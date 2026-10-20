@@ -52,6 +52,14 @@ The hybrid design: this machine pushes the latest scan as JSON to the server,
 which serves a read-only page. Nothing in the current design has to change to
 add it. Not wanted yet.
 
+## Server container controls
+
+Stop, restart and update a container from the server detail page.
+Parked with the other mutations until the read-only app proves itself.
+Routes when unparked: SSH to Silo for stop and restart, the server's own
+API for update, capabilities verified then. The container list itself is
+already in, as a live read, see `docs/decisions/scan-model.md`.
+
 ## Server service tiles
 
 The server runs other services. If a service's state is worth seeing

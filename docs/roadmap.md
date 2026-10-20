@@ -33,6 +33,16 @@ Push the branch, commit and push a vault, open in the editor. Each one changes
 something the scanner reads, so each needs a rescan after and an undo story.
 Parked until the read-only app has proved itself.
 
+## Roadmap items and branches
+
+The scanner reads roadmap files from the working copy, so the items shown
+are whatever branch is checked out, including a work-in-progress edit of the
+roadmap itself. Decide whether that is acceptable or whether the stable read
+should come from the default branch without touching the checkout, via
+`git show main:docs/roadmap.md`, with the working-copy version shown as a
+divergence when the two differ. Vaults are unaffected; they live on one
+branch.
+
 ## Tray icon status
 
 The StatusNotifier icon could carry an aggregate signal, for example the

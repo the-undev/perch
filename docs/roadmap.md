@@ -33,6 +33,13 @@ Push the branch, commit and push a vault, open in the editor. Each one changes
 something the scanner reads, so each needs a rescan after and an undo story.
 Parked until the read-only app has proved itself.
 
+## Tray icon status
+
+The StatusNotifier icon could carry an aggregate signal, for example the
+worst health colour across everything. Parked because no mapping from many
+statuses to one icon has proved itself useful yet. Decide after living with
+the glance view.
+
 ## Nudges
 
 Rules over a scan, such as a vault unpushed for more than three days, shown as

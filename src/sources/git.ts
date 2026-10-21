@@ -1,7 +1,6 @@
-import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { mapWithLimit, runCommand } from "../exec.ts";
-import { errorMessage, nullIfMissing } from "../fs.ts";
+import { errorMessage } from "../fs.ts";
 import type {
   ActivityState,
   Drift,
@@ -38,12 +37,6 @@ export function createGitRunner(baseEnv: NodeJS.ProcessEnv): GitRunner {
     LC_ALL: "C",
   };
   return (cwd, args) => runCommand("git", args, { cwd, env });
-}
-
-/** The modification time of a path, or null when it no longer exists. */
-export async function fileMtime(path: string): Promise<Date | null> {
-  const stats = await nullIfMissing(() => stat(path));
-  return stats?.mtime ?? null;
 }
 
 interface StatusSummary {

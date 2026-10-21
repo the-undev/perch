@@ -2,12 +2,12 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { discover } from "../src/discovery.ts";
+import { fileMtime } from "../src/fs.ts";
 import type { DriftThresholds, Item } from "../src/snapshot.ts";
 import {
   createGitSource,
   deriveActivity,
   deriveDrift,
-  fileMtime,
   scanRepository,
 } from "../src/sources/git.ts";
 import {

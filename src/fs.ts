@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 
 function isMissing(error: unknown): boolean {
   return (
@@ -33,4 +33,10 @@ export async function nullIfMissing<T>(
 /** The message of a thrown value, for recording as data. */
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+/** The modification time of a path, or null when it does not exist. */
+export async function fileMtime(path: string): Promise<Date | null> {
+  const stats = await nullIfMissing(() => stat(path));
+  return stats?.mtime ?? null;
 }

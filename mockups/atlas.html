@@ -185,9 +185,59 @@ const SEEDS = {
 	"snapshot (derived):durationMs": ["meta", "hidden"],
 	"snapshot (derived):aggregatedAt": ["meta", "hidden"],
 };
+const CAT_DEFS = {
+	identity: "What the thing is: names, ids, paths, urls, flags of nature (archived, fork)",
+	activity: "What is happening or happened recently: edits, commits, sessions, timestamps",
+	health: "Judged state: CI results, drift levels, flags, up/down",
+	work: "Outstanding or finished work: roadmap items, bugs, PRs, unpushed commits, dirty files",
+	risk: "Exposure to loss or surprise: backup status, one disk only, config conflicts",
+	meta: "The scan's own machinery: absence states, reasons, timings, errors",
+};
+const DEST_DEFS = {
+	bird: "Worn by the bird itself: colour, size, position, motion",
+	bubble: "In the speech bubble: the first-person line and the fact chips",
+	detail: "Only on the full project page",
+	hidden: "Never displayed: joins, derivation inputs, machinery",
+	undecided: "Not yet placed",
+};
+
+/* Every field gets a proposed assignment: explicit seeds first, then
+   rules on the field name. Raw sources never propose bird or bubble;
+   those read from the derived snapshot. What no rule matches stays
+   undecided, so amber marks the genuine judgement calls. */
 function seedFor(src, path) {
-	if (path === "gatheredAt" || path === "source") return ["meta", "hidden"];
-	return SEEDS[`${src}:${path}`] ?? ["", "undecided"];
+	const explicit = SEEDS[`${src}:${path}`];
+	if (explicit) return explicit;
+	const seg = path.split(".").pop().replace(/(\[\]|\{\})+$/, "");
+	const snap = src.startsWith("snapshot");
+	const has = (s) => path.includes(s);
+	if (snap && has("flags[]")) return ["health", "bubble"];
+	if (["state", "reason", "error", "gatheredAt", "source", "durationMs", "lastSucceededAt",
+		"foundBy", "aliases", "account", "basis", "skippedForks", "configPath", "aggregatedAt",
+		"scannedAt", "amberDays", "redDays", "line", "level"].includes(seg)) return ["meta", "hidden"];
+	if (snap && seg === "activity") return ["activity", "bird"];
+	if (snap && seg === "driftDays") return ["health", "bird"];
+	if (snap && has("drift")) return ["health", "detail"];
+	if (snap && seg === "backup") return ["risk", "bubble"];
+	if (snap && ["uncommittedCount", "unpushedCount"].includes(seg)) return ["work", "bubble"];
+	if (snap && has("counts")) return ["work", "bubble"];
+	if (snap && has("latestCi")) return ["health", "bubble"];
+	if (snap && seg === "allUp") return ["health", "bubble"];
+	if (["warnings", "conflicts"].includes(seg)) return ["risk", "detail"];
+	if (["conclusion", "status", "combinedStatus", "heartbeats"].includes(seg) || has(".ci")) return ["health", "detail"];
+	if (["ahead", "behind"].includes(seg)) return ["work", "detail"];
+	if (["archived", "fork", "private", "ignored", "draft"].includes(seg)) return ["identity", "detail"];
+	if (/[uU]rl/.test(seg)) return ["identity", "detail"];
+	if (["name", "fullName", "owner", "id", "itemId", "ref", "path", "directory", "file",
+		"include", "defaultBranch", "branch", "upstream", "head", "sha", "kind", "importance",
+		"folder", "livesyncPlugin", "number", "author", "context", "group", "monitors",
+		"statusPage", "liveSources"].includes(seg)) return ["identity", "detail"];
+	if (/At$/.test(seg) || ["mtime", "time", "newest"].includes(seg)) return ["activity", "detail"];
+	if (["subject", "title", "text", "heading", "prose", "body", "message", "checkbox", "tags",
+		"done", "progress", "total", "items", "bullets", "groups", "role", "openPullRequests",
+		"unpushedCommits", "dirtyFiles", "code", "parents", "bulletsBeforeFirstHeading",
+		"sections", "files", "repos", "branches", "remotes", "transcripts"].includes(seg)) return ["work", "detail"];
+	return ["", "undecided"];
 }
 
 let store = {};
@@ -249,8 +299,8 @@ function card(src, f) {
 		<div class="top"><span class="path">${esc(f.path)}</span><span class="pres">${f.count}/${f.parentCount}</span></div>
 		<div class="decl">${esc(f.declared ?? f.types.join(" | "))}</div>
 		<div class="ex">${f.examples.map((e) => `<div>${esc(e)}</div>`).join("")}</div>
-		<div class="tags cats">${CATS.map((x) => `<button class="${x}" data-cat="${x}">${x}</button>`).join("")}</div>
-		<div class="tags dests">${DESTS.map((x) => `<button class="${x}" data-dest="${x}">${x}</button>`).join("")}</div>`;
+		<div class="tags cats">${CATS.map((x) => `<button class="${x}" data-cat="${x}" title="${CAT_DEFS[x]}">${x}</button>`).join("")}</div>
+		<div class="tags dests">${DESTS.map((x) => `<button class="${x}" data-dest="${x}" title="${DEST_DEFS[x]}">${x}</button>`).join("")}</div>`;
 	c.addEventListener("click", (e) => {
 		const b = e.target.closest("button");
 		if (!b) return;

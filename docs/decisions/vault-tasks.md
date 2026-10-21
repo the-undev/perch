@@ -38,15 +38,26 @@ Decided 20 October 2026. Basic markdown extraction, no bespoke syntax:
 
 - Headings are the groups, and the detail view's structured list groups by
   them, see [project-detail](project-detail.md).
-- An open item is a list bullet when the file has any under its headings,
-  otherwise each heading is an item.
+- The rule is per heading, decided 21 October 2026 against the gathered
+  structure of every real roadmap file. A heading with direct bullets is a
+  group and its bullets are the items. A heading with no bullets and no
+  sub-headings is itself one item, with its prose as the body. A heading
+  with sub-headings and no direct bullets is structure. A heading with both
+  is a group with nested sub-groups. No file-level mode, no special cases.
+- Four files overcount under this rule because they hold done records or
+  design prose in a roadmap (oxbow, prism, cobble, the Pocket
+  vault's "Getting off one disk"). That is file hygiene against the owner's
+  own convention (outstanding work only), not a parser concern; tidy them
+  as they are next touched.
 - Checkbox syntax is honoured where it exists: `- [ ]` open, `- [x]` done.
   No file uses it today; plain bullets with done items deleted is the
   observed convention, and both parse.
-- An item is a bug when it sits under a `Bugs` heading or carries a `#bug`
-  tag on its line. Either signal counts; the heading is the primary
-  convention, the tag covers a bug recorded inside a feature's section.
-  Decided 20 October 2026.
+- An item is a bug when it sits under a heading whose text contains the
+  word "bugs" (case-insensitive, so "Next Priority Bugs" counts) or carries
+  a `#bug` tag on its line. Either signal counts; the heading is the
+  primary convention, the tag covers a bug recorded inside a feature's
+  section. Decided 20 October 2026, widened from exact `Bugs` on
+  21 October 2026.
 
 ## Epic convention
 

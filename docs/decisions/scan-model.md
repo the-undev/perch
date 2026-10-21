@@ -39,9 +39,13 @@ Decided 20 October 2026.
   Silo for stop and restart, the server's own API for update, with its
   actual capabilities verified then.
 
+- Not everything refreshes at one cadence. Archived forge repos change
+  rarely, so they sit in a slower lane with their own interval; the config
+  carries both intervals. Decided 21 October 2026.
+
 ## Open
 
-- The scan interval default, and measuring the cost of a full scan before
-  choosing it.
+- The scan interval defaults for both lanes, and measuring the cost of a
+  full scan before choosing them.
 - Whether scan-on-window-focus stays from the old spec (likely yes, it is
   cheap and makes the glance current when summoned).

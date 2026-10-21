@@ -18,9 +18,16 @@ Decided 20 October 2026.
 
 ## Known contents so far
 
-Roots, excluded folders, per-project importance tier, drift thresholds
-(global defaults plus per-project overrides), the Forgejo address, the
-Uptime Kuma address, the scan interval.
+Superseded on the same day by [project-model](project-model.md): config is
+itself a source of assertions, not a closed project list. It holds the
+local include and ignore paths, the forge accounts, joins the remote URLs
+cannot prove, importance, ignores and per-item overrides (drift thresholds,
+zellij session, roadmap paths beyond the defaults). Discovery under the
+include paths is app behaviour; an unconfigured find is flagged, not
+hidden.
+
+Also: drift threshold defaults, the Forgejo address, the Uptime Kuma address
+and slug, the scan interval, launcher commands.
 
 ## Open
 

@@ -89,6 +89,14 @@ Replace the Plasma custom shortcut with the Tauri global shortcut plugin once
 it supports Wayland through the GlobalShortcuts portal. The pull request to
 watch is tauri-apps/global-hotkey#162.
 
+## Public undev release
+
+If the bird language proves itself, perch moves to undev as a public
+project. Requirements that become hard at that point: everything
+machine-specific lives in config, no personal names or paths in the
+repository, and the aviary works with any project set. See
+`docs/decisions/bird-language.md`.
+
 ## Other sources
 
 Candidates that fit the derived-only rule: the vault roadmaps as tiles of their

@@ -15,9 +15,10 @@ Decided 20 October 2026.
 - Both humans and Claude edit it, so it must read well in a diff and carry
   comments.
 - No secrets in config. Tokens come from the desktop keyring at run time,
-  the same entries in dev and in the app: `service perch` with keys
-  `github-finch`, `github-the-undev` and `forgejo-token`, stored once
-  with `secret-tool store` and read with `secret-tool lookup`. All three
+  the same entries in dev and in the app: `service perch` with one key per
+  forge account (`github-finch`, `github-the-undev`,
+  `github-skiff-app`, `forgejo-finch`, `forgejo-the-undev`), stored
+  once with `secret-tool store` and read with `secret-tool lookup`. All three
   are read-only tokens: fine-grained GitHub PATs (contents, metadata,
   actions and pull requests, read only) and a Forgejo read-only token. This
   replaces the spec's `gh auth token` route, for two reasons: those tokens

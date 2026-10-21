@@ -18,16 +18,18 @@ tokens, Fine-grained tokens:
 - Repository permissions, all Read-only: Metadata (added automatically),
   Contents, Pull requests, Actions. Everything else No access.
 
-`skiff` lives under the `skiff-app` organisation, which a fine-grained
-token scoped to `the-undev` does not cover. Public repos read fine anyway;
-if a private org repo stops reading, create one more token with
-`skiff-app` as resource owner and store it under its own key.
+`skiff` lives under the `skiff-app` organisation, whose repos are
+private (verified 21 October 2026: the-undev's token gets 404 there), so a
+fine-grained token scoped to `the-undev` does not cover them. Create one
+more token with `skiff-app` as resource owner and the same permissions,
+stored under `github-skiff-app`.
 
 ## Forgejo
 
-One token for `finch`. Create at Settings, Applications, Generate New
-Token, with scopes `read:repository`, `read:issue` (pull requests sit
-under it) and `read:user`.
+One token per account, `finch` and `the-undev`, because a token reads
+only its own account's private repos. Create each at Settings,
+Applications, Generate New Token, with scopes `read:repository`,
+`read:issue` (pull requests sit under it) and `read:user`.
 
 ## Storing
 
@@ -36,7 +38,9 @@ Each command prompts for the token, so it never enters shell history:
 ```bash
 secret-tool store --label "perch github finch" service perch key github-finch
 secret-tool store --label "perch github the-undev" service perch key github-the-undev
-secret-tool store --label "perch forgejo" service perch key forgejo-token
+secret-tool store --label "perch github skiff-app" service perch key github-skiff-app
+secret-tool store --label "perch forgejo finch" service perch key forgejo-finch
+secret-tool store --label "perch forgejo the-undev" service perch key forgejo-the-undev
 ```
 
 Verify one with `secret-tool lookup service perch key <name>`, which

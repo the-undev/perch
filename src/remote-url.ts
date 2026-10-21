@@ -1,3 +1,10 @@
+import type { RawRemote } from "./raw.ts";
+
+/** A remote's distinct URLs, fetch first, then each push URL. */
+export function remoteUrls(remote: RawRemote): string[] {
+  return [...new Set([remote.fetchUrl, ...remote.pushUrls])];
+}
+
 export interface RemoteLocation {
   /** Host name or SSH alias, without user or port. */
   host: string;

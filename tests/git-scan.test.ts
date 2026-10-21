@@ -94,7 +94,7 @@ describe("gathering branches and tracking", () => {
     expect(raw.originHead).toEqual({ state: "observed", value: "main" });
     expect(raw.remotes).toEqual({
       state: "observed",
-      value: [{ name: "origin", url: remote }],
+      value: [{ name: "origin", fetchUrl: remote, pushUrls: [remote] }],
     });
   });
 
@@ -183,7 +183,10 @@ function rawGit(overrides: Partial<RawGit>): RawGit {
         },
       },
     ],
-    remotes: { state: "observed", value: [{ name: "origin", url: "x" }] },
+    remotes: {
+      state: "observed",
+      value: [{ name: "origin", fetchUrl: "x", pushUrls: ["x"] }],
+    },
     originHead: { state: "observed", value: "main" },
     unpushedCommits: [],
     ...overrides,

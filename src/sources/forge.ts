@@ -17,7 +17,7 @@ import type {
   RawForgeRepoInfo,
 } from "../raw.ts";
 import { sortedRecord } from "../records.ts";
-import { parseRemoteUrl } from "../remote-url.ts";
+import { parseRemoteUrl, remoteUrls } from "../remote-url.ts";
 import type { TokenLookup } from "../secrets.ts";
 import type { PolledSource } from "./source.ts";
 
@@ -163,8 +163,8 @@ export function createForgeSource<N extends ForgeName>(
         if (presence.git.state !== "observed") continue;
         const remotes = presence.git.value.remotes;
         if (remotes.state !== "observed") continue;
-        for (const remote of remotes.value) {
-          const location = parseRemoteUrl(remote.url);
+        for (const url of remotes.value.flatMap(remoteUrls)) {
+          const location = parseRemoteUrl(url);
           if (location === null || !deps.forge.hosts.includes(location.host))
             continue;
           const key = repoKey(location.owner, location.repo);

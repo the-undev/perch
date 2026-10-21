@@ -50,7 +50,9 @@ export interface RawDirtyFile {
 
 export interface RawRemote {
   name: string;
-  url: string;
+  fetchUrl: string;
+  /** Every URL a push goes to: the configured push URLs, or the fetch URL when there are none. */
+  pushUrls: string[];
 }
 
 export interface RawGit {

@@ -120,13 +120,19 @@ function parseBranches(output: string): RawBranch[] {
     });
 }
 
-function parseRemotes(output: string): RawRemote[] {
-  const remotes: RawRemote[] = [];
+/** Parses `git remote -v`, which prints one fetch line and one line per push URL per remote. */
+export function parseRemotes(output: string): RawRemote[] {
+  const remotes = new Map<string, RawRemote>();
   for (const line of output.split("\n")) {
-    const match = /^(\S+)\t(\S+) \(fetch\)$/.exec(line);
-    if (match) remotes.push({ name: match[1] ?? "", url: match[2] ?? "" });
+    const match = /^(\S+)\t(\S+) \((fetch|push)\)$/.exec(line);
+    if (!match) continue;
+    const [, name = "", url = "", kind] = match;
+    const remote = remotes.get(name) ?? { name, fetchUrl: "", pushUrls: [] };
+    if (kind === "fetch") remote.fetchUrl = url;
+    else remote.pushUrls.push(url);
+    remotes.set(name, remote);
   }
-  return remotes;
+  return [...remotes.values()];
 }
 
 const commitFormat = "--format=%H%x00%ct%x00%s";

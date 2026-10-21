@@ -3,7 +3,7 @@
 // disagreement is recorded.
 
 import type { ForgeName, RawForgeRepo, RawLocalPresence } from "./raw.ts";
-import { parseRemoteUrl } from "./remote-url.ts";
+import { parseRemoteUrl, remoteUrls } from "./remote-url.ts";
 import type { ConfigConflict, ItemFlag } from "./snapshot.ts";
 import { repoKey } from "./sources/forge.ts";
 
@@ -79,7 +79,8 @@ function conflict(
 /**
  * Joins presences into projects.
  *
- * - A local clone joins each forge presence one of its remote URLs names, origin first. Archived
+ * - A local clone joins each forge presence one of its remote URLs names, fetch and push alike,
+ *   origin first, so a dual-push remote joins both forges. Archived
  *   presences join nothing; the clone is flagged remote-archived. A presence already joined to
  *   another clone stays there and this clone is flagged remote-joined-elsewhere.
  * - Forge presences no clone joined are projects of their own; two never join each other
@@ -122,8 +123,10 @@ export function joinPresences(input: JoinInput): JoinResult {
       ...remotes.filter((remote) => remote.name === "origin"),
       ...remotes.filter((remote) => remote.name !== "origin"),
     ];
-    for (const remote of ordered) {
-      const location = parseRemoteUrl(remote.url);
+    for (const [remote, url] of ordered.flatMap((entry) =>
+      remoteUrls(entry).map((each) => [entry, each] as const),
+    )) {
+      const location = parseRemoteUrl(url);
       const forge = location ? input.forgeForHost(location.host) : null;
       if (location === null || forge === null) continue;
       const ref = forgeRef(forge, repoKey(location.owner, location.repo));

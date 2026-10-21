@@ -8,6 +8,7 @@ import { fileMtime } from "../src/fs.ts";
 import { createLocalSource } from "../src/sources/local.ts";
 import {
   fixtureGit,
+  git,
   initRepo,
   makeTempDir,
   removeDir,
@@ -90,6 +91,33 @@ describe("local source", () => {
     expect(data.presences.plain?.obsidian).toEqual({
       folder: false,
       livesyncPlugin: false,
+    });
+  });
+
+  it("records every remote's fetch URL and each of its push URLs", async () => {
+    const repo = initRepo(join(home, "dev", "perch"));
+    const github = "git@github.com:finch/perch.git";
+    const forgejo = "ssh://git@forgejo:2222/finch/perch.git";
+    git(repo, ["remote", "add", "origin", github]);
+    git(repo, ["remote", "set-url", "--add", "--push", "origin", github]);
+    git(repo, ["remote", "set-url", "--add", "--push", "origin", forgejo]);
+    git(repo, ["remote", "add", "backup", "/srv/backup/perch.git"]);
+
+    const data = await source([join(home, "dev")], []).gather({});
+    const presence = data.presences["dev/perch"];
+
+    expect(
+      presence?.git.state === "observed" && presence.git.value.remotes,
+    ).toEqual({
+      state: "observed",
+      value: [
+        {
+          name: "backup",
+          fetchUrl: "/srv/backup/perch.git",
+          pushUrls: ["/srv/backup/perch.git"],
+        },
+        { name: "origin", fetchUrl: github, pushUrls: [github, forgejo] },
+      ],
     });
   });
 

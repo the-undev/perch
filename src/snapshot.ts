@@ -20,7 +20,8 @@ export type HealthLevel = "green" | "amber" | "red";
 
 export interface Remote {
   name: string;
-  url: string;
+  fetchUrl: string;
+  pushUrls: string[];
 }
 
 export interface LocalBranch {

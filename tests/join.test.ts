@@ -89,6 +89,35 @@ describe("joining by remote URL", () => {
     ]);
   });
 
+  it("joins a dual-push remote to the forge named only by its second push URL", () => {
+    const github = "git@github.com:finch/perch.git";
+    const result = joined({
+      locals: [
+        {
+          id: "dev/perch",
+          presence: localPresence("/home/test/dev/perch", {
+            include: "/home/test/dev",
+            git: withRemotes([
+              {
+                name: "origin",
+                url: github,
+                pushUrls: [github, "ssh://git@forgejo:2222/finch/perch.git"],
+              },
+            ]),
+          }),
+        },
+      ],
+      forges: [
+        forge("github", forgeRepo("finch/perch", {})),
+        forge("forgejo", forgeRepo("finch/perch", {})),
+      ],
+    });
+
+    expect(refsOf(result)).toEqual([
+      ["local:dev/perch", "github:finch/perch", "forgejo:finch/perch"],
+    ]);
+  });
+
   it("follows a rename through the forge's alias for the old name", () => {
     const result = joined({
       locals: [

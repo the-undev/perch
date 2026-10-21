@@ -34,12 +34,24 @@ export function rawGit(overrides: Partial<RawGit>): RawGit {
   };
 }
 
-export function withRemotes(remotes: RawRemote[]): Pick<RawGit, "remotes"> {
+/** Remotes from a fetch URL and, for a dual-push remote, its push URLs. */
+export function withRemotes(
+  remotes: { name: string; url: string; pushUrls?: string[] }[],
+): Pick<RawGit, "remotes"> {
   return {
     remotes:
       remotes.length === 0
         ? { state: "absent", reason: "no-remote" }
-        : { state: "observed", value: remotes },
+        : {
+            state: "observed",
+            value: remotes.map(
+              (remote): RawRemote => ({
+                name: remote.name,
+                fetchUrl: remote.url,
+                pushUrls: remote.pushUrls ?? [remote.url],
+              }),
+            ),
+          },
   };
 }
 

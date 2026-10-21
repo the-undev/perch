@@ -7,7 +7,7 @@ import {
   deriveRoadmapFile,
 } from "../src/derivations.ts";
 import { readRoadmapStructure } from "../src/roadmap-parser.ts";
-import type { RoadmapFile } from "../src/snapshot.ts";
+import type { RoadmapFile, WorkItem, WorkItemGroup } from "../src/snapshot.ts";
 import { createRoadmapSource } from "../src/sources/roadmap.ts";
 
 function readFixture(name: string): string {
@@ -72,75 +72,170 @@ describe("readRoadmapStructure", () => {
   });
 });
 
-function summary(file: RoadmapFile): [string | null, string[]][] {
-  return file.groups.map((group) => [
-    group.heading,
-    group.items.map((item) => item.text),
-  ]);
+function summary(file: RoadmapFile): unknown {
+  const group = (entry: WorkItemGroup): unknown => [
+    entry.heading,
+    entry.role,
+    entry.items.map((item) => item.text),
+    entry.groups.map(group),
+  ];
+  return {
+    items: file.items.map((item) => item.text),
+    groups: file.groups.map(group),
+  };
 }
 
-describe("parseRoadmap with bullets", () => {
-  it("groups top-level bullets under their nearest heading", () => {
-    const file = parseFixture("bullets.md");
+function everyItem(file: RoadmapFile): WorkItem[] {
+  const walk = (group: WorkItemGroup): WorkItem[] => [
+    ...group.items,
+    ...group.groups.flatMap(walk),
+  ];
+  return [...file.items, ...file.groups.flatMap(walk)];
+}
 
-    expect(file.itemSource).toBe("bullets");
-    expect(summary(file)).toEqual([
-      [
-        "Documentation",
+describe("deriveRoadmapFile, per heading", () => {
+  it("makes bulleted headings groups, bare headings items, and sub-heading-only headings structure", () => {
+    expect(summary(parseFixture("mixed.md"))).toEqual({
+      items: [],
+      groups: [
         [
-          "Write up the shares and the user accounts, which continue onto a second line",
-          "Record the Plex entry name",
+          "Roadmap",
+          "structure",
+          ["Actions from tiles"],
+          [
+            [
+              "Claude Code integration",
+              "group",
+              ["Show the last user messages", "Launch from a tile"],
+              [["Hooks", "group", ["Session end hook"], []]],
+            ],
+            [
+              "Next Priority Bugs",
+              "structure",
+              ["Scan hangs on a locked index"],
+              [],
+            ],
+            [
+              "Area",
+              "structure",
+              [],
+              [["Sub-area", "group", ["Task under a structure heading"], []]],
+            ],
+          ],
         ],
       ],
-      ["Runbooks", ["Restoring from a backup", "Making a bootable USB"]],
-      ["Housekeeping", ["Decide whether to guard against the icon loop"]],
-    ]);
+    });
+  });
+
+  it("gives a bare heading its prose as the body", () => {
+    const actions = everyItem(parseFixture("mixed.md")).find(
+      (item) => item.text === "Actions from tiles",
+    );
+
+    expect(actions).toMatchObject({
+      source: "heading",
+      done: null,
+      body: "Push the branch, commit and push a vault.\n\nParked until the read-only app has proved itself.",
+    });
+  });
+
+  it("groups top-level bullets under their nearest heading and joins continuation lines", () => {
+    const file = parseFixture("bullets.md");
+
+    expect(summary(file)).toEqual({
+      items: [],
+      groups: [
+        [
+          "Documentation",
+          "group",
+          [
+            "Write up the shares and the user accounts, which continue onto a second line",
+            "Record the Plex entry name",
+          ],
+          [
+            [
+              "Runbooks",
+              "group",
+              ["Restoring from a backup", "Making a bootable USB"],
+              [],
+            ],
+          ],
+        ],
+        [
+          "Housekeeping",
+          "group",
+          ["Decide whether to guard against the icon loop"],
+          [],
+        ],
+      ],
+    });
+    expect(file.groups[0]?.items[0]).toMatchObject({
+      line: 7,
+      done: null,
+      source: "bullet",
+    });
   });
 
   it("ignores tag lines, nested bullets and fenced code", () => {
-    const file = parseFixture("bullets.md");
-    const texts = file.groups.flatMap((group) =>
-      group.items.map((item) => item.text),
+    const texts = everyItem(parseFixture("bullets.md")).map(
+      (item) => item.text,
     );
 
     expect(texts).not.toContain("not a bullet inside a fence");
-    expect(file.groups.map((group) => group.heading)).not.toContain(
-      "not a heading inside a fence",
-    );
     expect(texts.some((text) => text.includes("nested note"))).toBe(false);
   });
 
-  it("records the level and line of each item", () => {
-    const file = parseFixture("bullets.md");
-
-    expect(file.groups[1]?.level).toBe(3);
-    expect(file.groups[0]?.items[0]?.line).toBe(7);
-  });
-
-  it("leaves done unset and progress null without checkboxes", () => {
-    const file = parseFixture("bullets.md");
-
-    expect(file.groups.every((group) => group.progress === null)).toBe(true);
-    expect(file.groups[0]?.items[0]?.done).toBeNull();
+  it("treats every heading the same way in a file without bullets", () => {
+    expect(summary(parseFixture("headings-only.md"))).toEqual({
+      items: [],
+      groups: [
+        [
+          "Roadmap",
+          "structure",
+          ["First build", "Tray icon status", "Nudges #bug"],
+          [["Bugs", "structure", ["Scan hangs on a locked index"], []]],
+        ],
+      ],
+    });
   });
 });
 
-describe("parseRoadmap bug kinds", () => {
-  it("marks items under a Bugs heading, including its sub-headings, as bugs", () => {
-    const file = parseFixture("bugs.md");
-    const kinds = file.groups.map((group) => [
-      group.heading,
-      group.items.map((item) => item.kind),
-    ]);
+describe("deriveRoadmapFile bug kinds", () => {
+  it("marks items under any heading mentioning bugs, at any depth, as bugs", () => {
+    const kinds = Object.fromEntries(
+      everyItem(parseFixture("bugs.md")).map((item) => [item.text, item.kind]),
+    );
 
-    expect(kinds).toEqual([
-      ["Bugs", ["bug"]],
-      ["Scanner", ["bug"]],
-      ["Tiles", ["feature", "bug", "feature"]],
-    ]);
+    expect(kinds).toEqual({
+      "The window flickers on focus": "bug",
+      "Crash on an empty repository": "bug",
+      "Show the branch name": "feature",
+      "Counts are wrong after a rebase #bug": "bug",
+      "A #bugfix tag is not a bug tag": "feature",
+    });
   });
 
-  it("counts open items by kind", () => {
+  it("widens the heading match to any text containing the word", () => {
+    const item = everyItem(parseFixture("mixed.md")).find(
+      (entry) => entry.text === "Scan hangs on a locked index",
+    );
+
+    expect(item?.kind).toBe("bug");
+  });
+
+  it("applies the #bug tag to heading items", () => {
+    const kinds = Object.fromEntries(
+      everyItem(parseFixture("headings-only.md")).map((item) => [
+        item.text,
+        item.kind,
+      ]),
+    );
+
+    expect(kinds["Nudges #bug"]).toBe("bug");
+    expect(kinds["First build"]).toBe("feature");
+  });
+
+  it("counts open items by kind across nested groups", () => {
     expect(countOpenItems([parseFixture("bugs.md")])).toEqual({
       bug: 3,
       feature: 2,
@@ -148,52 +243,21 @@ describe("parseRoadmap bug kinds", () => {
   });
 });
 
-describe("parseRoadmap without bullets", () => {
-  it("falls back to headings below the title as items, grouped by their parent", () => {
-    const file = parseFixture("headings-only.md");
-
-    expect(file.itemSource).toBe("headings");
-    expect(summary(file)).toEqual([
-      ["Roadmap", ["First build", "Tray icon status", "Nudges #bug"]],
-      ["Bugs", ["Scan hangs on a locked index"]],
-    ]);
-  });
-
-  it("applies the Bugs heading and the #bug tag to heading items", () => {
-    const file = parseFixture("headings-only.md");
-    const kinds = Object.fromEntries(
-      file.groups.flatMap((group) =>
-        group.items.map((item) => [item.text, item.kind]),
-      ),
-    );
-
-    expect(kinds).toEqual({
-      "First build": "feature",
-      "Tray icon status": "feature",
-      "Nudges #bug": "bug",
-      "Scan hangs on a locked index": "bug",
-    });
-  });
-});
-
-describe("parseRoadmap checkboxes", () => {
+describe("deriveRoadmapFile checkboxes", () => {
   it("honours checkbox state and derives per-epic progress", () => {
     const file = parseFixture("epics.md");
+    const epics = file.groups[0]?.groups ?? [];
 
-    expect(file.groups.map((group) => [group.heading, group.progress])).toEqual(
-      [
-        ["Scanner PoC", { done: 2, total: 3 }],
-        ["Mockups", { done: 0, total: 2 }],
-        ["Ideas", null],
-      ],
-    );
-    expect(file.groups[0]?.items.map((item) => [item.text, item.done])).toEqual(
-      [
-        ["Scaffold", true],
-        ["Roadmap parser", true],
-        ["Git source", false],
-      ],
-    );
+    expect(epics.map((group) => [group.heading, group.progress])).toEqual([
+      ["Scanner PoC", { done: 2, total: 3 }],
+      ["Mockups", { done: 0, total: 2 }],
+      ["Ideas", null],
+    ]);
+    expect(epics[0]?.items.map((item) => [item.text, item.done])).toEqual([
+      ["Scaffold", true],
+      ["Roadmap parser", true],
+      ["Git source", false],
+    ]);
   });
 
   it("leaves done items out of the counts", () => {

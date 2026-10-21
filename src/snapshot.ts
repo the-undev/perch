@@ -72,6 +72,10 @@ export interface WorkItem {
   /** Null when the item carries no checkbox. */
   done: boolean | null;
   line: number;
+  /** A bullet, or a bare heading whose prose is its body. */
+  source: "bullet" | "heading";
+  /** The prose under a heading item; null for a bullet or a heading with no prose. */
+  body: string | null;
 }
 
 export interface Progress {
@@ -80,19 +84,22 @@ export interface Progress {
 }
 
 export interface WorkItemGroup {
-  /** Null for items above the first heading. */
-  heading: string | null;
+  heading: string;
   level: number;
+  line: number;
+  /** A group has direct bullets; structure only holds sub-headings. */
+  role: "group" | "structure";
   items: WorkItem[];
-  /** Checked against total checkbox items, null when the group has no checkboxes. */
+  groups: WorkItemGroup[];
+  /** Checked against total checkbox items among the direct items, null without checkboxes. */
   progress: Progress | null;
 }
 
 export interface RoadmapFile {
   /** Path relative to the item. */
   path: string;
-  /** Whether items came from bullets or, for a file without bullets, from headings. */
-  itemSource: "bullets" | "headings";
+  /** Bullets above the first heading and bare top-level headings. */
+  items: WorkItem[];
   groups: WorkItemGroup[];
 }
 

@@ -111,6 +111,8 @@ export interface RawSection {
   parents: RawHeadingRef[];
   /** Top-level bullets directly under this heading, before the next heading. */
   bullets: RawBullet[];
+  /** Other text directly under this heading, trimmed, paragraphs separated by a blank line. */
+  prose: string;
 }
 
 /** A roadmap file as found: every heading in order, with the bullets beneath it. */

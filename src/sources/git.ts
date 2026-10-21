@@ -1,26 +1,22 @@
 import { join } from "node:path";
-import { mapWithLimit, runCommand } from "../exec.ts";
-import { errorMessage } from "../fs.ts";
+import { runCommand } from "../exec.ts";
 import type {
   RawBranch,
   RawCommit,
   RawDirtyFile,
-  RawEntries,
   RawGit,
   RawRemote,
   Tracking,
 } from "../raw.ts";
-import type { PolledSource } from "./source.ts";
 
 export type GitRunner = (
   cwd: string,
   args: readonly string[],
 ) => Promise<string>;
 
-export interface GitSourceDeps {
+export interface GitReadDeps {
   runGit: GitRunner;
   mtimeOf: (path: string) => Promise<Date | null>;
-  concurrency: number;
 }
 
 /** Runs git without optional locks, so status never rewrites the index, and never prompts. */
@@ -138,7 +134,7 @@ const commitFormat = "--format=%H%x00%ct%x00%s";
 /** Reads one repository's working-copy facts without changing it. */
 export async function readRepository(
   path: string,
-  deps: Pick<GitSourceDeps, "runGit" | "mtimeOf">,
+  deps: GitReadDeps,
 ): Promise<RawGit> {
   const git = (args: readonly string[]) => deps.runGit(path, args);
   const [
@@ -201,29 +197,5 @@ export async function readRepository(
         ? { state: "absent", reason: "no-origin-head" }
         : { state: "observed", value: originHead },
     unpushedCommits: parseCommits(unpushedOutput),
-  };
-}
-
-/** Reads git facts for every repository and vault item. */
-export function createGitSource(deps: GitSourceDeps): PolledSource<"git"> {
-  return {
-    name: "git",
-    async gather(items) {
-      const entries: Record<string, RawEntries["git"]> = {};
-      const withPaths = items.flatMap((item) =>
-        item.kind === "server" ? [] : [{ id: item.id, path: item.path }],
-      );
-      await mapWithLimit(withPaths, deps.concurrency, async ({ id, path }) => {
-        try {
-          entries[id] = {
-            state: "observed",
-            value: await readRepository(path, deps),
-          };
-        } catch (error) {
-          entries[id] = { state: "error", error: errorMessage(error) };
-        }
-      });
-      return entries;
-    },
   };
 }

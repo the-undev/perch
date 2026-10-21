@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   driftThresholdsFor,
+  hostAccounts,
   importanceFor,
   loadConfig,
   parseConfig,
@@ -16,31 +17,37 @@ async function exampleText(): Promise<string> {
 }
 
 describe("example config", () => {
-  it("parses with every root expanded against the home directory", async () => {
+  it("parses with every path expanded against the home directory", async () => {
     const config = parseConfig(await exampleText(), home);
 
-    expect(config.roots.map((root) => [root.path, root.kind])).toEqual([
-      ["/home/test/dev", "repo"],
-      ["/home/test/undev", "repo"],
-      ["/home/test/.dotfiles", "repo"],
-      ["/home/test/obsidian/Hothouse", "vault"],
-      ["/home/test/obsidian/Pocket", "vault"],
+    expect(config.local.include).toEqual([
+      "/home/test/dev",
+      "/home/test/undev",
+      "/home/test/.dotfiles",
+      "/home/test/obsidian/Hothouse",
+      "/home/test/obsidian/Pocket",
     ]);
-    expect(config.roots[3]?.roadmaps).toEqual([
+    expect(config.local.ignore).toEqual([
+      "/home/test/dev/archived",
+      "/home/test/dev/third-party",
+      "/home/test/dev/all/delete",
+    ]);
+    expect(config.joins).toEqual([]);
+    expect(config.ignore).toEqual([]);
+    expect(config.drift).toEqual({ amberDays: 7, redDays: 30 });
+    expect(config.importance.default).toBe("projects");
+    expect(config.items["obsidian/Hothouse"]?.roadmaps).toEqual([
       "Tech/Tech Plans.md",
       "Garden/Garden Plans.md",
     ]);
-    expect(config.excludeSegments).toEqual([
-      "archived",
-      "third-party",
-      "delete",
-    ]);
-    expect(config.drift).toEqual({ amberDays: 7, redDays: 30 });
-    expect(config.importance.default).toBe("projects");
-    expect(config.items).toEqual({});
-    expect(config.github.hostAccounts["github-work"]).toBe("the-undev");
-    expect(config.forgejo.baseUrl).toBe("http://forge.example.lan:3000");
-    expect(config.server.kumaBaseUrl).toBe("http://kuma.example.lan:3001");
+    expect(config.forges.finalisedCommits).toBe(10);
+    expect(config.forges.archivedIntervalHours).toBe(24);
+    expect(config.forges.github.trackedForks).toEqual([]);
+    expect(hostAccounts(config.forges.github)).toEqual({
+      "github.com": "finch",
+      "github-work": "the-undev",
+    });
+    expect(config.forges.forgejo.baseUrl).toBe("http://forge.example.lan:3000");
     expect(config.server.kumaStatusPage).toBe("perch");
   });
 
@@ -58,8 +65,8 @@ describe("example config", () => {
 describe("item overrides", () => {
   async function withOverrides(overrides: string): Promise<string> {
     return (await exampleText()).replace(
-      "[items]\n",
-      `[items]\n${overrides}\n`,
+      "[forges]\n",
+      `${overrides}\n[forges]\n`,
     );
   }
 

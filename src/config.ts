@@ -2,30 +2,41 @@ import { join } from "node:path";
 import { parse } from "smol-toml";
 import type { DriftThresholds } from "./snapshot.ts";
 
-export type RootKind = "repo" | "vault";
-
-export interface RootConfig {
-  /** Absolute path, with a leading ~ expanded. */
-  path: string;
-  /** A repo root is searched for repositories; a vault root is itself one vault item. */
-  kind: RootKind;
-  /** Roadmap files relative to a vault root; empty for repo roots, which use the standard names. */
-  roadmaps: string[];
-}
-
 export interface ItemOverride {
   importance: string | null;
   drift: Partial<DriftThresholds>;
+  /** Roadmap files relative to the item, replacing the standard names; null keeps them. */
+  roadmaps: string[] | null;
+}
+
+export interface ForgeAccount {
+  account: string;
+  /** Remote hosts or SSH aliases whose repositories this account's token reads. */
+  hosts: string[];
+}
+
+export interface ForgeConfig {
+  accounts: ForgeAccount[];
+  /** Forks worth tracking, as owner/name; every other fork is skipped. */
+  trackedForks: string[];
 }
 
 export interface Config {
-  roots: RootConfig[];
-  excludeSegments: string[];
+  local: { include: string[]; ignore: string[] };
+  /** Groups of presence references asserted to be one project. */
+  joins: string[][];
+  /** Presence references to leave off the main view. */
+  ignore: string[];
   drift: DriftThresholds;
   importance: { tiers: string[]; default: string };
+  /** Per-item overrides keyed by item id; a key here also marks a found repository as set up. */
   items: Record<string, ItemOverride>;
-  github: { hostAccounts: Record<string, string> };
-  forgejo: { baseUrl: string; remoteHosts: string[] };
+  forges: {
+    finalisedCommits: number;
+    archivedIntervalHours: number;
+    github: ForgeConfig;
+    forgejo: ForgeConfig & { baseUrl: string };
+  };
   server: { name: string; kumaBaseUrl: string; kumaStatusPage: string };
 }
 
@@ -76,38 +87,10 @@ function stringArray(value: unknown, name: string): string[] {
   return value;
 }
 
-function stringRecord(value: Table, name: string): Record<string, string> {
-  const entries = Object.entries(value).map(([key, entry]) => {
-    if (typeof entry !== "string")
-      throw new Error(`config: ${name}.${key} must be a string`);
-    return [key, entry] as const;
-  });
-  return Object.fromEntries(entries);
-}
-
 function expandHome(path: string, home: string): string {
   if (path === "~") return home;
   if (path.startsWith("~/")) return join(home, path.slice(2));
   return path;
-}
-
-function parseRoot(value: unknown, index: number, home: string): RootConfig {
-  const where = `roots[${index}].`;
-  if (!isTable(value))
-    throw new Error(`config: roots[${index}] must be a table`);
-  const kind = string(value, "kind", where);
-  if (kind !== "repo" && kind !== "vault") {
-    throw new Error(`config: ${where}kind must be "repo" or "vault"`);
-  }
-  const roadmaps =
-    value.roadmaps === undefined
-      ? []
-      : stringArray(value.roadmaps, `${where}roadmaps`);
-  return {
-    path: expandHome(string(value, "path", where), home),
-    kind,
-    roadmaps,
-  };
 }
 
 function parseOverride(
@@ -138,18 +121,42 @@ function parseOverride(
       `items."${id}".drift_red_days`,
     );
   }
-  return { importance, drift };
+  const roadmaps =
+    value.roadmaps === undefined
+      ? null
+      : stringArray(value.roadmaps, `items."${id}".roadmaps`);
+  return { importance, drift, roadmaps };
 }
 
-/** Parses and validates config TOML, expanding ~ in root paths against the given home directory. */
+function parseForge(forge: Table, where: string): ForgeConfig {
+  const accounts = forge.accounts;
+  if (!Array.isArray(accounts)) {
+    throw new Error(`config: ${where}accounts must be an array of tables`);
+  }
+  return {
+    accounts: accounts.map((entry, index) => {
+      const name = `${where}accounts[${index}]`;
+      if (!isTable(entry)) throw new Error(`config: ${name} must be a table`);
+      return {
+        account: string(entry, "account", `${name}.`),
+        hosts: stringArray(entry.hosts, `${name}.hosts`),
+      };
+    }),
+    trackedForks: stringArray(forge.tracked_forks, `${where}tracked_forks`),
+  };
+}
+
+function stringArrays(value: unknown, name: string): string[][] {
+  if (!Array.isArray(value))
+    throw new Error(`config: ${name} must be an array`);
+  return value.map((entry, index) => stringArray(entry, `${name}[${index}]`));
+}
+
+/** Parses and validates config TOML, expanding a leading ~ in paths against the home directory. */
 export function parseConfig(text: string, home: string): Config {
   const document: Table = parse(text);
 
-  const scan = table(document, "scan", "");
-  const roots = document.roots;
-  if (!Array.isArray(roots))
-    throw new Error("config: roots must be an array of tables");
-
+  const local = table(document, "local", "");
   const drift = table(document, "drift", "");
   const importance = table(document, "importance", "");
   const tiers = stringArray(importance.tiers, "importance.tiers");
@@ -159,18 +166,20 @@ export function parseConfig(text: string, home: string): Config {
       `config: importance.default must be one of ${tiers.join(", ")}`,
     );
   }
-
   const items = optionalTable(document, "items", "");
-  const github = table(document, "github", "");
-  const forgejo = table(document, "forgejo", "");
+  const forges = table(document, "forges", "");
+  const forgejo = table(forges, "forgejo", "forges.");
   const server = table(document, "server", "");
+  const paths = (value: unknown, name: string) =>
+    stringArray(value, name).map((path) => expandHome(path, home));
 
   return {
-    roots: roots.map((root, index) => parseRoot(root, index, home)),
-    excludeSegments: stringArray(
-      scan.exclude_segments,
-      "scan.exclude_segments",
-    ),
+    local: {
+      include: paths(local.include, "local.include"),
+      ignore: paths(local.ignore, "local.ignore"),
+    },
+    joins: stringArrays(document.joins, "joins"),
+    ignore: stringArray(document.ignore, "ignore"),
     drift: {
       amberDays: positiveInteger(drift.amber_days, "drift.amber_days"),
       redDays: positiveInteger(drift.red_days, "drift.red_days"),
@@ -182,15 +191,20 @@ export function parseConfig(text: string, home: string): Config {
         parseOverride(id, value, tiers),
       ]),
     ),
-    github: {
-      hostAccounts: stringRecord(
-        table(github, "host_accounts", "github."),
-        "github.host_accounts",
+    forges: {
+      finalisedCommits: positiveInteger(
+        forges.finalised_commits,
+        "forges.finalised_commits",
       ),
-    },
-    forgejo: {
-      baseUrl: string(forgejo, "base_url", "forgejo."),
-      remoteHosts: stringArray(forgejo.remote_hosts, "forgejo.remote_hosts"),
+      archivedIntervalHours: positiveInteger(
+        forges.archived_interval_hours,
+        "forges.archived_interval_hours",
+      ),
+      github: parseForge(table(forges, "github", "forges."), "forges.github."),
+      forgejo: {
+        ...parseForge(forgejo, "forges.forgejo."),
+        baseUrl: string(forgejo, "base_url", "forges.forgejo."),
+      },
     },
     server: {
       name: string(server, "name", "server."),
@@ -198,6 +212,15 @@ export function parseConfig(text: string, home: string): Config {
       kumaStatusPage: string(server, "kuma_status_page", "server."),
     },
   };
+}
+
+/** Maps each remote host of a forge to the account whose token reads it. */
+export function hostAccounts(forge: ForgeConfig): Record<string, string> {
+  return Object.fromEntries(
+    forge.accounts.flatMap((entry) =>
+      entry.hosts.map((host) => [host, entry.account]),
+    ),
+  );
 }
 
 /** The importance tier for an item: its override when one is set, else the default tier. */

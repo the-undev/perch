@@ -3,9 +3,7 @@ import { join } from "node:path";
 import { SourceFailure } from "./failure.ts";
 import { errorMessage, readTextIfExists } from "./fs.ts";
 import type {
-  DiscoveryFile,
   PolledSourceName,
-  RawEntries,
   RawFiles,
   RawSourceFile,
   SourceStatus,
@@ -16,15 +14,18 @@ import type { PolledSource } from "./sources/source.ts";
 /** One polled source per name; the type makes every source required. */
 export type PolledSources = { [N in PolledSourceName]: PolledSource<N> };
 
-/** Gather order: git first, because the forges read remotes from its raw file. */
-export const polledSourceOrder: readonly PolledSourceName[] = [
-  "git",
-  "roadmap",
-  "claudeSessions",
-  "github",
-  "forgejo",
-  "kuma",
+/**
+ * Collection rounds, run in order. Root collectors read config and the outside world; enrichers
+ * read what the first round gathered. Sources within a round run together.
+ */
+export const gatherRounds: readonly (readonly PolledSourceName[])[] = [
+  ["local", "githubAccounts", "forgejoAccounts", "kuma"],
+  ["roadmap", "claudeSessions", "github", "forgejo"],
 ];
+
+/** Every polled source, in round order. */
+export const polledSourceOrder: readonly PolledSourceName[] =
+  gatherRounds.flat();
 
 /** Reads and writes the pretty-printed JSON files in the raw directory, by name without .json. */
 export interface RawStore {
@@ -55,37 +56,24 @@ export interface GatherDeps {
   store: RawStore;
 }
 
-/** Entries in discovery order, so the files read in the same order as the item list. */
-function ordered<T>(
-  entries: Record<string, T>,
-  discovery: DiscoveryFile,
-): Record<string, T> {
-  const sorted: Record<string, T> = {};
-  for (const item of discovery.items) {
-    const entry = entries[item.id];
-    if (entry !== undefined) sorted[item.id] = entry;
-  }
-  return sorted;
-}
-
 async function gatherSource<N extends PolledSourceName>(
   source: PolledSource<N>,
-  discovery: DiscoveryFile,
   earlier: Partial<RawFiles>,
+  gathered: Partial<RawFiles>,
   previous: SourceStatus | undefined,
   deps: GatherDeps,
 ): Promise<SourceStatus> {
   const started = deps.now();
   try {
-    const entries = await source.gather(discovery.items, earlier);
+    const data = await source.gather(earlier);
     const finished = deps.now();
     const file: RawSourceFile<N> = {
       source: source.name,
       gatheredAt: finished.toISOString(),
-      items: ordered<RawEntries[N]>(entries, discovery),
+      data,
     };
     await deps.store.write(source.name, file);
-    earlier[source.name] = file as Partial<RawFiles>[N];
+    gathered[source.name] = file as Partial<RawFiles>[N];
     return {
       state: "ok",
       lastSucceededAt: finished.toISOString(),
@@ -95,7 +83,7 @@ async function gatherSource<N extends PolledSourceName>(
     const kept = (await deps.store.read(
       source.name,
     )) as RawSourceFile<N> | null;
-    if (kept !== null) earlier[source.name] = kept as Partial<RawFiles>[N];
+    if (kept !== null) gathered[source.name] = kept as Partial<RawFiles>[N];
     return {
       state: "error",
       reason: error instanceof SourceFailure ? error.reason : "unexpected",
@@ -112,26 +100,32 @@ async function gatherSource<N extends PolledSourceName>(
 }
 
 /**
- * Writes the discovery file, then gathers every polled source in order into its own raw file.
- * A failing source leaves its previous raw file in place; status.json records each outcome.
+ * Gathers every polled source, round by round, each into its own raw file. A failing source
+ * leaves its previous raw file in place, and later rounds read that file; status.json records
+ * each outcome.
  */
-export async function gather(
-  discovery: DiscoveryFile,
-  deps: GatherDeps,
-): Promise<StatusFile> {
+export async function gather(deps: GatherDeps): Promise<StatusFile> {
   const started = deps.now();
-  await deps.store.write("discovery", discovery);
   const previous = (await deps.store.read("status")) as StatusFile | null;
   const earlier: Partial<RawFiles> = {};
   const sources = {} as Record<PolledSourceName, SourceStatus>;
-  for (const name of polledSourceOrder) {
-    sources[name] = await gatherSource(
-      deps.sources[name],
-      discovery,
-      earlier,
-      previous?.sources[name],
-      deps,
+  for (const round of gatherRounds) {
+    const gathered: Partial<RawFiles> = {};
+    const outcomes = await Promise.all(
+      round.map((name) =>
+        gatherSource(
+          deps.sources[name],
+          earlier,
+          gathered,
+          previous?.sources[name],
+          deps,
+        ),
+      ),
     );
+    round.forEach((name, index) => {
+      sources[name] = outcomes[index] as SourceStatus;
+    });
+    Object.assign(earlier, gathered);
   }
   const status: StatusFile = {
     gatheredAt: started.toISOString(),

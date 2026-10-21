@@ -3,34 +3,34 @@
 # The live copy is ~/.config/perch/config.toml. When it does not exist the
 # scanner reads this file instead. No secrets here: tokens come from the
 # desktop keyring at run time.
+#
+# Config asserts only what leaves no trace on disk or on a forge. When an
+# assertion and an observation disagree, the observation wins and the
+# disagreement is flagged.
+#
+# A presence is named local:<id>, github:<owner>/<name> or
+# forgejo:<owner>/<name>. A local id is the path relative to the home
+# directory.
 
-[scan]
-# A repository is skipped when any segment of its path has one of these names.
-exclude_segments = ["archived", "third-party", "delete"]
+# Presences that are one project although no remote URL proves it, for
+# example [["github:finch/notes", "forgejo:finch/notes"]].
+joins = []
 
-# Repo roots are searched for git repositories. A vault root is one vault item,
-# and its roadmaps are listed relative to the vault.
-[[roots]]
-path = "~/dev"
-kind = "repo"
+# Presences to leave off the main view. They still appear in their forge's
+# listing.
+ignore = []
 
-[[roots]]
-path = "~/undev"
-kind = "repo"
-
-[[roots]]
-path = "~/.dotfiles"
-kind = "repo"
-
-[[roots]]
-path = "~/obsidian/Hothouse"
-kind = "vault"
-roadmaps = ["Tech/Tech Plans.md", "Garden/Garden Plans.md"]
-
-[[roots]]
-path = "~/obsidian/Pocket"
-kind = "vault"
-roadmaps = ["Code/Code Plans.md", "Pocket Plans.md"]
+[local]
+# Each include is a repository, or a directory searched for repositories.
+include = [
+  "~/dev",
+  "~/undev",
+  "~/.dotfiles",
+  "~/obsidian/Hothouse",
+  "~/obsidian/Pocket",
+]
+# Nothing at or below these paths is searched.
+ignore = ["~/dev/archived", "~/dev/third-party", "~/dev/all/delete"]
 
 # Uncommitted or unpushed work older than these many days turns an item amber
 # or red. Overridable per item below.
@@ -43,24 +43,44 @@ red_days = 30
 tiers = ["server", "machine", "projects"]
 default = "projects"
 
-# Per-item overrides, keyed by item id: the path relative to the home
-# directory, or "server" for the server.
-[items]
-# [items.".dotfiles"]
+# Per-item overrides, keyed by item id. A repository found inside an include
+# directory is flagged as not set up until it has an entry here, even an
+# empty one.
+[items."obsidian/Hothouse"]
+roadmaps = ["Tech/Tech Plans.md", "Garden/Garden Plans.md"]
+
+[items."obsidian/Pocket"]
+roadmaps = ["Code/Code Plans.md", "Pocket Plans.md"]
+
+# [items."dev/perch"]
 # importance = "machine"
 # drift_amber_days = 3
 # drift_red_days = 14
 
-# The gh account whose token reads each GitHub remote host. github-work is the
-# SSH alias for the the-undev identity.
-[github.host_accounts]
-"github.com" = "finch"
-"github-work" = "the-undev"
+[forges]
+# Commits on each forge repository's default branch to read as finalised.
+finalised_commits = 10
+# Archived forge repositories change rarely and belong in a slower lane.
+# Placeholder: nothing reads this until the slow lane exists.
+archived_interval_hours = 24
 
-[forgejo]
+# Each account lists its own repositories with its gh token, and reads any
+# remote on its hosts. github-work is the SSH alias for the-undev.
+[forges.github]
+accounts = [
+  { account = "finch", hosts = ["github.com"] },
+  { account = "the-undev", hosts = ["github-work"] },
+]
+# Forks to track, as owner/name. Every other fork is skipped.
+tracked_forks = []
+
+# One token, from the keyring, reads every Forgejo host alias.
+[forges.forgejo]
 base_url = "http://forge.example.lan:3000"
-# Remote hosts that are this Forgejo, matched on the host name alone.
-remote_hosts = ["forgejo", "forge-work", "forge.example.lan"]
+accounts = [
+  { account = "finch", hosts = ["forgejo", "forge-work", "forge.example.lan"] },
+]
+tracked_forks = []
 
 [server]
 name = "Silo"

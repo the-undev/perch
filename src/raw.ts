@@ -22,21 +22,6 @@ export interface EntryError {
 /** One item's entry in a source file. */
 export type Entry<T, R extends string> = Observed<T, R> | EntryError;
 
-export type ItemKind = "repo" | "vault" | "server";
-
-export type DiscoveredItem =
-  | { id: string; name: string; kind: "repo" | "vault"; path: string }
-  | { id: string; name: string; kind: "server" };
-
-/** .scan/raw/discovery.json: the items found under the configured roots, plus the server. */
-export interface DiscoveryFile {
-  gatheredAt: string;
-  home: string;
-  items: DiscoveredItem[];
-  /** Problems finding items, such as a configured root that does not exist. */
-  warnings: string[];
-}
-
 // Git
 
 export interface RawCommit {
@@ -154,11 +139,23 @@ export interface RawClaudeSessions {
 
 // Forges
 
-export interface RawForgeRemote {
-  remoteName: string;
-  host: string;
+export type ForgeName = "github" | "forgejo";
+
+export interface RawForgeRepoInfo {
+  fullName: string;
   owner: string;
-  repo: string;
+  name: string;
+  defaultBranch: string;
+  archived: boolean;
+  fork: boolean;
+  private: boolean;
+  url: string;
+}
+
+/** One account's listing: its own repositories, with untracked forks left out by name. */
+export interface RawForgeAccount {
+  repos: RawForgeRepoInfo[];
+  skippedForks: string[];
 }
 
 export interface RawPullRequest {
@@ -178,14 +175,6 @@ export interface RawGithubRun {
   createdAt: string;
 }
 
-export interface RawGithub {
-  remote: RawForgeRemote;
-  account: string;
-  defaultBranch: string;
-  openPullRequests: RawPullRequest[];
-  latestRun: Observed<RawGithubRun, "no-runs-on-default-branch">;
-}
-
 export interface RawCommitStatus {
   context: string;
   status: string;
@@ -193,12 +182,31 @@ export interface RawCommitStatus {
   createdAt: string;
 }
 
-export interface RawForgejo {
-  remote: RawForgeRemote;
-  defaultBranch: string;
+export type RawCi =
+  | {
+      forge: "github";
+      latestRun: Observed<RawGithubRun, "no-runs-on-default-branch">;
+    }
+  | {
+      forge: "forgejo";
+      /** The default branch head's combined commit status as Forgejo reports it. */
+      combinedStatus: { state: string; statuses: RawCommitStatus[] };
+    };
+
+export interface RawForgeDetails {
   openPullRequests: RawPullRequest[];
-  /** The default branch head's combined commit status as Forgejo reports it. */
-  combinedStatus: { state: string; statuses: RawCommitStatus[] };
+  ci: RawCi;
+}
+
+export interface RawForgeRepo {
+  info: RawForgeRepoInfo;
+  /** Listed under a configured account, or looked up because a local clone's remote names it. */
+  foundBy: "account-listing" | "local-remote";
+  /** The account whose token read it. */
+  account: string;
+  /** Other lower-case owner/name forms that local remotes used and the forge redirected. */
+  aliases: string[];
+  details: Entry<RawForgeDetails, "archived-slow-lane">;
 }
 
 // Uptime Kuma
@@ -223,25 +231,54 @@ export interface RawKuma {
   monitors: RawMonitor[];
 }
 
-// Source files
+// Local presences
 
-/** Per-item entry type for each polled source. */
-export interface RawEntries {
-  git: Entry<RawGit, never>;
-  roadmap: Entry<RawRoadmap, "no-roadmap-file">;
-  claudeSessions: Entry<RawClaudeSessions, never>;
-  github: Entry<RawGithub, "no-github-remote">;
-  forgejo: Entry<RawForgejo, "no-forgejo-remote">;
-  kuma: Entry<RawKuma, never>;
+export type IncludeKind = "repo" | "directory";
+
+export interface RawObsidian {
+  /** Whether .obsidian/ exists at the repository root. */
+  folder: boolean;
+  /** Whether .obsidian/plugins/obsidian-livesync/ exists. */
+  livesyncPlugin: boolean;
 }
 
-export type PolledSourceName = keyof RawEntries;
+export interface RawLocalPresence {
+  path: string;
+  /** The configured include path the repository was found under. */
+  include: string;
+  obsidian: RawObsidian;
+  git: Entry<RawGit, never>;
+}
+
+export interface RawLocal {
+  /** Each configured include path: itself a repository, a directory searched for them, or missing. */
+  includes: Record<string, Observed<IncludeKind, "path-not-found">>;
+  /** Found repositories keyed by id, the path relative to the home directory. */
+  presences: Record<string, RawLocalPresence>;
+}
+
+// Source files
+
+/** Each polled source's data, as written to its raw file. */
+export interface RawData {
+  local: RawLocal;
+  githubAccounts: Record<string, Entry<RawForgeAccount, never>>;
+  forgejoAccounts: Record<string, Entry<RawForgeAccount, never>>;
+  kuma: RawKuma;
+  roadmap: Record<string, Entry<RawRoadmap, "no-roadmap-file">>;
+  claudeSessions: Record<string, Entry<RawClaudeSessions, never>>;
+  /** Forge repositories keyed by lower-case owner/name. */
+  github: Record<string, Entry<RawForgeRepo, "fork-not-tracked">>;
+  forgejo: Record<string, Entry<RawForgeRepo, "fork-not-tracked">>;
+}
+
+export type PolledSourceName = keyof RawData;
 
 /** .scan/raw/<source>.json */
 export interface RawSourceFile<N extends PolledSourceName> {
   source: N;
   gatheredAt: string;
-  items: Record<string, RawEntries[N]>;
+  data: RawData[N];
 }
 
 export type RawFiles = { [N in PolledSourceName]: RawSourceFile<N> };

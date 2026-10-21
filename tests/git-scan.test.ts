@@ -1,12 +1,11 @@
-import { mkdirSync, rmSync } from "node:fs";
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { deriveActivity, deriveDrift, deriveGit } from "../src/derivations.ts";
-import { discover } from "../src/discovery.ts";
 import { fileMtime } from "../src/fs.ts";
 import type { RawCommit, RawGit } from "../src/raw.ts";
 import type { DriftThresholds } from "../src/snapshot.ts";
-import { createGitSource, readRepository } from "../src/sources/git.ts";
+import { readRepository } from "../src/sources/git.ts";
 import {
   clonedRepo,
   commit,
@@ -160,25 +159,6 @@ describe("gathering branches and tracking", () => {
   });
 });
 
-describe("git source", () => {
-  it("records a broken repository as an error entry and skips the server", async () => {
-    const notRepo = join(base, "not-a-repo");
-    mkdirSync(notRepo);
-    const source = createGitSource({ ...deps, concurrency: 2 });
-
-    const entries = await source.gather(
-      [
-        { id: "broken", name: "broken", kind: "repo", path: notRepo },
-        { id: "server", name: "Silo", kind: "server" },
-      ],
-      {},
-    );
-
-    expect(entries.broken?.state).toBe("error");
-    expect(entries.server).toBeUndefined();
-  });
-});
-
 function commitAt(subject: string, date: Date): RawCommit {
   return { sha: subject, committedAt: date.toISOString(), subject };
 }
@@ -212,7 +192,7 @@ function rawGit(overrides: Partial<RawGit>): RawGit {
 
 describe("deriving git data", () => {
   it("is settled when everything is on the default branch and pushed", () => {
-    const data = deriveGit(rawGit({}), thresholds, now);
+    const data = deriveGit(rawGit({}), thresholds, now, "joined");
 
     expect([data.activity, data.drift.driftDays, data.drift.level]).toEqual([
       "settled",
@@ -235,14 +215,19 @@ describe("deriving git data", () => {
     const main = rawGit({}).branches;
 
     expect(
-      deriveGit(rawGit({ branches: [...main, feature] }), thresholds, now)
-        .activity,
+      deriveGit(
+        rawGit({ branches: [...main, feature] }),
+        thresholds,
+        now,
+        "joined",
+      ).activity,
     ).toBe("in-progress");
     expect(
       deriveGit(
         rawGit({ unpushedCommits: [commitAt("Local", daysBefore(1))] }),
         thresholds,
         now,
+        "joined",
       ).activity,
     ).toBe("in-progress");
     expect(
@@ -252,6 +237,7 @@ describe("deriving git data", () => {
         }),
         thresholds,
         now,
+        "joined",
       ).activity,
     ).toBe("in-progress");
   });
@@ -291,6 +277,7 @@ describe("deriving git data", () => {
       }),
       thresholds,
       now,
+      "joined",
     );
 
     expect(data.uncommittedCount).toBe(3);
@@ -313,6 +300,7 @@ describe("deriving git data", () => {
       }),
       thresholds,
       now,
+      "joined",
     );
 
     expect(data.unpushedCount).toBe(2);
@@ -344,33 +332,51 @@ describe("deriving git data", () => {
   });
 });
 
-describe("discover", () => {
-  it("finds nested repositories and skips excluded segments and hidden folders", async () => {
-    initRepo(join(base, "dev", "perch"));
-    initRepo(join(base, "dev", "all", "finch", "antler"));
-    initRepo(join(base, "dev", "archived", "old"));
-    initRepo(join(base, "dev", "all", "delete", "gone"));
-    initRepo(join(base, "dev", "third-party", "fork"));
-    initRepo(join(base, "dev", ".cache", "hidden"));
-    const vault = join(base, "vault");
-    mkdirSync(vault);
+describe("deriving git data by backup state", () => {
+  const unpushed = rawGit({
+    remotes: { state: "absent", reason: "no-remote" },
+    branches: [],
+    unpushedCommits: [commitAt("Old", daysBefore(40))],
+    dirtyFiles: [
+      {
+        path: "a",
+        code: ".M",
+        mtime: { state: "observed", value: daysBefore(9).toISOString() },
+      },
+    ],
+  });
 
-    const discovery = await discover(
-      [
-        { path: join(base, "dev"), kind: "repo", roadmaps: [] },
-        { path: vault, kind: "vault", roadmaps: [] },
-        { path: join(base, "missing"), kind: "repo", roadmaps: [] },
-      ],
-      ["archived", "third-party", "delete"],
+  it("gives a local-only clone no unpushed work and no unpushed drift", () => {
+    const data = deriveGit(unpushed, thresholds, now, "local-only");
+
+    expect(data.backup).toBe("local-only");
+    expect(data.unpushedCount).toBe(0);
+    expect(data.drift).toMatchObject({
+      unpushedDays: null,
+      uncommittedDays: 9,
+      level: "amber",
+    });
+  });
+
+  it("counts unpushed commits against an unjoined remote but does not age them", () => {
+    const data = deriveGit(
+      { ...unpushed, dirtyFiles: [] },
+      thresholds,
+      now,
+      "unjoined-remote",
     );
 
-    expect(discovery.found).toEqual([
-      { path: join(base, "dev", "all", "finch", "antler"), kind: "repo" },
-      { path: join(base, "dev", "perch"), kind: "repo" },
-      { path: vault, kind: "vault" },
-    ]);
-    expect(discovery.warnings).toEqual([
-      `root not found: ${join(base, "missing")}`,
-    ]);
+    expect(data.unpushedCount).toBe(1);
+    expect(data.drift).toMatchObject({
+      unpushedDays: null,
+      driftDays: null,
+      level: "green",
+    });
+  });
+
+  it("ages unpushed commits against a joined remote", () => {
+    expect(
+      deriveGit(unpushed, thresholds, now, "joined").drift.unpushedDays,
+    ).toBe(40);
   });
 });

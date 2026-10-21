@@ -1,25 +1,53 @@
-import { SourceFailure } from "../failure.ts";
-import { errorMessage } from "../fs.ts";
 import type { FetchJson } from "../http.ts";
-import { asArray, asRecord, optionalString, stringField } from "../json.ts";
-import type {
-  Observed,
-  RawEntries,
-  RawForgeRemote,
-  RawGithub,
-  RawGithubRun,
-} from "../raw.ts";
-import { forgeRemoteFor } from "../remote-url.ts";
+import {
+  asArray,
+  asRecord,
+  type JsonRecord,
+  optionalString,
+  stringField,
+} from "../json.ts";
+import type { Observed, RawForgeRepoInfo, RawGithubRun } from "../raw.ts";
+import type { ForgeClient } from "./forge.ts";
 import { readPullRequest } from "./pull-request.ts";
-import type { PolledSource } from "./source.ts";
 
 const apiBase = "https://api.github.com";
+const pageSize = 100;
+const maxPages = 20;
 
-export interface GithubSourceDeps {
+export interface GithubClientDeps {
   fetchJson: FetchJson;
   tokenFor: (account: string) => Promise<string>;
-  /** The gh account whose token reads each remote host, such as github-work to the-undev. */
-  hostAccounts: Readonly<Record<string, string>>;
+}
+
+/** Reads a repository from a GitHub or Forgejo response, which share these fields. */
+export function readRepoInfo(value: unknown): RawForgeRepoInfo {
+  const record = asRecord(value, "repository");
+  const owner = asRecord(record.owner, "owner") as JsonRecord;
+  return {
+    fullName: stringField(record, "full_name"),
+    owner: stringField(owner, "login"),
+    name: stringField(record, "name"),
+    defaultBranch: stringField(record, "default_branch"),
+    archived: record.archived === true,
+    fork: record.fork === true,
+    private: record.private === true,
+    url: stringField(record, "html_url"),
+  };
+}
+
+/** Reads every page of a list endpoint whose page size and page number are query parameters. */
+export async function readAllPages(
+  pageUrl: (page: number) => string,
+  size: number,
+  fetchPage: (url: string) => Promise<unknown>,
+): Promise<unknown[]> {
+  const all: unknown[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const entries = asArray(await fetchPage(pageUrl(page)), "page");
+    all.push(...entries);
+    if (entries.length < size) break;
+  }
+  return all;
 }
 
 function latestRun(
@@ -46,89 +74,47 @@ function latestRun(
   };
 }
 
-async function readRepository(
-  remote: RawForgeRemote,
-  account: string,
-  token: string,
-  fetchJson: FetchJson,
-): Promise<RawGithub> {
-  const headers = {
-    Authorization: `Bearer ${token}`,
+/** GitHub over its REST API, with each account's token from gh. */
+export function createGithubClient(deps: GithubClientDeps): ForgeClient {
+  const headersFor = async (account: string) => ({
+    Authorization: `Bearer ${await deps.tokenFor(account)}`,
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
     "User-Agent": "perch",
-  };
-  const base = `${apiBase}/repos/${remote.owner}/${remote.repo}`;
-  const repository = asRecord(await fetchJson(base, headers), "repository");
-  const defaultBranch = stringField(repository, "default_branch");
-  const [pulls, runs] = await Promise.all([
-    fetchJson(`${base}/pulls?state=open&per_page=100`, headers),
-    fetchJson(
-      `${base}/actions/runs?branch=${encodeURIComponent(defaultBranch)}&per_page=1`,
-      headers,
-    ),
-  ]);
+  });
   return {
-    remote,
-    account,
-    defaultBranch,
-    openPullRequests: asArray(pulls, "pulls").map(readPullRequest),
-    latestRun: latestRun(runs),
-  };
-}
-
-/** Reads open pull requests and the latest default-branch run for repositories on GitHub. */
-export function createGithubSource(
-  deps: GithubSourceDeps,
-): PolledSource<"github"> {
-  return {
-    name: "github",
-    async gather(items, earlier) {
-      const git = earlier.git;
-      if (git === undefined) {
-        throw new SourceFailure("unexpected", "no git data to find remotes in");
-      }
-      const tokens = new Map<string, Promise<string>>();
-      const tokenFor = (account: string): Promise<string> => {
-        const cached = tokens.get(account) ?? deps.tokenFor(account);
-        tokens.set(account, cached);
-        return cached;
-      };
-      const hosts = Object.keys(deps.hostAccounts);
-      const entries: Record<string, RawEntries["github"]> = {};
-      await Promise.all(
-        items.map(async (item) => {
-          if (item.kind === "server") return;
-          const lookup = forgeRemoteFor(git.items[item.id], hosts);
-          if (lookup.state === "no-git-data") {
-            entries[item.id] = {
-              state: "error",
-              error: "no git data for this item",
-            };
-            return;
-          }
-          if (lookup.state === "no-remote") {
-            entries[item.id] = { state: "absent", reason: "no-github-remote" };
-            return;
-          }
-          try {
-            const account = deps.hostAccounts[lookup.remote.host] ?? "";
-            const token = await tokenFor(account);
-            entries[item.id] = {
-              state: "observed",
-              value: await readRepository(
-                lookup.remote,
-                account,
-                token,
-                deps.fetchJson,
-              ),
-            };
-          } catch (error) {
-            entries[item.id] = { state: "error", error: errorMessage(error) };
-          }
-        }),
+    forge: "github",
+    async listRepos(account) {
+      const headers = await headersFor(account);
+      const repos = await readAllPages(
+        (page) =>
+          `${apiBase}/user/repos?affiliation=owner&per_page=${pageSize}&page=${page}`,
+        pageSize,
+        (url) => deps.fetchJson(url, headers),
       );
-      return entries;
+      return repos.map(readRepoInfo);
+    },
+    async getRepo(owner, name, account) {
+      const headers = await headersFor(account);
+      return readRepoInfo(
+        await deps.fetchJson(`${apiBase}/repos/${owner}/${name}`, headers),
+      );
+    },
+    async readDetails(info, account) {
+      const headers = await headersFor(account);
+      const base = `${apiBase}/repos/${info.fullName}`;
+      const branch = encodeURIComponent(info.defaultBranch);
+      const [pulls, runs] = await Promise.all([
+        deps.fetchJson(`${base}/pulls?state=open&per_page=100`, headers),
+        deps.fetchJson(
+          `${base}/actions/runs?branch=${branch}&per_page=1`,
+          headers,
+        ),
+      ]);
+      return {
+        openPullRequests: asArray(pulls, "pulls").map(readPullRequest),
+        ci: { forge: "github", latestRun: latestRun(runs) },
+      };
     },
   };
 }

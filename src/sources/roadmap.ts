@@ -1,6 +1,8 @@
 import { join } from "node:path";
+import { SourceFailure } from "../failure.ts";
 import { errorMessage } from "../fs.ts";
-import type { RawEntries, RawRoadmapFile } from "../raw.ts";
+import type { Entry, RawData, RawRoadmap, RawRoadmapFile } from "../raw.ts";
+import { sortedRecord } from "../records.ts";
 import { readRoadmapStructure } from "../roadmap-parser.ts";
 import type { PolledSource } from "./source.ts";
 
@@ -12,10 +14,12 @@ export const repoRoadmapCandidates = [
   "TODO.md",
 ];
 
+type RoadmapEntry = Entry<RawRoadmap, "no-roadmap-file">;
+
 export interface RoadmapSourceDeps {
   readText: (path: string) => Promise<string | null>;
-  /** Roadmap files per vault, keyed by the vault's absolute path, relative to it. */
-  vaultRoadmaps: ReadonlyMap<string, readonly string[]>;
+  /** Configured roadmap files for an item, relative to it, or null for the standard names. */
+  roadmapsFor: (itemId: string) => readonly string[] | null;
 }
 
 async function readFile(
@@ -33,10 +37,10 @@ async function readFile(
   };
 }
 
-async function repoRoadmap(
+async function standardRoadmap(
   root: string,
   deps: RoadmapSourceDeps,
-): Promise<RawEntries["roadmap"]> {
+): Promise<RoadmapEntry> {
   for (const candidate of repoRoadmapCandidates) {
     const file = await readFile(root, candidate, deps);
     if (file.structure.state === "observed") {
@@ -46,11 +50,11 @@ async function repoRoadmap(
   return { state: "absent", reason: "no-roadmap-file" };
 }
 
-async function vaultRoadmap(
+async function configuredRoadmap(
   root: string,
+  paths: readonly string[],
   deps: RoadmapSourceDeps,
-): Promise<RawEntries["roadmap"]> {
-  const paths = deps.vaultRoadmaps.get(root) ?? [];
+): Promise<RoadmapEntry> {
   if (paths.length === 0) return { state: "absent", reason: "no-roadmap-file" };
   const files = await Promise.all(
     paths.map((path) => readFile(root, path, deps)),
@@ -58,26 +62,33 @@ async function vaultRoadmap(
   return { state: "observed", value: { files } };
 }
 
-/** Reads the structure of each repository's roadmap file and each vault's configured roadmaps. */
+/** Enricher: reads the roadmap structure of every local presence. */
 export function createRoadmapSource(
   deps: RoadmapSourceDeps,
 ): PolledSource<"roadmap"> {
   return {
     name: "roadmap",
-    async gather(items) {
-      const entries: Record<string, RawEntries["roadmap"]> = {};
-      for (const item of items) {
-        if (item.kind === "server") continue;
+    async gather(earlier) {
+      const local = earlier.local;
+      if (local === undefined) {
+        throw new SourceFailure(
+          "unexpected",
+          "no local presences to read roadmaps for",
+        );
+      }
+      const entries: RawData["roadmap"] = {};
+      for (const [id, presence] of Object.entries(local.data.presences)) {
         try {
-          entries[item.id] =
-            item.kind === "vault"
-              ? await vaultRoadmap(item.path, deps)
-              : await repoRoadmap(item.path, deps);
+          const configured = deps.roadmapsFor(id);
+          entries[id] =
+            configured === null
+              ? await standardRoadmap(presence.path, deps)
+              : await configuredRoadmap(presence.path, configured, deps);
         } catch (error) {
-          entries[item.id] = { state: "error", error: errorMessage(error) };
+          entries[id] = { state: "error", error: errorMessage(error) };
         }
       }
-      return entries;
+      return sortedRecord(entries);
     },
   };
 }

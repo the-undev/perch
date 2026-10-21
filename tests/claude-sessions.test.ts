@@ -8,6 +8,7 @@ import {
   readSessions,
 } from "../src/sources/claude-sessions.ts";
 import { makeTempDir, removeDir, writeFile } from "./helpers/git-fixture.ts";
+import { localPresence } from "./helpers/raw.ts";
 
 let projectsDir: string;
 beforeEach(() => {
@@ -137,23 +138,28 @@ describe("readSessions", () => {
     });
   });
 
-  it("gathers an entry per item with a path and skips the server", async () => {
+  it("gathers an entry for every local presence", async () => {
     writeFile(
       projectsDir,
       join(encodeProjectPath("/work/repo"), "s.jsonl"),
       "{}\n",
     );
 
-    const entries = await createClaudeSessionsSource(projectsDir).gather(
-      [
-        { id: "repo", name: "repo", kind: "repo", path: "/work/repo" },
-        { id: "server", name: "Silo", kind: "server" },
-      ],
-      {},
-    );
+    const entries = await createClaudeSessionsSource(projectsDir).gather({
+      local: {
+        source: "local",
+        gatheredAt: "2026-10-21T09:00:00.000Z",
+        data: {
+          includes: {},
+          presences: {
+            repo: localPresence("/work/repo", { include: "/work" }),
+          },
+        },
+      },
+    });
 
+    expect(Object.keys(entries)).toEqual(["repo"]);
     expect(entries.repo?.state).toBe("observed");
-    expect(entries.server).toBeUndefined();
   });
 });
 

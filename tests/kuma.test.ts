@@ -2,11 +2,10 @@ import { describe, expect, it } from "vitest";
 import { deriveKuma } from "../src/derivations.ts";
 import { SourceFailure } from "../src/failure.ts";
 import type { FetchJson } from "../src/http.ts";
-import type { DiscoveredItem, RawKuma } from "../src/raw.ts";
+import type { RawKuma } from "../src/raw.ts";
 import { createKumaSource } from "../src/sources/kuma.ts";
 
 const base = "http://kuma.test";
-const server: DiscoveredItem = { id: "server", name: "Silo", kind: "server" };
 
 function fetchFrom(responses: Record<string, unknown>): FetchJson {
   return async (url) => {
@@ -35,24 +34,21 @@ describe("gathering the kuma status page", () => {
       }),
     });
 
-    const entries = await source.gather([server], {});
+    const data = await source.gather({});
 
-    expect(entries.server).toEqual({
-      state: "observed",
-      value: {
-        statusPage: "perch",
-        monitors: [
-          {
-            id: 1,
-            name: "Plex",
-            group: "Media",
-            heartbeats: [
-              { status: 1, time: "2026-10-21 08:01:00.000", message: "" },
-            ],
-          },
-          { id: 3, name: "Forgejo", group: "Infra", heartbeats: [] },
-        ],
-      },
+    expect(data).toEqual({
+      statusPage: "perch",
+      monitors: [
+        {
+          id: 1,
+          name: "Plex",
+          group: "Media",
+          heartbeats: [
+            { status: 1, time: "2026-10-21 08:01:00.000", message: "" },
+          ],
+        },
+        { id: 3, name: "Forgejo", group: "Infra", heartbeats: [] },
+      ],
     });
   });
 
@@ -63,9 +59,7 @@ describe("gathering the kuma status page", () => {
       fetchJson: fetchFrom({}),
     });
 
-    const failure = await source
-      .gather([server], {})
-      .catch((error: unknown) => error);
+    const failure = await source.gather({}).catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(SourceFailure);
     expect((failure as SourceFailure).reason).toBe("request-failed");

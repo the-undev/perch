@@ -9,6 +9,7 @@ import {
 import { readRoadmapStructure } from "../src/roadmap-parser.ts";
 import type { RoadmapFile, WorkItem, WorkItemGroup } from "../src/snapshot.ts";
 import { createRoadmapSource } from "../src/sources/roadmap.ts";
+import { localPresence } from "./helpers/raw.ts";
 
 function readFixture(name: string): string {
   return readFileSync(
@@ -269,7 +270,7 @@ describe("deriveRoadmapFile checkboxes", () => {
 });
 
 describe("roadmap source", () => {
-  it("reads the first repository candidate and every configured vault file, stating what is missing", async () => {
+  it("reads the first standard file, or the configured files, stating what is missing", async () => {
     const files = new Map([
       ["/repo/ROADMAP.md", "## Next\n\n- Upper case wins over TODO\n"],
       ["/repo/TODO.md", "- Not read\n"],
@@ -277,18 +278,24 @@ describe("roadmap source", () => {
     ]);
     const source = createRoadmapSource({
       readText: async (path) => files.get(path) ?? null,
-      vaultRoadmaps: new Map([["/vault", ["Tech/Tech Plans.md", "Missing.md"]]]),
+      roadmapsFor: (id) =>
+        id === "vault" ? ["Tech/Tech Plans.md", "Missing.md"] : null,
     });
 
-    const entries = await source.gather(
-      [
-        { id: "repo", name: "repo", kind: "repo", path: "/repo" },
-        { id: "empty", name: "empty", kind: "repo", path: "/empty" },
-        { id: "vault", name: "vault", kind: "vault", path: "/vault" },
-        { id: "server", name: "Silo", kind: "server" },
-      ],
-      {},
-    );
+    const entries = await source.gather({
+      local: {
+        source: "local",
+        gatheredAt: "2026-10-21T09:00:00.000Z",
+        data: {
+          includes: {},
+          presences: {
+            repo: localPresence("/repo", { include: "/repo" }),
+            empty: localPresence("/empty", { include: "/empty" }),
+            vault: localPresence("/vault", { include: "/vault", vault: true }),
+          },
+        },
+      },
+    });
 
     expect(entries.repo).toMatchObject({
       state: "observed",
@@ -312,7 +319,6 @@ describe("roadmap source", () => {
         ],
       },
     });
-    expect(entries.server).toBeUndefined();
   });
 
   it("derives a missing configured file as an error naming it", () => {

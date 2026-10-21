@@ -1,9 +1,10 @@
 import { open, readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { SourceFailure } from "../failure.ts";
 import { errorMessage, fileMtime, nullIfMissing } from "../fs.ts";
 import type {
   RawClaudeSessions,
-  RawEntries,
+  RawData,
   RawNewestTranscript,
   RawTranscript,
 } from "../raw.ts";
@@ -121,23 +122,29 @@ export async function readSessions(
   };
 }
 
-/** Lists Claude Code session transcripts for every item with a path. */
+/** Enricher: lists Claude Code session transcripts for every local presence. */
 export function createClaudeSessionsSource(
   projectsDir: string,
 ): PolledSource<"claudeSessions"> {
   return {
     name: "claudeSessions",
-    async gather(items) {
-      const entries: Record<string, RawEntries["claudeSessions"]> = {};
-      for (const item of items) {
-        if (item.kind === "server") continue;
+    async gather(earlier) {
+      const local = earlier.local;
+      if (local === undefined) {
+        throw new SourceFailure(
+          "unexpected",
+          "no local presences to read sessions for",
+        );
+      }
+      const entries: RawData["claudeSessions"] = {};
+      for (const [id, presence] of Object.entries(local.data.presences)) {
         try {
-          entries[item.id] = {
+          entries[id] = {
             state: "observed",
-            value: await readSessions(projectsDir, item.path),
+            value: await readSessions(projectsDir, presence.path),
           };
         } catch (error) {
-          entries[item.id] = { state: "error", error: errorMessage(error) };
+          entries[id] = { state: "error", error: errorMessage(error) };
         }
       }
       return entries;

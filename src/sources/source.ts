@@ -1,22 +1,14 @@
-import type {
-  DiscoveredItem,
-  PolledSourceName,
-  RawEntries,
-  RawFiles,
-} from "../raw.ts";
+import type { PolledSourceName, RawData, RawFiles } from "../raw.ts";
 import type { Item, LiveSourceName } from "../snapshot.ts";
 
 /**
- * A source that runs in the periodic, unattended gather. It returns raw entries keyed by item id
- * for the items it applies to, and may read the raw files of sources gathered before it.
- * Throwing fails the whole source; a problem with one item is recorded as that item's entry.
+ * A source that runs in the periodic, unattended gather. Root collectors read config and the
+ * outside world; enrichers read the raw files of sources gathered in an earlier round.
+ * Throwing fails the whole source; a problem with one entry is recorded as that entry.
  */
 export interface PolledSource<N extends PolledSourceName> {
   readonly name: N;
-  gather(
-    items: readonly DiscoveredItem[],
-    earlier: Partial<RawFiles>,
-  ): Promise<Record<string, RawEntries[N]>>;
+  gather(earlier: Partial<RawFiles>): Promise<RawData[N]>;
 }
 
 export type LiveResult<T> =

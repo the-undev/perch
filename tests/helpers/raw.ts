@@ -1,0 +1,150 @@
+// Builders for raw-shaped data, for aggregation tests that never touch the machine.
+
+import { polledSourceOrder } from "../../src/gather.ts";
+import type {
+  ForgeName,
+  RawFiles,
+  RawForgeRepo,
+  RawGit,
+  RawLocalPresence,
+  RawRemote,
+  SourceStatus,
+  StatusFile,
+} from "../../src/raw.ts";
+
+export const gatheredAt = "2026-10-21T09:00:00.000Z";
+
+export function rawGit(overrides: Partial<RawGit>): RawGit {
+  return {
+    head: { state: "branch", name: "main" },
+    lastCommit: {
+      state: "observed",
+      value: {
+        sha: "a",
+        committedAt: "2026-10-01T09:00:00.000Z",
+        subject: "First",
+      },
+    },
+    dirtyFiles: [],
+    branches: [],
+    remotes: { state: "absent", reason: "no-remote" },
+    originHead: { state: "absent", reason: "no-origin-head" },
+    unpushedCommits: [],
+    ...overrides,
+  };
+}
+
+export function withRemotes(remotes: RawRemote[]): Pick<RawGit, "remotes"> {
+  return {
+    remotes:
+      remotes.length === 0
+        ? { state: "absent", reason: "no-remote" }
+        : { state: "observed", value: remotes },
+  };
+}
+
+export function localPresence(
+  path: string,
+  options: { include: string; git?: Partial<RawGit>; vault?: boolean },
+): RawLocalPresence {
+  return {
+    path,
+    include: options.include,
+    obsidian: { folder: options.vault ?? false, livesyncPlugin: false },
+    git: { state: "observed", value: rawGit(options.git ?? {}) },
+  };
+}
+
+export function forgeRepo(
+  fullName: string,
+  options: Partial<Pick<RawForgeRepo, "foundBy" | "aliases">> & {
+    archived?: boolean;
+  },
+): RawForgeRepo {
+  const [owner = "", name = ""] = fullName.split("/");
+  return {
+    info: {
+      fullName,
+      owner,
+      name,
+      defaultBranch: "main",
+      archived: options.archived ?? false,
+      fork: false,
+      private: false,
+      url: `https://example.invalid/${fullName}`,
+    },
+    foundBy: options.foundBy ?? "account-listing",
+    account: owner,
+    aliases: options.aliases ?? [],
+    details: options.archived
+      ? { state: "absent", reason: "archived-slow-lane" }
+      : {
+          state: "observed",
+          value: {
+            openPullRequests: [],
+            ci: {
+              forge: "github",
+              latestRun: {
+                state: "absent",
+                reason: "no-runs-on-default-branch",
+              },
+            },
+          },
+        },
+  };
+}
+
+/** Raw files holding local presences and forge repositories, keyed as the sources key them. */
+export function rawFiles(input: {
+  includes: Record<string, "repo" | "directory">;
+  locals: Record<string, RawLocalPresence>;
+  forges: Partial<Record<ForgeName, RawForgeRepo[]>>;
+}): Partial<RawFiles> {
+  const files: Partial<RawFiles> = {
+    local: {
+      source: "local",
+      gatheredAt,
+      data: {
+        includes: Object.fromEntries(
+          Object.entries(input.includes).map(([path, kind]) => [
+            path,
+            { state: "observed", value: kind },
+          ]),
+        ),
+        presences: input.locals,
+      },
+    },
+  };
+  for (const forge of ["github", "forgejo"] as const) {
+    const repos = input.forges[forge];
+    if (repos === undefined) continue;
+    Object.assign(files, {
+      [forge]: {
+        source: forge,
+        gatheredAt,
+        data: Object.fromEntries(
+          repos.map((repo) => [
+            `${repo.info.owner}/${repo.info.name}`.toLowerCase(),
+            { state: "observed", value: repo },
+          ]),
+        ),
+      },
+    });
+  }
+  return files;
+}
+
+/** A status file in which every source succeeded, with any overrides applied. */
+export function okStatus(
+  overrides: Partial<StatusFile["sources"]>,
+): StatusFile {
+  const ok: SourceStatus = {
+    state: "ok",
+    lastSucceededAt: gatheredAt,
+    durationMs: 5,
+  };
+  const sources = Object.fromEntries(
+    polledSourceOrder.map((name) => [name, overrides[name] ?? ok]),
+  ) as StatusFile["sources"];
+  return { gatheredAt, durationMs: 1234, sources };
+}

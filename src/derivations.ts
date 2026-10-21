@@ -2,13 +2,11 @@
 // rule here can be read and changed without touching how the machine is read.
 
 import type {
-  Observed,
   RawBullet,
+  RawCi,
   RawClaudeSessions,
-  RawForgejo,
+  RawForgeRepo,
   RawGit,
-  RawGithub,
-  RawGithubRun,
   RawKuma,
   RawPullRequest,
   RawRoadmap,
@@ -17,6 +15,7 @@ import type {
 } from "./raw.ts";
 import type {
   ActivityState,
+  Backup,
   CiRun,
   CiState,
   ClaudeSessionsData,
@@ -262,13 +261,15 @@ function earliest(timestamps: readonly string[]): string | null {
 /**
  * Git data for an item. The oldest uncommitted change is the earliest mtime among dirty files
  * that still exist; deleted files have none. Unpushed work is every commit on a local branch
- * that no remote-tracking ref holds, so a repository with no remote counts all its commits.
+ * that no remote-tracking ref holds. It only drifts against a joined forge presence; a clone
+ * with no remote at all is local only, one disk, with no unpushed work and no unpushed drift.
  * Ahead and behind come from the current branch's tracking branch, when it has one.
  */
 export function deriveGit(
   raw: RawGit,
   thresholds: DriftThresholds,
   observedAt: Date,
+  backup: Backup,
 ): GitData {
   const branch = raw.head.state === "branch" ? raw.head.name : null;
   const branchNames = raw.branches.map((entry) => entry.name);
@@ -277,22 +278,24 @@ export function deriveGit(
     (entry) => entry.name === branch,
   )?.tracking;
   const tracked = tracking?.state === "tracking" ? tracking : null;
+  const unpushed = backup === "local-only" ? [] : raw.unpushedCommits;
   const oldestUncommittedAt = earliest(
     raw.dirtyFiles.flatMap((file) =>
       file.mtime.state === "observed" ? [file.mtime.value] : [],
     ),
   );
   const oldestUnpushedAt = earliest(
-    raw.unpushedCommits.map((commit) => commit.committedAt),
+    unpushed.map((commit) => commit.committedAt),
   );
   return {
+    backup,
     branch,
     defaultBranch,
     upstream: tracked?.upstream ?? null,
     uncommittedCount: raw.dirtyFiles.length,
     ahead: tracked?.ahead ?? null,
     behind: tracked?.behind ?? null,
-    unpushedCount: raw.unpushedCommits.length,
+    unpushedCount: unpushed.length,
     lastCommitAt:
       raw.lastCommit.state === "observed"
         ? raw.lastCommit.value.committedAt
@@ -304,21 +307,21 @@ export function deriveGit(
       lastCommitAt: entry.lastCommit.committedAt,
       subject: entry.lastCommit.subject,
       upstream:
-        entry.tracking.state === "absent" &&
-        entry.tracking.reason === "no-tracking-branch"
-          ? null
-          : entry.tracking.upstream,
+        entry.tracking.state === "tracking" ? entry.tracking.upstream : null,
     })),
     remotes: raw.remotes.state === "observed" ? raw.remotes.value : [],
     activity: deriveActivity({
       uncommittedCount: raw.dirtyFiles.length,
-      unpushedCount: raw.unpushedCommits.length,
+      unpushedCount: unpushed.length,
       branch,
       defaultBranch,
       branchNames,
     }),
     drift: deriveDrift(
-      { oldestUncommittedAt, oldestUnpushedAt },
+      {
+        oldestUncommittedAt,
+        oldestUnpushedAt: backup === "joined" ? oldestUnpushedAt : null,
+      },
       thresholds,
       observedAt,
     ),
@@ -382,35 +385,6 @@ export function githubCiState(
   return "neutral";
 }
 
-function githubCi(run: Observed<RawGithubRun, string>): CiRun | null {
-  if (run.state === "absent") return null;
-  const conclusion =
-    run.value.conclusion.state === "observed"
-      ? run.value.conclusion.value
-      : null;
-  return {
-    name: run.value.name,
-    state: githubCiState(run.value.status, conclusion),
-    forgeState:
-      conclusion === null
-        ? run.value.status
-        : `${run.value.status}/${conclusion}`,
-    url: run.value.url,
-    createdAt: run.value.createdAt,
-  };
-}
-
-export function deriveGithub(raw: RawGithub): ForgeData {
-  return {
-    host: raw.remote.host,
-    owner: raw.remote.owner,
-    repo: raw.remote.repo,
-    defaultBranch: raw.defaultBranch,
-    openPullRequests: raw.openPullRequests.map(pullRequest),
-    latestCi: githubCi(raw.latestRun),
-  };
-}
-
 /** Forgejo combined status to CI state: success, failure or error, pending, else neutral. */
 export function forgejoCiState(state: string): CiState {
   if (state === "success") return "success";
@@ -419,29 +393,49 @@ export function forgejoCiState(state: string): CiState {
   return "neutral";
 }
 
-/** Forgejo CI is the combined status, named after its newest individual status; none is null. */
-function forgejoCi(combined: RawForgejo["combinedStatus"]): CiRun | null {
-  const newest = combined.statuses
+/**
+ * CI from a forge. GitHub's is its latest run on the default branch. Forgejo's is the combined
+ * commit status, named after its newest individual status. None is null.
+ */
+function deriveCi(ci: RawCi): CiRun | null {
+  if (ci.forge === "github") {
+    if (ci.latestRun.state === "absent") return null;
+    const run = ci.latestRun.value;
+    const conclusion =
+      run.conclusion.state === "observed" ? run.conclusion.value : null;
+    return {
+      name: run.name,
+      state: githubCiState(run.status, conclusion),
+      forgeState:
+        conclusion === null ? run.status : `${run.status}/${conclusion}`,
+      url: run.url,
+      createdAt: run.createdAt,
+    };
+  }
+  const newest = ci.combinedStatus.statuses
     .slice()
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   if (newest === undefined) return null;
   return {
     name: newest.context,
-    state: forgejoCiState(combined.state),
-    forgeState: combined.state,
+    state: forgejoCiState(ci.combinedStatus.state),
+    forgeState: ci.combinedStatus.state,
     url: newest.targetUrl.state === "observed" ? newest.targetUrl.value : null,
     createdAt: newest.createdAt,
   };
 }
 
-export function deriveForgejo(raw: RawForgejo): ForgeData {
+/** Forge data for a presence; details that could not be read are the item's error. */
+export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
+  if (repo.details.state === "error") return { error: repo.details.error };
+  if (repo.details.state === "absent")
+    return { error: "details not read: archived" };
   return {
-    host: raw.remote.host,
-    owner: raw.remote.owner,
-    repo: raw.remote.repo,
-    defaultBranch: raw.defaultBranch,
-    openPullRequests: raw.openPullRequests.map(pullRequest),
-    latestCi: forgejoCi(raw.combinedStatus),
+    fullName: repo.info.fullName,
+    url: repo.info.url,
+    defaultBranch: repo.info.defaultBranch,
+    openPullRequests: repo.details.value.openPullRequests.map(pullRequest),
+    latestCi: deriveCi(repo.details.value.ci),
   };
 }
 

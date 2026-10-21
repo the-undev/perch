@@ -2,7 +2,7 @@ import { SourceFailure } from "../failure.ts";
 import { errorMessage } from "../fs.ts";
 import type { FetchJson } from "../http.ts";
 import { asArray, asRecord, numberField, stringField } from "../json.ts";
-import type { RawEntries, RawHeartbeat, RawKuma, RawMonitor } from "../raw.ts";
+import type { RawHeartbeat, RawKuma, RawMonitor } from "../raw.ts";
 import type { PolledSource } from "./source.ts";
 
 export interface KumaSourceDeps {
@@ -60,20 +60,13 @@ export async function readStatusPage(deps: KumaSourceDeps): Promise<RawKuma> {
   return { statusPage: deps.statusPage, monitors };
 }
 
-/** Reads the configured Uptime Kuma status page for the server item. */
+/** Root collector: reads the configured Uptime Kuma status page for the server. */
 export function createKumaSource(deps: KumaSourceDeps): PolledSource<"kuma"> {
   return {
     name: "kuma",
-    async gather(items) {
-      const servers = items.filter((item) => item.kind === "server");
-      if (servers.length === 0) return {};
-      const page = await readStatusPage(deps).catch((error: unknown) => {
+    gather: () =>
+      readStatusPage(deps).catch((error: unknown) => {
         throw new SourceFailure("request-failed", errorMessage(error));
-      });
-      const entries: Record<string, RawEntries["kuma"]> = {};
-      for (const server of servers)
-        entries[server.id] = { state: "observed", value: page };
-      return entries;
-    },
+      }),
   };
 }

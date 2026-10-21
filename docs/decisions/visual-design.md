@@ -75,9 +75,18 @@ health, the unadopted on the fence).
 - Aviary defects: content renders off screen; the fixed-aspect viewBox
   crops. Layout must compute from the real window and redraw on resize.
 
+## Aviary II notes, 21 October 2026
+
+Size variation too narrow; left-equals-trouble confirmed worth keeping and
+naming; the fence row is illegible (cut text, overlap, low contrast); the
+moon's crescent is misaligned; more stars wanted; a live time-of-day scene
+is worth exploring; motion stays subtle, with bigger or unhealthier birds
+allowed slightly more movement. The open question: how this scene
+transitions into the Shell II detail world, tested next by zooming a bird
+into a full shell-style detail view.
+
 ## Open
 
-- Aviary iteration: responsive layout, meaning for size and position,
-  per-wire summaries. Explore whether the aviary becomes the overview
-  with the shell's pane as the detail layer beneath it.
-- The shell overview as per-category aggregates, next shell round.
+- Aviary III: the fixes above plus the zoom-to-detail transition.
+- The shell overview as per-category aggregates, if still needed once the
+  aviary carries the overview.

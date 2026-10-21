@@ -74,7 +74,9 @@ section .file { color: var(--faint); font-size: 12px; margin-bottom: 12px; font-
 .fcard .top { display: flex; align-items: baseline; gap: 10px; }
 .fcard .path { font: 600 12.5px var(--mono); word-break: break-all; flex: 1; }
 .fcard .pres { font-size: 11px; color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.fcard .types { font-size: 10.5px; color: var(--faint); letter-spacing: 0.05em; }
+.fcard .decl { font: 400 11px var(--mono); color: #86a7c8; word-break: break-all; line-height: 1.5; }
+.fcard .decl::before { content: "can be  "; color: var(--faint); font-family: var(--body); letter-spacing: 0.05em; }
+.fcard .ex::before { content: "seen"; color: var(--faint); font-family: var(--body); font-size: 10.5px; letter-spacing: 0.05em; }
 .fcard .ex { font: 400 11px var(--mono); color: var(--muted); line-height: 1.55; word-break: break-all; }
 .fcard .ex div::before { content: "· "; color: var(--faint); }
 .tags { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -151,14 +153,6 @@ document.getElementById("gen").textContent = `from the scan · generated ${new D
    hidden (joins, machinery); the derived snapshot carries the bird and
    bubble candidates. Everything else starts undecided. */
 const SEEDS = {
-	"git:items{}.state": ["meta", "hidden"],
-	"git:items{}.value.head": ["identity", "detail"],
-	"git:items{}.value.originHead": ["meta", "detail"],
-	"git:items{}.value.remotes": ["meta", "hidden"],
-	"git:items{}.value.dirtyFiles": ["activity", "detail"],
-	"git:items{}.value.unpushedCommits": ["risk", "detail"],
-	"git:items{}.value.branches[]": ["work", "detail"],
-	"git:items{}.value.lastCommit": ["activity", "bubble"],
 	"claudeSessions:data{}.value.newest": ["activity", "bubble"],
 	"claudeSessions:data{}.value.transcripts": ["meta", "detail"],
 	"claudeSessions:data{}.value.directory": ["identity", "hidden"],
@@ -167,8 +161,6 @@ const SEEDS = {
 	"roadmap:data{}.value.files[].structure.value.sections[].heading": ["work", "detail"],
 	"roadmap:data{}.value.files[].structure.value.sections[].bullets[].checkbox": ["work", "detail"],
 	"roadmap:data{}.value.files[].structure.value.sections[].bullets[].tags": ["work", "detail"],
-	"discovery:home": ["meta", "hidden"],
-	"discovery:warnings": ["meta", "detail"],
 	"github:data{}.state": ["meta", "hidden"],
 	"github:data{}.value.account": ["identity", "hidden"],
 	"github:data{}.value.aliases": ["identity", "hidden"],
@@ -255,7 +247,7 @@ function card(src, f) {
 	c.dataset.path = f.path;
 	c.innerHTML = `
 		<div class="top"><span class="path">${esc(f.path)}</span><span class="pres">${f.count}/${f.parentCount}</span></div>
-		<div class="types">${f.types.join(" · ")}</div>
+		<div class="decl">${esc(f.declared ?? f.types.join(" | "))}</div>
 		<div class="ex">${f.examples.map((e) => `<div>${esc(e)}</div>`).join("")}</div>
 		<div class="tags cats">${CATS.map((x) => `<button class="${x}" data-cat="${x}">${x}</button>`).join("")}</div>
 		<div class="tags dests">${DESTS.map((x) => `<button class="${x}" data-dest="${x}">${x}</button>`).join("")}</div>`;
@@ -317,10 +309,11 @@ document.getElementById("export").addEventListener("click", () => {
 	for (const s of sources) {
 		const leafFields = s.fields.filter(isLeaf);
 		if (!leafFields.length) continue;
-		lines.push("", `## ${s.name}`, "", "| field | types | presence | category | destination |", "| --- | --- | --- | --- | --- |");
+		lines.push("", `## ${s.name}`, "", "| field | declared | presence | category | destination |", "| --- | --- | --- | --- | --- |");
 		for (const f of leafFields) {
 			const a = assignment(s.name, f.path);
-			lines.push(`| \`${f.path}\` | ${f.types.join(", ")} | ${f.count}/${f.parentCount} | ${a.cat || "TBD"} | ${a.dest === "undecided" ? "TBD" : a.dest} |`);
+			const decl = (f.declared ?? f.types.join(" | ")).replaceAll("|", "\\|");
+			lines.push(`| \`${f.path}\` | \`${decl}\` | ${f.count}/${f.parentCount} | ${a.cat || "TBD"} | ${a.dest === "undecided" ? "TBD" : a.dest} |`);
 		}
 	}
 	document.getElementById("out").value = lines.join("\n");

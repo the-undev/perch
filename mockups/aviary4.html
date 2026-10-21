@@ -235,6 +235,9 @@ function hash(s) { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) 
 
 const scene = document.getElementById("scene");
 const tip = document.getElementById("tip");
+const bubble = document.getElementById("bubble");
+bubble.addEventListener("click", (e) => e.stopPropagation());
+let bubbleItem = null;
 const el = (name, attrs, parent) => {
 	const n = document.createElementNS(svgNS, name);
 	for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
@@ -245,8 +248,10 @@ const el = (name, attrs, parent) => {
 function draw() {
 	closeBubble();
 	scene.innerHTML = "";
+	/* The viewBox matches the window's aspect exactly, so the scene always
+	   fills the page edge to edge: no letterbox, no cropping. */
 	const W = 2000;
-	const H = Math.max(850, Math.min(1500, Math.round(W * innerHeight / Math.max(innerWidth, 1))));
+	const H = Math.max(600, Math.min(3000, Math.round(W * innerHeight / Math.max(innerWidth, 1))));
 	scene.setAttribute("viewBox", `0 0 ${W} ${H}`);
 	scene.setAttribute("preserveAspectRatio", "xMidYMid meet");
 	const M = 120;
@@ -369,14 +374,19 @@ function draw() {
 	const t1 = adopted.filter((i) => i.tier === "machine-home").sort((a, b) => rank[a.health] - rank[b.health]);
 	const t2 = adopted.filter((i) => i.tier === "projects").sort((a, b) => rank[a.health] - rank[b.health]);
 	const rowA = t2.filter((_, i) => i % 2 === 0), rowB = t2.filter((_, i) => i % 2 === 1);
-	const y1 = H * 0.26, y2 = H * 0.49, y3 = H * 0.63, yF = H * 0.82;
+	/* The top wire stays below the fixed header, whatever the window shape:
+	   the header is about 80 screen pixels, converted to viewBox units, and
+	   the biggest bird reaches about 165 units above its wire. */
+	const topSafe = 80 * H / Math.max(innerHeight, 1) + 165;
+	const y1 = Math.max(H * 0.26, topSafe), y2 = H * 0.49, y3 = H * 0.63, yF = H * 0.82;
 	wire(y1, "Machine & Home", t1, 4);
 	wire(y2, "Projects", t2, 3);
 	wire(y3, "", [], 3);
 
 	el("line", { x1: 0, y1: yF, x2: W, y2: yF, stroke: "var(--post)", "stroke-width": 8 });
+	/* Posts run off the bottom edge, so the fence stands on the ground. */
 	for (let x = 120; x < W; x += 320) {
-		el("line", { x1: x, y1: yF - 6, x2: x, y2: Math.min(yF + 64, H - 30), stroke: "var(--post)", "stroke-width": 10, opacity: 0.7 });
+		el("line", { x1: x, y1: yF - 6, x2: x, y2: H + 20, stroke: "var(--post)", "stroke-width": 10, opacity: 0.7 });
 	}
 	const fl = el("text", { x: 36, y: yF - 70, class: "wirelabel" });
 	fl.textContent = `On the fence · ${triage.length} not adopted`;
@@ -399,9 +409,6 @@ const ICONS = {
 };
 
 /* The bubble: positioned above the beak, tail pointing back at it. */
-const bubble = document.getElementById("bubble");
-bubble.addEventListener("click", (e) => e.stopPropagation());
-let bubbleItem = null;
 function openBubble(it, beakPt, beakEl) {
 	tip.style.display = "none";
 	bubbleItem = it;

@@ -17,10 +17,6 @@ export interface PolledSource<N extends PolledSourceName> {
   ): Promise<ReadonlyMap<string, PolledSourceData[N]>>;
 }
 
-export type AnyPolledSource = {
-  [N in PolledSourceName]: PolledSource<N>;
-}[PolledSourceName];
-
 export type LiveResult<T> =
   | { state: "ok"; data: T }
   | { state: "error"; error: string }

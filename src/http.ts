@@ -14,7 +14,7 @@ export function createFetchJson(timeoutMs: number): FetchJson {
       throw new Error(`request to ${url} failed`, { cause: error });
     });
     if (!response.ok) {
-      throw new Error(`${response.status} ${response.statusText} from ${url}`);
+      throw new Error(`HTTP ${response.status} from ${url}`);
     }
     return response.json();
   };

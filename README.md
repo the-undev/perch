@@ -14,4 +14,5 @@ Plasma 6 on Wayland.
 Requirements and decisions: [docs/spec.md](docs/spec.md). Parked work:
 [docs/roadmap.md](docs/roadmap.md).
 
-Status: documented, not yet built.
+Status: scanner proof of concept. `pnpm scan` writes the snapshot to
+`scan.local.json`.

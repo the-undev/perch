@@ -28,7 +28,7 @@ function fakeFetch(responses: Record<string, unknown>): {
     calls,
     fetchJson: async (url, headers) => {
       calls.push({ url, headers });
-      if (!(url in responses)) throw new Error(`404 Not Found from ${url}`);
+      if (!(url in responses)) throw new Error(`HTTP 404 from ${url}`);
       return responses[url];
     },
   };

@@ -14,9 +14,11 @@ shows from things that already change. Nothing in it is typed in by hand.
 
 ## State of the repository
 
-Documentation only. No code and no scaffold yet. The first build session
-scaffolds the project from the Tooling section of the spec, once the Rust
-toolchain is installed by the dotfiles script named there.
+A read-only scanner proof of concept in TypeScript: no Electron and no UI yet.
+`pnpm scan` runs every polled source against this machine and writes
+`scan.local.json` at the repository root, which is gitignored. `pnpm check`
+runs Biome, tsc and vitest. The snapshot schema is `src/snapshot.ts`. Config is
+`~/.config/perch/config.toml`, or `config.example.toml` when that is absent.
 
 ## Conventions
 

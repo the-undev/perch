@@ -85,8 +85,30 @@ allowed slightly more movement. The open question: how this scene
 transitions into the Shell II detail world, tested next by zooming a bird
 into a full shell-style detail view.
 
+## Aviary III and IV notes, 21 October 2026
+
+III landed the live scene but letterboxed: the viewBox height clamp broke
+the window's aspect, cutting the top and floating the fence. IV replaced
+the click-to-detail jump with a speech bubble from the beak, the project's
+status in the first person with fact chips and launch actions, and a
+button through to the zoomed detail. Verdicts:
+
+- The speech bubbles are liked. A bird-click means "what's up with you?",
+  so the bubble carries the high-level detail; the full page is a second,
+  deliberate step.
+- Possible structure: two centred tabs, the aviary as overview and the
+  shell as the working view, with the bubble bridging them.
+- Birds should look inwards: left half faces right, right half faces left.
+- Arrival order should carry meaning: the reddest and plumpest land first.
+- The sky-click phase preview surprised; a control must say what it does.
+- The fence rail sits a fixed height from the bottom, posts short.
+- The star field clustered into dashes: the weak string hash correlated
+  sequential seeds. Scatter needs a real bit mixer.
+
 ## Open
 
-- Aviary III: the fixes above plus the zoom-to-detail transition.
+- Aviary V carries the fixes above; verdict pending.
+- The two-tab structure (aviary overview, shell working view) is pending a
+  proper test.
 - The shell overview as per-category aggregates, if still needed once the
   aviary carries the overview.

@@ -34,10 +34,15 @@ Status: open
   21 October 2026. Forge account listings join the sources, so a repo with
   no local clone is still a project.
 
+- No data prep before the dashboard exists. Decided 21 October 2026: no
+  repo classification, no pre-written project list, no tidy-up. Config
+  starts near empty (include paths, token keys) and grows through use; the
+  dashboard showing the real mess is what drives each decision to adopt,
+  ignore or archive. Known already but not acted on: `mixed-bag` is to be
+  archived once `skiff` reaches feature parity.
+
 ## Open
 
-- The top-level `~/dev` repositories need a review pass with the owner to
-  write the first project list. Known already: `mixed-bag` is to be archived
-  once `skiff` reaches feature parity.
+Nothing.
 - How the scanner reads Uptime Kuma: its API, a status page, or its
   Prometheus endpoint. `TBD`, check what the instance exposes.

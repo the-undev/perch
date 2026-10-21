@@ -1,0 +1,68 @@
+# perch configuration.
+#
+# The live copy is ~/.config/perch/config.toml. When it does not exist the
+# scanner reads this file instead. No secrets here: tokens come from the
+# desktop keyring at run time.
+
+[scan]
+# A repository is skipped when any segment of its path has one of these names.
+exclude_segments = ["archived", "third-party", "delete"]
+
+# Repo roots are searched for git repositories. A vault root is one vault item,
+# and its roadmaps are listed relative to the vault.
+[[roots]]
+path = "~/dev"
+kind = "repo"
+
+[[roots]]
+path = "~/undev"
+kind = "repo"
+
+[[roots]]
+path = "~/.dotfiles"
+kind = "repo"
+
+[[roots]]
+path = "~/obsidian/Hothouse"
+kind = "vault"
+roadmaps = ["Tech/Tech Plans.md", "Garden/Garden Plans.md"]
+
+[[roots]]
+path = "~/obsidian/Pocket"
+kind = "vault"
+roadmaps = ["Code/Code Plans.md", "Pocket Plans.md"]
+
+# Uncommitted or unpushed work older than these many days turns an item amber
+# or red. Overridable per item below.
+[drift]
+amber_days = 7
+red_days = 30
+
+# Tiers, most important first. Items without an override get the default.
+[importance]
+tiers = ["server", "machine", "projects"]
+default = "projects"
+
+# Per-item overrides, keyed by item id: the path relative to the home
+# directory, or "server" for the server.
+[items]
+# [items.".dotfiles"]
+# importance = "machine"
+# drift_amber_days = 3
+# drift_red_days = 14
+
+# The gh account whose token reads each GitHub remote host. github-work is the
+# SSH alias for the the-undev identity.
+[github.host_accounts]
+"github.com" = "finch"
+"github-work" = "the-undev"
+
+[forgejo]
+base_url = "http://forge.example.lan:3000"
+# Remote hosts that are this Forgejo, matched on the host name alone.
+remote_hosts = ["forgejo", "forge-work", "forge.example.lan"]
+
+[server]
+name = "Silo"
+kuma_base_url = "http://kuma.example.lan:3001"
+kuma_status_page = "perch"

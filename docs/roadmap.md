@@ -89,6 +89,15 @@ Replace the Plasma custom shortcut with the Tauri global shortcut plugin once
 it supports Wayland through the GlobalShortcuts portal. The pull request to
 watch is tauri-apps/global-hotkey#162.
 
+## Data placement audit
+
+Before the real app displays anything: walk every field the scanner
+gathers, categorise it, and decide where each surfaces: on the bird, in
+the bubble, in the detail view, or nowhere yet. The app gathers
+everything from day one but displays only what this audit assigns, so
+the temptation to surface too much is resisted structurally. See
+`docs/decisions/bird-language.md`.
+
 ## Public undev release
 
 If the bird language proves itself, perch moves to undev as a public

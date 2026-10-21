@@ -7,6 +7,23 @@ overview, so every trait must derive from scanned facts, see
 
 Status: open
 
+## Decided, 21 October 2026
+
+- Health is the fact, mood is its expression: red is distressed, amber is
+  restless, green is content. Speech tone, animation intensity and breast
+  colour all read from that one derivation; there is no second state
+  machine for happiness.
+- Activity is behaviour, not feeling, and maps to what the bird does:
+  singing while being edited, energy level, a flutter on arrival.
+- A trait without a derivable fact behind it is not a trait.
+- What counts as bad is per bird: the thresholds in config, with
+  per-project overrides as decided in [daily-glance](daily-glance.md),
+  drive each bird's reactions. Introduced slowly; some facts will be hard
+  to judge well.
+- The app starts by gathering all the data but aggregating and displaying
+  little. Surfacing decisions follow a deliberate audit of everything
+  gathered, never the other way round.
+
 ## Wanted, 21 October 2026
 
 - Speech varies with mood. A content bird and a distressed bird say
@@ -40,12 +57,12 @@ The fifth aviary and the combined prototype use:
 
 ## Open questions
 
-- Whether happiness is its own state or health worn behaviourally. The
-  working assumption: health is the fact, mood is its expression, so no
-  second state machine.
+- Unadopted projects: dimmed birds on the fence, or unhatched eggs that
+  hatch on adoption. Undecided; worth a look in a future round.
 - Candidate extra traits, each needing a fact to earn its place: ruffled
   or scruffy feathers for drift, a drooping posture for long neglect, a
   just-landed flutter after a fresh push, a precarious perch for
   one-disk-only projects.
-- Whether activity (editing, in flight, settled) maps to energy: how
-  animated the bird is, separate from how worried it is.
+- Out of all gathered data, what belongs on the bird, what in the bubble,
+  and what only in the detail view. Needs the data audit, see the
+  roadmap.

@@ -32,7 +32,10 @@ export async function nullIfMissing<T>(
 
 /** The message of a thrown value, for recording as data. */
 export function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  if (!(error instanceof Error)) return String(error);
+  if (error.cause instanceof Error)
+    return `${error.message}: ${error.cause.message}`;
+  return error.message;
 }
 
 /** The modification time of a path, or null when it does not exist. */

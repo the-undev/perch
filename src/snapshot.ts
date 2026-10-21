@@ -122,11 +122,14 @@ export interface PullRequest {
   url: string;
 }
 
+/** CI outcome in perch's own terms; neutral covers cancelled, skipped and warning results. */
+export type CiState = "success" | "failure" | "pending" | "neutral";
+
 export interface CiRun {
   name: string;
-  /** The forge's own status words, for example completed and success. */
-  status: string;
-  conclusion: string | null;
+  state: CiState;
+  /** The forge's own word for the result, for example completed/success or failure. */
+  forgeState: string;
   url: string | null;
   createdAt: string | null;
 }

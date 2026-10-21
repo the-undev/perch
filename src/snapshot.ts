@@ -154,6 +154,14 @@ export interface ForgeData {
   openPullRequests: PullRequest[];
   /** Latest CI result on the default branch, null when there is none. */
   latestCi: CiRun | null;
+  /** The newest commits on the forge's default branch: finalised work, against local work. */
+  finalisedCommits: FinalisedCommit[];
+}
+
+export interface FinalisedCommit {
+  sha: string;
+  committedAt: string;
+  subject: string;
 }
 
 export type MonitorStatus =

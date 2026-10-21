@@ -196,6 +196,8 @@ export type RawCi =
 export interface RawForgeDetails {
   openPullRequests: RawPullRequest[];
   ci: RawCi;
+  /** The newest commits on the forge's default branch, newest first, as the forge reports them. */
+  finalisedCommits: RawCommit[];
 }
 
 export interface RawForgeRepo {

@@ -3,7 +3,7 @@ import { asArray, asRecord, optionalString, stringField } from "../json.ts";
 import type { RawCommitStatus } from "../raw.ts";
 import type { ForgeClient } from "./forge.ts";
 import { readAllPages, readRepoInfo } from "./github.ts";
-import { readPullRequest } from "./pull-request.ts";
+import { readCommit, readPullRequest } from "./pull-request.ts";
 
 const pageSize = 50;
 
@@ -12,6 +12,8 @@ export interface ForgejoClientDeps {
   /** Resolves with the read-only API token, or rejects with a token-not-stored SourceFailure. */
   token: () => Promise<string>;
   baseUrl: string;
+  /** How many default-branch commits to read as finalised. */
+  finalisedCommits: number;
 }
 
 function readCommitStatus(value: unknown): RawCommitStatus {
@@ -58,9 +60,13 @@ export function createForgejoClient(deps: ForgejoClientDeps): ForgeClient {
       const auth = await headers();
       const base = `${api}/repos/${info.fullName}`;
       const branch = encodeURIComponent(info.defaultBranch);
-      const [pulls, status] = await Promise.all([
+      const [pulls, status, commits] = await Promise.all([
         deps.fetchJson(`${base}/pulls?state=open&limit=50`, auth),
         deps.fetchJson(`${base}/commits/${branch}/status`, auth),
+        deps.fetchJson(
+          `${base}/commits?sha=${branch}&limit=${deps.finalisedCommits}&stat=false&verification=false&files=false`,
+          auth,
+        ),
       ]);
       const combined = asRecord(status, "combined status");
       return {
@@ -74,6 +80,7 @@ export function createForgejoClient(deps: ForgejoClientDeps): ForgeClient {
             ),
           },
         },
+        finalisedCommits: asArray(commits, "commits").map(readCommit),
       };
     },
   };

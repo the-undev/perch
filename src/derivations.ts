@@ -436,6 +436,7 @@ export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
     defaultBranch: repo.info.defaultBranch,
     openPullRequests: repo.details.value.openPullRequests.map(pullRequest),
     latestCi: deriveCi(repo.details.value.ci),
+    finalisedCommits: repo.details.value.finalisedCommits,
   };
 }
 

@@ -89,6 +89,7 @@ export function forgeRepo(
                 reason: "no-runs-on-default-branch",
               },
             },
+            finalisedCommits: [],
           },
         },
   };

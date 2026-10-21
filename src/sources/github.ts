@@ -8,7 +8,7 @@ import {
 } from "../json.ts";
 import type { Observed, RawForgeRepoInfo, RawGithubRun } from "../raw.ts";
 import type { ForgeClient } from "./forge.ts";
-import { readPullRequest } from "./pull-request.ts";
+import { readCommit, readPullRequest } from "./pull-request.ts";
 
 const apiBase = "https://api.github.com";
 const pageSize = 100;
@@ -17,6 +17,8 @@ const maxPages = 20;
 export interface GithubClientDeps {
   fetchJson: FetchJson;
   tokenFor: (account: string) => Promise<string>;
+  /** How many default-branch commits to read as finalised. */
+  finalisedCommits: number;
 }
 
 /** Reads a repository from a GitHub or Forgejo response, which share these fields. */
@@ -104,16 +106,21 @@ export function createGithubClient(deps: GithubClientDeps): ForgeClient {
       const headers = await headersFor(account);
       const base = `${apiBase}/repos/${info.fullName}`;
       const branch = encodeURIComponent(info.defaultBranch);
-      const [pulls, runs] = await Promise.all([
+      const [pulls, runs, commits] = await Promise.all([
         deps.fetchJson(`${base}/pulls?state=open&per_page=100`, headers),
         deps.fetchJson(
           `${base}/actions/runs?branch=${branch}&per_page=1`,
+          headers,
+        ),
+        deps.fetchJson(
+          `${base}/commits?sha=${branch}&per_page=${deps.finalisedCommits}`,
           headers,
         ),
       ]);
       return {
         openPullRequests: asArray(pulls, "pulls").map(readPullRequest),
         ci: { forge: "github", latestRun: latestRun(runs) },
+        finalisedCommits: asArray(commits, "commits").map(readCommit),
       };
     },
   };

@@ -48,6 +48,7 @@ function fakeClient(
           forge: "github",
           latestRun: { state: "absent", reason: "no-runs-on-default-branch" },
         },
+        finalisedCommits: [],
       };
     },
   };
@@ -143,6 +144,7 @@ describe("forge accounts source", () => {
         throw new SourceFailure("token-not-stored", forgejoTokenMissing);
       },
       baseUrl: "http://forgejo.test",
+      finalisedCommits: 2,
     });
     const failure = await createForgeAccountsSource("forgejoAccounts", client, {
       accounts: [{ account: "finch", hosts: ["forgejo"] }],
@@ -300,6 +302,7 @@ describe("github client", () => {
     const client = createGithubClient({
       fetchJson,
       tokenFor: async (account) => `${account}-token`,
+      finalisedCommits: 2,
     });
 
     const repos = await client.listRepos("finch");
@@ -337,14 +340,30 @@ describe("github client", () => {
           },
         ],
       },
+      [`${base}/commits?sha=main&per_page=2`]: [
+        {
+          sha: "abc",
+          commit: {
+            committer: { date: "2026-10-20T08:00:00Z" },
+            message: "Add tiles\n\nWith a body.",
+          },
+        },
+      ],
     });
-    const client = createGithubClient({ fetchJson, tokenFor: async () => "t" });
+    const client = createGithubClient({
+      fetchJson,
+      tokenFor: async () => "t",
+      finalisedCommits: 2,
+    });
 
     const details = await client.readDetails(
       info("the-undev/harbour", {}),
       "the-undev",
     );
 
+    expect(details.finalisedCommits).toEqual([
+      { sha: "abc", committedAt: "2026-10-20T08:00:00Z", subject: "Add tiles" },
+    ]);
     expect(details.openPullRequests[0]?.author).toEqual({
       state: "absent",
       reason: "no-user",
@@ -370,6 +389,16 @@ describe("forgejo client", () => {
     const base = "http://forgejo.test/api/v1/repos/finch/Hothouse";
     const { fetchJson, calls } = fakeFetch({
       [`${base}/pulls?state=open&limit=50`]: [],
+      [`${base}/commits?sha=main&limit=2&stat=false&verification=false&files=false`]:
+        [
+          {
+            sha: "def",
+            commit: {
+              committer: { date: "2026-10-19T08:00:00Z" },
+              message: "Office lighting",
+            },
+          },
+        ],
       [`${base}/commits/main/status`]: {
         state: "pending",
         statuses: [
@@ -392,6 +421,7 @@ describe("forgejo client", () => {
       fetchJson,
       token: async () => "t",
       baseUrl: "http://forgejo.test",
+      finalisedCommits: 2,
     });
 
     const details = await client.readDetails(
@@ -400,6 +430,13 @@ describe("forgejo client", () => {
     );
 
     expect(calls[0]?.headers.Authorization).toBe("token t");
+    expect(details.finalisedCommits).toEqual([
+      {
+        sha: "def",
+        committedAt: "2026-10-19T08:00:00Z",
+        subject: "Office lighting",
+      },
+    ]);
     expect(details.ci).toMatchObject({
       forge: "forgejo",
       combinedStatus: {
@@ -433,6 +470,13 @@ describe("deriving forge data", () => {
             },
           },
         },
+        finalisedCommits: [
+          {
+            sha: "abc",
+            committedAt: "2026-10-20T08:00:00Z",
+            subject: "Add tiles",
+          },
+        ],
       },
     };
     const forgejoRepo = forgeRepo("finch/Hothouse", {});
@@ -460,6 +504,7 @@ describe("deriving forge data", () => {
             ],
           },
         },
+        finalisedCommits: [],
       },
     };
 
@@ -470,6 +515,13 @@ describe("deriving forge data", () => {
         state: "failure",
         forgeState: "completed/failure",
       },
+      finalisedCommits: [
+        {
+          sha: "abc",
+          committedAt: "2026-10-20T08:00:00Z",
+          subject: "Add tiles",
+        },
+      ],
     });
     expect(deriveForge(forgejoRepo)).toMatchObject({
       latestCi: {

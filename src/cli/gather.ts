@@ -34,11 +34,13 @@ const fetchJson = createFetchJson(10_000);
 const github = createGithubClient({
   fetchJson,
   tokenFor: createGithubTokenLookup(home, process.env),
+  finalisedCommits: config.forges.finalisedCommits,
 });
 const forgejo = createForgejoClient({
   fetchJson,
   token: createForgejoTokenLookup(home, process.env),
   baseUrl: config.forges.forgejo.baseUrl,
+  finalisedCommits: config.forges.finalisedCommits,
 });
 
 const status = await gather({

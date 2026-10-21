@@ -113,6 +113,8 @@ export interface RoadmapData {
 
 export interface ClaudeSessionsData {
   lastSessionAt: string | null;
+  /** Whether the time came from the newest transcript's last message or, failing that, its mtime. */
+  basis: "last-message" | "file-mtime" | null;
 }
 
 export interface PullRequest {

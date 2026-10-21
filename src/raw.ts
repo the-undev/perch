@@ -138,10 +138,18 @@ export interface RawTranscript {
   mtime: string;
 }
 
+export interface RawNewestTranscript {
+  file: string;
+  /** Timestamp of the last user or assistant line, read backwards from the end of the file. */
+  lastMessageAt: Observed<string, "no-message-line" | "beyond-tail-limit">;
+}
+
 export interface RawClaudeSessions {
   /** The directory under ~/.claude/projects for the item's path. */
   directory: string;
   transcripts: Observed<RawTranscript[], "no-project-directory">;
+  /** The transcript with the newest mtime. */
+  newest: Observed<RawNewestTranscript, "no-transcripts">;
 }
 
 // Forges

@@ -327,18 +327,24 @@ export function deriveGit(
 
 // Claude Code sessions
 
-/** The last session is the newest transcript mtime for the item's directory; none means null. */
+/**
+ * The last session is the timestamp of the last user or assistant line in the newest transcript.
+ * When that cannot be read, the newest transcript's mtime stands in. No transcripts means null.
+ */
 export function deriveClaudeSessions(
   raw: RawClaudeSessions,
 ): ClaudeSessionsData {
-  if (raw.transcripts.state === "absent") return { lastSessionAt: null };
-  const times = raw.transcripts.value.map((transcript) =>
-    new Date(transcript.mtime).getTime(),
-  );
-  return {
-    lastSessionAt:
-      times.length === 0 ? null : new Date(Math.max(...times)).toISOString(),
-  };
+  if (raw.newest.state === "absent" || raw.transcripts.state === "absent") {
+    return { lastSessionAt: null, basis: null };
+  }
+  const newest = raw.newest.value;
+  if (newest.lastMessageAt.state === "observed") {
+    return { lastSessionAt: newest.lastMessageAt.value, basis: "last-message" };
+  }
+  const mtime = raw.transcripts.value.find(
+    (entry) => entry.file === newest.file,
+  )?.mtime;
+  return { lastSessionAt: mtime ?? null, basis: mtime ? "file-mtime" : null };
 }
 
 // Forges

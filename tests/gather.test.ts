@@ -61,11 +61,16 @@ const sessions: PolledSource<"claudeSessions"> = {
       value: {
         directory: "-b",
         transcripts: { state: "absent", reason: "no-project-directory" },
+        newest: { state: "absent", reason: "no-transcripts" },
       },
     };
     entries["dev/a"] = {
       state: "observed",
-      value: { directory: "-a", transcripts: { state: "observed", value: [] } },
+      value: {
+        directory: "-a",
+        transcripts: { state: "observed", value: [] },
+        newest: { state: "absent", reason: "no-transcripts" },
+      },
     };
     return entries;
   },

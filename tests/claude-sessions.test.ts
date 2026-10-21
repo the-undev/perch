@@ -4,6 +4,7 @@ import { deriveClaudeSessions } from "../src/derivations.ts";
 import {
   createClaudeSessionsSource,
   encodeProjectPath,
+  readLastMessageAt,
   readSessions,
 } from "../src/sources/claude-sessions.ts";
 import { makeTempDir, removeDir, writeFile } from "./helpers/git-fixture.ts";
@@ -30,20 +31,25 @@ describe("encodeProjectPath", () => {
   });
 });
 
+const line = (record: object) => `${JSON.stringify(record)}\n`;
+
 describe("readSessions", () => {
-  it("lists every transcript with its mtime and ignores other files", async () => {
+  it("lists every transcript with its mtime and reads the newest one's last message", async () => {
     const encoded = encodeProjectPath("/home/owner/dev/perch");
-    writeFile(
-      projectsDir,
-      `${encoded}/b.jsonl`,
-      "{}\n",
-      new Date("2026-05-03T10:00:00Z"),
-    );
     writeFile(
       projectsDir,
       `${encoded}/a.jsonl`,
       "{}\n",
       new Date("2026-05-01T10:00:00Z"),
+    );
+    writeFile(
+      projectsDir,
+      `${encoded}/b.jsonl`,
+      line({ type: "user", timestamp: "2026-05-02T09:00:00.000Z" }) +
+        line({ type: "assistant", timestamp: "2026-05-02T09:05:00.000Z" }) +
+        line({ type: "system", timestamp: "2026-05-03T09:59:00.000Z" }) +
+        line({ type: "cost-state" }),
+      new Date("2026-05-03T10:00:00Z"),
     );
     writeFile(
       projectsDir,
@@ -61,6 +67,65 @@ describe("readSessions", () => {
           { file: "b.jsonl", mtime: "2026-05-03T10:00:00.000Z" },
         ],
       },
+      newest: {
+        state: "observed",
+        value: {
+          file: "b.jsonl",
+          lastMessageAt: {
+            state: "observed",
+            value: "2026-05-02T09:05:00.000Z",
+          },
+        },
+      },
+    });
+  });
+
+  it("finds a message line across chunk boundaries, and states when none exists", async () => {
+    const encoded = encodeProjectPath("/work/long");
+    const filler = line({ type: "system", padding: "x".repeat(150_000) });
+    writeFile(
+      projectsDir,
+      `${encoded}/long.jsonl`,
+      line({ type: "assistant", timestamp: "2026-05-02T09:05:00.000Z" }) +
+        filler +
+        filler,
+    );
+    writeFile(
+      projectsDir,
+      `${encodeProjectPath("/work/bare")}/s.jsonl`,
+      line({ type: "bridge-session" }),
+    );
+
+    const long = await readSessions(projectsDir, "/work/long");
+    const bare = await readSessions(projectsDir, "/work/bare");
+
+    expect(long.newest).toMatchObject({
+      value: {
+        lastMessageAt: { state: "observed", value: "2026-05-02T09:05:00.000Z" },
+      },
+    });
+    expect(bare.newest).toMatchObject({
+      value: { lastMessageAt: { state: "absent", reason: "no-message-line" } },
+    });
+  });
+
+  it("stops at the tail limit", async () => {
+    const encoded = encodeProjectPath("/work/long");
+    writeFile(
+      projectsDir,
+      `${encoded}/long.jsonl`,
+      line({ type: "user", timestamp: "2026-05-02T09:05:00.000Z" }) +
+        line({ type: "system", padding: "x".repeat(200_000) }),
+    );
+
+    expect(
+      await readLastMessageAt(
+        join(projectsDir, encoded, "long.jsonl"),
+        64 * 1024,
+      ),
+    ).toEqual({
+      state: "absent",
+      reason: "beyond-tail-limit",
     });
   });
 
@@ -68,6 +133,7 @@ describe("readSessions", () => {
     expect(await readSessions(projectsDir, "/home/owner/dev/none")).toEqual({
       directory: "-home-owner-dev-none",
       transcripts: { state: "absent", reason: "no-project-directory" },
+      newest: { state: "absent", reason: "no-transcripts" },
     });
   });
 
@@ -92,33 +158,62 @@ describe("readSessions", () => {
 });
 
 describe("deriving the last session", () => {
-  it("takes the newest transcript mtime", () => {
+  const transcripts = {
+    state: "observed" as const,
+    value: [
+      { file: "a.jsonl", mtime: "2026-05-01T10:00:00.000Z" },
+      { file: "b.jsonl", mtime: "2026-05-03T10:00:00.000Z" },
+    ],
+  };
+
+  it("takes the newest transcript's last message time", () => {
     expect(
       deriveClaudeSessions({
         directory: "-x",
-        transcripts: {
+        transcripts,
+        newest: {
           state: "observed",
-          value: [
-            { file: "a.jsonl", mtime: "2026-05-03T10:00:00.000Z" },
-            { file: "b.jsonl", mtime: "2026-05-01T10:00:00.000Z" },
-          ],
+          value: {
+            file: "b.jsonl",
+            lastMessageAt: {
+              state: "observed",
+              value: "2026-05-02T09:05:00.000Z",
+            },
+          },
         },
       }),
-    ).toEqual({ lastSessionAt: "2026-05-03T10:00:00.000Z" });
+    ).toEqual({
+      lastSessionAt: "2026-05-02T09:05:00.000Z",
+      basis: "last-message",
+    });
   });
 
-  it("is null without a project directory or transcripts", () => {
+  it("falls back to the newest transcript's mtime when no message line was read", () => {
+    expect(
+      deriveClaudeSessions({
+        directory: "-x",
+        transcripts,
+        newest: {
+          state: "observed",
+          value: {
+            file: "b.jsonl",
+            lastMessageAt: { state: "absent", reason: "no-message-line" },
+          },
+        },
+      }),
+    ).toEqual({
+      lastSessionAt: "2026-05-03T10:00:00.000Z",
+      basis: "file-mtime",
+    });
+  });
+
+  it("is null without transcripts", () => {
     expect(
       deriveClaudeSessions({
         directory: "-x",
         transcripts: { state: "absent", reason: "no-project-directory" },
+        newest: { state: "absent", reason: "no-transcripts" },
       }),
-    ).toEqual({ lastSessionAt: null });
-    expect(
-      deriveClaudeSessions({
-        directory: "-x",
-        transcripts: { state: "observed", value: [] },
-      }),
-    ).toEqual({ lastSessionAt: null });
+    ).toEqual({ lastSessionAt: null, basis: null });
   });
 });

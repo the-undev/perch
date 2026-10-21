@@ -9,6 +9,26 @@ const snapshot = JSON.parse(
 	readFileSync(join(repoRoot, ".scan", "snapshot.json"), "utf8"),
 );
 
+// Provisional adoption and tiers for the mockups only. The real app derives
+// these from config; nothing here is a decision.
+const TIERS = {
+	".dotfiles": ["machine-home", "Machine"],
+	"dev/dotfiles-nimbus": ["machine-home", "Machine"],
+	"dev/hearth-config": ["machine-home", "Tech"],
+	"obsidian/Hothouse": ["machine-home", "Tech"],
+	"obsidian/Pocket": ["machine-home", "Personal"],
+	"dev/perch": ["projects", "Projects"],
+	"undev/harbour": ["projects", "Projects"],
+	"undev/skiff": ["projects", "Projects"],
+	"undev/oxbow": ["projects", "Projects"],
+	"undev/spool": ["projects", "Projects"],
+	"undev/gramophone": ["projects", "Projects"],
+	"undev/glyph-docs": ["projects", "Projects"],
+	"undev/prism": ["projects", "Projects"],
+	"undev/mark-this": ["projects", "Projects"],
+	"undev/Hollow-legacy": ["projects", "Projects"],
+};
+
 const days = (iso, now) =>
 	iso === null || iso === undefined
 		? null
@@ -40,13 +60,16 @@ const items = snapshot.items
 
 		const bugs = roadmap?.counts?.bug ?? 0;
 		const features = roadmap?.counts?.feature ?? 0;
-		const redFlags = (item.flags ?? []).filter((f) => f.level === "red");
 		const driftLevel = git?.drift?.level ?? "green";
 		const ciFailing = ci?.conclusion === "failure" || ci?.state === "failure";
 
+		// Health ignores not-set-up: that is triage, not ill health.
 		let health = "green";
 		if (driftLevel === "amber" || git?.backup === "no-remote") health = "amber";
-		if (driftLevel === "red" || ciFailing || redFlags.length > 0) health = "red";
+		if (driftLevel === "red" || ciFailing || bugs > 0) health = "red";
+
+		const [tier, category] = TIERS[item.id] ?? [null, null];
+		const adopted = tier !== null;
 
 		const lastTouched = Math.max(
 			Date.parse(git?.lastCommitAt ?? 0) || 0,
@@ -58,6 +81,9 @@ const items = snapshot.items
 			name: item.name,
 			kind: item.kind,
 			importance: item.importance,
+			tier,
+			category,
+			adopted,
 			local: Boolean(item.presences?.local),
 			forges: (item.presences?.forges ?? []).map((f) => ({
 				forge: f.forge,

@@ -29,6 +29,26 @@ const TIERS = {
 	"undev/Hollow-legacy": ["projects", "Projects"],
 };
 
+// Provisional human-readable names for the mockups; the real app takes
+// these from config, defaulting to the repo name.
+const NAMES = {
+	".dotfiles": "Dotfiles",
+	"dev/dotfiles-nimbus": "Nimbus Dotfiles",
+	"dev/hearth-config": "Hearth Config",
+	"obsidian/Hothouse": "Hothouse Vault",
+	"obsidian/Pocket": "Pocket Vault",
+	"dev/perch": "Perch",
+	"undev/harbour": "Harbour",
+	"undev/skiff": "Skiff",
+	"undev/oxbow": "Oxbow",
+	"undev/spool": "Spool",
+	"undev/gramophone": "Gramophone",
+	"undev/glyph-docs": "Glyph Docs",
+	"undev/prism": "Prism",
+	"undev/mark-this": "Mark This",
+	"undev/Hollow-legacy": "Hollow (legacy)",
+};
+
 const days = (iso, now) =>
 	iso === null || iso === undefined
 		? null
@@ -79,6 +99,7 @@ const items = snapshot.items
 		return {
 			id: item.id,
 			name: item.name,
+			displayName: NAMES[item.id] ?? item.name,
 			kind: item.kind,
 			importance: item.importance,
 			tier,

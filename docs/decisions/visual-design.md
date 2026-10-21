@@ -59,7 +59,25 @@ one shared warm-dark language. Verdicts:
   home entry, selected at launch. Glance without clicking, one click to
   any detail.
 
+## Round three verdicts, 21 October 2026
+
+The revised shell (ink palette, restored hierarchy, stat tiles, iconed
+actions, tooltips, display names) and the aviary opposite (projects as
+birds on wires: wire height priority, bird size tier, breast colour
+health, the unadopted on the fence).
+
+- Shell II approved as the working structure; ink palette chosen.
+- The shell's overview page still reads cluttered, small and not high
+  level enough. Next idea: aggregate per category rather than per project.
+- The aviary landed ("holy shit lol i love that"): the wanted visual
+  direction is exactly not a standard admin dashboard. Iterate on it and
+  explore neighbouring ideas; size and position carry real meaning.
+- Aviary defects: content renders off screen; the fixed-aspect viewBox
+  crops. Layout must compute from the real window and redraw on resize.
+
 ## Open
 
-- Round three: the combined shell, with switchable palette candidates to
-  settle the hue, a visible status legend, and the two axes separated.
+- Aviary iteration: responsive layout, meaning for size and position,
+  per-wire summaries. Explore whether the aviary becomes the overview
+  with the shell's pane as the detail layer beneath it.
+- The shell overview as per-category aggregates, next shell round.

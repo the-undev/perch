@@ -1,6 +1,7 @@
 import { join } from "node:path";
+import { countOpenItems, deriveRoadmapFile } from "../derivations.ts";
 import { errorMessage } from "../fs.ts";
-import { countOpenItems, parseRoadmap } from "../roadmap-parser.ts";
+import { readRoadmapStructure } from "../roadmap-parser.ts";
 import type { Item, ItemError, RoadmapData, RoadmapFile } from "../snapshot.ts";
 import type { PolledSource } from "./source.ts";
 
@@ -24,7 +25,8 @@ async function repoRoadmap(
 ): Promise<RoadmapFile[]> {
   for (const candidate of repoRoadmapCandidates) {
     const text = await deps.readText(join(root, candidate));
-    if (text !== null) return [parseRoadmap(candidate, text)];
+    if (text !== null)
+      return [deriveRoadmapFile(candidate, readRoadmapStructure(text))];
   }
   return [];
 }
@@ -38,7 +40,7 @@ async function vaultRoadmap(
   for (const file of files) {
     const text = await deps.readText(join(root, file));
     if (text === null) throw new Error(`roadmap file not found: ${file}`);
-    parsed.push(parseRoadmap(file, text));
+    parsed.push(deriveRoadmapFile(file, readRoadmapStructure(text)));
   }
   return parsed;
 }

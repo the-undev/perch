@@ -1,14 +1,72 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { countOpenItems, parseRoadmap } from "../src/roadmap-parser.ts";
+import { countOpenItems, deriveRoadmapFile } from "../src/derivations.ts";
+import { readRoadmapStructure } from "../src/roadmap-parser.ts";
 import type { Item, RoadmapFile } from "../src/snapshot.ts";
 import { createRoadmapSource } from "../src/sources/roadmap.ts";
 
-function parseFixture(name: string): RoadmapFile {
-  const path = join(import.meta.dirname, "fixtures", "roadmaps", name);
-  return parseRoadmap(name, readFileSync(path, "utf8"));
+function readFixture(name: string): string {
+  return readFileSync(
+    join(import.meta.dirname, "fixtures", "roadmaps", name),
+    "utf8",
+  );
 }
+
+function parseFixture(name: string): RoadmapFile {
+  return deriveRoadmapFile(name, readRoadmapStructure(readFixture(name)));
+}
+
+describe("readRoadmapStructure", () => {
+  it("records every heading with its parents and the bullets beneath it", () => {
+    const structure = readRoadmapStructure(readFixture("headings-only.md"));
+
+    expect(
+      structure.sections.map((section) => [
+        section.heading,
+        section.level,
+        section.parents.map((parent) => parent.text),
+        section.bullets.length,
+      ]),
+    ).toEqual([
+      ["Roadmap", 1, [], 0],
+      ["First build", 2, ["Roadmap"], 0],
+      ["Tray icon status", 2, ["Roadmap"], 0],
+      ["Bugs", 2, ["Roadmap"], 0],
+      ["Scan hangs on a locked index", 3, ["Roadmap", "Bugs"], 0],
+      ["Nudges #bug", 2, ["Roadmap"], 0],
+    ]);
+    expect(structure.sections[5]?.tags).toEqual(["bug"]);
+  });
+
+  it("keeps checkbox state and tags as found, without judging kinds", () => {
+    const epics = readRoadmapStructure(readFixture("epics.md"));
+    const bugs = readRoadmapStructure(readFixture("bugs.md"));
+
+    expect(epics.sections[1]?.bullets.map((bullet) => bullet.checkbox)).toEqual(
+      ["checked", "checked", "unchecked"],
+    );
+    expect(epics.sections[3]?.bullets[0]?.checkbox).toBe("none");
+    expect(bugs.sections[3]?.bullets.map((bullet) => bullet.tags)).toEqual([
+      [],
+      ["bug"],
+      ["bugfix"],
+    ]);
+  });
+
+  it("collects bullets above the first heading separately", () => {
+    const structure = readRoadmapStructure(
+      "- loose item\n\n## Next\n\n- grouped\n",
+    );
+
+    expect(
+      structure.bulletsBeforeFirstHeading.map((bullet) => bullet.text),
+    ).toEqual(["loose item"]);
+    expect(structure.sections[0]?.bullets.map((bullet) => bullet.text)).toEqual(
+      ["grouped"],
+    );
+  });
+});
 
 function summary(file: RoadmapFile): [string | null, string[]][] {
   return file.groups.map((group) => [

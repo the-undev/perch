@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { errorMessage, fileMtime, nullIfMissing } from "../fs.ts";
-import type { ClaudeSessionsData, ItemError } from "../snapshot.ts";
+import type { RawClaudeSessions, RawEntries, RawTranscript } from "../raw.ts";
 import type { PolledSource } from "./source.ts";
 
 /**
@@ -13,42 +13,49 @@ export function encodeProjectPath(path: string): string {
   return path.replace(/[^A-Za-z0-9]/g, "-");
 }
 
-/** The newest modification time of the session transcripts for a working directory. */
-export async function lastSessionAt(
+/** Lists the session transcripts for a working directory with their modification times. */
+export async function readSessions(
   projectsDir: string,
   projectPath: string,
-): Promise<Date | null> {
-  const directory = join(projectsDir, encodeProjectPath(projectPath));
-  const names = (await nullIfMissing(() => readdir(directory))) ?? [];
-  const mtimes = await Promise.all(
-    names
-      .filter((name) => name.endsWith(".jsonl"))
-      .map((name) => fileMtime(join(directory, name))),
+): Promise<RawClaudeSessions> {
+  const directory = encodeProjectPath(projectPath);
+  const names = await nullIfMissing(() =>
+    readdir(join(projectsDir, directory)),
   );
-  const times = mtimes
-    .filter((mtime): mtime is Date => mtime !== null)
-    .map((mtime) => mtime.getTime());
-  return times.length === 0 ? null : new Date(Math.max(...times));
+  if (names === null) {
+    return {
+      directory,
+      transcripts: { state: "absent", reason: "no-project-directory" },
+    };
+  }
+  const transcripts: RawTranscript[] = [];
+  for (const file of names.filter((name) => name.endsWith(".jsonl")).sort()) {
+    const mtime = await fileMtime(join(projectsDir, directory, file));
+    if (mtime !== null) transcripts.push({ file, mtime: mtime.toISOString() });
+  }
+  return { directory, transcripts: { state: "observed", value: transcripts } };
 }
 
-/** Reads the last Claude Code session time for every item with a path. */
+/** Lists Claude Code session transcripts for every item with a path. */
 export function createClaudeSessionsSource(
   projectsDir: string,
 ): PolledSource<"claudeSessions"> {
   return {
     name: "claudeSessions",
-    async scan(items) {
-      const results = new Map<string, ClaudeSessionsData | ItemError>();
+    async gather(items) {
+      const entries: Record<string, RawEntries["claudeSessions"]> = {};
       for (const item of items) {
-        if (item.path === null) continue;
+        if (item.kind === "server") continue;
         try {
-          const last = await lastSessionAt(projectsDir, item.path);
-          results.set(item.id, { lastSessionAt: last?.toISOString() ?? null });
+          entries[item.id] = {
+            state: "observed",
+            value: await readSessions(projectsDir, item.path),
+          };
         } catch (error) {
-          results.set(item.id, { error: errorMessage(error) });
+          entries[item.id] = { state: "error", error: errorMessage(error) };
         }
       }
-      return results;
+      return entries;
     },
   };
 }

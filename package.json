@@ -8,7 +8,9 @@
     "node": ">=26"
   },
   "scripts": {
-    "scan": "node src/cli.ts",
+    "gather": "node src/cli/gather.ts",
+    "aggregate": "node src/cli/aggregate.ts",
+    "scan": "pnpm gather && pnpm aggregate",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",

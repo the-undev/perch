@@ -1,4 +1,4 @@
-import type { Item, Remote } from "./snapshot.ts";
+import type { RawEntries, RawForgeRemote, RawRemote } from "./raw.ts";
 
 export interface RemoteLocation {
   /** Host name or SSH alias, without user or port. */
@@ -26,36 +26,39 @@ export function parseRemoteUrl(url: string): RemoteLocation | null {
   return { host: match[1] ?? "", owner, repo };
 }
 
-/** The first remote on one of the given hosts, origin first, with its parsed location. */
+/** The first remote on one of the given hosts, origin first. */
 export function findForgeRemote(
-  remotes: readonly Remote[],
+  remotes: readonly RawRemote[],
   hosts: readonly string[],
-): RemoteLocation | null {
+): RawForgeRemote | null {
   const ordered = [
     ...remotes.filter((remote) => remote.name === "origin"),
     ...remotes.filter((remote) => remote.name !== "origin"),
   ];
   for (const remote of ordered) {
     const location = parseRemoteUrl(remote.url);
-    if (location && hosts.includes(location.host)) return location;
+    if (location && hosts.includes(location.host)) {
+      return { remoteName: remote.name, ...location };
+    }
   }
   return null;
 }
 
-export interface ForgeTarget {
-  itemId: string;
-  location: RemoteLocation;
-}
+export type ForgeLookup =
+  | { state: "remote"; remote: RawForgeRemote }
+  | { state: "no-remote" }
+  | { state: "no-git-data" };
 
-/** Items whose git data shows a remote on one of the given hosts; items without git data are skipped. */
-export function forgeTargets(
-  items: readonly Item[],
+/** Finds an item's forge remote from its raw git entry. */
+export function forgeRemoteFor(
+  gitEntry: RawEntries["git"] | undefined,
   hosts: readonly string[],
-): ForgeTarget[] {
-  return items.flatMap((item) => {
-    const git = item.sources.git;
-    if (git === undefined || "error" in git) return [];
-    const location = findForgeRemote(git.remotes, hosts);
-    return location ? [{ itemId: item.id, location }] : [];
-  });
+): ForgeLookup {
+  if (gitEntry === undefined || gitEntry.state !== "observed") {
+    return { state: "no-git-data" };
+  }
+  const remotes = gitEntry.value.remotes;
+  const remote =
+    remotes.state === "observed" ? findForgeRemote(remotes.value, hosts) : null;
+  return remote ? { state: "remote", remote } : { state: "no-remote" };
 }

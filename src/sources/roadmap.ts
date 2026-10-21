@@ -1,8 +1,7 @@
 import { join } from "node:path";
-import { countOpenItems, deriveRoadmapFile } from "../derivations.ts";
 import { errorMessage } from "../fs.ts";
+import type { RawEntries, RawRoadmapFile } from "../raw.ts";
 import { readRoadmapStructure } from "../roadmap-parser.ts";
-import type { Item, ItemError, RoadmapData, RoadmapFile } from "../snapshot.ts";
 import type { PolledSource } from "./source.ts";
 
 /** Roadmap file names for a repository, in order of preference; the first that exists is read. */
@@ -19,67 +18,66 @@ export interface RoadmapSourceDeps {
   vaultRoadmaps: ReadonlyMap<string, readonly string[]>;
 }
 
+async function readFile(
+  root: string,
+  path: string,
+  deps: RoadmapSourceDeps,
+): Promise<RawRoadmapFile> {
+  const text = await deps.readText(join(root, path));
+  return {
+    path,
+    structure:
+      text === null
+        ? { state: "absent", reason: "file-not-found" }
+        : { state: "observed", value: readRoadmapStructure(text) },
+  };
+}
+
 async function repoRoadmap(
   root: string,
   deps: RoadmapSourceDeps,
-): Promise<RoadmapFile[]> {
+): Promise<RawEntries["roadmap"]> {
   for (const candidate of repoRoadmapCandidates) {
-    const text = await deps.readText(join(root, candidate));
-    if (text !== null)
-      return [deriveRoadmapFile(candidate, readRoadmapStructure(text))];
+    const file = await readFile(root, candidate, deps);
+    if (file.structure.state === "observed") {
+      return { state: "observed", value: { files: [file] } };
+    }
   }
-  return [];
+  return { state: "absent", reason: "no-roadmap-file" };
 }
 
 async function vaultRoadmap(
   root: string,
-  files: readonly string[],
   deps: RoadmapSourceDeps,
-): Promise<RoadmapFile[]> {
-  const parsed: RoadmapFile[] = [];
-  for (const file of files) {
-    const text = await deps.readText(join(root, file));
-    if (text === null) throw new Error(`roadmap file not found: ${file}`);
-    parsed.push(deriveRoadmapFile(file, readRoadmapStructure(text)));
-  }
-  return parsed;
+): Promise<RawEntries["roadmap"]> {
+  const paths = deps.vaultRoadmaps.get(root) ?? [];
+  if (paths.length === 0) return { state: "absent", reason: "no-roadmap-file" };
+  const files = await Promise.all(
+    paths.map((path) => readFile(root, path, deps)),
+  );
+  return { state: "observed", value: { files } };
 }
 
-async function roadmapFor(
-  item: Item & { path: string },
-  deps: RoadmapSourceDeps,
-): Promise<RoadmapData | ItemError> {
-  try {
-    const files =
-      item.kind === "vault"
-        ? await vaultRoadmap(
-            item.path,
-            deps.vaultRoadmaps.get(item.path) ?? [],
-            deps,
-          )
-        : await repoRoadmap(item.path, deps);
-    return { counts: countOpenItems(files), files };
-  } catch (error) {
-    return { error: errorMessage(error) };
-  }
-}
-
-/** Parses each repository's roadmap file and each vault's configured roadmaps into work items. */
+/** Reads the structure of each repository's roadmap file and each vault's configured roadmaps. */
 export function createRoadmapSource(
   deps: RoadmapSourceDeps,
 ): PolledSource<"roadmap"> {
   return {
     name: "roadmap",
-    async scan(items) {
-      const results = new Map<string, RoadmapData | ItemError>();
+    async gather(items) {
+      const entries: Record<string, RawEntries["roadmap"]> = {};
       for (const item of items) {
-        if (item.path === null) continue;
-        results.set(
-          item.id,
-          await roadmapFor({ ...item, path: item.path }, deps),
-        );
+        if (item.kind === "server") continue;
+        try {
+          entries[item.id] =
+            item.kind === "vault"
+              ? await vaultRoadmap(item.path, deps)
+              : await repoRoadmap(item.path, deps);
+        } catch (error) {
+          entries[item.id] = { state: "error", error: errorMessage(error) };
+        }
       }
-      return results;
+      return entries;
     },
   };
 }

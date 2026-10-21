@@ -1,9 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { countOpenItems, deriveRoadmapFile } from "../src/derivations.ts";
+import {
+  countOpenItems,
+  deriveRoadmap,
+  deriveRoadmapFile,
+} from "../src/derivations.ts";
 import { readRoadmapStructure } from "../src/roadmap-parser.ts";
-import type { Item, RoadmapFile } from "../src/snapshot.ts";
+import type { RoadmapFile } from "../src/snapshot.ts";
 import { createRoadmapSource } from "../src/sources/roadmap.ts";
 
 function readFixture(name: string): string {
@@ -201,48 +205,62 @@ describe("parseRoadmap checkboxes", () => {
 });
 
 describe("roadmap source", () => {
-  function item(kind: Item["kind"], path: string): Item {
-    return {
-      id: path,
-      name: path,
-      kind,
-      path,
-      importance: "projects",
-      liveSources: [],
-      sources: {},
-    };
-  }
-
-  it("reads the first repository candidate that exists and the configured vault files", async () => {
+  it("reads the first repository candidate and every configured vault file, stating what is missing", async () => {
     const files = new Map([
       ["/repo/ROADMAP.md", "## Next\n\n- Upper case wins over TODO\n"],
       ["/repo/TODO.md", "- Not read\n"],
-      [
-        "/vault/Tech/Tech Plans.md",
-        "## Docs\n\n- Write it down\n- Fix it #bug\n",
-      ],
+      ["/vault/Tech/Tech Plans.md", "## Docs\n\n- Write it down\n"],
     ]);
     const source = createRoadmapSource({
       readText: async (path) => files.get(path) ?? null,
       vaultRoadmaps: new Map([["/vault", ["Tech/Tech Plans.md", "Missing.md"]]]),
     });
 
-    const results = await source.scan([
-      item("repo", "/repo"),
-      item("repo", "/empty"),
-      item("vault", "/vault"),
-    ]);
+    const entries = await source.gather(
+      [
+        { id: "repo", name: "repo", kind: "repo", path: "/repo" },
+        { id: "empty", name: "empty", kind: "repo", path: "/empty" },
+        { id: "vault", name: "vault", kind: "vault", path: "/vault" },
+        { id: "server", name: "Silo", kind: "server" },
+      ],
+      {},
+    );
 
-    expect(results.get("/repo")).toMatchObject({
-      counts: { bug: 0, feature: 1 },
-      files: [{ path: "ROADMAP.md" }],
+    expect(entries.repo).toMatchObject({
+      state: "observed",
+      value: {
+        files: [{ path: "ROADMAP.md", structure: { state: "observed" } }],
+      },
     });
-    expect(results.get("/empty")).toEqual({
-      counts: { bug: 0, feature: 0 },
-      files: [],
+    expect(entries.empty).toEqual({
+      state: "absent",
+      reason: "no-roadmap-file",
     });
-    expect(results.get("/vault")).toEqual({
-      error: "roadmap file not found: Missing.md",
+    expect(entries.vault).toMatchObject({
+      state: "observed",
+      value: {
+        files: [
+          { path: "Tech/Tech Plans.md", structure: { state: "observed" } },
+          {
+            path: "Missing.md",
+            structure: { state: "absent", reason: "file-not-found" },
+          },
+        ],
+      },
     });
+    expect(entries.server).toBeUndefined();
+  });
+
+  it("derives a missing configured file as an error naming it", () => {
+    expect(
+      deriveRoadmap({
+        files: [
+          {
+            path: "Missing.md",
+            structure: { state: "absent", reason: "file-not-found" },
+          },
+        ],
+      }),
+    ).toEqual({ error: "roadmap file not found: Missing.md" });
   });
 });

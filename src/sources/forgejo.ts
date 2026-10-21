@@ -1,61 +1,49 @@
+import { SourceFailure } from "../failure.ts";
 import { errorMessage } from "../fs.ts";
 import type { FetchJson } from "../http.ts";
 import { asArray, asRecord, optionalString, stringField } from "../json.ts";
-import { forgeTargets, type RemoteLocation } from "../remote-url.ts";
-import type { CiRun, CiState, ForgeData, ItemError } from "../snapshot.ts";
+import type {
+  RawCommitStatus,
+  RawEntries,
+  RawForgejo,
+  RawForgeRemote,
+} from "../raw.ts";
+import { forgeRemoteFor } from "../remote-url.ts";
 import { readPullRequest } from "./pull-request.ts";
 import type { PolledSource } from "./source.ts";
 
 export interface ForgejoSourceDeps {
   fetchJson: FetchJson;
-  /** Resolves with the read-only API token, or rejects when it is not available. */
+  /** Resolves with the read-only API token, or rejects with a token-not-stored SourceFailure. */
   token: () => Promise<string>;
   baseUrl: string;
   remoteHosts: readonly string[];
 }
 
-/** Maps a Forgejo combined commit status to perch's CI state. */
-export function forgejoCiState(state: string): CiState {
-  if (state === "success") return "success";
-  if (state === "failure" || state === "error") return "failure";
-  if (state === "pending") return "pending";
-  return "neutral";
-}
-
-/** The combined status of a commit, named after its newest individual status. */
-function combinedStatus(value: unknown): CiRun | null {
-  const combined = asRecord(value, "combined status");
-  const statuses = asArray(combined.statuses, "statuses").map((status) =>
-    asRecord(status, "status"),
-  );
-  const newest = statuses
-    .slice()
-    .sort((a, b) =>
-      (optionalString(b, "created_at") ?? "").localeCompare(
-        optionalString(a, "created_at") ?? "",
-      ),
-    )[0];
-  if (newest === undefined) return null;
-  const state = stringField(combined, "state");
+function readCommitStatus(value: unknown): RawCommitStatus {
+  const record = asRecord(value, "status");
+  const targetUrl = optionalString(record, "target_url");
   return {
-    name: optionalString(newest, "context") ?? "status",
-    state: forgejoCiState(state),
-    forgeState: state,
-    url: optionalString(newest, "target_url"),
-    createdAt: optionalString(newest, "created_at"),
+    context: stringField(record, "context"),
+    status: stringField(record, "status"),
+    targetUrl:
+      targetUrl === null
+        ? { state: "absent", reason: "no-target-url" }
+        : { state: "observed", value: targetUrl },
+    createdAt: stringField(record, "created_at"),
   };
 }
 
 async function readRepository(
-  location: RemoteLocation,
+  remote: RawForgeRemote,
   token: string,
   deps: ForgejoSourceDeps,
-): Promise<ForgeData> {
+): Promise<RawForgejo> {
   const headers = {
     Authorization: `token ${token}`,
     Accept: "application/json",
   };
-  const base = `${deps.baseUrl}/api/v1/repos/${location.owner}/${location.repo}`;
+  const base = `${deps.baseUrl}/api/v1/repos/${remote.owner}/${remote.repo}`;
   const repository = asRecord(
     await deps.fetchJson(base, headers),
     "repository",
@@ -68,13 +56,15 @@ async function readRepository(
       headers,
     ),
   ]);
+  const combined = asRecord(status, "combined status");
   return {
-    host: location.host,
-    owner: location.owner,
-    repo: location.repo,
+    remote,
     defaultBranch,
     openPullRequests: asArray(pulls, "pulls").map(readPullRequest),
-    latestCi: combinedStatus(status),
+    combinedStatus: {
+      state: typeof combined.state === "string" ? combined.state : "",
+      statuses: asArray(combined.statuses, "statuses").map(readCommitStatus),
+    },
   };
 }
 
@@ -87,21 +77,42 @@ export function createForgejoSource(
 ): PolledSource<"forgejo"> {
   return {
     name: "forgejo",
-    async scan(items) {
-      const results = new Map<string, ForgeData | ItemError>();
-      const targets = forgeTargets(items, deps.remoteHosts);
-      if (targets.length === 0) return results;
+    async gather(items, earlier) {
+      const git = earlier.git;
+      if (git === undefined) {
+        throw new SourceFailure("unexpected", "no git data to find remotes in");
+      }
+      const entries: Record<string, RawEntries["forgejo"]> = {};
+      const targets: { id: string; remote: RawForgeRemote }[] = [];
+      for (const item of items) {
+        if (item.kind === "server") continue;
+        const lookup = forgeRemoteFor(git.items[item.id], deps.remoteHosts);
+        if (lookup.state === "no-git-data") {
+          entries[item.id] = {
+            state: "error",
+            error: "no git data for this item",
+          };
+        } else if (lookup.state === "no-remote") {
+          entries[item.id] = { state: "absent", reason: "no-forgejo-remote" };
+        } else {
+          targets.push({ id: item.id, remote: lookup.remote });
+        }
+      }
+      if (targets.length === 0) return entries;
       const token = await deps.token();
       await Promise.all(
-        targets.map(async ({ itemId, location }) => {
+        targets.map(async ({ id, remote }) => {
           try {
-            results.set(itemId, await readRepository(location, token, deps));
+            entries[id] = {
+              state: "observed",
+              value: await readRepository(remote, token, deps),
+            };
           } catch (error) {
-            results.set(itemId, { error: errorMessage(error) });
+            entries[id] = { state: "error", error: errorMessage(error) };
           }
         }),
       );
-      return results;
+      return entries;
     },
   };
 }

@@ -24,6 +24,13 @@ Decided 20 October 2026.
   things; everything aggregated stays polled. Polled and live are two
   source kinds in the code, an abstraction the scanner PoC and mockups are
   expected to prove or reshape. Decided 20 October 2026.
+- The polled path is two stages. Gathering writes raw observed facts, one
+  file per source, with no thresholds, ages or judgements, and every absent
+  value carrying an explicit reason rather than a bare null. Aggregation
+  reads those files and is the only place derived values (drift days,
+  health levels, activity states) are computed, with the rules written
+  down. Raw files are reviewable on their own, and a derivation rule can
+  change without re-reading the machine. Decided 21 October 2026.
 - The first live source: the server page fetches the Docker container list
   with names and states from a Docker socket proxy already running on
   Silo, read only over HTTP.

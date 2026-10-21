@@ -1,8 +1,9 @@
 import type { Dirent } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { join, sep } from "node:path";
+import { basename, join, relative, sep } from "node:path";
 import type { RootConfig, RootKind } from "./config.ts";
 import { nullIfMissing } from "./fs.ts";
+import type { DiscoveredItem, DiscoveryFile } from "./raw.ts";
 
 export interface DiscoveredPath {
   path: string;
@@ -77,4 +78,36 @@ export async function discover(
     for (const path of repositories) found.push({ path, kind: "repo" });
   }
   return { found, warnings };
+}
+
+/** Id of the one server item. */
+export const serverItemId = "server";
+
+/** An item's id: its path relative to the home directory, or the absolute path outside it. */
+export function itemIdFor(path: string, home: string): string {
+  const fromHome = relative(home, path);
+  if (fromHome === "" || fromHome.startsWith("..")) return path;
+  return fromHome.split(sep).join("/");
+}
+
+/** The discovery file: one item per found repository or vault, then the server. */
+export function discoveryFile(
+  discovery: Discovery,
+  home: string,
+  serverName: string,
+  gatheredAt: Date,
+): DiscoveryFile {
+  const items: DiscoveredItem[] = discovery.found.map((found) => ({
+    id: itemIdFor(found.path, home),
+    name: basename(found.path),
+    kind: found.kind,
+    path: found.path,
+  }));
+  items.push({ id: serverItemId, name: serverName, kind: "server" });
+  return {
+    gatheredAt: gatheredAt.toISOString(),
+    home,
+    items,
+    warnings: discovery.warnings,
+  };
 }

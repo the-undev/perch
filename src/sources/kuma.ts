@@ -1,12 +1,8 @@
+import { SourceFailure } from "../failure.ts";
+import { errorMessage } from "../fs.ts";
 import type { FetchJson } from "../http.ts";
-import {
-  asArray,
-  asRecord,
-  numberField,
-  optionalString,
-  stringField,
-} from "../json.ts";
-import type { KumaData, Monitor, MonitorStatus } from "../snapshot.ts";
+import { asArray, asRecord, numberField, stringField } from "../json.ts";
+import type { RawEntries, RawHeartbeat, RawKuma, RawMonitor } from "../raw.ts";
 import type { PolledSource } from "./source.ts";
 
 export interface KumaSourceDeps {
@@ -15,91 +11,69 @@ export interface KumaSourceDeps {
   statusPage: string;
 }
 
-const statusNames: Record<number, MonitorStatus> = {
-  0: "down",
-  1: "up",
-  2: "pending",
-  3: "maintenance",
-};
-
-function monitorsOnPage(page: unknown): { id: number; name: string }[] {
-  const groups = asArray(
-    asRecord(page, "status page").publicGroupList,
-    "publicGroupList",
-  );
-  return groups.flatMap((group) =>
-    asArray(asRecord(group, "group").monitorList, "monitorList").map(
-      (monitor) => {
-        const record = asRecord(monitor, "monitor");
-        return {
-          id: numberField(record, "id"),
-          name: stringField(record, "name"),
-        };
-      },
-    ),
-  );
+function readHeartbeats(value: unknown): RawHeartbeat[] {
+  if (value === undefined) return [];
+  return asArray(value, "heartbeats").map((beat) => {
+    const record = asRecord(beat, "heartbeat");
+    return {
+      status: numberField(record, "status"),
+      time: stringField(record, "time"),
+      message: typeof record.msg === "string" ? record.msg : "",
+    };
+  });
 }
 
-/** The newest heartbeat for a monitor; Kuma's time strings sort in time order. */
-function newestHeartbeat(heartbeats: unknown): {
-  status: MonitorStatus;
-  time: string | null;
-} {
-  const beats = Array.isArray(heartbeats)
-    ? heartbeats.map((beat) => asRecord(beat, "heartbeat"))
-    : [];
-  const newest = beats
-    .slice()
-    .sort((a, b) =>
-      (optionalString(b, "time") ?? "").localeCompare(
-        optionalString(a, "time") ?? "",
-      ),
-    )[0];
-  if (newest === undefined) return { status: "unknown", time: null };
-  const status = newest.status;
-  return {
-    status:
-      typeof status === "number"
-        ? (statusNames[status] ?? "unknown")
-        : "unknown",
-    time: optionalString(newest, "time"),
-  };
-}
-
-/** Reads the Uptime Kuma status page into one aggregate for the server item. */
-export async function readStatusPage(deps: KumaSourceDeps): Promise<KumaData> {
-  const pageUrl = `${deps.baseUrl}/api/status-page/${encodeURIComponent(deps.statusPage)}`;
-  const heartbeatUrl = `${deps.baseUrl}/api/status-page/heartbeat/${encodeURIComponent(deps.statusPage)}`;
+/** Reads the monitors on an Uptime Kuma status page with their heartbeats. */
+export async function readStatusPage(deps: KumaSourceDeps): Promise<RawKuma> {
+  const slug = encodeURIComponent(deps.statusPage);
   const headers = { Accept: "application/json" };
   const [page, heartbeat] = await Promise.all([
-    deps.fetchJson(pageUrl, headers),
-    deps.fetchJson(heartbeatUrl, headers),
+    deps.fetchJson(`${deps.baseUrl}/api/status-page/${slug}`, headers),
+    deps.fetchJson(
+      `${deps.baseUrl}/api/status-page/heartbeat/${slug}`,
+      headers,
+    ),
   ]);
   const heartbeatList = asRecord(
     asRecord(heartbeat, "heartbeat").heartbeatList,
     "heartbeatList",
   );
-  const monitors: Monitor[] = monitorsOnPage(page).map((monitor) => {
-    const newest = newestHeartbeat(heartbeatList[String(monitor.id)]);
-    return { ...monitor, status: newest.status, lastHeartbeatAt: newest.time };
+  const groups = asArray(
+    asRecord(page, "status page").publicGroupList,
+    "publicGroupList",
+  );
+  const monitors: RawMonitor[] = groups.flatMap((group) => {
+    const groupRecord = asRecord(group, "group");
+    const groupName =
+      typeof groupRecord.name === "string" ? groupRecord.name : "";
+    return asArray(groupRecord.monitorList, "monitorList").map((monitor) => {
+      const record = asRecord(monitor, "monitor");
+      const id = numberField(record, "id");
+      return {
+        id,
+        name: stringField(record, "name"),
+        group: groupName,
+        heartbeats: readHeartbeats(heartbeatList[String(id)]),
+      };
+    });
   });
-  return {
-    allUp:
-      monitors.length > 0 &&
-      monitors.every((monitor) => monitor.status === "up"),
-    monitors,
-  };
+  return { statusPage: deps.statusPage, monitors };
 }
 
-/** The server aggregate: all monitors on the configured status page up, or not. */
+/** Reads the configured Uptime Kuma status page for the server item. */
 export function createKumaSource(deps: KumaSourceDeps): PolledSource<"kuma"> {
   return {
     name: "kuma",
-    async scan(items) {
+    async gather(items) {
       const servers = items.filter((item) => item.kind === "server");
-      if (servers.length === 0) return new Map();
-      const data = await readStatusPage(deps);
-      return new Map(servers.map((server) => [server.id, data]));
+      if (servers.length === 0) return {};
+      const page = await readStatusPage(deps).catch((error: unknown) => {
+        throw new SourceFailure("request-failed", errorMessage(error));
+      });
+      const entries: Record<string, RawEntries["kuma"]> = {};
+      for (const server of servers)
+        entries[server.id] = { state: "observed", value: page };
+      return entries;
     },
   };
 }

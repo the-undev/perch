@@ -1,20 +1,22 @@
 import type {
-  Item,
-  LiveSourceName,
-  PolledSourceData,
+  DiscoveredItem,
   PolledSourceName,
-} from "../snapshot.ts";
+  RawEntries,
+  RawFiles,
+} from "../raw.ts";
+import type { Item, LiveSourceName } from "../snapshot.ts";
 
 /**
- * A source that runs in the periodic, unattended scan and feeds the glance.
- * It receives the items with the data of earlier sources filled in, and returns data keyed by
- * item id for the items it applies to. Throwing marks the whole source as failed.
+ * A source that runs in the periodic, unattended gather. It returns raw entries keyed by item id
+ * for the items it applies to, and may read the raw files of sources gathered before it.
+ * Throwing fails the whole source; a problem with one item is recorded as that item's entry.
  */
 export interface PolledSource<N extends PolledSourceName> {
   readonly name: N;
-  scan(
-    items: readonly Item[],
-  ): Promise<ReadonlyMap<string, PolledSourceData[N]>>;
+  gather(
+    items: readonly DiscoveredItem[],
+    earlier: Partial<RawFiles>,
+  ): Promise<Record<string, RawEntries[N]>>;
 }
 
 export type LiveResult<T> =

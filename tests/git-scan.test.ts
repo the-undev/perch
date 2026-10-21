@@ -1,15 +1,12 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { deriveActivity, deriveDrift, deriveGit } from "../src/derivations.ts";
 import { discover } from "../src/discovery.ts";
 import { fileMtime } from "../src/fs.ts";
-import type { DriftThresholds, Item } from "../src/snapshot.ts";
-import {
-  createGitSource,
-  deriveActivity,
-  deriveDrift,
-  scanRepository,
-} from "../src/sources/git.ts";
+import type { RawCommit, RawGit } from "../src/raw.ts";
+import type { DriftThresholds } from "../src/snapshot.ts";
+import { createGitSource, readRepository } from "../src/sources/git.ts";
 import {
   clonedRepo,
   commit,
@@ -25,7 +22,7 @@ const now = new Date("2026-06-01T12:00:00Z");
 const daysBefore = (days: number) =>
   new Date(now.getTime() - days * 86_400_000);
 const thresholds: DriftThresholds = { amberDays: 7, redDays: 30 };
-const deps = { runGit: fixtureGit, mtimeOf: fileMtime, now: () => now };
+const deps = { runGit: fixtureGit, mtimeOf: fileMtime };
 
 let base: string;
 beforeEach(() => {
@@ -35,24 +32,45 @@ afterEach(() => {
   removeDir(base);
 });
 
-describe("uncommitted changes", () => {
-  it("counts modified, staged and untracked files and reports editing", async () => {
+describe("gathering uncommitted changes", () => {
+  it("lists modified, staged, untracked and deleted paths with their codes and mtimes", async () => {
     const { clone } = clonedRepo(base, daysBefore(2));
+    commit(clone, "gone.txt", "Add a file to delete", daysBefore(2));
+    rmSync(join(clone, "gone.txt"));
     writeFile(clone, "README.md", "changed\n", daysBefore(1));
-    writeFile(clone, "staged.txt", "new\n", daysBefore(1));
+    writeFile(clone, "staged.txt", "new\n", daysBefore(3));
     git(clone, ["add", "staged.txt"]);
-    writeFile(clone, "notes/untracked.txt", "untracked\n", daysBefore(1));
+    writeFile(clone, "untracked.txt", "untracked\n", daysBefore(4));
 
-    const data = await scanRepository(clone, thresholds, deps);
+    const raw = await readRepository(clone, deps);
 
-    expect(data.uncommittedCount).toBe(3);
-    expect(data.activity).toBe("editing");
-    expect(data.branch).toBe("main");
+    expect(raw.dirtyFiles).toEqual([
+      {
+        path: "README.md",
+        code: ".M",
+        mtime: { state: "observed", value: daysBefore(1).toISOString() },
+      },
+      {
+        path: "gone.txt",
+        code: ".D",
+        mtime: { state: "absent", reason: "file-deleted" },
+      },
+      {
+        path: "staged.txt",
+        code: "A.",
+        mtime: { state: "observed", value: daysBefore(3).toISOString() },
+      },
+      {
+        path: "untracked.txt",
+        code: "??",
+        mtime: { state: "observed", value: daysBefore(4).toISOString() },
+      },
+    ]);
   });
 });
 
-describe("tracking branch", () => {
-  it("reports commits ahead of and behind the upstream", async () => {
+describe("gathering branches and tracking", () => {
+  it("records ahead and behind on a tracking branch and the commits no remote holds", async () => {
     const { remote, clone } = clonedRepo(base, daysBefore(5));
     const other = join(base, "other");
     git(base, ["clone", "--quiet", remote, other]);
@@ -62,112 +80,253 @@ describe("tracking branch", () => {
     commit(clone, "c.txt", "Local one", daysBefore(2));
     git(clone, ["fetch", "--quiet"]);
 
-    const data = await scanRepository(clone, thresholds, deps);
+    const raw = await readRepository(clone, deps);
 
-    expect(data.upstream).toBe("origin/main");
-    expect([data.ahead, data.behind]).toEqual([1, 2]);
-    expect(data.unpushedCount).toBe(1);
-    expect(data.activity).toBe("in-progress");
-    expect(data.lastCommitAt).toBe(daysBefore(2).toISOString());
+    expect(raw.head).toEqual({ state: "branch", name: "main" });
+    expect(raw.branches[0]?.tracking).toEqual({
+      state: "tracking",
+      upstream: "origin/main",
+      ahead: 1,
+      behind: 2,
+    });
+    expect(
+      raw.unpushedCommits.map((entry) => [entry.subject, entry.committedAt]),
+    ).toEqual([["Local one", daysBefore(2).toISOString()]]);
+    expect(raw.originHead).toEqual({ state: "observed", value: "main" });
+    expect(raw.remotes).toEqual({
+      state: "observed",
+      value: [{ name: "origin", url: remote }],
+    });
   });
 
-  it("leaves ahead and behind null without an upstream", async () => {
+  it("gives a reason for a branch with no upstream and one whose upstream is gone", async () => {
+    const { clone } = clonedRepo(base, daysBefore(5));
+    git(clone, ["switch", "--quiet", "-c", "local-only"]);
+    git(clone, ["switch", "--quiet", "-c", "pushed"]);
+    git(clone, ["push", "--quiet", "-u", "origin", "pushed"]);
+    git(clone, ["push", "--quiet", "origin", "--delete", "pushed"]);
+
+    const raw = await readRepository(clone, deps);
+    const tracking = Object.fromEntries(
+      raw.branches.map((branch) => [branch.name, branch.tracking]),
+    );
+
+    expect(tracking["local-only"]).toEqual({
+      state: "absent",
+      reason: "no-tracking-branch",
+    });
+    expect(tracking.pushed).toEqual({
+      state: "absent",
+      reason: "upstream-gone",
+      upstream: "origin/pushed",
+    });
+  });
+
+  it("states no remote, no origin head, and lists every commit as unpushed", async () => {
     const repo = initRepo(join(base, "local"));
-    commit(repo, "a.txt", "Only commit", daysBefore(1));
+    commit(repo, "a.txt", "First", daysBefore(3));
+    commit(repo, "b.txt", "Second", daysBefore(1));
 
-    const data = await scanRepository(repo, thresholds, deps);
+    const raw = await readRepository(repo, deps);
 
-    expect([data.upstream, data.ahead, data.behind]).toEqual([
-      null,
-      null,
-      null,
+    expect(raw.remotes).toEqual({ state: "absent", reason: "no-remote" });
+    expect(raw.originHead).toEqual({
+      state: "absent",
+      reason: "no-origin-head",
+    });
+    expect(raw.unpushedCommits.map((entry) => entry.subject)).toEqual([
+      "Second",
+      "First",
     ]);
-    expect(data.remotes).toEqual([]);
+  });
+
+  it("states a detached head and a repository with no commits", async () => {
+    const { clone } = clonedRepo(base, daysBefore(5));
+    git(clone, ["switch", "--quiet", "--detach"]);
+    const empty = initRepo(join(base, "empty"));
+
+    const detached = await readRepository(clone, deps);
+    const unborn = await readRepository(empty, deps);
+
+    expect(detached.head).toMatchObject({
+      state: "absent",
+      reason: "detached-head",
+    });
+    expect(unborn.lastCommit).toEqual({
+      state: "absent",
+      reason: "no-commits",
+    });
+    expect(unborn.branches).toEqual([]);
   });
 });
 
-describe("activity state", () => {
-  it("is settled when everything is on the default branch and pushed", async () => {
-    const { remote, clone } = clonedRepo(base, daysBefore(3));
+describe("git source", () => {
+  it("records a broken repository as an error entry and skips the server", async () => {
+    const notRepo = join(base, "not-a-repo");
+    mkdirSync(notRepo);
+    const source = createGitSource({ ...deps, concurrency: 2 });
 
-    const data = await scanRepository(clone, thresholds, deps);
-
-    expect(data.defaultBranch).toBe("main");
-    expect(data.remotes).toEqual([{ name: "origin", url: remote }]);
-    expect(data.activity).toBe("settled");
-    expect(data.drift.driftDays).toBeNull();
-    expect(data.drift.level).toBe("green");
-  });
-
-  it("is in progress when another local branch exists, listing branches newest first", async () => {
-    const { clone } = clonedRepo(base, daysBefore(3));
-    git(clone, ["switch", "--quiet", "-c", "feature"]);
-    commit(clone, "f.txt", "Feature work", daysBefore(1));
-    git(clone, ["switch", "--quiet", "main"]);
-
-    const data = await scanRepository(clone, thresholds, deps);
-
-    expect(data.activity).toBe("in-progress");
-    expect(
-      data.branches.map((branch) => [branch.name, branch.subject]),
-    ).toEqual([
-      ["feature", "Feature work"],
-      ["main", "Initial commit"],
-    ]);
-    expect(data.branches[0]?.lastCommitAt).toBe(daysBefore(1).toISOString());
-    expect(data.branches[1]?.upstream).toBe("origin/main");
-  });
-
-  it("ranks editing over in progress over settled", () => {
-    const settled = {
-      uncommittedCount: 0,
-      unpushedCount: 0,
-      branch: "main",
-      defaultBranch: "main",
-      branchNames: ["main"],
-    };
-
-    expect(deriveActivity(settled)).toBe("settled");
-    expect(deriveActivity({ ...settled, branch: null })).toBe("in-progress");
-    expect(deriveActivity({ ...settled, unpushedCount: 1 })).toBe(
-      "in-progress",
+    const entries = await source.gather(
+      [
+        { id: "broken", name: "broken", kind: "repo", path: notRepo },
+        { id: "server", name: "Silo", kind: "server" },
+      ],
+      {},
     );
+
+    expect(entries.broken?.state).toBe("error");
+    expect(entries.server).toBeUndefined();
+  });
+});
+
+function commitAt(subject: string, date: Date): RawCommit {
+  return { sha: subject, committedAt: date.toISOString(), subject };
+}
+
+function rawGit(overrides: Partial<RawGit>): RawGit {
+  return {
+    head: { state: "branch", name: "main" },
+    lastCommit: {
+      state: "observed",
+      value: commitAt("Initial", daysBefore(20)),
+    },
+    dirtyFiles: [],
+    branches: [
+      {
+        name: "main",
+        lastCommit: commitAt("Initial", daysBefore(20)),
+        tracking: {
+          state: "tracking",
+          upstream: "origin/main",
+          ahead: 0,
+          behind: 0,
+        },
+      },
+    ],
+    remotes: { state: "observed", value: [{ name: "origin", url: "x" }] },
+    originHead: { state: "observed", value: "main" },
+    unpushedCommits: [],
+    ...overrides,
+  };
+}
+
+describe("deriving git data", () => {
+  it("is settled when everything is on the default branch and pushed", () => {
+    const data = deriveGit(rawGit({}), thresholds, now);
+
+    expect([data.activity, data.drift.driftDays, data.drift.level]).toEqual([
+      "settled",
+      null,
+      "green",
+    ]);
+    expect([data.upstream, data.ahead, data.behind]).toEqual([
+      "origin/main",
+      0,
+      0,
+    ]);
+  });
+
+  it("is in progress with another local branch, unpushed commits or a detached head", () => {
+    const feature = {
+      name: "feature",
+      lastCommit: commitAt("Work", daysBefore(1)),
+      tracking: { state: "absent", reason: "no-tracking-branch" } as const,
+    };
+    const main = rawGit({}).branches;
+
     expect(
-      deriveActivity({ ...settled, uncommittedCount: 1, unpushedCount: 1 }),
+      deriveGit(rawGit({ branches: [...main, feature] }), thresholds, now)
+        .activity,
+    ).toBe("in-progress");
+    expect(
+      deriveGit(
+        rawGit({ unpushedCommits: [commitAt("Local", daysBefore(1))] }),
+        thresholds,
+        now,
+      ).activity,
+    ).toBe("in-progress");
+    expect(
+      deriveGit(
+        rawGit({
+          head: { state: "absent", reason: "detached-head", commit: "abc" },
+        }),
+        thresholds,
+        now,
+      ).activity,
+    ).toBe("in-progress");
+  });
+
+  it("ranks editing over in progress", () => {
+    expect(
+      deriveActivity({
+        uncommittedCount: 1,
+        unpushedCount: 1,
+        branch: "main",
+        defaultBranch: "main",
+        branchNames: ["main"],
+      }),
     ).toBe("editing");
   });
-});
 
-describe("drift", () => {
-  it("ages uncommitted work from the dirty files' modification times", async () => {
-    const { clone } = clonedRepo(base, daysBefore(20));
-    writeFile(clone, "old.txt", "old\n", daysBefore(10));
-    writeFile(clone, "new.txt", "new\n", daysBefore(1));
+  it("ages uncommitted work from the oldest existing dirty file, ignoring deleted ones", () => {
+    const data = deriveGit(
+      rawGit({
+        dirtyFiles: [
+          {
+            path: "a",
+            code: ".M",
+            mtime: { state: "observed", value: daysBefore(10).toISOString() },
+          },
+          {
+            path: "b",
+            code: "??",
+            mtime: { state: "observed", value: daysBefore(1).toISOString() },
+          },
+          {
+            path: "c",
+            code: ".D",
+            mtime: { state: "absent", reason: "file-deleted" },
+          },
+        ],
+      }),
+      thresholds,
+      now,
+    );
 
-    const data = await scanRepository(clone, thresholds, deps);
-
+    expect(data.uncommittedCount).toBe(3);
     expect(data.oldestUncommittedAt).toBe(daysBefore(10).toISOString());
-    expect(data.drift.uncommittedDays).toBe(10);
-    expect(data.drift.level).toBe("amber");
+    expect(data.drift).toMatchObject({
+      uncommittedDays: 10,
+      driftDays: 10,
+      level: "amber",
+    });
+    expect(data.activity).toBe("editing");
   });
 
-  it("ages unpushed work from the oldest commit no remote holds", async () => {
-    const { clone } = clonedRepo(base, daysBefore(60));
-    commit(clone, "a.txt", "Unpushed old", daysBefore(40));
-    commit(clone, "b.txt", "Unpushed new", daysBefore(2));
-
-    const data = await scanRepository(clone, thresholds, deps);
+  it("ages unpushed work from the oldest commit no remote holds", () => {
+    const data = deriveGit(
+      rawGit({
+        unpushedCommits: [
+          commitAt("New", daysBefore(2)),
+          commitAt("Old", daysBefore(40)),
+        ],
+      }),
+      thresholds,
+      now,
+    );
 
     expect(data.unpushedCount).toBe(2);
-    expect(data.drift.unpushedDays).toBe(40);
-    expect(data.drift.driftDays).toBe(40);
-    expect(data.drift.level).toBe("red");
+    expect(data.drift).toMatchObject({
+      unpushedDays: 40,
+      driftDays: 40,
+      level: "red",
+    });
   });
 
-  it("judges the larger age against the injected thresholds", () => {
+  it("judges the larger age against the injected thresholds at the observation time", () => {
     const ages = {
-      oldestUncommittedAt: daysBefore(4),
-      oldestUnpushedAt: daysBefore(2),
+      oldestUncommittedAt: daysBefore(4).toISOString(),
+      oldestUnpushedAt: daysBefore(2).toISOString(),
     };
 
     expect(deriveDrift(ages, thresholds, now).level).toBe("green");
@@ -181,43 +340,7 @@ describe("drift", () => {
     expect(deriveDrift(ages, { amberDays: 1, redDays: 4 }, now).level).toBe(
       "red",
     );
-  });
-});
-
-describe("git source", () => {
-  function item(id: string, path: string | null): Item {
-    return {
-      id,
-      name: id,
-      kind: "repo",
-      path,
-      importance: "projects",
-      liveSources: [],
-      sources: {},
-    };
-  }
-
-  it("applies per-item thresholds and records a broken repository as an error", async () => {
-    const { clone } = clonedRepo(base, daysBefore(20));
-    writeFile(clone, "old.txt", "old\n", daysBefore(5));
-    const notRepo = join(base, "not-a-repo");
-    mkdirSync(notRepo);
-    const source = createGitSource({
-      ...deps,
-      thresholdsFor: (id) =>
-        id === "strict" ? { amberDays: 2, redDays: 4 } : thresholds,
-      concurrency: 2,
-    });
-
-    const results = await source.scan([
-      item("strict", clone),
-      item("broken", notRepo),
-      item("server", null),
-    ]);
-
-    expect(results.get("strict")).toMatchObject({ drift: { level: "red" } });
-    expect(results.get("broken")).toHaveProperty("error");
-    expect(results.has("server")).toBe(false);
+    expect(deriveDrift(ages, thresholds, daysBefore(-30)).level).toBe("red");
   });
 });
 

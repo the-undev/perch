@@ -1,4 +1,5 @@
 import { runCommand } from "./exec.ts";
+import { SourceFailure } from "./failure.ts";
 
 /** Message recorded when the Forgejo token has not been put in the keyring. */
 export const forgejoTokenMissing =
@@ -21,7 +22,7 @@ export function createGithubTokenLookup(
   };
 }
 
-/** Reads the Forgejo token from the keyring, rejecting with forgejoTokenMissing when absent. */
+/** Reads the Forgejo token from the keyring, failing the source with token-not-stored when absent. */
 export function createForgejoTokenLookup(
   home: string,
   env: NodeJS.ProcessEnv,
@@ -33,7 +34,9 @@ export function createForgejoTokenLookup(
       { cwd: home, env },
     ).catch(() => "");
     const token = output.trim();
-    if (token === "") throw new Error(forgejoTokenMissing);
+    if (token === "") {
+      throw new SourceFailure("token-not-stored", forgejoTokenMissing);
+    }
     return token;
   };
 }

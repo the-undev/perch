@@ -15,9 +15,15 @@ shows from things that already change. Nothing in it is typed in by hand.
 ## State of the repository
 
 A read-only scanner proof of concept in TypeScript: no Electron and no UI yet.
-`pnpm scan` runs every polled source against this machine and writes
-`scan.local.json` at the repository root, which is gitignored. `pnpm check`
-runs Biome, tsc and vitest. The snapshot schema is `src/snapshot.ts`. Config is
+Two stages, both writing under the gitignored `.scan/`:
+
+- `pnpm gather` reads this machine and writes raw facts, one JSON file per
+  source, to `.scan/raw/`. Types in `src/raw.ts`.
+- `pnpm aggregate` reads only those files and the config, and writes
+  `.scan/snapshot.json`. Types in `src/snapshot.ts`; every derivation rule is
+  in `src/derivations.ts`.
+
+`pnpm scan` runs both. `pnpm check` runs Biome, tsc and vitest. Config is
 `~/.config/perch/config.toml`, or `config.example.toml` when that is absent.
 
 ## Conventions

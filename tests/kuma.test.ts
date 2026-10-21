@@ -1,18 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { deriveKuma } from "../src/derivations.ts";
+import { SourceFailure } from "../src/failure.ts";
 import type { FetchJson } from "../src/http.ts";
-import type { Item } from "../src/snapshot.ts";
+import type { DiscoveredItem, RawKuma } from "../src/raw.ts";
 import { createKumaSource } from "../src/sources/kuma.ts";
 
 const base = "http://kuma.test";
-const server: Item = {
-  id: "server",
-  name: "Silo",
-  kind: "server",
-  path: null,
-  importance: "projects",
-  liveSources: [],
-  sources: {},
-};
+const server: DiscoveredItem = { id: "server", name: "Silo", kind: "server" };
 
 function fetchFrom(responses: Record<string, unknown>): FetchJson {
   return async (url) => {
@@ -21,88 +15,113 @@ function fetchFrom(responses: Record<string, unknown>): FetchJson {
   };
 }
 
-const page = {
-  publicGroupList: [
-    {
-      name: "Media",
-      monitorList: [
-        { id: 1, name: "Plex" },
-        { id: 2, name: "Downloads" },
-      ],
-    },
-    { name: "Infra", monitorList: [{ id: 3, name: "Forgejo" }] },
-  ],
-};
-
-describe("kuma source", () => {
-  it("aggregates the newest heartbeat of every monitor on the status page", async () => {
-    const source = createKumaSource({
-      baseUrl: base,
-      statusPage: "perch",
-      fetchJson: fetchFrom({
-        [`${base}/api/status-page/perch`]: page,
-        [`${base}/api/status-page/heartbeat/perch`]: {
-          heartbeatList: {
-            "1": [
-              { status: 0, time: "2026-10-21 08:00:00.000" },
-              { status: 1, time: "2026-10-21 08:01:00.000" },
-            ],
-            "2": [{ status: 0, time: "2026-10-21 08:01:00.000" }],
-          },
-        },
-      }),
-    });
-
-    const results = await source.scan([server]);
-
-    expect(results.get("server")).toEqual({
-      allUp: false,
-      monitors: [
-        {
-          id: 1,
-          name: "Plex",
-          status: "up",
-          lastHeartbeatAt: "2026-10-21 08:01:00.000",
-        },
-        {
-          id: 2,
-          name: "Downloads",
-          status: "down",
-          lastHeartbeatAt: "2026-10-21 08:01:00.000",
-        },
-        { id: 3, name: "Forgejo", status: "unknown", lastHeartbeatAt: null },
-      ],
-    });
-  });
-
-  it("is all up only when every monitor is up", async () => {
+describe("gathering the kuma status page", () => {
+  it("records each monitor with its group and heartbeats as returned", async () => {
     const source = createKumaSource({
       baseUrl: base,
       statusPage: "perch",
       fetchJson: fetchFrom({
         [`${base}/api/status-page/perch`]: {
-          publicGroupList: [page.publicGroupList[1]],
+          publicGroupList: [
+            { name: "Media", monitorList: [{ id: 1, name: "Plex" }] },
+            { name: "Infra", monitorList: [{ id: 3, name: "Forgejo" }] },
+          ],
         },
         [`${base}/api/status-page/heartbeat/perch`]: {
           heartbeatList: {
-            "3": [{ status: 1, time: "2026-10-21 08:01:00.000" }],
+            "1": [{ status: 1, time: "2026-10-21 08:01:00.000", msg: "" }],
           },
         },
       }),
     });
 
-    expect((await source.scan([server])).get("server")).toMatchObject({
-      allUp: true,
+    const entries = await source.gather([server], {});
+
+    expect(entries.server).toEqual({
+      state: "observed",
+      value: {
+        statusPage: "perch",
+        monitors: [
+          {
+            id: 1,
+            name: "Plex",
+            group: "Media",
+            heartbeats: [
+              { status: 1, time: "2026-10-21 08:01:00.000", message: "" },
+            ],
+          },
+          { id: 3, name: "Forgejo", group: "Infra", heartbeats: [] },
+        ],
+      },
     });
   });
 
-  it("fails as a whole when the status page cannot be read", async () => {
+  it("fails as a whole with request-failed when the page cannot be read", async () => {
     const source = createKumaSource({
       baseUrl: base,
       statusPage: "missing",
       fetchJson: fetchFrom({}),
     });
 
-    await expect(source.scan([server])).rejects.toThrow(/request to .* failed/);
+    const failure = await source
+      .gather([server], {})
+      .catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(SourceFailure);
+    expect((failure as SourceFailure).reason).toBe("request-failed");
+  });
+});
+
+describe("deriving the server aggregate", () => {
+  const monitor = (
+    id: number,
+    heartbeats: RawKuma["monitors"][number]["heartbeats"],
+  ) => ({
+    id,
+    name: `m${id}`,
+    group: "g",
+    heartbeats,
+  });
+
+  it("uses each monitor's newest heartbeat and is all up only when every monitor is up", () => {
+    const raw: RawKuma = {
+      statusPage: "perch",
+      monitors: [
+        monitor(1, [
+          { status: 1, time: "2026-10-21 08:01:00.000", message: "" },
+          { status: 0, time: "2026-10-21 08:00:00.000", message: "" },
+        ]),
+        monitor(2, [
+          { status: 0, time: "2026-10-21 08:01:00.000", message: "" },
+        ]),
+        monitor(3, []),
+      ],
+    };
+
+    expect(deriveKuma(raw)).toEqual({
+      allUp: false,
+      monitors: [
+        {
+          id: 1,
+          name: "m1",
+          status: "up",
+          lastHeartbeatAt: "2026-10-21 08:01:00.000",
+        },
+        {
+          id: 2,
+          name: "m2",
+          status: "down",
+          lastHeartbeatAt: "2026-10-21 08:01:00.000",
+        },
+        { id: 3, name: "m3", status: "unknown", lastHeartbeatAt: null },
+      ],
+    });
+    expect(
+      deriveKuma({
+        statusPage: "perch",
+        monitors: [raw.monitors[0] ?? monitor(9, [])],
+      }).allUp,
+    ).toBe(true);
+    expect(deriveKuma({ statusPage: "perch", monitors: [] }).allUp).toBe(false);
   });
 });

@@ -1,8 +1,15 @@
+import { SourceFailure } from "../failure.ts";
 import { errorMessage } from "../fs.ts";
 import type { FetchJson } from "../http.ts";
 import { asArray, asRecord, optionalString, stringField } from "../json.ts";
-import { forgeTargets, type RemoteLocation } from "../remote-url.ts";
-import type { CiRun, CiState, ForgeData, ItemError } from "../snapshot.ts";
+import type {
+  Observed,
+  RawEntries,
+  RawForgeRemote,
+  RawGithub,
+  RawGithubRun,
+} from "../raw.ts";
+import { forgeRemoteFor } from "../remote-url.ts";
 import { readPullRequest } from "./pull-request.ts";
 import type { PolledSource } from "./source.ts";
 
@@ -15,51 +22,43 @@ export interface GithubSourceDeps {
   hostAccounts: Readonly<Record<string, string>>;
 }
 
-/** Maps a GitHub Actions run's status and conclusion to perch's CI state. */
-export function githubCiState(
-  status: string,
-  conclusion: string | null,
-): CiState {
-  if (status !== "completed") return "pending";
-  if (conclusion === "success") return "success";
-  if (
-    conclusion === "failure" ||
-    conclusion === "timed_out" ||
-    conclusion === "startup_failure" ||
-    conclusion === "action_required"
-  ) {
-    return "failure";
-  }
-  return "neutral";
-}
-
-function latestRun(value: unknown): CiRun | null {
+function latestRun(
+  value: unknown,
+): Observed<RawGithubRun, "no-runs-on-default-branch"> {
   const runs = asArray(asRecord(value, "runs").workflow_runs, "workflow_runs");
-  if (runs.length === 0) return null;
+  if (runs.length === 0) {
+    return { state: "absent", reason: "no-runs-on-default-branch" };
+  }
   const run = asRecord(runs[0], "workflow run");
-  const status = stringField(run, "status");
   const conclusion = optionalString(run, "conclusion");
   return {
-    name: optionalString(run, "name") ?? "workflow",
-    state: githubCiState(status, conclusion),
-    forgeState: conclusion === null ? status : `${status}/${conclusion}`,
-    url: optionalString(run, "html_url"),
-    createdAt: optionalString(run, "created_at"),
+    state: "observed",
+    value: {
+      name: stringField(run, "name"),
+      status: stringField(run, "status"),
+      conclusion:
+        conclusion === null
+          ? { state: "absent", reason: "run-not-completed" }
+          : { state: "observed", value: conclusion },
+      url: stringField(run, "html_url"),
+      createdAt: stringField(run, "created_at"),
+    },
   };
 }
 
 async function readRepository(
-  location: RemoteLocation,
+  remote: RawForgeRemote,
+  account: string,
   token: string,
   fetchJson: FetchJson,
-): Promise<ForgeData> {
+): Promise<RawGithub> {
   const headers = {
     Authorization: `Bearer ${token}`,
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
     "User-Agent": "perch",
   };
-  const base = `${apiBase}/repos/${location.owner}/${location.repo}`;
+  const base = `${apiBase}/repos/${remote.owner}/${remote.repo}`;
   const repository = asRecord(await fetchJson(base, headers), "repository");
   const defaultBranch = stringField(repository, "default_branch");
   const [pulls, runs] = await Promise.all([
@@ -70,45 +69,66 @@ async function readRepository(
     ),
   ]);
   return {
-    host: location.host,
-    owner: location.owner,
-    repo: location.repo,
+    remote,
+    account,
     defaultBranch,
     openPullRequests: asArray(pulls, "pulls").map(readPullRequest),
-    latestCi: latestRun(runs),
+    latestRun: latestRun(runs),
   };
 }
 
-/** Reads open pull requests and the latest default-branch CI run for repositories on GitHub. */
+/** Reads open pull requests and the latest default-branch run for repositories on GitHub. */
 export function createGithubSource(
   deps: GithubSourceDeps,
 ): PolledSource<"github"> {
   return {
     name: "github",
-    async scan(items) {
-      const results = new Map<string, ForgeData | ItemError>();
+    async gather(items, earlier) {
+      const git = earlier.git;
+      if (git === undefined) {
+        throw new SourceFailure("unexpected", "no git data to find remotes in");
+      }
       const tokens = new Map<string, Promise<string>>();
       const tokenFor = (account: string): Promise<string> => {
         const cached = tokens.get(account) ?? deps.tokenFor(account);
         tokens.set(account, cached);
         return cached;
       };
-      const targets = forgeTargets(items, Object.keys(deps.hostAccounts));
+      const hosts = Object.keys(deps.hostAccounts);
+      const entries: Record<string, RawEntries["github"]> = {};
       await Promise.all(
-        targets.map(async ({ itemId, location }) => {
+        items.map(async (item) => {
+          if (item.kind === "server") return;
+          const lookup = forgeRemoteFor(git.items[item.id], hosts);
+          if (lookup.state === "no-git-data") {
+            entries[item.id] = {
+              state: "error",
+              error: "no git data for this item",
+            };
+            return;
+          }
+          if (lookup.state === "no-remote") {
+            entries[item.id] = { state: "absent", reason: "no-github-remote" };
+            return;
+          }
           try {
-            const account = deps.hostAccounts[location.host] ?? "";
+            const account = deps.hostAccounts[lookup.remote.host] ?? "";
             const token = await tokenFor(account);
-            results.set(
-              itemId,
-              await readRepository(location, token, deps.fetchJson),
-            );
+            entries[item.id] = {
+              state: "observed",
+              value: await readRepository(
+                lookup.remote,
+                account,
+                token,
+                deps.fetchJson,
+              ),
+            };
           } catch (error) {
-            results.set(itemId, { error: errorMessage(error) });
+            entries[item.id] = { state: "error", error: errorMessage(error) };
           }
         }),
       );
-      return results;
+      return entries;
     },
   };
 }

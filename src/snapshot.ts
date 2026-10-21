@@ -1,14 +1,9 @@
-// The snapshot schema written to scan.local.json. These types are its source of truth.
+// The snapshot written to .scan/snapshot.json by `pnpm aggregate`. Every value here is derived
+// from the raw files by src/derivations.ts. These types are the snapshot's source of truth.
 
-export type ItemKind = "repo" | "vault" | "server";
+import type { FailureReason, ItemKind, PolledSourceName } from "./raw.ts";
 
-export type PolledSourceName =
-  | "git"
-  | "roadmap"
-  | "claudeSessions"
-  | "github"
-  | "forgejo"
-  | "kuma";
+export type { ItemKind, PolledSourceName };
 
 export type LiveSourceName = "dockerContainers";
 
@@ -189,14 +184,17 @@ export interface Item {
 
 export interface SourceStatus {
   state: "ok" | "error";
+  reason: FailureReason | null;
   error: string | null;
   lastSucceededAt: string | null;
   durationMs: number;
 }
 
 export interface Snapshot {
+  /** When the raw files were gathered, and how long gathering took. */
   scannedAt: string;
   durationMs: number;
+  aggregatedAt: string;
   configPath: string;
   /** Problems outside any one source, such as a configured root that does not exist. */
   warnings: string[];

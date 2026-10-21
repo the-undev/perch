@@ -1,10 +1,10 @@
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { Item } from "../src/snapshot.ts";
+import { deriveClaudeSessions } from "../src/derivations.ts";
 import {
   createClaudeSessionsSource,
   encodeProjectPath,
-  lastSessionAt,
+  readSessions,
 } from "../src/sources/claude-sessions.ts";
 import { makeTempDir, removeDir, writeFile } from "./helpers/git-fixture.ts";
 
@@ -30,17 +30,21 @@ describe("encodeProjectPath", () => {
   });
 });
 
-describe("lastSessionAt", () => {
-  it("returns the newest transcript mtime and ignores other files", async () => {
+describe("readSessions", () => {
+  it("lists every transcript with its mtime and ignores other files", async () => {
     const encoded = encodeProjectPath("/home/owner/dev/perch");
-    const newest = new Date("2026-05-03T10:00:00Z");
+    writeFile(
+      projectsDir,
+      `${encoded}/b.jsonl`,
+      "{}\n",
+      new Date("2026-05-03T10:00:00Z"),
+    );
     writeFile(
       projectsDir,
       `${encoded}/a.jsonl`,
       "{}\n",
       new Date("2026-05-01T10:00:00Z"),
     );
-    writeFile(projectsDir, `${encoded}/b.jsonl`, "{}\n", newest);
     writeFile(
       projectsDir,
       `${encoded}/notes.txt`,
@@ -48,43 +52,73 @@ describe("lastSessionAt", () => {
       new Date("2026-05-09T10:00:00Z"),
     );
 
-    expect(await lastSessionAt(projectsDir, "/home/owner/dev/perch")).toEqual(
-      newest,
-    );
+    expect(await readSessions(projectsDir, "/home/owner/dev/perch")).toEqual({
+      directory: encoded,
+      transcripts: {
+        state: "observed",
+        value: [
+          { file: "a.jsonl", mtime: "2026-05-01T10:00:00.000Z" },
+          { file: "b.jsonl", mtime: "2026-05-03T10:00:00.000Z" },
+        ],
+      },
+    });
   });
 
-  it("returns null for a directory with no sessions", async () => {
-    expect(await lastSessionAt(projectsDir, "/home/owner/dev/none")).toBeNull();
+  it("states that a directory without sessions has no project directory", async () => {
+    expect(await readSessions(projectsDir, "/home/owner/dev/none")).toEqual({
+      directory: "-home-owner-dev-none",
+      transcripts: { state: "absent", reason: "no-project-directory" },
+    });
   });
-});
 
-describe("claude sessions source", () => {
-  it("records a time per item with a path and skips the server", async () => {
-    const when = new Date("2026-05-03T10:00:00Z");
+  it("gathers an entry per item with a path and skips the server", async () => {
     writeFile(
       projectsDir,
       join(encodeProjectPath("/work/repo"), "s.jsonl"),
       "{}\n",
-      when,
     );
-    const item = (id: string, path: string | null): Item => ({
-      id,
-      name: id,
-      kind: "repo",
-      path,
-      importance: "projects",
-      liveSources: [],
-      sources: {},
-    });
 
-    const results = await createClaudeSessionsSource(projectsDir).scan([
-      item("repo", "/work/repo"),
-      item("quiet", "/work/quiet"),
-      item("server", null),
-    ]);
+    const entries = await createClaudeSessionsSource(projectsDir).gather(
+      [
+        { id: "repo", name: "repo", kind: "repo", path: "/work/repo" },
+        { id: "server", name: "Silo", kind: "server" },
+      ],
+      {},
+    );
 
-    expect(results.get("repo")).toEqual({ lastSessionAt: when.toISOString() });
-    expect(results.get("quiet")).toEqual({ lastSessionAt: null });
-    expect(results.has("server")).toBe(false);
+    expect(entries.repo?.state).toBe("observed");
+    expect(entries.server).toBeUndefined();
+  });
+});
+
+describe("deriving the last session", () => {
+  it("takes the newest transcript mtime", () => {
+    expect(
+      deriveClaudeSessions({
+        directory: "-x",
+        transcripts: {
+          state: "observed",
+          value: [
+            { file: "a.jsonl", mtime: "2026-05-03T10:00:00.000Z" },
+            { file: "b.jsonl", mtime: "2026-05-01T10:00:00.000Z" },
+          ],
+        },
+      }),
+    ).toEqual({ lastSessionAt: "2026-05-03T10:00:00.000Z" });
+  });
+
+  it("is null without a project directory or transcripts", () => {
+    expect(
+      deriveClaudeSessions({
+        directory: "-x",
+        transcripts: { state: "absent", reason: "no-project-directory" },
+      }),
+    ).toEqual({ lastSessionAt: null });
+    expect(
+      deriveClaudeSessions({
+        directory: "-x",
+        transcripts: { state: "observed", value: [] },
+      }),
+    ).toEqual({ lastSessionAt: null });
   });
 });

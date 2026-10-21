@@ -12,7 +12,11 @@ Status: open
 
 - The home server (Silo) is a source: one aggregate status derived
   from Uptime Kuma, see [daily-glance](daily-glance.md). This replaces the
-  spec's link-to-dashboard tile.
+  spec's link-to-dashboard tile. Deferred on 21 October 2026: server and
+  service monitoring (the Kuma aggregate, the container list, the parked
+  controls) is its own feature with its own prototype, after projects work
+  fully. The kuma source ships disabled in config until then, which also
+  removes its timeout from every scan.
 
 - Last Claude Code session time per project comes from the timestamp of the
   last message inside the newest transcript, not file mtimes, which

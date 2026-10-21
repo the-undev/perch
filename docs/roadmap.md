@@ -62,6 +62,13 @@ The hybrid design: this machine pushes the latest scan as JSON to the server,
 which serves a read-only page. Nothing in the current design has to change to
 add it. Not wanted yet.
 
+## Server monitoring
+
+Deferred as a whole: the Uptime Kuma aggregate, the live container list and
+the server tile. Projects come first; server and service monitoring is its
+own feature with its own prototype and sources. The scanner's kuma source
+exists and stays disabled in config until this is picked up.
+
 ## Server container controls
 
 Stop, restart and update a container from the server detail page.

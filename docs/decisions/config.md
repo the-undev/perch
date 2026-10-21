@@ -20,8 +20,11 @@ Decided 20 October 2026.
   with `secret-tool store` and read with `secret-tool lookup`. All three
   are read-only tokens: fine-grained GitHub PATs (contents, metadata,
   actions and pull requests, read only) and a Forgejo read-only token. This
-  replaces the spec's `gh auth token` route, whose tokens carry write
-  scopes perch must not hold. Human backup copies live in a password manager, which
+  replaces the spec's `gh auth token` route, for two reasons: those tokens
+  carry write scopes perch must not hold, and perch must not share state
+  with the `gh` the owner uses interactively, which has one active account
+  that switches; the app integrates with the forges directly, not through
+  another tool's login. Human backup copies live in a password manager, which
   is never read at run time. Decided 21 October 2026.
 
 ## Known contents so far

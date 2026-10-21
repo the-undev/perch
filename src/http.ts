@@ -10,6 +10,8 @@ export function createFetchJson(timeoutMs: number): FetchJson {
     const response = await fetch(url, {
       headers,
       signal: AbortSignal.timeout(timeoutMs),
+    }).catch((error: unknown) => {
+      throw new Error(`request to ${url} failed`, { cause: error });
     });
     if (!response.ok) {
       throw new Error(`${response.status} ${response.statusText} from ${url}`);

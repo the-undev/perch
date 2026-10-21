@@ -1,42 +1,26 @@
 import { runCommand } from "./exec.ts";
-import { SourceFailure } from "./failure.ts";
 
-/** Message recorded when the Forgejo token has not been put in the keyring. */
-export const forgejoTokenMissing =
-  "Forgejo token is not yet stored in the keyring (secret-tool lookup service perch key forgejo-token found nothing)";
+/** Reads read-only forge tokens from the desktop keyring by key, under service perch. */
+export type TokenLookup = (key: string) => Promise<string>;
 
-/** Reads a GitHub account's token from gh, which keeps it in the desktop keyring. */
-export function createGithubTokenLookup(
-  home: string,
-  env: NodeJS.ProcessEnv,
-): (account: string) => Promise<string> {
-  return async (account) => {
-    const token = (
-      await runCommand("gh", ["auth", "token", "--user", account], {
-        cwd: home,
-        env,
-      })
-    ).trim();
-    if (token === "") throw new Error(`gh has no token for ${account}`);
-    return token;
-  };
+/** The error for a key with no keyring entry, naming the command that stores it. */
+export function tokenMissing(key: string): string {
+  return `no token in the keyring under service perch key ${key}; store it with: secret-tool store --label "perch ${key}" service perch key ${key}`;
 }
 
-/** Reads the Forgejo token from the keyring, failing the source with token-not-stored when absent. */
-export function createForgejoTokenLookup(
+/** Looks tokens up with secret-tool; a failed or empty lookup rejects with tokenMissing. */
+export function createKeyringTokenLookup(
   home: string,
   env: NodeJS.ProcessEnv,
-): () => Promise<string> {
-  return async () => {
+): TokenLookup {
+  return async (key) => {
     const output = await runCommand(
       "secret-tool",
-      ["lookup", "service", "perch", "key", "forgejo-token"],
+      ["lookup", "service", "perch", "key", key],
       { cwd: home, env },
     ).catch(() => "");
     const token = output.trim();
-    if (token === "") {
-      throw new SourceFailure("token-not-stored", forgejoTokenMissing);
-    }
+    if (token === "") throw new Error(tokenMissing(key));
     return token;
   };
 }

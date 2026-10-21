@@ -10,12 +10,15 @@ export interface ItemOverride {
 }
 
 export interface ForgeAccount {
+  /** The user or organisation whose own repositories this account lists. */
   account: string;
-  /** Remote hosts or SSH aliases whose repositories this account's token reads. */
-  hosts: string[];
+  /** The keyring key, under service perch, holding the account's read-only token. */
+  key: string;
 }
 
 export interface ForgeConfig {
+  /** Remote hosts or SSH aliases that are this forge. */
+  hosts: string[];
   accounts: ForgeAccount[];
   /** Forks worth tracking, as owner/name; every other fork is skipped. */
   trackedForks: string[];
@@ -134,12 +137,13 @@ function parseForge(forge: Table, where: string): ForgeConfig {
     throw new Error(`config: ${where}accounts must be an array of tables`);
   }
   return {
+    hosts: stringArray(forge.hosts, `${where}hosts`),
     accounts: accounts.map((entry, index) => {
       const name = `${where}accounts[${index}]`;
       if (!isTable(entry)) throw new Error(`config: ${name} must be a table`);
       return {
         account: string(entry, "account", `${name}.`),
-        hosts: stringArray(entry.hosts, `${name}.hosts`),
+        key: string(entry, "key", `${name}.`),
       };
     }),
     trackedForks: stringArray(forge.tracked_forks, `${where}tracked_forks`),
@@ -214,12 +218,15 @@ export function parseConfig(text: string, home: string): Config {
   };
 }
 
-/** Maps each remote host of a forge to the account whose token reads it. */
-export function hostAccounts(forge: ForgeConfig): Record<string, string> {
-  return Object.fromEntries(
-    forge.accounts.flatMap((entry) =>
-      entry.hosts.map((host) => [host, entry.account]),
-    ),
+/** The configured account for a repository owner, matched without case, or null. */
+export function accountForOwner(
+  forge: ForgeConfig,
+  owner: string,
+): ForgeAccount | null {
+  return (
+    forge.accounts.find(
+      (entry) => entry.account.toLowerCase() === owner.toLowerCase(),
+    ) ?? null
   );
 }
 

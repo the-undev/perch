@@ -64,21 +64,27 @@ finalised_commits = 10
 # Placeholder: nothing reads this until the slow lane exists.
 archived_interval_hours = 24
 
-# Each account lists its own repositories with its gh token, and reads any
-# remote on its hosts. github-work is the SSH alias for the-undev.
+# Each account lists the repositories it owns, read with its own read-only
+# token from the keyring (secret-tool, service perch, the key named here; see
+# docs/tokens.md). A remote that no listing holds is looked up with the token
+# of the account that owns it. Hosts are the remote hosts and SSH aliases that
+# are this forge.
 [forges.github]
+hosts = ["github.com", "github-work"]
 accounts = [
-  { account = "finch", hosts = ["github.com"] },
-  { account = "the-undev", hosts = ["github-work"] },
+  { account = "finch", key = "github-finch" },
+  { account = "the-undev", key = "github-the-undev" },
+  { account = "skiff-app", key = "github-skiff-app" },
 ]
 # Forks to track, as owner/name. Every other fork is skipped.
 tracked_forks = []
 
-# One token, from the keyring, reads every Forgejo host alias.
 [forges.forgejo]
 base_url = "http://forge.example.lan:3000"
+hosts = ["forgejo", "forge-work", "forge.example.lan"]
 accounts = [
-  { account = "finch", hosts = ["forgejo", "forge-work", "forge.example.lan"] },
+  { account = "finch", key = "forgejo-finch" },
+  { account = "the-undev", key = "forgejo-the-undev" },
 ]
 tracked_forks = []
 

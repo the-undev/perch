@@ -58,8 +58,8 @@ const bundle: RawBundle = {
   status: okStatus({
     forgejo: {
       state: "error",
-      reason: "token-not-stored",
-      message: "not stored",
+      reason: "request-failed",
+      message: "unreachable",
       lastSucceededAt: { state: "absent", reason: "never-succeeded" },
       durationMs: 3,
     },
@@ -124,8 +124,8 @@ describe("aggregate", () => {
 
     expect(snapshot.sources.forgejo).toEqual({
       state: "error",
-      reason: "token-not-stored",
-      error: "not stored",
+      reason: "request-failed",
+      error: "unreachable",
       lastSucceededAt: null,
       durationMs: 3,
     });

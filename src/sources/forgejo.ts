@@ -9,8 +9,6 @@ const pageSize = 50;
 
 export interface ForgejoClientDeps {
   fetchJson: FetchJson;
-  /** Resolves with the read-only API token, or rejects with a token-not-stored SourceFailure. */
-  token: () => Promise<string>;
   baseUrl: string;
   /** How many default-branch commits to read as finalised. */
   finalisedCommits: number;
@@ -31,19 +29,19 @@ function readCommitStatus(value: unknown): RawCommitStatus {
 }
 
 /**
- * Forgejo over its v1 API with the one keyring token. Its CI is the default branch's combined
+ * Forgejo over its v1 API, with read-only tokens sent as token. Its CI is the default branch's combined
  * commit status, since its Actions API cannot filter runs by branch.
  */
 export function createForgejoClient(deps: ForgejoClientDeps): ForgeClient {
   const api = `${deps.baseUrl}/api/v1`;
-  const headers = async () => ({
-    Authorization: `token ${await deps.token()}`,
+  const headers = (token: string) => ({
+    Authorization: `token ${token}`,
     Accept: "application/json",
   });
   return {
     forge: "forgejo",
-    async listRepos() {
-      const auth = await headers();
+    async listRepos(token) {
+      const auth = headers(token);
       const repos = await readAllPages(
         (page) => `${api}/user/repos?limit=${pageSize}&page=${page}`,
         pageSize,
@@ -51,13 +49,13 @@ export function createForgejoClient(deps: ForgejoClientDeps): ForgeClient {
       );
       return repos.map(readRepoInfo);
     },
-    async getRepo(owner, name) {
+    async getRepo(owner, name, token) {
       return readRepoInfo(
-        await deps.fetchJson(`${api}/repos/${owner}/${name}`, await headers()),
+        await deps.fetchJson(`${api}/repos/${owner}/${name}`, headers(token)),
       );
     },
-    async readDetails(info) {
-      const auth = await headers();
+    async readDetails(info, token) {
+      const auth = headers(token);
       const base = `${api}/repos/${info.fullName}`;
       const branch = encodeURIComponent(info.defaultBranch);
       const [pulls, status, commits] = await Promise.all([
@@ -75,7 +73,8 @@ export function createForgejoClient(deps: ForgejoClientDeps): ForgeClient {
           forge: "forgejo",
           combinedStatus: {
             state: typeof combined.state === "string" ? combined.state : "",
-            statuses: asArray(combined.statuses, "statuses").map(
+            // Forgejo sends null, not an empty list, for a commit with no statuses.
+            statuses: asArray(combined.statuses ?? [], "statuses").map(
               readCommitStatus,
             ),
           },

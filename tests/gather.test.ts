@@ -131,7 +131,7 @@ describe("gather", () => {
     const broken = sources({
       local: failing(
         "local",
-        new SourceFailure("token-not-stored", "not stored"),
+        new SourceFailure("request-failed", "unreachable"),
       ),
       roadmap,
     });
@@ -144,8 +144,8 @@ describe("gather", () => {
     expect(seen).toEqual([["dev/a"], ["dev/a"]]);
     expect(third.sources.local).toMatchObject({
       state: "error",
-      reason: "token-not-stored",
-      message: "not stored",
+      reason: "request-failed",
+      message: "unreachable",
       lastSucceededAt: {
         state: "observed",
         value: firstLocal.state === "ok" ? firstLocal.lastSucceededAt : "",

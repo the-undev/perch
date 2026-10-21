@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   driftThresholdsFor,
-  hostAccounts,
   importanceFor,
   loadConfig,
   parseConfig,
@@ -43,10 +42,16 @@ describe("example config", () => {
     expect(config.forges.finalisedCommits).toBe(10);
     expect(config.forges.archivedIntervalHours).toBe(24);
     expect(config.forges.github.trackedForks).toEqual([]);
-    expect(hostAccounts(config.forges.github)).toEqual({
-      "github.com": "finch",
-      "github-work": "the-undev",
-    });
+    expect(config.forges.github.hosts).toEqual(["github.com", "github-work"]);
+    expect(config.forges.github.accounts).toEqual([
+      { account: "finch", key: "github-finch" },
+      { account: "the-undev", key: "github-the-undev" },
+      { account: "skiff-app", key: "github-skiff-app" },
+    ]);
+    expect(config.forges.forgejo.accounts.map((entry) => entry.key)).toEqual([
+      "forgejo-finch",
+      "forgejo-the-undev",
+    ]);
     expect(config.forges.forgejo.baseUrl).toBe("http://forge.example.lan:3000");
     expect(config.server.kumaStatusPage).toBe("perch");
   });

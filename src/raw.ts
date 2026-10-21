@@ -204,7 +204,7 @@ export interface RawForgeRepo {
   info: RawForgeRepoInfo;
   /** Listed under a configured account, or looked up because a local clone's remote names it. */
   foundBy: "account-listing" | "local-remote";
-  /** The account whose token read it. */
+  /** The configured account whose token read it. */
   account: string;
   /** Other lower-case owner/name forms that local remotes used and the forge redirected. */
   aliases: string[];
@@ -285,10 +285,7 @@ export interface RawSourceFile<N extends PolledSourceName> {
 
 export type RawFiles = { [N in PolledSourceName]: RawSourceFile<N> };
 
-export type FailureReason =
-  | "token-not-stored"
-  | "request-failed"
-  | "unexpected";
+export type FailureReason = "request-failed" | "unexpected";
 
 export type SourceStatus =
   | { state: "ok"; lastSucceededAt: string; durationMs: number }

@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { deriveForge, githubCiState } from "../src/derivations.ts";
-import { SourceFailure } from "../src/failure.ts";
 import type { FetchJson } from "../src/http.ts";
 import type { RawFiles, RawForgeRepoInfo } from "../src/raw.ts";
 import { parseRemoteUrl } from "../src/remote-url.ts";
-import { forgejoTokenMissing } from "../src/secrets.ts";
+import { tokenMissing } from "../src/secrets.ts";
 import {
   createForgeAccountsSource,
   createForgeSource,
@@ -21,27 +20,30 @@ function info(
   return { ...forgeRepo(fullName, {}).info, ...extra };
 }
 
-function fakeClient(
-  repos: Record<string, RawForgeRepoInfo[]>,
-  lookups: Record<string, RawForgeRepoInfo>,
-) {
+/** A client whose token stands for an account: it lists and reads what that token may. */
+function fakeClient(readable: Record<string, RawForgeRepoInfo[]>): {
+  client: ForgeClient;
+  calls: string[];
+} {
   const calls: string[] = [];
+  const visible = (token: string) => readable[token] ?? [];
   const client: ForgeClient = {
     forge: "github",
-    listRepos: async (account) => {
-      calls.push(`list ${account}`);
-      const listed = repos[account];
-      if (listed === undefined) throw new Error(`no such account ${account}`);
-      return listed;
+    listRepos: async (token) => {
+      calls.push(`list with ${token}`);
+      return visible(token);
     },
-    getRepo: async (owner, name, account) => {
-      calls.push(`get ${owner}/${name} as ${account}`);
-      const found = lookups[`${owner}/${name}`];
+    getRepo: async (owner, name, token) => {
+      calls.push(`get ${owner}/${name} with ${token}`);
+      const found = visible(token).find(
+        (repo) =>
+          repo.fullName.toLowerCase() === `${owner}/${name}`.toLowerCase(),
+      );
       if (found === undefined) throw new Error(`HTTP 404 for ${owner}/${name}`);
       return found;
     },
-    readDetails: async (repo) => {
-      calls.push(`details ${repo.fullName}`);
+    readDetails: async (repo, token) => {
+      calls.push(`details ${repo.fullName} with ${token}`);
       return {
         openPullRequests: [],
         ci: {
@@ -55,12 +57,32 @@ function fakeClient(
   return { client, calls };
 }
 
+/** Keyring entries by key; a key with no entry rejects as the real lookup does. */
+function fakeKeyring(entries: Record<string, string>) {
+  const asked: string[] = [];
+  const tokenFor = async (key: string) => {
+    asked.push(key);
+    const token = entries[key];
+    if (token === undefined) throw new Error(tokenMissing(key));
+    return token;
+  };
+  return { tokenFor, asked };
+}
+
 const github = {
+  hosts: ["github.com", "github-work"],
   accounts: [
-    { account: "finch", hosts: ["github.com"] },
-    { account: "the-undev", hosts: ["github-work"] },
+    { account: "finch", key: "github-finch" },
+    { account: "the-undev", key: "github-the-undev" },
+    { account: "skiff-app", key: "github-skiff-app" },
   ],
   trackedForks: ["finch/kept-fork"],
+};
+
+const allKeys = {
+  "github-finch": "finch-token",
+  "github-the-undev": "undev-token",
+  "github-skiff-app": "org-token",
 };
 
 describe("parseRemoteUrl", () => {
@@ -101,25 +123,36 @@ describe("parseRemoteUrl", () => {
 });
 
 describe("forge accounts source", () => {
-  it("lists each account, skipping untracked forks by name and keeping archived repositories", async () => {
-    const { client } = fakeClient(
-      {
-        finch: [
-          info("finch/perch", {}),
-          info("finch/old", { archived: true }),
-          info("finch/someone-elses", { fork: true }),
-          info("finch/kept-fork", { fork: true }),
-        ],
-      },
-      {},
-    );
+  it("lists each account with its own key's token, keeping only what the account owns", async () => {
+    const { client, calls } = fakeClient({
+      "finch-token": [
+        info("finch/perch", {}),
+        info("finch/old", { archived: true }),
+        info("finch/someone-elses", { fork: true }),
+        info("finch/kept-fork", { fork: true }),
+      ],
+      "org-token": [
+        info("skiff-app/skiff", {}),
+        info("the-undev/harbour", {}),
+      ],
+    });
+    const { tokenFor, asked } = fakeKeyring({
+      "github-finch": "finch-token",
+      "github-skiff-app": "org-token",
+    });
 
-    const data = await createForgeAccountsSource(
-      "githubAccounts",
+    const data = await createForgeAccountsSource("githubAccounts", {
       client,
-      github,
-    ).gather({});
+      forge: github,
+      tokenFor,
+    }).gather({});
 
+    expect(asked).toEqual([
+      "github-finch",
+      "github-the-undev",
+      "github-skiff-app",
+    ]);
+    expect(calls).toEqual(["list with finch-token", "list with org-token"]);
     expect(data.finch).toEqual({
       state: "observed",
       value: {
@@ -131,36 +164,39 @@ describe("forge accounts source", () => {
         skippedForks: ["finch/someone-elses"],
       },
     });
-    expect(data["the-undev"]).toEqual({
-      state: "error",
-      error: "no such account the-undev",
+    expect(data["skiff-app"]).toEqual({
+      state: "observed",
+      value: { repos: [info("skiff-app/skiff", {})], skippedForks: [] },
     });
   });
 
-  it("fails as a whole with the client's reason when the token is missing", async () => {
-    const client = createForgejoClient({
-      fetchJson: async () => [],
-      token: async () => {
-        throw new SourceFailure("token-not-stored", forgejoTokenMissing);
-      },
-      baseUrl: "http://forgejo.test",
-      finalisedCommits: 2,
-    });
-    const failure = await createForgeAccountsSource("forgejoAccounts", client, {
-      accounts: [{ account: "finch", hosts: ["forgejo"] }],
-      trackedForks: [],
-    })
-      .gather({})
-      .catch((error: unknown) => error);
+  it("records a missing keyring entry as that account's error, naming the key to store", async () => {
+    const { client } = fakeClient({});
+    const { tokenFor } = fakeKeyring({});
 
-    expect((failure as SourceFailure).reason).toBe("token-not-stored");
+    const data = await createForgeAccountsSource("githubAccounts", {
+      client,
+      forge: {
+        ...github,
+        accounts: [{ account: "the-undev", key: "github-the-undev" }],
+      },
+      tokenFor,
+    }).gather({});
+
+    expect(data["the-undev"]).toEqual({
+      state: "error",
+      error: tokenMissing("github-the-undev"),
+    });
+    expect(tokenMissing("github-the-undev")).toContain(
+      'secret-tool store --label "perch github-the-undev" service perch key github-the-undev',
+    );
   });
 });
 
 describe("forge source", () => {
   const earlier = (
     remotes: string[],
-    listed: RawForgeRepoInfo[],
+    listed: Record<string, RawForgeRepoInfo[]>,
   ): Partial<RawFiles> => ({
     local: {
       source: "local",
@@ -181,62 +217,80 @@ describe("forge source", () => {
     githubAccounts: {
       source: "githubAccounts",
       gatheredAt: "2026-10-21T09:00:00.000Z",
-      data: {
-        finch: {
-          state: "observed",
-          value: { repos: listed, skippedForks: [] },
-        },
-      },
+      data: Object.fromEntries(
+        Object.entries(listed).map(([account, repos]) => [
+          account,
+          { state: "observed", value: { repos, skippedForks: [] } },
+        ]),
+      ),
     },
   });
 
-  it("reads details for listed repositories, and looks up remotes the listings missed", async () => {
-    const { client, calls } = fakeClient(
-      {},
-      {
-        "skiff-app/skiff": info("skiff-app/skiff", {}),
-        "finch/camera-mover": info("finch/PhotoMover", {}),
-        "finch/forked": info("finch/forked", { fork: true }),
-      },
+  it("reads each listed repository's details with its listing account's token", async () => {
+    const { client, calls } = fakeClient({
+      "finch-token": [info("finch/perch", {})],
+      "org-token": [info("skiff-app/skiff", {})],
+    });
+    const { tokenFor } = fakeKeyring(allKeys);
+
+    const data = await createForgeSource("github", "githubAccounts", {
+      client,
+      forge: github,
+      tokenFor,
+    }).gather(
+      earlier([], {
+        finch: [
+          info("finch/perch", {}),
+          info("finch/old", { archived: true }),
+        ],
+        "skiff-app": [info("skiff-app/skiff", {})],
+      }),
     );
 
-    const data = await createForgeSource(
-      "github",
-      "githubAccounts",
+    expect(calls.sort()).toEqual([
+      "details finch/perch with finch-token",
+      "details skiff-app/skiff with org-token",
+    ]);
+    expect(data["skiff-app/skiff"]).toMatchObject({
+      value: { foundBy: "account-listing", account: "skiff-app" },
+    });
+    expect(data["finch/old"]).toMatchObject({
+      value: { details: { state: "absent", reason: "archived-slow-lane" } },
+    });
+  });
+
+  it("looks up a remote the listings missed with the token of the account that owns it", async () => {
+    const { client, calls } = fakeClient({
+      "org-token": [info("skiff-app/skiff", {})],
+      "finch-token": [
+        info("finch/PhotoMover", {}),
+        info("finch/forked", { fork: true }),
+      ],
+    });
+    const { tokenFor } = fakeKeyring(allKeys);
+
+    const data = await createForgeSource("github", "githubAccounts", {
       client,
-      github,
-    ).gather(
+      forge: github,
+      tokenFor,
+    }).gather(
       earlier(
         [
-          "git@github.com:finch/perch.git",
           "git@github-work:skiff-app/skiff.git",
-          "https://github.com/finch/camera-mover.git",
           "https://github.com/finch/forked.git",
           "https://github.com/finch/deleted.git",
-          "git@gitlab.com:someone/elsewhere.git",
+          "https://github.com/someone/elsewhere.git",
+          "git@gitlab.com:someone/other-forge.git",
         ],
-        [info("finch/perch", {}), info("finch/old", { archived: true })],
+        {},
       ),
     );
 
-    expect(Object.keys(data)).toEqual([
-      "finch/deleted",
-      "finch/forked",
-      "finch/old",
-      "finch/perch",
-      "finch/photomover",
-      "skiff-app/skiff",
-    ]);
+    expect(calls).toContain("get skiff-app/skiff with org-token");
+    expect(calls).toContain("details skiff-app/skiff with org-token");
     expect(data["skiff-app/skiff"]).toMatchObject({
       state: "observed",
-      value: {
-        foundBy: "local-remote",
-        account: "the-undev",
-        details: { state: "observed" },
-      },
-    });
-    expect(data["finch/photomover"]).toMatchObject({
-      value: { aliases: ["finch/camera-mover"] },
+      value: { foundBy: "local-remote", account: "skiff-app" },
     });
     expect(data["finch/forked"]).toEqual({
       state: "absent",
@@ -246,18 +300,60 @@ describe("forge source", () => {
       state: "error",
       error: "HTTP 404 for finch/deleted",
     });
-    expect(data["finch/old"]).toMatchObject({
-      value: { details: { state: "absent", reason: "archived-slow-lane" } },
+    expect(data["someone/elsewhere"]).toEqual({
+      state: "error",
+      error: "no github account is configured for owner someone",
     });
-    expect(calls).not.toContain("get finch/perch as finch");
-    expect(calls).not.toContain("details finch/old");
+    expect(Object.keys(data)).not.toContain("someone/other-forge");
+  });
+
+  it("records the alias a renamed repository was reached by", async () => {
+    const renamed = info("finch/PhotoMover", {});
+    const client: ForgeClient = {
+      ...fakeClient({}).client,
+      getRepo: async () => renamed,
+    };
+    const { tokenFor } = fakeKeyring(allKeys);
+
+    const data = await createForgeSource("github", "githubAccounts", {
+      client,
+      forge: github,
+      tokenFor,
+    }).gather(
+      earlier(["https://github.com/finch/camera-mover.git"], {}),
+    );
+
+    expect(data["finch/photomover"]).toMatchObject({
+      value: { aliases: ["finch/camera-mover"] },
+    });
+  });
+
+  it("records a lookup whose owner's key is missing as that repository's error", async () => {
+    const { client } = fakeClient({});
+    const { tokenFor } = fakeKeyring({ "github-finch": "finch-token" });
+
+    const data = await createForgeSource("github", "githubAccounts", {
+      client,
+      forge: github,
+      tokenFor,
+    }).gather(earlier(["git@github-work:skiff-app/skiff.git"], {}));
+
+    expect(data["skiff-app/skiff"]).toEqual({
+      state: "error",
+      error: tokenMissing("github-skiff-app"),
+    });
   });
 
   it("fails as a whole without local presences to read remotes from", async () => {
-    const { client } = fakeClient({}, {});
+    const { client } = fakeClient({});
+    const { tokenFor } = fakeKeyring(allKeys);
 
     await expect(
-      createForgeSource("github", "githubAccounts", client, github).gather({}),
+      createForgeSource("github", "githubAccounts", {
+        client,
+        forge: github,
+        tokenFor,
+      }).gather({}),
     ).rejects.toThrow(/no local presences/);
   });
 });
@@ -292,20 +388,16 @@ const apiRepo = (fullName: string, extra: object) => ({
 describe("github client", () => {
   const api = "https://api.github.com";
 
-  it("lists the account's own repositories with its token, page by page", async () => {
+  it("lists every repository the token reads, page by page", async () => {
     const { fetchJson, calls } = fakeFetch({
-      [`${api}/user/repos?affiliation=owner&per_page=100&page=1`]: [
+      [`${api}/user/repos?per_page=100&page=1`]: [
         apiRepo("finch/perch", {}),
         apiRepo("finch/old", { archived: true }),
       ],
     });
-    const client = createGithubClient({
-      fetchJson,
-      tokenFor: async (account) => `${account}-token`,
-      finalisedCommits: 2,
-    });
+    const client = createGithubClient({ fetchJson, finalisedCommits: 2 });
 
-    const repos = await client.listRepos("finch");
+    const repos = await client.listRepos("finch-token");
 
     expect(
       repos.map((repo) => [repo.fullName, repo.archived, repo.private]),
@@ -350,16 +442,9 @@ describe("github client", () => {
         },
       ],
     });
-    const client = createGithubClient({
-      fetchJson,
-      tokenFor: async () => "t",
-      finalisedCommits: 2,
-    });
+    const client = createGithubClient({ fetchJson, finalisedCommits: 2 });
 
-    const details = await client.readDetails(
-      info("the-undev/harbour", {}),
-      "the-undev",
-    );
+    const details = await client.readDetails(info("the-undev/harbour", {}), "t");
 
     expect(details.finalisedCommits).toEqual([
       { sha: "abc", committedAt: "2026-10-20T08:00:00Z", subject: "Add tiles" },
@@ -419,14 +504,13 @@ describe("forgejo client", () => {
     });
     const client = createForgejoClient({
       fetchJson,
-      token: async () => "t",
       baseUrl: "http://forgejo.test",
       finalisedCommits: 2,
     });
 
     const details = await client.readDetails(
       info("finch/Hothouse", {}),
-      "finch",
+      "t",
     );
 
     expect(calls[0]?.headers.Authorization).toBe("token t");
@@ -446,6 +530,35 @@ describe("forgejo client", () => {
           { targetUrl: { state: "absent", reason: "no-target-url" } },
         ],
       },
+    });
+  });
+
+  it("reads a commit with no statuses, which Forgejo sends as null, as an empty list", async () => {
+    const base = "http://forgejo.test/api/v1/repos/finch/Pocket";
+    const { fetchJson } = fakeFetch({
+      [`${base}/pulls?state=open&limit=50`]: [],
+      [`${base}/commits/main/status`]: {
+        state: "",
+        statuses: null,
+        total_count: 0,
+      },
+      [`${base}/commits?sha=main&limit=2&stat=false&verification=false&files=false`]:
+        [],
+    });
+    const client = createForgejoClient({
+      fetchJson,
+      baseUrl: "http://forgejo.test",
+      finalisedCommits: 2,
+    });
+
+    const details = await client.readDetails(
+      info("finch/Pocket", {}),
+      "t",
+    );
+
+    expect(details.ci).toEqual({
+      forge: "forgejo",
+      combinedStatus: { state: "", statuses: [] },
     });
   });
 });

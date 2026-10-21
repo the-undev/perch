@@ -7,10 +7,7 @@ import { loadConfig } from "../config.ts";
 import { fileMtime, readTextIfExists } from "../fs.ts";
 import { createRawStore, gather } from "../gather.ts";
 import { createFetchJson } from "../http.ts";
-import {
-  createForgejoTokenLookup,
-  createGithubTokenLookup,
-} from "../secrets.ts";
+import { createKeyringTokenLookup } from "../secrets.ts";
 import { createClaudeSessionsSource } from "../sources/claude-sessions.ts";
 import {
   createForgeAccountsSource,
@@ -31,17 +28,24 @@ const { config } = await loadConfig({
   readText: readTextIfExists,
 });
 const fetchJson = createFetchJson(10_000);
-const github = createGithubClient({
-  fetchJson,
-  tokenFor: createGithubTokenLookup(home, process.env),
-  finalisedCommits: config.forges.finalisedCommits,
-});
-const forgejo = createForgejoClient({
-  fetchJson,
-  token: createForgejoTokenLookup(home, process.env),
-  baseUrl: config.forges.forgejo.baseUrl,
-  finalisedCommits: config.forges.finalisedCommits,
-});
+const tokenFor = createKeyringTokenLookup(home, process.env);
+const github = {
+  client: createGithubClient({
+    fetchJson,
+    finalisedCommits: config.forges.finalisedCommits,
+  }),
+  forge: config.forges.github,
+  tokenFor,
+};
+const forgejo = {
+  client: createForgejoClient({
+    fetchJson,
+    baseUrl: config.forges.forgejo.baseUrl,
+    finalisedCommits: config.forges.finalisedCommits,
+  }),
+  forge: config.forges.forgejo,
+  tokenFor,
+};
 
 const status = await gather({
   now: () => new Date(),
@@ -55,16 +59,8 @@ const status = await gather({
       mtimeOf: fileMtime,
       concurrency: 8,
     }),
-    githubAccounts: createForgeAccountsSource(
-      "githubAccounts",
-      github,
-      config.forges.github,
-    ),
-    forgejoAccounts: createForgeAccountsSource(
-      "forgejoAccounts",
-      forgejo,
-      config.forges.forgejo,
-    ),
+    githubAccounts: createForgeAccountsSource("githubAccounts", github),
+    forgejoAccounts: createForgeAccountsSource("forgejoAccounts", forgejo),
     kuma: createKumaSource({
       fetchJson,
       baseUrl: config.server.kumaBaseUrl,
@@ -77,18 +73,8 @@ const status = await gather({
     claudeSessions: createClaudeSessionsSource(
       join(home, ".claude", "projects"),
     ),
-    github: createForgeSource(
-      "github",
-      "githubAccounts",
-      github,
-      config.forges.github,
-    ),
-    forgejo: createForgeSource(
-      "forgejo",
-      "forgejoAccounts",
-      forgejo,
-      config.forges.forgejo,
-    ),
+    github: createForgeSource("github", "githubAccounts", github),
+    forgejo: createForgeSource("forgejo", "forgejoAccounts", forgejo),
   },
 });
 

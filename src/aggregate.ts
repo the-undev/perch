@@ -1,10 +1,5 @@
 import { basename } from "node:path";
-import {
-  type Config,
-  driftThresholdsFor,
-  hostAccounts,
-  importanceFor,
-} from "./config.ts";
+import { type Config, driftThresholdsFor, importanceFor } from "./config.ts";
 import {
   deriveClaudeSessions,
   deriveForge,
@@ -252,8 +247,8 @@ export function aggregate(
 ): Snapshot {
   const { config } = input;
   const files = bundle.files;
-  const github = hostAccounts(config.forges.github);
-  const forgejo = hostAccounts(config.forges.forgejo);
+  const github = config.forges.github.hosts;
+  const forgejo = config.forges.forgejo.hosts;
   const join = joinPresences({
     locals: Object.entries(files.local?.data.presences ?? {}).map(
       ([id, presence]) => ({
@@ -263,7 +258,11 @@ export function aggregate(
     ),
     forges: forgeNames.flatMap((forge) => forgePresences(forge, files)),
     forgeForHost: (host) =>
-      host in github ? "github" : host in forgejo ? "forgejo" : null,
+      github.includes(host)
+        ? "github"
+        : forgejo.includes(host)
+          ? "forgejo"
+          : null,
     joins: config.joins,
     ignore: config.ignore,
   });

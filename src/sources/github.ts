@@ -16,7 +16,6 @@ const maxPages = 20;
 
 export interface GithubClientDeps {
   fetchJson: FetchJson;
-  tokenFor: (account: string) => Promise<string>;
   /** How many default-branch commits to read as finalised. */
   finalisedCommits: number;
 }
@@ -76,34 +75,33 @@ function latestRun(
   };
 }
 
-/** GitHub over its REST API, with each account's token from gh. */
+/** GitHub over its REST API, with fine-grained read-only tokens sent as Bearer. */
 export function createGithubClient(deps: GithubClientDeps): ForgeClient {
-  const headersFor = async (account: string) => ({
-    Authorization: `Bearer ${await deps.tokenFor(account)}`,
+  const headersFor = (token: string) => ({
+    Authorization: `Bearer ${token}`,
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
     "User-Agent": "perch",
   });
   return {
     forge: "github",
-    async listRepos(account) {
-      const headers = await headersFor(account);
+    async listRepos(token) {
+      const headers = headersFor(token);
       const repos = await readAllPages(
-        (page) =>
-          `${apiBase}/user/repos?affiliation=owner&per_page=${pageSize}&page=${page}`,
+        (page) => `${apiBase}/user/repos?per_page=${pageSize}&page=${page}`,
         pageSize,
         (url) => deps.fetchJson(url, headers),
       );
       return repos.map(readRepoInfo);
     },
-    async getRepo(owner, name, account) {
-      const headers = await headersFor(account);
+    async getRepo(owner, name, token) {
+      const headers = headersFor(token);
       return readRepoInfo(
         await deps.fetchJson(`${apiBase}/repos/${owner}/${name}`, headers),
       );
     },
-    async readDetails(info, account) {
-      const headers = await headersFor(account);
+    async readDetails(info, token) {
+      const headers = headersFor(token);
       const base = `${apiBase}/repos/${info.fullName}`;
       const branch = encodeURIComponent(info.defaultBranch);
       const [pulls, runs, commits] = await Promise.all([

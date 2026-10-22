@@ -14,6 +14,7 @@ Needs Node 26 and pnpm 11. Run `pnpm install` once, then from the root:
 | Command | Does |
 | --- | --- |
 | `pnpm dev` | Runs the desktop app. |
+| `pnpm design` | Serves the design site at http://localhost:5174, every component in every state. |
 | `pnpm check` | Runs Biome, tsc and vitest across the workspace. |
 | `pnpm scan` | Gathers raw facts into `.scan/raw/` and aggregates them into `.scan/snapshot.json`. |
 | `pnpm dist` | Builds the Linux AppImage into `apps/desktop/dist/`. |
@@ -26,5 +27,7 @@ GitHub release.
 
 ## More
 
-What it shows and why: [docs/spec.md](docs/spec.md). The design board:
-open [design/index.html](design/index.html) in a browser.
+What it shows and why: [docs/spec.md](docs/spec.md). The design site
+(`pnpm design`) shows the real components; the approved board pages it
+grew from are in [design/index.html](design/index.html), opened in a
+browser.

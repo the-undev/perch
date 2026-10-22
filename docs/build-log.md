@@ -102,3 +102,34 @@ build-time calls so they can be revisited.
   home, and would litter it with browser state. The app will set
   userData to `~/.local/share/perch`, leaving `~/.config/perch` to the
   stowed config.toml alone. Wired in the app phase.
+- The theme is one stylesheet, `packages/ui/src/theme.css`: Tailwind v4
+  `@theme static` tokens replacing Tailwind's default palette, values
+  from `design/perch.html` (its lifted muted and faint inks). shadcn's
+  semantic tokens map onto the ink palette and its dark variants always
+  apply: perch has one theme.
+- Fonts are the board's, Bricolage Grotesque and Figtree, bundled from
+  fontsource; the desktop's content security policy blocks Google
+  Fonts. Geist is dropped.
+- shadcn primitives move to `packages/ui/src/primitives` with
+  `components.json`. The desktop drops its `@/` alias, so a stray `@/`
+  import in ui fails the desktop typecheck instead of resolving into the
+  desktop.
+- Bird size: base scale 0.9 for the least important tier rising to 1.8
+  for the most, linear in rank; 0.78 on the fence. Plumpness multiplies
+  by up to 1.65 at the view model's cap of 50, the board's factor.
+- Sleeping birds are still as well as closed-eyed, per the bird
+  language; the board kept them bobbing. Fence birds bob like content
+  birds whatever their health: they do not wear their mood.
+- Detail times read as the speech's durations measured to a `now` the
+  caller passes ("30 hours ago"), replacing the board's day counts, so
+  components hold no clock.
+- Behaviour leaves components through required callbacks (`onLaunch`,
+  `onFullStory`). The key-file paper keeps its open tab as its own
+  state. The bubble's tail is placed by side and the inset of its tip.
+- Pull request lines, sources not read and the detail heading joined
+  the ui components: the view model carries them and the detail page
+  needs them.
+- The design site routes every page through `/$slug` from one registry,
+  serves on port 5174, and its paper page renders this repository's
+  README, spec and roadmap as the mock Perch bird's key files. Its smoke
+  test renders the index and every page.

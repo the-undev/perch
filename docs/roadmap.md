@@ -125,10 +125,39 @@ tree to pick any file from, a drill-down below the configured list.
 
 ## Design site on real components
 
-Once the app exists, the design board grows into a design site built
-from the app's actual assets and components, a visual explorer for each
-piece in isolation. The board's pages (app demo, field guide, atlas)
-migrate onto real components rather than hand-drawn copies.
+In progress. `apps/design` renders every `packages/ui` component and the
+shadcn Button in all their states. What remains:
+
+- Scenes: the aviary composed from wires, fence and sky on the mock
+  dataset, the bubble anchored to a clicked bird's beak, the camera
+  between the aviary and a detail page, and the detail page itself.
+  The scene carries what the components leave to it: crowded wires
+  split over two rows, the arrival flight, hover tips, selection and
+  focus, the beak's wiggle as the bubble opens, and the scene-wide
+  source errors and warnings.
+- Spec pages: the field guide, phrasebook and atlas rebuilt on the real
+  components. The board pages stay as the approved record.
+
+## Detail page meta line
+
+The board's detail heading says where a bird lives: its path, its
+forges, its wire. The view model carries the wire and the forge links
+but not the path outside the launch actions; the line waits on a
+`Detail` field for it.
+
+## Ledger summary line
+
+The board's ledger opens with a quiet sentence when nothing waits ("the
+working tree is clean and everything is pushed"). Deriving it in the
+renderer would mean matching ledger labels; it needs a view model field
+first.
+
+## Links inside key files
+
+Markdown on the key-file paper renders relative links as plain anchors,
+which go nowhere. Following a link to another file in the same
+repository would open it on the paper; external links would go to the
+browser through the main process.
 
 ## Public undev release
 

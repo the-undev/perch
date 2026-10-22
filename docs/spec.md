@@ -84,6 +84,10 @@ The visual language is specified on the board: the field guide
 (`design/anatomy.html`) annotates every trait with its rule, and the
 app page (`design/perch.html`) is the working structure. The palette is
 ink: warm dark, crisp edges, red rare enough to mean something.
+The design site (`apps/design`, served by `pnpm design`) is the board's
+living successor: the real components from `packages/ui` in every state
+the view model allows, each labelled with its rule. The board pages stay
+as the approved record.
 
 ## Health
 
@@ -217,8 +221,9 @@ read at run time, its CLI prompts. Creation and replacement runbook:
 
 ## Tooling
 
-A pnpm workspace: the scanner in `packages/core`, the Electron app in
-`apps/desktop` with electron-vite, React, TypeScript strict, Tailwind
+A pnpm workspace: the scanner in `packages/core`, the components and
+theme in `packages/ui`, the design site in `apps/design`, the Electron app
+in `apps/desktop` with electron-vite, React, TypeScript strict, Tailwind
 v4, TanStack Router and Query, shadcn for basics, Biome and vitest.
 `pnpm check` covers lint, types and tests, and CI runs it on every push
 and pull request. electron-builder packages a Linux AppImage; a `v*` tag

@@ -12,6 +12,7 @@ import { appPaths, examplePathFor } from "./app-paths.ts";
 import { createAppState } from "./app-state.ts";
 import { createConfigStore } from "./config-store.ts";
 import { isWebUrl } from "./external-links.ts";
+import { iconPaths, resourceDirFor } from "./icons.ts";
 import { registerIpc } from "./ipc.ts";
 import { createSpawnDetached, launch } from "./launch.ts";
 import { createScanScheduler } from "./scan-scheduler.ts";
@@ -21,11 +22,12 @@ const focusGapMs = 60_000;
 /** Without any config, the next attempt to read it and scan comes this soon. */
 const noConfigRetryMs = 60_000;
 
-function createWindow(): BrowserWindow {
+function createWindow(icon: string): BrowserWindow {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
     show: false,
+    icon,
     autoHideMenuBar: true,
     backgroundColor: "#101214",
     webPreferences: {
@@ -62,6 +64,9 @@ function start(): void {
   const paths = appPaths(
     home,
     examplePathFor(app.isPackaged, process.resourcesPath, import.meta.dirname),
+  );
+  const icons = iconPaths(
+    resourceDirFor(app.isPackaged, process.resourcesPath, import.meta.dirname),
   );
   // Before anything reads it: the single-instance lock lives in userData.
   app.setPath("userData", paths.userData);
@@ -146,7 +151,7 @@ function start(): void {
       keyFiles: (birdId) => state.keyFiles(birdId),
       launch: (action) => state.launch(action),
     });
-    mainWindow = createWindow();
+    mainWindow = createWindow(icons.window);
     mainWindow.on("focus", () => void ready.then(() => scheduler.focused()));
     await ready;
     scheduler.start();

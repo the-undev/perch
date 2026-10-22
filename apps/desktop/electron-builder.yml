@@ -5,13 +5,20 @@ directories:
 files:
   - out/**
   - package.json
-# Read when the owner has no ~/.config/perch/config.toml.
 extraResources:
+  # Read when the owner has no ~/.config/perch/config.toml.
   - from: ../../config.example.toml
     to: config.example.toml
+  # The window's and the tray's icons, found where the dev build finds them in resources/.
+  - from: resources
+    to: .
+    filter:
+      - icons/*.png
+      - tray*.png
 linux:
   target: AppImage
   category: Development
   executableName: perch
   syncDesktopName: true
+  icon: resources/icons
 artifactName: ${productName}-${version}-${arch}.${ext}

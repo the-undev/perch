@@ -105,6 +105,15 @@ button through to the zoomed detail. Verdicts:
 - The star field clustered into dashes: the weak string hash correlated
   sequential seeds. Scatter needs a real bit mixer.
 
+## Field guide verdicts, 22 October 2026
+
+The anatomy plates (`mockups/anatomy.html`) are approved as the visual
+spec for tiers A and B: the bird with every trait annotated with its
+rule, and the bubble with speech, chips and actions annotated. Kept
+from the round: the ♪ sized with the bird just off the beak tip, toes
+resting exactly on the wire, the bubble tail's tip meeting the beak
+tip.
+
 ## Open
 
 - Aviary V carries the fixes above; verdict pending.

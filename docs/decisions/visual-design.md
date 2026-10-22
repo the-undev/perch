@@ -138,6 +138,18 @@ was recorded for removing the rail entirely. Layouts are designed for
 the ultrawide and the small monitor alike; the owner often uses the
 small one as primary.
 
+## Camera verdicts, 22 October 2026
+
+The camera concept won the rail question: the aviary is the zoomed-in
+view, pulling back compresses the flock into tab rows at the very top
+(one slim row per wire), and the project starts underneath, top left.
+There is no left menu: the wire rows are the switcher within the detail
+view, and the whole aviary is one press away (the pill on the strip,
+the Aviary tab, Escape). Kept: the current bird highlighted by dimming
+the rest; the folder-tab paper from the fourth detail pass. Dropped:
+the browser focus rectangle on clicked birds (keyboard focus keeps a
+quiet custom mark) and the rail scrollbar problem with the rail itself.
+
 ## Open
 
 - Aviary V carries the fixes above; verdict pending.

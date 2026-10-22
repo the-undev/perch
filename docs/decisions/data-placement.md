@@ -117,7 +117,9 @@ superset: everything tiers A and B show appears here too, plus:
 The detail page states facts plainly; the judgement is already carried
 by the mood and the colour above it. Panel names follow the facts
 ("in-flight work", never "unsafe work" in the UI), and readers are
-assumed to know what the facts mean. Where lower is better, a clean
+assumed to know what the facts mean. Headings name the actual thing,
+never a concept: "main on GitHub, newest commits", not "finalised"
+(which stays internal vocabulary for the derivation). Where lower is better, a clean
 zero reads as a quiet word ("none", green) rather than a large zero,
 and a real count takes the tone of how bad it is.
 

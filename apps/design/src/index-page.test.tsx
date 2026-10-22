@@ -33,8 +33,19 @@ describe("the design site", () => {
     }
   });
 
-  it.each(pages)(
-    "renders the $title page with its usage note",
+  it.each(pages)("renders the $title page", async (page) => {
+    const router = createDesignRouter(
+      createMemoryHistory({ initialEntries: [`/${page.slug}`] }),
+    );
+    render(<RouterProvider router={router} />);
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: page.title }),
+    ).toBeDefined();
+  });
+
+  it.each(pages.filter((page) => page.group !== "spec"))(
+    "ends the $title page with its usage note",
     async (page) => {
       const router = createDesignRouter(
         createMemoryHistory({ initialEntries: [`/${page.slug}`] }),
@@ -42,9 +53,8 @@ describe("the design site", () => {
       render(<RouterProvider router={router} />);
 
       expect(
-        await screen.findByRole("heading", { level: 1, name: page.title }),
+        await screen.findByRole("heading", { name: /^Usage:/ }),
       ).toBeDefined();
-      expect(screen.getByRole("heading", { name: /^Usage:/ })).toBeDefined();
     },
   );
 });

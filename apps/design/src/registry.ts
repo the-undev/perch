@@ -23,6 +23,17 @@ import {
 import { SkyPage } from "./pages/sky-page.tsx";
 import { TokensPage } from "./pages/tokens-page.tsx";
 import { WirePage } from "./pages/wire-page.tsx";
+import { ChainPage } from "./spec/chain-page.tsx";
+import { ConfigPage } from "./spec/config-page.tsx";
+import { PhrasebookPage } from "./spec/phrasebook-page.tsx";
+import {
+  ClaudeSessionsPage,
+  ForgejoPage,
+  GithubPage,
+  KumaPage,
+  LocalGitPage,
+  RoadmapsPage,
+} from "./spec/source-pages.tsx";
 
 export type GroupId = "components" | "primitives" | "scenes" | "spec";
 
@@ -218,6 +229,78 @@ export const pages: DesignPage[] = [
     summary:
       "A wire holding more birds than one row fits splits over two rows, or more.",
     component: CrowdedPage,
+  },
+  {
+    slug: "model-chain",
+    group: "spec",
+    title: "The model chain",
+    summary:
+      "Raw facts to snapshot to view model, the two-stage rule, and where each derivation lives.",
+    component: ChainPage,
+  },
+  {
+    slug: "source-local-git",
+    group: "spec",
+    title: "Local git",
+    summary:
+      "Data source: the clones under the include paths, read with git, and the git data derived from them.",
+    component: LocalGitPage,
+  },
+  {
+    slug: "source-github",
+    group: "spec",
+    title: "GitHub",
+    summary:
+      "Data source: account listings, pull requests, workflow runs and finalised commits.",
+    component: GithubPage,
+  },
+  {
+    slug: "source-forgejo",
+    group: "spec",
+    title: "Forgejo",
+    summary:
+      "Data source: the same as GitHub, CI from the combined commit status.",
+    component: ForgejoPage,
+  },
+  {
+    slug: "source-roadmaps",
+    group: "spec",
+    title: "Roadmaps",
+    summary:
+      "Data source: roadmap files parsed into headings and bullets, counted into work items.",
+    component: RoadmapsPage,
+  },
+  {
+    slug: "source-claude-sessions",
+    group: "spec",
+    title: "Claude sessions",
+    summary:
+      "Data source: Claude Code transcripts, read for the time of the last session.",
+    component: ClaudeSessionsPage,
+  },
+  {
+    slug: "source-uptime-kuma",
+    group: "spec",
+    title: "Uptime Kuma",
+    summary:
+      "Data source: the server's status page, gathered and derived, not shown until server monitoring.",
+    component: KumaPage,
+  },
+  {
+    slug: "config",
+    group: "spec",
+    title: "Config",
+    summary:
+      "config.example.toml table by table beside what parseConfig makes of it, and the config model.",
+    component: ConfigPage,
+  },
+  {
+    slug: "phrasebook",
+    group: "spec",
+    title: "Phrasebook",
+    summary:
+      "What a bird says in every situation, by the real speak() over subjects from the mock.",
+    component: PhrasebookPage,
   },
   {
     slug: "button",

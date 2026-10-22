@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { SourceFailure } from "../src/failure.ts";
@@ -78,6 +78,18 @@ describe("gather", () => {
     ]);
   });
 
+  it("skips the kuma collector and writes no kuma file when there is no server", async () => {
+    const status = await gather({
+      now: stepClock(9),
+      store: createRawStore(rawDir),
+      sources: sources({ kuma: null }),
+    });
+
+    expect(Object.keys(status.sources)).not.toContain("kuma");
+    expect(existsSync(join(rawDir, "kuma.json"))).toBe(false);
+    expect(status.sources.local?.state).toBe("ok");
+  });
+
   it("writes one pretty-printed file per source and a status file", async () => {
     await gather({
       now: stepClock(9),
@@ -90,7 +102,7 @@ describe("gather", () => {
     expect(JSON.parse(text).data).toEqual(localData);
     const status: StatusFile = JSON.parse(readRaw("status"));
     expect(Object.keys(status.sources)).toEqual(gatherRounds.flat());
-    expect(status.sources.local.state).toBe("ok");
+    expect(status.sources.local?.state).toBe("ok");
   });
 
   it("gives enrichers the first round's raw files", async () => {
@@ -148,7 +160,7 @@ describe("gather", () => {
       message: "unreachable",
       lastSucceededAt: {
         state: "observed",
-        value: firstLocal.state === "ok" ? firstLocal.lastSucceededAt : "",
+        value: firstLocal?.state === "ok" ? firstLocal.lastSucceededAt : "",
       },
     });
   });

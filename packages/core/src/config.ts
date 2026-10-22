@@ -85,7 +85,8 @@ export interface Config {
     github: ForgeConfig;
     forgejo: ForgeConfig & { baseUrl: string };
   };
-  server: { name: string; kumaBaseUrl: string; kumaStatusPage: string };
+  /** The server to monitor through Uptime Kuma; null when config has no [server] section. */
+  server: { name: string; kumaBaseUrl: string; kumaStatusPage: string } | null;
 }
 
 export interface LoadedConfig {
@@ -331,7 +332,8 @@ export function parseConfig(text: string, home: string): Config {
   const sessions = optionalTable(launch, "zellij_sessions", "launch.");
   const forges = table(document, "forges", "");
   const forgejo = table(forges, "forgejo", "forges.");
-  const server = table(document, "server", "");
+  const server =
+    document.server === undefined ? null : table(document, "server", "");
   const paths = (value: unknown, name: string) =>
     stringArray(value, name).map((path) => expandHome(path, home));
 
@@ -381,11 +383,14 @@ export function parseConfig(text: string, home: string): Config {
         baseUrl: string(forgejo, "base_url", "forges.forgejo."),
       },
     },
-    server: {
-      name: string(server, "name", "server."),
-      kumaBaseUrl: string(server, "kuma_base_url", "server."),
-      kumaStatusPage: string(server, "kuma_status_page", "server."),
-    },
+    server:
+      server === null
+        ? null
+        : {
+            name: string(server, "name", "server."),
+            kumaBaseUrl: string(server, "kuma_base_url", "server."),
+            kumaStatusPage: string(server, "kuma_status_page", "server."),
+          },
   };
 }
 

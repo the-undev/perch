@@ -186,5 +186,7 @@ build-time calls so they can be revisited.
 - The Uptime Kuma source runs on every gather; nothing in config turns it
   off. The view model leaves the server off the scene, so nothing it
   reads is shown.
+- Server monitoring is enabled by the presence of `[server]` in config;
+  without it the kuma collector does not run and there is no server item.
 - The design site's night toggle is the Night option of the sky switcher
   on the aviary and camera pages, beside Follow the clock.

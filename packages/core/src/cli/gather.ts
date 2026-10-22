@@ -61,11 +61,14 @@ const status = await gather({
     }),
     githubAccounts: createForgeAccountsSource("githubAccounts", github),
     forgejoAccounts: createForgeAccountsSource("forgejoAccounts", forgejo),
-    kuma: createKumaSource({
-      fetchJson,
-      baseUrl: config.server.kumaBaseUrl,
-      statusPage: config.server.kumaStatusPage,
-    }),
+    kuma:
+      config.server === null
+        ? null
+        : createKumaSource({
+            fetchJson,
+            baseUrl: config.server.kumaBaseUrl,
+            statusPage: config.server.kumaStatusPage,
+          }),
     roadmap: createRoadmapSource({
       readText: readTextIfExists,
       roadmapsFor: (itemId) => config.items[itemId]?.roadmaps ?? null,

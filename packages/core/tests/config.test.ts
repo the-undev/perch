@@ -76,7 +76,20 @@ describe("example config", () => {
       "forgejo-the-undev",
     ]);
     expect(config.forges.forgejo.baseUrl).toBe("http://forge.example.lan:3000");
-    expect(config.server.kumaStatusPage).toBe("perch");
+    expect(config.server).toBeNull();
+  });
+
+  it("parses the [server] section when it is present", async () => {
+    const config = parseConfig(
+      `${await exampleText()}\n[server]\nname = "Silo"\nkuma_base_url = "http://kuma.example.lan:3001"\nkuma_status_page = "perch"\n`,
+      home,
+    );
+
+    expect(config.server).toEqual({
+      name: "Silo",
+      kumaBaseUrl: "http://kuma.example.lan:3001",
+      kumaStatusPage: "perch",
+    });
   });
 
   it("gives every item the default tier and global thresholds when nothing is overridden", async () => {

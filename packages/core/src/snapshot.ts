@@ -321,6 +321,6 @@ export interface Snapshot {
   warnings: string[];
   conflicts: ConfigConflict[];
   forges: Record<ForgeName, ForgeListing>;
-  sources: Record<PolledSourceName, SourceStatus>;
+  sources: Partial<Record<PolledSourceName, SourceStatus>>;
   items: Item[];
 }

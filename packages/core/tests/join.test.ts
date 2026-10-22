@@ -357,7 +357,6 @@ describe("aggregating joined projects", () => {
       "dev/toy",
       "dev/gone",
       "github:finch/notes",
-      "server",
     ]);
     const byId = Object.fromEntries(
       snapshot.items.map((item) => [item.id, item]),

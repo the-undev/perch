@@ -131,7 +131,8 @@ accounts = [
 ]
 tracked_forks = []
 
-[server]
-name = "Silo"
-kuma_base_url = "http://kuma.example.lan:3001"
-kuma_status_page = "perch"
+# Uncomment this section to enable server monitoring.
+# [server]
+# name = "Silo"
+# kuma_base_url = "http://kuma.example.lan:3001"
+# kuma_status_page = "perch"

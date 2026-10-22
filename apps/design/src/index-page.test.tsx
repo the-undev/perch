@@ -1,7 +1,7 @@
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { pages } from "./registry.ts";
+import { groups, pages } from "./registry.ts";
 import { createDesignRouter } from "./router.tsx";
 
 // jsdom has no scrolling; the router restores scroll position on every navigation.
@@ -10,7 +10,7 @@ window.scrollTo = () => {};
 afterEach(cleanup);
 
 describe("the design site", () => {
-  it("renders a card for every page at the index route, and the next phase's groups", async () => {
+  it("renders a card for every page at the index route, under its group", async () => {
     const router = createDesignRouter(
       createMemoryHistory({ initialEntries: ["/"] }),
     );
@@ -26,10 +26,11 @@ describe("the design site", () => {
           .getAttribute("href"),
       ).toBe(`/${page.slug}`);
     }
-    expect(
-      screen.getByRole("heading", { name: "Scenes next phase" }),
-    ).toBeDefined();
-    expect(screen.getByRole("heading", { name: "The aviary" })).toBeDefined();
+    for (const group of groups) {
+      expect(
+        screen.getByRole("heading", { level: 2, name: group.title }),
+      ).toBeDefined();
+    }
   });
 
   it.each(pages)(

@@ -306,6 +306,11 @@ export function BirdPage() {
             type: "number",
             what: "Bird only: how far below the wire the name sits; the fence staggers it.",
           },
+          {
+            name: "speaking",
+            type: "boolean",
+            what: "Bird only: its bubble has just opened, so the beak wiggles. The aviary sets it.",
+          },
         ]}
       >
         <p>

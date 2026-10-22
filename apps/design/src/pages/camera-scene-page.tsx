@@ -1,0 +1,113 @@
+import { mockAviary } from "@perch/core/mock.ts";
+import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
+import { useState } from "react";
+import { birdSheets } from "../key-files.ts";
+import { mockBird } from "../specimens.ts";
+import {
+  Choice,
+  Code,
+  Pressed,
+  SceneFrame,
+  Section,
+  Usage,
+} from "../usage.tsx";
+import { clockFor, clockOptions } from "./aviary-scene-page.tsx";
+
+type Clock = Parameters<typeof clockFor>[0];
+
+function placeWords(place: CameraPlace): string {
+  return place.at === "aviary"
+    ? "{ at: aviary }"
+    : `{ at: detail, birdId: ${place.birdId} }`;
+}
+
+export function CameraScenePage() {
+  const [place, setPlace] = useState<CameraPlace>({ at: "aviary" });
+  const [clock, setClock] = useState<Clock>("clock");
+  const [pressed, setPressed] = useState("nothing yet");
+  const sheets =
+    place.at === "detail" ? birdSheets(mockBird(place.birdId)) : [];
+  return (
+    <>
+      <Section
+        title="The camera, end to end"
+        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The header's tabs switch wires; each remembers the bird last open on it. The brand, The Aviary and Escape ride home."
+        min={600}
+      >
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+          <Choice
+            label="Sky"
+            options={clockOptions}
+            value={clock}
+            onChange={setClock}
+          />
+          <p className="m-0 text-[12.5px] text-ink-faint">
+            place:{" "}
+            <code className="font-mono text-ink-muted">
+              {placeWords(place)}
+            </code>
+          </p>
+        </div>
+      </Section>
+      <SceneFrame height="max(640px, calc(100vh - 260px))">
+        <CameraView
+          aviary={mockAviary}
+          now={clockFor(clock)}
+          place={place}
+          onNavigate={(next) => {
+            setPressed(`onNavigate(${placeWords(next)})`);
+            setPlace(next);
+          }}
+          onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
+          sheets={sheets}
+        />
+      </SceneFrame>
+      <Pressed text={pressed} />
+
+      <Usage
+        component="<CameraView>"
+        props={[
+          {
+            name: "aviary",
+            type: "Aviary",
+            what: "The whole view model.",
+          },
+          {
+            name: "now",
+            type: "Date",
+            what: "The render's clock, for the sky, sleep and every age.",
+          },
+          {
+            name: "place",
+            type: '{ at: "aviary" } | { at: "detail"; birdId: string }',
+            what: "Where the camera points. The caller holds it; a bird the aviary no longer holds shows the aviary.",
+          },
+          {
+            name: "onNavigate",
+            type: "(place: CameraPlace) => void",
+            what: "Every move: a tab, a strip bird, a bubble's full story, the brand, Escape.",
+          },
+          {
+            name: "onLaunch",
+            type: "(action: LaunchAction) => void",
+            what: "A launch action was pressed, in a bubble or on the detail page.",
+          },
+          {
+            name: "sheets",
+            type: "KeyFileSheet[]",
+            what: "The open bird's key files with what was read from each.",
+          },
+        ]}
+      >
+        <p>
+          Navigation is a controlled prop so the desktop app can bind{" "}
+          <Code>place</Code> to its router: this page holds it in state and
+          prints it above. What the camera keeps for itself is the bird last
+          open under each tab, and the bird left on the ground while it rides
+          home. Tabs follow <Code>cameraTabs(aviary)</Code>; a wire with no
+          birds has its tab, disabled.
+        </p>
+      </Usage>
+    </>
+  );
+}

@@ -774,7 +774,7 @@ const moodRank: Record<Mood, number> = {
 };
 
 /** Along a wire: the worst mood leftmost, then the more important, then by name. */
-function compareOnWire(a: Bird, b: Bird): number {
+export function compareOnWire(a: Bird, b: Bird): number {
   return (
     moodRank[a.mood] - moodRank[b.mood] ||
     a.size.rank - b.size.rank ||

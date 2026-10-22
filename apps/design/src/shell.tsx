@@ -1,7 +1,7 @@
 // The frame around every page: the header with the brand and the groups, and the page beneath.
 
 import { Link, Outlet } from "@tanstack/react-router";
-import { groups, pagesIn } from "./registry.ts";
+import { groups } from "./registry.ts";
 
 /** The board's mark: one content bird, drawn small. */
 export function Mark() {
@@ -62,27 +62,16 @@ export function Shell() {
           aria-label="Groups"
           className="flex gap-1 rounded-full border border-edge bg-band p-0.75"
         >
-          {groups.map((group) => {
-            const live = pagesIn(group.id).length > 0;
-            return live ? (
-              <Link
-                key={group.id}
-                to="/"
-                hash={group.id}
-                className="rounded-full px-4 py-1.5 font-semibold text-[12.5px] text-ink-muted no-underline hover:text-ink"
-              >
-                {group.title}
-              </Link>
-            ) : (
-              <span
-                key={group.id}
-                title="Next phase"
-                className="rounded-full px-4 py-1.5 font-semibold text-[12.5px] text-ink-faint/60"
-              >
-                {group.title}
-              </span>
-            );
-          })}
+          {groups.map((group) => (
+            <Link
+              key={group.id}
+              to="/"
+              hash={group.id}
+              className="rounded-full px-4 py-1.5 font-semibold text-[12.5px] text-ink-muted no-underline hover:text-ink"
+            >
+              {group.title}
+            </Link>
+          ))}
         </nav>
         <span className="ml-auto text-[12px] text-ink-faint">
           mock scan, 22 October 2026 09:00

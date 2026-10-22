@@ -1,24 +1,7 @@
-import type { KeyFile } from "@perch/core/viewmodel.ts";
-import { KeyFilePaper, type KeyFileSheet } from "@perch/ui/paper.tsx";
-import roadmap from "../../../../docs/roadmap.md?raw";
-import spec from "../../../../docs/spec.md?raw";
-import readme from "../../../../README.md?raw";
+import { KeyFilePaper } from "@perch/ui/paper.tsx";
+import { perchFiles, sheetsFor } from "../key-files.ts";
 import { mockBird } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
-
-/** This repository's own files stand in for the mock Perch bird's key files. */
-const perchFiles: Record<string, string> = {
-  "README.md": readme,
-  "docs/spec.md": spec,
-  "docs/roadmap.md": roadmap,
-};
-
-function sheetsFor(
-  files: KeyFile[],
-  contents: Record<string, string>,
-): KeyFileSheet[] {
-  return files.map((file) => ({ file, markdown: contents[file.path] ?? null }));
-}
 
 const everyElement = `# Every element
 

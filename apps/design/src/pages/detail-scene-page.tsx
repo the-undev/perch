@@ -1,0 +1,106 @@
+import { DetailView } from "@perch/ui/detail-view.tsx";
+import { useState } from "react";
+import { birdSheets } from "../key-files.ts";
+import { mockBird, scanMoment } from "../specimens.ts";
+import { Choice, Code, Pressed, Section, Usage } from "../usage.tsx";
+
+const birds = [
+  {
+    id: "dev/perch",
+    label: "Perch",
+    rule: "Content and being edited: branches, newest commits on both forges, a draft pull request, and three key files from config, which this repository's own files stand in for.",
+  },
+  {
+    id: "undev/prism",
+    label: "Prism",
+    rule: "Distressed: CI failing on Forgejo in red, four uncommitted changes in amber, and GitHub not read for this bird.",
+  },
+  {
+    id: "undev/skiff",
+    label: "Skiff",
+    rule: "Restless: parked on a feature branch for three weeks with everything pushed.",
+  },
+  {
+    id: "dev/odin/hello",
+    label: "Hello",
+    rule: "On the fence: one disk only, so the ledger says there is no remote, and the not-set-up flag shows.",
+  },
+  {
+    id: "github:finch/obsidian-tidy",
+    label: "obsidian-tidy",
+    rule: "On a forge, never cloned here: no local facts, nothing to launch, no key files; only the link out.",
+  },
+] as const;
+
+type BirdId = (typeof birds)[number]["id"];
+
+export function DetailScenePage() {
+  const [id, setId] = useState<BirdId>("dev/perch");
+  const [pressed, setPressed] = useState("nothing yet");
+  const bird = mockBird(id);
+  const entry = birds.find((candidate) => candidate.id === id);
+  return (
+    <>
+      <Section
+        title="Five contrasting birds"
+        rule="The page shows only what exists for a bird: an empty section is left out, a bird with no clone has nothing to launch, and a source that failed is named with its error."
+        min={600}
+      >
+        <div>
+          <Choice
+            label="Bird"
+            options={birds.map((candidate) => ({
+              value: candidate.id,
+              label: candidate.label,
+            }))}
+            value={id}
+            onChange={setId}
+          />
+          <p className="mt-2.5 mb-0 max-w-[90ch] text-[12.5px] text-ink-faint">
+            {entry?.rule}
+          </p>
+        </div>
+      </Section>
+      <div className="mt-4 rounded-xl border border-edge bg-ground px-7.5 pt-5.5 pb-11">
+        <DetailView
+          key={id}
+          bird={bird}
+          now={scanMoment}
+          onLaunch={(action) => setPressed(`${bird.name}: ${action.verb}`)}
+          sheets={birdSheets(bird)}
+        />
+      </div>
+      <Pressed text={pressed} />
+
+      <Usage
+        component="<DetailView>"
+        props={[
+          { name: "bird", type: "Bird", what: "One bird from the aviary." },
+          {
+            name: "now",
+            type: "Date",
+            what: "The render's clock: ages are measured to it, and at night a sleeping bird's speech is woken.",
+          },
+          {
+            name: "onLaunch",
+            type: "(action: LaunchAction) => void",
+            what: "A launch action was pressed; the app asks the main process to open it.",
+          },
+          {
+            name: "sheets",
+            type: "KeyFileSheet[]",
+            what: "bird.detail.keyFiles with the markdown read from each, null where a file could not be read; empty until read.",
+          },
+        ]}
+      >
+        <p>
+          The view fetches nothing. The app reads each key file&apos;s{" "}
+          <Code>absolutePath</Code> and passes the text in. The ledger and its
+          sections sit beside the paper when the page is at least 1040px wide,
+          above it when narrower; the page centres as one block up to 1560px.
+          Inside the app the camera places it on the ground beneath the strip.
+        </p>
+      </Usage>
+    </>
+  );
+}

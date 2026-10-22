@@ -145,3 +145,73 @@ export function Code({ children }: { children: ReactNode }) {
     </code>
   );
 }
+
+export interface ChoiceProps<T extends string> {
+  /** What the choice sets, for assistive technology and as its visible label. */
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}
+
+/** A row of pills, one of them on: the scene pages' switchers. */
+export function Choice<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: ChoiceProps<T>) {
+  return (
+    <div className="flex flex-wrap items-center gap-2.5">
+      <span className="text-[12.5px] text-ink-faint">{label}</span>
+      <fieldset
+        aria-label={label}
+        className="m-0 flex flex-wrap gap-1 rounded-full border border-edge bg-band p-0.75"
+      >
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={option.value === value}
+            onClick={() => onChange(option.value)}
+            className={
+              option.value === value
+                ? "cursor-pointer rounded-full bg-panel-hi px-3.5 py-1.25 font-semibold text-[12.5px] text-ink"
+                : "cursor-pointer rounded-full px-3.5 py-1.25 font-semibold text-[12.5px] text-ink-muted hover:text-ink"
+            }
+          >
+            {option.label}
+          </button>
+        ))}
+      </fieldset>
+    </div>
+  );
+}
+
+/** A window-sized frame for a whole scene: the app's own view, embedded in the page. */
+export function SceneFrame({
+  height,
+  children,
+}: {
+  /** The frame's height as a CSS length. */
+  height: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="mt-4 overflow-hidden rounded-xl border border-edge"
+      style={{ height }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** A quiet line showing what the scene's callbacks last reported. */
+export function Pressed({ text }: { text: string }) {
+  return (
+    <p className="mt-3 mb-0 text-[13px] text-ink-faint">
+      Last called back: <span className="text-ink-muted">{text}</span>
+    </p>
+  );
+}

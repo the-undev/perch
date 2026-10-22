@@ -154,8 +154,9 @@ export function WirePage() {
           from <Code>aviary.wires</Code> in config order, the fence from{" "}
           <Code>aviary.fence</Code>. Birds are spread evenly, at most 340 units
           apart on a wire and 205 on the fence, and turned to face the middle.
-          Splitting a crowded wire over two rows, arrival flights and hover tips
-          belong to the aviary scene, the next phase.
+          Splitting a crowded wire over two rows, the arrival and hover tips
+          belong to <Code>AviaryView</Code>, which draws the same line and rail
+          through <Code>WireLine</Code> and <Code>FenceRail</Code>.
         </p>
       </Usage>
     </>

@@ -1,4 +1,4 @@
-// The index: a card per page, grouped, with the next phase's pages as placeholders.
+// The index: a card per page, grouped.
 
 import { Link } from "@tanstack/react-router";
 import { groups, pagesIn } from "./registry.ts";
@@ -23,12 +23,7 @@ export function IndexPage() {
         return (
           <section key={group.id} id={group.id} className="mt-10 scroll-mt-20">
             <h2 className="m-0 font-bold font-display text-[22px]">
-              {group.title}{" "}
-              {groupPages.length === 0 && (
-                <span className="ml-3 font-body font-semibold text-[12px] text-ink-faint">
-                  next phase
-                </span>
-              )}
+              {group.title}
             </h2>
             <p className="mt-1 mb-0 max-w-[72ch] text-[13.5px] text-ink-faint">
               {group.blurb}
@@ -48,17 +43,6 @@ export function IndexPage() {
                     {page.summary}
                   </span>
                 </Link>
-              ))}
-              {group.planned.map((title) => (
-                <div
-                  key={title}
-                  className="flex flex-col gap-2 rounded-xl border border-edge border-dashed px-5 pt-4.5 pb-4 text-ink-faint"
-                >
-                  <h3 className="m-0 font-bold font-display text-[20px]">
-                    {title}
-                  </h3>
-                  <span className="text-[13px]">Next phase.</span>
-                </div>
               ))}
             </div>
           </section>

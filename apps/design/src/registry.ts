@@ -3,10 +3,14 @@
 
 import type { ComponentType } from "react";
 import { ActionsPage, IntroPage, LinksPage } from "./pages/actions-pages.tsx";
+import { AviaryScenePage } from "./pages/aviary-scene-page.tsx";
 import { BirdPage } from "./pages/bird-page.tsx";
 import { BubblePage } from "./pages/bubble-page.tsx";
 import { ButtonPage } from "./pages/button-page.tsx";
+import { CameraScenePage } from "./pages/camera-scene-page.tsx";
 import { ChipPage } from "./pages/chip-page.tsx";
+import { CrowdedPage } from "./pages/crowded-page.tsx";
+import { DetailScenePage } from "./pages/detail-scene-page.tsx";
 import { LedgerPage } from "./pages/ledger-page.tsx";
 import { PaperPage } from "./pages/paper-page.tsx";
 import {
@@ -26,8 +30,6 @@ export interface Group {
   id: GroupId;
   title: string;
   blurb: string;
-  /** Pages promised for a later phase, shown as placeholders until they exist. */
-  planned: string[];
 }
 
 export interface DesignPage {
@@ -45,30 +47,23 @@ export const groups: Group[] = [
     title: "Components",
     blurb:
       "The perch components from @perch/ui, each in every state the view model allows, with the rule behind it.",
-    planned: [],
   },
   {
     id: "primitives",
     title: "Primitives",
     blurb: "The shadcn basics the apps use, themed onto the ink palette.",
-    planned: [],
   },
   {
     id: "scenes",
     title: "Scenes",
-    blurb: "Components composed into the app's views on the mock dataset.",
-    planned: [
-      "The aviary",
-      "The bubble over the aviary",
-      "The camera",
-      "The detail page",
-    ],
+    blurb:
+      "The composed views the desktop app renders, on the mock dataset: the aviary, the detail page, and the camera between them.",
   },
   {
     id: "spec",
     title: "Spec",
-    blurb: "The board's spec pages, rebuilt on the real components.",
-    planned: ["Field guide", "Phrasebook", "Data atlas"],
+    blurb:
+      "Reference pages that run the real code: the sources and their types, the model chain, the config, and what the birds say.",
   },
 ];
 
@@ -191,6 +186,38 @@ export const pages: DesignPage[] = [
     title: "Key-file paper",
     summary: "Markdown on paper behind folder tabs.",
     component: PaperPage,
+  },
+  {
+    slug: "aviary",
+    group: "scenes",
+    title: "The aviary",
+    summary:
+      "The whole home scene on the mock: sky by the clock, wires, fence, tips, bubbles and the arrival.",
+    component: AviaryScenePage,
+  },
+  {
+    slug: "detail",
+    group: "scenes",
+    title: "The detail page",
+    summary:
+      "Tier C for five contrasting birds: ledger, sections, actions, links and paper.",
+    component: DetailScenePage,
+  },
+  {
+    slug: "camera",
+    group: "scenes",
+    title: "The camera",
+    summary:
+      "The aviary and the detail joined: header tabs, the strip, the flights, Escape home.",
+    component: CameraScenePage,
+  },
+  {
+    slug: "crowded-wire",
+    group: "scenes",
+    title: "A crowded wire",
+    summary:
+      "A wire holding more birds than one row fits splits over two rows, or more.",
+    component: CrowdedPage,
   },
   {
     slug: "button",

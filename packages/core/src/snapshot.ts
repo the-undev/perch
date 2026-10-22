@@ -65,6 +65,16 @@ export interface Drift {
   thresholds: HourThresholds;
 }
 
+/** HEAD parked on a branch other than the default, aged from that branch's newest commit. */
+export interface Stall {
+  branch: string;
+  since: string;
+  /** Whole days from since to when git was read. */
+  days: number;
+  level: HealthLevel;
+  thresholds: DayThresholds;
+}
+
 /**
  * Whether unpushed work has somewhere to go: a joined forge presence, a remote perch has no
  * presence for, or no remote at all (one disk).
@@ -90,6 +100,8 @@ export interface GitData {
   remotes: Remote[];
   activity: ActivityState;
   drift: Drift;
+  /** Null when HEAD is on the default branch, detached, or there is no default branch. */
+  stall: Stall | null;
 }
 
 export type WorkItemKind = "bug" | "feature";
@@ -241,6 +253,18 @@ export interface ItemFlag {
   detail: string;
 }
 
+/** An expectation config asserts for an item, and whether the scan finds it met. */
+export interface Expectation {
+  name: ExpectationName;
+  met: boolean;
+  /** When a scan first found it unmet, carried forward between scans; null while met. */
+  unmetSince: string | null;
+  /** Whole days from unmetSince to the scan; null while met. */
+  days: number | null;
+  level: HealthLevel;
+  thresholds: DayThresholds;
+}
+
 export interface Item {
   /** A local presence's id, or the first forge presence's reference for a forge-only item. */
   id: string;
@@ -253,6 +277,8 @@ export interface Item {
   liveSources: LiveSourceName[];
   presences: Presences;
   flags: ItemFlag[];
+  /** Only the expectations config asserts for the item, in config order. */
+  expectations: Expectation[];
   sources: ItemSources;
 }
 

@@ -1,10 +1,15 @@
 import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { deriveActivity, deriveDrift, deriveGit } from "../src/derivations.ts";
+import type { GitThresholds } from "../src/derivations.ts";
+import {
+  deriveActivity,
+  deriveDrift,
+  deriveGit,
+  deriveStall,
+} from "../src/derivations.ts";
 import { fileMtime } from "../src/fs.ts";
 import type { RawCommit, RawGit } from "../src/raw.ts";
-import type { HourThresholds } from "../src/snapshot.ts";
 import { readRepository } from "../src/sources/git.ts";
 import {
   clonedRepo,
@@ -20,7 +25,10 @@ import {
 const now = new Date("2026-06-01T12:00:00Z");
 const daysBefore = (days: number) =>
   new Date(now.getTime() - days * 86_400_000);
-const thresholds: HourThresholds = { amberHours: 7 * 24, redHours: 30 * 24 };
+const thresholds: GitThresholds = {
+  unsafe: { amberHours: 7 * 24, redHours: 30 * 24 },
+  stalled: { amberDays: 7, redDays: 30 },
+};
 const deps = { runGit: fixtureGit, mtimeOf: fileMtime };
 
 let base: string;
@@ -324,7 +332,7 @@ describe("deriving git data", () => {
       oldestUnpushedAt: new Date(now.getTime() - 30 * 3_600_000).toISOString(),
     };
 
-    expect(deriveDrift(ages, thresholds, now).level).toBe("green");
+    expect(deriveDrift(ages, thresholds.unsafe, now).level).toBe("green");
     expect(deriveDrift(ages, { amberHours: 24, redHours: 72 }, now)).toEqual({
       uncommitted: { since: ages.oldestUncommittedAt, hours: 96, level: "red" },
       unpushed: { since: ages.oldestUnpushedAt, hours: 30, level: "amber" },
@@ -334,7 +342,9 @@ describe("deriving git data", () => {
     expect(
       deriveDrift(ages, { amberHours: 24, redHours: 120 }, now).level,
     ).toBe("amber");
-    expect(deriveDrift(ages, thresholds, daysBefore(-30)).level).toBe("red");
+    expect(deriveDrift(ages, thresholds.unsafe, daysBefore(-30)).level).toBe(
+      "red",
+    );
   });
 });
 
@@ -384,5 +394,76 @@ describe("deriving git data by backup state", () => {
     expect(
       deriveGit(unpushed, thresholds, now, "joined").drift.unpushed?.hours,
     ).toBe(960);
+  });
+});
+
+describe("stalled flight", () => {
+  const feature = (days: number) => ({
+    name: "extension-popup-ia",
+    lastCommit: commitAt("Popup", daysBefore(days)),
+    tracking: {
+      state: "tracking",
+      upstream: "origin/extension-popup-ia",
+      ahead: 0,
+      behind: 0,
+    } as const,
+  });
+
+  it("ages HEAD on a non-default branch from that branch's newest commit", () => {
+    const data = deriveGit(
+      rawGit({
+        head: { state: "branch", name: "extension-popup-ia" },
+        branches: [...rawGit({}).branches, feature(10)],
+      }),
+      thresholds,
+      now,
+      "joined",
+    );
+
+    expect(data.stall).toEqual({
+      branch: "extension-popup-ia",
+      since: daysBefore(10).toISOString(),
+      days: 10,
+      level: "amber",
+      thresholds: { amberDays: 7, redDays: 30 },
+    });
+  });
+
+  it("is absent on the default branch and on a detached HEAD", () => {
+    const branches = [...rawGit({}).branches, feature(40)];
+
+    expect(
+      deriveGit(rawGit({ branches }), thresholds, now, "joined").stall,
+    ).toBeNull();
+    expect(
+      deriveGit(
+        rawGit({
+          branches,
+          head: { state: "absent", reason: "detached-head", commit: "abc" },
+        }),
+        thresholds,
+        now,
+        "joined",
+      ).stall,
+    ).toBeNull();
+  });
+
+  it("goes green, amber and red on the day windows, and needs a default branch to compare", () => {
+    const head = (days: number) => ({
+      branch: "spec",
+      defaultBranch: "main",
+      branchLastCommitAt: daysBefore(days).toISOString(),
+    });
+
+    expect(deriveStall(head(6), thresholds.stalled, now)?.level).toBe("green");
+    expect(deriveStall(head(7), thresholds.stalled, now)?.level).toBe("amber");
+    expect(deriveStall(head(30), thresholds.stalled, now)?.level).toBe("red");
+    expect(
+      deriveStall(
+        { ...head(30), defaultBranch: null },
+        thresholds.stalled,
+        now,
+      ),
+    ).toBeNull();
   });
 });

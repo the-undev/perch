@@ -20,17 +20,22 @@ import type {
   CiRun,
   CiState,
   ClaudeSessionsData,
+  DayThresholds,
   Drift,
+  Expectation,
+  ExpectationName,
   ForgeData,
   GitData,
   HealthLevel,
   HourThresholds,
   ItemError,
+  ItemSources,
   KumaData,
   MonitorStatus,
   PullRequest,
   RoadmapData,
   RoadmapFile,
+  Stall,
   WorkItem,
   WorkItemCounts,
   WorkItemGroup,
@@ -295,6 +300,39 @@ export function deriveDrift(
   };
 }
 
+/**
+ * Stalled flight: HEAD parked on a branch other than the default, aged in days from that
+ * branch's newest commit, so a fresh commit on the branch restarts the clock. Null on the
+ * default branch, on a detached HEAD, or without a default branch to compare against.
+ */
+export function deriveStall(
+  head: {
+    branch: string | null;
+    defaultBranch: string | null;
+    branchLastCommitAt: string | null;
+  },
+  thresholds: DayThresholds,
+  observedAt: Date,
+): Stall | null {
+  const { branch, defaultBranch, branchLastCommitAt } = head;
+  if (branch === null || branch === defaultBranch) return null;
+  if (defaultBranch === null || branchLastCommitAt === null) return null;
+  const days = daysSince(branchLastCommitAt, observedAt);
+  return {
+    branch,
+    since: branchLastCommitAt,
+    days,
+    level: levelFor(days, thresholds.amberDays, thresholds.redDays),
+    thresholds,
+  };
+}
+
+/** The windows git data is judged against. */
+export interface GitThresholds {
+  unsafe: HourThresholds;
+  stalled: DayThresholds;
+}
+
 function earliest(timestamps: readonly string[]): string | null {
   if (timestamps.length === 0) return null;
   return timestamps.reduce((a, b) => (new Date(a) <= new Date(b) ? a : b));
@@ -309,16 +347,15 @@ function earliest(timestamps: readonly string[]): string | null {
  */
 export function deriveGit(
   raw: RawGit,
-  thresholds: HourThresholds,
+  thresholds: GitThresholds,
   observedAt: Date,
   backup: Backup,
 ): GitData {
   const branch = raw.head.state === "branch" ? raw.head.name : null;
   const branchNames = raw.branches.map((entry) => entry.name);
   const defaultBranch = chooseDefaultBranch(raw.originHead, branchNames);
-  const tracking = raw.branches.find(
-    (entry) => entry.name === branch,
-  )?.tracking;
+  const current = raw.branches.find((entry) => entry.name === branch);
+  const tracking = current?.tracking;
   const tracked = tracking?.state === "tracking" ? tracking : null;
   const unpushed = backup === "local-only" ? [] : raw.unpushedCommits;
   const oldestUncommittedAt = earliest(
@@ -364,7 +401,16 @@ export function deriveGit(
         oldestUncommittedAt,
         oldestUnpushedAt: backup === "joined" ? oldestUnpushedAt : null,
       },
-      thresholds,
+      thresholds.unsafe,
+      observedAt,
+    ),
+    stall: deriveStall(
+      {
+        branch,
+        defaultBranch,
+        branchLastCommitAt: current?.lastCommit.committedAt ?? null,
+      },
+      thresholds.stalled,
       observedAt,
     ),
   };
@@ -479,6 +525,57 @@ export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
     openPullRequests: repo.details.value.openPullRequests.map(pullRequest),
     latestCi: deriveCi(repo.details.value.ci),
     finalisedCommits: repo.details.value.finalisedCommits,
+  };
+}
+
+// Expectations
+
+/**
+ * Whether an item's sources meet an expectation. CI is met when any forge presence that could be
+ * read has a CI result on its default branch. A ticket source is never met until perch reads
+ * forge tickets.
+ */
+export function expectationMet(
+  name: ExpectationName,
+  sources: ItemSources,
+): boolean {
+  if (name === "tickets") return false;
+  return [sources.github, sources.forgejo].some(
+    (forge) =>
+      forge !== undefined && !("error" in forge) && forge.latestCi !== null,
+  );
+}
+
+/**
+ * An expectation as of a scan. An unmet one ages in days from when a scan first found it unmet,
+ * carried forward from the previous snapshot; without a previous record the clock starts now.
+ */
+export function deriveExpectation(
+  name: ExpectationName,
+  met: boolean,
+  previousUnmetSince: string | null,
+  thresholds: DayThresholds,
+  observedAt: Date,
+): Expectation {
+  if (met) {
+    return {
+      name,
+      met,
+      unmetSince: null,
+      days: null,
+      level: "green",
+      thresholds,
+    };
+  }
+  const unmetSince = previousUnmetSince ?? observedAt.toISOString();
+  const days = daysSince(unmetSince, observedAt);
+  return {
+    name,
+    met,
+    unmetSince,
+    days,
+    level: levelFor(days, thresholds.amberDays, thresholds.redDays),
+    thresholds,
   };
 }
 

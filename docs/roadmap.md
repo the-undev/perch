@@ -3,6 +3,70 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
+## No config fallback, welcome screen
+
+Approved 22 October 2026. Three parts:
+
+- Trim `config.example.toml` to a genuine example: include only `~/dev`
+  and `~/.dotfiles`, drop the undev and vault includes, the two vault
+  item entries and the undev `launch.zellij_sessions` entry. The forge
+  sections stay as the template to copy.
+- The app reads only `~/.config/perch/config.toml`. A missing file is a
+  distinct no-config state: no scan runs and the renderer shows a
+  welcome screen naming the path, with a button that writes a starter
+  config from the shipped example (only when the file is absent, never
+  overwriting) and a check-again action; window focus also re-checks.
+- The CLI keeps reading the repository's example; it is a dev tool run
+  against `.scan/`.
+
+Tests: config-store returns no-config and never reads the example; the
+scheduler stays idle without config; the welcome screen renders against
+the fake preload; the starter write refuses when the file exists.
+
+## Settings UI
+
+Everything in config becomes editable in the app, even where the form
+is a plain text field. Decided 22 October 2026: the live config file is
+machine-written TOML without comments, which drops the comment
+requirement in `docs/decisions/config.md` (revise that doc). The
+mechanism: `parseConfig` already gives the typed `Config`; the reverse
+is serialising it back (smol-toml; deterministic output keeps dotfiles
+diffs readable). The main process owns the write: atomic save to
+`~/.config/perch/config.toml`, then a rescan, since config feeds every
+derivation. Stow is unaffected; the file is edited in place through the
+symlink. Collisions (file edited while a form is open): last write
+wins, with a reload when the file changes on disk, fine for one person
+on one machine.
+
+Rough order of worth: include and ignore paths, wires (ordered names
+plus default), thresholds, scan intervals as plain forms; launch
+command templates and forge accounts (names bound to keyring keys) as
+raw text fields, rarely touched.
+
+## Adopt and edit birds in the UI
+
+The highest-value slice of the settings work, needing no settings page:
+a fence bird's detail gets an adopt button (pick a wire, optionally
+rename), which writes the item entry and rescans. An adopted bird's
+detail edits the same entry: wire, name, importance, expectations,
+key files, roadmaps, threshold overrides. The expected flow works
+today apart from the UI: adding an include path makes found repos
+appear on the fence after a scan, flagged not-set-up until adopted.
+
+## Item identity across joins
+
+An item entry is keyed by the project's id: the local path id when a
+clone exists, else the project's first ref such as
+`forgejo:owner/name` (`itemFor` in aggregate.ts). Joining is by
+observation: a clone's remote URLs pull the forge presences into its
+project, so forge birds vanish into the local bird when a clone
+appears. That changes the project's id, so an adoption keyed by the
+forge ref stops matching and the bird drops back to the fence,
+not-set-up. Two fixes to choose between: item entries match any ref of
+the project (with a conflict when two entries match one project), or
+the adopt flow and a scan-time migration rewrite the key to the local
+id. The same applies to ignores and joins keyed by refs that move.
+
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the

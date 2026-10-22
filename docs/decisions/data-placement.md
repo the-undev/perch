@@ -43,5 +43,13 @@ The six candidate questions, numbered for reference below:
 
 - The bird answers 1, 2 and 6.
 - The bubble answers 1, 2 and 6 in more detail: listening to what the
-  bird is trying to say. Whether it also carries 3, 4 and 5 is open.
+  bird is trying to say.
 - Everything else is the detail page's job.
+
+### The bubble's two surfaces
+
+The speech is the bird's voice and carries only 1, 2 and 6, in words:
+how it feels and why. The chips beneath are the facts it is carrying:
+the numbers for 3, 4 and 5 (last session, open PRs and CI state, open
+item counts). Anything that needs a list or names, which PRs, which
+items, belongs to the detail page.

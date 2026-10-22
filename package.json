@@ -10,6 +10,7 @@
     "gather": "node packages/core/src/cli/gather.ts",
     "aggregate": "node packages/core/src/cli/aggregate.ts",
     "scan": "pnpm gather && pnpm aggregate",
+    "dev": "pnpm --filter @perch/desktop dev",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "pnpm -r typecheck",

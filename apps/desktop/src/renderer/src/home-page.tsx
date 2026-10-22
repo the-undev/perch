@@ -1,5 +1,5 @@
+import { Button } from "@perch/ui/primitives/button.tsx";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button.tsx";
 import type { PerchApi } from "../../shared/ipc.ts";
 
 /** The placeholder page: the app's name and version, read from the main process. */

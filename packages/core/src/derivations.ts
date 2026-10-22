@@ -28,6 +28,7 @@ import type {
   GitData,
   HealthLevel,
   HourThresholds,
+  Item,
   ItemError,
   ItemSources,
   KumaData,
@@ -40,6 +41,7 @@ import type {
   WorkItemCounts,
   WorkItemGroup,
 } from "./snapshot.ts";
+import type { Health, HealthCause } from "./viewmodel.ts";
 
 // Work items
 
@@ -577,6 +579,81 @@ export function deriveExpectation(
     level: levelFor(days, thresholds.amberDays, thresholds.redDays),
     thresholds,
   };
+}
+
+// Health
+
+/**
+ * An item's health: the worst of its inputs. Failing CI and open bugs are red. Uncommitted
+ * changes, unpushed commits, stalled flight and unmet expectations take the level already judged
+ * against the item's windows. Only amber and red inputs are causes; they come worst first, ties
+ * in the order CI, bugs, uncommitted, unpushed, stalled, expectations. Flags are not inputs: the
+ * one with a level, not set up, is the fence's own situation.
+ */
+export function deriveHealth(item: Item): Health {
+  const candidates: HealthCause[] = [];
+  for (const forge of ["github", "forgejo"] as const) {
+    const data = item.sources[forge];
+    if (data === undefined || "error" in data) continue;
+    if (data.latestCi?.state !== "failure") continue;
+    candidates.push({
+      kind: "ci-failing",
+      level: "red",
+      forge,
+      branch: data.defaultBranch,
+      run: data.latestCi,
+    });
+  }
+  const roadmap = item.sources.roadmap;
+  if (
+    roadmap !== undefined &&
+    !("error" in roadmap) &&
+    roadmap.counts.bug > 0
+  ) {
+    candidates.push({ kind: "bugs", level: "red", count: roadmap.counts.bug });
+  }
+  const git = item.sources.git;
+  if (git !== undefined && !("error" in git)) {
+    const { drift } = git;
+    if (drift.uncommitted) {
+      candidates.push({
+        kind: "uncommitted",
+        level: drift.uncommitted.level,
+        count: git.uncommittedCount,
+        work: drift.uncommitted,
+        thresholds: drift.thresholds,
+      });
+    }
+    if (drift.unpushed) {
+      candidates.push({
+        kind: "unpushed",
+        level: drift.unpushed.level,
+        count: git.unpushedCount,
+        work: drift.unpushed,
+        thresholds: drift.thresholds,
+      });
+    }
+    if (git.stall) {
+      candidates.push({
+        kind: "stalled",
+        level: git.stall.level,
+        stall: git.stall,
+        everythingPushed: git.uncommittedCount === 0 && git.unpushedCount === 0,
+      });
+    }
+  }
+  for (const expectation of item.expectations) {
+    if (expectation.met) continue;
+    candidates.push({
+      kind: "expectation",
+      level: expectation.level,
+      expectation,
+    });
+  }
+  const causes = candidates
+    .filter((cause) => cause.level !== "green")
+    .sort((a, b) => compareLevels(a.level, b.level));
+  return { level: causes[0]?.level ?? "green", causes };
 }
 
 // Uptime Kuma

@@ -3,7 +3,7 @@
 
 import type { FailureReason, ForgeName, PolledSourceName } from "./raw.ts";
 
-export type { ForgeName, PolledSourceName };
+export type { FailureReason, ForgeName, PolledSourceName };
 
 export type ItemKind = "repo" | "vault" | "server";
 

@@ -64,6 +64,25 @@ derivation:
   skiff is fully clean and pushed yet sits on extension-popup-ia,
   last commit seven weeks old, and its bird should not look content.
 
+### Unsafe work thresholds
+
+Uncommitted changes should not exist for more than a day. Defaults:
+under 24 hours green, under 72 hours amber, beyond that red. Unpushed
+local commits use the same defaults; nothing stops them being pushed.
+All of it per project: each bird is different, and a project's config
+can loosen the windows to the point where changes never reach red and
+red comes only from CI and bugs.
+
+### Stalled flight escalates
+
+Parked on a non-default branch with no movement: amber after the first
+threshold, red after the second (defaults 7 and 30 days), because
+half-baked in-flight changes are a state that needs tending, even when
+the tending is a WIP commit and push, which returns the bird to amber
+until the branch itself goes stale. Per-project thresholds as above.
+The one-disk-only accelerant (shorter windows when no copy exists
+anywhere) is TBD.
+
 ### The bubble's two surfaces
 
 The speech is the bird's voice and carries only 1, 2 and 6, in words:

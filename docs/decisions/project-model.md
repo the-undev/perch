@@ -72,3 +72,13 @@ Unpushed drift is measured against a joined remote presence. A local
 presence with no remote is not drifting; it is "local only, one disk",
 its own loud state. Decided here, closing the question the first scan
 raised (a toy repo showing 371 days of fake drift).
+
+## Composite projects
+
+Open. A bird may be a higher-level thing than one repository: skiff
+could grow a native app repo beside the web one, and the Hothouse
+project already incorporates the hearth-config repo without a decided
+join. The model would be a config-asserted member list per project,
+with health rolling up worst-of across members. Parked until dogfooding
+shows whether any two things actually want to be one bird; for now one
+bird per repository or vault.

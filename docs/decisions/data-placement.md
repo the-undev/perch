@@ -123,6 +123,19 @@ never a concept: "main on GitHub, newest commits", not "finalised"
 zero reads as a quiet word ("none", green) rather than a large zero,
 and a real count takes the tone of how bad it is.
 
+Three more rules from the second detail round:
+
+- The stat ledger holds facts in full words ("uncommitted changes",
+  "unpushed commits"), never derived judgement terms: "drift" is a
+  derivation and lives with the bird, the mood word and the sentence on
+  the top line, not in the stats.
+- Only what exists appears, at every tier: no CI chip or stat without
+  CI set up, no tickets without a source. The page exposes facts and
+  never suggests how the project ought to be run.
+- Concrete nouns link where a page exists for them (the branch on the
+  forge, the forge repositories, a PR), styled subtle: inherited colour
+  with a dotted underline.
+
 ### The bubble's two surfaces
 
 The speech is the bird's voice and carries only 1, 2 and 6, in words:

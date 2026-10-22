@@ -89,6 +89,9 @@ svg.bgl { width: 52px; height: 40px; flex: none; overflow: visible; align-self: 
 .panel td.v { text-align: right; color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: 14px; }
 .panel .sub { color: var(--faint); font-size: 12.5px; }
 .inflight { color: var(--accent); font-size: 12px; }
+/* Concrete nouns link where a page exists for them, kept subtle. */
+a.lnk { color: inherit; text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
+a.lnk:hover { color: var(--ink); text-decoration-color: var(--accent); }
 
 .files { background: var(--card); border: 1px solid var(--edge); border-radius: 10px; min-width: 0; }
 .files .ftabs { display: flex; gap: 6px; padding: 12px 16px; border-bottom: 1px solid var(--edge); flex-wrap: wrap; align-items: center; }
@@ -141,19 +144,16 @@ svg.bgl { width: 52px; height: 40px; flex: none; overflow: visible; align-self: 
 			<span class="mood">content</span>
 			<span class="act">editing ♪</span>
 		</div>
-		<div class="meta">Lives in <code>~/dev/perch</code>, on GitHub and Forgejo, on the machine &amp; home wire.</div>
+		<div class="meta">Lives in <code>~/dev/perch</code>, on <a class="lnk" href="#" onclick="return false">GitHub</a> and <a class="lnk" href="#" onclick="return false">Forgejo</a>, on the machine &amp; home wire.</div>
 		<p class="sentence">You're in my files right now. ♪ All settled otherwise:
 		everything committed and pushed to both forges.</p>
 
 		<div class="ledger">
-			<span class="stat"><span class="v good">none</span><span class="k">uncommitted</span></span>
-			<span class="stat"><span class="v good">none</span><span class="k">unpushed</span></span>
-			<span class="stat"><span class="v good">none</span><span class="k">drift</span></span>
-			<span class="stat"><span class="v good">none</span><span class="k">bugs</span></span>
-			<span class="stat"><span class="v good">none</span><span class="k">open PRs</span></span>
-			<span class="stat"><span class="v">24</span><span class="k">open items</span></span>
-			<span class="stat"><span class="v quietv">no source yet</span><span class="k">tickets</span></span>
-			<span class="stat"><span class="v quietv">none yet</span><span class="k">ci</span></span>
+			<span class="stat"><span class="v good">none</span><span class="k">uncommitted changes</span></span>
+			<span class="stat"><span class="v good">none</span><span class="k">unpushed commits</span></span>
+			<span class="stat"><span class="v good">none</span><span class="k">open bugs</span></span>
+			<span class="stat"><span class="v good">none</span><span class="k">open pull requests</span></span>
+			<span class="stat"><span class="v">24</span><span class="k">open roadmap items</span></span>
 			<span class="stat"><span class="v">today</span><span class="k">claude session</span></span>
 		</div>
 
@@ -169,14 +169,13 @@ svg.bgl { width: 52px; height: 40px; flex: none; overflow: visible; align-self: 
 		<div class="lower">
 			<div class="stack">
 				<div class="quiet">Nothing waiting: the working tree is clean,
-				everything is pushed, and no pull requests are open. Tickets
-				have no source yet.</div>
+				everything is pushed, and no pull requests are open.</div>
 				<div class="panel"><h4>Branches</h4><table>
 					<tr><td><b>scanner-poc</b> <span class="inflight">in flight, HEAD</span><br><span class="sub">Record tier C: a strict superset with stats, links…</span></td><td class="v">6m ago</td></tr>
 					<tr><td><b>design-session</b><br><span class="sub">Park the roadmap-versus-branch question in the roadmap</span></td><td class="v">2d ago</td></tr>
 					<tr><td><b>main</b><br><span class="sub">Seed perch with its specification and roadmap</span></td><td class="v">2d ago</td></tr>
 				</table></div>
-				<div class="panel"><h4>main on GitHub, newest commits</h4><table>
+				<div class="panel"><h4><a class="lnk" href="#" onclick="return false">main on GitHub</a>, newest commits</h4><table>
 					<tr><td>Seed perch with its specification and roadmap</td><td class="v">2026-10-20</td></tr>
 				</table><div class="sub" style="margin-top:8px">main holds one commit; scanner-poc is 80+ ahead, unmerged and in flight.</div></div>
 				<div class="panel"><h4>Flags</h4><table>

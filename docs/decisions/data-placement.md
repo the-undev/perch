@@ -83,6 +83,14 @@ until the branch itself goes stale. Per-project thresholds as above.
 The one-disk-only accelerant (shorter windows when no copy exists
 anywhere) is TBD.
 
+### Wires are swim lanes
+
+A wire is the owner's priority lane, assigned in config. A bird never
+changes wire by itself: the vertical geography is stable so the glance
+builds muscle memory. What the bird controls is its position along its
+wire, leftmost needing attention first. Health moves a bird sideways,
+never between lanes.
+
 ### The bubble's two surfaces
 
 The speech is the bird's voice and carries only 1, 2 and 6, in words:

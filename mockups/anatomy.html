@@ -134,7 +134,8 @@ el(p1, "path", { d: "M -20 528 Q 740 560 1500 528", stroke: "var(--wire)", "stro
 bird(p1, 740, 545, 6, "var(--amber)");
 const lbl = el(p1, "text", { x: 740, y: 625, "text-anchor": "middle", fill: "var(--muted)", "font-size": 19, "font-family": "var(--body)", "font-weight": 500 });
 lbl.textContent = "Skiff";
-const note1 = el(p1, "text", { x: 905, y: 180, "text-anchor": "middle", fill: "var(--accent)", "font-size": 26 });
+/* The song scales with the bird; a big bird sings a big note. */
+const note1 = el(p1, "text", { x: 920, y: 195, "text-anchor": "middle", fill: "var(--accent)", "font-size": 58 });
 note1.textContent = "♪";
 
 note(p1, {
@@ -174,8 +175,9 @@ note(p1, {
 });
 note(p1, {
 	x: 330, y: 680, ax: 520, ay: 540, w: 360,
-	title: "Position · who needs you first",
-	text: "Higher wire = more important. Leftmost on its wire = needs you first. The fence below holds the unadopted, dimmed.",
+	title: "The wire · your swim lane",
+	text: "Wires are priority lanes set in config; a bird never changes wire by itself. Along the wire the bird places itself: leftmost needs you first. The fence below holds the unadopted, dimmed.",
+	rule: "lane from config · position from state",
 });
 note(p1, {
 	x: 820, y: 680, ax: 760, ay: 612, w: 300,

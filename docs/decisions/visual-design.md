@@ -108,6 +108,8 @@ button through to the zoomed detail. Verdicts:
 ## Open
 
 - Aviary V carries the fixes above; verdict pending.
+- The ♪ must scale with the bird; the fixed-size note reads tiny on a
+  big bird (field guide verdict).
 - The two-tab structure (aviary overview, shell working view) is pending a
   proper test.
 - The shell overview as per-category aggregates, if still needed once the

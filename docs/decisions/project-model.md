@@ -79,6 +79,17 @@ Open. A bird may be a higher-level thing than one repository: skiff
 could grow a native app repo beside the web one, and the Hothouse
 project already incorporates the hearth-config repo without a decided
 join. The model would be a config-asserted member list per project,
-with health rolling up worst-of across members. Parked until dogfooding
-shows whether any two things actually want to be one bird; for now one
-bird per repository or vault.
+with health rolling up worst-of across members. How a multi-repo
+project displays on its detail page is part of the same open question.
+Parked until dogfooding shows whether any two things actually want to
+be one bird; for now one bird per repository or vault.
+
+## Adoption
+
+With only include paths and forge tokens configured, every found thing
+is a bird on the fence. Observation already joins what it can prove: a
+local clone whose remotes point at a GitHub and a Forgejo repository is
+one thing with three presences, while the same two forge repositories
+without a local clone stay two birds. Adopting a bird means adding it
+to config: that puts it on a wire, and the same config entry may assert
+ties the URLs could not prove.

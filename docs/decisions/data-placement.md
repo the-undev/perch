@@ -91,6 +91,12 @@ builds muscle memory. What the bird controls is its position along its
 wire, leftmost needing attention first. Health moves a bird sideways,
 never between lanes.
 
+The lanes themselves are dynamic: config defines an ordered, named list
+of wires, top to bottom, and adding a lane is a config edit, not a code
+change. The fence is not a lane; it is always present beneath as the
+ground for the unadopted. The current "Machine & Home" and "Projects"
+pair is just this machine's starting config.
+
 ### The bubble's two surfaces
 
 The speech is the bird's voice and carries only 1, 2 and 6, in words:

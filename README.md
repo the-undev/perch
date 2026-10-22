@@ -18,6 +18,7 @@ Needs Node 26 and pnpm 11. Run `pnpm install` once, then from the root:
 | `pnpm check` | Runs Biome, tsc and vitest across the workspace. |
 | `pnpm scan` | Runs the same scan from the command line, into `.scan/raw/` and `.scan/snapshot.json` in the repository. |
 | `pnpm dist` | Builds the Linux AppImage into `apps/desktop/dist/`. |
+| `pnpm icons` | Renders the app and tray icons from their SVGs in `apps/desktop/resources/`. |
 
 The config is `~/.config/perch/config.toml`; without it the app reads
 `config.example.toml`, which shows every field. Forge tokens come from the

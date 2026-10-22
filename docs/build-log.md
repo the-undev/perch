@@ -240,3 +240,32 @@ build-time calls so they can be revisited.
   vitest projects in the desktop package.
 - A full scan of this machine took 6.5 seconds cold and about 4 seconds
   warm, all seven sources ok. The interval defaults stay open.
+- The tray phase. The app icon is the board's content bird on a wire on
+  the ink ground, drawn from `bird.tsx`'s geometry with the theme's
+  colours written out. The tray has its own silhouette: body, head, tail
+  and beak in ink with the green breast, no legs, eye or wire, which
+  smear at 22px. `@resvg/resvg-js` renders the PNGs, which are committed;
+  a test reads each one's size.
+- The window and tray icons ship among the AppImage's resources and are
+  found where the dev build finds them, in `apps/desktop/resources/`.
+- Activating the tray icon, a left click on Plasma, toggles the window.
+  The menu is Show, Rescan and Quit, Quit set apart by a separator.
+  Rescan does not show the window.
+- In front means shown, not minimised and focused. A toggle on a window
+  shown but behind others brings it forward rather than hiding it.
+- A second launch's arguments are read from the `second-instance` event's
+  command line as exact flags anywhere in it, so the executable and
+  Chromium's switches are ignored. `--toggle` wins over `--show`;
+  `--scan` combines with either. A second launch with only `--hidden` or
+  `--scan` leaves the window alone, so an autostart beside a running
+  perch does not show it.
+- Two desktop entries: `perch.desktop` for the launcher runs `perch`,
+  `perch-autostart.desktop` runs `perch --hidden`. Both name the icon
+  `perch`, linked into the hicolor theme by hand as the README says.
+  Nothing is installed outside the repository.
+- The AppImage is 121 MB. Its runtime hung in the build shell, even for
+  `--appimage-version`, so the hand-over was checked on
+  `dist/linux-unpacked/perch` under a scratch HOME: second launches with
+  `--toggle`, `--toggle` and `--scan` each quit with exit 0 in about 0.2
+  seconds, the first kept running, and `--scan` wrote a new snapshot.
+  Whether the window took focus was not checked; see the roadmap.

@@ -15,25 +15,33 @@ import type {
 } from "./raw.ts";
 import type {
   ActivityState,
+  AgedWork,
   Backup,
   CiRun,
   CiState,
   ClaudeSessionsData,
+  DayThresholds,
   Drift,
-  DriftThresholds,
+  Expectation,
+  ExpectationName,
   ForgeData,
   GitData,
   HealthLevel,
+  HourThresholds,
+  Item,
   ItemError,
+  ItemSources,
   KumaData,
   MonitorStatus,
   PullRequest,
   RoadmapData,
   RoadmapFile,
+  Stall,
   WorkItem,
   WorkItemCounts,
   WorkItemGroup,
 } from "./snapshot.ts";
+import type { Health, HealthCause } from "./viewmodel.ts";
 
 // Work items
 
@@ -177,7 +185,8 @@ export const emptyRoadmap: RoadmapData = {
 
 // Git
 
-const dayMs = 24 * 60 * 60 * 1000;
+const hourMs = 60 * 60 * 1000;
+const dayMs = 24 * hourMs;
 
 /** The default branch: where origin/HEAD points, else main or master if such a branch exists. */
 export function chooseDefaultBranch(
@@ -211,46 +220,119 @@ export function deriveActivity(input: ActivityInput): ActivityState {
   return otherBranches.length > 0 ? "in-progress" : "settled";
 }
 
-/** Whole days from a timestamp to the observation time, never negative. */
-function ageInDays(since: string | null, observedAt: Date): number | null {
-  if (since === null) return null;
+/** Whole units of a length from a timestamp to the observation time, never negative. */
+function wholeUnitsSince(
+  since: string,
+  observedAt: Date,
+  unitMs: number,
+): number {
   const elapsed = observedAt.getTime() - new Date(since).getTime();
-  return Math.max(0, Math.floor(elapsed / dayMs));
+  return Math.max(0, Math.floor(elapsed / unitMs));
 }
 
-/** Red at or beyond the red threshold, amber at or beyond amber, else green; no drift is green. */
-function levelFor(
-  driftDays: number | null,
-  thresholds: DriftThresholds,
-): HealthLevel {
-  if (driftDays === null) return "green";
-  if (driftDays >= thresholds.redDays) return "red";
-  if (driftDays >= thresholds.amberDays) return "amber";
+/** Whole days from a timestamp to the observation time, never negative. */
+export function daysSince(since: string, observedAt: Date): number {
+  return wholeUnitsSince(since, observedAt, dayMs);
+}
+
+/** Whole hours from a timestamp to the observation time, never negative. */
+export function hoursSince(since: string, observedAt: Date): number {
+  return wholeUnitsSince(since, observedAt, hourMs);
+}
+
+/** Red at or beyond the red window, amber at or beyond the amber window, else green. */
+export function levelFor(age: number, amber: number, red: number): HealthLevel {
+  if (age >= red) return "red";
+  if (age >= amber) return "amber";
   return "green";
 }
 
+const levelRank: Record<HealthLevel, number> = { green: 0, amber: 1, red: 2 };
+
+/** The worse of health levels; green for none. */
+export function worstLevel(levels: readonly HealthLevel[]): HealthLevel {
+  return levels.reduce<HealthLevel>(
+    (worst, level) => (levelRank[level] > levelRank[worst] ? level : worst),
+    "green",
+  );
+}
+
+/** Orders health levels worst first. */
+export function compareLevels(a: HealthLevel, b: HealthLevel): number {
+  return levelRank[b] - levelRank[a];
+}
+
+function agedWork(
+  since: string | null,
+  thresholds: HourThresholds,
+  observedAt: Date,
+): AgedWork | null {
+  if (since === null) return null;
+  const hours = hoursSince(since, observedAt);
+  return {
+    since,
+    hours,
+    level: levelFor(hours, thresholds.amberHours, thresholds.redHours),
+  };
+}
+
 /**
- * Drift is the age of the oldest uncommitted or unpushed work, the larger of the two, measured
- * at the time git was read and judged against the item's thresholds.
+ * Unsafe work is uncommitted changes and unpushed commits, each aged in hours from its oldest
+ * change at the time git was read and judged against the item's windows. The level is the worse
+ * of the two, so continuing to edit never resets the clock on an older backlog.
  */
 export function deriveDrift(
   ages: { oldestUncommittedAt: string | null; oldestUnpushedAt: string | null },
-  thresholds: DriftThresholds,
+  thresholds: HourThresholds,
   observedAt: Date,
 ): Drift {
-  const uncommittedDays = ageInDays(ages.oldestUncommittedAt, observedAt);
-  const unpushedDays = ageInDays(ages.oldestUnpushedAt, observedAt);
-  const known = [uncommittedDays, unpushedDays].filter(
-    (days): days is number => days !== null,
+  const uncommitted = agedWork(
+    ages.oldestUncommittedAt,
+    thresholds,
+    observedAt,
   );
-  const driftDays = known.length === 0 ? null : Math.max(...known);
+  const unpushed = agedWork(ages.oldestUnpushedAt, thresholds, observedAt);
   return {
-    uncommittedDays,
-    unpushedDays,
-    driftDays,
-    level: levelFor(driftDays, thresholds),
+    uncommitted,
+    unpushed,
+    level: worstLevel(
+      [uncommitted, unpushed].flatMap((work) => (work ? [work.level] : [])),
+    ),
     thresholds,
   };
+}
+
+/**
+ * Stalled flight: HEAD parked on a branch other than the default, aged in days from that
+ * branch's newest commit, so a fresh commit on the branch restarts the clock. Null on the
+ * default branch, on a detached HEAD, or without a default branch to compare against.
+ */
+export function deriveStall(
+  head: {
+    branch: string | null;
+    defaultBranch: string | null;
+    branchLastCommitAt: string | null;
+  },
+  thresholds: DayThresholds,
+  observedAt: Date,
+): Stall | null {
+  const { branch, defaultBranch, branchLastCommitAt } = head;
+  if (branch === null || branch === defaultBranch) return null;
+  if (defaultBranch === null || branchLastCommitAt === null) return null;
+  const days = daysSince(branchLastCommitAt, observedAt);
+  return {
+    branch,
+    since: branchLastCommitAt,
+    days,
+    level: levelFor(days, thresholds.amberDays, thresholds.redDays),
+    thresholds,
+  };
+}
+
+/** The windows git data is judged against. */
+export interface GitThresholds {
+  unsafe: HourThresholds;
+  stalled: DayThresholds;
 }
 
 function earliest(timestamps: readonly string[]): string | null {
@@ -267,16 +349,15 @@ function earliest(timestamps: readonly string[]): string | null {
  */
 export function deriveGit(
   raw: RawGit,
-  thresholds: DriftThresholds,
+  thresholds: GitThresholds,
   observedAt: Date,
   backup: Backup,
 ): GitData {
   const branch = raw.head.state === "branch" ? raw.head.name : null;
   const branchNames = raw.branches.map((entry) => entry.name);
   const defaultBranch = chooseDefaultBranch(raw.originHead, branchNames);
-  const tracking = raw.branches.find(
-    (entry) => entry.name === branch,
-  )?.tracking;
+  const current = raw.branches.find((entry) => entry.name === branch);
+  const tracking = current?.tracking;
   const tracked = tracking?.state === "tracking" ? tracking : null;
   const unpushed = backup === "local-only" ? [] : raw.unpushedCommits;
   const oldestUncommittedAt = earliest(
@@ -322,7 +403,16 @@ export function deriveGit(
         oldestUncommittedAt,
         oldestUnpushedAt: backup === "joined" ? oldestUnpushedAt : null,
       },
-      thresholds,
+      thresholds.unsafe,
+      observedAt,
+    ),
+    stall: deriveStall(
+      {
+        branch,
+        defaultBranch,
+        branchLastCommitAt: current?.lastCommit.committedAt ?? null,
+      },
+      thresholds.stalled,
       observedAt,
     ),
   };
@@ -395,9 +485,10 @@ export function forgejoCiState(state: string): CiState {
 
 /**
  * CI from a forge. GitHub's is its latest run on the default branch. Forgejo's is the combined
- * commit status, named after its newest individual status. None is null.
+ * commit status, named after its newest individual status, whose target URL Forgejo may give
+ * relative to the instance; it is resolved against the repository URL. None is null.
  */
-function deriveCi(ci: RawCi): CiRun | null {
+function deriveCi(ci: RawCi, repoUrl: string): CiRun | null {
   if (ci.forge === "github") {
     if (ci.latestRun.state === "absent") return null;
     const run = ci.latestRun.value;
@@ -420,7 +511,10 @@ function deriveCi(ci: RawCi): CiRun | null {
     name: newest.context,
     state: forgejoCiState(ci.combinedStatus.state),
     forgeState: ci.combinedStatus.state,
-    url: newest.targetUrl.state === "observed" ? newest.targetUrl.value : null,
+    url:
+      newest.targetUrl.state === "observed"
+        ? new URL(newest.targetUrl.value, repoUrl).href
+        : null,
     createdAt: newest.createdAt,
   };
 }
@@ -435,9 +529,135 @@ export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
     url: repo.info.url,
     defaultBranch: repo.info.defaultBranch,
     openPullRequests: repo.details.value.openPullRequests.map(pullRequest),
-    latestCi: deriveCi(repo.details.value.ci),
+    latestCi: deriveCi(repo.details.value.ci, repo.info.url),
     finalisedCommits: repo.details.value.finalisedCommits,
   };
+}
+
+// Expectations
+
+/**
+ * Whether an item's sources meet an expectation. CI is met when any forge presence that could be
+ * read has a CI result on its default branch. A ticket source is never met until perch reads
+ * forge tickets.
+ */
+export function expectationMet(
+  name: ExpectationName,
+  sources: ItemSources,
+): boolean {
+  if (name === "tickets") return false;
+  return [sources.github, sources.forgejo].some(
+    (forge) =>
+      forge !== undefined && !("error" in forge) && forge.latestCi !== null,
+  );
+}
+
+/**
+ * An expectation as of a scan. An unmet one ages in days from when a scan first found it unmet,
+ * carried forward from the previous snapshot; without a previous record the clock starts now.
+ */
+export function deriveExpectation(
+  name: ExpectationName,
+  met: boolean,
+  previousUnmetSince: string | null,
+  thresholds: DayThresholds,
+  observedAt: Date,
+): Expectation {
+  if (met) {
+    return {
+      name,
+      met,
+      unmetSince: null,
+      days: null,
+      level: "green",
+      thresholds,
+    };
+  }
+  const unmetSince = previousUnmetSince ?? observedAt.toISOString();
+  const days = daysSince(unmetSince, observedAt);
+  return {
+    name,
+    met,
+    unmetSince,
+    days,
+    level: levelFor(days, thresholds.amberDays, thresholds.redDays),
+    thresholds,
+  };
+}
+
+// Health
+
+/**
+ * An item's health: the worst of its inputs. Failing CI and open bugs are red. Uncommitted
+ * changes, unpushed commits, stalled flight and unmet expectations take the level already judged
+ * against the item's windows. Only amber and red inputs are causes; they come worst first, ties
+ * in the order CI, bugs, uncommitted, unpushed, stalled, expectations. Flags are not inputs: the
+ * one with a level, not set up, is the fence's own situation.
+ */
+export function deriveHealth(item: Item): Health {
+  const candidates: HealthCause[] = [];
+  for (const forge of ["github", "forgejo"] as const) {
+    const data = item.sources[forge];
+    if (data === undefined || "error" in data) continue;
+    if (data.latestCi?.state !== "failure") continue;
+    candidates.push({
+      kind: "ci-failing",
+      level: "red",
+      forge,
+      branch: data.defaultBranch,
+      run: data.latestCi,
+    });
+  }
+  const roadmap = item.sources.roadmap;
+  if (
+    roadmap !== undefined &&
+    !("error" in roadmap) &&
+    roadmap.counts.bug > 0
+  ) {
+    candidates.push({ kind: "bugs", level: "red", count: roadmap.counts.bug });
+  }
+  const git = item.sources.git;
+  if (git !== undefined && !("error" in git)) {
+    const { drift } = git;
+    if (drift.uncommitted) {
+      candidates.push({
+        kind: "uncommitted",
+        level: drift.uncommitted.level,
+        count: git.uncommittedCount,
+        work: drift.uncommitted,
+        thresholds: drift.thresholds,
+      });
+    }
+    if (drift.unpushed) {
+      candidates.push({
+        kind: "unpushed",
+        level: drift.unpushed.level,
+        count: git.unpushedCount,
+        work: drift.unpushed,
+        thresholds: drift.thresholds,
+      });
+    }
+    if (git.stall) {
+      candidates.push({
+        kind: "stalled",
+        level: git.stall.level,
+        stall: git.stall,
+        everythingPushed: git.uncommittedCount === 0 && git.unpushedCount === 0,
+      });
+    }
+  }
+  for (const expectation of item.expectations) {
+    if (expectation.met) continue;
+    candidates.push({
+      kind: "expectation",
+      level: expectation.level,
+      expectation,
+    });
+  }
+  const causes = candidates
+    .filter((cause) => cause.level !== "green")
+    .sort((a, b) => compareLevels(a.level, b.level));
+  return { level: causes[0]?.level ?? "green", causes };
 }
 
 // Uptime Kuma

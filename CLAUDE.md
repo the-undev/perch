@@ -30,9 +30,17 @@ the repository root:
 - `pnpm gather` reads this machine and the forge accounts in two rounds (root
   collectors, then enrichers) and writes raw facts, one JSON file per source,
   to `.scan/raw/`. Types in `src/raw.ts`.
-- `pnpm aggregate` reads only those files and the config, joins presences
-  into projects (`src/join.ts`), and writes `.scan/snapshot.json`. Types in
-  `src/snapshot.ts`; every derivation rule is in `src/derivations.ts`.
+- `pnpm aggregate` reads only those files, the config and the previous
+  snapshot, joins presences into projects (`src/join.ts`), and writes
+  `.scan/snapshot.json`. Types in `src/snapshot.ts`; every derivation rule
+  is in `src/derivations.ts`.
+
+The renderer reads only the view model: `src/viewmodel.ts` derives the
+aviary, each bird, its bubble and its detail from a snapshot and the config
+by pure functions, with the speech in `src/speech.ts`. `src/mock.ts` is a
+hand-curated snapshot and config pair that covers every view model state,
+imported as `@perch/core/mock.ts`; `tests/mock.test.ts` fails if it drifts
+from the rules or loses a state.
 
 `pnpm scan` runs both. Config is `~/.config/perch/config.toml`, or the root
 `config.example.toml` when that is absent.

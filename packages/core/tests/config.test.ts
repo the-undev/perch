@@ -2,10 +2,12 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  driftThresholdsFor,
   importanceFor,
   loadConfig,
   parseConfig,
+  thresholdsFor,
+  wireFor,
+  zellijSessionFor,
 } from "../src/config.ts";
 
 const examplePath = join(
@@ -39,14 +41,29 @@ describe("example config", () => {
     ]);
     expect(config.joins).toEqual([]);
     expect(config.ignore).toEqual([]);
-    expect(config.drift).toEqual({ amberDays: 7, redDays: 30 });
+    expect(config.wires).toEqual({
+      names: ["Machine & Home", "Projects"],
+      default: "Projects",
+    });
+    expect(config.thresholds).toEqual({
+      unsafe: { amberHours: 24, redHours: 72 },
+      stalled: { amberDays: 7, redDays: 30 },
+      expectation: { amberDays: 7, redDays: 30 },
+    });
     expect(config.importance.default).toBe("projects");
     expect(config.items["obsidian/Hothouse"]?.roadmaps).toEqual([
       "Tech/Tech Plans.md",
       "Garden/Garden Plans.md",
     ]);
     expect(config.forges.finalisedCommits).toBe(10);
-    expect(config.forges.archivedIntervalHours).toBe(24);
+    expect(config.scan).toEqual({
+      intervalMinutes: 15,
+      archivedIntervalHours: 24,
+    });
+    expect(config.launch).toEqual({
+      zellijSession: "home",
+      zellijSessions: { "/home/test/undev": "undev" },
+    });
     expect(config.forges.github.trackedForks).toEqual([]);
     expect(config.forges.github.hosts).toEqual(["github.com", "github-work"]);
     expect(config.forges.github.accounts).toEqual([
@@ -66,9 +83,36 @@ describe("example config", () => {
     const config = parseConfig(await exampleText(), home);
 
     expect(importanceFor(config, "dev/perch")).toBe("projects");
-    expect(driftThresholdsFor(config, "dev/perch")).toEqual({
-      amberDays: 7,
-      redDays: 30,
+    expect(thresholdsFor(config, "dev/perch")).toEqual(config.thresholds);
+  });
+
+  it("shows every entry field in its commented example, and each parses", async () => {
+    const text = await exampleText();
+    const lines = text.split("\n");
+    const start = lines.indexOf('# [items."dev/perch"]');
+    const block = [];
+    for (const line of lines.slice(start)) {
+      if (!line.startsWith("# ")) break;
+      block.push(line.slice(2));
+    }
+    const config = parseConfig(
+      text.replace("[forges]\n", `${block.join("\n")}\n\n[forges]\n`),
+      home,
+    );
+
+    expect(config.items["dev/perch"]).toEqual({
+      wire: "Projects",
+      name: "Perch",
+      importance: "machine",
+      thresholds: {
+        unsafe: { amberHours: 12, redHours: 48 },
+        stalled: { amberDays: 14, redDays: 60 },
+        expectation: { amberDays: 3, redDays: 14 },
+      },
+      expect: ["ci", "tickets"],
+      keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
+      roadmaps: ["docs/roadmap.md"],
+      zellijSession: "home",
     });
   });
 });
@@ -81,18 +125,80 @@ describe("item overrides", () => {
     );
   }
 
-  it("apply importance and drift thresholds to the named item only", async () => {
+  it("apply importance and thresholds to the named item only", async () => {
     const text = await withOverrides(
-      '[items.".dotfiles"]\nimportance = "machine"\ndrift_amber_days = 3\n',
+      '[items.".dotfiles"]\nimportance = "machine"\nunsafe_amber_hours = 3\nstalled_red_days = 60\n',
     );
     const config = parseConfig(text, home);
 
     expect(importanceFor(config, ".dotfiles")).toBe("machine");
-    expect(driftThresholdsFor(config, ".dotfiles")).toEqual({
-      amberDays: 3,
-      redDays: 30,
+    expect(thresholdsFor(config, ".dotfiles")).toEqual({
+      unsafe: { amberHours: 3, redHours: 72 },
+      stalled: { amberDays: 7, redDays: 60 },
+      expectation: { amberDays: 7, redDays: 30 },
     });
     expect(importanceFor(config, "dev/perch")).toBe("projects");
+    expect(thresholdsFor(config, "dev/perch")).toEqual(config.thresholds);
+  });
+
+  it("put an adopted item on its wire, the default wire without one, and the rest on the fence", async () => {
+    const text = await withOverrides(
+      '[items.".dotfiles"]\nwire = "Machine & Home"\n\n[items."dev/perch"]\n',
+    );
+    const config = parseConfig(text, home);
+
+    expect(wireFor(config, ".dotfiles")).toBe("Machine & Home");
+    expect(wireFor(config, "dev/perch")).toBe("Projects");
+    expect(wireFor(config, "dev/hello")).toBeNull();
+  });
+
+  it("choose the zellij session from the entry, then the longest root, then the default", async () => {
+    const text = (
+      await withOverrides('[items."undev/spool"]\nzellij_session = "spool"\n')
+    ).replace(
+      '"~/undev" = "undev"',
+      '"~/undev" = "undev"\n"~/undev/tools" = "tools"',
+    );
+    const config = parseConfig(text, home);
+
+    expect(
+      zellijSessionFor(config, "undev/spool", "/home/test/undev/spool"),
+    ).toBe("spool");
+    expect(
+      zellijSessionFor(config, "undev/x", "/home/test/undev/tools/x"),
+    ).toBe("tools");
+    expect(zellijSessionFor(config, "undev/y", "/home/test/undev/y")).toBe(
+      "undev",
+    );
+    expect(zellijSessionFor(config, "undevx", "/home/test/undevx")).toBe(
+      "home",
+    );
+  });
+
+  it("reject a wire that is not in the wire list", async () => {
+    const text = await withOverrides('[items."dev/perch"]\nwire = "Garden"\n');
+
+    expect(() => parseConfig(text, home)).toThrow(/wire must be one of/);
+  });
+
+  it("reject an expectation perch cannot check", async () => {
+    const text = await withOverrides(
+      '[items."dev/perch"]\nexpect = ["docs"]\n',
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      /expect must be one of ci, tickets/,
+    );
+  });
+
+  it("reject an amber window that does not open before red, once merged with the globals", async () => {
+    const text = await withOverrides(
+      '[items."dev/perch"]\nunsafe_amber_hours = 72\n',
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      /items."dev\/perch".unsafe amber threshold must be below its red threshold/,
+    );
   });
 
   it("reject a tier that is not in the tier list", async () => {
@@ -114,9 +220,12 @@ describe("loadConfig", () => {
     const fallback = await loadConfig({ home, examplePath, readText });
     expect(fallback.path).toBe(examplePath);
 
-    files.set(userPath, example.replace("amber_days = 7", "amber_days = 5"));
+    files.set(
+      userPath,
+      example.replace("stalled_amber_days = 7", "stalled_amber_days = 5"),
+    );
     const user = await loadConfig({ home, examplePath, readText });
     expect(user.path).toBe(userPath);
-    expect(user.config.drift.amberDays).toBe(5);
+    expect(user.config.thresholds.stalled.amberDays).toBe(5);
   });
 });

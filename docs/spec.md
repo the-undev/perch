@@ -122,9 +122,22 @@ paths below are inside it. Two stages, both writing under the gitignored
 - `pnpm aggregate` reads only those files and the config, joins
   presences into projects (`src/join.ts`), and writes
   `.scan/snapshot.json`. Types in `src/snapshot.ts`; every derivation
-  rule lives in `src/derivations.ts`.
+  rule lives in `src/derivations.ts`. It reads the previous snapshot
+  first: that is the first-seen record for unmet expectations.
 
 `pnpm scan` runs both; `pnpm check` runs Biome, tsc and vitest.
+
+The renderer consumes only the view model, never the raw or snapshot
+types. `src/viewmodel.ts` derives it from a snapshot and the config by
+pure functions, in the design's words: the aviary's wires and fence,
+each bird's mood, activity, size and plumpness, its bubble (the speech
+from `src/speech.ts`, which follows the phrasebook, and the chips) and
+its detail (ledger, branches, newest commits, pull requests, flags,
+launch actions, links, key files). The sky follows the clock at render
+and is not part of the model. `src/mock.ts` holds a hand-curated
+snapshot and config pair covering every view model state, for the
+design site and the app. Neither module imports Node, so the renderer
+can import both.
 Scanners are tested against fixtures under `tests/fixtures/`, never the
 live machine. The scan feeds the glance unattended: no prompting
 routes, no SSH. Detail views may use live sources; the window never
@@ -154,9 +167,11 @@ Details and open questions (composite multi-repo projects among them):
 
 `~/.config/perch/config.toml`, stowed from the dotfiles so backup is a
 dotfiles push. It holds: the wires as an ordered named list, include
-and ignore paths, forge accounts and addresses, per-project assertions
-(joins, importance, display names, thresholds, expectations, key file
-lists, zellij session names). No secrets, ever.
+and ignore paths, forge accounts and addresses, the health windows, the
+two scan lanes, the zellij session defaults, per-project assertions
+(joins, wire, importance, display names, thresholds, expectations, key
+file lists, zellij session names). An entry for an item adopts it. No
+secrets, ever. Every field is shown in `config.example.toml`.
 
 ## Secrets
 

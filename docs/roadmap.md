@@ -103,7 +103,8 @@ a chore.
 ## Forge issues source
 
 Tickets from GitHub and Forgejo as a work source beside the in-repo
-roadmap, feeding the bubble's chips and the detail page. Forgejo's API
+roadmap, feeding the bubble's chips, the bird's plumpness and the detail
+page. Until it exists a `tickets` expectation is never met. Forgejo's API
 serves them and the tokens already carry read:issue. GitHub fine-grained
 tokens need the Issues read permission added, a regenerate per
 docs/tokens.md. GitHub's issues listing includes pull requests; the
@@ -142,3 +143,24 @@ repository, and the aviary works with any project set. See
 Candidates that fit the derived-only rule: the vault roadmaps as tiles of their
 own, the family PC's setup runbook progress if it is a checklist in the
 vault, browser reading list.
+
+## Launcher commands in config
+
+Launch actions say what to open (zellij tab, VS Code, folder, Obsidian);
+the commands that open them are hard-coded nowhere yet. They join config
+when the main process implements launching, per
+`docs/decisions/launch-actions.md`.
+
+## Just pushed
+
+The phrasebook's candidate "Everything's just gone up" needs the time
+work was last made safe. Git does not record when a push happened; the
+remote-tracking ref's reflog or the forge's push events might. Decide the
+source before the line joins the speech.
+
+## Calendar words in speech
+
+The phrasebook's examples say "since Monday" and "yesterday". The model
+speaks in durations measured at the scan, which needs no clock or time
+zone. Calendar words would need the render time and the local zone, so
+they belong in the renderer if they come back.

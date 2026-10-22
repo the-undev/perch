@@ -3,7 +3,7 @@
 
 import type { FailureReason, ForgeName, PolledSourceName } from "./raw.ts";
 
-export type { ForgeName, PolledSourceName };
+export type { FailureReason, ForgeName, PolledSourceName };
 
 export type ItemKind = "repo" | "vault" | "server";
 
@@ -18,6 +18,9 @@ export type ActivityState = "settled" | "in-progress" | "editing";
 
 export type HealthLevel = "green" | "amber" | "red";
 
+/** A source the owner can assert an item should have: CI, or a ticket source. */
+export type ExpectationName = "ci" | "tickets";
+
 export interface Remote {
   name: string;
   fetchUrl: string;
@@ -31,20 +34,45 @@ export interface LocalBranch {
   upstream: string | null;
 }
 
-export interface DriftThresholds {
+/** Windows in hours: amber at or beyond the first, red at or beyond the second. */
+export interface HourThresholds {
+  amberHours: number;
+  redHours: number;
+}
+
+/** Windows in days: amber at or beyond the first, red at or beyond the second. */
+export interface DayThresholds {
   amberDays: number;
   redDays: number;
 }
 
-export interface Drift {
-  /** Age in whole days of the oldest uncommitted change, from the dirty files' mtimes. */
-  uncommittedDays: number | null;
-  /** Age in whole days of the oldest commit on any local branch that no remote holds. */
-  unpushedDays: number | null;
-  /** The larger of the two ages, null when nothing is uncommitted or unpushed. */
-  driftDays: number | null;
+/** Unsafe work of one kind, aged from its oldest change and judged against the item's windows. */
+export interface AgedWork {
+  since: string;
+  /** Whole hours from since to when git was read. */
+  hours: number;
   level: HealthLevel;
-  thresholds: DriftThresholds;
+}
+
+/** Unsafe work: uncommitted changes and unpushed commits, each aged from its oldest. */
+export interface Drift {
+  /** The oldest uncommitted change, from the dirty files' mtimes; null when there is none. */
+  uncommitted: AgedWork | null;
+  /** The oldest commit no remote holds, aged only against a joined forge presence. */
+  unpushed: AgedWork | null;
+  /** The worse of the two levels; green when neither exists. */
+  level: HealthLevel;
+  thresholds: HourThresholds;
+}
+
+/** HEAD parked on a branch other than the default, aged from that branch's newest commit. */
+export interface Stall {
+  branch: string;
+  since: string;
+  /** Whole days from since to when git was read. */
+  days: number;
+  level: HealthLevel;
+  thresholds: DayThresholds;
 }
 
 /**
@@ -72,6 +100,8 @@ export interface GitData {
   remotes: Remote[];
   activity: ActivityState;
   drift: Drift;
+  /** Null when HEAD is on the default branch, detached, or there is no default branch. */
+  stall: Stall | null;
 }
 
 export type WorkItemKind = "bug" | "feature";
@@ -223,6 +253,18 @@ export interface ItemFlag {
   detail: string;
 }
 
+/** An expectation config asserts for an item, and whether the scan finds it met. */
+export interface Expectation {
+  name: ExpectationName;
+  met: boolean;
+  /** When a scan first found it unmet, carried forward between scans; null while met. */
+  unmetSince: string | null;
+  /** Whole days from unmetSince to the scan; null while met. */
+  days: number | null;
+  level: HealthLevel;
+  thresholds: DayThresholds;
+}
+
 export interface Item {
   /** A local presence's id, or the first forge presence's reference for a forge-only item. */
   id: string;
@@ -235,6 +277,8 @@ export interface Item {
   liveSources: LiveSourceName[];
   presences: Presences;
   flags: ItemFlag[];
+  /** Only the expectations config asserts for the item, in config order. */
+  expectations: Expectation[];
   sources: ItemSources;
 }
 

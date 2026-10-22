@@ -649,6 +649,42 @@ describe("deriving forge data", () => {
     });
   });
 
+  it("resolves a Forgejo CI link given relative to the instance", () => {
+    const repo = forgeRepo("the-undev/prism", {});
+    repo.info.url = "http://forge.example.lan:3000/the-undev/prism";
+    repo.details = {
+      state: "observed",
+      value: {
+        openPullRequests: [],
+        ci: {
+          forge: "forgejo",
+          combinedStatus: {
+            state: "failure",
+            statuses: [
+              {
+                context: "check / check (push)",
+                status: "failure",
+                targetUrl: {
+                  state: "observed",
+                  value: "/the-undev/prism/actions/runs/6/jobs/0",
+                },
+                createdAt: "2026-10-17T23:02:30+01:00",
+              },
+            ],
+          },
+        },
+        finalisedCommits: [],
+      },
+    };
+
+    expect(deriveForge(repo)).toMatchObject({
+      latestCi: {
+        state: "failure",
+        url: "http://forge.example.lan:3000/the-undev/prism/actions/runs/6/jobs/0",
+      },
+    });
+  });
+
   it("maps run status and conclusion to a CI state", () => {
     expect(githubCiState("in_progress", null)).toBe("pending");
     expect(githubCiState("completed", "success")).toBe("success");

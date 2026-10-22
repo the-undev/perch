@@ -7,6 +7,7 @@ import { aggregate, readRawBundle } from "../aggregate.ts";
 import { loadConfig } from "../config.ts";
 import { readTextIfExists } from "../fs.ts";
 import { createRawStore } from "../gather.ts";
+import type { Snapshot } from "../snapshot.ts";
 import { dockerContainersSource } from "../sources/docker-containers.ts";
 import { examplePath, rawDir, snapshotPath } from "./paths.ts";
 
@@ -15,9 +16,13 @@ const { config, path: configPath } = await loadConfig({
   examplePath,
   readText: readTextIfExists,
 });
+// The previous snapshot carries the first-seen times of unmet expectations forward.
+const previousText = await readTextIfExists(snapshotPath);
+const previous =
+  previousText === null ? null : (JSON.parse(previousText) as Snapshot);
 const snapshot = aggregate(
   await readRawBundle(createRawStore(rawDir)),
-  { config, configPath, liveSources: [dockerContainersSource] },
+  { config, configPath, liveSources: [dockerContainersSource], previous },
   new Date(),
 );
 await writeFile(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`);

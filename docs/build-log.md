@@ -34,3 +34,71 @@ build-time calls so they can be revisited.
 - Build process: one Opus subagent per phase on its own branch; the main
   session reviews the diff, tests and check output, then merges no-ff to
   main and pushes.
+- Unsafe work ages in hours, matching the 24 and 72 hour windows in
+  docs/decisions/data-placement.md. The snapshot's drift carries the
+  uncommitted and unpushed ages separately, each with its own level.
+  Config's `[drift]` becomes `[thresholds]`, six keys for the three
+  windows, the same keys per item; amber must open before red.
+- Stalled flight ages from the newest commit on the branch HEAD is on.
+  Uncommitted edits are not movement: they age as unsafe work. A
+  detached HEAD, or a clone with no default branch, never stalls.
+- Expectations are `ci` and `tickets`. CI is met when any readable
+  forge presence has a CI result on its default branch; an unreadable
+  forge counts as none. Tickets are never met until the forge issues
+  source exists. The first-seen record is the previous snapshot, read
+  by `pnpm aggregate` before it writes the new one.
+- An entry in config `items` adopts a bird; it sits on the entry's wire,
+  else `wires.default`. The example config puts the two vaults on
+  Machine & Home under the phrasebook's names.
+- Health is the worst of CI, bugs, unsafe work, stalled flight and
+  unmet expectations. Flags are not inputs: not set up is the fence's
+  own situation. Only amber and red inputs are causes; ties speak in
+  that order.
+- Along a wire: worst mood leftmost, then the more important tier, then
+  the name. The fence is ordered by name. Every configured wire appears,
+  empty or not.
+- A fence bird speaks only of where it stands, carries no chips and
+  sleeps at night. Its mood is still derived; the bubble's word is "not
+  adopted".
+- The server item is not a bird until server monitoring is picked up.
+- Activity is editing, in flight or settled, from the git work-state,
+  and null without a local clone.
+- Size is the importance tier, its rank and the tier count; the
+  renderer turns that into pixels. Plumpness is open roadmap items, bugs
+  included, capped at 50.
+- Speech names durations measured at the scan ("for 30 hours", "for two
+  days"), never weekdays, so the model needs no clock or time zone:
+  hours under two days, then days, weeks under thirty days, months
+  beyond; counts in words up to twenty. Two content lines the
+  phrasebook lacks: "Out on {branch}. All fresh so far." and "{N}
+  commits waiting to go up. All fresh so far." Last touched is the
+  newest commit, local or on a forge. "Just pushed" stays a candidate.
+- Only a sleeping bird gains the waking prefix, per the bird language;
+  the model carries the woken speech beside the plain one.
+- Chips run CI, unmet expectations, bugs, uncommitted, unpushed, open
+  PRs, open items. The CI chip shows the worst state across forges.
+  A chip's severity is its fact's amber or red, else none.
+- Ledger: a clean zero is "none" in green; a count takes amber or red
+  from its judged level, else no tone; CI success is green. A clone with
+  no remote shows "remote: none, one disk only" instead of unpushed
+  commits.
+- Key files default to README.md and the roadmap files the scan found;
+  `key_files` replaces them. The model holds paths; the renderer reads
+  the files.
+- The zellij tab is named after the scanned name. Its session is the
+  entry's, else the session of the longest root in
+  `launch.zellij_sessions` containing the clone, else
+  `launch.zellij_session`. A vault adds Open in Obsidian first.
+- A branch links to its forge when its upstream's remote URL matches a
+  forge presence through the configured hosts.
+- Forgejo gives CI target URLs relative to the instance; they are
+  resolved against the repository URL.
+- `config.ts` drops its Node imports so the renderer can use the config
+  lookups. The mock uses `/home/owner` for its paths.
+- Both expectation kinds open with "You said I should have ...": one
+  template per cause. The phrasebook's red example said "I'd get"; its
+  distinctive closer "That was {span} ago." is kept.
+- Electron's userData defaults to `~/.config/perch`, the config file's
+  home, and would litter it with browser state. The app will set
+  userData to `~/.local/share/perch`, leaving `~/.config/perch` to the
+  stowed config.toml alone. Wired in the app phase.

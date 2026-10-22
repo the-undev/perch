@@ -1,12 +1,48 @@
-import { join } from "node:path";
-import { parse } from "smol-toml";
-import type { DriftThresholds } from "./snapshot.ts";
+// The config model: what the owner asserts that leaves no trace on disk or on a forge. Parsing
+// uses no Node modules, so the renderer may import the lookups below.
 
-export interface ItemOverride {
+import { parse } from "smol-toml";
+import type {
+  DayThresholds,
+  ExpectationName,
+  HourThresholds,
+} from "./snapshot.ts";
+
+export type { ExpectationName };
+
+/** Every expectation config may assert. */
+export const expectationNames: readonly ExpectationName[] = ["ci", "tickets"];
+
+/** The three health windows: unsafe work in hours, stalled flight and unmet expectations in days. */
+export interface Thresholds {
+  unsafe: HourThresholds;
+  stalled: DayThresholds;
+  expectation: DayThresholds;
+}
+
+/** Per-item threshold overrides; anything left out takes the global value. */
+export interface ThresholdOverrides {
+  unsafe: Partial<HourThresholds>;
+  stalled: Partial<DayThresholds>;
+  expectation: Partial<DayThresholds>;
+}
+
+/** An item's entry in config. Having one adopts the bird, which puts it on a wire. */
+export interface ItemEntry {
+  /** The wire the bird sits on; null puts it on the default wire. */
+  wire: string | null;
+  /** The name the bird goes by; null keeps the scanned name. */
+  name: string | null;
   importance: string | null;
-  drift: Partial<DriftThresholds>;
+  thresholds: ThresholdOverrides;
+  /** Sources the owner says this item should have; an unmet one is a fact on the bird. */
+  expect: ExpectationName[];
+  /** Files for the detail page, relative to the item; null keeps the README and the roadmaps. */
+  keyFiles: string[] | null;
   /** Roadmap files relative to the item, replacing the standard names; null keeps them. */
   roadmaps: string[] | null;
+  /** The zellij session holding the item's tab; null takes it from the launch section. */
+  zellijSession: string | null;
 }
 
 export interface ForgeAccount {
@@ -25,18 +61,27 @@ export interface ForgeConfig {
 }
 
 export interface Config {
+  /** The wires top to bottom, and the one an adopted item sits on when its entry names none. */
+  wires: { names: string[]; default: string };
   local: { include: string[]; ignore: string[] };
   /** Groups of presence references asserted to be one project. */
   joins: string[][];
   /** Presence references to leave off the main view. */
   ignore: string[];
-  drift: DriftThresholds;
+  thresholds: Thresholds;
   importance: { tiers: string[]; default: string };
-  /** Per-item overrides keyed by item id; a key here also marks a found repository as set up. */
-  items: Record<string, ItemOverride>;
+  /** Item entries keyed by item id; an entry adopts the item and marks a found repository set up. */
+  items: Record<string, ItemEntry>;
+  /** The two scan lanes: everything on the main interval, archived forge data on the slow one. */
+  scan: { intervalMinutes: number; archivedIntervalHours: number };
+  launch: {
+    /** The zellij session for an item no root or entry assigns. */
+    zellijSession: string;
+    /** Sessions by root directory, home expanded; the longest root containing the item wins. */
+    zellijSessions: Record<string, string>;
+  };
   forges: {
     finalisedCommits: number;
-    archivedIntervalHours: number;
     github: ForgeConfig;
     forgejo: ForgeConfig & { baseUrl: string };
   };
@@ -73,6 +118,15 @@ function string(parent: Table, key: string, where: string): string {
   return value;
 }
 
+function optionalString(
+  parent: Table,
+  key: string,
+  where: string,
+): string | null {
+  if (parent[key] === undefined) return null;
+  return string(parent, key, where);
+}
+
 function positiveInteger(value: unknown, name: string): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
     throw new Error(`config: ${name} must be a positive integer`);
@@ -90,45 +144,136 @@ function stringArray(value: unknown, name: string): string[] {
   return value;
 }
 
+function oneOf(
+  value: string,
+  allowed: readonly string[],
+  name: string,
+): string {
+  if (!allowed.includes(value)) {
+    throw new Error(`config: ${name} must be one of ${allowed.join(", ")}`);
+  }
+  return value;
+}
+
 function expandHome(path: string, home: string): string {
   if (path === "~") return home;
-  if (path.startsWith("~/")) return join(home, path.slice(2));
+  if (path.startsWith("~/")) return `${home}/${path.slice(2)}`;
   return path;
 }
 
-function parseOverride(
+/** The threshold keys, the same globally and per item, with the window and field each sets. */
+const thresholdKeys = [
+  ["unsafe", "amberHours", "unsafe_amber_hours"],
+  ["unsafe", "redHours", "unsafe_red_hours"],
+  ["stalled", "amberDays", "stalled_amber_days"],
+  ["stalled", "redDays", "stalled_red_days"],
+  ["expectation", "amberDays", "expectation_amber_days"],
+  ["expectation", "redDays", "expectation_red_days"],
+] as const;
+
+/** Reads the threshold keys present in a table. */
+function thresholdOverrides(source: Table, where: string): ThresholdOverrides {
+  const overrides: ThresholdOverrides = {
+    unsafe: {},
+    stalled: {},
+    expectation: {},
+  };
+  for (const [window, field, key] of thresholdKeys) {
+    if (source[key] === undefined) continue;
+    Object.assign(overrides[window], {
+      [field]: positiveInteger(source[key], `${where}${key}`),
+    });
+  }
+  return overrides;
+}
+
+function applyOverrides(
+  base: Thresholds,
+  overrides: ThresholdOverrides,
+): Thresholds {
+  return {
+    unsafe: { ...base.unsafe, ...overrides.unsafe },
+    stalled: { ...base.stalled, ...overrides.stalled },
+    expectation: { ...base.expectation, ...overrides.expectation },
+  };
+}
+
+/** Amber must open before red, or the amber window would never show. */
+function checkOrder(thresholds: Thresholds, where: string): void {
+  const pairs: [string, number, number][] = [
+    ["unsafe", thresholds.unsafe.amberHours, thresholds.unsafe.redHours],
+    ["stalled", thresholds.stalled.amberDays, thresholds.stalled.redDays],
+    [
+      "expectation",
+      thresholds.expectation.amberDays,
+      thresholds.expectation.redDays,
+    ],
+  ];
+  for (const [name, amber, red] of pairs) {
+    if (amber >= red) {
+      throw new Error(
+        `config: ${where}${name} amber threshold must be below its red threshold`,
+      );
+    }
+  }
+}
+
+function globalThresholds(source: Table): Thresholds {
+  const read = (key: string) =>
+    positiveInteger(source[key], `thresholds.${key}`);
+  return {
+    unsafe: {
+      amberHours: read("unsafe_amber_hours"),
+      redHours: read("unsafe_red_hours"),
+    },
+    stalled: {
+      amberDays: read("stalled_amber_days"),
+      redDays: read("stalled_red_days"),
+    },
+    expectation: {
+      amberDays: read("expectation_amber_days"),
+      redDays: read("expectation_red_days"),
+    },
+  };
+}
+
+function parseEntry(
   id: string,
   value: unknown,
-  tiers: readonly string[],
-): ItemOverride {
+  context: {
+    tiers: readonly string[];
+    wires: readonly string[];
+    thresholds: Thresholds;
+  },
+): ItemEntry {
+  const where = `items."${id}".`;
   if (!isTable(value)) throw new Error(`config: items."${id}" must be a table`);
-  const importance = value.importance === undefined ? null : value.importance;
-  if (
-    importance !== null &&
-    (typeof importance !== "string" || !tiers.includes(importance))
-  ) {
-    throw new Error(
-      `config: items."${id}".importance must be one of ${tiers.join(", ")}`,
-    );
-  }
-  const drift: Partial<DriftThresholds> = {};
-  if (value.drift_amber_days !== undefined) {
-    drift.amberDays = positiveInteger(
-      value.drift_amber_days,
-      `items."${id}".drift_amber_days`,
-    );
-  }
-  if (value.drift_red_days !== undefined) {
-    drift.redDays = positiveInteger(
-      value.drift_red_days,
-      `items."${id}".drift_red_days`,
-    );
-  }
-  const roadmaps =
-    value.roadmaps === undefined
-      ? null
-      : stringArray(value.roadmaps, `items."${id}".roadmaps`);
-  return { importance, drift, roadmaps };
+  const importance = optionalString(value, "importance", where);
+  if (importance !== null)
+    oneOf(importance, context.tiers, `${where}importance`);
+  const wire = optionalString(value, "wire", where);
+  if (wire !== null) oneOf(wire, context.wires, `${where}wire`);
+  const thresholds = thresholdOverrides(value, where);
+  checkOrder(applyOverrides(context.thresholds, thresholds), where);
+  const expect =
+    value.expect === undefined
+      ? []
+      : stringArray(value.expect, `${where}expect`).map(
+          (name) =>
+            oneOf(name, expectationNames, `${where}expect`) as ExpectationName,
+        );
+  const list = (key: string) =>
+    value[key] === undefined ? null : stringArray(value[key], `${where}${key}`);
+  return {
+    wire,
+    name: optionalString(value, "name", where),
+    importance,
+    thresholds,
+    expect,
+    keyFiles: list("key_files"),
+    roadmaps: list("roadmaps"),
+    zellijSession: optionalString(value, "zellij_session", where),
+  };
 }
 
 function parseForge(forge: Table, where: string): ForgeConfig {
@@ -160,17 +305,30 @@ function stringArrays(value: unknown, name: string): string[][] {
 export function parseConfig(text: string, home: string): Config {
   const document: Table = parse(text);
 
+  const wires = table(document, "wires", "");
+  const wireNames = stringArray(wires.names, "wires.names");
+  if (wireNames.length === 0) {
+    throw new Error("config: wires.names must name at least one wire");
+  }
+  const defaultWire = oneOf(
+    string(wires, "default", "wires."),
+    wireNames,
+    "wires.default",
+  );
   const local = table(document, "local", "");
-  const drift = table(document, "drift", "");
+  const thresholds = globalThresholds(table(document, "thresholds", ""));
+  checkOrder(thresholds, "thresholds.");
   const importance = table(document, "importance", "");
   const tiers = stringArray(importance.tiers, "importance.tiers");
-  const defaultTier = string(importance, "default", "importance.");
-  if (!tiers.includes(defaultTier)) {
-    throw new Error(
-      `config: importance.default must be one of ${tiers.join(", ")}`,
-    );
-  }
+  const defaultTier = oneOf(
+    string(importance, "default", "importance."),
+    tiers,
+    "importance.default",
+  );
   const items = optionalTable(document, "items", "");
+  const scan = table(document, "scan", "");
+  const launch = table(document, "launch", "");
+  const sessions = optionalTable(launch, "zellij_sessions", "launch.");
   const forges = table(document, "forges", "");
   const forgejo = table(forges, "forgejo", "forges.");
   const server = table(document, "server", "");
@@ -178,31 +336,44 @@ export function parseConfig(text: string, home: string): Config {
     stringArray(value, name).map((path) => expandHome(path, home));
 
   return {
+    wires: { names: wireNames, default: defaultWire },
     local: {
       include: paths(local.include, "local.include"),
       ignore: paths(local.ignore, "local.ignore"),
     },
     joins: stringArrays(document.joins, "joins"),
     ignore: stringArray(document.ignore, "ignore"),
-    drift: {
-      amberDays: positiveInteger(drift.amber_days, "drift.amber_days"),
-      redDays: positiveInteger(drift.red_days, "drift.red_days"),
-    },
+    thresholds,
     importance: { tiers, default: defaultTier },
     items: Object.fromEntries(
       Object.entries(items).map(([id, value]) => [
         id,
-        parseOverride(id, value, tiers),
+        parseEntry(id, value, { tiers, wires: wireNames, thresholds }),
       ]),
     ),
+    scan: {
+      intervalMinutes: positiveInteger(
+        scan.interval_minutes,
+        "scan.interval_minutes",
+      ),
+      archivedIntervalHours: positiveInteger(
+        scan.archived_interval_hours,
+        "scan.archived_interval_hours",
+      ),
+    },
+    launch: {
+      zellijSession: string(launch, "zellij_session", "launch."),
+      zellijSessions: Object.fromEntries(
+        Object.keys(sessions).map((root) => [
+          expandHome(root, home),
+          string(sessions, root, "launch.zellij_sessions."),
+        ]),
+      ),
+    },
     forges: {
       finalisedCommits: positiveInteger(
         forges.finalised_commits,
         "forges.finalised_commits",
-      ),
-      archivedIntervalHours: positiveInteger(
-        forges.archived_interval_hours,
-        "forges.archived_interval_hours",
       ),
       github: parseForge(table(forges, "github", "forges."), "forges.github."),
       forgejo: {
@@ -230,21 +401,43 @@ export function accountForOwner(
   );
 }
 
-/** The importance tier for an item: its override when one is set, else the default tier. */
+/** The importance tier for an item: its entry's when one is set, else the default tier. */
 export function importanceFor(config: Config, itemId: string): string {
   return config.items[itemId]?.importance ?? config.importance.default;
 }
 
-/** The drift thresholds for an item: the global values with any per-item override applied. */
-export function driftThresholdsFor(
+/** The health windows for an item: the global values with its entry's overrides applied. */
+export function thresholdsFor(config: Config, itemId: string): Thresholds {
+  const overrides = config.items[itemId]?.thresholds ?? {
+    unsafe: {},
+    stalled: {},
+    expectation: {},
+  };
+  return applyOverrides(config.thresholds, overrides);
+}
+
+/** The wire an adopted item sits on; null for an item config does not name, which is on the fence. */
+export function wireFor(config: Config, itemId: string): string | null {
+  const entry = config.items[itemId];
+  if (entry === undefined) return null;
+  return entry.wire ?? config.wires.default;
+}
+
+/**
+ * The zellij session for an item at a path: its entry's, else the session of the longest root
+ * containing the path, else the launch default.
+ */
+export function zellijSessionFor(
   config: Config,
   itemId: string,
-): DriftThresholds {
-  const override = config.items[itemId]?.drift ?? {};
-  return {
-    amberDays: override.amberDays ?? config.drift.amberDays,
-    redDays: override.redDays ?? config.drift.redDays,
-  };
+  path: string,
+): string {
+  const asserted = config.items[itemId]?.zellijSession;
+  if (asserted) return asserted;
+  const byRoot = Object.entries(config.launch.zellijSessions)
+    .filter(([root]) => path === root || path.startsWith(`${root}/`))
+    .sort(([a], [b]) => b.length - a.length)[0];
+  return byRoot?.[1] ?? config.launch.zellijSession;
 }
 
 export interface ConfigDeps {
@@ -255,7 +448,7 @@ export interface ConfigDeps {
 
 /** Reads ~/.config/perch/config.toml when it exists, else the example config in the repository. */
 export async function loadConfig(deps: ConfigDeps): Promise<LoadedConfig> {
-  const userPath = join(deps.home, ".config", "perch", "config.toml");
+  const userPath = `${deps.home}/.config/perch/config.toml`;
   const userText = await deps.readText(userPath);
   if (userText !== null)
     return { config: parseConfig(userText, deps.home), path: userPath };

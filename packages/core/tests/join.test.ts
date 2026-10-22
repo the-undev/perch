@@ -347,6 +347,7 @@ describe("aggregating joined projects", () => {
         ),
         configPath: "c",
         liveSources: [],
+        previous: null,
       },
       new Date(gatheredAt),
     );
@@ -369,7 +370,7 @@ describe("aggregating joined projects", () => {
     });
     expect(byId["dev/perch"]?.sources.git).toMatchObject({
       backup: "joined",
-      drift: { unpushedDays: 10 },
+      drift: { unpushed: { hours: 240 } },
     });
     expect(byId["dev/toy"]?.sources.git).toMatchObject({
       backup: "local-only",
@@ -387,7 +388,12 @@ describe("aggregating joined projects", () => {
   it("lists every forge presence grouped active and archived, and keeps archived ones off the items", async () => {
     const snapshot = aggregate(
       { status: okStatus({}), files },
-      { config: await config(""), configPath: "c", liveSources: [] },
+      {
+        config: await config(""),
+        configPath: "c",
+        liveSources: [],
+        previous: null,
+      },
       new Date(gatheredAt),
     );
 
@@ -432,6 +438,7 @@ describe("aggregating joined projects", () => {
         ),
         configPath: "c",
         liveSources: [],
+        previous: null,
       },
       new Date(gatheredAt),
     );

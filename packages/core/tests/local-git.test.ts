@@ -137,7 +137,7 @@ describe("not set up", () => {
     const config = parseConfig(
       (
         await readFile(
-          join(import.meta.dirname, "..", "config.example.toml"),
+          join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
           "utf8",
         )
       ).replace("[forges]\n", '[items."dev/known"]\n\n[forges]\n'),

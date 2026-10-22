@@ -8,7 +8,13 @@ import {
   parseConfig,
 } from "../src/config.ts";
 
-const examplePath = join(import.meta.dirname, "..", "config.example.toml");
+const examplePath = join(
+  import.meta.dirname,
+  "..",
+  "..",
+  "..",
+  "config.example.toml",
+);
 const home = "/home/test";
 
 async function exampleText(): Promise<string> {

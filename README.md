@@ -23,6 +23,40 @@ The config is `~/.config/perch/config.toml`; without it the app reads
 `config.example.toml`, which shows every field. Forge tokens come from the
 desktop keyring, see [docs/tokens.md](docs/tokens.md).
 
+## Installing
+
+perch is one AppImage on the PATH as `perch`. From the repository root:
+
+```sh
+pnpm dist
+cp apps/desktop/dist/perch-*-x86_64.AppImage ~/.local/bin/perch
+ln -s "$PWD/apps/desktop/resources/perch.desktop" ~/.local/share/applications/perch.desktop
+ln -s "$PWD/apps/desktop/resources/perch-autostart.desktop" ~/.config/autostart/perch.desktop
+mkdir -p ~/.local/share/icons/hicolor/256x256/apps
+ln -s "$PWD/apps/desktop/resources/icons/256x256.png" ~/.local/share/icons/hicolor/256x256/apps/perch.png
+```
+
+The first link puts perch in the launcher. The second starts it at login
+with the window hidden and its icon in the tray; systemd runs it as the
+user unit `app-perch@autostart.service`. The third gives both entries the
+icon.
+
+The shortcut is a Plasma custom shortcut: System Settings, Keyboard,
+Shortcuts, Add New, Command or Script, with the command `perch --toggle`,
+then a key.
+
+A second launch hands its arguments to the running perch and quits:
+
+| Argument | Does |
+| --- | --- |
+| `--toggle` | Shows and focuses the window, or hides it when it is already in front. |
+| `--show` | Shows and focuses the window. A launch with no arguments does the same. |
+| `--scan` | Scans now. |
+| `--hidden` | On the first launch, starts with the window hidden. |
+
+Closing the window hides it. The tray menu shows it, rescans and quits;
+clicking the tray icon toggles the window.
+
 ## Releases
 
 Versions are semver, set in `apps/desktop/package.json`. Pushing a tag

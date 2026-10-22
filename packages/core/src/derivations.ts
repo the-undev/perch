@@ -485,9 +485,10 @@ export function forgejoCiState(state: string): CiState {
 
 /**
  * CI from a forge. GitHub's is its latest run on the default branch. Forgejo's is the combined
- * commit status, named after its newest individual status. None is null.
+ * commit status, named after its newest individual status, whose target URL Forgejo may give
+ * relative to the instance; it is resolved against the repository URL. None is null.
  */
-function deriveCi(ci: RawCi): CiRun | null {
+function deriveCi(ci: RawCi, repoUrl: string): CiRun | null {
   if (ci.forge === "github") {
     if (ci.latestRun.state === "absent") return null;
     const run = ci.latestRun.value;
@@ -510,7 +511,10 @@ function deriveCi(ci: RawCi): CiRun | null {
     name: newest.context,
     state: forgejoCiState(ci.combinedStatus.state),
     forgeState: ci.combinedStatus.state,
-    url: newest.targetUrl.state === "observed" ? newest.targetUrl.value : null,
+    url:
+      newest.targetUrl.state === "observed"
+        ? new URL(newest.targetUrl.value, repoUrl).href
+        : null,
     createdAt: newest.createdAt,
   };
 }
@@ -525,7 +529,7 @@ export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
     url: repo.info.url,
     defaultBranch: repo.info.defaultBranch,
     openPullRequests: repo.details.value.openPullRequests.map(pullRequest),
-    latestCi: deriveCi(repo.details.value.ci),
+    latestCi: deriveCi(repo.details.value.ci, repo.info.url),
     finalisedCommits: repo.details.value.finalisedCommits,
   };
 }

@@ -150,6 +150,24 @@ the rest; the folder-tab paper from the fourth detail pass. Dropped:
 the browser focus rectangle on clicked birds (keyboard focus keeps a
 quiet custom mark) and the rail scrollbar problem with the rail itself.
 
+## Camera app verdicts, 22 October 2026
+
+The camera app (now design/perch.html) is the settled working
+structure. Header tabs are the whole navigation, in the scene's own
+order: The Aviary, one tab per wire top to bottom, On the fence. Each
+wire tab remembers its last-open bird, falling back to its most urgent.
+Zoomed out, the strip shows only the current bird's wire, its name big
+at a glance; the wire-mates fly between their aviary places and the tab
+row as the sky collapses. No back button and no left menu; the tabs,
+the brand and Escape ride the camera. The detail content centres as one
+block, and the paper fills its column with the writing kept at reading
+width.
+
+Real-app notes, not prototyped: on large state changes between scans
+the birds fly in again onto the wires (the arrival animation) rather
+than fading between states; position morphing, not crossfades, wherever
+the flock rearranges.
+
 ## Open
 
 - Aviary V carries the fixes above; verdict pending.
@@ -161,5 +179,8 @@ quiet custom mark) and the rail scrollbar problem with the rail itself.
   the beak tip exactly.
 - The two-tab structure (aviary overview, shell working view) is pending a
   proper test.
+- Bird click behaviour: whether left click goes straight to the detail
+  view with right click for the speech bubble, or the bubble stays the
+  primary click. Decide by living with both in the real app.
 - The shell overview as per-category aggregates, if still needed once the
   aviary carries the overview.

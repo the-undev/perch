@@ -233,11 +233,10 @@ staggers rows in the aviary view.
 
 ## Empty wire tab
 
-A wire with no birds still gets a header tab, rendered dead because
-`tabDestination` returns null. Seen with the example config, which
-adopts nothing onto Projects. Decide whether an empty wire's tab is
-hidden, greyed with a word saying it is empty, or goes somewhere that
-says how to adopt a bird onto it.
+A configured wire always gets a header tab, decided 22 October 2026.
+An empty one's tab is dead (`tabDestination` returns null) and says
+nothing about why. It could carry an "empty" word, or go somewhere that
+says how to adopt a bird onto the wire.
 
 ## Links inside key files
 

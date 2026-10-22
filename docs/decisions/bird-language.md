@@ -26,6 +26,12 @@ Status: open
 - The bird speaking as an entity is itself motivating: character and
   gentle gamification are part of the product, not decoration. The owner
   wants to keep coming back because something with a face is talking.
+- Night is cosmetic and sleep is earned. The sky follows the clock, and
+  at night a content bird that is not being edited sleeps: eyes closed,
+  still, the waking prefix on its speech. Restless and distressed birds
+  stay awake, and an edited bird sings whatever the hour. Nothing
+  changes functionally: colours, positions and bubbles are identical by
+  night, and no fact is ever hidden for atmosphere.
 
 ## Wanted, 21 October 2026
 
@@ -53,8 +59,8 @@ The fifth aviary and the combined prototype use:
 | Wire height and body size | importance tier |
 | Position on the wire | leftmost needs attention first |
 | Restlessness (bob, tail flick) | health |
-| ♪ singing | being edited now |
-| Eyes closed, no song | night |
+| ♪ singing | being edited now, whatever the hour |
+| Asleep: eyes closed, still | night, and only earned: content birds not being edited, and the fence |
 | Dimmed, on the fence | not adopted |
 | Speech bubble | first-person status summary |
 

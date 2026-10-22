@@ -332,7 +332,8 @@ function speech(it) {
 		if (open && s.length < 3) s.push(`${open} item${open === 1 ? "" : "s"} on my roadmap when you want me.`);
 	}
 	const text = s.slice(0, 3).join(" ");
-	return phase === "night" ? `Mm? You woke me. ${text}` : text;
+	const asleep = phase === "night" && (!it.adopted || (it.health === "green" && g?.activity !== "editing"));
+	return asleep ? `Mm? You woke me. ${text}` : text;
 }
 function hash(s) { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; }
 function rnd(seed) {
@@ -370,7 +371,10 @@ function birdParts(parent, it, dim) {
 	el(parent, "circle", { cx: 14, cy: -30, r: 5.5, fill: breast, opacity: 0.9 });
 	el(parent, "circle", { cx: 16, cy: -44, r: 11.5, fill: bodyFill });
 	const beak = el(parent, "path", { d: "M 26 -45 L 37 -42 L 26 -39 Z", fill: "var(--accent)" });
-	el(parent, "circle", { cx: 19.5, cy: -46, r: 1.8, fill: phase === "night" ? "#4a4e55" : "#0d0f12" });
+	/* Sleep is earned: at night only content birds not being edited, and
+	   the fence, close their eyes. The unhappy lie awake. */
+	const asleep = phase === "night" && (dim || (it.health === "green" && it.git?.activity !== "editing"));
+	el(parent, "circle", { cx: 19.5, cy: -46, r: 1.8, fill: asleep ? "#4a4e55" : "#0d0f12" });
 	el(parent, "path", { d: "M -14 -28 Q 2 -36 8 -24 Q -2 -16 -14 -28 Z", fill: "#00000022" });
 	return { tail, beak };
 }
@@ -455,7 +459,7 @@ function draw() {
 		const { tail, beak } = birdParts(inner, it, dim);
 		const label = el(g, "text", { y: labelBelow + 3 * scale, class: "label" });
 		label.textContent = it.displayName;
-		if (!dim && it.git?.activity === "editing" && phase !== "night") {
+		if (!dim && it.git?.activity === "editing") {
 			const note = el(g, "text", { x: 48 * face * scale, y: -60 * scale, fill: "var(--accent)", "font-size": Math.max(15, 13 * scale), "text-anchor": "middle" });
 			note.textContent = "♪";
 			if (!reduce) note.animate?.([{ opacity: 0.2 }, { opacity: 1 }, { opacity: 0.2 }], { duration: 2600, iterations: Infinity });

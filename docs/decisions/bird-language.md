@@ -48,6 +48,12 @@ Status: open
   rather than staying personal. Config-driven, nothing hard-coded to this
   machine, becomes a requirement rather than a preference.
 
+## The voice
+
+The speech spec is the phrasebook on the design board,
+`design/phrasebook.html`: the voice rules and every situation rendered
+as the bubble it would show. Approved 22 October 2026.
+
 ## Trait mapping as prototyped
 
 The fifth aviary and the combined prototype use:

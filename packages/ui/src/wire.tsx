@@ -57,7 +57,8 @@ export function wireTally(birds: BirdModel[]): {
   };
 }
 
-function Tally({ birds }: { birds: BirdModel[] }) {
+/** The tally as tspans, for a wire's name to carry. */
+export function Tally({ birds }: { birds: BirdModel[] }) {
   const { attention, drifting } = wireTally(birds);
   if (attention === 0 && drifting === 0)
     return <tspan dx={18}>all settled</tspan>;

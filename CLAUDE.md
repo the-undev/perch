@@ -1,9 +1,10 @@
 # perch
 
 Desktop app for one machine, showing the current state of everything
-its owner is working on: git repositories, their remotes and CI, roadmaps,
-Claude Code sessions, Steam. It lives in the tray and derives everything it
-shows from things that already change. Nothing in it is typed in by hand.
+its owner is working on as birds on wires: git repositories, their remotes
+and CI, roadmaps, Claude Code sessions. It lives in the tray and derives
+everything it shows from things that already change. Nothing in it is typed
+in by hand.
 
 ## Read first
 
@@ -32,9 +33,10 @@ Two stages, both writing under the gitignored `.scan/`:
 
 ## Conventions
 
-- Tauri 2. Rust in `src-tauri/`, the UI in `src/`: Vite, React, TypeScript
-  strict, Tailwind v4, TanStack Router and Query, shadcn, Biome, vitest, pnpm.
-  The same frontend stack as harbour and skiff.
+- Electron, TypeScript end to end: Vite, React, TypeScript strict, Tailwind
+  v4, TanStack Router and Query, shadcn for basics, Biome, vitest, pnpm. The
+  same frontend stack as harbour and skiff; why Electron is in
+  `docs/decisions/tech-stack.md`.
 - Every behaviour change ships with a test in the same commit. Scanners are
   tested against fixture repositories and files under `tests/fixtures/`, never
   against the live machine.

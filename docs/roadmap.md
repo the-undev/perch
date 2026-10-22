@@ -85,9 +85,10 @@ download queues and Plex watch history.
 
 ## In-app global shortcut
 
-Replace the Plasma custom shortcut with the Tauri global shortcut plugin once
-it supports Wayland through the GlobalShortcuts portal. The pull request to
-watch is tauri-apps/global-hotkey#162.
+Replace the Plasma custom shortcut with an in-app one once Electron's
+global shortcuts work under Wayland through the GlobalShortcuts portal.
+Until then the Plasma route needs no portal code and works on the one
+desktop this runs on.
 
 ## Data placement audit
 

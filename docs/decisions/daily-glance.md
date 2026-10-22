@@ -35,7 +35,9 @@ Decided 20 October 2026.
 
 - Drift thresholds are config-driven: global defaults of 7 days for amber and
   30 for red, overridable per project. Starting values, expected to be tuned
-  against real tiles. Decided 20 October 2026.
+  against real tiles. Decided 20 October 2026. Refined 22 October 2026 in
+  [data-placement](data-placement.md): unsafe work ages on 24 and 72 hour
+  windows, stalled flight and unmet expectations on 7 and 30 days.
 
 ## Open
 

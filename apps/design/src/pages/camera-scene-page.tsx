@@ -15,6 +15,13 @@ import { clockFor, clockOptions } from "./aviary-scene-page.tsx";
 
 type Clock = Parameters<typeof clockFor>[0];
 
+type Scanning = "idle" | "scanning";
+
+const scanningOptions: { value: Scanning; label: string }[] = [
+  { value: "idle", label: "Idle" },
+  { value: "scanning", label: "Scanning" },
+];
+
 function placeWords(place: CameraPlace): string {
   return place.at === "aviary"
     ? "{ at: aviary }"
@@ -24,6 +31,7 @@ function placeWords(place: CameraPlace): string {
 export function CameraScenePage() {
   const [place, setPlace] = useState<CameraPlace>({ at: "aviary" });
   const [clock, setClock] = useState<Clock>("clock");
+  const [scanning, setScanning] = useState<Scanning>("idle");
   const [pressed, setPressed] = useState("nothing yet");
   const sheets =
     place.at === "detail" ? birdSheets(mockBird(place.birdId)) : [];
@@ -31,7 +39,7 @@ export function CameraScenePage() {
     <>
       <Section
         title="The camera, end to end"
-        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The header's tabs switch wires; each remembers the bird last open on it. The brand, The Aviary and Escape ride home."
+        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The header's tabs switch wires; each remembers the bird last open on it. The brand, The Aviary and Escape ride home. The scan line at the right says how old the scan is and scans again when pressed."
         min={600}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -40,6 +48,12 @@ export function CameraScenePage() {
             options={clockOptions}
             value={clock}
             onChange={setClock}
+          />
+          <Choice
+            label="Scan"
+            options={scanningOptions}
+            value={scanning}
+            onChange={setScanning}
           />
           <p className="m-0 text-[12.5px] text-ink-faint">
             place:{" "}
@@ -60,6 +74,8 @@ export function CameraScenePage() {
           }}
           onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
           sheets={sheets}
+          scanning={scanning === "scanning"}
+          onRescan={() => setPressed("onRescan()")}
         />
       </SceneFrame>
       <Pressed text={pressed} />
@@ -96,6 +112,16 @@ export function CameraScenePage() {
             name: "sheets",
             type: "KeyFileSheet[]",
             what: "The open bird's key files with what was read from each.",
+          },
+          {
+            name: "scanning",
+            type: "boolean",
+            what: "A scan is running: the header says scanning, quietly, and its scan line waits.",
+          },
+          {
+            name: "onRescan",
+            type: "() => void",
+            what: "The header's scan line, which reads the phase, the scan's time and its age, was pressed.",
           },
         ]}
       >

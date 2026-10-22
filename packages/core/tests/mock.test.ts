@@ -1,0 +1,165 @@
+import { describe, expect, it } from "vitest";
+import { importanceFor, thresholdsFor } from "../src/config.ts";
+import {
+  deriveActivity,
+  deriveDrift,
+  deriveExpectation,
+  deriveStall,
+  expectationMet,
+} from "../src/derivations.ts";
+import { mockAviary, mockConfig, mockSnapshot } from "../src/mock.ts";
+import type { GitData } from "../src/snapshot.ts";
+import { deriveAviary } from "../src/viewmodel.ts";
+
+const scannedAt = new Date(mockSnapshot.scannedAt);
+const birds = [
+  ...mockAviary.wires.flatMap((wire) => wire.birds),
+  ...mockAviary.fence.birds,
+];
+const adopted = birds.filter((bird) => bird.adopted);
+
+describe("the mock dataset", () => {
+  it("derives the exported aviary", () => {
+    expect(deriveAviary(mockSnapshot, mockConfig)).toEqual(mockAviary);
+  });
+
+  it("holds every mood and every activity among its adopted birds", () => {
+    expect(new Set(adopted.map((bird) => bird.mood))).toEqual(
+      new Set(["content", "restless", "distressed"]),
+    );
+    expect(new Set(adopted.map((bird) => bird.activity))).toEqual(
+      new Set(["editing", "in-flight", "settled"]),
+    );
+  });
+
+  it("puts birds on every wire, and the fence's three situations beneath", () => {
+    expect(mockAviary.wires.every((wire) => wire.birds.length > 0)).toBe(true);
+    expect(mockAviary.fence.birds.map((bird) => bird.bubble.speech)).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/^Nobody's cloned me yet\./),
+        expect.stringMatching(/^I only exist on this machine\./),
+        expect.stringMatching(/^Still on the fence\./),
+      ]),
+    );
+  });
+
+  it("covers every health cause, amber and red unsafe work, and both expectations", () => {
+    const causes = adopted.flatMap((bird) => bird.health.causes);
+    const kinds = (level: string) =>
+      new Set(
+        causes
+          .filter((cause) => cause.level === level)
+          .map((cause) => cause.kind),
+      );
+
+    expect(new Set(causes.map((cause) => cause.kind))).toEqual(
+      new Set([
+        "ci-failing",
+        "bugs",
+        "uncommitted",
+        "unpushed",
+        "stalled",
+        "expectation",
+      ]),
+    );
+    expect(kinds("amber")).toEqual(
+      new Set(["uncommitted", "unpushed", "stalled", "expectation"]),
+    );
+    expect(kinds("red")).toEqual(
+      new Set(["ci-failing", "bugs", "uncommitted", "expectation"]),
+    );
+    expect(adopted.some((bird) => bird.health.causes.length > 1)).toBe(true);
+  });
+
+  it("carries every kind of chip, a clean ledger, a source problem and a scene error", () => {
+    const chips = adopted.flatMap((bird) => bird.bubble.chips);
+
+    expect(new Set(chips.map((chip) => chip.kind))).toEqual(
+      new Set([
+        "ci",
+        "expectation",
+        "bugs",
+        "uncommitted",
+        "unpushed",
+        "pull-requests",
+        "open-items",
+      ]),
+    );
+    expect(chips).toContainEqual(
+      expect.objectContaining({ label: "ci failure", severity: "red" }),
+    );
+    expect(
+      adopted.some(
+        (bird) =>
+          bird.bubble.chips.length === 0 &&
+          bird.detail.ledger.every(
+            (entry) => entry.kind !== "count" || entry.text === "none",
+          ),
+      ),
+    ).toBe(true);
+    expect(adopted.some((bird) => bird.detail.problems.length > 0)).toBe(true);
+    expect(birds.some((bird) => bird.kind === "vault")).toBe(true);
+    expect(mockAviary.sourceErrors).toHaveLength(1);
+    expect(mockAviary.warnings).toHaveLength(1);
+  });
+
+  it("agrees with the derivation rules wherever it states a judged value", () => {
+    for (const item of mockSnapshot.items) {
+      expect(item.importance).toBe(importanceFor(mockConfig, item.id));
+      const thresholds = thresholdsFor(mockConfig, item.id);
+      expect(item.expectations).toEqual(
+        item.expectations.map((expectation) =>
+          deriveExpectation(
+            expectation.name,
+            expectationMet(expectation.name, item.sources),
+            expectation.unmetSince,
+            thresholds.expectation,
+            scannedAt,
+          ),
+        ),
+      );
+      expect(item.expectations.map((entry) => entry.name)).toEqual(
+        mockConfig.items[item.id]?.expect ?? [],
+      );
+      const git = item.sources.git;
+      if (git === undefined || "error" in git) continue;
+      expect(git.drift, item.id).toEqual(
+        deriveDrift(
+          {
+            oldestUncommittedAt: git.oldestUncommittedAt,
+            oldestUnpushedAt: git.oldestUnpushedAt,
+          },
+          thresholds.unsafe,
+          scannedAt,
+        ),
+      );
+      expect(git.stall, item.id).toEqual(
+        deriveStall(
+          {
+            branch: git.branch,
+            defaultBranch: git.defaultBranch,
+            branchLastCommitAt: currentBranchCommit(git),
+          },
+          thresholds.stalled,
+          scannedAt,
+        ),
+      );
+      expect(git.activity, item.id).toBe(
+        deriveActivity({
+          uncommittedCount: git.uncommittedCount,
+          unpushedCount: git.unpushedCount,
+          branch: git.branch,
+          defaultBranch: git.defaultBranch,
+          branchNames: git.branches.map((branch) => branch.name),
+        }),
+      );
+    }
+  });
+});
+
+function currentBranchCommit(git: GitData): string | null {
+  return (
+    git.branches.find((branch) => branch.name === git.branch)?.lastCommitAt ??
+    null
+  );
+}

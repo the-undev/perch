@@ -113,6 +113,13 @@ docs/tokens.md. GitHub's issues listing includes pull requests; the
 gatherer filters them out. Not in use today on any repo, gathered
 anyway once built.
 
+## Design site on real components
+
+Once the app exists, the design board grows into a design site built
+from the app's actual assets and components, a visual explorer for each
+piece in isolation. The board's pages (app demo, field guide, atlas)
+migrate onto real components rather than hand-drawn copies.
+
 ## Public undev release
 
 If the bird language proves itself, perch moves to undev as a public

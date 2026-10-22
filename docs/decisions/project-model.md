@@ -54,7 +54,9 @@ Detect what leaves a trace; config asserts only what does not.
   needs no config.
 - Asserted in config: importance, ignores, joins the URLs cannot prove,
   per-item overrides (thresholds, zellij session, roadmap paths beyond the
-  defaults).
+  defaults), and expectations (this project should have CI, a ticket
+  source): an unmet expectation surfaces as a fact, see
+  [data-placement](data-placement.md).
 - On conflict the observation wins and the conflict is flagged; stale
   config must be visible, never silently trusted.
 

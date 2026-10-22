@@ -132,6 +132,11 @@ Three more rules from the second detail round:
 - Only what exists appears, at every tier: no CI chip or stat without
   CI set up, no tickets without a source. The page exposes facts and
   never suggests how the project ought to be run.
+- Config can assert expectations per project: this bird should have CI,
+  should have a ticket source. An asserted expectation that reality
+  does not meet is itself a fact and shows as one ("ci: not set up").
+  Without an assertion, silence. The suggestions live in the owner's
+  config, never in the page.
 - Concrete nouns link where a page exists for them (the branch on the
   forge, the forge repositories, a PR), styled subtle: inherited colour
   with a dotted underline.

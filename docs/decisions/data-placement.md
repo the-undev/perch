@@ -46,6 +46,24 @@ The six candidate questions, numbered for reference below:
   bird is trying to say.
 - Everything else is the detail page's job.
 
+### Loss risk folds into health
+
+Question 2 surfaces through the health colour, not a separate trait (a
+dedicated visual stays a bird-language open idea). Principles for the
+derivation:
+
+- Unhappiness from unsafe work grows with quantity and age combined.
+  Fresh edits never alarm: new uncommitted work on an active project is
+  a happy bird. What alarms is volume that has sat unsafe for a long
+  time.
+- The age anchor is the oldest unsafe change, so continuing to edit
+  does not reset the clock while the backlog stays unpushed.
+- Safe but stalled work is its own health input: a repository parked on
+  a non-default branch with no movement for a long time is mid-flight
+  and abandoned, even with everything pushed. Found by the walk:
+  skiff is fully clean and pushed yet sits on extension-popup-ia,
+  last commit seven weeks old, and its bird should not look content.
+
 ### The bubble's two surfaces
 
 The speech is the bird's voice and carries only 1, 2 and 6, in words:

@@ -113,6 +113,18 @@ docs/tokens.md. GitHub's issues listing includes pull requests; the
 gatherer filters them out. Not in use today on any repo, gathered
 anyway once built.
 
+## Visual roadmap view
+
+The detail page renders roadmap files as plain markdown first. Later:
+a structured view where sections become epics and features with their
+task lists and progress, per the vault-tasks parse rules. Parked until
+plain rendering has lived a while.
+
+## Docs tree browsing
+
+The detail page renders a configured list of key files. Later: a docs
+tree to pick any file from, a drill-down below the configured list.
+
 ## Design site on real components
 
 Once the app exists, the design board grows into a design site built

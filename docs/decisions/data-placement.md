@@ -97,6 +97,23 @@ change. The fence is not a lane; it is always present beneath as the
 ground for the unadopted. The current "Machine & Home" and "Projects"
 pair is just this machine's starting config.
 
+### The detail page
+
+Tier C answers "what exactly, and let me start". It is a strict
+superset: everything tiers A and B show appears here too, plus:
+
+- The stats: the facts behind the bubble's numbers, itemised and named
+  (which branches, which dirty files, which PRs, which tickets).
+- Links out: the GitHub repository, the Forgejo repository.
+- Launch: VS Code, a zellij tab, the folder in the file manager. All
+  non-mutating.
+- Rendered views of key files, a configurable list per project; the
+  README and the roadmap are the defaults. A docs tree with file
+  choice is a deeper drill-down, wanted but later.
+- The roadmap renders as the markdown file itself first. The visual
+  roadmap (sections as epics and features with task lists) is parked
+  on the roadmap until plain rendering has lived a while.
+
 ### The bubble's two surfaces
 
 The speech is the bird's voice and carries only 1, 2 and 6, in words:

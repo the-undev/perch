@@ -1,0 +1,48 @@
+# Sources and priority
+
+Which sources perch reads, and which items within them get a tile.
+
+Status: open
+
+## Decided so far
+
+- Repositories under `archived`, `third-party` and `delete` folders are
+  excluded entirely: not scanned, no tile, no config toggle. Decided
+  20 October 2026. This reverses the spec's default-on choice.
+
+- The home server (Silo) is a source: one aggregate status derived
+  from Uptime Kuma, see [daily-glance](daily-glance.md). This replaces the
+  spec's link-to-dashboard tile. Deferred on 21 October 2026: server and
+  service monitoring (the Kuma aggregate, the container list, the parked
+  controls) is its own feature with its own prototype, after projects work
+  fully. The kuma source ships disabled in config until then, which also
+  removes its timeout from every scan.
+
+- Last Claude Code session time per project comes from the timestamp of the
+  last message inside the newest transcript, not file mtimes, which
+  housekeeping and moved conversations rewrite in bulk. Mtime is the
+  fallback for an unparseable file. Decided 21 October 2026.
+- The v1 sources, decided 20 October 2026: projects with git state, work
+  items from roadmap files, GitHub and Forgejo pull requests and CI, the
+  Uptime Kuma aggregate, and the last Claude Code session time per project.
+- Steam and gaming are parked. Cheap to add later (local files, no network)
+  but they contribute nothing to health or work state.
+
+- Projects are joined entities over presences gathered per source, with
+  config as a source of assertions; see [project-model](project-model.md),
+  which supersedes the explicit-list decision briefly recorded here on
+  21 October 2026. Forge account listings join the sources, so a repo with
+  no local clone is still a project.
+
+- No data prep before the dashboard exists. Decided 21 October 2026: no
+  repo classification, no pre-written project list, no tidy-up. Config
+  starts near empty (include paths, token keys) and grows through use; the
+  dashboard showing the real mess is what drives each decision to adopt,
+  ignore or archive. Known already but not acted on: `mixed-bag` is to be
+  archived once `skiff` reaches feature parity.
+
+## Open
+
+Nothing.
+- How the scanner reads Uptime Kuma: its API, a status page, or its
+  Prometheus endpoint. `TBD`, check what the instance exposes.

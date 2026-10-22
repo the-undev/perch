@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perch Camera App</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* The camera app: the full aviary on real scan data, fused with the
+   camera structure. Zoomed in, it is the aviary: live sky, bubbles,
+   the lot. A bird's "tell me the full story" pulls the camera back:
+   the flock compresses into tab rows at the very top (one per wire,
+   the fence beneath), and the project starts underneath, top left.
+   No left menu; the wire rows are the switcher, the whole aviary one
+   press away. Data: ./data.js, regenerate with scripts/mockup-data.mjs */
+:root {
+	--display: "Bricolage Grotesque", system-ui, sans-serif;
+	--body: "Figtree", system-ui, sans-serif;
+	--mono: ui-monospace, monospace;
+	color-scheme: dark;
+	--bg: #101214; --rail: #121517; --band: #15181b; --card: #1a1e22; --card-hi: #20252a;
+	--edge: #2b3036; --edge-hi: #3e454d; --ink: #ece7db;
+	--muted: #aaa396; --faint: #837d70;
+	--accent: #b9b2a2; --green: #66bb86; --amber: #d8a845; --red: #e25d4f;
+	--body-c: #272b31; --body-dim: #23262c;
+	--ground: #13161a;
+	--paper: #e9e4d8; --paper-dim: #ddd7c9; --paper-ink: #2f3338; --paper-head: #171a1e;
+	--zoom-ms: 850ms;
+	/* sky phases set these */
+	--sky-top: #0d1016; --sky-low: #1a1d24; --horizon: #23262d; --wire: #3a3e46; --post: #2a2d34;
+}
+:root[data-phase="day"] { --sky-top: #1c2733; --sky-low: #2b3a47; --horizon: #394550; --wire: #4b5563; --post: #39414c; }
+:root[data-phase="dawn"] { --sky-top: #16181f; --sky-low: #2e2a33; --horizon: #4a3a3c; --wire: #46434e; --post: #353039; }
+:root[data-phase="night"] { --sky-top: #090b10; --sky-low: #10131a; --horizon: #171a21; --wire: #333741; --post: #23262e; }
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--edge-hi) transparent; }
+*::-webkit-scrollbar { width: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; display: flex; flex-direction: column; overflow: hidden; }
+
+header {
+	flex: none; height: 54px; display: flex; align-items: center; gap: 18px;
+	padding: 0 max(20px, env(safe-area-inset-right, 0px)) 0 max(20px, env(safe-area-inset-left, 0px));
+	background: var(--rail); border-bottom: 1px solid var(--edge); z-index: 6;
+}
+header h1 { font: 700 19px var(--display); margin: 0; cursor: pointer; }
+header h1:hover { color: var(--accent); }
+.tabs { display: flex; gap: 4px; background: var(--band); border: 1px solid var(--edge); border-radius: 999px; padding: 3px; }
+.tabs button {
+	background: none; border: 0; color: var(--muted); cursor: pointer;
+	font: 600 12.5px var(--body); border-radius: 999px; padding: 6px 16px;
+	transition: background 0.18s, color 0.18s;
+}
+.tabs button.on { background: var(--card-hi); color: var(--ink); }
+.tabs button:not(.on):hover { color: var(--ink); }
+.totals { display: flex; gap: 16px; font-weight: 600; font-size: 13px; }
+.totals .red { color: var(--red); } .totals .amber { color: var(--amber); } .totals .green { color: var(--green); }
+header .scanned { margin-left: auto; color: var(--faint); font-size: 12px; }
+header #hour {
+	cursor: pointer; background: none; border: 1px solid var(--edge); color: var(--faint);
+	font: 500 11.5px var(--body); border-radius: 999px; padding: 4px 12px;
+}
+header #hour:hover { color: var(--muted); border-color: var(--edge-hi); }
+
+main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* The sky holds both renderings: the aviary, and the clicked bird's own
+   wire as the tab row. Birds fly between the two as the sky collapses. */
+.scenewrap {
+	position: relative; flex: none; height: 198px;
+	background: linear-gradient(var(--sky-top), var(--sky-low) 78%, var(--horizon));
+	overflow: hidden;
+	transition: height var(--zoom-ms) cubic-bezier(0.4, 0, 0.2, 1), background 1s;
+}
+.zoomed .scenewrap { height: 100%; }
+.scenewrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#aviary-svg { transition: opacity 0.3s 0.5s; }
+#strip-svg { transition: opacity 0.25s 0.62s; }
+.zoomed #strip-svg { opacity: 0; pointer-events: none; transition-delay: 0s; }
+.detailview #aviary-svg { opacity: 0; pointer-events: none; transition: opacity 0.3s 0s; }
+.flyer { position: fixed; z-index: 5; pointer-events: none; overflow: visible; }
+.wirename { font: 700 30px var(--display); fill: var(--ink); letter-spacing: -0.01em; }
+#strip-svg .wiretally { font-size: 13px; }
+
+.bird { cursor: pointer; }
+.bird:focus { outline: none; }
+.bird:focus-visible .label { fill: var(--ink); text-decoration: underline; }
+.bird .label { font: 500 13.5px var(--body); fill: var(--muted); text-anchor: middle; }
+.bird:hover .label { fill: var(--ink); }
+.bird .flock { transition: transform 0.2s; }
+.bird:hover .flock { transform: translateY(-4px); }
+.fencebird .label { fill: #8e897d; font-size: 12.5px; }
+.wirelabel { font: 700 11px var(--body); letter-spacing: 0.18em; text-transform: uppercase; fill: var(--faint); }
+.wiretally { font: 500 11px var(--body); fill: var(--faint); }
+.wiretally .red { fill: var(--red); } .wiretally .amber { fill: var(--amber); }
+#strip-svg .label { font-size: 13px; }
+.detailview #strip-svg .bird:not(.sel) { opacity: 0.55; }
+.detailview #strip-svg .bird:not(.sel):hover { opacity: 1; }
+
+.sky-legend {
+	position: absolute; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
+	display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;
+	font-size: 11px; color: var(--faint);
+	padding-inline: max(16px, env(safe-area-inset-left, 0px));
+	transition: opacity 0.4s;
+}
+.detailview .sky-legend { opacity: 0; pointer-events: none; }
+.sky-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sky-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+.tip {
+	position: fixed; z-index: 3; pointer-events: none;
+	background: #171a1f; border: 1px solid #333841; border-radius: 8px;
+	padding: 9px 12px; font-size: 12.5px; color: var(--muted);
+	max-width: 300px; display: none; box-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.7);
+}
+.tip b { color: var(--ink); }
+
+/* The speech bubble: paper-light against the sky, tail to the beak. */
+#bubble {
+	position: fixed; z-index: 4; display: none;
+	background: var(--paper); color: #2a2e35;
+	border-radius: 16px; padding: 14px 16px 13px;
+	font-size: 13.5px; line-height: 1.5;
+	box-shadow: 0 18px 50px -12px rgb(0 0 0 / 0.8);
+}
+#bubble.show { display: block; }
+#bubble .who { font: 700 16px var(--display); color: #14171b; display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+#bubble .state { font: 600 10px var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: #6e695f; }
+#bubble .state.red { color: #b23325; } #bubble .state.amber { color: #8f6d14; } #bubble .state.green { color: #2c7a4b; }
+#bubble p.say { margin: 0; }
+#bubble .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+#bubble .chips span {
+	background: #ddd7c9; border-radius: 999px; padding: 3px 10px;
+	font-size: 11.5px; font-weight: 600; color: #3a3e45;
+	font-variant-numeric: tabular-nums;
+}
+#bubble .chips span.warn { background: #e7d3a0; color: #6b500e; }
+#bubble .chips span.bad { background: #ecc0b8; color: #8c2619; }
+#bubble .brow { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+#bubble .brow button {
+	display: inline-flex; align-items: center; gap: 7px;
+	background: #22262c; border: 0; color: var(--ink);
+	font: 500 12.5px var(--body); border-radius: 8px; padding: 8px 10px; cursor: pointer;
+}
+#bubble .brow button:hover { background: #2e333a; }
+#bubble .brow button svg { width: 14px; height: 14px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#bubble .brow .more { margin-left: auto; background: #14171b; font-weight: 600; padding: 8px 14px; }
+#bubble .tail { position: absolute; bottom: -27px; width: 44px; height: 30px; pointer-events: none; }
+
+/* The ground: the project starts underneath, top left. */
+.ground {
+	flex: 1; min-height: 0; overflow-y: auto;
+	background: var(--ground); border-top: 2px solid var(--horizon);
+	padding: 22px max(30px, env(safe-area-inset-right, 0px)) 44px max(30px, env(safe-area-inset-left, 0px));
+}
+/* The detail centres as one block; dead width splits evenly. */
+.wrap { max-width: 1560px; margin-inline: auto; }
+.intro { max-width: 980px; }
+.dwho { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.dwho h2 { font: 700 42px/1 var(--display); margin: 0; letter-spacing: -0.02em; }
+.mood { font: 600 14px var(--body); }
+.mood.green { color: var(--green); } .mood.amber { color: var(--amber); } .mood.red { color: var(--red); } .mood.dim { color: var(--faint); }
+.dact { font-size: 13px; color: var(--accent); }
+.dsay { font-size: 16.5px; color: var(--muted); margin: 9px 0 0; max-width: 64ch; line-height: 1.55; }
+.dmeta { color: var(--faint); font-size: 13px; margin-top: 8px; }
+.dmeta code { font-family: var(--mono); font-size: 12px; background: rgb(0 0 0 / 0.25); border: 1px solid var(--edge); border-radius: 4px; padding: 1px 6px; }
+a.lnk { color: inherit; text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
+a.lnk:hover { color: var(--ink); text-decoration-color: var(--accent); }
+.actions { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+.actions button {
+	display: inline-flex; align-items: center; gap: 8px;
+	background: none; border: 1px solid transparent; color: var(--muted);
+	font: 500 13.5px var(--body); border-radius: 8px; padding: 9px 13px; cursor: pointer;
+}
+.actions button:hover { color: var(--ink); border-color: var(--edge); background: var(--card); }
+.actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.actions svg { width: 15px; height: 15px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.actions .ext { color: var(--faint); font-size: 11px; }
+
+.cols { display: grid; grid-template-columns: minmax(330px, 430px) minmax(0, 1fr); gap: 40px; align-items: start; margin-top: 16px; }
+@media (max-width: 1100px) { .cols { grid-template-columns: 1fr; } }
+.ledger { min-width: 0; }
+.quiet { color: var(--muted); font-size: 13.5px; line-height: 1.6; margin: 6px 0; max-width: 48ch; }
+.ledger h3 { font: 600 13.5px var(--body); color: var(--faint); margin: 26px 0 2px; }
+.lrow {
+	display: flex; justify-content: space-between; gap: 16px; align-items: baseline;
+	padding: 9px 2px; border-top: 1px solid var(--edge);
+}
+.ledger .lrow:first-of-type { border-top: 0; }
+.lrow .l { min-width: 0; }
+.lrow .r { color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 13px; }
+.lrow .r.good { color: var(--green); opacity: 0.9; }
+.lrow .r.warn { color: var(--amber); }
+.lrow .r.bad { color: var(--red); }
+.lrow .sub { color: var(--faint); font-size: 12.5px; display: block; }
+.inflight { color: var(--accent); font-size: 12px; }
+
+.paperzone { min-width: 0; }
+.ptabs { display: flex; gap: 6px; align-items: flex-end; padding-left: 18px; }
+.ptabs button {
+	background: var(--paper-dim); border: 0; color: #5b564b;
+	font: 600 12px var(--mono); border-radius: 9px 9px 0 0; padding: 8px 16px 7px; cursor: pointer;
+	opacity: 0.75;
+}
+.ptabs button.on { background: var(--paper); color: var(--paper-head); opacity: 1; padding-bottom: 9px; }
+.ptabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ptabs .note { margin-left: auto; color: var(--faint); font-size: 12px; padding-bottom: 8px; }
+.paper {
+	background: var(--paper); color: var(--paper-ink); border-radius: 12px;
+	box-shadow: 0 24px 60px -18px rgb(0 0 0 / 0.75);
+	padding: 28px 38px 34px;
+	transition: transform 0.55s 0.35s cubic-bezier(0.25, 0.9, 0.3, 1), opacity 0.55s 0.35s;
+}
+.zoomed .paper { transform: translateY(56px); opacity: 0; transition-delay: 0s; }
+/* The sheet fills its column; the writing on it keeps a reading width. */
+.paper h1, .paper p { max-width: 80ch; }
+.paper h1 { font: 700 25px var(--display); color: var(--paper-head); margin: 0 0 10px; }
+.paper p { margin: 0 0 11px; line-height: 1.6; font-size: 14px; }
+.paper code { font-family: var(--mono); font-size: 0.9em; background: #dcd6c8; border: 1px solid #c9c3b3; border-radius: 4px; padding: 1px 5px; }
+
+@keyframes appear { from { opacity: 0; transform: translateY(6px); } }
+.swap { animation: appear 0.25s ease; }
+@media (prefers-reduced-motion: reduce) {
+	.scenewrap, .paper, .wires-btn, #aviary-svg, #strip-svg { transition: none !important; }
+	.swap { animation: none; }
+}
+</style>
+</head>
+<body class="zoomed">
+<header>
+	<h1 id="brand">perch</h1>
+	<div class="tabs" id="tabsbox">
+		<button id="tab-aviary" class="on" data-tab="aviary">The Aviary</button>
+	</div>
+	<div class="totals" id="totals"></div>
+	<div class="scanned" id="scanned"></div>
+	<button id="hour" title="Mockup only: the real app follows the clock">preview the hour</button>
+</header>
+<main>
+	<div class="scenewrap">
+		<svg id="aviary-svg" aria-label="Projects as birds on wires"></svg>
+		<svg id="strip-svg" viewBox="0 0 2000 198" preserveAspectRatio="xMidYMid meet" aria-label="The clicked bird's wire as a tab row"></svg>
+		<div class="sky-legend">
+			<span><i style="background:var(--red)"></i>attention</span>
+			<span><i style="background:var(--amber)"></i>drifting</span>
+			<span><i style="background:var(--green)"></i>settled</span>
+			<span>higher wire = more important · leftmost = needs you first · plumper = more outstanding work · ♪ = being edited</span>
+			<span>click a bird to hear from it</span>
+		</div>
+	</div>
+	<div class="ground">
+		<div class="wrap">
+			<div class="intro" id="intro"></div>
+			<div class="cols" id="cols">
+				<div class="ledger" id="ledger"></div>
+				<div class="paperzone">
+					<div class="ptabs" id="ptabs"></div>
+					<div class="paper" id="paper"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</main>
+<div class="tip" id="tip"></div>
+<div id="bubble"></div>
+<script src="./data.js"></script>
+<script>
+const { items, scannedAt } = window.PERCH_DATA;
+const svgNS = "http://www.w3.org/2000/svg";
+const ago = (d) => d === null ? "—" : d === 0 ? "today" : d === 1 ? "yesterday" : `${d}d ago`;
+const adopted = items.filter((i) => i.adopted);
+const triage = items.filter((i) => !i.adopted);
+const rank = { red: 0, amber: 1, green: 2 };
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const MOOD = { red: "distressed", amber: "restless", green: "content" };
+
+const tally = { red: 0, amber: 0, green: 0 };
+for (const it of adopted) tally[it.health]++;
+document.getElementById("totals").innerHTML =
+	`<span class="red">${tally.red} attention</span><span class="amber">${tally.amber} drifting</span><span class="green">${tally.green} settled</span>`;
+
+/* The sky follows the real clock; the header button previews the phases. */
+const PHASES = ["dawn", "day", "dusk", "night"];
+function phaseForHour(h) { return h < 6 ? "night" : h < 9 ? "dawn" : h < 17 ? "day" : h < 21 ? "dusk" : "night"; }
+let phase = phaseForHour(new Date().getHours());
+let phaseOverride = false;
+function applyPhase() {
+	if (phase === "dusk") delete document.documentElement.dataset.phase;
+	else document.documentElement.dataset.phase = phase;
+	document.getElementById("scanned").textContent =
+		`${phase} scan, ${new Date(scannedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}${phaseOverride ? " · previewing" : ""}`;
+	draw();
+}
+document.getElementById("hour").addEventListener("click", (e) => {
+	e.stopPropagation();
+	phaseOverride = true;
+	phase = PHASES[(PHASES.indexOf(phase) + 1) % PHASES.length];
+	applyPhase();
+});
+
+function summary(it) {
+	const g = it.git;
+	if (!g) return `only on ${it.forges.map((f) => f.forge).join(" and ")}`;
+	const bits = [];
+	if (g.uncommitted) bits.push(`${g.uncommitted} uncommitted`);
+	if (g.unpushed) bits.push(`${g.unpushed} unpushed`);
+	if (g.driftDays) bits.push(`drifting ${g.driftDays}d`);
+	if (it.work.bugs) bits.push(`${it.work.bugs} bugs`);
+	if (g.backup === "no-remote") bits.push("one disk only");
+	return bits.length ? bits.join(" · ") : `clean, touched ${ago(it.lastTouchedDays)}`;
+}
+
+/* What the bird says: its status in the first person, three sentences at most. */
+function speech(it) {
+	const g = it.git;
+	const s = [];
+	if (!it.adopted) {
+		if (!g) s.push(`Nobody's cloned me yet. I live on ${it.forges.map((f) => f.fullName).join(" and ")}.`);
+		else if (g.backup === "no-remote") s.push("I only exist on this machine. One disk, no backup.");
+		else s.push("Still on the fence. You haven't decided about me.");
+	} else {
+		if (it.work.bugs) s.push(`I've got ${it.work.bugs} bug${it.work.bugs === 1 ? "" : "s"} open. Not thrilled about it.`);
+		if (it.ci?.conclusion === "failure") s.push("My CI is red.");
+		if (g?.activity === "editing") s.push("We're in the middle of something. ♪");
+		if (g?.uncommitted) s.push(`I'm holding ${g.uncommitted} uncommitted change${g.uncommitted === 1 ? "" : "s"}.`);
+		if (g?.unpushed) s.push(`${g.unpushed} commit${g.unpushed === 1 ? " is" : "s are"} local only.`);
+		if ((g?.driftDays ?? 0) >= 7) s.push(`Nothing finalised in ${g.driftDays} days.`);
+		if (!s.length) s.push(`All settled over here. Last touched ${ago(it.lastTouchedDays)}.`);
+		const open = it.work.total - it.work.bugs;
+		if (open && s.length < 3) s.push(`${open} item${open === 1 ? "" : "s"} on my roadmap when you want me.`);
+	}
+	const text = s.slice(0, 3).join(" ");
+	const asleep = phase === "night" && (!it.adopted || (it.health === "green" && g?.activity !== "editing"));
+	return asleep ? `Mm? You woke me. ${text}` : text;
+}
+function hash(s) { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; }
+function rnd(seed) {
+	let x = (seed ^ 0x9e3779b9) >>> 0;
+	x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
+	x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
+	return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+}
+
+const mainEl = document.querySelector("main");
+const scene = document.getElementById("aviary-svg");
+const stripSvg = document.getElementById("strip-svg");
+const tip = document.getElementById("tip");
+const bubble = document.getElementById("bubble");
+bubble.addEventListener("click", (e) => e.stopPropagation());
+let bubbleItem = null;
+let currentItem = null;
+const el = (parent, name, attrs) => {
+	const n = document.createElementNS(svgNS, name);
+	for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+	parent.appendChild(n);
+	return n;
+};
+
+/* One bird, any scale, any parent. */
+function birdParts(parent, it, dim) {
+	const bodyFill = dim ? "var(--body-dim)" : "var(--body-c)";
+	const breast = dim ? "#4a4f58" : `var(--${it.health})`;
+	el(parent, "line", { x1: -6, y1: -8, x2: -7, y2: 2, stroke: "#4a4e55", "stroke-width": 2.4 });
+	el(parent, "line", { x1: 6, y1: -8, x2: 7, y2: 2, stroke: "#4a4e55", "stroke-width": 2.4 });
+	el(parent, "path", { d: "M -7 2 L -12 3 M -7 2 L -3 3 M 7 2 L 2 3 M 7 2 L 12 3", stroke: "#4a4e55", "stroke-width": 2, fill: "none", "stroke-linecap": "round" });
+	const tail = el(parent, "path", { d: "M -16 -22 L -42 -10 L -38 -20 L -44 -26 L -20 -32 Z", fill: bodyFill });
+	el(parent, "ellipse", { cx: 0, cy: -26, rx: 23, ry: 19, fill: bodyFill });
+	el(parent, "path", { d: "M 10 -14 A 18 16 0 0 0 20 -34 A 23 19 0 0 1 2 -8 Z", fill: breast });
+	el(parent, "circle", { cx: 14, cy: -30, r: 5.5, fill: breast, opacity: 0.9 });
+	el(parent, "circle", { cx: 16, cy: -44, r: 11.5, fill: bodyFill });
+	const beak = el(parent, "path", { d: "M 26 -45 L 37 -42 L 26 -39 Z", fill: "var(--accent)" });
+	/* Sleep is earned: at night only content birds not being edited, and
+	   the fence, close their eyes. The unhappy lie awake. */
+	const asleep = phase === "night" && (dim || (it.health === "green" && it.git?.activity !== "editing"));
+	el(parent, "circle", { cx: 19.5, cy: -46, r: 1.8, fill: asleep ? "#4a4e55" : "#0d0f12" });
+	el(parent, "path", { d: "M -14 -28 Q 2 -36 8 -24 Q -2 -16 -14 -28 Z", fill: "#00000022" });
+	return { tail, beak };
+}
+
+/* ---------- The aviary (zoomed in) ---------- */
+const anchors = new Map();
+function anchorPoint(it) {
+	const a = anchors.get(it.id);
+	if (!a) return null;
+	const p = new DOMPoint(a.x, a.y).matrixTransform(scene.getScreenCTM());
+	return { x: p.x, y: p.y, face: a.face };
+}
+
+function draw() {
+	closeBubble();
+	scene.innerHTML = "";
+	anchors.clear();
+	const vw = Math.max(mainEl.clientWidth, 1), vh = Math.max(mainEl.clientHeight, 1);
+	const W = 2000;
+	const H = Math.max(600, Math.min(3000, Math.round(W * vh / vw)));
+	scene.setAttribute("viewBox", `0 0 ${W} ${H}`);
+	scene.setAttribute("preserveAspectRatio", "xMidYMid meet");
+	const M = 120;
+	const px = (n) => n * H / vh;
+
+	const cx = W - 300, cy = H * 0.11;
+	if (phase === "day" || phase === "dawn") {
+		el(scene, "circle", { cx, cy, r: 42, fill: phase === "day" ? "#e8d9a8" : "#d9a86a", opacity: 0.9 });
+		el(scene, "circle", { cx, cy, r: 58, fill: phase === "day" ? "#e8d9a8" : "#d9a86a", opacity: 0.12 });
+	} else {
+		el(scene, "path", { d: `M ${cx} ${cy - 44} A 44 44 0 1 0 ${cx} ${cy + 44} A 34 34 0 1 1 ${cx} ${cy - 44} Z`, fill: "#c9c4b4", opacity: 0.85 });
+	}
+	const starCount = phase === "day" ? 0 : phase === "night" ? 110 : 60;
+	for (let i = 0; i < starCount; i++) {
+		const s = el(scene, "circle", {
+			cx: rnd(i * 4) * W, cy: rnd(i * 4 + 1) * H * 0.5,
+			r: rnd(i * 4 + 2) * 1.4 + 0.3, fill: "#9aa0ae",
+			opacity: 0.25 + rnd(i * 4 + 3) * 0.4,
+		});
+		if (!reduce && i % 7 === 0) s.animate?.(
+			[{ opacity: 0.15 }, { opacity: 0.7 }, { opacity: 0.15 }],
+			{ duration: 3000 + Math.round(rnd(i * 4 + 5) * 4000), iterations: Infinity, easing: "ease-in-out" });
+	}
+
+	const sag = 22;
+	function wire(y, label, list, thick) {
+		el(scene, "path", { d: `M -20 ${y - 12} Q ${W / 2} ${y + sag} ${W + 20} ${y - 12}`, stroke: "var(--wire)", "stroke-width": thick, fill: "none" });
+		if (label) {
+			const t = el(scene, "text", { x: 36, y: y - 26, class: "wirelabel" });
+			t.textContent = label;
+			const red = list.filter((i) => i.health === "red").length;
+			const amber = list.filter((i) => i.health === "amber").length;
+			const tt = el(scene, "text", { x: 36 + label.length * 9 + 18, y: y - 26, class: "wiretally" });
+			tt.innerHTML = red || amber
+				? `${red ? `<tspan class="red">${red} attention</tspan>` : ""}${red && amber ? " · " : ""}${amber ? `<tspan class="amber">${amber} drifting</tspan>` : ""}`
+				: "all settled";
+		}
+	}
+	const wireY = (y, x) => {
+		const t = (x + 20) / (W + 40);
+		return (1 - t) * (1 - t) * (y - 12) + 2 * (1 - t) * t * (y + sag) + t * t * (y - 12);
+	};
+	function spread(n, cap) {
+		if (n === 0) return [];
+		if (n === 1) return [W / 2];
+		const span = Math.min((n - 1) * cap, W - 2 * M);
+		const start = (W - span) / 2;
+		return Array.from({ length: n }, (_, i) => start + (span / (n - 1)) * i);
+	}
+
+	function bird(it, x, y, base, dim, labelBelow = 30) {
+		x = Math.max(M, Math.min(W - M, x));
+		const plump = 1 + Math.min(it.work.total, 30) / 30 * 0.65;
+		const scale = base * plump;
+		const face = x < W / 2 ? 1 : -1;
+		anchors.set(it.id, { x: x + 37 * scale * face, y: y - 42 * scale, face, ox: x, oy: y - 3 * scale, s: scale });
+		/* The toes end 3 units below the origin; perch 3 × scale above the wire. */
+		const g = el(scene, "g", { class: `bird ${dim ? "fencebird" : ""}`, transform: `translate(${x} ${y - 3 * scale})`, tabindex: 0 });
+		const flock = el(scene, "g", { class: "flock" });
+		g.appendChild(flock);
+		const inner = el(flock, "g", { transform: `scale(${scale * face} ${scale})` });
+		const { tail, beak } = birdParts(inner, it, dim);
+		const label = el(g, "text", { y: labelBelow + 3 * scale, class: "label" });
+		label.textContent = it.displayName;
+		if (!dim && it.git?.activity === "editing") {
+			const note = el(g, "text", { x: 48 * face * scale, y: -60 * scale, fill: "var(--accent)", "font-size": Math.max(15, 13 * scale), "text-anchor": "middle" });
+			note.textContent = "♪";
+			if (!reduce) note.animate?.([{ opacity: 0.2 }, { opacity: 1 }, { opacity: 0.2 }], { duration: 2600, iterations: Infinity });
+		}
+		if (!reduce && g.animate) {
+			g.animate(
+				[{ transform: `translate(${x}px, ${y - 130}px)`, opacity: 0 }, { transform: `translate(${x}px, ${y - 3 * scale}px)`, opacity: 1 }],
+				{ duration: 480, delay: (arrival.get(it.id) ?? 0) * 95, easing: "cubic-bezier(0.3, 1.4, 0.5, 1)", fill: "backwards" },
+			);
+			const restless = it.health === "red" ? 2.2 : it.health === "amber" ? 1.5 : 1;
+			flock.animate(
+				[{ transform: "translateY(0)" }, { transform: `translateY(-${2 * restless}px)` }, { transform: "translateY(0)" }],
+				{ duration: 3600 - restless * 500 + (hash(it.id) % 1500), delay: hash(it.id) % 2000, iterations: Infinity, easing: "ease-in-out" },
+			);
+			if (it.health === "red" && !dim) {
+				tail.animate(
+					[{ transform: "rotate(0deg)" }, { transform: "rotate(0deg)" }, { transform: "rotate(-9deg)" }, { transform: "rotate(0deg)" }, { transform: "rotate(0deg)" }],
+					{ duration: 9000 + (hash(it.id) % 5000), iterations: Infinity, easing: "ease-in-out" },
+				);
+			}
+		}
+		g.addEventListener("mousemove", (e) => {
+			if (bubbleItem === it) return;
+			tip.style.display = "block";
+			tip.innerHTML = `<b>${it.displayName}</b> · ${dim ? "not adopted" : it.health}<br>${summary(it)}`;
+			tip.style.left = `${Math.min(e.clientX + 16, innerWidth - 310)}px`;
+			tip.style.top = `${Math.min(e.clientY + 18, innerHeight - 90)}px`;
+		});
+		g.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+		const speak = (e) => {
+			e.stopPropagation();
+			openBubble(it, anchorPoint(it), beak);
+		};
+		g.addEventListener("click", speak);
+		g.addEventListener("keydown", (e) => { if (e.key === "Enter") speak(e); });
+	}
+
+	const t1 = adopted.filter((i) => i.tier === "machine-home").sort((a, b) => rank[a.health] - rank[b.health]);
+	const t2 = adopted.filter((i) => i.tier === "projects").sort((a, b) => rank[a.health] - rank[b.health]);
+	const rowA = t2.filter((_, i) => i % 2 === 0), rowB = t2.filter((_, i) => i % 2 === 1);
+	const topSafe = px(26) + 165;
+	const y1 = Math.max(H * 0.26, topSafe), y2 = H * 0.49, y3 = H * 0.63, yF = H - px(150);
+	wire(y1, "Machine & Home", t1, 4);
+	wire(y2, "Projects", t2, 3);
+	wire(y3, "", [], 3);
+
+	el(scene, "line", { x1: 0, y1: yF, x2: W, y2: yF, stroke: "var(--post)", "stroke-width": 8 });
+	for (let x = 120; x < W; x += 320) {
+		el(scene, "line", { x1: x, y1: yF - 6, x2: x, y2: H + 20, stroke: "var(--post)", "stroke-width": 10, opacity: 0.7 });
+	}
+	const fl = el(scene, "text", { x: 36, y: yF - 70, class: "wirelabel" });
+	fl.textContent = `On the fence · ${triage.length} not adopted`;
+
+	const placements = [];
+	spread(t1.length, 360).forEach((x, i) => placements.push([t1[i], x, wireY(y1, x), 1.35, false, 30]));
+	spread(rowA.length, 330).forEach((x, i) => placements.push([rowA[i], x, wireY(y2, x), 0.9, false, 30]));
+	spread(rowB.length, 330).forEach((x, i) => placements.push([rowB[i], x + 150, wireY(y3, x + 150), 0.9, false, 30]));
+	spread(triage.length, 205).forEach((x, i) => placements.push([triage[i], x, yF + 2, 0.78, true, i % 2 ? 48 : 30]));
+	const arrival = new Map();
+	[...placements]
+		.sort((a, b) =>
+			(a[4] ? 1 : 0) - (b[4] ? 1 : 0)
+			|| rank[a[0].health] - rank[b[0].health]
+			|| b[0].work.total - a[0].work.total)
+		.forEach((p, i) => arrival.set(p[0].id, i));
+	for (const p of placements) bird(...p);
+
+	drawStrip(currentItem ?? mostUrgent());
+}
+
+/* ---------- The strip: the clicked bird's wire as the tab row ---------- */
+const stripBirds = new Map();
+const stripPos = new Map();
+function cohortOf(it) {
+	if (!it.adopted) return ["On the fence", triage, true];
+	if (it.tier === "machine-home") return ["Machine & Home", adopted.filter((i) => i.tier === "machine-home"), false];
+	return ["Projects", adopted.filter((i) => i.tier === "projects"), false];
+}
+function drawStrip(it) {
+	const [label, listRaw, dim] = cohortOf(it);
+	stripSvg.innerHTML = "";
+	stripBirds.clear();
+	stripPos.clear();
+	const W = 2000, y = 150, base = dim ? 0.8 : 1.0;
+	if (dim) el(stripSvg, "line", { x1: 0, y1: y, x2: W, y2: y, stroke: "var(--post)", "stroke-width": 5 });
+	else el(stripSvg, "path", { d: `M -20 ${y} Q ${W / 2} ${y + 8} ${W + 20} ${y}`, stroke: "var(--wire)", "stroke-width": 3, fill: "none" });
+	/* The wire's name, big and readable at a glance. */
+	const t = el(stripSvg, "text", { x: 36, y: 56, class: "wirename" });
+	t.textContent = label;
+	const list = [...listRaw].sort((a, b) => rank[a.health] - rank[b.health]);
+	const red = list.filter((i) => i.health === "red").length;
+	const amber = list.filter((i) => i.health === "amber").length;
+	const tt = el(stripSvg, "text", { x: 44 + label.length * 17, y: 54, class: "wiretally" });
+	tt.innerHTML = dim ? `${list.length} not adopted`
+		: red || amber
+			? `${red ? `<tspan class="red">${red} attention</tspan>` : ""}${red && amber ? " · " : ""}${amber ? `<tspan class="amber">${amber} drifting</tspan>` : ""}`
+			: "all settled";
+	const n = list.length;
+	const span = Math.min((n - 1) * 175, W - 2 * 200);
+	const start = (W - span) / 2;
+	list.forEach((it2, i) => {
+		const x = n === 1 ? W / 2 : start + (span / (n - 1)) * i;
+		const face = x < W / 2 ? 1 : -1;
+		stripPos.set(it2.id, { x, y: y - 3 * base, s: base });
+		const g = el(stripSvg, "g", { class: `bird ${dim ? "fencebird" : ""}`, transform: `translate(${x} ${y - 3 * base})`, tabindex: 0 });
+		const inner = el(g, "g", { transform: `scale(${base * face} ${base})` });
+		birdParts(inner, it2, dim);
+		const label2 = el(g, "text", { y: 26, class: "label" });
+		label2.textContent = it2.displayName;
+		g.addEventListener("click", (e) => { e.stopPropagation(); enterDetail(it2); });
+		g.addEventListener("keydown", (e) => { if (e.key === "Enter") enterDetail(it2); });
+		stripBirds.set(it2.id, g);
+	});
+}
+
+/* ---------- The flight between the two altitudes ---------- */
+const STRIP_H = 198;
+function stripTarget(id) {
+	const p = stripPos.get(id);
+	if (!p) return null;
+	const vw = mainEl.clientWidth;
+	const s = Math.min(vw / 2000, 1);
+	const offX = (vw - 2000 * s) / 2;
+	const offY = 54 + (STRIP_H - STRIP_H * s) / 2;
+	return { x: offX + p.x * s, y: offY + p.y * s, k: p.s * s };
+}
+function stripCurrent(id) {
+	const p = stripPos.get(id);
+	if (!p) return null;
+	const ctm = stripSvg.getScreenCTM();
+	const q = new DOMPoint(p.x, p.y).matrixTransform(ctm);
+	return { x: q.x, y: q.y, k: p.s * ctm.a };
+}
+function aviaryCurrent(id) {
+	const a = anchors.get(id);
+	if (!a) return null;
+	const ctm = scene.getScreenCTM();
+	const q = new DOMPoint(a.ox, a.oy).matrixTransform(ctm);
+	return { x: q.x, y: q.y, k: a.s * ctm.a };
+}
+function aviaryTargetFinal(id) {
+	const a = anchors.get(id);
+	if (!a) return null;
+	const vw = mainEl.clientWidth, vh = mainEl.clientHeight;
+	const H = Number(scene.getAttribute("viewBox").split(" ")[3]);
+	const s = Math.min(vw / 2000, vh / H);
+	const offX = (vw - 2000 * s) / 2, offY = 54 + (vh - H * s) / 2;
+	return { x: offX + a.ox * s, y: offY + a.oy * s, k: a.s * s };
+}
+function fly(it2, from, to, dim) {
+	if (!from || !to) return;
+	const svg = document.createElementNS(svgNS, "svg");
+	svg.setAttribute("class", "flyer");
+	svg.setAttribute("viewBox", "-50 -62 100 70");
+	svg.setAttribute("width", 100);
+	svg.setAttribute("height", 70);
+	svg.style.left = "0px";
+	svg.style.top = "0px";
+	svg.style.transformOrigin = "50px 62px";
+	const g = document.createElementNS(svgNS, "g");
+	svg.appendChild(g);
+	birdParts(g, it2, dim);
+	document.body.appendChild(svg);
+	const T = (p) => `translate(${p.x - 50}px, ${p.y - 62}px) scale(${p.k})`;
+	const anim = svg.animate(
+		[{ transform: T(from) }, { transform: T(to) }],
+		{ duration: 850, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" },
+	);
+	anim.onfinish = () => svg.remove();
+}
+
+/* ---------- The bubble (tier B, aviary only) ---------- */
+const ICONS = {
+	terminal: `<svg viewBox="0 0 24 24"><path d="M4 17l6-5-6-5"/><path d="M12 19h8"/></svg>`,
+	code: `<svg viewBox="0 0 24 24"><path d="M8 6l-6 6 6 6"/><path d="M16 6l6 6-6 6"/></svg>`,
+	folder: `<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`,
+	forge: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3.5 9h17M3.5 15h17M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>`,
+};
+function openBubble(it, beakPt, beakEl) {
+	if (!beakPt) return;
+	tip.style.display = "none";
+	bubbleItem = it;
+	const stateWord = it.adopted ? MOOD[it.health] : "not adopted";
+	const chips = [];
+	const chip = (text, tone = "") => chips.push(`<span class="${tone}">${text}</span>`);
+	if (it.ci) chip(`ci ${it.ci.conclusion}`, it.ci.conclusion === "failure" ? "bad" : "");
+	if (it.work.bugs) chip(`${it.work.bugs} bugs`, "bad");
+	if (it.work.total - it.work.bugs) chip(`${it.work.total - it.work.bugs} open items`);
+	bubble.innerHTML = `
+		<div class="who">${it.displayName}<span class="state ${it.adopted ? it.health : ""}">${stateWord}</span></div>
+		<p class="say">${speech(it)}</p>
+		${chips.length ? `<div class="chips">${chips.join("")}</div>` : ""}
+		<div class="brow">
+			<button title="Open a zellij tab">${ICONS.terminal}</button>
+			<button title="Open in VS Code">${ICONS.code}</button>
+			<button title="Open the folder">${ICONS.folder}</button>
+			<button class="more" id="more">Tell me the full story</button>
+		</div>
+		<svg class="tail" viewBox="0 0 44 30"><path d="M 6 0 Q 14 18 2 29 Q 22 22 34 2 Z" fill="var(--paper)"/></svg>`;
+	bubble.classList.add("show");
+	const w = Math.min(390, innerWidth - 24);
+	bubble.style.width = `${w}px`;
+	const left = Math.max(12, Math.min(innerWidth - w - 12, beakPt.x - (beakPt.face === 1 ? 52 : w - 52)));
+	bubble.style.left = `${left}px`;
+	bubble.style.top = `${Math.max(60, beakPt.y - bubble.offsetHeight - 32)}px`;
+	const tailEl = bubble.querySelector(".tail");
+	const tx = Math.max(10, Math.min(w - 54, beakPt.x - left - 22));
+	tailEl.style.left = `${tx}px`;
+	if (tx > w / 2) tailEl.style.transform = "scaleX(-1)";
+	if (!reduce) {
+		bubble.style.transformOrigin = `${tx + 22}px 100%`;
+		bubble.animate(
+			[{ transform: "scale(0.4)", opacity: 0 }, { transform: "scale(1.04)", opacity: 1 }, { transform: "scale(1)" }],
+			{ duration: 260, easing: "cubic-bezier(0.3, 1.2, 0.4, 1)" },
+		);
+		beakEl.style.transformBox = "fill-box";
+		beakEl.style.transformOrigin = "left center";
+		beakEl.animate?.(
+			[{ transform: "rotate(0deg)" }, { transform: "rotate(9deg)" }, { transform: "rotate(0deg)" }, { transform: "rotate(7deg)" }, { transform: "rotate(0deg)" }],
+			{ duration: 700, easing: "ease-in-out" },
+		);
+	}
+	document.getElementById("more").addEventListener("click", () => {
+		closeBubble();
+		enterDetail(it);
+	});
+}
+function closeBubble() {
+	bubbleItem = null;
+	bubble.classList.remove("show");
+}
+window.addEventListener("click", closeBubble);
+
+/* ---------- The ground: tier C ---------- */
+const lnk = (text) => `<a class="lnk" href="#" onclick="return false">${text}</a>`;
+function show(it) {
+	currentItem = it;
+	lastByWire[it.adopted ? it.tier : "fence"] = it;
+	const mood = it.adopted ? MOOD[it.health] : "not adopted";
+	const moodCls = it.adopted ? it.health : "dim";
+	const act = it.git?.activity === "editing" ? `<span class="dact">editing ♪</span>` : it.git?.activity === "in-progress" ? `<span class="dact">in flight</span>` : "";
+	const wireName = it.tier === "machine-home" ? "machine & home" : it.tier === "projects" ? "projects" : null;
+	const forgeBits = it.forges.map((f) => lnk(f.forge === "github" ? "GitHub" : "Forgejo")).join(" and ");
+	const meta = it.git
+		? `Lives in <code>~/${it.id}</code>${forgeBits ? `, on ${forgeBits}` : ", no forge"}${wireName ? `, on the ${wireName} wire` : ", on the fence"}.`
+		: `Lives only on ${forgeBits}; no clone on this machine.`;
+	document.getElementById("intro").innerHTML = `
+		<div class="dwho"><h2>${it.displayName}</h2><span class="mood ${moodCls}">${mood}</span>${act}</div>
+		<p class="dsay">${speech(it)}</p>
+		<div class="dmeta">${meta}</div>
+		<div class="actions">
+			${it.git ? `<button>${ICONS.terminal}Open a zellij tab<span class="ext">↗</span></button>
+			<button>${ICONS.code}Open in VS Code<span class="ext">↗</span></button>
+			<button>${ICONS.folder}Open the folder<span class="ext">↗</span></button>` : ""}
+			${it.forges.map((f) => `<button>${ICONS.forge}Open on ${f.forge === "github" ? "GitHub" : "Forgejo"}<span class="ext">↗</span></button>`).join("")}
+		</div>`;
+
+	/* The ledger: only facts that exist, in full words. */
+	const rows = [];
+	const fact = (label, value, tone = "") => rows.push(`<div class="lrow"><span class="l">${label}</span><span class="r ${tone}">${value}</span></div>`);
+	const g = it.git;
+	if (g) {
+		fact("uncommitted changes", g.uncommitted || "none", g.uncommitted ? "warn" : "good");
+		fact("unpushed commits", g.unpushed || "none", g.unpushed ? "warn" : "good");
+	}
+	fact("open bugs", it.work.bugs || "none", it.work.bugs ? "bad" : "good");
+	if (it.work.total - it.work.bugs) fact("open roadmap items", it.work.total - it.work.bugs);
+	if (it.ci) fact("latest ci", it.ci.conclusion, it.ci.conclusion === "failure" ? "bad" : "");
+	if (it.lastSessionDays !== null) fact("claude session", ago(it.lastSessionDays));
+	const parts = [`<div class="quiet">${g && !g.uncommitted && !g.unpushed ? "Nothing waiting: the working tree is clean and everything is pushed." : ""}</div>`, ...rows];
+	if (g?.branches?.length) {
+		parts.push(`<h3>Branches</h3>`);
+		for (const b of g.branches) {
+			parts.push(`<div class="lrow"><span class="l"><b>${b.name}</b><span class="sub">${b.subject ?? ""}</span></span><span class="r">${ago(b.daysAgo)}</span></div>`);
+		}
+	}
+	if (it.groups.length) {
+		parts.push(`<h3>Roadmap headings</h3>`);
+		for (const grp of it.groups.slice(0, 6)) {
+			parts.push(`<div class="lrow"><span class="l">${grp.heading}</span><span class="r">${grp.done ? `${grp.done}/${grp.items}` : grp.items}</span></div>`);
+		}
+	}
+	if (it.finalised.length) {
+		parts.push(`<h3>${lnk(`main on ${it.finalised[0].forge === "github" ? "GitHub" : "Forgejo"}`)}, newest commits</h3>`);
+		for (const c of it.finalised.slice(0, 4)) {
+			parts.push(`<div class="lrow"><span class="l">${c.subject}</span><span class="r">${c.at ? c.at.slice(0, 10) : ""}</span></div>`);
+		}
+	}
+	if (it.flags.length) {
+		parts.push(`<h3>Flags</h3>`);
+		for (const f of it.flags) {
+			parts.push(`<div class="lrow"><span class="l">${f.detail ?? f.flag}</span><span class="r">${f.flag}</span></div>`);
+		}
+	}
+	document.getElementById("ledger").innerHTML = parts.join("");
+
+	document.getElementById("ptabs").innerHTML = `
+		<button class="on">README.md</button>
+		<button>docs/roadmap.md</button>
+		<span class="note">key files from config; docs tree later</span>`;
+	document.getElementById("paper").innerHTML = `
+		<h1>${it.displayName}</h1>
+		<p>The real app renders this project's README here, on its paper,
+		and the roadmap behind the second tab. File contents are not in the
+		scan snapshot, so this prototype shows the structure only.</p>`;
+
+	for (const [id, gEl] of stripBirds) gEl.classList.toggle("sel", id === it.id);
+}
+
+/* ---------- The camera ---------- */
+/* One tab per wire, from the data: wires are dynamic config. */
+const WIRE_LABELS = { "machine-home": "Machine & Home", "projects": "Projects" };
+const wireKeys = [...new Set(adopted.map((i) => i.tier))];
+const lastByWire = {};
+const urgentIn = (key) =>
+	adopted.filter((i) => i.tier === key)
+		.sort((a, b) => rank[a.health] - rank[b.health] || b.work.total - a.work.total)[0];
+const urgentFence = () =>
+	[...triage].sort((a, b) => rank[a.health] - rank[b.health] || b.work.total - a.work.total)[0];
+/* Tab order: the aviary, the wires top to bottom, the fence. */
+const tabsbox = document.getElementById("tabsbox");
+for (const key of wireKeys) {
+	const b = document.createElement("button");
+	b.dataset.tab = key;
+	b.textContent = WIRE_LABELS[key] ?? key;
+	b.addEventListener("click", (e) => {
+		e.stopPropagation();
+		enterDetail(lastByWire[key] ?? urgentIn(key));
+	});
+	tabsbox.appendChild(b);
+}
+if (triage.length) {
+	const b = document.createElement("button");
+	b.dataset.tab = "fence";
+	b.textContent = "On the fence";
+	b.addEventListener("click", (e) => {
+		e.stopPropagation();
+		enterDetail(lastByWire.fence ?? urgentFence());
+	});
+	tabsbox.appendChild(b);
+}
+const setTab = (name) => {
+	for (const b of tabsbox.querySelectorAll("button")) b.classList.toggle("on", b.dataset.tab === name);
+};
+const mostUrgent = () =>
+	[...adopted].sort((a, b) => rank[a.health] - rank[b.health] || b.work.total - a.work.total)[0];
+function enterDetail(it) {
+	closeBubble();
+	tip.style.display = "none";
+	const wasDetail = document.body.classList.contains("detailview");
+	if (!stripPos.has(it.id)) drawStrip(it);
+	show(it);
+	if (!wasDetail && !reduce) {
+		/* The clicked bird's wire-mates fly from the sky to the tab row. */
+		const [, listRaw, dim] = cohortOf(it);
+		for (const it2 of listRaw) fly(it2, aviaryCurrent(it2.id), stripTarget(it2.id), dim);
+	}
+	document.body.classList.remove("zoomed");
+	document.body.classList.add("detailview");
+	setTab(it.adopted ? it.tier : "fence");
+	if (wasDetail && !reduce) {
+		for (const id of ["intro", "cols"]) {
+			const n = document.getElementById(id);
+			n.classList.remove("swap");
+			void n.offsetWidth;
+			n.classList.add("swap");
+		}
+	}
+}
+function zoomIn() {
+	closeBubble();
+	const wasDetail = document.body.classList.contains("detailview");
+	if (wasDetail && !reduce && currentItem) {
+		/* And back: the row scatters to its places on the big wires. */
+		const [, listRaw, dim] = cohortOf(currentItem);
+		for (const it2 of listRaw) fly(it2, stripCurrent(it2.id), aviaryTargetFinal(it2.id), dim);
+	}
+	document.body.classList.add("zoomed");
+	document.body.classList.remove("detailview");
+	setTab("aviary");
+}
+document.getElementById("brand").addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
+document.getElementById("tab-aviary").addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
+window.addEventListener("keydown", (e) => {
+	if (e.key !== "Escape") return;
+	if (bubble.classList.contains("show")) closeBubble();
+	else if (document.body.classList.contains("detailview")) zoomIn();
+});
+
+applyPhase();
+show(mostUrgent());
+let rT;
+addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(draw, 150); });
+setInterval(() => { if (!phaseOverride) { const p = phaseForHour(new Date().getHours()); if (p !== phase) { phase = p; applyPhase(); } } }, 60_000);
+</script>
+</body>
+</html>

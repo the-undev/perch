@@ -1,9 +1,10 @@
 # perch
 
 Desktop app for one machine, showing the current state of everything
-its owner is working on: git repositories, their remotes and CI, roadmaps,
-Claude Code sessions, Steam. It lives in the tray and derives everything it
-shows from things that already change. Nothing in it is typed in by hand.
+its owner is working on as birds on wires: git repositories, their remotes
+and CI, roadmaps, Claude Code sessions. It lives in the tray and derives
+everything it shows from things that already change. Nothing in it is typed
+in by hand.
 
 ## Read first
 
@@ -11,18 +12,31 @@ shows from things that already change. Nothing in it is typed in by hand.
   decision with the reason behind it. Read before proposing anything.
 - [docs/roadmap.md](docs/roadmap.md): parked work. Anything worth returning to
   goes there, in a commit, never in chat.
+- [design/index.html](design/index.html): the design board, the approved
+  living design pages, opened in a browser. mockups/ holds the retired
+  prototype rounds, never edited once their verdicts are recorded.
 
 ## State of the repository
 
-Documentation only. No code and no scaffold yet. The first build session
-scaffolds the project from the Tooling section of the spec, once the Rust
-toolchain is installed by the dotfiles script named there.
+A read-only scanner proof of concept in TypeScript: no Electron and no UI yet.
+Two stages, both writing under the gitignored `.scan/`:
+
+- `pnpm gather` reads this machine and the forge accounts in two rounds (root
+  collectors, then enrichers) and writes raw facts, one JSON file per source,
+  to `.scan/raw/`. Types in `src/raw.ts`.
+- `pnpm aggregate` reads only those files and the config, joins presences
+  into projects (`src/join.ts`), and writes `.scan/snapshot.json`. Types in
+  `src/snapshot.ts`; every derivation rule is in `src/derivations.ts`.
+
+`pnpm scan` runs both. `pnpm check` runs Biome, tsc and vitest. Config is
+`~/.config/perch/config.toml`, or `config.example.toml` when that is absent.
 
 ## Conventions
 
-- Tauri 2. Rust in `src-tauri/`, the UI in `src/`: Vite, React, TypeScript
-  strict, Tailwind v4, TanStack Router and Query, shadcn, Biome, vitest, pnpm.
-  The same frontend stack as harbour and skiff.
+- Electron, TypeScript end to end: Vite, React, TypeScript strict, Tailwind
+  v4, TanStack Router and Query, shadcn for basics, Biome, vitest, pnpm. The
+  same frontend stack as harbour and skiff; why Electron is in
+  `docs/decisions/tech-stack.md`.
 - Every behaviour change ships with a test in the same commit. Scanners are
   tested against fixture repositories and files under `tests/fixtures/`, never
   against the live machine.
@@ -35,3 +49,7 @@ toolchain is installed by the dotfiles script named there.
 - Commit messages: imperative subject, a body only when the why is not
   obvious. No attribution trailers.
 - British English in docs, comments and messages. No em dashes.
+- Design is explained visually. A new idea gets a prototype page in
+  mockups/, a new file per round; an approved page moves to design/ and is
+  updated in place. Prefer a page on the board over a markdown explainer;
+  the decision docs hold the why.

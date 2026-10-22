@@ -1,0 +1,5 @@
+node_modules/
+.scan/
+mockups/data.js
+design/data.js
+design/atlas-data.js

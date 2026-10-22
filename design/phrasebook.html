@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perch Phrasebook</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* The phrasebook: what a bird says in every situation the derivations
+   can produce, rendered as the bubble it would show, with the trigger
+   beside it. The voice rules at the top govern anything not listed. */
+:root {
+	--display: "Bricolage Grotesque", system-ui, sans-serif;
+	--body: "Figtree", system-ui, sans-serif;
+	--mono: ui-monospace, monospace;
+	color-scheme: dark;
+	--bg: #101214; --band: #15181b; --card: #1a1e22; --edge: #2b3036; --edge-hi: #3e454d;
+	--ink: #ece7db; --muted: #aaa396; --faint: #837d70; --accent: #b9b2a2;
+	--green: #66bb86; --amber: #d8a845; --red: #e25d4f;
+	--body-c: #272b31; --body-dim: #23262c;
+	--paper: #e9e4d8;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; }
+.page { max-width: 1280px; margin: 0 auto; padding: 36px max(24px, env(safe-area-inset-right, 0px)) 70px max(24px, env(safe-area-inset-left, 0px)); }
+h1 { font: 700 30px var(--display); margin: 0 0 6px; }
+.page > p { color: var(--muted); max-width: 72ch; line-height: 1.6; }
+
+.rules { background: var(--card); border: 1px solid var(--edge); border-radius: 12px; padding: 18px 22px; margin: 22px 0 8px; max-width: 900px; }
+.rules h2 { font: 700 17px var(--display); margin: 0 0 8px; }
+.rules ul { margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.7; font-size: 13.5px; }
+
+h2.mood { font: 700 22px var(--display); margin: 40px 0 2px; }
+h2.mood .w { font: 600 13px var(--body); margin-left: 10px; }
+h2.mood .w.green { color: var(--green); } h2.mood .w.amber { color: var(--amber); } h2.mood .w.red { color: var(--red); } h2.mood .w.dim { color: var(--faint); }
+.moodsub { color: var(--faint); font-size: 13px; margin-bottom: 14px; max-width: 72ch; }
+
+.entries { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 26px 34px; }
+.entry { min-width: 0; }
+.trigger { margin-bottom: 10px; }
+.trigger .nm { font: 600 13.5px var(--body); color: var(--ink); }
+.trigger .when { color: var(--faint); font-size: 12px; line-height: 1.55; margin-top: 2px; }
+.trigger .when code { font-family: var(--mono); font-size: 11px; }
+
+.bub {
+	position: relative; background: var(--paper); color: #2a2e35;
+	border-radius: 16px; padding: 13px 16px 12px; font-size: 13.5px; line-height: 1.5;
+	box-shadow: 0 16px 40px -14px rgb(0 0 0 / 0.7);
+	margin-bottom: 64px;
+}
+.bub .who { font: 700 15px var(--display); color: #14171b; display: flex; align-items: baseline; gap: 10px; margin-bottom: 3px; }
+.bub .state { font: 600 10px var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: #6e695f; }
+.bub .state.red { color: #b23325; } .bub .state.amber { color: #8f6d14; } .bub .state.green { color: #2c7a4b; }
+.bub p { margin: 0; }
+.bub .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.bub .chips span { background: #ddd7c9; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: #3a3e45; font-variant-numeric: tabular-nums; }
+.bub .chips span.bad { background: #ecc0b8; color: #8c2619; }
+.bub .tailw { position: absolute; bottom: -26px; left: 34px; width: 42px; height: 28px; }
+/* The speaker: positioned so the beak tip meets the tail tip. */
+.bub svg.birdy { position: absolute; bottom: -49px; left: -5px; width: 44px; height: 34px; overflow: visible; }
+.candidate .trigger .nm::after { content: "  candidate, needs its fact"; color: var(--amber); font: 600 10.5px var(--body); letter-spacing: 0.04em; margin-left: 8px; }
+</style>
+</head>
+<body>
+<div class="page">
+	<h1>Perch Phrasebook</h1>
+	<p>What a bird says in every situation the derivations can produce.
+	The speech carries how the bird feels and why; the chips carry the
+	numbers it holds. Each entry names its
+	trigger; the rules below govern anything not listed.</p>
+
+	<div class="rules">
+		<h2>The voice</h2>
+		<ul>
+			<li>First person, present tense, three sentences at most.</li>
+			<li>The worst input speaks first; at most one secondary follows;
+			everything else stays in the chips.</li>
+			<li>Numbers name quantity and time plainly; judgement lives in
+			tone, never in adjectives about the owner.</li>
+			<li>Tone follows mood: content birds are brief, restless birds
+			nudge, distressed birds are blunt but never hysterical.</li>
+			<li>No suggestions, with one exception: a bird may echo the
+			owner's own config expectations back ("you said I should have
+			CI").</li>
+			<li>At night every speech gains the waking prefix.</li>
+			<li>Calm punctuation: no exclamation marks, ever.</li>
+		</ul>
+	</div>
+
+	<div id="book"></div>
+</div>
+<script>
+const svgNS = "http://www.w3.org/2000/svg";
+function birdSvg(health, dim = false) {
+	const bodyFill = dim ? "var(--body-dim)" : "var(--body-c)";
+	const breast = dim ? "#4a4f58" : `var(--${health})`;
+	return `
+		<line x1="-6" y1="-8" x2="-7" y2="2" stroke="#4a4e55" stroke-width="2.4"/>
+		<line x1="6" y1="-8" x2="7" y2="2" stroke="#4a4e55" stroke-width="2.4"/>
+		<path d="M -7 2 L -12 3 M -7 2 L -3 3 M 7 2 L 2 3 M 7 2 L 12 3" stroke="#4a4e55" stroke-width="2" fill="none" stroke-linecap="round"/>
+		<path d="M -16 -22 L -42 -10 L -38 -20 L -44 -26 L -20 -32 Z" fill="${bodyFill}"/>
+		<ellipse cx="0" cy="-26" rx="23" ry="19" fill="${bodyFill}"/>
+		<path d="M 10 -14 A 18 16 0 0 0 20 -34 A 23 19 0 0 1 2 -8 Z" fill="${breast}"/>
+		<circle cx="14" cy="-30" r="5.5" fill="${breast}" opacity="0.9"/>
+		<circle cx="16" cy="-44" r="11.5" fill="${bodyFill}"/>
+		<path d="M 26 -45 L 37 -42 L 26 -39 Z" fill="var(--accent)"/>
+		<circle cx="19.5" cy="-46" r="1.8" fill="#0d0f12"/>
+		<path d="M -14 -28 Q 2 -36 8 -24 Q -2 -16 -14 -28 Z" fill="#00000022"/>`;
+}
+
+const BOOK = [
+	{
+		mood: "Content", cls: "green", word: "content",
+		sub: "Green birds are brief. Contentment never needs more than two sentences, and the backlog is an invitation, not a nag.",
+		entries: [
+			{ name: "Settled", when: "No unsafe work, no stalled flight, nothing red. The default state.",
+				bird: "Spool", say: "All settled over here. Last touched yesterday.", chips: ["3 open items"] },
+			{ name: "Being edited", when: "activity = editing. The song plays; the speech acknowledges you.",
+				bird: "Perch", say: "We're in the middle of something. ♪", chips: ["24 open items"] },
+			{ name: "Settled with a backlog", when: "Green with open roadmap items. The items are an offer.",
+				bird: "Harbour", say: "All settled, and twelve items on my roadmap when you want me.", chips: ["12 open items"] },
+			{ name: "Just pushed", when: "Everything made safe within the last hour.", candidate: true,
+				bird: "Gramophone", say: "Everything's just gone up. Feeling light.", chips: [] },
+		],
+	},
+	{
+		mood: "Restless", cls: "amber", word: "restless",
+		sub: "Amber birds nudge. They name the quantity and the time and stop there; the closing remark may be dry, never wounded.",
+		entries: [
+			{ name: "Uncommitted work ageing", when: "Oldest uncommitted change past 24 hours (default), under 72.",
+				bird: "Hothouse Vault", say: "Six changes have sat uncommitted since yesterday. Past a day now.", chips: ["6 uncommitted"] },
+			{ name: "Unpushed backlog", when: "Oldest unpushed commit past 24 hours, under 72.",
+				bird: "Dotfiles", say: "Three commits are local only since Monday. Nothing stops them being pushed.", chips: ["3 unpushed"] },
+			{ name: "Stalled flight", when: "HEAD on a non-default branch, no movement for 7 days (default).",
+				bird: "Skiff", say: "Parked on extension-popup-ia for three weeks. Everything's pushed, but the flight's gone quiet.", chips: ["12 open items"] },
+			{ name: "An expectation, waiting", when: "A config expectation unmet for 7 days (default).",
+				bird: "Harbour", say: "You said I should have CI. Two weeks now, still none.", chips: ["ci not set up"] },
+		],
+	},
+	{
+		mood: "Distressed", cls: "red", word: "distressed",
+		sub: "Red birds are blunt and lead with the worst thing. One secondary fact at most; the rest waits in the chips.",
+		entries: [
+			{ name: "CI failing", when: "Latest CI on the default branch failed.",
+				bird: "Prism", say: "My CI is failing on main. Start there.", chips: [["ci failure", "bad"], "2 open PRs"] },
+			{ name: "Open bugs", when: "Bugs open on the roadmap or the forge.",
+				bird: "Hollow (legacy)", say: "Two bugs open against me. Not thrilled about it.", chips: [["2 bugs", "bad"], "9 open items"] },
+			{ name: "Unsafe work gone stale", when: "Oldest unsafe change past 72 hours (default).",
+				bird: "Cobble", say: "Fourteen changes uncommitted for five days. I'd rather not be the only copy.", chips: [["14 uncommitted", "bad"]] },
+			{ name: "An expectation, soured", when: "A config expectation unmet for 30 days (default).",
+				bird: "Oxbow", say: "You said I'd get a ticket source. That was a month ago.", chips: [["tickets not set up", "bad"]] },
+			{ name: "Several things at once", when: "Worst input speaks first, one secondary follows, chips hold the rest.",
+				bird: "Prism", say: "My CI is failing on main. I'm also holding four uncommitted changes since Friday.", chips: [["ci failure", "bad"], "4 uncommitted", "2 open PRs"] },
+		],
+	},
+	{
+		mood: "On the fence", cls: "dim", word: "not adopted",
+		sub: "Fence birds state their situation without pleading. The decision is the owner's; the bird just says where it stands.",
+		entries: [
+			{ name: "Forge only", when: "A repository on a forge with no local clone.",
+				bird: "obsidian-tidy", say: "Nobody's cloned me yet. I live on GitHub as finch/obsidian-tidy.", chips: [], dim: true },
+			{ name: "Found, undecided", when: "A local repository config has not adopted or ignored.",
+				bird: "photo-shuttle", say: "Still on the fence. You haven't decided about me.", chips: [], dim: true },
+			{ name: "One disk only", when: "A local repository with no remote at all.",
+				bird: "hello", say: "I only exist on this machine. One disk, no backup.", chips: [], dim: true },
+		],
+	},
+	{
+		mood: "At night", cls: "dim", word: "any mood",
+		sub: "Sleep is earned. At night a content bird that is not being edited sleeps; restless and distressed birds lie awake, and an edited bird sings whatever the hour. Nothing changes functionally.",
+		entries: [
+			{ name: "Woken", when: "A sleeping bird clicked during the night phase: content, not being edited. The prefix joins its normal speech. Awake birds never gain it.",
+				bird: "Spool", say: "Mm? You woke me. All settled over here.", chips: [] },
+		],
+	},
+];
+
+const book = document.getElementById("book");
+for (const sec of BOOK) {
+	const h = document.createElement("h2");
+	h.className = "mood";
+	h.innerHTML = `${sec.mood}<span class="w ${sec.cls}">${sec.word}</span>`;
+	book.appendChild(h);
+	const sub = document.createElement("div");
+	sub.className = "moodsub";
+	sub.textContent = sec.sub;
+	book.appendChild(sub);
+	const grid = document.createElement("div");
+	grid.className = "entries";
+	for (const e of sec.entries) {
+		const chipHtml = (e.chips ?? []).map((c) =>
+			Array.isArray(c) ? `<span class="${c[1]}">${c[0]}</span>` : `<span>${c}</span>`).join("");
+		const d = document.createElement("div");
+		d.className = `entry ${e.candidate ? "candidate" : ""}`;
+		d.innerHTML = `
+			<div class="trigger"><div class="nm">${e.name}</div><div class="when">${e.when}</div></div>
+			<div class="bub">
+				<div class="who">${e.bird}<span class="state ${e.dim ? "" : sec.cls === "dim" ? "" : sec.cls}">${sec.word === "any mood" ? "content" : e.dim ? "not adopted" : sec.word}</span></div>
+				<p>${e.say}</p>
+				${chipHtml ? `<div class="chips">${chipHtml}</div>` : ""}
+				<svg class="tailw" viewBox="0 0 44 30"><path d="M 6 0 Q 14 18 2 29 Q 22 22 34 2 Z" fill="var(--paper)"/></svg>
+				<svg class="birdy" viewBox="-48 -62 92 68">${birdSvg(e.dim ? "green" : sec.cls === "dim" ? "green" : sec.cls === "green" ? "green" : sec.cls, e.dim)}</svg>
+			</div>
+		</div>`;
+		grid.appendChild(d);
+	}
+	book.appendChild(grid);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one screen, never scrolls. Priority bands: machine & home large,
+   projects compact, everything else summarised in a footer strip.
+   Warm dark material, crisp edges, no glow. */
+:root {
+	--bg: #16120e;
+	--band: #1c1712;
+	--card: #241e17;
+	--card-hi: #2b241b;
+	--edge: #372d22;
+	--ink: #ece4d4;
+	--muted: #a2957f;
+	--faint: #6d6252;
+	--green: #63bd84;
+	--amber: #dca743;
+	--red: #e25c4d;
+	--display: "Bricolage Grotesque", system-ui, sans-serif;
+	--body: "Figtree", system-ui, sans-serif;
+	color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--body);
+	font-size: 14px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	padding-block: 0;
+	padding-left: max(20px, env(safe-area-inset-left, 0px));
+	padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+header { display: flex; align-items: baseline; gap: 24px; padding-block: 18px 10px; flex: none; }
+header h1 { font: 700 24px/1 var(--display); margin: 0; letter-spacing: -0.01em; }
+.totals { display: flex; gap: 18px; font-weight: 600; font-size: 13px; }
+.totals .red { color: var(--red); } .totals .amber { color: var(--amber); } .totals .green { color: var(--green); }
+header .scanned { margin-left: auto; color: var(--faint); font-size: 12px; }
+
+.bandlabel {
+	font: 700 11px var(--body); letter-spacing: 0.16em; text-transform: uppercase;
+	color: var(--faint); margin: 10px 0 8px; flex: none;
+	display: flex; align-items: center; gap: 12px;
+}
+.bandlabel::after { content: ""; height: 1px; background: var(--edge); flex: 1; }
+
+.tier1 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; flex: 5; min-height: 0; }
+.tier2 { display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: 1fr; gap: 10px; flex: 4; min-height: 0; }
+
+.card {
+	background: linear-gradient(170deg, var(--card), var(--band));
+	border: 1px solid var(--edge);
+	border-radius: 9px;
+	padding: 14px 16px;
+	display: flex; flex-direction: column; gap: 4px;
+	cursor: pointer; min-height: 0; overflow: hidden;
+	opacity: 0; transform: translateY(10px);
+	animation: enter 0.45s cubic-bezier(0.22, 0.9, 0.3, 1) forwards;
+	animation-delay: var(--d);
+	transition: border-color 0.18s, background 0.18s, transform 0.18s;
+}
+.card:hover, .card:focus-visible { border-color: #4a3d2d; background: var(--card-hi); transform: translateY(-2px); outline: none; }
+@keyframes enter { to { opacity: 1; transform: none; } }
+.card .head { display: flex; align-items: center; gap: 9px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dot.red { background: var(--red); } .dot.amber { background: var(--amber); } .dot.green { background: var(--green); }
+.dot.editing { animation: breathe 1.8s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: scale(1.5); } }
+.card h2 { font: 700 17px/1.1 var(--display); margin: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.statusword { font: 600 10px var(--body); letter-spacing: 0.1em; text-transform: uppercase; }
+.statusword.red { color: var(--red); } .statusword.amber { color: var(--amber); } .statusword.green { color: var(--faint); }
+.card .sum { color: var(--muted); font-size: 12.5px; line-height: 1.45; overflow: hidden; }
+.tier1 .card h2 { font-size: 21px; }
+.tier1 .card .sum { font-size: 13px; }
+.card .nums { margin-top: auto; display: flex; gap: 14px; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+.card .nums b { color: var(--ink); font-weight: 600; }
+.card .nums .warn b { color: var(--amber); } .card .nums .bad b { color: var(--red); }
+.tier2 .card { padding: 10px 13px; gap: 2px; border-radius: 7px; }
+.tier2 .card h2 { font-size: 14.5px; }
+.tier2 .card .sum { font-size: 11.5px; -webkit-line-clamp: 1; display: -webkit-box; -webkit-box-orient: vertical; }
+
+footer {
+	flex: none; display: flex; gap: 12px; align-items: stretch;
+	padding-block: 12px 16px; flex-wrap: wrap;
+}
+.strip {
+	flex: 1; min-width: 240px;
+	background: var(--band); border: 1px dashed var(--edge); border-radius: 8px;
+	padding: 10px 14px; color: var(--muted); font-size: 12.5px;
+	display: flex; align-items: center; gap: 10px; cursor: pointer;
+	transition: border-color 0.18s;
+}
+.strip:hover { border-color: #4a3d2d; }
+.strip b { color: var(--ink); font: 700 18px var(--display); }
+.strip .what { line-height: 1.3; }
+
+/* Detail morph */
+#overlay { position: fixed; inset: 0; z-index: 10; display: none; background: rgb(10 8 5 / 0.6); }
+#overlay.show { display: block; }
+#sheet {
+	position: fixed; z-index: 11; display: none;
+	background: linear-gradient(170deg, var(--card-hi), var(--card));
+	border: 1px solid #4a3d2d; border-radius: 12px;
+	padding: 26px 28px; overflow-y: auto;
+	box-shadow: 0 40px 80px -24px rgb(0 0 0 / 0.8);
+}
+#sheet.show { display: block; }
+#sheet h2 { font: 700 28px/1 var(--display); margin: 0 0 4px; }
+#sheet .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+#sheet h3 { font: 700 11px var(--body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin: 18px 0 6px; }
+#sheet table { width: 100%; border-collapse: collapse; font-size: 13px; }
+#sheet td { padding: 5px 0; border-top: 1px solid var(--edge); }
+#sheet td.v { text-align: right; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: 16px; }
+#sheet ul.plain { margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: 13px; line-height: 1.6; }
+@media (prefers-reduced-motion: reduce) { .card { animation: none; opacity: 1; transform: none; } .dot.editing { animation: none; } }
+@media (max-width: 900px) { body { overflow: auto; } .tier1, .tier2 { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+	<h1>Overview</h1>
+	<div class="totals" id="totals"></div>
+	<div class="scanned" id="scanned"></div>
+</header>
+<div class="bandlabel">Machine &amp; Home</div>
+<div class="tier1" id="tier1"></div>
+<div class="bandlabel">Projects</div>
+<div class="tier2" id="tier2"></div>
+<footer id="foot"></footer>
+<div id="overlay"></div>
+<div id="sheet"></div>
+<script src="./data.js"></script>
+<script>
+const { items, scannedAt } = window.PERCH_DATA;
+const ago = (d) => d === null ? "—" : d === 0 ? "today" : d === 1 ? "1d" : `${d}d`;
+const adopted = items.filter((i) => i.adopted);
+const triage = items.filter((i) => !i.adopted && i.local);
+const forgeOnly = items.filter((i) => !i.local);
+
+const tally = { red: 0, amber: 0, green: 0 };
+for (const it of adopted) tally[it.health]++;
+document.getElementById("totals").innerHTML =
+	`<span class="red">${tally.red} red</span><span class="amber">${tally.amber} drifting</span><span class="green">${tally.green} settled</span>`;
+document.getElementById("scanned").textContent =
+	`scanned ${new Date(scannedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · tiers are provisional mockup data`;
+
+function summary(it) {
+	const g = it.git;
+	if (!g) return `only on ${it.forges.map((f) => f.forge).join(" and ")}`;
+	const bits = [];
+	if (g.uncommitted) bits.push(`${g.uncommitted} uncommitted`);
+	if (g.unpushed) bits.push(`${g.unpushed} unpushed`);
+	if (g.driftDays) bits.push(`drifting ${g.driftDays}d`);
+	if (it.work.bugs) bits.push(`${it.work.bugs} bugs`);
+	if (g.backup === "no-remote") bits.push("one disk only");
+	return bits.length ? bits.join(" · ") : `clean · touched ${ago(it.lastTouchedDays)} ago`;
+}
+function nums(it) {
+	const n = [];
+	if (it.git) {
+		n.push(`<span class="${it.git.uncommitted ? "warn" : ""}"><b>${it.git.uncommitted}</b> dirty</span>`);
+		n.push(`<span class="${it.git.unpushed ? "warn" : ""}"><b>${it.git.unpushed}</b> unpushed</span>`);
+	}
+	if (it.work.bugs) n.push(`<span class="bad"><b>${it.work.bugs}</b> bugs</span>`);
+	else if (it.work.total) n.push(`<span><b>${it.work.total}</b> open</span>`);
+	if (it.ci) n.push(`<span class="${it.ci.conclusion === "failure" ? "bad" : ""}"><b>ci</b> ${it.ci.conclusion}</span>`);
+	return n.join("");
+}
+const rank = { red: 0, amber: 1, green: 2 };
+function card(it, i) {
+	const c = document.createElement("article");
+	c.className = "card";
+	c.tabIndex = 0;
+	c.style.setProperty("--d", `${Math.min(i * 40, 600)}ms`);
+	c.innerHTML = `
+		<div class="head"><span class="dot ${it.health} ${it.git?.activity === "editing" ? "editing" : ""}"></span>
+		<h2>${it.name}</h2><span class="statusword ${it.health}">${it.health === "amber" ? "drifting" : it.health === "green" ? "settled" : "red"}</span></div>
+		<div class="sum">${summary(it)}</div>
+		<div class="nums">${nums(it)}</div>`;
+	c.addEventListener("click", () => openSheet(it, c));
+	c.addEventListener("keydown", (e) => { if (e.key === "Enter") openSheet(it, c); });
+	return c;
+}
+const t1 = document.getElementById("tier1");
+adopted.filter((i) => i.tier === "machine-home")
+	.sort((a, b) => rank[a.health] - rank[b.health])
+	.forEach((it, i) => t1.appendChild(card(it, i)));
+const t2 = document.getElementById("tier2");
+adopted.filter((i) => i.tier === "projects")
+	.sort((a, b) => rank[a.health] - rank[b.health] || (a.lastTouchedDays ?? 999) - (b.lastTouchedDays ?? 999))
+	.forEach((it, i) => t2.appendChild(card(it, i + 5)));
+
+const foot = document.getElementById("foot");
+foot.innerHTML = `
+	<div class="strip" id="strip-triage"><b>${triage.length}</b><span class="what">repos found on disk, not adopted<br>oldest untouched ${Math.max(...triage.map((t) => t.lastTouchedDays ?? 0))}d</span></div>
+	<div class="strip" id="strip-forge"><b>${forgeOnly.length}</b><span class="what">on a forge with no local copy<br>${forgeOnly.map((f) => f.name).join(", ")}</span></div>
+	<div class="strip" id="strip-arch"><b>14</b><span class="what">archived across both forges<br>never shown here</span></div>`;
+document.getElementById("strip-triage").addEventListener("click", () => openList("Not adopted", triage));
+document.getElementById("strip-forge").addEventListener("click", () => openList("Forge only", forgeOnly));
+
+/* Morph: sheet grows from the clicked card's rectangle. */
+const overlay = document.getElementById("overlay");
+const sheet = document.getElementById("sheet");
+function morphFrom(el) {
+	const r = el.getBoundingClientRect();
+	const target = {
+		left: Math.max(24, innerWidth / 2 - 330),
+		top: Math.max(24, innerHeight * 0.1),
+		width: Math.min(660, innerWidth - 48),
+		height: Math.min(innerHeight * 0.8, innerHeight - 48),
+	};
+	Object.assign(sheet.style, {
+		left: `${target.left}px`, top: `${target.top}px`,
+		width: `${target.width}px`, height: `${target.height}px`,
+	});
+	overlay.classList.add("show");
+	sheet.classList.add("show");
+	const dx = r.left - target.left, dy = r.top - target.top;
+	const sx = r.width / target.width, sy = r.height / target.height;
+	sheet.animate(
+		[{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: 0.4 },
+		 { transform: "none", opacity: 1 }],
+		{ duration: 300, easing: "cubic-bezier(0.24, 0.9, 0.3, 1)" },
+	);
+}
+function openSheet(it, el) {
+	const row = (k, v) => `<tr><td>${k}</td><td class="v">${v}</td></tr>`;
+	let h = `<h2>${it.name}</h2><div class="sub">${it.id} · <span class="statusword ${it.health}">${it.health}</span> · ${it.forges.map((f) => f.fullName).join(" + ") || "no forge"} · session ${ago(it.lastSessionDays)} ago</div>`;
+	if (it.git) h += `<h3>Branches</h3><table>${it.git.branches.map((b) => row(`<b>${b.name}</b> ${b.subject ?? ""}`, ago(b.daysAgo))).join("")}</table>`;
+	if (it.groups.length) h += `<h3>Roadmap</h3><table>${it.groups.map((g) => row(g.heading, g.done ? `${g.done}/${g.items}` : g.items)).join("")}</table>`;
+	if (it.finalised.length) h += `<h3>Finalised</h3><table>${it.finalised.map((c) => row(c.subject, c.at ? c.at.slice(0, 10) : "")).join("")}</table>`;
+	sheet.innerHTML = h;
+	morphFrom(el);
+}
+function openList(title, list) {
+	sheet.innerHTML = `<h2>${title}</h2><div class="sub">${list.length} items</div>
+		<ul class="plain">${list.map((t) => `<li><b>${t.name}</b> — ${summary(t)}</li>`).join("")}</ul>`;
+	morphFrom(foot);
+}
+function close() { overlay.classList.remove("show"); sheet.classList.remove("show"); }
+overlay.addEventListener("click", close);
+window.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+</script>
+</body>
+</html>

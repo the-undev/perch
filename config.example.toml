@@ -1,0 +1,94 @@
+# perch configuration.
+#
+# The live copy is ~/.config/perch/config.toml. When it does not exist the
+# scanner reads this file instead. No secrets here: tokens come from the
+# desktop keyring at run time.
+#
+# Config asserts only what leaves no trace on disk or on a forge. When an
+# assertion and an observation disagree, the observation wins and the
+# disagreement is flagged.
+#
+# A presence is named local:<id>, github:<owner>/<name> or
+# forgejo:<owner>/<name>. A local id is the path relative to the home
+# directory.
+
+# Presences that are one project although no remote URL proves it, for
+# example [["github:finch/notes", "forgejo:finch/notes"]].
+joins = []
+
+# Presences to leave off the main view. They still appear in their forge's
+# listing.
+ignore = []
+
+[local]
+# Each include is a repository, or a directory searched for repositories.
+include = [
+  "~/dev",
+  "~/undev",
+  "~/.dotfiles",
+  "~/obsidian/Hothouse",
+  "~/obsidian/Pocket",
+]
+# Nothing at or below these paths is searched.
+ignore = ["~/dev/archived", "~/dev/third-party", "~/dev/all/delete"]
+
+# Uncommitted or unpushed work older than these many days turns an item amber
+# or red. Overridable per item below.
+[drift]
+amber_days = 7
+red_days = 30
+
+# Tiers, most important first. Items without an override get the default.
+[importance]
+tiers = ["server", "machine", "projects"]
+default = "projects"
+
+# Per-item overrides, keyed by item id. A repository found inside an include
+# directory is flagged as not set up until it has an entry here, even an
+# empty one.
+[items."obsidian/Hothouse"]
+roadmaps = ["Tech/Tech Plans.md", "Garden/Garden Plans.md"]
+
+[items."obsidian/Pocket"]
+roadmaps = ["Code/Code Plans.md", "Pocket Plans.md"]
+
+# [items."dev/perch"]
+# importance = "machine"
+# drift_amber_days = 3
+# drift_red_days = 14
+
+[forges]
+# Commits on each forge repository's default branch to read as finalised.
+finalised_commits = 10
+# Archived forge repositories change rarely and belong in a slower lane.
+# Placeholder: nothing reads this until the slow lane exists.
+archived_interval_hours = 24
+
+# Each account lists the repositories it owns, read with its own read-only
+# token from the keyring (secret-tool, service perch, the key named here; see
+# docs/tokens.md). A remote that no listing holds is looked up with the token
+# of the account that owns it. Hosts are the remote hosts and SSH aliases that
+# are this forge.
+[forges.github]
+hosts = ["github.com", "github-work"]
+accounts = [
+  { account = "finch", key = "github-finch" },
+  { account = "the-undev", key = "github-the-undev" },
+  { account = "skiff-app", key = "github-skiff-app" },
+]
+# Forks to track, as owner/name. Every other fork is skipped.
+tracked_forks = []
+
+[forges.forgejo]
+base_url = "http://forge.example.lan:3000"
+hosts = ["forgejo", "forge-work", "forge.example.lan"]
+accounts = [
+  { account = "finch", key = "forgejo-finch" },
+  { account = "the-undev", key = "forgejo-the-undev" },
+]
+tracked_forks = []
+
+[server]
+name = "Silo"
+kuma_base_url = "http://kuma.example.lan:3001"
+kuma_status_page = "perch"

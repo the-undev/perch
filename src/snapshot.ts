@@ -1,0 +1,282 @@
+// The snapshot written to .scan/snapshot.json by `pnpm aggregate`. Every value here is derived
+// from the raw files by src/derivations.ts. These types are the snapshot's source of truth.
+
+import type { FailureReason, ForgeName, PolledSourceName } from "./raw.ts";
+
+export type { ForgeName, PolledSourceName };
+
+export type ItemKind = "repo" | "vault" | "server";
+
+export type LiveSourceName = "dockerContainers";
+
+/** Data a source could not read for one item, kept as data rather than failing the source. */
+export interface ItemError {
+  error: string;
+}
+
+export type ActivityState = "settled" | "in-progress" | "editing";
+
+export type HealthLevel = "green" | "amber" | "red";
+
+export interface Remote {
+  name: string;
+  fetchUrl: string;
+  pushUrls: string[];
+}
+
+export interface LocalBranch {
+  name: string;
+  lastCommitAt: string;
+  subject: string;
+  upstream: string | null;
+}
+
+export interface DriftThresholds {
+  amberDays: number;
+  redDays: number;
+}
+
+export interface Drift {
+  /** Age in whole days of the oldest uncommitted change, from the dirty files' mtimes. */
+  uncommittedDays: number | null;
+  /** Age in whole days of the oldest commit on any local branch that no remote holds. */
+  unpushedDays: number | null;
+  /** The larger of the two ages, null when nothing is uncommitted or unpushed. */
+  driftDays: number | null;
+  level: HealthLevel;
+  thresholds: DriftThresholds;
+}
+
+/**
+ * Whether unpushed work has somewhere to go: a joined forge presence, a remote perch has no
+ * presence for, or no remote at all (one disk).
+ */
+export type Backup = "joined" | "unjoined-remote" | "local-only";
+
+export interface GitData {
+  backup: Backup;
+  /** Null when HEAD is detached. */
+  branch: string | null;
+  defaultBranch: string | null;
+  upstream: string | null;
+  uncommittedCount: number;
+  /** Null when the current branch has no upstream. */
+  ahead: number | null;
+  behind: number | null;
+  /** Commits on local branches that no remote-tracking ref contains; zero when local only. */
+  unpushedCount: number;
+  lastCommitAt: string | null;
+  oldestUncommittedAt: string | null;
+  oldestUnpushedAt: string | null;
+  branches: LocalBranch[];
+  remotes: Remote[];
+  activity: ActivityState;
+  drift: Drift;
+}
+
+export type WorkItemKind = "bug" | "feature";
+
+export interface WorkItem {
+  text: string;
+  kind: WorkItemKind;
+  /** Null when the item carries no checkbox. */
+  done: boolean | null;
+  line: number;
+  /** A bullet, or a bare heading whose prose is its body. */
+  source: "bullet" | "heading";
+  /** The prose under a heading item; null for a bullet or a heading with no prose. */
+  body: string | null;
+}
+
+export interface Progress {
+  done: number;
+  total: number;
+}
+
+export interface WorkItemGroup {
+  heading: string;
+  level: number;
+  line: number;
+  /** A group has direct bullets; structure only holds sub-headings. */
+  role: "group" | "structure";
+  items: WorkItem[];
+  groups: WorkItemGroup[];
+  /** Checked against total checkbox items among the direct items, null without checkboxes. */
+  progress: Progress | null;
+}
+
+export interface RoadmapFile {
+  /** Path relative to the item. */
+  path: string;
+  /** Bullets above the first heading and bare top-level headings. */
+  items: WorkItem[];
+  groups: WorkItemGroup[];
+}
+
+export type WorkItemCounts = Record<WorkItemKind, number>;
+
+export interface RoadmapData {
+  /** Open items by kind across every file; done items are not counted. */
+  counts: WorkItemCounts;
+  files: RoadmapFile[];
+}
+
+export interface ClaudeSessionsData {
+  lastSessionAt: string | null;
+  /** Whether the time came from the newest transcript's last message or, failing that, its mtime. */
+  basis: "last-message" | "file-mtime" | null;
+}
+
+export interface PullRequest {
+  number: number;
+  title: string;
+  author: string | null;
+  draft: boolean;
+  updatedAt: string;
+  url: string;
+}
+
+/** CI outcome in perch's own terms; neutral covers cancelled, skipped and warning results. */
+export type CiState = "success" | "failure" | "pending" | "neutral";
+
+export interface CiRun {
+  name: string;
+  state: CiState;
+  /** The forge's own word for the result, for example completed/success or failure. */
+  forgeState: string;
+  url: string | null;
+  createdAt: string | null;
+}
+
+export interface ForgeData {
+  fullName: string;
+  url: string;
+  defaultBranch: string;
+  openPullRequests: PullRequest[];
+  /** Latest CI result on the default branch, null when there is none. */
+  latestCi: CiRun | null;
+  /** The newest commits on the forge's default branch: finalised work, against local work. */
+  finalisedCommits: FinalisedCommit[];
+}
+
+export interface FinalisedCommit {
+  sha: string;
+  committedAt: string;
+  subject: string;
+}
+
+export type MonitorStatus =
+  | "up"
+  | "down"
+  | "pending"
+  | "maintenance"
+  | "unknown";
+
+export interface Monitor {
+  id: number;
+  name: string;
+  status: MonitorStatus;
+  lastHeartbeatAt: string | null;
+}
+
+export interface KumaData {
+  allUp: boolean;
+  monitors: Monitor[];
+}
+
+/** Derived data per source on an item. */
+export interface ItemSourceData {
+  git: GitData | ItemError;
+  roadmap: RoadmapData | ItemError;
+  claudeSessions: ClaudeSessionsData | ItemError;
+  github: ForgeData | ItemError;
+  forgejo: ForgeData | ItemError;
+  kuma: KumaData | ItemError;
+}
+
+export type ItemSources = Partial<ItemSourceData>;
+
+export interface ForgePresence {
+  forge: ForgeName;
+  /** The presence reference, such as github:finch/perch. */
+  ref: string;
+  fullName: string;
+  url: string;
+  foundBy: "account-listing" | "local-remote";
+}
+
+export interface Presences {
+  local: { ref: string; path: string } | null;
+  forges: ForgePresence[];
+}
+
+export type ItemFlagName =
+  | "not-set-up"
+  | "remote-archived"
+  | "remote-joined-elsewhere"
+  | "config-conflict";
+
+export interface ItemFlag {
+  flag: ItemFlagName;
+  /** The health level the flag carries where one is decided, else null. */
+  level: HealthLevel | null;
+  detail: string;
+}
+
+export interface Item {
+  /** A local presence's id, or the first forge presence's reference for a forge-only item. */
+  id: string;
+  name: string;
+  kind: ItemKind;
+  /** Absolute path of the local clone, null without one. */
+  path: string | null;
+  importance: string;
+  /** Live sources a detail view may fetch for this item; never part of the scan. */
+  liveSources: LiveSourceName[];
+  presences: Presences;
+  flags: ItemFlag[];
+  sources: ItemSources;
+}
+
+/** A config assertion that the observations contradict; the observation won. */
+export interface ConfigConflict {
+  assertion: string;
+  detail: string;
+}
+
+export interface ForgeListingEntry {
+  ref: string;
+  fullName: string;
+  url: string;
+  /** The item this presence belongs to, null when it is on no item. */
+  itemId: string | null;
+  ignored: boolean;
+}
+
+/** What a forge holds, for its drill-down view; archived repositories only appear here. */
+export interface ForgeListing {
+  active: ForgeListingEntry[];
+  archived: ForgeListingEntry[];
+}
+
+export interface SourceStatus {
+  state: "ok" | "error";
+  reason: FailureReason | null;
+  error: string | null;
+  lastSucceededAt: string | null;
+  durationMs: number;
+}
+
+export interface Snapshot {
+  /** When the raw files were gathered, and how long gathering took. */
+  scannedAt: string;
+  durationMs: number;
+  aggregatedAt: string;
+  configPath: string;
+  /** Problems outside any one item, such as a configured include path that does not exist. */
+  warnings: string[];
+  conflicts: ConfigConflict[];
+  forges: Record<ForgeName, ForgeListing>;
+  sources: Record<PolledSourceName, SourceStatus>;
+  items: Item[];
+}

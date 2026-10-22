@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: instrument wall. A totals strip, then a dense tile grid; a detail
+   panel slides in from the right. Dark only, by choice. */
+:root {
+	--bg: #0b0e13;
+	--panel: #121721;
+	--panel-edge: #1d2431;
+	--ink: #d9e1ec;
+	--muted: #788392;
+	--faint: #4a5362;
+	--green: #3ecf7a;
+	--amber: #e8a73c;
+	--red: #ff5c52;
+	--pulse: #59c2ff;
+	--sans: "IBM Plex Sans", system-ui, sans-serif;
+	--mono: "IBM Plex Mono", ui-monospace, monospace;
+	color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--sans);
+	font-size: 14px;
+	padding-block: 0;
+	padding-left: max(16px, env(safe-area-inset-left, 0px));
+	padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 10px 28px;
+	padding-block: 18px 14px;
+	border-bottom: 1px solid var(--panel-edge);
+}
+header h1 {
+	font: 500 15px/1 var(--mono);
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	margin: 0;
+	color: var(--muted);
+}
+header h1 b { color: var(--ink); font-weight: 500; }
+.totals { display: flex; gap: 22px; font-family: var(--mono); }
+.totals span { display: inline-flex; align-items: baseline; gap: 7px; }
+.totals .n { font-size: 22px; font-variant-numeric: tabular-nums; }
+.totals .lbl { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.totals .red .n { color: var(--red); text-shadow: 0 0 14px color-mix(in srgb, var(--red) 55%, transparent); }
+.totals .amber .n { color: var(--amber); text-shadow: 0 0 14px color-mix(in srgb, var(--amber) 45%, transparent); }
+.totals .green .n { color: var(--green); text-shadow: 0 0 14px color-mix(in srgb, var(--green) 45%, transparent); }
+.scanned { margin-left: auto; font: 400 12px var(--mono); color: var(--faint); }
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+	gap: 10px;
+	padding-block: 16px 40px;
+}
+.tile {
+	background: var(--panel);
+	border: 1px solid var(--panel-edge);
+	border-left: 3px solid var(--faint);
+	border-radius: 4px;
+	padding: 12px 14px 11px;
+	cursor: pointer;
+	opacity: 0;
+	transform: translateY(8px);
+	animation: enter 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+	animation-delay: var(--d);
+	transition: border-color 0.2s, background 0.2s;
+}
+.tile:hover, .tile:focus-visible { background: #161c28; border-color: #2a3344; outline: none; }
+.tile.red { border-left-color: var(--red); box-shadow: inset 4px 0 18px -10px var(--red); }
+.tile.amber { border-left-color: var(--amber); box-shadow: inset 4px 0 18px -10px var(--amber); }
+.tile.green { border-left-color: var(--green); }
+@keyframes enter { to { opacity: 1; transform: none; } }
+
+.tile .top { display: flex; align-items: center; gap: 8px; }
+.tile h2 { margin: 0; font: 600 14px var(--sans); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
+.dot.editing { background: var(--pulse); animation: pulse 1.6s ease-in-out infinite; }
+.dot.in-progress { background: var(--pulse); opacity: 0.7; }
+@keyframes pulse {
+	0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pulse) 55%, transparent); }
+	50% { box-shadow: 0 0 0 5px transparent; }
+}
+.tile .stat { margin-top: 8px; font: 400 12px/1.7 var(--mono); color: var(--muted); }
+.tile .stat b { color: var(--ink); font-weight: 500; }
+.tile .stat .warn { color: var(--amber); }
+.tile .stat .bad { color: var(--red); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.chip {
+	font: 500 10.5px var(--mono);
+	letter-spacing: 0.04em;
+	padding: 2px 7px;
+	border-radius: 3px;
+	border: 1px solid var(--panel-edge);
+	color: var(--muted);
+}
+.chip.bug { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); }
+.chip.flag { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 35%, transparent); }
+
+/* Detail panel */
+#panel {
+	position: fixed;
+	top: 0; right: 0; bottom: 0;
+	width: min(430px, 92vw);
+	background: #0e1219;
+	border-left: 1px solid var(--panel-edge);
+	box-shadow: -30px 0 60px rgb(0 0 0 / 0.5);
+	transform: translateX(102%);
+	transition: transform 0.32s cubic-bezier(0.25, 0.9, 0.3, 1);
+	overflow-y: auto;
+	padding: 22px max(22px, env(safe-area-inset-right, 0px)) 40px 22px;
+	z-index: 5;
+}
+#panel.open { transform: none; }
+#panel h2 { font: 600 20px var(--sans); margin: 0 0 2px; }
+#panel .sub { font: 400 12px var(--mono); color: var(--muted); margin-bottom: 18px; }
+#panel section { margin-top: 20px; }
+#panel h3 {
+	font: 500 10.5px var(--mono);
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: var(--faint);
+	margin: 0 0 8px;
+	border-bottom: 1px solid var(--panel-edge);
+	padding-bottom: 5px;
+}
+#panel ul { list-style: none; margin: 0; padding: 0; font: 400 12.5px/1.5 var(--mono); }
+#panel li { display: flex; gap: 10px; padding: 4px 0; color: var(--muted); }
+#panel li .k { color: var(--ink); min-width: 0; flex: 1; }
+#panel li .v { color: var(--faint); flex: none; font-variant-numeric: tabular-nums; }
+#panel .close {
+	position: absolute; top: 14px; right: 16px;
+	background: none; border: 1px solid var(--panel-edge); border-radius: 4px;
+	color: var(--muted); font: 500 12px var(--mono); padding: 4px 10px; cursor: pointer;
+}
+#panel .close:hover { color: var(--ink); }
+#scrim { position: fixed; inset: 0; background: rgb(0 0 0 / 0.35); opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 4; }
+#scrim.open { opacity: 1; pointer-events: auto; }
+.statusword { font: 500 11px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.statusword.red { color: var(--red); } .statusword.amber { color: var(--amber); } .statusword.green { color: var(--green); }
+@media (prefers-reduced-motion: reduce) {
+	.tile { animation: none; opacity: 1; transform: none; }
+	.dot.editing { animation: none; }
+	#panel, #scrim { transition: none; }
+}
+</style>
+</head>
+<body>
+<header>
+	<h1><b>perch</b> / control room</h1>
+	<div class="totals" id="totals"></div>
+	<div class="scanned" id="scanned"></div>
+</header>
+<main class="grid" id="grid"></main>
+<div id="scrim"></div>
+<aside id="panel" aria-label="Project detail"></aside>
+<script src="./data.js"></script>
+<script>
+const { items, scannedAt } = window.PERCH_DATA;
+const ago = (d) => d === null ? "—" : d === 0 ? "today" : d === 1 ? "1d ago" : `${d}d ago`;
+
+const totals = { red: 0, amber: 0, green: 0 };
+for (const it of items) totals[it.health]++;
+document.getElementById("totals").innerHTML = ["red", "amber", "green"]
+	.map((h) => `<span class="${h}"><span class="n">${totals[h]}</span><span class="lbl">${h}</span></span>`)
+	.join("");
+document.getElementById("scanned").textContent =
+	`scanned ${new Date(scannedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+
+const grid = document.getElementById("grid");
+items.forEach((it, i) => {
+	const t = document.createElement("article");
+	t.className = `tile ${it.health}`;
+	t.tabIndex = 0;
+	t.style.setProperty("--d", `${Math.min(i * 35, 700)}ms`);
+	const g = it.git;
+	const act = g?.activity ?? "settled";
+	const statLines = [];
+	if (g) {
+		const bits = [`<b>${g.branch ?? "?"}</b>`];
+		if (g.uncommitted) bits.push(`<span class="warn">${g.uncommitted} uncommitted</span>`);
+		if (g.unpushed) bits.push(`<span class="warn">${g.unpushed} unpushed</span>`);
+		if (!g.uncommitted && !g.unpushed) bits.push("clean");
+		statLines.push(bits.join(" · "));
+		statLines.push(`${g.driftDays !== null ? `drift ${g.driftDays}d · ` : ""}commit ${ago(it.lastTouchedDays)}`);
+	} else {
+		statLines.push(`forge only · ${it.forges.map((f) => f.forge).join(", ")}`);
+	}
+	const chips = [];
+	if (it.work.bugs) chips.push(`<span class="chip bug">${it.work.bugs} bugs</span>`);
+	if (it.work.total - it.work.bugs) chips.push(`<span class="chip">${it.work.total - it.work.bugs} open</span>`);
+	if (it.ci) chips.push(`<span class="chip ${it.ci.conclusion === "failure" ? "bug" : ""}">ci ${it.ci.conclusion}</span>`);
+	for (const f of it.flags) if (f.flag !== "not-set-up") chips.push(`<span class="chip flag">${f.flag}</span>`);
+	if (it.flags.some((f) => f.flag === "not-set-up")) chips.push(`<span class="chip flag">not set up</span>`);
+	t.innerHTML = `
+		<div class="top"><span class="dot ${act}" title="${act}"></span><h2>${it.name}</h2>
+		<span class="statusword ${it.health}">${it.health}</span></div>
+		<div class="stat">${statLines.join("<br>")}</div>
+		${chips.length ? `<div class="chips">${chips.join("")}</div>` : ""}`;
+	t.addEventListener("click", () => openPanel(it));
+	t.addEventListener("keydown", (e) => { if (e.key === "Enter") openPanel(it); });
+	grid.appendChild(t);
+});
+
+const panel = document.getElementById("panel");
+const scrim = document.getElementById("scrim");
+function openPanel(it) {
+	const rows = (list) => list.map((r) => `<li><span class="k">${r[0]}</span><span class="v">${r[1]}</span></li>`).join("");
+	const sections = [];
+	if (it.git) sections.push(`<section><h3>Branches</h3><ul>${rows(it.git.branches.map((b) => [`${b.name} — ${b.subject ?? ""}`, ago(b.daysAgo)]))}</ul></section>`);
+	if (it.groups.length) sections.push(`<section><h3>Roadmap</h3><ul>${rows(it.groups.map((gr) => [gr.heading, gr.done ? `${gr.done}/${gr.items}` : `${gr.items}`]))}</ul></section>`);
+	if (it.finalised.length) sections.push(`<section><h3>Finalised on ${it.finalised[0].forge}</h3><ul>${rows(it.finalised.map((c) => [c.subject, c.at ? c.at.slice(0, 10) : ""]))}</ul></section>`);
+	if (it.flags.length) sections.push(`<section><h3>Flags</h3><ul>${rows(it.flags.map((f) => [f.detail ?? f.flag, f.level]))}</ul></section>`);
+	panel.innerHTML = `
+		<button class="close" id="close">esc</button>
+		<h2>${it.name}</h2>
+		<div class="sub">${it.id} · <span class="statusword ${it.health}">${it.health}</span>
+		 · ${it.forges.map((f) => f.forge).join(" + ") || "no forge"}
+		 · session ${ago(it.lastSessionDays)}</div>
+		${sections.join("")}`;
+	panel.classList.add("open");
+	scrim.classList.add("open");
+	document.getElementById("close").addEventListener("click", closePanel);
+}
+function closePanel() { panel.classList.remove("open"); scrim.classList.remove("open"); }
+scrim.addEventListener("click", closePanel);
+window.addEventListener("keydown", (e) => { if (e.key === "Escape") closePanel(); });
+</script>
+</body>
+</html>

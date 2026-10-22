@@ -153,8 +153,10 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .ground {
 	flex: 1; min-height: 0; overflow-y: auto;
 	background: var(--ground); border-top: 2px solid var(--horizon);
-	padding: 22px max(30px, env(safe-area-inset-right, 0px)) 44px 30px;
+	padding: 22px max(30px, env(safe-area-inset-right, 0px)) 44px max(30px, env(safe-area-inset-left, 0px));
 }
+/* The detail centres as one block; dead width splits evenly. */
+.wrap { max-width: 1560px; margin-inline: auto; }
 .intro { max-width: 980px; }
 .dwho { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
 .dwho h2 { font: 700 42px/1 var(--display); margin: 0; letter-spacing: -0.02em; }
@@ -208,10 +210,12 @@ a.lnk:hover { color: var(--ink); text-decoration-color: var(--accent); }
 .paper {
 	background: var(--paper); color: var(--paper-ink); border-radius: 12px;
 	box-shadow: 0 24px 60px -18px rgb(0 0 0 / 0.75);
-	padding: 28px 34px 34px; max-width: 84ch;
+	padding: 28px 38px 34px;
 	transition: transform 0.55s 0.35s cubic-bezier(0.25, 0.9, 0.3, 1), opacity 0.55s 0.35s;
 }
 .zoomed .paper { transform: translateY(56px); opacity: 0; transition-delay: 0s; }
+/* The sheet fills its column; the writing on it keeps a reading width. */
+.paper h1, .paper p { max-width: 80ch; }
 .paper h1 { font: 700 25px var(--display); color: var(--paper-head); margin: 0 0 10px; }
 .paper p { margin: 0 0 11px; line-height: 1.6; font-size: 14px; }
 .paper code { font-family: var(--mono); font-size: 0.9em; background: #dcd6c8; border: 1px solid #c9c3b3; border-radius: 4px; padding: 1px 5px; }
@@ -247,12 +251,14 @@ a.lnk:hover { color: var(--ink); text-decoration-color: var(--accent); }
 		</div>
 	</div>
 	<div class="ground">
-		<div class="intro" id="intro"></div>
-		<div class="cols" id="cols">
-			<div class="ledger" id="ledger"></div>
-			<div class="paperzone">
-				<div class="ptabs" id="ptabs"></div>
-				<div class="paper" id="paper"></div>
+		<div class="wrap">
+			<div class="intro" id="intro"></div>
+			<div class="cols" id="cols">
+				<div class="ledger" id="ledger"></div>
+				<div class="paperzone">
+					<div class="ptabs" id="ptabs"></div>
+					<div class="paper" id="paper"></div>
+				</div>
 			</div>
 		</div>
 	</div>

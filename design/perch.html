@@ -323,7 +323,7 @@ function speech(it) {
 	} else {
 		if (it.work.bugs) s.push(`I've got ${it.work.bugs} bug${it.work.bugs === 1 ? "" : "s"} open. Not thrilled about it.`);
 		if (it.ci?.conclusion === "failure") s.push("My CI is red.");
-		if (g?.activity === "editing") s.push("You're in my files right now. ♪");
+		if (g?.activity === "editing") s.push("We're in the middle of something. ♪");
 		if (g?.uncommitted) s.push(`I'm holding ${g.uncommitted} uncommitted change${g.uncommitted === 1 ? "" : "s"}.`);
 		if (g?.unpushed) s.push(`${g.unpushed} commit${g.unpushed === 1 ? " is" : "s are"} local only.`);
 		if ((g?.driftDays ?? 0) >= 7) s.push(`Nothing finalised in ${g.driftDays} days.`);

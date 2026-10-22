@@ -240,9 +240,8 @@ a.lnk:hover { color: var(--ink); text-decoration-color: var(--accent); }
 <body class="zoomed">
 <header>
 	<h1 id="brand">perch</h1>
-	<div class="tabs">
-		<button id="tab-aviary" class="on">The Aviary</button>
-		<button id="tab-projects">Projects</button>
+	<div class="tabs" id="tabsbox">
+		<button id="tab-aviary" class="on" data-tab="aviary">The Aviary</button>
 	</div>
 	<div class="totals" id="totals"></div>
 	<div class="scanned" id="scanned"></div>
@@ -702,6 +701,7 @@ window.addEventListener("click", closeBubble);
 const lnk = (text) => `<a class="lnk" href="#" onclick="return false">${text}</a>`;
 function show(it) {
 	currentItem = it;
+	if (it.adopted) lastByWire[it.tier] = it;
 	const mood = it.adopted ? MOOD[it.health] : "not adopted";
 	const moodCls = it.adopted ? it.health : "dim";
 	const act = it.git?.activity === "editing" ? `<span class="dact">editing ♪</span>` : it.git?.activity === "in-progress" ? `<span class="dact">in flight</span>` : "";
@@ -774,9 +774,26 @@ function show(it) {
 }
 
 /* ---------- The camera ---------- */
+/* One tab per wire, from the data: wires are dynamic config. */
+const WIRE_LABELS = { "machine-home": "Machine & Home", "projects": "Projects" };
+const wireKeys = [...new Set(adopted.map((i) => i.tier))];
+const lastByWire = {};
+const urgentIn = (key) =>
+	adopted.filter((i) => i.tier === key)
+		.sort((a, b) => rank[a.health] - rank[b.health] || b.work.total - a.work.total)[0];
+const tabsbox = document.getElementById("tabsbox");
+for (const key of wireKeys) {
+	const b = document.createElement("button");
+	b.dataset.tab = key;
+	b.textContent = WIRE_LABELS[key] ?? key;
+	b.addEventListener("click", (e) => {
+		e.stopPropagation();
+		enterDetail(lastByWire[key] ?? urgentIn(key));
+	});
+	tabsbox.appendChild(b);
+}
 const setTab = (name) => {
-	document.getElementById("tab-aviary").classList.toggle("on", name === "aviary");
-	document.getElementById("tab-projects").classList.toggle("on", name === "projects");
+	for (const b of tabsbox.querySelectorAll("button")) b.classList.toggle("on", b.dataset.tab === name);
 };
 const mostUrgent = () =>
 	[...adopted].sort((a, b) => rank[a.health] - rank[b.health] || b.work.total - a.work.total)[0];
@@ -793,7 +810,7 @@ function enterDetail(it) {
 	}
 	document.body.classList.remove("zoomed");
 	document.body.classList.add("detailview");
-	setTab("projects");
+	setTab(it.adopted ? it.tier : "fence");
 	if (wasDetail && !reduce) {
 		for (const id of ["intro", "cols"]) {
 			const n = document.getElementById(id);
@@ -818,7 +835,6 @@ function zoomIn() {
 document.getElementById("wires").addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
 document.getElementById("brand").addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
 document.getElementById("tab-aviary").addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
-document.getElementById("tab-projects").addEventListener("click", (e) => { e.stopPropagation(); enterDetail(currentItem ?? mostUrgent()); });
 window.addEventListener("keydown", (e) => {
 	if (e.key !== "Escape") return;
 	if (bubble.classList.contains("show")) closeBubble();

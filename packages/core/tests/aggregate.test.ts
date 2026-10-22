@@ -14,7 +14,7 @@ import {
 const config = parseConfig(
   (
     await readFile(
-      join(import.meta.dirname, "..", "config.example.toml"),
+      join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
       "utf8",
     )
   ).replace(

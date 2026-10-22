@@ -1,11 +1,11 @@
 // Generates design/atlas-data.js from the live scan: every field path in
 // every raw source and the snapshot, with observed types, presence counts,
-// real example values, and the declared type resolved from src/raw.ts and
-// src/snapshot.ts through the TypeScript checker, so the possibilities
-// show alongside what this machine happens to contain. The checker also
-// drives the walk: an object whose declared type has a string index
-// signature (a Record keyed by data) walks as one "{}" path rather than
-// one path per key. The output carries live machine data, so it is
+// real example values, and the declared type resolved from raw.ts and
+// snapshot.ts in packages/core/src through the TypeScript checker, so the
+// possibilities show alongside what this machine happens to contain. The
+// checker also drives the walk: an object whose declared type has a string
+// index signature (a Record keyed by data) walks as one "{}" path rather
+// than one path per key. The output carries live machine data, so it is
 // gitignored like mockups/data.js. Run: node scripts/atlas-data.mjs
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -32,12 +32,21 @@ const FILE_TYPES = {
   status: "StatusFile",
 };
 
-// ---- The checker over src/raw.ts and src/snapshot.ts ----
+// ---- The checker over packages/core/src/raw.ts and snapshot.ts ----
 
 mkdirSync(join(tmpdir(), "perch-atlas"), { recursive: true });
 const entryPath = join(tmpdir(), "perch-atlas", "entry.ts");
-const rawPath = join(root, "src", "raw.ts").replaceAll("\\", "/");
-const snapPath = join(root, "src", "snapshot.ts").replaceAll("\\", "/");
+const rawPath = join(root, "packages", "core", "src", "raw.ts").replaceAll(
+  "\\",
+  "/",
+);
+const snapPath = join(
+  root,
+  "packages",
+  "core",
+  "src",
+  "snapshot.ts",
+).replaceAll("\\", "/");
 writeFileSync(
   entryPath,
   [

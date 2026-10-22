@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+  - apps/*
+
+# Windows installer tooling pulled in by electron-builder; never needed on Linux.
+allowBuilds:
+  electron-winstaller: false

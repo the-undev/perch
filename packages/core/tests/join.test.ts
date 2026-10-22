@@ -292,7 +292,7 @@ describe("ignores", () => {
 describe("aggregating joined projects", () => {
   async function config(extra: string) {
     const text = await readFile(
-      join(import.meta.dirname, "..", "config.example.toml"),
+      join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
       "utf8",
     );
     return parseConfig(

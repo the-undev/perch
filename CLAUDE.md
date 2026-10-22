@@ -12,14 +12,20 @@ in by hand.
   decision with the reason behind it. Read before proposing anything.
 - [docs/roadmap.md](docs/roadmap.md): parked work. Anything worth returning to
   goes there, in a commit, never in chat.
+- [docs/build-log.md](docs/build-log.md): dated record of the build-time
+  calls Claude made. Append a line whenever a decision is taken that the
+  decision docs do not carry.
 - [design/index.html](design/index.html): the design board, the approved
   living design pages, opened in a browser. mockups/ holds the retired
   prototype rounds, never edited once their verdicts are recorded.
 
 ## State of the repository
 
-A read-only scanner proof of concept in TypeScript: no Electron and no UI yet.
-Two stages, both writing under the gitignored `.scan/`:
+A pnpm workspace with two packages. Every command below runs from the root.
+
+`packages/core` (`@perch/core`) is the read-only scanner, pure Node with no
+Electron imports. Two stages, both writing under the gitignored `.scan/` at
+the repository root:
 
 - `pnpm gather` reads this machine and the forge accounts in two rounds (root
   collectors, then enrichers) and writes raw facts, one JSON file per source,
@@ -28,8 +34,21 @@ Two stages, both writing under the gitignored `.scan/`:
   into projects (`src/join.ts`), and writes `.scan/snapshot.json`. Types in
   `src/snapshot.ts`; every derivation rule is in `src/derivations.ts`.
 
-`pnpm scan` runs both. `pnpm check` runs Biome, tsc and vitest. Config is
-`~/.config/perch/config.toml`, or `config.example.toml` when that is absent.
+`pnpm scan` runs both. Config is `~/.config/perch/config.toml`, or the root
+`config.example.toml` when that is absent.
+
+`apps/desktop` (`@perch/desktop`) is the Electron app, built with
+electron-vite. It does not use the scanner yet: the window shows a
+placeholder page. The main process is `src/main`, the sandboxed preload
+`src/preload`, the renderer `src/renderer`. Every renderer call into the main
+process is declared in `src/shared/ipc.ts`. shadcn components are added with
+`pnpm dlx shadcn add <name>` from `apps/desktop`. Renderer packages are
+devDependencies because electron-vite bundles them; shadcn adds its packages
+to `dependencies`, so move them.
+
+`pnpm dev` runs the app. `pnpm check` runs Biome over the workspace, then tsc
+and vitest in each package. `pnpm dist` builds the AppImage into
+`apps/desktop/dist/`; CI releases it from `v*` tags, see the README.
 
 ## Conventions
 

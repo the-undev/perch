@@ -111,7 +111,9 @@ from work alone, leaving red to CI and bugs.
 
 ## The scanner
 
-Two stages, both writing under the gitignored `.scan/`:
+The scanner is the `@perch/core` package in `packages/core`, and the
+paths below are inside it. Two stages, both writing under the gitignored
+`.scan/` at the repository root:
 
 - `pnpm gather` reads this machine and the forge accounts in rounds
   (root collectors, then enrichers) and writes raw facts, one JSON file
@@ -200,12 +202,14 @@ read at run time, its CLI prompts. Creation and replacement runbook:
 
 ## Tooling
 
-To be set up by the first build session: the Electron scaffold with
-Vite, React, TypeScript strict, Tailwind v4, TanStack Router and Query,
-shadcn for basics, Biome, vitest, pnpm; `pnpm check` covering lint,
-types and tests; the autostart mechanism (`TBD`: desktop entry or a
-systemd user unit from the dotfiles, decided once tray behaviour under
-session restore is known).
+A pnpm workspace: the scanner in `packages/core`, the Electron app in
+`apps/desktop` with electron-vite, React, TypeScript strict, Tailwind
+v4, TanStack Router and Query, shadcn for basics, Biome and vitest.
+`pnpm check` covers lint, types and tests, and CI runs it on every push
+and pull request. electron-builder packages a Linux AppImage; a `v*` tag
+releases it on GitHub. The autostart mechanism is `TBD`: a desktop entry
+or a systemd user unit from the dotfiles, decided once tray behaviour
+under session restore is known.
 
 ## Environment, as of 22 October 2026
 

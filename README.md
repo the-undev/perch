@@ -1,23 +1,30 @@
 # perch
 
-A tray app for one PC that shows the current state of everything its
-owner is working on, so a project can be picked up where it was left.
-Projects are birds on wires: git repositories with their uncommitted and
-unpushed work, branches, remotes and CI; each project's roadmap; recent
-Claude Code sessions. Click a bird and it tells you how it is doing.
+[![CI](https://github.com/finch/perch/actions/workflows/ci.yml/badge.svg)](https://github.com/finch/perch/actions/workflows/ci.yml)
 
-Everything on screen is read from the machine or from GitHub and
-Forgejo. Nothing is entered by hand, and only the latest scan is kept.
+A tray app for one PC that shows the state of everything its owner is
+working on as birds on wires: git repositories, their remotes and CI,
+roadmaps, Claude Code sessions. Everything it shows is read from the machine
+or the forges. Electron, built for Arch Linux on KDE Plasma 6.
 
-Electron, TypeScript end to end. Built for one Linux machine: Arch Linux, KDE
-Plasma 6 on Wayland.
+## Running
 
-Requirements: [docs/spec.md](docs/spec.md). Decisions with their
-reasons: [docs/decisions/](docs/decisions/). Parked work:
-[docs/roadmap.md](docs/roadmap.md). The settled designs are working
-pages: open [design/index.html](design/index.html) in a browser.
+Needs Node 26 and pnpm 11. Run `pnpm install` once, then from the root:
 
-Status: design settled, scanner proof of concept working. `pnpm scan`
-gathers raw facts into `.scan/raw/` and aggregates them into
-`.scan/snapshot.json`; `pnpm check` runs Biome, tsc and vitest. The
-app build is next.
+| Command | Does |
+| --- | --- |
+| `pnpm dev` | Runs the desktop app. |
+| `pnpm check` | Runs Biome, tsc and vitest across the workspace. |
+| `pnpm scan` | Gathers raw facts into `.scan/raw/` and aggregates them into `.scan/snapshot.json`. |
+| `pnpm dist` | Builds the Linux AppImage into `apps/desktop/dist/`. |
+
+## Releases
+
+Versions are semver, set in `apps/desktop/package.json`. Pushing a tag
+`v<version>` that matches it builds the AppImage in CI and attaches it to a
+GitHub release.
+
+## More
+
+What it shows and why: [docs/spec.md](docs/spec.md). The design board:
+open [design/index.html](design/index.html) in a browser.

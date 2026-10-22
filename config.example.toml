@@ -58,9 +58,10 @@ expectation_red_days = 30
 tiers = ["server", "machine", "projects"]
 default = "projects"
 
-# The two scan lanes. Everything is scanned on the main interval; archived
-# forge repositories change rarely and refresh on the slow one. Placeholders
-# until a full scan's cost is measured; nothing reads them yet.
+# The two scan lanes. Everything is scanned on the main interval, counted
+# from the end of the last scan; archived forge repositories change rarely
+# and are meant to refresh on the slow one, which nothing reads yet. Both are
+# placeholders until the defaults are chosen.
 [scan]
 interval_minutes = 15
 archived_interval_hours = 24
@@ -73,6 +74,22 @@ zellij_session = "home"
 
 [launch.zellij_sessions]
 "~/undev" = "undev"
+
+# The commands behind the launch actions, each an argument list run without
+# a shell. Placeholders in braces are filled in at launch. Leave a command
+# out and its action is not offered.
+[launch.commands]
+# zellij itself. perch finds the session's tab named after the project and
+# goes to it, or opens one in the project's directory.
+zellij = ["zellij"]
+# Opens a terminal on a session that is not running: {session}, and {cwd}
+# the project's directory. Needed with zellij for the zellij tab.
+terminal = ["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
+# {path} is the project's directory.
+vscode = ["code", "{path}"]
+folder = ["dolphin", "{path}"]
+# {vault} is the vault's folder name, encoded for a URI.
+obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 
 # Item entries, keyed by item id. An entry adopts the bird and puts it on a
 # wire. A repository found inside an include directory is flagged as not set

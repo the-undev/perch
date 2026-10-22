@@ -6,6 +6,7 @@ import {
   loadConfig,
   parseConfig,
   thresholdsFor,
+  userConfigPath,
   wireFor,
   zellijSessionFor,
 } from "../src/config.ts";
@@ -63,6 +64,22 @@ describe("example config", () => {
     expect(config.launch).toEqual({
       zellijSession: "home",
       zellijSessions: { "/home/test/undev": "undev" },
+      commands: {
+        zellij: ["zellij"],
+        terminal: [
+          "alacritty",
+          "--working-directory",
+          "{cwd}",
+          "-e",
+          "zellij",
+          "attach",
+          "-c",
+          "{session}",
+        ],
+        vscode: ["code", "{path}"],
+        folder: ["dolphin", "{path}"],
+        obsidian: ["xdg-open", "obsidian://open?vault={vault}"],
+      },
     });
     expect(config.forges.github.trackedForks).toEqual([]);
     expect(config.forges.github.hosts).toEqual(["github.com", "github-work"]);
@@ -223,22 +240,68 @@ describe("item overrides", () => {
   });
 });
 
+describe("launch commands", () => {
+  async function withCommands(commands: string): Promise<string> {
+    const example = await exampleText();
+    const start = example.indexOf("[launch.commands]");
+    const end = example.indexOf("\n[items.", start);
+    return `${example.slice(0, start)}[launch.commands]\n${commands}\n${example.slice(end)}`;
+  }
+
+  it("leave a command out as null", async () => {
+    const config = parseConfig(
+      await withCommands('folder = ["xdg-open", "{path}"]'),
+      home,
+    );
+
+    expect(config.launch.commands).toEqual({
+      zellij: null,
+      terminal: null,
+      vscode: null,
+      folder: ["xdg-open", "{path}"],
+      obsidian: null,
+    });
+  });
+
+  it("reject a placeholder the command cannot fill", async () => {
+    const text = await withCommands('vscode = ["code", "{vault}"]');
+
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: launch.commands.vscode has no placeholder {vault}; it may use {path}",
+    );
+  });
+
+  it("reject a command with no program", async () => {
+    const text = await withCommands("folder = []");
+
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: launch.commands.folder must name a program",
+    );
+  });
+});
+
 describe("loadConfig", () => {
   it("prefers the user config and falls back to the example", async () => {
-    const userPath = join(home, ".config", "perch", "config.toml");
+    const userPath = "/elsewhere/perch.toml";
     const example = await exampleText();
     const files = new Map([[examplePath, example]]);
     const readText = async (path: string) => files.get(path) ?? null;
 
-    const fallback = await loadConfig({ home, examplePath, readText });
+    const deps = { home, userPath, examplePath, readText };
+
+    const fallback = await loadConfig(deps);
     expect(fallback.path).toBe(examplePath);
 
     files.set(
       userPath,
       example.replace("stalled_amber_days = 7", "stalled_amber_days = 5"),
     );
-    const user = await loadConfig({ home, examplePath, readText });
+    const user = await loadConfig(deps);
     expect(user.path).toBe(userPath);
     expect(user.config.thresholds.stalled.amberDays).toBe(5);
+  });
+
+  it("finds the owner's config under ~/.config/perch", () => {
+    expect(userConfigPath(home)).toBe("/home/test/.config/perch/config.toml");
   });
 });

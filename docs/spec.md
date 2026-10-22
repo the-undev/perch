@@ -116,20 +116,23 @@ from work alone, leaving red to CI and bugs.
 ## The scanner
 
 The scanner is the `@perch/core` package in `packages/core`, and the
-paths below are inside it. Two stages, both writing under the gitignored
-`.scan/` at the repository root:
+paths below are inside it. `src/scan.ts` composes it with its
+directories and config path as parameters: the app scans into
+`~/.local/share/perch/scan/`, the command line into the gitignored
+`.scan/` at the repository root. Two stages:
 
-- `pnpm gather` reads this machine and the forge accounts in rounds
-  (root collectors, then enrichers) and writes raw facts, one JSON file
-  per source, to `.scan/raw/`. Types in `src/raw.ts`. Nothing judged;
-  every absent value states why.
-- `pnpm aggregate` reads only those files and the config, joins
-  presences into projects (`src/join.ts`), and writes
-  `.scan/snapshot.json`. Types in `src/snapshot.ts`; every derivation
-  rule lives in `src/derivations.ts`. It reads the previous snapshot
-  first: that is the first-seen record for unmet expectations.
+- Gather (`pnpm gather`) reads this machine and the forge accounts in
+  rounds (root collectors, then enrichers) and writes raw facts, one
+  JSON file per source, to `raw/`. Types in `src/raw.ts`. Nothing
+  judged; every absent value states why.
+- Aggregate (`pnpm aggregate`) reads only those files and the config,
+  joins presences into projects (`src/join.ts`), and writes
+  `snapshot.json`. Types in `src/snapshot.ts`; every derivation rule
+  lives in `src/derivations.ts`. It reads the previous snapshot first:
+  that is the first-seen record for unmet expectations.
 
-`pnpm scan` runs both; `pnpm check` runs Biome, tsc and vitest.
+`pnpm scan` runs both; `pnpm check` runs Biome, tsc and vitest. A full
+scan of this machine took about 4 to 7 seconds on 22 October 2026.
 
 The renderer consumes only the view model, never the raw or snapshot
 types. `src/viewmodel.ts` derives it from a snapshot and the config by
@@ -172,7 +175,8 @@ Details and open questions (composite multi-repo projects among them):
 `~/.config/perch/config.toml`, stowed from the dotfiles so backup is a
 dotfiles push. It holds: the wires as an ordered named list, include
 and ignore paths, forge accounts and addresses, the health windows, the
-two scan lanes, the zellij session defaults, per-project assertions
+two scan lanes, the zellij session defaults, the launch commands (an
+action whose command is left out is not offered), per-project assertions
 (joins, wire, importance, display names, thresholds, expectations, key
 file lists, zellij session names). An entry for an item adopts it. No
 secrets, ever. Every field is shown in `config.example.toml`.
@@ -190,20 +194,46 @@ read at run time, its CLI prompts. Creation and replacement runbook:
 
 ## Behaviour
 
+- A normal window. One instance: a second launch shows and focuses the
+  running one.
+- The scan runs in the Electron main process: at start, then
+  `[scan] interval_minutes` after each scan finishes, on window focus
+  once a minute has passed since the last scan, and when the header's
+  scan line is pressed. One scan at a time; a request during a scan
+  joins it. The config is read again before every scan.
+- The latest snapshot is cached in `~/.local/share/perch/scan/`; the
+  window renders from it at start and the main process pushes the fresh
+  aviary when a scan finishes. Before any snapshot exists the window
+  says the first scan is running. A failing source keeps its previous
+  result and shows the error and its age. A config that does not parse
+  leaves the previous one in force, and a failed scan leaves the
+  previous snapshot; either says so in the sky's notices, as does a
+  failed launch until the next scan.
+- The header's scan line says the sky's phase, the scan's time and its
+  age, and "scanning" while a scan runs. The sky follows the clock,
+  read again every minute.
+- The URL holds where the camera points: `/` for the aviary,
+  `/bird/<id>` for a bird's detail.
+- Launch actions run their commands from config, detached, and only
+  ones some bird offers. Links open in the browser; the window never
+  navigates. Key files are read by the main process when a detail opens
+  and again after every scan.
+- The zellij tab action goes to the project's tab in its session, or
+  opens one in the project's directory; a session that is not running
+  opens in the configured terminal. It does not raise the terminal's
+  window.
+
+Next phase, not built yet:
+
 - Starts at login, window hidden, icon in the tray. Tray menu: show,
-  rescan, quit.
-- One instance. A second launch hands its arguments to the running one:
-  `--toggle` shows and focuses, or hides when already in front;
-  `--show` only shows; `--scan` rescans.
+  rescan, quit. Closing the window hides it.
+- A second launch hands its arguments to the running one: `--toggle`
+  shows and focuses, or hides when already in front; `--show` only
+  shows; `--scan` rescans.
 - The global shortcut is a Plasma custom shortcut bound to
   `perch --toggle`. In-app global shortcuts on Wayland are parked, see
   the roadmap.
-- Scans run on a timer, on window focus, on `--scan` and from the tray.
-  Archived data refreshes in a slower lane. Intervals are config; the
-  defaults wait on measuring a full scan's cost.
-- The latest snapshot is cached on disk; the window renders from it at
-  start and replaces it when a scan finishes. A failing source keeps
-  its previous result and shows the error and its age.
+- Archived data refreshes in a slower lane, see the roadmap.
 
 ## Standing decisions
 

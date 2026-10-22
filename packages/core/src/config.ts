@@ -79,6 +79,7 @@ export interface Config {
     zellijSession: string;
     /** Sessions by root directory, home expanded; the longest root containing the item wins. */
     zellijSessions: Record<string, string>;
+    commands: LaunchCommands;
   };
   forges: {
     finalisedCommits: number;
@@ -88,6 +89,30 @@ export interface Config {
   /** The server to monitor through Uptime Kuma; null when config has no [server] section. */
   server: { name: string; kumaBaseUrl: string; kumaStatusPage: string } | null;
 }
+
+/** A launch command's name in config, which is also the launch action it serves. */
+export type LaunchCommandName =
+  | "zellij"
+  | "terminal"
+  | "vscode"
+  | "folder"
+  | "obsidian";
+
+/**
+ * The commands behind the launch actions, each an argument list with placeholders filled in at
+ * launch; null when config leaves it out, and then its action is not offered.
+ */
+export type LaunchCommands = Record<LaunchCommandName, string[] | null>;
+
+/** The placeholders each launch command may use. */
+export const launchPlaceholders: Record<LaunchCommandName, readonly string[]> =
+  {
+    zellij: [],
+    terminal: ["session", "cwd"],
+    vscode: ["path"],
+    folder: ["path"],
+    obsidian: ["vault"],
+  };
 
 export interface LoadedConfig {
   config: Config;
@@ -296,6 +321,33 @@ function parseForge(forge: Table, where: string): ForgeConfig {
   };
 }
 
+function parseLaunchCommands(commands: Table): LaunchCommands {
+  const parsed = {} as LaunchCommands;
+  for (const [command, allowed] of Object.entries(launchPlaceholders) as [
+    LaunchCommandName,
+    readonly string[],
+  ][]) {
+    const name = `launch.commands.${command}`;
+    if (commands[command] === undefined) {
+      parsed[command] = null;
+      continue;
+    }
+    const argv = stringArray(commands[command], name);
+    if (argv.length === 0) {
+      throw new Error(`config: ${name} must name a program`);
+    }
+    for (const [, placeholder] of argv.join(" ").matchAll(/\{(\w+)\}/g)) {
+      if (placeholder !== undefined && !allowed.includes(placeholder)) {
+        throw new Error(
+          `config: ${name} has no placeholder {${placeholder}}; it may use ${allowed.map((entry) => `{${entry}}`).join(", ") || "none"}`,
+        );
+      }
+    }
+    parsed[command] = argv;
+  }
+  return parsed;
+}
+
 function stringArrays(value: unknown, name: string): string[][] {
   if (!Array.isArray(value))
     throw new Error(`config: ${name} must be an array`);
@@ -371,6 +423,9 @@ export function parseConfig(text: string, home: string): Config {
           string(sessions, root, "launch.zellij_sessions."),
         ]),
       ),
+      commands: parseLaunchCommands(
+        optionalTable(launch, "commands", "launch."),
+      ),
     },
     forges: {
       finalisedCommits: positiveInteger(
@@ -445,15 +500,24 @@ export function zellijSessionFor(
   return byRoot?.[1] ?? config.launch.zellijSession;
 }
 
+/** Where the owner's config lives under a home directory: ~/.config/perch/config.toml. */
+export function userConfigPath(home: string): string {
+  return `${home}/.config/perch/config.toml`;
+}
+
 export interface ConfigDeps {
+  /** The home directory a leading ~ in config paths expands to. */
   home: string;
+  /** The owner's config, read when it exists. */
+  userPath: string;
+  /** The example config, read when the owner's does not exist. */
   examplePath: string;
   readText: (path: string) => Promise<string | null>;
 }
 
-/** Reads ~/.config/perch/config.toml when it exists, else the example config in the repository. */
+/** Reads the owner's config when it exists, else the example config. */
 export async function loadConfig(deps: ConfigDeps): Promise<LoadedConfig> {
-  const userPath = `${deps.home}/.config/perch/config.toml`;
+  const { userPath } = deps;
   const userText = await deps.readText(userPath);
   if (userText !== null)
     return { config: parseConfig(userText, deps.home), path: userPath };

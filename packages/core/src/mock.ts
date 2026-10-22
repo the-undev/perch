@@ -101,6 +101,13 @@ export const mockConfig: Config = {
   launch: {
     zellijSession: "home",
     zellijSessions: { [`${home}/undev`]: "undev" },
+    commands: {
+      zellij: ["zellij"],
+      terminal: ["alacritty", "-e", "zellij", "attach", "-c", "{session}"],
+      vscode: ["code", "{path}"],
+      folder: ["dolphin", "{path}"],
+      obsidian: ["xdg-open", "obsidian://open?vault={vault}"],
+    },
   },
   forges: {
     finalisedCommits: 10,

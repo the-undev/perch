@@ -5,6 +5,10 @@ directories:
 files:
   - out/**
   - package.json
+# Read when the owner has no ~/.config/perch/config.toml.
+extraResources:
+  - from: ../../config.example.toml
+    to: config.example.toml
 linux:
   target: AppImage
   category: Development

@@ -10,22 +10,26 @@ const now = new Date(mockSnapshot.scannedAt);
 const aviaryPlace: CameraPlace = { at: "aviary" };
 const detailOf = (birdId: string): CameraPlace => ({ at: "detail", birdId });
 
-function camera(place: CameraPlace) {
+function camera(place: CameraPlace, scanning = false, clock = now) {
   const onNavigate = vi.fn();
+  const onRescan = vi.fn();
   const view = (at: CameraPlace) => (
     <CameraView
       aviary={mockAviary}
-      now={now}
+      now={clock}
       place={at}
       onNavigate={onNavigate}
       onLaunch={() => {}}
       sheets={[]}
+      scanning={scanning}
+      onRescan={onRescan}
     />
   );
   const { container, rerender } = render(view(place));
   return {
     container,
     onNavigate,
+    onRescan,
     moveTo: (at: CameraPlace) => rerender(view(at)),
   };
 }
@@ -171,5 +175,26 @@ describe("the camera", () => {
 
     expect(tab("The Aviary").getAttribute("aria-current")).toBe("page");
     expect(screen.queryByRole("article")).toBeNull();
+  });
+
+  it("says how old the scan is, and scans again when its line is pressed", () => {
+    const later = new Date(Date.parse(mockSnapshot.scannedAt) + 30 * 3_600_000);
+    const { onRescan } = camera(aviaryPlace, false, later);
+
+    const line = screen.getByTitle("Scan now");
+    expect(line.textContent).toMatch(/, scanned \d\d:\d\d, 30 hours ago$/);
+    fireEvent.click(line);
+
+    expect(onRescan).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("says quietly while a scan runs, and waits for it", () => {
+    const { onRescan } = camera(aviaryPlace, true);
+
+    expect(screen.getByRole("status").textContent).toBe("scanning");
+    fireEvent.click(screen.getByTitle("Scan now"));
+
+    expect(onRescan).not.toHaveBeenCalled();
   });
 });

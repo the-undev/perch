@@ -13,11 +13,15 @@ Needs Node 26 and pnpm 11. Run `pnpm install` once, then from the root:
 
 | Command | Does |
 | --- | --- |
-| `pnpm dev` | Runs the desktop app. |
+| `pnpm dev` | Runs the desktop app: it scans this machine and the forges and shows the aviary. Its data lives in `~/.local/share/perch`. |
 | `pnpm design` | Serves the design site at http://localhost:5174, every component in every state. |
 | `pnpm check` | Runs Biome, tsc and vitest across the workspace. |
-| `pnpm scan` | Gathers raw facts into `.scan/raw/` and aggregates them into `.scan/snapshot.json`. |
+| `pnpm scan` | Runs the same scan from the command line, into `.scan/raw/` and `.scan/snapshot.json` in the repository. |
 | `pnpm dist` | Builds the Linux AppImage into `apps/desktop/dist/`. |
+
+The config is `~/.config/perch/config.toml`; without it the app reads
+`config.example.toml`, which shows every field. Forge tokens come from the
+desktop keyring, see [docs/tokens.md](docs/tokens.md).
 
 ## Releases
 

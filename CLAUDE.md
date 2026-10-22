@@ -26,15 +26,17 @@ in by hand.
 A pnpm workspace with four packages. Every command below runs from the root.
 
 `packages/core` (`@perch/core`) is the read-only scanner, pure Node with no
-Electron imports. Two stages, both writing under the gitignored `.scan/` at
-the repository root:
+Electron imports. `src/scan.ts` composes it, every directory and the config
+path a parameter: the CLI writes under the gitignored `.scan/` at the
+repository root, the desktop app under `~/.local/share/perch/scan/`. Two
+stages:
 
-- `pnpm gather` reads this machine and the forge accounts in two rounds (root
-  collectors, then enrichers) and writes raw facts, one JSON file per source,
-  to `.scan/raw/`. Types in `src/raw.ts`.
-- `pnpm aggregate` reads only those files, the config and the previous
-  snapshot, joins presences into projects (`src/join.ts`), and writes
-  `.scan/snapshot.json`. Types in `src/snapshot.ts`; every derivation rule
+- Gather (`pnpm gather`) reads this machine and the forge accounts in two
+  rounds (root collectors, then enrichers) and writes raw facts, one JSON
+  file per source, to `raw/`. Types in `src/raw.ts`.
+- Aggregate (`pnpm aggregate`) reads only those files, the config and the
+  previous snapshot, joins presences into projects (`src/join.ts`), and
+  writes `snapshot.json`. Types in `src/snapshot.ts`; every derivation rule
   is in `src/derivations.ts`.
 
 The renderer reads only the view model: `src/viewmodel.ts` derives the
@@ -45,7 +47,8 @@ imported as `@perch/core/mock.ts`; `tests/mock.test.ts` fails if it drifts
 from the rules or loses a state.
 
 `pnpm scan` runs both. Config is `~/.config/perch/config.toml`, or the root
-`config.example.toml` when that is absent.
+`config.example.toml` when that is absent; the AppImage ships the example
+among its resources.
 
 `packages/ui` (`@perch/ui`) holds the React components of the design,
 typed against the view model only: the bird, wire, fence and sky scene, the
@@ -65,11 +68,19 @@ it. A page is a component in `src/pages` and one entry in
 `src/registry.ts`. It is a local tool, never deployed.
 
 `apps/desktop` (`@perch/desktop`) is the Electron app, built with
-electron-vite. It does not use the scanner yet: the window shows a
-placeholder page. The main process is `src/main`, the sandboxed preload
-`src/preload`, the renderer `src/renderer`. Every renderer call into the main
-process is declared in `src/shared/ipc.ts`. Renderer packages are
-devDependencies because electron-vite bundles them.
+electron-vite. The main process (`src/main`) reads the config, runs the scan
+at start, on the config's interval, on window focus and on request
+(`scan-scheduler.ts`), keeps the snapshot cache, derives the aviary and
+reads key files (`app-state.ts`), and runs launch actions (`launch.ts`).
+Its data lives in `~/.local/share/perch`, Electron's userData. The renderer
+(`src/renderer`) receives only view model types: TanStack Query holds the
+pushed state, TanStack Router holds where the camera points (`/` and
+`/bird/<id>`), and `CameraView` draws it. The sandboxed preload
+(`src/preload`) exposes the calls declared in `src/shared/ipc.ts`. Main
+tests run in node, renderer tests in jsdom against a fake preload API
+(`fake-api.ts`). Workspace packages are devDependencies because
+electron-vite bundles them. The tray, autostart, second-instance arguments
+and the shortcut are the next phase.
 
 `pnpm dev` runs the app, `pnpm design` the design site. `pnpm check` runs Biome over the workspace, then tsc
 and vitest in each package. `pnpm dist` builds the AppImage into

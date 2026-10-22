@@ -38,6 +38,7 @@ import {
 import type { KeyFileSheet } from "./paper.tsx";
 import { sceneWidth, skyBackground } from "./scene.tsx";
 import { isNight, type SkyPhase, skyPhase } from "./sky.ts";
+import { agoWords } from "./time.ts";
 import { byPosition, facingAt, Tally } from "./wire.tsx";
 
 /** Where the camera points: the whole aviary, or one bird's detail page. */
@@ -367,15 +368,22 @@ function Totals({ aviary }: { aviary: Aviary }) {
   );
 }
 
-/** The scan's moment and phase at the header's right, with any sources the scan could not read. */
+/**
+ * The phase and the scan's moment and age at the header's right, quietly saying when a scan is
+ * running, with any sources the scan could not read. Pressing the scan line scans now.
+ */
 function ScanLine({
   aviary,
   now,
   phase,
+  scanning,
+  onRescan,
 }: {
   aviary: Aviary;
   now: Date;
   phase: SkyPhase;
+  scanning: boolean;
+  onRescan: () => void;
 }) {
   const time = new Date(aviary.scannedAt).toLocaleTimeString("en-GB", {
     hour: "2-digit",
@@ -384,9 +392,20 @@ function ScanLine({
   const failing = aviary.sourceErrors.length;
   return (
     <div className="ml-auto flex items-baseline gap-2 text-[12px] text-ink-faint">
-      <span>
-        {phase}, scanned {time}
-      </span>
+      {scanning && (
+        <span role="status" className="motion-safe:animate-pulse">
+          scanning
+        </span>
+      )}
+      <button
+        type="button"
+        title="Scan now"
+        disabled={scanning}
+        onClick={onRescan}
+        className="cursor-pointer hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-ink-accent disabled:cursor-default disabled:hover:text-ink-faint"
+      >
+        {phase}, scanned {time}, {agoWords(aviary.scannedAt, now)}
+      </button>
       {failing > 0 && (
         <span
           className="text-amber"
@@ -412,6 +431,10 @@ export interface CameraViewProps {
   onLaunch: (action: LaunchAction) => void;
   /** The open bird's key files with what was read from each; empty until read. */
   sheets: KeyFileSheet[];
+  /** A scan is running; the header says so quietly. */
+  scanning: boolean;
+  /** The header's scan line was pressed: scan now. */
+  onRescan: () => void;
 }
 
 /** Until the first measurement the camera assumes a small monitor's window. */
@@ -425,6 +448,8 @@ export function CameraView({
   onNavigate,
   onLaunch,
   sheets,
+  scanning,
+  onRescan,
 }: CameraViewProps) {
   const phase = skyPhase(now);
   const night = isNight(phase);
@@ -522,7 +547,13 @@ export function CameraView({
           })}
         </nav>
         <Totals aviary={aviary} />
-        <ScanLine aviary={aviary} now={now} phase={phase} />
+        <ScanLine
+          aviary={aviary}
+          now={now}
+          phase={phase}
+          scanning={scanning}
+          onRescan={onRescan}
+        />
       </header>
       <main ref={mainRef} className="relative min-h-0 flex-1 overflow-hidden">
         <div className="flex h-full flex-col">

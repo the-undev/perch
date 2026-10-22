@@ -1,2 +1,11 @@
 @import "tailwindcss";
 @import "@perch/ui/theme.css";
+
+/* The camera fills the window. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}

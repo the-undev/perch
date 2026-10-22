@@ -68,6 +68,9 @@ importers:
 
   apps/desktop:
     devDependencies:
+      '@perch/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@perch/ui':
         specifier: workspace:*
         version: link:../../packages/ui

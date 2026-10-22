@@ -2,7 +2,7 @@ import { mockAviary } from "@perch/core/mock.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { BirdPortrait, birdScale, fenceScale } from "./bird.tsx";
+import { BirdPortrait, birdScale, fenceScale, portraitFrame } from "./bird.tsx";
 import { mockBird } from "./mock-birds.ts";
 import { Scene } from "./scene.tsx";
 import { Fence, Wire } from "./wire.tsx";
@@ -92,6 +92,16 @@ describe("the bird", () => {
     expect(birdScale(important)).toBeCloseTo(1.8);
     expect(birdScale(plump)).toBeCloseTo(0.9 * 1.65);
     expect(birdScale(mockBird("dev/odin/hello"))).toBeCloseTo(fenceScale);
+  });
+  it("frames a portrait with the beak tip above the wire, mirrored when facing left", () => {
+    const spool = mockBird("undev/spool");
+    const right = portraitFrame(spool, "right");
+    const left = portraitFrame(spool, "left");
+    const scale = birdScale(spool);
+
+    expect(right.beakX - right.width / 2).toBeCloseTo(37 * scale);
+    expect(left.beakX + right.beakX).toBeCloseTo(right.width);
+    expect(right.height - 44 - right.beakY).toBeCloseTo(45 * scale);
   });
 });
 

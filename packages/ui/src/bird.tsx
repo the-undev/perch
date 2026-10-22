@@ -219,21 +219,43 @@ export interface BirdPortraitProps {
   night: boolean;
 }
 
-/** A bird alone on a short length of wire, at its true size: for pages that show one bird. */
-export function BirdPortrait({ bird, facing, night }: BirdPortraitProps) {
+/** A portrait's size in pixels, and where in it the beak tip lands: a bubble's tail tip meets it. */
+export interface PortraitFrame {
+  width: number;
+  height: number;
+  beakX: number;
+  beakY: number;
+}
+
+/** The frame a portrait of this bird is drawn in. */
+export function portraitFrame(bird: BirdModel, facing: Facing): PortraitFrame {
   const scale = birdScale(bird);
   const half = Math.ceil(62 * scale + 40);
   const top = Math.ceil(80 * scale + 8);
-  const bottom = 44;
+  const face = facing === "right" ? 1 : -1;
+  return {
+    width: 2 * half,
+    height: top + 44,
+    // The beak tip is at (37, -42) in bird units, the bird 3 units above the wire.
+    beakX: half + 37 * scale * face,
+    beakY: top - 45 * scale,
+  };
+}
+
+/** A bird alone on a short length of wire, at its true size: for pages that show one bird. */
+export function BirdPortrait({ bird, facing, night }: BirdPortraitProps) {
+  const frame = portraitFrame(bird, facing);
+  const half = frame.width / 2;
+  const top = frame.height - 44;
   const look = birdLook(bird, night);
   return (
     <svg
       role="img"
       aria-label={`${bird.name}, ${bird.adopted ? bird.mood : "not adopted"}${look.asleep ? ", asleep" : ""}`}
-      viewBox={`${-half} ${-top} ${2 * half} ${top + bottom}`}
-      width={2 * half}
-      height={top + bottom}
-      className="max-w-full overflow-visible"
+      viewBox={`${-half} ${-top} ${frame.width} ${frame.height}`}
+      width={frame.width}
+      height={frame.height}
+      className="h-auto max-w-full overflow-visible"
     >
       <line
         x1={-half}

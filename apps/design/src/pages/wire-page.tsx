@@ -1,0 +1,163 @@
+import { mockAviary } from "@perch/core/mock.ts";
+import type { Wire as WireModel } from "@perch/core/viewmodel.ts";
+import { Scene, sceneWidth } from "@perch/ui/scene.tsx";
+import { Fence, Wire } from "@perch/ui/wire.tsx";
+import { mockBird, mockWire } from "../specimens.ts";
+import { Code, Section, Specimen, Usage } from "../usage.tsx";
+
+const machineHome = mockWire("Machine & Home");
+const projects = mockWire("Projects");
+
+/** A wire whose birds are all content: the tally reads "all settled". */
+const settledWire: WireModel = {
+  name: "Quiet",
+  birds: ["undev/spool", "obsidian/Pocket", "dev/perch"].map(
+    (id, position) => ({
+      ...mockBird(id),
+      position,
+    }),
+  ),
+};
+
+function WireScene({ wire, night }: { wire: WireModel; night: boolean }) {
+  return (
+    <Scene
+      phase={night ? "night" : "day"}
+      height={340}
+      label={`The ${wire.name} wire`}
+    >
+      <Wire wire={wire} y={230} width={sceneWidth} night={night} />
+    </Scene>
+  );
+}
+
+export function WirePage() {
+  return (
+    <>
+      <Section
+        title="The wire · your priority"
+        rule="Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the bird places itself: leftmost needs you first. The tally beside the name counts who needs attention and who drifts."
+        min={900}
+      >
+        <Specimen
+          label="Machine & Home"
+          rule="Two restless birds, one content. Dotfiles and the Hothouse Vault are larger: the machine tier."
+        >
+          <WireScene wire={machineHome} night={false} />
+        </Specimen>
+        <Specimen
+          label="Projects"
+          rule="Distressed leftmost, then restless, then content; within a mood the more important first, then by name."
+        >
+          <WireScene wire={projects} night={false} />
+        </Specimen>
+        <Specimen
+          label="All settled"
+          rule="Hand-built: when nobody is restless or distressed the tally says so."
+        >
+          <WireScene wire={settledWire} night={false} />
+        </Specimen>
+      </Section>
+
+      <Section
+        title="The fence · not adopted"
+        rule="The fence below holds the unadopted, dimmed, ordered by name: it holds no priority. Names alternate between two rows so they never collide."
+        min={900}
+      >
+        <Specimen
+          label="By day"
+          rule="Three situations: one disk only, found and undecided, forge only."
+        >
+          <Scene phase="day" height={260} label="The fence">
+            <Fence
+              fence={mockAviary.fence}
+              y={150}
+              width={sceneWidth}
+              height={260}
+              night={false}
+            />
+          </Scene>
+        </Specimen>
+        <Specimen label="At night" rule="The fence sleeps.">
+          <Scene phase="night" height={260} label="The fence at night">
+            <Fence
+              fence={mockAviary.fence}
+              y={150}
+              width={sceneWidth}
+              height={260}
+              night={true}
+            />
+          </Scene>
+        </Specimen>
+      </Section>
+
+      <Section
+        title="Together at night"
+        rule="Night is cosmetic: positions and colours hold. Content birds that are not edited sleep; the rest stay awake, and Perch sings."
+        min={900}
+      >
+        <Specimen
+          label="The whole mock aviary"
+          rule="Both wires and the fence in one scene."
+        >
+          <Scene phase="night" height={980} label="The mock aviary at night">
+            <Wire wire={machineHome} y={300} width={sceneWidth} night={true} />
+            <Wire wire={projects} y={590} width={sceneWidth} night={true} />
+            <Fence
+              fence={mockAviary.fence}
+              y={850}
+              width={sceneWidth}
+              height={980}
+              night={true}
+            />
+          </Scene>
+        </Specimen>
+      </Section>
+
+      <Usage
+        component="<Wire> and <Fence>"
+        props={[
+          {
+            name: "wire",
+            type: "Wire",
+            what: "Wire only: one priority band from the view model, its birds ordered leftmost first.",
+          },
+          {
+            name: "fence",
+            type: "Fence",
+            what: "Fence only: every bird config does not adopt.",
+          },
+          {
+            name: "y",
+            type: "number",
+            what: "The wire's ends, or the fence rail, in scene units.",
+          },
+          {
+            name: "width",
+            type: "number",
+            what: "The scene's width, sceneWidth (2000).",
+          },
+          {
+            name: "height",
+            type: "number",
+            what: "Fence only: the scene's height, so the posts reach the bottom.",
+          },
+          {
+            name: "night",
+            type: "boolean",
+            what: "Passed to every bird for sleep.",
+          },
+        ]}
+      >
+        <p>
+          Both draw into a <Code>Scene</Code>, in scene units. The wires come
+          from <Code>aviary.wires</Code> in config order, the fence from{" "}
+          <Code>aviary.fence</Code>. Birds are spread evenly, at most 340 units
+          apart on a wire and 205 on the fence, and turned to face the middle.
+          Splitting a crowded wire over two rows, arrival flights and hover tips
+          belong to the aviary scene, the next phase.
+        </p>
+      </Usage>
+    </>
+  );
+}

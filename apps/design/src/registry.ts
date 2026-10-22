@@ -1,0 +1,212 @@
+// Every page on the design site, grouped. A new page is a component and one entry here; the index,
+// the navigation and the route pick it up.
+
+import type { ComponentType } from "react";
+import { ActionsPage, IntroPage, LinksPage } from "./pages/actions-pages.tsx";
+import { BirdPage } from "./pages/bird-page.tsx";
+import { BubblePage } from "./pages/bubble-page.tsx";
+import { ButtonPage } from "./pages/button-page.tsx";
+import { ChipPage } from "./pages/chip-page.tsx";
+import { LedgerPage } from "./pages/ledger-page.tsx";
+import { PaperPage } from "./pages/paper-page.tsx";
+import {
+  BranchesPage,
+  CommitsPage,
+  FlagsPage,
+  ProblemsPage,
+  PullRequestsPage,
+} from "./pages/sections-pages.tsx";
+import { SkyPage } from "./pages/sky-page.tsx";
+import { TokensPage } from "./pages/tokens-page.tsx";
+import { WirePage } from "./pages/wire-page.tsx";
+
+export type GroupId = "components" | "primitives" | "scenes" | "spec";
+
+export interface Group {
+  id: GroupId;
+  title: string;
+  blurb: string;
+  /** Pages promised for a later phase, shown as placeholders until they exist. */
+  planned: string[];
+}
+
+export interface DesignPage {
+  slug: string;
+  group: GroupId;
+  title: string;
+  /** One or two sentences for the index card and the page's head. */
+  summary: string;
+  component: ComponentType;
+}
+
+export const groups: Group[] = [
+  {
+    id: "components",
+    title: "Components",
+    blurb:
+      "The perch components from @perch/ui, each in every state the view model allows, with the rule behind it.",
+    planned: [],
+  },
+  {
+    id: "primitives",
+    title: "Primitives",
+    blurb: "The shadcn basics the apps use, themed onto the ink palette.",
+    planned: [],
+  },
+  {
+    id: "scenes",
+    title: "Scenes",
+    blurb: "Components composed into the app's views on the mock dataset.",
+    planned: [
+      "The aviary",
+      "The bubble over the aviary",
+      "The camera",
+      "The detail page",
+    ],
+  },
+  {
+    id: "spec",
+    title: "Spec",
+    blurb: "The board's spec pages, rebuilt on the real components.",
+    planned: ["Field guide", "Phrasebook", "Data atlas"],
+  },
+];
+
+export const pages: DesignPage[] = [
+  {
+    slug: "tokens",
+    group: "components",
+    title: "Tokens",
+    summary:
+      "The ink palette, mood colours, sky phases, paper and type: the one theme both apps import.",
+    component: TokensPage,
+  },
+  {
+    slug: "bird",
+    group: "components",
+    title: "Bird",
+    summary:
+      "Breast from mood, size from importance, plumpness from outstanding work, the fence, sleep and song.",
+    component: BirdPage,
+  },
+  {
+    slug: "wire",
+    group: "components",
+    title: "Wire and Fence",
+    summary:
+      "A priority band with its birds leftmost first, and the fence beneath for the unadopted.",
+    component: WirePage,
+  },
+  {
+    slug: "sky",
+    group: "components",
+    title: "Sky",
+    summary:
+      "The scene's backdrop at dawn, day, dusk and night, following the clock.",
+    component: SkyPage,
+  },
+  {
+    slug: "bubble",
+    group: "components",
+    title: "Bubble",
+    summary:
+      "Tier B: name, mood word, first-person speech, chips and actions, every phrasebook situation.",
+    component: BubblePage,
+  },
+  {
+    slug: "chip",
+    group: "components",
+    title: "Chip",
+    summary: "One number the bird carries, plain, amber or red.",
+    component: ChipPage,
+  },
+  {
+    slug: "detail-intro",
+    group: "components",
+    title: "Detail heading",
+    summary: "The top of a bird's page: name, mood word, activity and speech.",
+    component: IntroPage,
+  },
+  {
+    slug: "ledger",
+    group: "components",
+    title: "Ledger",
+    summary:
+      'Facts in full words: clean zeros a quiet green "none", counts toned by severity.',
+    component: LedgerPage,
+  },
+  {
+    slug: "branches",
+    group: "components",
+    title: "Branch lines",
+    summary:
+      "Local branches, the checked-out one first, linked to their forge.",
+    component: BranchesPage,
+  },
+  {
+    slug: "commits",
+    group: "components",
+    title: "Newest commits",
+    summary: 'The default branch on each forge, headed "main on GitHub".',
+    component: CommitsPage,
+  },
+  {
+    slug: "pull-requests",
+    group: "components",
+    title: "Pull requests",
+    summary: "Open pull requests across forges, newest first.",
+    component: PullRequestsPage,
+  },
+  {
+    slug: "flags",
+    group: "components",
+    title: "Flag lines",
+    summary: "Facts the scan raised about the bird, toned by level.",
+    component: FlagsPage,
+  },
+  {
+    slug: "problems",
+    group: "components",
+    title: "Sources not read",
+    summary: "Sources that failed for this bird, with their errors.",
+    component: ProblemsPage,
+  },
+  {
+    slug: "actions",
+    group: "components",
+    title: "Launch actions",
+    summary: "Verbs that open things and change nothing.",
+    component: ActionsPage,
+  },
+  {
+    slug: "links",
+    group: "components",
+    title: "Links out",
+    summary: "The bird's repositories on its forges.",
+    component: LinksPage,
+  },
+  {
+    slug: "paper",
+    group: "components",
+    title: "Key-file paper",
+    summary: "Markdown on paper behind folder tabs.",
+    component: PaperPage,
+  },
+  {
+    slug: "button",
+    group: "primitives",
+    title: "Button",
+    summary: "shadcn's button in every variant and size.",
+    component: ButtonPage,
+  },
+];
+
+/** The page at a slug, if there is one. */
+export function pageBySlug(slug: string): DesignPage | undefined {
+  return pages.find((page) => page.slug === slug);
+}
+
+/** The pages of one group, in registry order. */
+export function pagesIn(group: GroupId): DesignPage[] {
+  return pages.filter((page) => page.group === group);
+}

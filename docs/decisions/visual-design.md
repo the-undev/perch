@@ -114,6 +114,16 @@ from the round: the ♪ sized with the bird just off the beak tip, toes
 resting exactly on the wire, the bubble tail's tip meeting the beak
 tip.
 
+## Detail view verdicts, 22 October 2026
+
+The tier C prototype (mockups/detail.html) round one: the file chips
+with toggled rendered markdown are liked and kept. Changes from the
+round: the session chip is gone (it never belonged, per data-placement)
+and the facts tile says "claude session"; zero-is-good facts show a
+quiet green "none" instead of a large 0, counts take tones; dim text
+lifted a contrast step for the dense page; "Unsafe work" renamed
+"In-flight work", facts without editorial.
+
 ## Open
 
 - Aviary V carries the fixes above; verdict pending.

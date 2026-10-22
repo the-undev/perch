@@ -114,6 +114,13 @@ superset: everything tiers A and B show appears here too, plus:
   roadmap (sections as epics and features with task lists) is parked
   on the roadmap until plain rendering has lived a while.
 
+The detail page states facts plainly; the judgement is already carried
+by the mood and the colour above it. Panel names follow the facts
+("in-flight work", never "unsafe work" in the UI), and readers are
+assumed to know what the facts mean. Where lower is better, a clean
+zero reads as a quiet word ("none", green) rather than a large zero,
+and a real count takes the tone of how bad it is.
+
 ### The bubble's two surfaces
 
 The speech is the bird's voice and carries only 1, 2 and 6, in words:

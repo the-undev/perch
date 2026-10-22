@@ -19,6 +19,9 @@
 	--edge: #2b3036; --edge-hi: #3e454d; --ink: #ece7db; --muted: #a09a8c; --faint: #6e6960;
 	--accent: #b9b2a2; --green: #66bb86; --amber: #d8a845; --red: #e25d4f;
 	--body-c: #272b31;
+	/* Lifted a step from the ink defaults: the detail page is dense and
+	   its dim text was falling below comfortable contrast. */
+	--muted: #aaa396; --faint: #837d70;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -58,6 +61,11 @@ svg.bgl { width: 46px; height: 35px; flex: none; overflow: visible; }
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; margin-top: 18px; max-width: 1100px; }
 .fact { background: var(--card); border: 1px solid var(--edge); border-radius: 10px; padding: 13px 16px; text-align: center; }
 .fact .v { font: 700 25px var(--display); font-variant-numeric: tabular-nums; }
+/* Lower is better: a clean zero reads as a quiet word, a real count
+   takes the tone of how bad it is. */
+.fact .v.good { color: var(--green); font-size: 19px; line-height: 25px; opacity: 0.9; }
+.fact .v.warn { color: var(--amber); }
+.fact .v.bad { color: var(--red); }
 .fact .k { font-size: 10.5px; color: var(--faint); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
 
 .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
@@ -134,14 +142,14 @@ svg.bgl { width: 46px; height: 35px; flex: none; overflow: visible; }
 		</div>
 		<p class="sentence">You're in my files right now. ♪ All settled otherwise:
 		everything committed and pushed to both forges.</p>
-		<div class="chips"><span>session today</span><span>no ci yet</span><span>0 open PRs</span><span>tickets · source not built</span><span>24 open items</span></div>
+		<div class="chips"><span>no ci yet</span><span>0 open PRs</span><span>tickets · source not built</span><span>24 open items</span></div>
 		<div class="facts">
-			<div class="fact"><div class="v">0</div><div class="k">uncommitted</div></div>
-			<div class="fact"><div class="v">0</div><div class="k">unpushed</div></div>
-			<div class="fact"><div class="v">0</div><div class="k">days drift</div></div>
-			<div class="fact"><div class="v">0</div><div class="k">bugs</div></div>
+			<div class="fact"><div class="v good">none</div><div class="k">uncommitted</div></div>
+			<div class="fact"><div class="v good">none</div><div class="k">unpushed</div></div>
+			<div class="fact"><div class="v good">none</div><div class="k">drift</div></div>
+			<div class="fact"><div class="v good">none</div><div class="k">bugs</div></div>
 			<div class="fact"><div class="v">24</div><div class="k">open items</div></div>
-			<div class="fact"><div class="v">today</div><div class="k">last session</div></div>
+			<div class="fact"><div class="v">today</div><div class="k">claude session</div></div>
 		</div>
 		<div class="actions">
 			<button><svg viewBox="0 0 24 24"><path d="M4 17l6-5-6-5"/><path d="M12 19h8"/></svg>zellij tab<span class="ext">↗</span></button>
@@ -159,7 +167,7 @@ svg.bgl { width: 46px; height: 35px; flex: none; overflow: visible; }
 					<tr><td><b>design-session</b><br><span class="sub">Park the roadmap-versus-branch question in the roadmap</span></td><td class="v">2d ago</td></tr>
 					<tr><td><b>main</b><br><span class="sub">Seed perch with its specification and roadmap</span></td><td class="v">2d ago</td></tr>
 				</table></div>
-				<div class="panel"><h4>Unsafe work</h4><div class="empty">Working tree clean, everything pushed. Nothing to lose.</div></div>
+				<div class="panel"><h4>In-flight work</h4><div class="empty">Working tree clean; everything pushed.</div></div>
 				<div class="panel"><h4>Open pull requests</h4><div class="empty">None on either forge.</div></div>
 				<div class="panel"><h4>Tickets</h4><div class="empty">The forge issues source is not built yet, see the roadmap.</div></div>
 				<div class="panel"><h4>Finalised on GitHub</h4><table>

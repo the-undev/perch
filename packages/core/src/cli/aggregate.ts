@@ -1,31 +1,24 @@
-// Entry point for `pnpm aggregate`: reads only the raw files and the config, derives every value,
-// and writes .scan/snapshot.json. It does not read the machine.
+// Entry point for `pnpm aggregate`: reads only the raw files, the config and the previous
+// snapshot, derives every value, and writes .scan/snapshot.json. It does not read the machine.
 
-import { writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
-import { aggregate, readRawBundle } from "../aggregate.ts";
 import { loadConfig } from "../config.ts";
 import { readTextIfExists } from "../fs.ts";
-import { createRawStore } from "../gather.ts";
-import type { Snapshot } from "../snapshot.ts";
-import { dockerContainersSource } from "../sources/docker-containers.ts";
-import { examplePath, rawDir, snapshotPath } from "./paths.ts";
+import { runAggregate } from "../scan.ts";
+import { examplePath, home, rawDir, snapshotPath, userPath } from "./paths.ts";
 
 const { config, path: configPath } = await loadConfig({
-  home: homedir(),
+  home,
+  userPath,
   examplePath,
   readText: readTextIfExists,
 });
-// The previous snapshot carries the first-seen times of unmet expectations forward.
-const previousText = await readTextIfExists(snapshotPath);
-const previous =
-  previousText === null ? null : (JSON.parse(previousText) as Snapshot);
-const snapshot = aggregate(
-  await readRawBundle(createRawStore(rawDir)),
-  { config, configPath, liveSources: [dockerContainersSource], previous },
-  new Date(),
-);
-await writeFile(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+const snapshot = await runAggregate({
+  config,
+  configPath,
+  rawDir,
+  snapshotPath,
+  now: () => new Date(),
+});
 
 console.log(
   `${snapshot.items.length} items, config ${configPath}, wrote ${snapshotPath}`,

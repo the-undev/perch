@@ -6,6 +6,7 @@ import {
   loadConfig,
   parseConfig,
   thresholdsFor,
+  userConfigPath,
   wireFor,
   zellijSessionFor,
 } from "../src/config.ts";
@@ -225,20 +226,26 @@ describe("item overrides", () => {
 
 describe("loadConfig", () => {
   it("prefers the user config and falls back to the example", async () => {
-    const userPath = join(home, ".config", "perch", "config.toml");
+    const userPath = "/elsewhere/perch.toml";
     const example = await exampleText();
     const files = new Map([[examplePath, example]]);
     const readText = async (path: string) => files.get(path) ?? null;
 
-    const fallback = await loadConfig({ home, examplePath, readText });
+    const deps = { home, userPath, examplePath, readText };
+
+    const fallback = await loadConfig(deps);
     expect(fallback.path).toBe(examplePath);
 
     files.set(
       userPath,
       example.replace("stalled_amber_days = 7", "stalled_amber_days = 5"),
     );
-    const user = await loadConfig({ home, examplePath, readText });
+    const user = await loadConfig(deps);
     expect(user.path).toBe(userPath);
     expect(user.config.thresholds.stalled.amberDays).toBe(5);
+  });
+
+  it("finds the owner's config under ~/.config/perch", () => {
+    expect(userConfigPath(home)).toBe("/home/test/.config/perch/config.toml");
   });
 });

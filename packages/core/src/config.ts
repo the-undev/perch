@@ -445,15 +445,24 @@ export function zellijSessionFor(
   return byRoot?.[1] ?? config.launch.zellijSession;
 }
 
+/** Where the owner's config lives under a home directory: ~/.config/perch/config.toml. */
+export function userConfigPath(home: string): string {
+  return `${home}/.config/perch/config.toml`;
+}
+
 export interface ConfigDeps {
+  /** The home directory a leading ~ in config paths expands to. */
   home: string;
+  /** The owner's config, read when it exists. */
+  userPath: string;
+  /** The example config, read when the owner's does not exist. */
   examplePath: string;
   readText: (path: string) => Promise<string | null>;
 }
 
-/** Reads ~/.config/perch/config.toml when it exists, else the example config in the repository. */
+/** Reads the owner's config when it exists, else the example config. */
 export async function loadConfig(deps: ConfigDeps): Promise<LoadedConfig> {
-  const userPath = `${deps.home}/.config/perch/config.toml`;
+  const { userPath } = deps;
   const userText = await deps.readText(userPath);
   if (userText !== null)
     return { config: parseConfig(userText, deps.home), path: userPath };

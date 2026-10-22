@@ -83,17 +83,17 @@ until the branch itself goes stale. Per-project thresholds as above.
 The one-disk-only accelerant (shorter windows when no copy exists
 anywhere) is TBD.
 
-### Wires are swim lanes
+### The wires are yours
 
-A wire is the owner's priority lane, assigned in config. A bird never
-changes wire by itself: the vertical geography is stable so the glance
-builds muscle memory. What the bird controls is its position along its
-wire, leftmost needing attention first. Health moves a bird sideways,
-never between lanes.
+A wire is the owner's priority band, assigned in config ("wire" is the
+term, never "lane"). A bird never changes wire by itself: the vertical
+geography is stable so the glance builds muscle memory. What the bird
+controls is its position along its wire, leftmost needing attention
+first. Health moves a bird sideways, never between wires.
 
-The lanes themselves are dynamic: config defines an ordered, named list
-of wires, top to bottom, and adding a lane is a config edit, not a code
-change. The fence is not a lane; it is always present beneath as the
+The wires themselves are dynamic: config defines an ordered, named list
+of wires, top to bottom, and adding a wire is a config edit, not a code
+change. The fence is not a wire; it is always present beneath as the
 ground for the unadopted. The current "Machine & Home" and "Projects"
 pair is just this machine's starting config.
 

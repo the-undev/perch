@@ -147,7 +147,10 @@ window, red after the second, defaults 7 and 30 days, per-bird
 thresholds in config. The clock starts when the scan first observes
 the assertion unmet, which means the aggregate carries a first-seen
 time forward between scans: the one piece of state beyond the last
-scan, and it needs designing at build time.
+scan, and it needs designing at build time. Small state like this is
+acceptable on one condition: losing it must be harmless. A lost
+first-seen record restarts the clock at the next scan and nothing else
+notices.
 - Concrete nouns link where a page exists for them (the branch on the
   forge, the forge repositories, a PR), styled subtle: inherited colour
   with a dotted underline.

@@ -65,6 +65,32 @@ function Stars({ count, height }: { count: number; height: number }) {
   );
 }
 
+/** The sky's own drawing for a phase: the sun or the moon, and the stars, in scene units. */
+export function SkyDrawing({
+  phase,
+  height,
+}: {
+  phase: SkyPhase;
+  height: number;
+}) {
+  const lightX = sceneWidth - 300;
+  const lightY = height * 0.11;
+  return (
+    <>
+      {phase === "day" || phase === "dawn" ? (
+        <Sun phase={phase} x={lightX} y={lightY} />
+      ) : (
+        <Moon x={lightX} y={lightY} />
+      )}
+      <Stars count={starCount[phase]} height={height} />
+    </>
+  );
+}
+
+/** The sky's gradient, behind any element that holds a scene at a phase. */
+export const skyBackground =
+  "linear-gradient(var(--color-sky-top), var(--color-sky-low) 78%, var(--color-horizon))";
+
 export interface SceneProps {
   phase: SkyPhase;
   /** The scene's height in scene units; the width is always 2000. */
@@ -77,16 +103,11 @@ export interface SceneProps {
 
 /** A piece of sky at one phase, holding wires and birds drawn in scene units. */
 export function Scene({ phase, height, label, children }: SceneProps) {
-  const lightX = sceneWidth - 300;
-  const lightY = height * 0.11;
   return (
     <div
       data-phase={phase}
       className="overflow-hidden"
-      style={{
-        background:
-          "linear-gradient(var(--color-sky-top), var(--color-sky-low) 78%, var(--color-horizon))",
-      }}
+      style={{ background: skyBackground }}
     >
       <svg
         role="img"
@@ -95,12 +116,7 @@ export function Scene({ phase, height, label, children }: SceneProps) {
         preserveAspectRatio="xMidYMid meet"
         className="block h-auto w-full"
       >
-        {phase === "day" || phase === "dawn" ? (
-          <Sun phase={phase} x={lightX} y={lightY} />
-        ) : (
-          <Moon x={lightX} y={lightY} />
-        )}
-        <Stars count={starCount[phase]} height={height} />
+        <SkyDrawing phase={phase} height={height} />
         {children}
       </svg>
     </div>

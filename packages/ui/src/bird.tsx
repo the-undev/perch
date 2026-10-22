@@ -87,8 +87,15 @@ function flickStyle(id: string): CustomProperties {
   return { "--flick-duration": `${9000 + (hash(id) % 5000)}ms` };
 }
 
+export interface BirdFigureProps {
+  look: BirdLook;
+  id: string;
+  /** The bird has just been asked to speak: its beak wiggles as the bubble opens. */
+  speaking: boolean;
+}
+
 /** The bird's parts at unit scale, facing right. */
-export function BirdFigure({ look, id }: { look: BirdLook; id: string }) {
+export function BirdFigure({ look, id, speaking }: BirdFigureProps) {
   const body = look.dim ? "var(--color-plumage-dim)" : "var(--color-plumage)";
   return (
     <g data-part="figure">
@@ -136,6 +143,11 @@ export function BirdFigure({ look, id }: { look: BirdLook; id: string }) {
         data-part="beak"
         d="M 26 -45 L 37 -42 L 26 -39 Z"
         fill="var(--color-ink-accent)"
+        className={
+          speaking
+            ? "origin-left [transform-box:fill-box] motion-safe:animate-beak-wiggle"
+            : undefined
+        }
       />
       <circle
         data-part="eye"
@@ -161,10 +173,29 @@ export interface BirdProps {
   night: boolean;
   /** How far below the wire the name sits; the fence staggers it so names do not collide. */
   labelDrop: number;
+  /** Its bubble has just opened: the beak wiggles. */
+  speaking: boolean;
 }
 
+/** The name's ink: muted, brighter when an enclosing group is hovered or focused from the keyboard. */
+const labelClass = {
+  wire: "fill-ink-muted font-body font-medium text-[13.5px]",
+  fence: "fill-ink-fence font-body font-medium text-[12.5px]",
+};
+
+const labelReacts =
+  "group-hover:fill-ink group-focus-visible:fill-ink group-focus-visible:underline";
+
 /** One bird perched in a scene: its figure, its song when edited, and its name beneath. */
-export function Bird({ bird, x, y, facing, night, labelDrop }: BirdProps) {
+export function Bird({
+  bird,
+  x,
+  y,
+  facing,
+  night,
+  labelDrop,
+  speaking,
+}: BirdProps) {
   const look = birdLook(bird, night);
   const scale = birdScale(bird);
   const face = facing === "right" ? 1 : -1;
@@ -182,7 +213,7 @@ export function Bird({ bird, x, y, facing, night, labelDrop }: BirdProps) {
         style={bobStyle(bird.id, look.restlessness)}
       >
         <g transform={`scale(${scale * face} ${scale})`}>
-          <BirdFigure look={look} id={bird.id} />
+          <BirdFigure look={look} id={bird.id} speaking={speaking} />
         </g>
         {look.singing && (
           <text
@@ -201,11 +232,7 @@ export function Bird({ bird, x, y, facing, night, labelDrop }: BirdProps) {
       <text
         y={labelDrop + 3 * scale}
         textAnchor="middle"
-        className={
-          look.dim
-            ? "fill-ink-fence font-body font-medium text-[12.5px]"
-            : "fill-ink-muted font-body font-medium text-[13.5px]"
-        }
+        className={`${look.dim ? labelClass.fence : labelClass.wire} ${labelReacts}`}
       >
         {bird.name}
       </text>
@@ -272,6 +299,7 @@ export function BirdPortrait({ bird, facing, night }: BirdPortraitProps) {
         facing={facing}
         night={night}
         labelDrop={30}
+        speaking={false}
       />
     </svg>
   );

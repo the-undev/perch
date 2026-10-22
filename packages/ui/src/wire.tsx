@@ -9,7 +9,7 @@ import type {
 import { Bird, type Facing } from "./bird.tsx";
 
 /** The margin no bird is placed inside, at either end of the scene. */
-const edgeMargin = 120;
+export const edgeMargin = 120;
 
 /** How far a wire dips at its middle below its ends' line. */
 const sag = 22;
@@ -32,7 +32,7 @@ export function facingAt(x: number, width: number): Facing {
 }
 
 /** The height of the sagging wire at x: a quadratic from end to end through the dip. */
-function wireHeight(y: number, x: number, width: number): number {
+export function wireHeight(y: number, x: number, width: number): number {
   const t = (x + 20) / (width + 40);
   return (
     (1 - t) * (1 - t) * (y - 12) +
@@ -41,7 +41,8 @@ function wireHeight(y: number, x: number, width: number): number {
   );
 }
 
-function byPosition(birds: BirdModel[]): BirdModel[] {
+/** Birds in their view model order, leftmost first. */
+export function byPosition(birds: BirdModel[]): BirdModel[] {
   return [...birds].sort((a, b) => a.position - b.position);
 }
 
@@ -74,68 +75,58 @@ function Tally({ birds }: { birds: BirdModel[] }) {
   );
 }
 
-export interface WireProps {
-  wire: WireModel;
+export interface WireLineProps {
   /** The wire's height in scene units, at its ends before the sag. */
   y: number;
   width: number;
-  night: boolean;
+  /** The wire's name and the birds its tally counts; null for a wire's second row, which is unnamed. */
+  label: { name: string; birds: BirdModel[] } | null;
 }
 
-/** One priority band: the wire, its name and tally, and its birds leftmost first. */
-export function Wire({ wire, y, width, night }: WireProps) {
-  const birds = byPosition(wire.birds);
+/** The sagging wire itself, with its name and tally above the left end when it has them. */
+export function WireLine({ y, width, label }: WireLineProps) {
   return (
-    <g data-wire={wire.name}>
+    <>
       <path
         d={`M -20 ${y - 12} Q ${width / 2} ${y + sag} ${width + 20} ${y - 12}`}
         stroke="var(--color-wire)"
         strokeWidth={3}
         fill="none"
       />
-      <text x={36} y={y - 26} className="fill-ink-faint font-body text-[11px]">
-        <tspan className="font-bold uppercase tracking-[0.18em]">
-          {wire.name}
-        </tspan>
-        <Tally birds={birds} />
-      </text>
-      {birds.map((bird, i) => {
-        const x = placeAt(i, birds.length, 340, width);
-        return (
-          <Bird
-            key={bird.id}
-            bird={bird}
-            x={x}
-            y={wireHeight(y, x, width)}
-            facing={facingAt(x, width)}
-            night={night}
-            labelDrop={30}
-          />
-        );
-      })}
-    </g>
+      {label !== null && (
+        <text
+          x={36}
+          y={y - 26}
+          className="fill-ink-faint font-body text-[11px]"
+        >
+          <tspan className="font-bold uppercase tracking-[0.18em]">
+            {label.name}
+          </tspan>
+          <Tally birds={label.birds} />
+        </text>
+      )}
+    </>
   );
 }
 
-export interface FenceProps {
-  fence: FenceModel;
+export interface FenceRailProps {
   /** The rail's height in scene units. */
   y: number;
   width: number;
   /** The scene's height: the posts run from the rail to the bottom. */
   height: number;
-  night: boolean;
+  /** How many birds sit on the fence, for its label. */
+  count: number;
 }
 
-/** The fence beneath the wires: a rail on posts, every unadopted bird dimmed upon it. */
-export function Fence({ fence, y, width, height, night }: FenceProps) {
-  const birds = byPosition(fence.birds);
+/** The fence's rail on its posts, with its label. */
+export function FenceRail({ y, width, height, count }: FenceRailProps) {
   const posts = Array.from(
     { length: Math.ceil((width - 120) / 320) },
     (_, i) => 120 + i * 320,
   );
   return (
-    <g data-fence="">
+    <>
       <line
         x1={0}
         y1={y}
@@ -161,10 +152,74 @@ export function Fence({ fence, y, width, height, night }: FenceProps) {
         y={y - 70}
         className="fill-ink-faint font-body font-bold text-[11px] uppercase tracking-[0.18em]"
       >
-        On the fence · {birds.length} not adopted
+        On the fence · {count} not adopted
       </text>
+    </>
+  );
+}
+
+/** The gap between birds on a wire, at most; a crowded wire squeezes them closer. */
+export const wireGap = 340;
+
+/** The gap between birds on the fence, at most. */
+export const fenceGap = 205;
+
+/** The fence staggers names over two rows so neighbours' names never collide. */
+export function fenceLabelDrop(index: number): number {
+  return index % 2 === 1 ? 48 : 30;
+}
+
+export interface WireProps {
+  wire: WireModel;
+  /** The wire's height in scene units, at its ends before the sag. */
+  y: number;
+  width: number;
+  night: boolean;
+}
+
+/** One priority band: the wire, its name and tally, and its birds leftmost first. */
+export function Wire({ wire, y, width, night }: WireProps) {
+  const birds = byPosition(wire.birds);
+  return (
+    <g data-wire={wire.name}>
+      <WireLine y={y} width={width} label={{ name: wire.name, birds }} />
       {birds.map((bird, i) => {
-        const x = placeAt(i, birds.length, 205, width);
+        const x = placeAt(i, birds.length, wireGap, width);
+        return (
+          <Bird
+            key={bird.id}
+            bird={bird}
+            x={x}
+            y={wireHeight(y, x, width)}
+            facing={facingAt(x, width)}
+            night={night}
+            labelDrop={30}
+            speaking={false}
+          />
+        );
+      })}
+    </g>
+  );
+}
+
+export interface FenceProps {
+  fence: FenceModel;
+  /** The rail's height in scene units. */
+  y: number;
+  width: number;
+  /** The scene's height: the posts run from the rail to the bottom. */
+  height: number;
+  night: boolean;
+}
+
+/** The fence beneath the wires: a rail on posts, every unadopted bird dimmed upon it. */
+export function Fence({ fence, y, width, height, night }: FenceProps) {
+  const birds = byPosition(fence.birds);
+  return (
+    <g data-fence="">
+      <FenceRail y={y} width={width} height={height} count={birds.length} />
+      {birds.map((bird, i) => {
+        const x = placeAt(i, birds.length, fenceGap, width);
         return (
           <Bird
             key={bird.id}
@@ -173,7 +228,8 @@ export function Fence({ fence, y, width, height, night }: FenceProps) {
             y={y + 2}
             facing={facingAt(x, width)}
             night={night}
-            labelDrop={i % 2 === 1 ? 48 : 30}
+            labelDrop={fenceLabelDrop(i)}
+            speaking={false}
           />
         );
       })}

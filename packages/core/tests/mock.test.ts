@@ -9,7 +9,8 @@ import {
 } from "../src/derivations.ts";
 import { mockAviary, mockConfig, mockSnapshot } from "../src/mock.ts";
 import type { GitData } from "../src/snapshot.ts";
-import { deriveAviary } from "../src/viewmodel.ts";
+import { speak } from "../src/speech.ts";
+import { deriveAviary, speechSubjectFor } from "../src/viewmodel.ts";
 
 const scannedAt = new Date(mockSnapshot.scannedAt);
 const birds = [
@@ -21,6 +22,19 @@ const adopted = birds.filter((bird) => bird.adopted);
 describe("the mock dataset", () => {
   it("derives the exported aviary", () => {
     expect(deriveAviary(mockSnapshot, mockConfig)).toEqual(mockAviary);
+  });
+
+  it("gives each bird the speech its own speech subject speaks", () => {
+    for (const bird of birds) {
+      const item = mockSnapshot.items.find(
+        (candidate) => candidate.id === bird.id,
+      );
+      if (item === undefined) throw new Error(`no item ${bird.id}`);
+
+      expect(speak(speechSubjectFor(item, mockConfig, scannedAt))).toBe(
+        bird.bubble.speech,
+      );
+    }
   });
 
   it("holds every mood and every activity among its adopted birds", () => {

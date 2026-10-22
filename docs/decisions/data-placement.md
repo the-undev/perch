@@ -137,6 +137,17 @@ Three more rules from the second detail round:
   does not meet is itself a fact and shows as one ("ci: not set up").
   Without an assertion, silence. The suggestions live in the owner's
   config, never in the page.
+
+### Expectations age
+
+An unmet expectation is a health input: the bird wants its CI, wants
+its ticket source, and like every want it escalates with time rather
+than instantly. Same shape as stalled flight: amber after the first
+window, red after the second, defaults 7 and 30 days, per-bird
+thresholds in config. The clock starts when the scan first observes
+the assertion unmet, which means the aggregate carries a first-seen
+time forward between scans: the one piece of state beyond the last
+scan, and it needs designing at build time.
 - Concrete nouns link where a page exists for them (the branch on the
   forge, the forge repositories, a PR), styled subtle: inherited colour
   with a dotted underline.

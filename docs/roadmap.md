@@ -125,18 +125,39 @@ tree to pick any file from, a drill-down below the configured list.
 
 ## Design site on real components
 
-In progress. `apps/design` renders every `packages/ui` component and the
-shadcn Button in all their states. What remains:
+`apps/design` renders every component, the composed scenes and the
+reference pages that run the real code. What remains is the field guide:
+`design/anatomy.html`'s annotated plates of the bird and the bubble,
+rebuilt on the real components. The component pages carry each trait's
+rule beside its states, but not the plates themselves.
 
-- Scenes: the aviary composed from wires, fence and sky on the mock
-  dataset, the bubble anchored to a clicked bird's beak, the camera
-  between the aviary and a detail page, and the detail page itself.
-  The scene carries what the components leave to it: crowded wires
-  split over two rows, the arrival flight, hover tips, selection and
-  focus, the beak's wiggle as the bubble opens, and the scene-wide
-  source errors and warnings.
-- Spec pages: the field guide, phrasebook and atlas rebuilt on the real
-  components. The board pages stay as the approved record.
+## Atlas live values
+
+The Spec pages show each source's raw and snapshot types as declared,
+with the mock snapshot's derived values. The board's atlas showed raw
+values from a live scan beside every field, and let fields be tagged
+with a category and a destination. Live values would need the design
+site to read `.scan/`; the tagging was for the data placement audit,
+which was dropped.
+
+## Scene details from the board
+
+What `design/perch.html` draws that the composed views do not yet:
+
+- The ledger's "Roadmap headings" section, each heading with its item
+  count or progress. `Detail` carries no roadmap groups; it needs a field
+  first.
+- The hover tip's summary of where a fence bird lives ("only on GitHub",
+  "one disk only"). The view model says so only in the speech, so a fence
+  bird's tip shows its name, its word and, when it has one, its last
+  commit.
+- The top wire drawn thicker than the rest.
+- A bubble with no room above its bird keeps to the scene's top edge and
+  its tail no longer meets the beak, as on the board. Opening it beside
+  or below the bird is undesigned.
+- Names in the scene scale with it, as on the board: a bird's name is
+  about 9.5px in a 1400px window. Whether they keep a minimum size is
+  undecided.
 
 ## Detail page meta line
 

@@ -1,4 +1,4 @@
-import type { Aviary, KeyFile } from "@perch/core/viewmodel.ts";
+import type { Aviary, KeyFile, LaunchAction } from "@perch/core/viewmodel.ts";
 
 /** What the window shows, pushed whenever it changes. */
 export interface PerchState {
@@ -20,9 +20,27 @@ export interface KeyFileSheet {
 export interface PerchApi {
   /** The application version, from the desktop package's manifest. */
   appVersion(): Promise<string>;
+  /** The state now: the cached aviary at start, the latest after every scan. */
+  state(): Promise<PerchState>;
+  /** Calls back with every new state, and returns the call that stops it. */
+  onState(listener: (state: PerchState) => void): () => void;
+  /** Scans now, or joins the scan running; resolves when it finishes. */
+  rescan(): Promise<void>;
+  /** A bird's key files, read by the main process; none for a bird the aviary does not hold. */
+  keyFiles(birdId: string): Promise<KeyFileSheet[]>;
+  /** Performs a bird's launch action of a kind; a failure arrives as a problem in the state. */
+  launch(birdId: string, kind: LaunchAction["kind"]): Promise<void>;
 }
 
-/** The IPC channel that carries each call. */
+/** The calls the main process answers: everything but the pushed state. */
+export type PerchCalls = Omit<PerchApi, "onState">;
+
+/** The IPC channel that carries each call, and the one the state is pushed on. */
 export const channels = {
   appVersion: "app:version",
+  state: "state:get",
+  onState: "state:changed",
+  rescan: "scan:request",
+  keyFiles: "bird:key-files",
+  launch: "bird:launch",
 } as const satisfies Record<keyof PerchApi, string>;

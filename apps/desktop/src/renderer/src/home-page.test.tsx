@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { PerchApi } from "../../shared/ipc.ts";
+import { fakeApi } from "./fake-api.ts";
 import { createAppRouter } from "./router.tsx";
 
 // jsdom has no scrolling; the router restores scroll position on every navigation.
@@ -12,7 +12,7 @@ afterEach(cleanup);
 
 describe("the placeholder page", () => {
   it("renders at the index route with the version the main process reports", async () => {
-    const api: PerchApi = { appVersion: async () => "9.8.7" };
+    const { api } = fakeApi({ aviary: null, scanning: false, problems: [] });
     const queryClient = new QueryClient();
     const router = createAppRouter(
       { api, queryClient },

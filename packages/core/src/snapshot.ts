@@ -18,6 +18,9 @@ export type ActivityState = "settled" | "in-progress" | "editing";
 
 export type HealthLevel = "green" | "amber" | "red";
 
+/** A source the owner can assert an item should have: CI, or a ticket source. */
+export type ExpectationName = "ci" | "tickets";
+
 export interface Remote {
   name: string;
   fetchUrl: string;
@@ -31,20 +34,35 @@ export interface LocalBranch {
   upstream: string | null;
 }
 
-export interface DriftThresholds {
+/** Windows in hours: amber at or beyond the first, red at or beyond the second. */
+export interface HourThresholds {
+  amberHours: number;
+  redHours: number;
+}
+
+/** Windows in days: amber at or beyond the first, red at or beyond the second. */
+export interface DayThresholds {
   amberDays: number;
   redDays: number;
 }
 
-export interface Drift {
-  /** Age in whole days of the oldest uncommitted change, from the dirty files' mtimes. */
-  uncommittedDays: number | null;
-  /** Age in whole days of the oldest commit on any local branch that no remote holds. */
-  unpushedDays: number | null;
-  /** The larger of the two ages, null when nothing is uncommitted or unpushed. */
-  driftDays: number | null;
+/** Unsafe work of one kind, aged from its oldest change and judged against the item's windows. */
+export interface AgedWork {
+  since: string;
+  /** Whole hours from since to when git was read. */
+  hours: number;
   level: HealthLevel;
-  thresholds: DriftThresholds;
+}
+
+/** Unsafe work: uncommitted changes and unpushed commits, each aged from its oldest. */
+export interface Drift {
+  /** The oldest uncommitted change, from the dirty files' mtimes; null when there is none. */
+  uncommitted: AgedWork | null;
+  /** The oldest commit no remote holds, aged only against a joined forge presence. */
+  unpushed: AgedWork | null;
+  /** The worse of the two levels; green when neither exists. */
+  level: HealthLevel;
+  thresholds: HourThresholds;
 }
 
 /**

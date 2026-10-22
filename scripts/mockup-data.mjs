@@ -4,6 +4,14 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Whole days of the older unsafe work, from the snapshot's hour ages.
+const driftDaysOf = (drift) => {
+  const hours = [drift?.uncommitted?.hours, drift?.unpushed?.hours].filter(
+    (value) => typeof value === "number",
+  );
+  return hours.length === 0 ? null : Math.floor(Math.max(...hours) / 24);
+};
+
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const snapshot = JSON.parse(
   readFileSync(join(repoRoot, ".scan", "snapshot.json"), "utf8"),
@@ -126,7 +134,7 @@ const items = snapshot.items
             ahead: git.ahead,
             behind: git.behind,
             activity: git.activity,
-            driftDays: git.drift?.driftDays ?? null,
+            driftDays: driftDaysOf(git.drift),
             driftLevel,
             lastCommitAt: git.lastCommitAt,
             branches: (git.branches ?? []).slice(0, 6).map((b) => ({

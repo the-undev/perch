@@ -15,15 +15,16 @@ import type {
 } from "./raw.ts";
 import type {
   ActivityState,
+  AgedWork,
   Backup,
   CiRun,
   CiState,
   ClaudeSessionsData,
   Drift,
-  DriftThresholds,
   ForgeData,
   GitData,
   HealthLevel,
+  HourThresholds,
   ItemError,
   KumaData,
   MonitorStatus,
@@ -177,7 +178,8 @@ export const emptyRoadmap: RoadmapData = {
 
 // Git
 
-const dayMs = 24 * 60 * 60 * 1000;
+const hourMs = 60 * 60 * 1000;
+const dayMs = 24 * hourMs;
 
 /** The default branch: where origin/HEAD points, else main or master if such a branch exists. */
 export function chooseDefaultBranch(
@@ -211,44 +213,84 @@ export function deriveActivity(input: ActivityInput): ActivityState {
   return otherBranches.length > 0 ? "in-progress" : "settled";
 }
 
-/** Whole days from a timestamp to the observation time, never negative. */
-function ageInDays(since: string | null, observedAt: Date): number | null {
-  if (since === null) return null;
+/** Whole units of a length from a timestamp to the observation time, never negative. */
+function wholeUnitsSince(
+  since: string,
+  observedAt: Date,
+  unitMs: number,
+): number {
   const elapsed = observedAt.getTime() - new Date(since).getTime();
-  return Math.max(0, Math.floor(elapsed / dayMs));
+  return Math.max(0, Math.floor(elapsed / unitMs));
 }
 
-/** Red at or beyond the red threshold, amber at or beyond amber, else green; no drift is green. */
-function levelFor(
-  driftDays: number | null,
-  thresholds: DriftThresholds,
-): HealthLevel {
-  if (driftDays === null) return "green";
-  if (driftDays >= thresholds.redDays) return "red";
-  if (driftDays >= thresholds.amberDays) return "amber";
+/** Whole days from a timestamp to the observation time, never negative. */
+export function daysSince(since: string, observedAt: Date): number {
+  return wholeUnitsSince(since, observedAt, dayMs);
+}
+
+/** Whole hours from a timestamp to the observation time, never negative. */
+export function hoursSince(since: string, observedAt: Date): number {
+  return wholeUnitsSince(since, observedAt, hourMs);
+}
+
+/** Red at or beyond the red window, amber at or beyond the amber window, else green. */
+export function levelFor(age: number, amber: number, red: number): HealthLevel {
+  if (age >= red) return "red";
+  if (age >= amber) return "amber";
   return "green";
 }
 
+const levelRank: Record<HealthLevel, number> = { green: 0, amber: 1, red: 2 };
+
+/** The worse of health levels; green for none. */
+export function worstLevel(levels: readonly HealthLevel[]): HealthLevel {
+  return levels.reduce<HealthLevel>(
+    (worst, level) => (levelRank[level] > levelRank[worst] ? level : worst),
+    "green",
+  );
+}
+
+/** Orders health levels worst first. */
+export function compareLevels(a: HealthLevel, b: HealthLevel): number {
+  return levelRank[b] - levelRank[a];
+}
+
+function agedWork(
+  since: string | null,
+  thresholds: HourThresholds,
+  observedAt: Date,
+): AgedWork | null {
+  if (since === null) return null;
+  const hours = hoursSince(since, observedAt);
+  return {
+    since,
+    hours,
+    level: levelFor(hours, thresholds.amberHours, thresholds.redHours),
+  };
+}
+
 /**
- * Drift is the age of the oldest uncommitted or unpushed work, the larger of the two, measured
- * at the time git was read and judged against the item's thresholds.
+ * Unsafe work is uncommitted changes and unpushed commits, each aged in hours from its oldest
+ * change at the time git was read and judged against the item's windows. The level is the worse
+ * of the two, so continuing to edit never resets the clock on an older backlog.
  */
 export function deriveDrift(
   ages: { oldestUncommittedAt: string | null; oldestUnpushedAt: string | null },
-  thresholds: DriftThresholds,
+  thresholds: HourThresholds,
   observedAt: Date,
 ): Drift {
-  const uncommittedDays = ageInDays(ages.oldestUncommittedAt, observedAt);
-  const unpushedDays = ageInDays(ages.oldestUnpushedAt, observedAt);
-  const known = [uncommittedDays, unpushedDays].filter(
-    (days): days is number => days !== null,
+  const uncommitted = agedWork(
+    ages.oldestUncommittedAt,
+    thresholds,
+    observedAt,
   );
-  const driftDays = known.length === 0 ? null : Math.max(...known);
+  const unpushed = agedWork(ages.oldestUnpushedAt, thresholds, observedAt);
   return {
-    uncommittedDays,
-    unpushedDays,
-    driftDays,
-    level: levelFor(driftDays, thresholds),
+    uncommitted,
+    unpushed,
+    level: worstLevel(
+      [uncommitted, unpushed].flatMap((work) => (work ? [work.level] : [])),
+    ),
     thresholds,
   };
 }
@@ -267,7 +309,7 @@ function earliest(timestamps: readonly string[]): string | null {
  */
 export function deriveGit(
   raw: RawGit,
-  thresholds: DriftThresholds,
+  thresholds: HourThresholds,
   observedAt: Date,
   backup: Backup,
 ): GitData {

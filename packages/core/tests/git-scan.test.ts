@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { deriveActivity, deriveDrift, deriveGit } from "../src/derivations.ts";
 import { fileMtime } from "../src/fs.ts";
 import type { RawCommit, RawGit } from "../src/raw.ts";
-import type { DriftThresholds } from "../src/snapshot.ts";
+import type { HourThresholds } from "../src/snapshot.ts";
 import { readRepository } from "../src/sources/git.ts";
 import {
   clonedRepo,
@@ -20,7 +20,7 @@ import {
 const now = new Date("2026-06-01T12:00:00Z");
 const daysBefore = (days: number) =>
   new Date(now.getTime() - days * 86_400_000);
-const thresholds: DriftThresholds = { amberDays: 7, redDays: 30 };
+const thresholds: HourThresholds = { amberHours: 7 * 24, redHours: 30 * 24 };
 const deps = { runGit: fixtureGit, mtimeOf: fileMtime };
 
 let base: string;
@@ -197,11 +197,12 @@ describe("deriving git data", () => {
   it("is settled when everything is on the default branch and pushed", () => {
     const data = deriveGit(rawGit({}), thresholds, now, "joined");
 
-    expect([data.activity, data.drift.driftDays, data.drift.level]).toEqual([
-      "settled",
-      null,
-      "green",
-    ]);
+    expect(data.activity).toBe("settled");
+    expect(data.drift).toMatchObject({
+      uncommitted: null,
+      unpushed: null,
+      level: "green",
+    });
     expect([data.upstream, data.ahead, data.behind]).toEqual([
       "origin/main",
       0,
@@ -286,8 +287,12 @@ describe("deriving git data", () => {
     expect(data.uncommittedCount).toBe(3);
     expect(data.oldestUncommittedAt).toBe(daysBefore(10).toISOString());
     expect(data.drift).toMatchObject({
-      uncommittedDays: 10,
-      driftDays: 10,
+      uncommitted: {
+        since: daysBefore(10).toISOString(),
+        hours: 240,
+        level: "amber",
+      },
+      unpushed: null,
       level: "amber",
     });
     expect(data.activity).toBe("editing");
@@ -308,29 +313,27 @@ describe("deriving git data", () => {
 
     expect(data.unpushedCount).toBe(2);
     expect(data.drift).toMatchObject({
-      unpushedDays: 40,
-      driftDays: 40,
+      unpushed: { hours: 960, level: "red" },
       level: "red",
     });
   });
 
-  it("judges the larger age against the injected thresholds at the observation time", () => {
+  it("judges each age in hours against the injected windows, the worse giving the level", () => {
     const ages = {
       oldestUncommittedAt: daysBefore(4).toISOString(),
-      oldestUnpushedAt: daysBefore(2).toISOString(),
+      oldestUnpushedAt: new Date(now.getTime() - 30 * 3_600_000).toISOString(),
     };
 
     expect(deriveDrift(ages, thresholds, now).level).toBe("green");
-    expect(deriveDrift(ages, { amberDays: 3, redDays: 9 }, now)).toEqual({
-      uncommittedDays: 4,
-      unpushedDays: 2,
-      driftDays: 4,
-      level: "amber",
-      thresholds: { amberDays: 3, redDays: 9 },
+    expect(deriveDrift(ages, { amberHours: 24, redHours: 72 }, now)).toEqual({
+      uncommitted: { since: ages.oldestUncommittedAt, hours: 96, level: "red" },
+      unpushed: { since: ages.oldestUnpushedAt, hours: 30, level: "amber" },
+      level: "red",
+      thresholds: { amberHours: 24, redHours: 72 },
     });
-    expect(deriveDrift(ages, { amberDays: 1, redDays: 4 }, now).level).toBe(
-      "red",
-    );
+    expect(
+      deriveDrift(ages, { amberHours: 24, redHours: 120 }, now).level,
+    ).toBe("amber");
     expect(deriveDrift(ages, thresholds, daysBefore(-30)).level).toBe("red");
   });
 });
@@ -355,8 +358,8 @@ describe("deriving git data by backup state", () => {
     expect(data.backup).toBe("local-only");
     expect(data.unpushedCount).toBe(0);
     expect(data.drift).toMatchObject({
-      unpushedDays: null,
-      uncommittedDays: 9,
+      unpushed: null,
+      uncommitted: { hours: 216, level: "amber" },
       level: "amber",
     });
   });
@@ -371,15 +374,15 @@ describe("deriving git data by backup state", () => {
 
     expect(data.unpushedCount).toBe(1);
     expect(data.drift).toMatchObject({
-      unpushedDays: null,
-      driftDays: null,
+      unpushed: null,
+      uncommitted: null,
       level: "green",
     });
   });
 
   it("ages unpushed commits against a joined remote", () => {
     expect(
-      deriveGit(unpushed, thresholds, now, "joined").drift.unpushedDays,
-    ).toBe(40);
+      deriveGit(unpushed, thresholds, now, "joined").drift.unpushed?.hours,
+    ).toBe(960);
   });
 });

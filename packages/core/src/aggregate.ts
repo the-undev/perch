@@ -1,5 +1,5 @@
 import { basename } from "node:path";
-import { type Config, driftThresholdsFor, importanceFor } from "./config.ts";
+import { type Config, importanceFor, thresholdsFor } from "./config.ts";
 import {
   deriveClaudeSessions,
   deriveForge,
@@ -138,7 +138,7 @@ function localSources(
   } else if (presence.git.state === "observed") {
     sources.git = deriveGit(
       presence.git.value,
-      driftThresholdsFor(config, id),
+      thresholdsFor(config, id).unsafe,
       observedAt,
       backupOf(project),
     );

@@ -369,7 +369,7 @@ describe("aggregating joined projects", () => {
     });
     expect(byId["dev/perch"]?.sources.git).toMatchObject({
       backup: "joined",
-      drift: { unpushedDays: 10 },
+      drift: { unpushed: { hours: 240 } },
     });
     expect(byId["dev/toy"]?.sources.git).toMatchObject({
       backup: "local-only",

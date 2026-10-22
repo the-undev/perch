@@ -20,6 +20,13 @@ joins = []
 # listing.
 ignore = []
 
+# The wires, top to bottom: the owner's priority bands. An adopted item
+# sits on the wire its entry names, else the default. Everything config does
+# not name sits on the fence beneath.
+[wires]
+names = ["Machine & Home", "Projects"]
+default = "Projects"
+
 [local]
 # Each include is a repository, or a directory searched for repositories.
 include = [
@@ -32,37 +39,73 @@ include = [
 # Nothing at or below these paths is searched.
 ignore = ["~/dev/archived", "~/dev/third-party", "~/dev/all/delete"]
 
-# Uncommitted or unpushed work older than these many days turns an item amber
-# or red. Overridable per item below.
-[drift]
-amber_days = 7
-red_days = 30
+# Health windows: amber at the first, red at the second. Unsafe work
+# (uncommitted changes, unpushed commits) ages in hours from its oldest
+# change. Stalled flight, parked on a non-default branch with no new commit,
+# ages in days, as does an expectation below that reality does not meet,
+# from when a scan first saw it unmet. Each is overridable per item with the
+# same keys.
+[thresholds]
+unsafe_amber_hours = 24
+unsafe_red_hours = 72
+stalled_amber_days = 7
+stalled_red_days = 30
+expectation_amber_days = 7
+expectation_red_days = 30
 
 # Tiers, most important first. Items without an override get the default.
 [importance]
 tiers = ["server", "machine", "projects"]
 default = "projects"
 
-# Per-item overrides, keyed by item id. A repository found inside an include
-# directory is flagged as not set up until it has an entry here, even an
-# empty one.
+# The two scan lanes. Everything is scanned on the main interval; archived
+# forge repositories change rarely and refresh on the slow one. Placeholders
+# until a full scan's cost is measured; nothing reads them yet.
+[scan]
+interval_minutes = 15
+archived_interval_hours = 24
+
+# The zellij session that holds a project's terminal tab: the item's own
+# zellij_session, else the session of the longest root below containing the
+# project, else zellij_session here.
+[launch]
+zellij_session = "home"
+
+[launch.zellij_sessions]
+"~/undev" = "undev"
+
+# Item entries, keyed by item id. An entry adopts the bird and puts it on a
+# wire. A repository found inside an include directory is flagged as not set
+# up until it has an entry here, even an empty one.
 [items."obsidian/Hothouse"]
+wire = "Machine & Home"
+name = "Hothouse Vault"
 roadmaps = ["Tech/Tech Plans.md", "Garden/Garden Plans.md"]
 
 [items."obsidian/Pocket"]
+wire = "Machine & Home"
+name = "Pocket Vault"
 roadmaps = ["Code/Code Plans.md", "Pocket Plans.md"]
 
+# Every field an entry can hold, each optional:
 # [items."dev/perch"]
-# importance = "machine"
-# drift_amber_days = 3
-# drift_red_days = 14
+# wire = "Projects"                  # one of wires.names
+# name = "Perch"                     # the bird's name; default the folder or repository name
+# importance = "machine"             # one of importance.tiers
+# expect = ["ci", "tickets"]         # sources this item should have
+# key_files = ["README.md", "docs/spec.md", "docs/roadmap.md"]  # default the README and roadmaps
+# roadmaps = ["docs/roadmap.md"]     # replaces the standard roadmap names
+# zellij_session = "home"
+# unsafe_amber_hours = 12
+# unsafe_red_hours = 48
+# stalled_amber_days = 14
+# stalled_red_days = 60
+# expectation_amber_days = 3
+# expectation_red_days = 14
 
 [forges]
 # Commits on each forge repository's default branch to read as finalised.
 finalised_commits = 10
-# Archived forge repositories change rarely and belong in a slower lane.
-# Placeholder: nothing reads this until the slow lane exists.
-archived_interval_hours = 24
 
 # Each account lists the repositories it owns, read with its own read-only
 # token from the keyring (secret-tool, service perch, the key named here; see

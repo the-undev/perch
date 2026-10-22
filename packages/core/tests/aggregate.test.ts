@@ -19,7 +19,7 @@ const config = parseConfig(
     )
   ).replace(
     "[forges]\n",
-    '[items."dev/perch"]\nimportance = "machine"\ndrift_amber_days = 2\n\n[forges]\n',
+    '[items."dev/perch"]\nimportance = "machine"\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\n\n[forges]\n',
   ),
   "/home/test",
 );
@@ -103,9 +103,9 @@ describe("aggregate", () => {
       backup: "local-only",
       activity: "editing",
       drift: {
-        uncommittedDays: 3,
+        uncommitted: { hours: 72, level: "amber" },
         level: "amber",
-        thresholds: { amberDays: 2, redDays: 30 },
+        thresholds: { amberHours: 48, redHours: 96 },
       },
     });
   });

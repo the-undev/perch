@@ -10,6 +10,7 @@ import { app, BrowserWindow, Menu, shell, Tray } from "electron";
 import { channels, type PerchState } from "../shared/ipc.ts";
 import { appPaths, examplePathFor } from "./app-paths.ts";
 import { createAppState } from "./app-state.ts";
+import { handOver, parseArguments } from "./command-line.ts";
 import { createConfigStore } from "./config-store.ts";
 import { isWebUrl } from "./external-links.ts";
 import { iconPaths, resourceDirFor } from "./icons.ts";
@@ -27,7 +28,7 @@ const noConfigRetryMs = 60_000;
 /** Held for the life of the app: a tray icon that is collected leaves the tray. */
 let tray: Tray | null = null;
 
-function createWindow(icon: string): BrowserWindow {
+function createWindow(icon: string, showWhenReady: boolean): BrowserWindow {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -42,7 +43,8 @@ function createWindow(icon: string): BrowserWindow {
       nodeIntegration: false,
     },
   });
-  window.once("ready-to-show", () => window.show());
+  // Started with --hidden, the window waits for the tray or a second launch to show it.
+  if (showWhenReady) window.once("ready-to-show", () => window.show());
 
   // Links leave for the browser; the window itself never navigates away from the app.
   window.webContents.setWindowOpenHandler(({ url }) => {
@@ -81,11 +83,8 @@ function start(): void {
     return;
   }
 
+  const launchArguments = parseArguments(process.argv);
   let mainWindow: BrowserWindow | undefined;
-  app.on("second-instance", () => {
-    if (!mainWindow) return;
-    present(mainWindow, "show");
-  });
 
   const config = createConfigStore(() =>
     loadConfig({
@@ -142,6 +141,16 @@ function start(): void {
   });
   const ready = state.start();
 
+  // A second launch quits at once; the running instance does what its command line asks.
+  app.on("second-instance", (_event, commandLine) => {
+    handOver(parseArguments(commandLine), {
+      present: (request) => {
+        if (mainWindow !== undefined) present(mainWindow, request);
+      },
+      rescan: () => void scheduler.request(),
+    });
+  });
+
   // Closing the window hides it; only a quit, from the tray, lets it close.
   let quitting = false;
   app.on("before-quit", () => {
@@ -159,7 +168,7 @@ function start(): void {
       keyFiles: (birdId) => state.keyFiles(birdId),
       launch: (action) => state.launch(action),
     });
-    const window = createWindow(icons.window);
+    const window = createWindow(icons.window, !launchArguments.hidden);
     mainWindow = window;
     window.on("close", (event) => hideOnClose(event, window, quitting));
     window.on("focus", () => void ready.then(() => scheduler.focused()));

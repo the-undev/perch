@@ -100,20 +100,6 @@ electron-updater can replace the running AppImage with the latest one from
 the GitHub releases that CI publishes. Parked until updating by hand becomes
 a chore.
 
-## Data placement audit
-
-Before the real app displays anything: decide what surfaces where. The
-unit is not the raw field but the island: a derived, nicely formed piece
-of data (a count, an outline, a judgement) built from raw fields by a
-named transformation. The audit walks the islands, one at a time: what
-raw inputs feed it, what the transform is, what shape comes out, and
-which altitudes may show it (bird, bubble, detail, or none). Raw fields
-are checked only for coverage: a field feeding no island is gathered but
-unused, which is fine; an island wanting a field the scanner lacks is a
-gap. The app gathers everything from day one but displays only what an
-island earns, so the temptation to surface too much is resisted
-structurally. See `docs/decisions/bird-language.md`.
-
 ## Forge issues source
 
 Tickets from GitHub and Forgejo as a work source beside the in-repo

@@ -11,6 +11,9 @@ shows from things that already change. Nothing in it is typed in by hand.
   decision with the reason behind it. Read before proposing anything.
 - [docs/roadmap.md](docs/roadmap.md): parked work. Anything worth returning to
   goes there, in a commit, never in chat.
+- [design/index.html](design/index.html): the design board, the approved
+  living design pages, opened in a browser. mockups/ holds the retired
+  prototype rounds, never edited once their verdicts are recorded.
 
 ## State of the repository
 
@@ -44,3 +47,7 @@ Two stages, both writing under the gitignored `.scan/`:
 - Commit messages: imperative subject, a body only when the why is not
   obvious. No attribution trailers.
 - British English in docs, comments and messages. No em dashes.
+- Design is explained visually. A new idea gets a prototype page in
+  mockups/, a new file per round; an approved page moves to design/ and is
+  updated in place. Prefer a page on the board over a markdown explainer;
+  the decision docs hold the why.

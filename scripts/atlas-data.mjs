@@ -1,4 +1,4 @@
-// Generates mockups/atlas-data.js from the live scan: every field path in
+// Generates design/atlas-data.js from the live scan: every field path in
 // every raw source and the snapshot, with observed types, presence counts,
 // real example values, and the declared type resolved from src/raw.ts and
 // src/snapshot.ts through the TypeScript checker, so the possibilities
@@ -218,7 +218,7 @@ const snapshot = JSON.parse(readFileSync(join(scanDir, "snapshot.json"), "utf8")
 sources.push({ name: "snapshot (derived)", file: ".scan/snapshot.json", fields: walkFile(snapshot, rootTypes.get("snapshot")) });
 
 const out = { generatedAt: new Date().toISOString(), sources };
-writeFileSync(join(root, "mockups", "atlas-data.js"), `window.ATLAS = ${JSON.stringify(out, null, "\t")};\n`);
+writeFileSync(join(root, "design", "atlas-data.js"), `window.ATLAS = ${JSON.stringify(out, null, "\t")};\n`);
 const total = sources.reduce((n, s) => n + s.fields.length, 0);
 const unresolved = sources.reduce((n, s) => n + s.fields.filter((f) => !f.declared).length, 0);
 console.log(`atlas-data.js written: ${sources.length} sources, ${total} field paths, ${unresolved} without a declared type`);

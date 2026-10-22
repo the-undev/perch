@@ -175,6 +175,10 @@ const out = `window.PERCH_DATA = ${JSON.stringify(
 	null,
 	"\t",
 )};\n`;
-mkdirSync(join(repoRoot, "mockups"), { recursive: true });
-writeFileSync(join(repoRoot, "mockups", "data.js"), out);
-console.log(`mockups/data.js written: ${items.length} items`);
+// The design board is the live home; the copy in mockups/ keeps the
+// archived prototype rounds openable.
+for (const dir of ["design", "mockups"]) {
+	mkdirSync(join(repoRoot, dir), { recursive: true });
+	writeFileSync(join(repoRoot, dir, "data.js"), out);
+}
+console.log(`design/data.js and mockups/data.js written: ${items.length} items`);

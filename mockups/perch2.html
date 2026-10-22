@@ -108,19 +108,6 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .detailview .sky-legend { opacity: 0; pointer-events: none; }
 .sky-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .sky-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-.wires-btn {
-	position: absolute; top: 50%; transform: translateY(-50%);
-	right: max(20px, env(safe-area-inset-right, 0px)); z-index: 2;
-	display: inline-flex; align-items: center; gap: 9px;
-	background: var(--card); border: 1px solid var(--edge-hi); color: var(--ink);
-	font: 600 14px var(--body); border-radius: 999px; padding: 11px 20px; cursor: pointer;
-	box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.6);
-	opacity: 0; pointer-events: none; transition: opacity 0.4s 0.5s;
-}
-.detailview .wires-btn { opacity: 1; pointer-events: auto; }
-.wires-btn:hover { border-color: var(--accent); background: var(--card-hi); }
-.wires-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.wires-btn svg { width: 17px; height: 17px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .tip {
 	position: fixed; z-index: 3; pointer-events: none;
@@ -251,7 +238,6 @@ a.lnk:hover { color: var(--ink); text-decoration-color: var(--accent); }
 	<div class="scenewrap">
 		<svg id="aviary-svg" aria-label="Projects as birds on wires"></svg>
 		<svg id="strip-svg" viewBox="0 0 2000 198" preserveAspectRatio="xMidYMid meet" aria-label="The clicked bird's wire as a tab row"></svg>
-		<button class="wires-btn" id="wires"><svg viewBox="0 0 24 24"><path d="M11 6l-6 6 6 6"/><path d="M5 12h14"/></svg>Back to the wires</button>
 		<div class="sky-legend">
 			<span><i style="background:var(--red)"></i>attention</span>
 			<span><i style="background:var(--amber)"></i>drifting</span>
@@ -701,7 +687,7 @@ window.addEventListener("click", closeBubble);
 const lnk = (text) => `<a class="lnk" href="#" onclick="return false">${text}</a>`;
 function show(it) {
 	currentItem = it;
-	if (it.adopted) lastByWire[it.tier] = it;
+	lastByWire[it.adopted ? it.tier : "fence"] = it;
 	const mood = it.adopted ? MOOD[it.health] : "not adopted";
 	const moodCls = it.adopted ? it.health : "dim";
 	const act = it.git?.activity === "editing" ? `<span class="dact">editing ♪</span>` : it.git?.activity === "in-progress" ? `<span class="dact">in flight</span>` : "";
@@ -781,6 +767,9 @@ const lastByWire = {};
 const urgentIn = (key) =>
 	adopted.filter((i) => i.tier === key)
 		.sort((a, b) => rank[a.health] - rank[b.health] || b.work.total - a.work.total)[0];
+const urgentFence = () =>
+	[...triage].sort((a, b) => rank[a.health] - rank[b.health] || b.work.total - a.work.total)[0];
+/* Tab order: the aviary, the wires top to bottom, the fence. */
 const tabsbox = document.getElementById("tabsbox");
 for (const key of wireKeys) {
 	const b = document.createElement("button");
@@ -789,6 +778,16 @@ for (const key of wireKeys) {
 	b.addEventListener("click", (e) => {
 		e.stopPropagation();
 		enterDetail(lastByWire[key] ?? urgentIn(key));
+	});
+	tabsbox.appendChild(b);
+}
+if (triage.length) {
+	const b = document.createElement("button");
+	b.dataset.tab = "fence";
+	b.textContent = "On the fence";
+	b.addEventListener("click", (e) => {
+		e.stopPropagation();
+		enterDetail(lastByWire.fence ?? urgentFence());
 	});
 	tabsbox.appendChild(b);
 }
@@ -832,7 +831,6 @@ function zoomIn() {
 	document.body.classList.remove("detailview");
 	setTab("aviary");
 }
-document.getElementById("wires").addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
 document.getElementById("brand").addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
 document.getElementById("tab-aviary").addEventListener("click", (e) => { e.stopPropagation(); zoomIn(); });
 window.addEventListener("keydown", (e) => {

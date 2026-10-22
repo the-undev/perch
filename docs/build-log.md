@@ -190,3 +190,53 @@ build-time calls so they can be revisited.
   without it the kuma collector does not run and there is no server item.
 - The design site's night toggle is the Night option of the sky switcher
   on the aviary and camera pages, beside Follow the clock.
+- The app phase. `src/scan.ts` in core composes gather and aggregate with
+  every directory and the config path as parameters; the CLI passes the
+  repository's `.scan/`, the app `~/.local/share/perch/scan/`. `loadConfig`
+  takes the user config path rather than deriving it from home.
+- The snapshot is written to a `.part` file and renamed into place. A
+  snapshot that does not parse reads as none: it is a cache and the
+  first-seen record, and losing it only restarts the expectation clocks.
+- userData is set before the single-instance lock, which lives in it. The
+  scan's files sit in its `scan/` folder, apart from Chromium's state.
+- The AppImage ships `config.example.toml` among its resources; the dev
+  build reads the repository's.
+- The main process derives the aviary, so the renderer receives view model
+  types only. The state it pushes is the aviary (null before any
+  snapshot), whether a scan runs, and problems outside any one source: an
+  unreadable config, a failed scan, a failed launch. The renderer puts the
+  problems ahead of the scan's warnings in the sky's notices.
+- The scan timer counts from the end of the last scan and reads the
+  interval afresh each time. A request during a scan joins it rather than
+  queueing another. A focus scans only once a minute has passed since the
+  last scan finished, so moving between windows does not rescan each time.
+  Without any config the next attempt is a minute away. The config is read
+  again before every scan.
+- Launch commands are argument lists in `[launch.commands]`, run without a
+  shell: `zellij` and `terminal` together give the zellij tab, then
+  `vscode`, `folder` and `obsidian`. A placeholder a command cannot fill is
+  a config error. The vault's name is URI-encoded for `{vault}`. Keys are
+  the action kinds, so the verb "Open in VS Code" stays true to its key.
+- The zellij tab reads running sessions from `zellij list-sessions
+  --no-formatting`, a line holding "EXITED" not counting; a failed listing
+  counts as none running. Programs start detached in their own process
+  group with no stdio, from the home directory.
+- The renderer sends the launch action itself: the bubble's callback
+  carries no bird. The main process runs it only when a bird in the
+  current aviary offers the same action, field for field.
+- Links with a target open through `setWindowOpenHandler`, and every
+  navigation is refused, web pages opening in the browser. Relative links
+  on the key-file paper go nowhere, as the roadmap's item says.
+- The camera is the root route and stays mounted; `/` and `/bird/$` (a
+  splat, since ids hold slashes) only say where it points. The clock is
+  read every minute.
+- Key files are read once the state is known, keyed by bird and scan time,
+  so a scan reads them again; while a read runs the same bird keeps its
+  sheets.
+- The camera header's scan line reads "{phase}, scanned {time}, {age}" and
+  is a button that scans now, the rescan until the tray exists. While a
+  scan runs it waits, and "scanning" sits before it, pulsing gently.
+- Main-process tests run in node and renderer tests in jsdom, as two
+  vitest projects in the desktop package.
+- A full scan of this machine took 6.5 seconds cold and about 4 seconds
+  warm, all seven sources ok. The interval defaults stay open.

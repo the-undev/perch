@@ -5,12 +5,40 @@ they land.
 
 ## First build
 
-The desktop app is a placeholder window. What remains is the spec, wired
-into it: the periodic scan in the main process and its snapshot cache, the
-tray and its menu, the launch arguments a second instance hands over, the
-glance window and the detail views, the autostart mechanism, and an app icon
-(the AppImage carries Electron's default). The order is for the build session
-to decide; the spec is the end state.
+The window shows the aviary and the detail from scans in the main process.
+What remains is the polish around it: the tray and its menu (show, rescan,
+quit) with the window hiding on close, the autostart mechanism, the launch
+arguments a second instance hands over (`--toggle`, `--show`, `--scan`), the
+Plasma shortcut bound to `perch --toggle`, and an app icon (the AppImage
+carries Electron's default).
+
+## Archived scan lane
+
+`[scan] archived_interval_hours` is parsed and read by nothing. Gather reads
+every forge repository, archived or not, on the one interval. The slow lane
+needs gather to split the forge enricher by archived state and keep the
+archived half's raw file between its own runs.
+
+## Raising the zellij window
+
+The zellij tab action selects or opens the tab but does not raise the
+terminal attached to the session, the fallback in
+`docs/decisions/launch-actions.md`. Raising another app's window on Plasma
+Wayland needs a KWin script or `kdotool` (not installed on 22 October 2026).
+A session that is not running opens in the terminal on its default tab,
+not one named after the project.
+
+## TUI tiles
+
+`docs/decisions/launch-actions.md` decides run or focus for the TUIs in
+`~/undev` (oxbow, spool) in tagged alacritty windows. The view model has
+no TUI action yet; it needs a config marker for which items are TUIs and the
+window raising above.
+
+## Launch failures on the detail page
+
+A failed launch shows in the sky's notices until the next scan, which the
+detail page hides. The detail has no place for it yet.
 
 ## Claude Code integration
 

@@ -303,5 +303,6 @@ export type SourceStatus =
 export interface StatusFile {
   gatheredAt: string;
   durationMs: number;
-  sources: Record<PolledSourceName, SourceStatus>;
+  /** A source that did not run, such as kuma without a [server] section, has no entry. */
+  sources: Partial<Record<PolledSourceName, SourceStatus>>;
 }

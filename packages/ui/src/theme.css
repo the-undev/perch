@@ -1,0 +1,389 @@
+/* The perch theme: the ink palette, mood colours, sky phases and paper from
+   design/perch.html, as Tailwind v4 theme tokens. Each app imports this after
+   tailwindcss; it is the one place a colour, font or keyframe is defined. */
+
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/bricolage-grotesque/opsz.css";
+@import "@fontsource-variable/figtree";
+
+/* The components in this package use utilities the app's own scan cannot see. */
+@source ".";
+
+/* Perch has one theme, dark, so shadcn's dark variants always apply. */
+@custom-variant dark (&);
+
+/* Static: the bird's SVG reads these through var() in attributes, which
+   Tailwind cannot see as utilities, so every token is always emitted. */
+@theme static {
+  --color-*: initial;
+  --font-*: initial;
+
+  --font-display: "Bricolage Grotesque Variable", system-ui, sans-serif;
+  --font-body: "Figtree Variable", system-ui, sans-serif;
+  --font-sans: var(--font-body);
+  --font-mono: ui-monospace, monospace;
+
+  --color-black: #000;
+  --color-white: #fff;
+
+  /* The ground, warm dark: page, header rail, bands, panels and their edges. */
+  --color-bg: #101214;
+  --color-rail: #121517;
+  --color-band: #15181b;
+  --color-panel: #1a1e22;
+  --color-panel-hi: #20252a;
+  --color-edge: #2b3036;
+  --color-edge-hi: #3e454d;
+  --color-ground: #13161a;
+
+  /* Writing on the dark ground, strongest first. */
+  --color-ink: #ece7db;
+  --color-ink-muted: #aaa396;
+  --color-ink-faint: #837d70;
+  --color-ink-accent: #b9b2a2;
+  --color-ink-fence: #8e897d;
+
+  /* Health as colour: green content, amber restless, red distressed. Red is rare. */
+  --color-green: #66bb86;
+  --color-amber: #d8a845;
+  --color-red: #e25d4f;
+
+  /* The bird's own parts. */
+  --color-plumage: #272b31;
+  --color-plumage-dim: #23262c;
+  --color-breast-dim: #4a4f58;
+  --color-leg: #4a4e55;
+  --color-eye: #0d0f12;
+  --color-shade: #00000022;
+
+  /* The sky, at dusk by default; the phases below redefine it. */
+  --color-sky-top: #0d1016;
+  --color-sky-low: #1a1d24;
+  --color-horizon: #23262d;
+  --color-wire: #3a3e46;
+  --color-post: #2a2d34;
+  --color-sun: #e8d9a8;
+  --color-sun-low: #d9a86a;
+  --color-moon: #c9c4b4;
+  --color-star: #9aa0ae;
+
+  /* Paper: the bubble's and the key files' material, and the ink written on it. */
+  --color-paper: #e9e4d8;
+  --color-paper-dim: #ddd7c9;
+  --color-paper-ink: #2f3338;
+  --color-paper-text: #2a2e35;
+  --color-paper-head: #171a1e;
+  --color-paper-strong: #14171b;
+  --color-paper-quiet: #6e695f;
+  --color-paper-tab: #5b564b;
+  --color-paper-code: #dcd6c8;
+  --color-paper-rule: #c9c3b3;
+  --color-paper-green: #2c7a4b;
+  --color-paper-amber: #8f6d14;
+  --color-paper-red: #b23325;
+
+  /* Chips on paper, by severity. */
+  --color-chip: #ddd7c9;
+  --color-chip-ink: #3a3e45;
+  --color-chip-amber: #e7d3a0;
+  --color-chip-amber-ink: #6b500e;
+  --color-chip-red: #ecc0b8;
+  --color-chip-red-ink: #8c2619;
+
+  /* Dark keys set on paper: the bubble's buttons. */
+  --color-key: #22262c;
+  --color-key-hi: #2e333a;
+  --color-key-strong: #14171b;
+
+  /* The hover tip. */
+  --color-tip: #171a1f;
+  --color-tip-edge: #333841;
+
+  --radius: 0.5rem;
+  --radius-bubble: 16px;
+  --radius-paper: 12px;
+
+  --shadow-bubble: 0 18px 50px -12px rgb(0 0 0 / 0.8);
+  --shadow-paper: 0 24px 60px -18px rgb(0 0 0 / 0.75);
+
+  /* Motion. Per-bird timings arrive as custom properties set by the component. */
+  --animate-bird-bob: bird-bob var(--bob-duration, 3600ms) ease-in-out
+    var(--bob-delay, 0ms) infinite;
+  --animate-tail-flick: tail-flick var(--flick-duration, 9000ms) ease-in-out
+    infinite;
+  --animate-song: song 2600ms linear infinite;
+  --animate-twinkle: twinkle var(--twinkle-duration, 5000ms) ease-in-out
+    infinite;
+  --animate-bubble-pop: bubble-pop 260ms cubic-bezier(0.3, 1.2, 0.4, 1);
+  /* The arrival: each bird drops onto its wire in turn, the delay from its place in the order. */
+  --animate-arrive: arrive 480ms cubic-bezier(0.3, 1.4, 0.5, 1)
+    var(--arrive-delay, 0ms) backwards;
+  --animate-beak-wiggle: beak-wiggle 700ms ease-in-out;
+  --animate-swap: swap 250ms ease;
+
+  @keyframes arrive {
+    from {
+      transform: translateY(-130px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes beak-wiggle {
+    0%,
+    50%,
+    100% {
+      transform: rotate(0deg);
+    }
+    25% {
+      transform: rotate(9deg);
+    }
+    75% {
+      transform: rotate(7deg);
+    }
+  }
+  @keyframes swap {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  @keyframes bird-bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(calc(-1px * var(--bob-lift, 2)));
+    }
+  }
+  @keyframes tail-flick {
+    0%,
+    25%,
+    75%,
+    100% {
+      transform: rotate(0deg);
+    }
+    50% {
+      transform: rotate(-9deg);
+    }
+  }
+  @keyframes song {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: 0.15;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+  @keyframes bubble-pop {
+    0% {
+      transform: scale(0.4);
+      opacity: 0;
+    }
+    70% {
+      transform: scale(1.04);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+}
+
+/* shadcn's semantic tokens, mapped onto the ink palette. */
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-panel);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-panel);
+  --color-popover-foreground: var(--color-ink);
+  --color-primary: var(--color-ink);
+  --color-primary-foreground: var(--color-bg);
+  --color-secondary: var(--color-panel-hi);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-band);
+  --color-muted-foreground: var(--color-ink-muted);
+  --color-accent: var(--color-panel-hi);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-red);
+  --color-border: var(--color-edge);
+  --color-input: var(--color-edge);
+  --color-ring: var(--color-ink-accent);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+/* The sky phases, set with data-phase on any element that holds a scene. */
+[data-phase="dawn"] {
+  --color-sky-top: #16181f;
+  --color-sky-low: #2e2a33;
+  --color-horizon: #4a3a3c;
+  --color-wire: #46434e;
+  --color-post: #353039;
+}
+[data-phase="day"] {
+  --color-sky-top: #1c2733;
+  --color-sky-low: #2b3a47;
+  --color-horizon: #394550;
+  --color-wire: #4b5563;
+  --color-post: #39414c;
+}
+[data-phase="dusk"] {
+  --color-sky-top: #0d1016;
+  --color-sky-low: #1a1d24;
+  --color-horizon: #23262d;
+  --color-wire: #3a3e46;
+  --color-post: #2a2d34;
+}
+[data-phase="night"] {
+  --color-sky-top: #090b10;
+  --color-sky-low: #10131a;
+  --color-horizon: #171a21;
+  --color-wire: #333741;
+  --color-post: #23262e;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-edge-hi) transparent;
+  }
+  html {
+    color-scheme: dark;
+    @apply font-body;
+  }
+  body {
+    @apply bg-bg text-ink text-sm;
+  }
+}
+
+/* Markdown on paper: the key-file sheets. The sheet fills its column; the
+   writing on it keeps a reading width. */
+@layer components {
+  .perch-prose {
+    color: var(--color-paper-ink);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .perch-prose > * {
+    max-width: 80ch;
+  }
+  .perch-prose > :first-child {
+    margin-top: 0;
+  }
+  .perch-prose h1 {
+    font: 700 25px / 1.25 var(--font-display);
+    color: var(--color-paper-head);
+    margin: 0 0 10px;
+  }
+  .perch-prose h2 {
+    font: 700 19px / 1.3 var(--font-display);
+    color: var(--color-paper-head);
+    margin: 24px 0 8px;
+  }
+  .perch-prose h3,
+  .perch-prose h4 {
+    font: 700 15.5px / 1.35 var(--font-display);
+    color: var(--color-paper-head);
+    margin: 18px 0 6px;
+  }
+  .perch-prose p {
+    margin: 0 0 11px;
+  }
+  .perch-prose ul,
+  .perch-prose ol {
+    margin: 0 0 11px;
+    padding-left: 22px;
+  }
+  .perch-prose ul {
+    list-style: disc;
+  }
+  .perch-prose ol {
+    list-style: decimal;
+  }
+  .perch-prose li {
+    margin: 2px 0;
+  }
+  .perch-prose li > ul,
+  .perch-prose li > ol {
+    margin: 2px 0 0;
+  }
+  .perch-prose a {
+    color: inherit;
+    text-decoration: underline dotted var(--color-paper-quiet);
+    text-underline-offset: 3px;
+  }
+  .perch-prose a:hover {
+    color: var(--color-paper-head);
+    text-decoration-style: solid;
+  }
+  .perch-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--color-paper-code);
+    border: 1px solid var(--color-paper-rule);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  .perch-prose pre {
+    background: var(--color-paper-code);
+    border: 1px solid var(--color-paper-rule);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 0 0 12px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .perch-prose pre code {
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+  .perch-prose blockquote {
+    border-left: 3px solid var(--color-paper-rule);
+    padding-left: 14px;
+    color: var(--color-paper-quiet);
+    margin: 0 0 11px;
+  }
+  .perch-prose hr {
+    border: 0;
+    border-top: 1px solid var(--color-paper-rule);
+    margin: 20px 0;
+  }
+  .perch-prose table {
+    border-collapse: collapse;
+    margin: 0 0 12px;
+    font-size: 13.5px;
+  }
+  .perch-prose th,
+  .perch-prose td {
+    border-bottom: 1px solid var(--color-paper-rule);
+    padding: 6px 14px 6px 0;
+    text-align: left;
+    vertical-align: top;
+  }
+  .perch-prose th {
+    color: var(--color-paper-head);
+    font-weight: 600;
+  }
+}

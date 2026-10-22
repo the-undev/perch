@@ -11,8 +11,10 @@ import type {
 } from "./raw.ts";
 import type { PolledSource } from "./sources/source.ts";
 
-/** One polled source per name; the type makes every source required. */
-export type PolledSources = { [N in PolledSourceName]: PolledSource<N> };
+/** One polled source per name; kuma is null when config has no server to monitor. */
+export type PolledSources = {
+  [N in Exclude<PolledSourceName, "kuma">]: PolledSource<N>;
+} & { kuma: PolledSource<"kuma"> | null };
 
 /**
  * Collection rounds, run in order. Root collectors read config and the outside world; enrichers
@@ -108,13 +110,14 @@ export async function gather(deps: GatherDeps): Promise<StatusFile> {
   const started = deps.now();
   const previous = (await deps.store.read("status")) as StatusFile | null;
   const earlier: Partial<RawFiles> = {};
-  const sources = {} as Record<PolledSourceName, SourceStatus>;
-  for (const round of gatherRounds) {
+  const sources: Partial<Record<PolledSourceName, SourceStatus>> = {};
+  for (const configuredRound of gatherRounds) {
+    const round = configuredRound.filter((name) => deps.sources[name] !== null);
     const gathered: Partial<RawFiles> = {};
     const outcomes = await Promise.all(
       round.map((name) =>
         gatherSource(
-          deps.sources[name],
+          deps.sources[name] as PolledSource<typeof name>,
           earlier,
           gathered,
           previous?.sources[name],

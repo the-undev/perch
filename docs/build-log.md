@@ -102,3 +102,91 @@ build-time calls so they can be revisited.
   home, and would litter it with browser state. The app will set
   userData to `~/.local/share/perch`, leaving `~/.config/perch` to the
   stowed config.toml alone. Wired in the app phase.
+- The theme is one stylesheet, `packages/ui/src/theme.css`: Tailwind v4
+  `@theme static` tokens replacing Tailwind's default palette, values
+  from `design/perch.html` (its lifted muted and faint inks). shadcn's
+  semantic tokens map onto the ink palette and its dark variants always
+  apply: perch has one theme.
+- Fonts are the board's, Bricolage Grotesque and Figtree, bundled from
+  fontsource; the desktop's content security policy blocks Google
+  Fonts. Geist is dropped.
+- shadcn primitives move to `packages/ui/src/primitives` with
+  `components.json`. The desktop drops its `@/` alias, so a stray `@/`
+  import in ui fails the desktop typecheck instead of resolving into the
+  desktop.
+- Bird size: base scale 0.9 for the least important tier rising to 1.8
+  for the most, linear in rank; 0.78 on the fence. Plumpness multiplies
+  by up to 1.65 at the view model's cap of 50, the board's factor.
+- Sleeping birds are still as well as closed-eyed, per the bird
+  language; the board kept them bobbing. Fence birds bob like content
+  birds whatever their health: they do not wear their mood.
+- Detail times read as the speech's durations measured to a `now` the
+  caller passes ("30 hours ago"), replacing the board's day counts, so
+  components hold no clock.
+- Behaviour leaves components through required callbacks (`onLaunch`,
+  `onFullStory`). The key-file paper keeps its open tab as its own
+  state. The bubble's tail is placed by side and the inset of its tip.
+- Pull request lines, sources not read and the detail heading joined
+  the ui components: the view model carries them and the detail page
+  needs them.
+- The design site routes every page through `/$slug` from one registry,
+  serves on port 5174, and its paper page renders this repository's
+  README, spec and roadmap as the mock Perch bird's key files. Its smoke
+  test renders the index and every page.
+- The aviary lays itself out from its measured size in the board's
+  proportions: the scene keeps the window's aspect between 600 and 3000
+  units tall, the top wire sits at a quarter of the height or lower to
+  leave a bubble room, the fence 150px from the bottom, and the wires and
+  their rows share the space between, a step apart at most.
+- A crowded wire splits by capacity, not by name as on the board: a row
+  holds as many birds as fit 300 units apart between the margins, six,
+  and each further six takes another row. Birds are dealt over the rows
+  in turn, so every row's leftmost needs attention first; each further
+  row sits 150 units right.
+- A large change is a change of arrangement: who sits on which wire or
+  on the fence. The flock flies in again; a bird that only moves along
+  its wire glides there. The glide also runs as the window resizes.
+- Scene-wide source errors and warnings had no place on the board. They
+  sit top left in the sky, each failing source with how long since it
+  was last read and its error; the camera's header adds a count beside
+  the scan time, with the details in its tooltip.
+- The hover tip's second line is the bird's chips, else its last commit.
+  The board's summary needs facts the view model lacks; parked.
+- The bubble anchors so its tail tip meets the beak tip and opens away
+  from the bird's tail. Without room above it keeps to the top edge, as
+  the board did.
+- The camera takes where it points as a controlled prop and calls back
+  every move, for the desktop's router. The bird last open under each
+  tab, and the bird left on the ground while riding home, are its own
+  state. A bird the aviary no longer holds shows the aviary without a
+  callback.
+- Every configured wire has a header tab, and so does the fence; with no
+  birds the tab is disabled. The board left such tabs out.
+- The flights are computed from the layouts rather than measured from the
+  DOM. The aviary keeps the main area's full size beneath the collapsing
+  sky, so its layout holds still during the ride.
+- `Bird` gains a required `speaking` prop for the beak's wiggle; its name
+  brightens on hover and underlines on keyboard focus of the group
+  around it.
+- `packages/ui/src/test-setup.ts` stubs what jsdom lacks: ResizeObserver,
+  matchMedia, and element.animate as an animation that never finishes.
+  The design site's tests load it too.
+- The detail page goes to one column below 1040px of its own width, a
+  container query (the board's 1100px viewport query less its padding),
+  so it behaves the same embedded in a design page as in the app.
+- The Spec pages excerpt declarations from the repository's files through
+  `?raw` imports, cut by name; a renamed declaration throws and fails the
+  route test. The gather's rounds are parsed from `gatherRounds` in
+  gather.ts, which imports Node and cannot be imported by the site.
+- `speechSubjectFor` and `compareOnWire` are exported from viewmodel.ts:
+  the phrasebook runs `speak()` over the subjects of the mock's items,
+  and the scene pages order their hand-built wires as the model does.
+  A situation the mock lacks is the nearest mock bird's subject with one
+  fact changed, and the page names the change.
+- The Uptime Kuma source runs on every gather; nothing in config turns it
+  off. The view model leaves the server off the scene, so nothing it
+  reads is shown.
+- Server monitoring is enabled by the presence of `[server]` in config;
+  without it the kuma collector does not run and there is no server item.
+- The design site's night toggle is the Night option of the sky switcher
+  on the aviary and camera pages, beside Follow the clock.

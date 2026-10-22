@@ -16,12 +16,14 @@ in by hand.
   calls Claude made. Append a line whenever a decision is taken that the
   decision docs do not carry.
 - [design/index.html](design/index.html): the design board, the approved
-  living design pages, opened in a browser. mockups/ holds the retired
-  prototype rounds, never edited once their verdicts are recorded.
+  design pages, opened in a browser, kept as the approved record. The design
+  site (`pnpm design`) is its living successor on the real components.
+  mockups/ holds the retired prototype rounds, never edited once their
+  verdicts are recorded.
 
 ## State of the repository
 
-A pnpm workspace with two packages. Every command below runs from the root.
+A pnpm workspace with four packages. Every command below runs from the root.
 
 `packages/core` (`@perch/core`) is the read-only scanner, pure Node with no
 Electron imports. Two stages, both writing under the gitignored `.scan/` at
@@ -45,16 +47,31 @@ from the rules or loses a state.
 `pnpm scan` runs both. Config is `~/.config/perch/config.toml`, or the root
 `config.example.toml` when that is absent.
 
+`packages/ui` (`@perch/ui`) holds the React components of the design,
+typed against the view model only: the bird, wire, fence and sky scene, the
+bubble and chips, and the detail page's pieces (ledger and its sections,
+launch actions, links out, key-file paper). Components are presentational:
+no fetching and no clock; the caller passes `night`, a `now` Date and
+callbacks. `src/theme.css` is the one theme, Tailwind v4 tokens taken from
+`design/perch.html`; each app imports it after `tailwindcss`. shadcn
+primitives live in `src/primitives`, added with `pnpm dlx shadcn add <name>`
+from `packages/ui`; rewrite the `@/` imports it writes to relative ones,
+because the apps resolve ui's sources with their own settings.
+
+`apps/design` (`@perch/design`) is the design site, a Vite and React app
+served by `pnpm design`: an index and one usage page per component and
+primitive, every state rendered from the mock dataset with the rule behind
+it. A page is a component in `src/pages` and one entry in
+`src/registry.ts`. It is a local tool, never deployed.
+
 `apps/desktop` (`@perch/desktop`) is the Electron app, built with
 electron-vite. It does not use the scanner yet: the window shows a
 placeholder page. The main process is `src/main`, the sandboxed preload
 `src/preload`, the renderer `src/renderer`. Every renderer call into the main
-process is declared in `src/shared/ipc.ts`. shadcn components are added with
-`pnpm dlx shadcn add <name>` from `apps/desktop`. Renderer packages are
-devDependencies because electron-vite bundles them; shadcn adds its packages
-to `dependencies`, so move them.
+process is declared in `src/shared/ipc.ts`. Renderer packages are
+devDependencies because electron-vite bundles them.
 
-`pnpm dev` runs the app. `pnpm check` runs Biome over the workspace, then tsc
+`pnpm dev` runs the app, `pnpm design` the design site. `pnpm check` runs Biome over the workspace, then tsc
 and vitest in each package. `pnpm dist` builds the AppImage into
 `apps/desktop/dist/`; CI releases it from `v*` tags, see the README.
 

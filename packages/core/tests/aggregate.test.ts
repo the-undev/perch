@@ -19,10 +19,14 @@ const config = parseConfig(
       join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
       "utf8",
     )
-  ).replace(
-    "[forges]\n",
-    '[items."dev/perch"]\nimportance = "machine"\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\nexpect = ["ci", "tickets"]\n\n[forges]\n',
-  ),
+  )
+    .concat(
+      '\n[server]\nname = "Silo"\nkuma_base_url = "http://forge.example.lan:3001"\nkuma_status_page = "perch"\n',
+    )
+    .replace(
+      "[forges]\n",
+      '[items."dev/perch"]\nimportance = "machine"\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\nexpect = ["ci", "tickets"]\n\n[forges]\n',
+    ),
   "/home/test",
 );
 
@@ -99,6 +103,24 @@ describe("aggregate", () => {
     ]);
   });
 
+  it("adds no server item when config has no server", async () => {
+    const withoutServer = parseConfig(
+      await readFile(
+        join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
+        "utf8",
+      ),
+      "/home/test",
+    );
+
+    const snapshot = aggregate(
+      bundle,
+      { ...input, config: withoutServer },
+      new Date(),
+    );
+
+    expect(snapshot.items.map((item) => item.id)).toEqual(["dev/perch"]);
+  });
+
   it("derives git data against the item's thresholds, as of when it was gathered", () => {
     const later = aggregate(bundle, input, new Date("2027-01-01T00:00:00Z"));
 
@@ -132,7 +154,7 @@ describe("aggregate", () => {
       lastSucceededAt: null,
       durationMs: 3,
     });
-    expect(snapshot.sources.local.lastSucceededAt).toBe(gatheredAt);
+    expect(snapshot.sources.local?.lastSucceededAt).toBe(gatheredAt);
   });
 
   it("returns not-implemented from the container list stub", async () => {

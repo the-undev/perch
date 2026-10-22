@@ -11,6 +11,7 @@
     "aggregate": "node packages/core/src/cli/aggregate.ts",
     "scan": "pnpm gather && pnpm aggregate",
     "dev": "pnpm --filter @perch/desktop dev",
+    "design": "pnpm --filter @perch/design dev",
     "dist": "pnpm --filter @perch/desktop dist",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

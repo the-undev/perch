@@ -125,10 +125,60 @@ tree to pick any file from, a drill-down below the configured list.
 
 ## Design site on real components
 
-Once the app exists, the design board grows into a design site built
-from the app's actual assets and components, a visual explorer for each
-piece in isolation. The board's pages (app demo, field guide, atlas)
-migrate onto real components rather than hand-drawn copies.
+`apps/design` renders every component, the composed scenes and the
+reference pages that run the real code. What remains is the field guide:
+`design/anatomy.html`'s annotated plates of the bird and the bubble,
+rebuilt on the real components. The component pages carry each trait's
+rule beside its states, but not the plates themselves.
+
+## Atlas live values
+
+The Spec pages show each source's raw and snapshot types as declared,
+with the mock snapshot's derived values. The board's atlas showed raw
+values from a live scan beside every field, and let fields be tagged
+with a category and a destination. Live values would need the design
+site to read `.scan/`; the tagging was for the data placement audit,
+which was dropped.
+
+## Scene details from the board
+
+What `design/perch.html` draws that the composed views do not yet:
+
+- The ledger's "Roadmap headings" section, each heading with its item
+  count or progress. `Detail` carries no roadmap groups; it needs a field
+  first.
+- The hover tip's summary of where a fence bird lives ("only on GitHub",
+  "one disk only"). The view model says so only in the speech, so a fence
+  bird's tip shows its name, its word and, when it has one, its last
+  commit.
+- The top wire drawn thicker than the rest.
+- A bubble with no room above its bird keeps to the scene's top edge and
+  its tail no longer meets the beak, as on the board. Opening it beside
+  or below the bird is undesigned.
+- Names in the scene scale with it, as on the board: a bird's name is
+  about 9.5px in a 1400px window. Whether they keep a minimum size is
+  undecided.
+
+## Detail page meta line
+
+The board's detail heading says where a bird lives: its path, its
+forges, its wire. The view model carries the wire and the forge links
+but not the path outside the launch actions; the line waits on a
+`Detail` field for it.
+
+## Ledger summary line
+
+The board's ledger opens with a quiet sentence when nothing waits ("the
+working tree is clean and everything is pushed"). Deriving it in the
+renderer would mean matching ledger labels; it needs a view model field
+first.
+
+## Links inside key files
+
+Markdown on the key-file paper renders relative links as plain anchors,
+which go nowhere. Following a link to another file in the same
+repository would open it on the paper; external links would go to the
+browser through the main process.
 
 ## Public undev release
 

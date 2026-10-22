@@ -32,7 +32,12 @@ import type {
   Snapshot,
   Stall,
 } from "./snapshot.ts";
-import { type FenceSituation, speak, wakingPrefix } from "./speech.ts";
+import {
+  type FenceSituation,
+  type SpeechSubject,
+  speak,
+  wakingPrefix,
+} from "./speech.ts";
 
 export type { HealthLevel };
 
@@ -676,6 +681,25 @@ function lastTouchedHours(item: Item, scannedAt: Date): number | null {
   return newest === undefined ? null : hoursSince(newest, scannedAt);
 }
 
+/** Everything a bird's speech is chosen from, read off its snapshot item and the config. */
+export function speechSubjectFor(
+  item: Item,
+  config: Config,
+  scannedAt: Date,
+): SpeechSubject {
+  const git = readable<GitData>(item.sources.git);
+  return {
+    fence: wireFor(config, item.id) === null ? fenceSituation(item) : null,
+    causes: deriveHealth(item).causes,
+    activity: git ? activityOf[git.activity] : null,
+    branch: git?.branch ?? null,
+    defaultBranch: git?.defaultBranch ?? null,
+    unpushedCount: git?.unpushedCount ?? 0,
+    openItems: openItemsOf(readable<RoadmapData>(item.sources.roadmap)),
+    lastTouchedHours: lastTouchedHours(item, scannedAt),
+  };
+}
+
 /** One bird, before it is placed: its position is set when the wire is ordered. */
 export function deriveBird(
   item: BirdItem,
@@ -691,16 +715,7 @@ export function deriveBird(
   const name = config.items[item.id]?.name ?? item.name;
   const outstanding = openItemsOf(readable<RoadmapData>(item.sources.roadmap));
   const tier = importanceFor(config, item.id);
-  const speech = speak({
-    fence: adopted ? null : fenceSituation(item),
-    causes: health.causes,
-    activity,
-    branch: git?.branch ?? null,
-    defaultBranch: git?.defaultBranch ?? null,
-    unpushedCount: git?.unpushedCount ?? 0,
-    openItems: outstanding,
-    lastTouchedHours: lastTouchedHours(item, scannedAt),
-  });
+  const speech = speak(speechSubjectFor(item, config, scannedAt));
   const sleepsAtNight =
     !adopted || (mood === "content" && activity !== "editing");
   return {
@@ -759,7 +774,7 @@ const moodRank: Record<Mood, number> = {
 };
 
 /** Along a wire: the worst mood leftmost, then the more important, then by name. */
-function compareOnWire(a: Bird, b: Bird): number {
+export function compareOnWire(a: Bird, b: Bird): number {
   return (
     moodRank[a.mood] - moodRank[b.mood] ||
     a.size.rank - b.size.rank ||

@@ -334,18 +334,20 @@ export function aggregate(
   const idOf = new Map(
     join.projects.map((project, index) => [project, items[index]?.id ?? ""]),
   );
-  items.push({
-    id: serverItemId,
-    name: config.server.name,
-    kind: "server",
-    path: null,
-    importance: importanceFor(config, serverItemId),
-    liveSources: [],
-    presences: { local: null, forges: [] },
-    flags: [],
-    expectations: [],
-    sources: files.kuma ? { kuma: deriveKuma(files.kuma.data) } : {},
-  });
+  if (config.server !== null) {
+    items.push({
+      id: serverItemId,
+      name: config.server.name,
+      kind: "server",
+      path: null,
+      importance: importanceFor(config, serverItemId),
+      liveSources: [],
+      presences: { local: null, forges: [] },
+      flags: [],
+      expectations: [],
+      sources: files.kuma ? { kuma: deriveKuma(files.kuma.data) } : {},
+    });
+  }
   for (const item of items) {
     item.liveSources = input.liveSources
       .filter((source) => source.appliesTo(item))
@@ -391,9 +393,10 @@ export function aggregate(
     forges[forge] = listing;
   }
 
-  const sources = {} as Record<PolledSourceName, SourceStatus>;
+  const sources: Partial<Record<PolledSourceName, SourceStatus>> = {};
   for (const name of polledSourceOrder) {
-    sources[name] = sourceStatus(bundle.status.sources[name]);
+    const raw = bundle.status.sources[name];
+    if (raw !== undefined) sources[name] = sourceStatus(raw);
   }
   const includes = files.local?.data.includes ?? {};
   return {

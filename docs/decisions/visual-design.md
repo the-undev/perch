@@ -108,8 +108,12 @@ button through to the zoomed detail. Verdicts:
 ## Open
 
 - Aviary V carries the fixes above; verdict pending.
-- The ♪ must scale with the bird; the fixed-size note reads tiny on a
-  big bird (field guide verdict).
+- Scene fixes from the field guide: the ♪ scales with the bird and
+  rises just off the beak tip, not over the head; birds stand on the
+  wire (feet end 2 units below the origin, so the perch point is
+  2 × scale above the wire line), where today the legs pass through
+  it; legs end in little gripping toes; the bubble tail's tip meets
+  the beak tip exactly.
 - The two-tab structure (aviary overview, shell working view) is pending a
   proper test.
 - The shell overview as per-category aggregates, if still needed once the

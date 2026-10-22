@@ -1,6 +1,7 @@
 {
   "name": "@perch/desktop",
   "productName": "perch",
+  "desktopName": "perch.desktop",
   "description": "Birds on wires: the state of everything in progress on this machine.",
   "private": true,
   "version": "0.1.0",
@@ -9,6 +10,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "dist": "electron-vite build && electron-builder --linux --publish never",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run"
   },

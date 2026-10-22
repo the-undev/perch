@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perch Field Guide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* The field guide: what every part of a bird and its bubble means, as
+   annotated plates. Values are illustrative (skiff's stalled flight);
+   the rules under each label come from docs/decisions/. */
+:root {
+	--display: "Bricolage Grotesque", system-ui, sans-serif;
+	--body: "Figtree", system-ui, sans-serif;
+	color-scheme: dark;
+	--bg: #101214; --band: #15181b; --card: #1a1e22; --edge: #2b3036; --edge-hi: #3e454d;
+	--ink: #ece7db; --muted: #a09a8c; --faint: #6e6960; --accent: #b9b2a2;
+	--green: #66bb86; --amber: #d8a845; --red: #e25d4f;
+	--body-c: #272b31; --sky-top: #0d1016; --sky-low: #1a1d24; --horizon: #23262d; --wire: #3a3e46;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; }
+.page { max-width: 1480px; margin: 0 auto; padding: 28px max(24px, env(safe-area-inset-right, 0px)) 60px max(24px, env(safe-area-inset-left, 0px)); }
+h1 { font: 700 30px var(--display); margin: 0; }
+.page > p { color: var(--muted); max-width: 72ch; line-height: 1.6; }
+h2 { font: 700 20px var(--display); margin: 38px 0 4px; }
+.plate-sub { color: var(--faint); font-size: 13px; margin-bottom: 12px; }
+.plate { position: relative; border: 1px solid var(--edge); border-radius: 14px; overflow: hidden; }
+.plate.sky { background: linear-gradient(var(--sky-top), var(--sky-low) 72%, var(--horizon)); }
+.plate.flat { background: var(--band); }
+.plate svg.scene { display: block; width: 100%; height: auto; }
+.note h4 { font: 700 13px var(--display); margin: 0 0 4px; color: var(--ink); }
+.note p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.note .rule { color: var(--faint); font-size: 10.5px; margin-top: 4px; }
+
+/* Plate II: the bubble is real markup, annotated by an overlay. */
+#plate2 { height: 660px; }
+#plate2 .overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#plate2 .note { position: absolute; width: 300px; background: var(--card); border: 1px solid var(--edge); border-radius: 10px; padding: 11px 13px; }
+#bubble {
+	position: absolute; left: 480px; top: 110px; width: 470px;
+	background: var(--ink); color: #2a2e35; border-radius: 18px;
+	padding: 18px 20px 16px; font-size: 15px; line-height: 1.55;
+	box-shadow: 0 18px 50px -12px rgb(0 0 0 / 0.8);
+}
+#bubble .who { font: 700 19px var(--display); color: #14171b; display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+#bubble .state { font: 600 11px var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: #8f6d14; }
+#bubble p.say { margin: 0; }
+#bubble .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
+#bubble .chips span { background: #ddd7c9; border-radius: 999px; padding: 4px 12px; font-size: 12.5px; font-weight: 600; color: #3a3e45; font-variant-numeric: tabular-nums; }
+#bubble .chips span.bad { background: #ecc0b8; color: #8c2619; }
+#bubble .brow { display: flex; gap: 9px; margin-top: 14px; align-items: center; }
+#bubble .brow button { display: inline-flex; align-items: center; background: #22262c; border: 0; color: var(--ink); font: 500 13px var(--body); border-radius: 8px; padding: 9px 11px; }
+#bubble .brow button svg { width: 15px; height: 15px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#bubble .brow .more { margin-left: auto; background: #14171b; font-weight: 600; padding: 9px 15px; }
+#bubble .tail { position: absolute; bottom: -29px; left: 48px; width: 48px; height: 32px; }
+</style>
+</head>
+<body>
+<div class="page">
+	<h1>Perch Field Guide</h1>
+	<p>What every part of a bird carries, and what it says when you listen.
+	The example throughout is skiff as scanned: clean and pushed, but
+	parked on a feature branch for seven weeks, so its bird is restless.
+	Every threshold shown is a default; each bird takes its own from
+	config.</p>
+
+	<h2>Plate I · the bird</h2>
+	<div class="plate-sub">Tier A: read without clicking. Answers: does anything need me, is anything at risk, is the rest quietly fine.</div>
+	<div class="plate sky"><svg class="scene" id="plate1" viewBox="0 0 1480 820"></svg></div>
+
+	<h2>Plate II · the bubble</h2>
+	<div class="plate-sub">Tier B: click a bird and listen. The speech is the why behind the colour; the chips are the numbers it carries.</div>
+	<div class="plate flat" id="plate2">
+		<svg class="overlay" id="overlay" viewBox="0 0 1480 660" preserveAspectRatio="none"></svg>
+		<div id="bubble">
+			<div class="who">Skiff<span class="state">restless</span></div>
+			<p class="say">I've been parked on extension-popup-ia for seven
+			weeks. Everything's pushed and safe, but the flight's gone
+			quiet.</p>
+			<div class="chips"><span>ci success</span><span>2 open PRs</span><span>3 tickets</span><span>12 open items</span><span class="bad">1 bug</span></div>
+			<div class="brow">
+				<button title="zellij tab"><svg viewBox="0 0 24 24"><path d="M4 17l6-5-6-5"/><path d="M12 19h8"/></svg></button>
+				<button title="VS Code"><svg viewBox="0 0 24 24"><path d="M8 6l-6 6 6 6"/><path d="M16 6l6 6-6 6"/></svg></button>
+				<button title="Files"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+				<button class="more">the full story →</button>
+			</div>
+			<svg class="tail" viewBox="0 0 44 30"><path d="M 6 0 Q 14 18 2 29 Q 22 22 34 2 Z" fill="var(--ink)"/></svg>
+		</div>
+	</div>
+</div>
+<script>
+const svgNS = "http://www.w3.org/2000/svg";
+const el = (parent, name, attrs) => {
+	const n = document.createElementNS(svgNS, name);
+	for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+	parent.appendChild(n);
+	return n;
+};
+
+/* The bird, drawn once at a given scale, restless amber like skiff. */
+function bird(parent, x, y, s, breast) {
+	const g = el(parent, "g", { transform: `translate(${x} ${y}) scale(${s})` });
+	el(g, "line", { x1: -6, y1: -8, x2: -7, y2: 2, stroke: "#4a4e55", "stroke-width": 2.4 });
+	el(g, "line", { x1: 6, y1: -8, x2: 7, y2: 2, stroke: "#4a4e55", "stroke-width": 2.4 });
+	el(g, "path", { d: "M -16 -22 L -42 -10 L -38 -20 L -44 -26 L -20 -32 Z", fill: "var(--body-c)" });
+	el(g, "ellipse", { cx: 0, cy: -26, rx: 23, ry: 19, fill: "var(--body-c)" });
+	el(g, "path", { d: "M 10 -14 A 18 16 0 0 0 20 -34 A 23 19 0 0 1 2 -8 Z", fill: breast });
+	el(g, "circle", { cx: 14, cy: -30, r: 5.5, fill: breast, opacity: 0.9 });
+	el(g, "circle", { cx: 16, cy: -44, r: 11.5, fill: "var(--body-c)" });
+	el(g, "path", { d: "M 26 -45 L 37 -42 L 26 -39 Z", fill: "var(--accent)" });
+	el(g, "circle", { cx: 19.5, cy: -46, r: 1.8, fill: "#0d0f12" });
+	el(g, "path", { d: "M -14 -28 Q 2 -36 8 -24 Q -2 -16 -14 -28 Z", fill: "#00000022" });
+	return g;
+}
+
+/* A callout: a card of text and a line to its anchor on the drawing. */
+function note(svg, { x, y, w = 300, h = 120, ax, ay, title, text, rule }) {
+	const side = ax >= x + w ? x + w : ax <= x ? x : x + w / 2;
+	const sy = (ax >= x + w || ax <= x) ? y + 34 : (ay > y ? y + h : y);
+	el(svg, "line", { x1: side, y1: sy, x2: ax, y2: ay, stroke: "var(--faint)", "stroke-width": 1.2 });
+	el(svg, "circle", { cx: ax, cy: ay, r: 3.5, fill: "none", stroke: "var(--faint)", "stroke-width": 1.2 });
+	const f = el(svg, "foreignObject", { x, y, width: w, height: h });
+	const d = document.createElement("div");
+	d.className = "note";
+	d.setAttribute("style", "background: var(--card); border: 1px solid var(--edge); border-radius: 10px; padding: 11px 13px; height: auto;");
+	d.innerHTML = `<h4>${title}</h4><p>${text}</p>${rule ? `<div class="rule">${rule}</div>` : ""}`;
+	f.appendChild(d);
+}
+
+/* ---------- Plate I ---------- */
+const p1 = document.getElementById("plate1");
+el(p1, "path", { d: "M -20 528 Q 740 560 1500 528", stroke: "var(--wire)", "stroke-width": 5, fill: "none" });
+bird(p1, 740, 545, 6, "var(--amber)");
+const lbl = el(p1, "text", { x: 740, y: 625, "text-anchor": "middle", fill: "var(--muted)", "font-size": 19, "font-family": "var(--body)", "font-weight": 500 });
+lbl.textContent = "Skiff";
+const note1 = el(p1, "text", { x: 905, y: 180, "text-anchor": "middle", fill: "var(--accent)", "font-size": 26 });
+note1.textContent = "♪";
+
+note(p1, {
+	x: 60, y: 90, ax: 620, ay: 300,
+	title: "Size · importance",
+	text: "The tier from config sets the bird's base size and which wire it sits on. Machine and home outrank projects.",
+	rule: "grouping.md",
+});
+note(p1, {
+	x: 60, y: 280, ax: 580, ay: 395,
+	title: "Plumpness · outstanding work",
+	text: "More open roadmap items and tickets means a plumper bird, capped so nobody bursts.",
+	rule: "question 5 at a glance, exact numbers in the bubble",
+});
+note(p1, {
+	x: 60, y: 470, ax: 485, ay: 425,
+	title: "Restlessness · unhappiness in motion",
+	text: "Everyone bobs gently. The unhappier the bird, the more it fidgets, and a distressed bird's tail flicks. Content birds barely move.",
+	rule: "motion stays subtle; reduced motion honoured",
+});
+note(p1, {
+	x: 1120, y: 70, ax: 912, ay: 168,
+	title: "♪ · being edited",
+	text: "The song means your hands are in its files right now. Activity is behaviour, not feeling: a separate axis from health.",
+	rule: "daily-glance.md: activity tiers",
+});
+note(p1, {
+	x: 1120, y: 240, ax: 860, ay: 270,
+	title: "Eye · the scene is live",
+	text: "The sky follows the real clock. At night eyes close and nobody sings.",
+});
+note(p1, {
+	x: 1120, y: 420, ax: 828, ay: 365,
+	title: "Breast colour · health, worn as mood",
+	text: "Green content, amber restless, red distressed. From CI failures, open bugs, unsafe work (24h amber, 72h red), and stalled flight (7d amber, 30d red). Skiff is amber: parked mid-feature.",
+	rule: "worst input wins · per-bird thresholds in config",
+});
+note(p1, {
+	x: 330, y: 680, ax: 520, ay: 540, w: 360,
+	title: "Position · who needs you first",
+	text: "Higher wire = more important. Leftmost on its wire = needs you first. The fence below holds the unadopted, dimmed.",
+});
+note(p1, {
+	x: 820, y: 680, ax: 760, ay: 612, w: 300,
+	title: "Name",
+	text: "The display name from config; the bird is the project, not the repository.",
+});
+
+/* ---------- Plate II ---------- */
+const ov = document.getElementById("overlay");
+bird(document.getElementById("overlay"), 480, 580, 3.2, "var(--amber)");
+note(ov, {
+	x: 70, y: 60, ax: 492, ay: 150,
+	title: "Name and mood word",
+	text: "The same mood the colour wears: content, restless, distressed. Not a second status, the same health spoken.",
+});
+note(ov, {
+	x: 70, y: 240, ax: 492, ay: 235,
+	title: "The speech · questions 1, 2, 6",
+	text: "The why behind the colour, in the bird's voice. Loss risk, stalled flight, bugs, or quiet contentment. Tone follows mood; at night you wake it.",
+	rule: "only feelings here, never inventory",
+});
+note(ov, {
+	x: 70, y: 440, ax: 538, ay: 420,
+	title: "The tail points at the speaker",
+	text: "The bubble grows from the clicked bird's beak and dismisses with Escape or a click elsewhere.",
+});
+note(ov, {
+	x: 1010, y: 90, ax: 938, ay: 302,
+	title: "Chips · questions 4 and 5, real numbers",
+	text: "CI state, open pull requests, forge tickets, open roadmap items, bugs called out. Real forge data, not inference; the Claude session time lives on the detail page instead.",
+	rule: "tickets need the forge issues source, see roadmap",
+});
+note(ov, {
+	x: 1010, y: 330, ax: 938, ay: 356,
+	title: "Actions · tend to it",
+	text: "Launch actions open the terminal, editor or files without perch mutating anything. The full story zooms into the detail page, tier C.",
+	rule: "launch-actions.md · non-mutating in v1",
+});
+</script>
+</body>
+</html>

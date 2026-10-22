@@ -86,7 +86,10 @@ anywhere) is TBD.
 ### The bubble's two surfaces
 
 The speech is the bird's voice and carries only 1, 2 and 6, in words:
-how it feels and why. The chips beneath are the facts it is carrying:
-the numbers for 3, 4 and 5 (last session, open PRs and CI state, open
-item counts). Anything that needs a list or names, which PRs, which
-items, belongs to the detail page.
+how it feels and why. The chips beneath are the facts it is carrying,
+the numbers for 4 and 5, from real data rather than inference: CI
+state, open pull requests, forge tickets (a wanted source, see the
+roadmap), and roadmap open items with bugs called out. The Claude
+session time is not a chip; it lives on the detail page. Anything that
+needs a list or names, which PRs, which items, belongs to the detail
+page.

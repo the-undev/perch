@@ -103,6 +103,16 @@ gap. The app gathers everything from day one but displays only what an
 island earns, so the temptation to surface too much is resisted
 structurally. See `docs/decisions/bird-language.md`.
 
+## Forge issues source
+
+Tickets from GitHub and Forgejo as a work source beside the in-repo
+roadmap, feeding the bubble's chips and the detail page. Forgejo's API
+serves them and the tokens already carry read:issue. GitHub fine-grained
+tokens need the Issues read permission added, a regenerate per
+docs/tokens.md. GitHub's issues listing includes pull requests; the
+gatherer filters them out. Not in use today on any repo, gathered
+anyway once built.
+
 ## Public undev release
 
 If the bird language proves itself, perch moves to undev as a public

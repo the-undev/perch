@@ -5,8 +5,12 @@ they land.
 
 ## First build
 
-Scaffold and the sources in the spec. The order is for the build session to
-decide; the spec is the end state.
+The desktop app is a placeholder window. What remains is the spec, wired
+into it: the periodic scan in the main process and its snapshot cache, the
+tray and its menu, the launch arguments a second instance hands over, the
+glance window and the detail views, the autostart mechanism, and an app icon
+(the AppImage carries Electron's default). The order is for the build session
+to decide; the spec is the end state.
 
 ## Claude Code integration
 
@@ -89,6 +93,12 @@ Replace the Plasma custom shortcut with an in-app one once Electron's
 global shortcuts work under Wayland through the GlobalShortcuts portal.
 Until then the Plasma route needs no portal code and works on the one
 desktop this runs on.
+
+## AppImage auto-update
+
+electron-updater can replace the running AppImage with the latest one from
+the GitHub releases that CI publishes. Parked until updating by hand becomes
+a chore.
 
 ## Data placement audit
 

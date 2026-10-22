@@ -42,6 +42,9 @@ Decided 20 October 2026.
 - Not everything refreshes at one cadence. Archived forge repos change
   rarely, so they sit in a slower lane with their own interval; the config
   carries both intervals. Decided 21 October 2026.
+- The periodic scan runs inside the Electron main process on a timer while
+  the app runs in the tray. There is no separate service or systemd unit to
+  install. Wiring it is a later build phase. Decided 22 October 2026.
 
 ## Open
 

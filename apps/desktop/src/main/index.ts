@@ -6,7 +6,7 @@ import { loadConfig } from "@perch/core/config.ts";
 import { runCommand } from "@perch/core/exec.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
 import { readSnapshot, runAggregate, runGather } from "@perch/core/scan.ts";
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, Menu, shell, Tray } from "electron";
 import { channels, type PerchState } from "../shared/ipc.ts";
 import { appPaths, examplePathFor } from "./app-paths.ts";
 import { createAppState } from "./app-state.ts";
@@ -16,11 +16,16 @@ import { iconPaths, resourceDirFor } from "./icons.ts";
 import { registerIpc } from "./ipc.ts";
 import { createSpawnDetached, launch } from "./launch.ts";
 import { createScanScheduler } from "./scan-scheduler.ts";
+import { trayMenu } from "./tray-menu.ts";
+import { hideOnClose, present } from "./window-presence.ts";
 
 /** A focus scans only once this long has passed since the last scan finished. */
 const focusGapMs = 60_000;
 /** Without any config, the next attempt to read it and scan comes this soon. */
 const noConfigRetryMs = 60_000;
+
+/** Held for the life of the app: a tray icon that is collected leaves the tray. */
+let tray: Tray | null = null;
 
 function createWindow(icon: string): BrowserWindow {
   const window = new BrowserWindow({
@@ -79,9 +84,7 @@ function start(): void {
   let mainWindow: BrowserWindow | undefined;
   app.on("second-instance", () => {
     if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.show();
-    mainWindow.focus();
+    present(mainWindow, "show");
   });
 
   const config = createConfigStore(() =>
@@ -139,7 +142,12 @@ function start(): void {
   });
   const ready = state.start();
 
-  app.on("before-quit", () => scheduler.stop());
+  // Closing the window hides it; only a quit, from the tray, lets it close.
+  let quitting = false;
+  app.on("before-quit", () => {
+    quitting = true;
+    scheduler.stop();
+  });
 
   void app.whenReady().then(async () => {
     registerIpc({
@@ -151,8 +159,24 @@ function start(): void {
       keyFiles: (birdId) => state.keyFiles(birdId),
       launch: (action) => state.launch(action),
     });
-    mainWindow = createWindow(icons.window);
-    mainWindow.on("focus", () => void ready.then(() => scheduler.focused()));
+    const window = createWindow(icons.window);
+    mainWindow = window;
+    window.on("close", (event) => hideOnClose(event, window, quitting));
+    window.on("focus", () => void ready.then(() => scheduler.focused()));
+
+    tray = new Tray(icons.tray);
+    tray.setToolTip("perch");
+    tray.setContextMenu(
+      Menu.buildFromTemplate(
+        trayMenu({
+          show: () => present(window, "show"),
+          rescan: () => void scheduler.request(),
+          quit: () => app.quit(),
+        }),
+      ),
+    );
+    // On Plasma a left click activates the icon, which Electron reports as a click.
+    tray.on("click", () => present(window, "toggle"));
     await ready;
     scheduler.start();
   });

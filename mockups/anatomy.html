@@ -104,7 +104,7 @@ function bird(parent, x, y, s, breast) {
 	el(g, "line", { x1: -6, y1: -8, x2: -7, y2: 2, stroke: "#4a4e55", "stroke-width": 2.4 });
 	el(g, "line", { x1: 6, y1: -8, x2: 7, y2: 2, stroke: "#4a4e55", "stroke-width": 2.4 });
 	/* Little feet: toes gripping the wire at each leg's end. */
-	el(g, "path", { d: "M -7 2 L -12 4 M -7 2 L -3 4 M 7 2 L 2 4 M 7 2 L 12 4", stroke: "#4a4e55", "stroke-width": 2, fill: "none", "stroke-linecap": "round" });
+	el(g, "path", { d: "M -7 2 L -12 3 M -7 2 L -3 3 M 7 2 L 2 3 M 7 2 L 12 3", stroke: "#4a4e55", "stroke-width": 2, fill: "none", "stroke-linecap": "round" });
 	el(g, "path", { d: "M -16 -22 L -42 -10 L -38 -20 L -44 -26 L -20 -32 Z", fill: "var(--body-c)" });
 	el(g, "ellipse", { cx: 0, cy: -26, rx: 23, ry: 19, fill: "var(--body-c)" });
 	el(g, "path", { d: "M 10 -14 A 18 16 0 0 0 20 -34 A 23 19 0 0 1 2 -8 Z", fill: breast });
@@ -133,46 +133,46 @@ function note(svg, { x, y, w = 300, h = 120, ax, ay, title, text, rule }) {
 /* ---------- Plate I ---------- */
 const p1 = document.getElementById("plate1");
 el(p1, "path", { d: "M -20 528 Q 740 560 1500 528", stroke: "var(--wire)", "stroke-width": 5, fill: "none" });
-/* Feet end 2 units below the origin, so the bird stands 2 × scale above
-   the wire to perch on it rather than through it. */
-bird(p1, 740, 532, 6, "var(--amber)");
+/* The toes end 3 units below the origin, so the bird stands 3 × scale
+   above the wire and the toes rest exactly on it. */
+bird(p1, 740, 526, 6, "var(--amber)");
 const lbl = el(p1, "text", { x: 740, y: 625, "text-anchor": "middle", fill: "var(--muted)", "font-size": 19, "font-family": "var(--body)", "font-weight": 500 });
 lbl.textContent = "Skiff";
 /* The song scales with the bird and rises just off the beak tip. */
-const note1 = el(p1, "text", { x: 1000, y: 245, "text-anchor": "middle", fill: "var(--accent)", "font-size": 58 });
+const note1 = el(p1, "text", { x: 1000, y: 239, "text-anchor": "middle", fill: "var(--accent)", "font-size": 58 });
 note1.textContent = "♪";
 
 note(p1, {
-	x: 60, y: 90, ax: 620, ay: 287,
+	x: 60, y: 90, ax: 620, ay: 281,
 	title: "Size · importance",
 	text: "The tier from config sets the bird's base size and which wire it sits on. Machine and home outrank projects.",
 	rule: "grouping.md",
 });
 note(p1, {
-	x: 60, y: 280, ax: 580, ay: 382,
+	x: 60, y: 280, ax: 580, ay: 376,
 	title: "Plumpness · outstanding work",
 	text: "More open roadmap items and tickets means a plumper bird, capped so nobody bursts.",
 	rule: "question 5 at a glance, exact numbers in the bubble",
 });
 note(p1, {
-	x: 60, y: 470, ax: 485, ay: 412,
+	x: 60, y: 470, ax: 485, ay: 406,
 	title: "Restlessness · unhappiness in motion",
 	text: "Everyone bobs gently. The unhappier the bird, the more it fidgets, and a distressed bird's tail flicks. Content birds barely move.",
 	rule: "motion stays subtle; reduced motion honoured",
 });
 note(p1, {
-	x: 1120, y: 70, ax: 1004, ay: 226,
+	x: 1120, y: 70, ax: 1004, ay: 220,
 	title: "♪ · being edited",
 	text: "The song means your hands are in its files right now. Activity is behaviour, not feeling: a separate axis from health.",
 	rule: "daily-glance.md: activity tiers",
 });
 note(p1, {
-	x: 1120, y: 240, ax: 858, ay: 257,
+	x: 1120, y: 240, ax: 858, ay: 251,
 	title: "Eye · the scene is live",
 	text: "The sky follows the real clock. At night eyes close and nobody sings.",
 });
 note(p1, {
-	x: 1120, y: 420, ax: 824, ay: 352,
+	x: 1120, y: 420, ax: 824, ay: 346,
 	title: "Breast colour · health, worn as mood",
 	text: "Green content, amber restless, red distressed. From CI failures, open bugs, unsafe work (24h amber, 72h red), and stalled flight (7d amber, 30d red). Skiff is amber: parked mid-feature.",
 	rule: "worst input wins · per-bird thresholds in config",
@@ -207,7 +207,7 @@ function buildPlate2() {
 	const [tipX, tipY] = pt(bub.querySelector(".tail").getBoundingClientRect(), 0.1, 1);
 	const s = 3.2;
 	const birdX = tipX - 37 * s, birdY = tipY + 42 * s + 6;
-	el(ov, "line", { x1: birdX - 150, y1: birdY + 2 * s, x2: birdX + 150, y2: birdY + 2 * s, stroke: "var(--wire)", "stroke-width": 4 });
+	el(ov, "line", { x1: birdX - 150, y1: birdY + 3 * s, x2: birdX + 150, y2: birdY + 3 * s, stroke: "var(--wire)", "stroke-width": 4 });
 	bird(ov, birdX, birdY, s, "var(--amber)");
 	const [whoX, whoY] = pt(bub.querySelector(".who").getBoundingClientRect(), 0, 0.5);
 	const [sayX, sayY] = pt(bub.querySelector(".say").getBoundingClientRect(), 0, 0.5);

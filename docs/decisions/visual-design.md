@@ -110,8 +110,8 @@ button through to the zoomed detail. Verdicts:
 - Aviary V carries the fixes above; verdict pending.
 - Scene fixes from the field guide: the ♪ scales with the bird and
   rises just off the beak tip, not over the head; birds stand on the
-  wire (feet end 2 units below the origin, so the perch point is
-  2 × scale above the wire line), where today the legs pass through
+  wire (the toes end 3 units below the origin, so the perch point is
+  3 × scale above the wire line), where today the legs pass through
   it; legs end in little gripping toes; the bubble tail's tip meets
   the beak tip exactly.
 - The two-tab structure (aviary overview, shell working view) is pending a

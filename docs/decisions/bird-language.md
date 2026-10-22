@@ -23,6 +23,9 @@ Status: open
 - The app starts by gathering all the data but aggregating and displaying
   little. Surfacing decisions follow a deliberate audit of everything
   gathered, never the other way round.
+- The bird speaking as an entity is itself motivating: character and
+  gentle gamification are part of the product, not decoration. The owner
+  wants to keep coming back because something with a face is talking.
 
 ## Wanted, 21 October 2026
 

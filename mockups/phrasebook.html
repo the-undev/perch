@@ -46,7 +46,7 @@ h2.mood .w.green { color: var(--green); } h2.mood .w.amber { color: var(--amber)
 	position: relative; background: var(--paper); color: #2a2e35;
 	border-radius: 16px; padding: 13px 16px 12px; font-size: 13.5px; line-height: 1.5;
 	box-shadow: 0 16px 40px -14px rgb(0 0 0 / 0.7);
-	margin-bottom: 34px;
+	margin-bottom: 64px;
 }
 .bub .who { font: 700 15px var(--display); color: #14171b; display: flex; align-items: baseline; gap: 10px; margin-bottom: 3px; }
 .bub .state { font: 600 10px var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: #6e695f; }
@@ -56,7 +56,8 @@ h2.mood .w.green { color: var(--green); } h2.mood .w.amber { color: var(--amber)
 .bub .chips span { background: #ddd7c9; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: #3a3e45; font-variant-numeric: tabular-nums; }
 .bub .chips span.bad { background: #ecc0b8; color: #8c2619; }
 .bub .tailw { position: absolute; bottom: -26px; left: 34px; width: 42px; height: 28px; }
-.bub svg.birdy { position: absolute; bottom: -58px; left: 86px; width: 44px; height: 34px; overflow: visible; }
+/* The speaker: positioned so the beak tip meets the tail tip. */
+.bub svg.birdy { position: absolute; bottom: -49px; left: -5px; width: 44px; height: 34px; overflow: visible; }
 .candidate .trigger .nm::after { content: "  candidate, needs its fact"; color: var(--amber); font: 600 10.5px var(--body); letter-spacing: 0.04em; margin-left: 8px; }
 </style>
 </head>

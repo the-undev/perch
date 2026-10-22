@@ -3,14 +3,22 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
-## First build
+## Session restore beside autostart
 
-The window shows the aviary and the detail from scans in the main process.
-What remains is the polish around it: the tray and its menu (show, rescan,
-quit) with the window hiding on close, the autostart mechanism, the launch
-arguments a second instance hands over (`--toggle`, `--show`, `--scan`), the
-Plasma shortcut bound to `perch --toggle`, and an app icon (the AppImage
-carries Electron's default).
+Plasma's session restore may relaunch perch at login as well as the
+autostart entry. A plain launch would then hand over to the autostarted
+instance and show the window. Not observed yet; if it happens, exclude
+perch in Plasma's session settings or have the restored launch pass
+`--hidden`.
+
+## Focus on show under Wayland
+
+`--toggle` hides the window only when it is in front, which needs KWin
+to give it focus when shown. Whether KWin's focus stealing prevention
+lets a window shown from the tray or a second launch take focus is not
+checked yet. If it does not, a second toggle shows the window again
+instead of hiding it, and the show would need the launch's activation
+token.
 
 ## Archived scan lane
 

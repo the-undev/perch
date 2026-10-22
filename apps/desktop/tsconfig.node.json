@@ -24,6 +24,7 @@
     "vitest.config.ts",
     "src/main",
     "src/preload",
-    "src/shared"
+    "src/shared",
+    "scripts"
   ]
 }

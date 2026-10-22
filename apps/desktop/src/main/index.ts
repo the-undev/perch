@@ -6,26 +6,34 @@ import { loadConfig } from "@perch/core/config.ts";
 import { runCommand } from "@perch/core/exec.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
 import { readSnapshot, runAggregate, runGather } from "@perch/core/scan.ts";
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, Menu, shell, Tray } from "electron";
 import { channels, type PerchState } from "../shared/ipc.ts";
 import { appPaths, examplePathFor } from "./app-paths.ts";
 import { createAppState } from "./app-state.ts";
+import { handOver, parseArguments } from "./command-line.ts";
 import { createConfigStore } from "./config-store.ts";
 import { isWebUrl } from "./external-links.ts";
+import { iconPaths, resourceDirFor } from "./icons.ts";
 import { registerIpc } from "./ipc.ts";
 import { createSpawnDetached, launch } from "./launch.ts";
 import { createScanScheduler } from "./scan-scheduler.ts";
+import { trayMenu } from "./tray-menu.ts";
+import { hideOnClose, present } from "./window-presence.ts";
 
 /** A focus scans only once this long has passed since the last scan finished. */
 const focusGapMs = 60_000;
 /** Without any config, the next attempt to read it and scan comes this soon. */
 const noConfigRetryMs = 60_000;
 
-function createWindow(): BrowserWindow {
+/** Held for the life of the app: a tray icon that is collected leaves the tray. */
+let tray: Tray | null = null;
+
+function createWindow(icon: string, showWhenReady: boolean): BrowserWindow {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
     show: false,
+    icon,
     autoHideMenuBar: true,
     backgroundColor: "#101214",
     webPreferences: {
@@ -35,7 +43,8 @@ function createWindow(): BrowserWindow {
       nodeIntegration: false,
     },
   });
-  window.once("ready-to-show", () => window.show());
+  // Started with --hidden, the window waits for the tray or a second launch to show it.
+  if (showWhenReady) window.once("ready-to-show", () => window.show());
 
   // Links leave for the browser; the window itself never navigates away from the app.
   window.webContents.setWindowOpenHandler(({ url }) => {
@@ -63,6 +72,9 @@ function start(): void {
     home,
     examplePathFor(app.isPackaged, process.resourcesPath, import.meta.dirname),
   );
+  const icons = iconPaths(
+    resourceDirFor(app.isPackaged, process.resourcesPath, import.meta.dirname),
+  );
   // Before anything reads it: the single-instance lock lives in userData.
   app.setPath("userData", paths.userData);
 
@@ -71,13 +83,8 @@ function start(): void {
     return;
   }
 
+  const launchArguments = parseArguments(process.argv);
   let mainWindow: BrowserWindow | undefined;
-  app.on("second-instance", () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.show();
-    mainWindow.focus();
-  });
 
   const config = createConfigStore(() =>
     loadConfig({
@@ -134,7 +141,22 @@ function start(): void {
   });
   const ready = state.start();
 
-  app.on("before-quit", () => scheduler.stop());
+  // A second launch quits at once; the running instance does what its command line asks.
+  app.on("second-instance", (_event, commandLine) => {
+    handOver(parseArguments(commandLine), {
+      present: (request) => {
+        if (mainWindow !== undefined) present(mainWindow, request);
+      },
+      rescan: () => void scheduler.request(),
+    });
+  });
+
+  // Closing the window hides it; only a quit, from the tray, lets it close.
+  let quitting = false;
+  app.on("before-quit", () => {
+    quitting = true;
+    scheduler.stop();
+  });
 
   void app.whenReady().then(async () => {
     registerIpc({
@@ -146,8 +168,24 @@ function start(): void {
       keyFiles: (birdId) => state.keyFiles(birdId),
       launch: (action) => state.launch(action),
     });
-    mainWindow = createWindow();
-    mainWindow.on("focus", () => void ready.then(() => scheduler.focused()));
+    const window = createWindow(icons.window, !launchArguments.hidden);
+    mainWindow = window;
+    window.on("close", (event) => hideOnClose(event, window, quitting));
+    window.on("focus", () => void ready.then(() => scheduler.focused()));
+
+    tray = new Tray(icons.tray);
+    tray.setToolTip("perch");
+    tray.setContextMenu(
+      Menu.buildFromTemplate(
+        trayMenu({
+          show: () => present(window, "show"),
+          rescan: () => void scheduler.request(),
+          quit: () => app.quit(),
+        }),
+      ),
+    );
+    // On Plasma a left click activates the icon, which Electron reports as a click.
+    tray.on("click", () => present(window, "toggle"));
     await ready;
     scheduler.start();
   });

@@ -194,13 +194,26 @@ read at run time, its CLI prompts. Creation and replacement runbook:
 
 ## Behaviour
 
-- A normal window. One instance: a second launch shows and focuses the
-  running one.
+- A normal window and an icon in the tray. Closing the window hides it.
+  The tray menu shows it, rescans and quits; activating the icon toggles
+  the window.
+- Starts at login from an XDG autostart entry running `perch --hidden`:
+  the window hidden, the icon in the tray. See
+  [decisions/window-presentation.md](decisions/window-presentation.md).
+- One instance. A second launch hands its arguments to the running one
+  and quits: `--toggle` shows and focuses, or hides when already in
+  front; `--show` only shows; `--scan` rescans. With none of them it
+  shows.
+- The global shortcut is a Plasma custom shortcut bound to
+  `perch --toggle`. In-app global shortcuts on Wayland are parked, see
+  the roadmap.
 - The scan runs in the Electron main process: at start, then
   `[scan] interval_minutes` after each scan finishes, on window focus
-  once a minute has passed since the last scan, and when the header's
-  scan line is pressed. One scan at a time; a request during a scan
-  joins it. The config is read again before every scan.
+  once a minute has passed since the last scan, and on request: the
+  header's scan line, Rescan in the tray, `perch --scan`. One scan at a
+  time; a request during a scan joins it. The config is read again
+  before every scan. Archived repositories are read on the same
+  interval; a slower lane is parked, see the roadmap.
 - The latest snapshot is cached in `~/.local/share/perch/scan/`; the
   window renders from it at start and the main process pushes the fresh
   aviary when a scan finishes. Before any snapshot exists the window
@@ -222,18 +235,6 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   opens one in the project's directory; a session that is not running
   opens in the configured terminal. It does not raise the terminal's
   window.
-
-Next phase, not built yet:
-
-- Starts at login, window hidden, icon in the tray. Tray menu: show,
-  rescan, quit. Closing the window hides it.
-- A second launch hands its arguments to the running one: `--toggle`
-  shows and focuses, or hides when already in front; `--show` only
-  shows; `--scan` rescans.
-- The global shortcut is a Plasma custom shortcut bound to
-  `perch --toggle`. In-app global shortcuts on Wayland are parked, see
-  the roadmap.
-- Archived data refreshes in a slower lane, see the roadmap.
 
 ## Standing decisions
 
@@ -257,9 +258,10 @@ in `apps/desktop` with electron-vite, React, TypeScript strict, Tailwind
 v4, TanStack Router and Query, shadcn for basics, Biome and vitest.
 `pnpm check` covers lint, types and tests, and CI runs it on every push
 and pull request. electron-builder packages a Linux AppImage; a `v*` tag
-releases it on GitHub. The autostart mechanism is `TBD`: a desktop entry
-or a systemd user unit from the dotfiles, decided once tray behaviour
-under session restore is known.
+releases it on GitHub. The app icon and the tray icon are drawn in
+`apps/desktop/resources/icon.svg` and `tray.svg`; `pnpm icons` renders
+their PNGs. The desktop entries for the launcher and autostart sit
+beside them, and the README says how to link them.
 
 ## Environment, as of 22 October 2026
 

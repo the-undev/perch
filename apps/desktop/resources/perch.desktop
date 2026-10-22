@@ -1,0 +1,10 @@
+# The launcher's entry: a plain launch shows the window, or hands over to the running instance.
+# Link into ~/.local/share/applications/, see the README.
+[Desktop Entry]
+Type=Application
+Name=perch
+Comment=Birds on wires: the state of everything in progress on this machine
+Exec=perch
+Icon=perch
+Terminal=false
+Categories=Development;

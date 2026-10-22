@@ -79,8 +79,11 @@ pushed state, TanStack Router holds where the camera points (`/` and
 (`src/preload`) exposes the calls declared in `src/shared/ipc.ts`. Main
 tests run in node, renderer tests in jsdom against a fake preload API
 (`fake-api.ts`). Workspace packages are devDependencies because
-electron-vite bundles them. The tray, autostart, second-instance arguments
-and the shortcut are the next phase.
+electron-vite bundles them. The app lives in the tray (`tray-menu.ts`):
+closing hides the window, and a second launch hands its arguments over
+(`command-line.ts`, `window-presence.ts`). `resources/` holds the icon
+SVGs, the PNGs `pnpm icons` renders from them, and the desktop entries
+for the launcher and autostart.
 
 `pnpm dev` runs the app, `pnpm design` the design site. `pnpm check` runs Biome over the workspace, then tsc
 and vitest in each package. `pnpm dist` builds the AppImage into

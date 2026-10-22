@@ -1,6 +1,7 @@
 // A stand-in for the preload's API in renderer tests: it answers from what the test gives it,
 // records every call, and pushes states when the test says so.
 
+import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import type { KeyFileSheet, PerchApi, PerchState } from "../../shared/ipc.ts";
 
 export interface FakeApi {
@@ -8,7 +9,7 @@ export interface FakeApi {
   /** Pushes a state to every listener, as a finished scan does. */
   push(state: PerchState): void;
   rescans: number;
-  launches: [string, string][];
+  launches: LaunchAction[];
   keyFileReads: string[];
 }
 
@@ -20,7 +21,6 @@ export function fakeApi(
   let current = initial;
   const fake: FakeApi = {
     api: {
-      appVersion: async () => "9.8.7",
       state: async () => current,
       onState(listener) {
         listeners.add(listener);
@@ -33,8 +33,8 @@ export function fakeApi(
         fake.keyFileReads.push(birdId);
         return sheetsFor(birdId);
       },
-      launch: async (birdId, kind) => {
-        fake.launches.push([birdId, kind]);
+      launch: async (action) => {
+        fake.launches.push(action);
       },
     },
     push(state) {

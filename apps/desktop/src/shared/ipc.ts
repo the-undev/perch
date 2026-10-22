@@ -18,8 +18,6 @@ export interface KeyFileSheet {
 
 /** The calls the renderer can make of the main process, exposed on `window.perch` by the preload. */
 export interface PerchApi {
-  /** The application version, from the desktop package's manifest. */
-  appVersion(): Promise<string>;
   /** The state now: the cached aviary at start, the latest after every scan. */
   state(): Promise<PerchState>;
   /** Calls back with every new state, and returns the call that stops it. */
@@ -28,8 +26,8 @@ export interface PerchApi {
   rescan(): Promise<void>;
   /** A bird's key files, read by the main process; none for a bird the aviary does not hold. */
   keyFiles(birdId: string): Promise<KeyFileSheet[]>;
-  /** Performs a bird's launch action of a kind; a failure arrives as a problem in the state. */
-  launch(birdId: string, kind: LaunchAction["kind"]): Promise<void>;
+  /** Performs a launch action a bird offers; a failure arrives as a problem in the state. */
+  launch(action: LaunchAction): Promise<void>;
 }
 
 /** The calls the main process answers: everything but the pushed state. */
@@ -37,7 +35,6 @@ export type PerchCalls = Omit<PerchApi, "onState">;
 
 /** The IPC channel that carries each call, and the one the state is pushed on. */
 export const channels = {
-  appVersion: "app:version",
   state: "state:get",
   onState: "state:changed",
   rescan: "scan:request",

@@ -19,6 +19,7 @@ export default defineConfig({
           name: "renderer",
           environment: "jsdom",
           include: ["src/renderer/**/*.test.{ts,tsx}"],
+          setupFiles: ["@perch/ui/test-setup.ts"],
         },
       },
     ],

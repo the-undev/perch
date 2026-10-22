@@ -9,6 +9,13 @@ import type { ConfigState, ConfigStore } from "./config-store.ts";
 
 const loaded: LoadedConfig = { config: mockConfig, path: "/config.toml" };
 
+/** A launch action the mock's Perch bird offers. */
+const perchInCode: LaunchAction = {
+  kind: "vscode",
+  verb: "Open in VS Code",
+  path: "/home/owner/dev/perch",
+};
+
 /** A config store whose next read is whatever the test sets. */
 function configStore(first: ConfigState) {
   let state = first;
@@ -142,21 +149,15 @@ describe("the app state", () => {
     expect(published.at(-1)?.scanning).toBe(true);
   });
 
-  it("launches a bird's own action with the config's commands", async () => {
+  it("launches only an action a bird offers, with the config's commands", async () => {
     const { app, deps } = appState();
     await app.start();
 
-    await app.launch("dev/perch", "vscode");
-    await app.launch("dev/nobody", "vscode");
+    await app.launch(perchInCode);
+    await app.launch({ ...perchInCode, path: "/etc" });
 
     expect(deps.launch).toHaveBeenCalledTimes(1);
-    expect(deps.launch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: "vscode",
-        path: "/home/owner/dev/perch",
-      }),
-      mockConfig,
-    );
+    expect(deps.launch).toHaveBeenCalledWith(perchInCode, mockConfig);
   });
 
   it("says when a launch fails, until the next scan", async () => {
@@ -167,7 +168,7 @@ describe("the app state", () => {
     });
     await app.start();
 
-    await app.launch("dev/perch", "vscode");
+    await app.launch(perchInCode);
     expect(published.at(-1)?.problems).toEqual([
       "Open in VS Code failed: spawn code ENOENT",
     ]);

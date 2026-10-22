@@ -138,14 +138,13 @@ function start(): void {
 
   void app.whenReady().then(async () => {
     registerIpc({
-      appVersion: async () => app.getVersion(),
       state: async () => {
         await ready;
         return state.state();
       },
       rescan: () => scheduler.request(),
       keyFiles: (birdId) => state.keyFiles(birdId),
-      launch: (birdId, kind) => state.launch(birdId, kind),
+      launch: (action) => state.launch(action),
     });
     mainWindow = createWindow();
     mainWindow.on("focus", () => void ready.then(() => scheduler.focused()));

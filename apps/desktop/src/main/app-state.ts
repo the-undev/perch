@@ -37,10 +37,22 @@ export interface AppState {
   /** Rereads the config, then gathers and aggregates; failures become problems, never throws. */
   scan(): Promise<void>;
   setScanning(scanning: boolean): void;
-  /** Performs a bird's launch action of a kind; a failure becomes a problem until the next scan. */
-  launch(birdId: string, kind: LaunchAction["kind"]): Promise<void>;
+  /**
+   * Performs a launch action when some bird in the aviary offers it, else nothing; a failure
+   * becomes a problem until the next scan.
+   */
+  launch(action: LaunchAction): Promise<void>;
   /** A bird's key files with what was read from each; none for a bird the aviary does not hold. */
   keyFiles(birdId: string): Promise<KeyFileSheet[]>;
+}
+
+/** Two launch actions are the same when every field is: they are flat records of strings. */
+function sameAction(a: LaunchAction, b: LaunchAction): boolean {
+  const fields = Object.entries(a);
+  return (
+    fields.length === Object.keys(b).length &&
+    fields.every(([key, value]) => b[key as keyof LaunchAction] === value)
+  );
 }
 
 function birdsOf(aviary: Aviary): Bird[] {
@@ -115,10 +127,11 @@ export function createAppState(deps: AppStateDeps): AppState {
       scanning = next;
       publish();
     },
-    async launch(birdId, kind) {
-      const action = bird(birdId)?.detail.actions.find(
-        (candidate) => candidate.kind === kind,
-      );
+    async launch(requested) {
+      const current = aviary();
+      const action = (current === null ? [] : birdsOf(current))
+        .flatMap((candidate) => candidate.detail.actions)
+        .find((candidate) => sameAction(candidate, requested));
       const config = deps.config.current().loaded?.config;
       if (action === undefined || config === undefined) return;
       try {

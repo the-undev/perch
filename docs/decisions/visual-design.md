@@ -124,6 +124,20 @@ quiet green "none" instead of a large 0, counts take tones; dim text
 lifted a contrast step for the dense page; "Unsafe work" renamed
 "In-flight work", facts without editorial.
 
+## Detail view round three, 22 October 2026
+
+The in-world detail (mockups/detail3.html) landed: sky and wire
+continue onto the page, the bird perches on its own page, facts are a
+ruled ledger on the ground, documents are paper with folder tabs. One
+misfit: the admin-style rail no longer belongs. Three follow-ups run as
+separate prototypes: the branch rail (birds perched on a vertical
+branch, names kept), the perch strip (a narrow dock of birds alone),
+and the camera (the aviary as the zoomed-in view, the rail logically
+always present off-frame to the left, revealed by zooming out). A no
+was recorded for removing the rail entirely. Layouts are designed for
+the ultrawide and the small monitor alike; the owner often uses the
+small one as primary.
+
 ## Open
 
 - Aviary V carries the fixes above; verdict pending.

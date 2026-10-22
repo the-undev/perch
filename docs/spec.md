@@ -172,7 +172,8 @@ Details and open questions (composite multi-repo projects among them):
 `~/.config/perch/config.toml`, stowed from the dotfiles so backup is a
 dotfiles push. It holds: the wires as an ordered named list, include
 and ignore paths, forge accounts and addresses, the health windows, the
-two scan lanes, the zellij session defaults, per-project assertions
+two scan lanes, the zellij session defaults, the launch commands (an
+action whose command is left out is not offered), per-project assertions
 (joins, wire, importance, display names, thresholds, expectations, key
 file lists, zellij session names). An entry for an item adopts it. No
 secrets, ever. Every field is shown in `config.example.toml`.

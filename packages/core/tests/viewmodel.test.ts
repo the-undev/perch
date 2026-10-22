@@ -692,6 +692,19 @@ describe("the detail", () => {
     ]);
   });
 
+  it("leaves out an action whose command config leaves out", async () => {
+    const config = await adoptAll(["undev/notes"]);
+    config.launch.commands.terminal = null;
+    config.launch.commands.obsidian = null;
+    const vault = item("undev/notes", { kind: "vault" });
+
+    expect(
+      birdIn([vault], config, "undev/notes").detail.actions.map(
+        (action) => action.kind,
+      ),
+    ).toEqual(["vscode", "folder"]);
+  });
+
   it("offers no launch actions and no key files without a local clone", async () => {
     const config = await adoptAll(["github:finch/obsidian-tidy"]);
     const forgeOnly = item("github:finch/obsidian-tidy", {

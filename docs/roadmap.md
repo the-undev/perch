@@ -194,13 +194,6 @@ Candidates that fit the derived-only rule: the vault roadmaps as tiles of their
 own, the family PC's setup runbook progress if it is a checklist in the
 vault, browser reading list.
 
-## Launcher commands in config
-
-Launch actions say what to open (zellij tab, VS Code, folder, Obsidian);
-the commands that open them are hard-coded nowhere yet. They join config
-when the main process implements launching, per
-`docs/decisions/launch-actions.md`.
-
 ## Just pushed
 
 The phrasebook's candidate "Everything's just gone up" needs the time

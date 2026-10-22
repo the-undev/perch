@@ -608,29 +608,32 @@ function pullRequestsFor(item: Item): PullRequestLine[] {
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
+/** The launch actions for a local item; one whose command config leaves out is not offered. */
 function actionsFor(item: Item, config: Config): LaunchAction[] {
   const path = item.path;
   if (path === null) return [];
-  const actions: LaunchAction[] = [];
-  if (item.kind === "vault") {
-    actions.push({
-      kind: "obsidian",
-      verb: "Open in Obsidian",
-      vault: path.slice(path.lastIndexOf("/") + 1),
-    });
-  }
-  actions.push(
-    {
-      kind: "zellij-tab",
-      verb: "Open the zellij tab",
-      session: zellijSessionFor(config, item.id, path),
-      tab: item.name,
-      cwd: path,
-    },
-    { kind: "vscode", verb: "Open in VS Code", path },
-    { kind: "folder", verb: "Open the folder", path },
-  );
-  return actions;
+  const commands = config.launch.commands;
+  const offered: (LaunchAction | null)[] = [
+    item.kind === "vault" && commands.obsidian
+      ? {
+          kind: "obsidian",
+          verb: "Open in Obsidian",
+          vault: path.slice(path.lastIndexOf("/") + 1),
+        }
+      : null,
+    commands.zellij && commands.terminal
+      ? {
+          kind: "zellij-tab",
+          verb: "Open the zellij tab",
+          session: zellijSessionFor(config, item.id, path),
+          tab: item.name,
+          cwd: path,
+        }
+      : null,
+    commands.vscode ? { kind: "vscode", verb: "Open in VS Code", path } : null,
+    commands.folder ? { kind: "folder", verb: "Open the folder", path } : null,
+  ];
+  return offered.filter((action) => action !== null);
 }
 
 function keyFilesFor(item: Item, config: Config): KeyFile[] {

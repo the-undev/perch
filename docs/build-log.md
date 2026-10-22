@@ -95,3 +95,10 @@ build-time calls so they can be revisited.
   resolved against the repository URL.
 - `config.ts` drops its Node imports so the renderer can use the config
   lookups. The mock uses `/home/owner` for its paths.
+- Both expectation kinds open with "You said I should have ...": one
+  template per cause. The phrasebook's red example said "I'd get"; its
+  distinctive closer "That was {span} ago." is kept.
+- Electron's userData defaults to `~/.config/perch`, the config file's
+  home, and would litter it with browser state. The app will set
+  userData to `~/.local/share/perch`, leaving `~/.config/perch` to the
+  stowed config.toml alone. Wired in the app phase.

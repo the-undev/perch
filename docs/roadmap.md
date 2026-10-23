@@ -3,23 +3,19 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
-## Settings UI
+## Renaming a wire or tier
 
-Everything in config becomes editable in the app, even where the form
-is a plain text field. Item entries already are, from each bird's detail
-page. `writeConfig` in `packages/core` serialises a `Config`; it writes
-paths expanded against the home directory, and whether the UI collapses
-them back to `~` is `TBD`. The write path exists: `editConfigFile` in the
-desktop main process rereads the file, applies the edit and renames the
-result over the file a stow symlink names, and the app state rereads the
-config and scans. Collisions (file edited while a form is open): last
-write wins, with a reload when the file changes on disk, fine for one
-person on one machine.
+The settings page treats a wire or tier edited in place as one removed
+and one added: entries naming the old name move to the default when
+saved, and the form says so first. A rename would carry those entries
+to the new name. It needs the form to know which old name each new one
+replaces, which a list of text fields does not say.
 
-Rough order of worth: include and ignore paths, wires (ordered names
-plus default), thresholds, scan intervals as plain forms; launch
-command templates and forge accounts (names bound to keyring keys) as
-raw text fields, rarely touched.
+## A hand edit and the scan
+
+An edit to the config file by hand is read and shown at once, but scans
+only on the next interval or focus, so a new include path finds its
+birds then. A save from the settings page scans at once.
 
 ## Session restore beside autostart
 
@@ -70,8 +66,8 @@ press that did nothing.
 
 ## A config write during a scan
 
-A config entry write asks for a scan, and a request while a scan runs
-joins it. That scan read the config before the write, so its snapshot's
+A config write, an entry's or the settings', asks for a scan, and a
+request while a scan runs joins it. That scan read the config before the write, so its snapshot's
 flags (not set up, config conflicts) and its roadmap reads follow the old
 entry until the next scan. The aviary itself follows the new entry at
 once. The fix is a scheduler request that queues one more scan when one

@@ -71,11 +71,34 @@ function readRaw(name: string): string {
 }
 
 describe("gather", () => {
-  it("runs root collectors before enrichers", () => {
+  it("runs root collectors before enrichers, and the roadmap reader last", () => {
     expect(gatherRounds).toEqual([
       ["local", "githubAccounts", "forgejoAccounts", "kuma"],
-      ["roadmap", "claudeSessions", "github", "forgejo"],
+      ["claudeSessions", "github", "forgejo"],
+      ["roadmap"],
     ]);
+  });
+
+  it("gives the roadmap reader the forge enrichers' files", async () => {
+    const seen: string[][] = [];
+    const roadmap: PolledSource<"roadmap"> = {
+      name: "roadmap",
+      gather: async (earlier) => {
+        seen.push(Object.keys(earlier.forgejo?.data ?? {}));
+        return {};
+      },
+    };
+    const forgejo = returning("forgejo", {
+      "finch/a": { state: "error", error: "details not gathered" },
+    });
+
+    await gather({
+      now: stepClock(9),
+      store: createRawStore(rawDir),
+      sources: sources({ roadmap, forgejo }),
+    });
+
+    expect(seen).toEqual([["finch/a"]]);
   });
 
   it("skips the kuma collector and writes no kuma file when there is no server", async () => {

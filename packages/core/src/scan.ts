@@ -4,7 +4,7 @@
 
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { aggregate, readRawBundle } from "./aggregate.ts";
+import { aggregate, localEntries, readRawBundle } from "./aggregate.ts";
 import type { Config } from "./config.ts";
 import { fileMtime, readTextIfExists } from "./fs.ts";
 import { createRawStore, gather } from "./gather.ts";
@@ -81,7 +81,10 @@ export async function runGather(run: GatherRun): Promise<StatusFile> {
             }),
       roadmap: createRoadmapSource({
         readText: readTextIfExists,
-        roadmapsFor: (itemId) => config.items[itemId]?.roadmaps ?? null,
+        roadmapsFor: (earlier) => {
+          const entries = localEntries(earlier, config);
+          return (localId) => entries.get(localId)?.roadmaps ?? null;
+        },
       }),
       claudeSessions: createClaudeSessionsSource(
         join(home, ".claude", "projects"),

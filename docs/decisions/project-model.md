@@ -95,3 +95,11 @@ one thing with three presences, while the same two forge repositories
 without a local clone stay two birds. Adopting a bird means adding it
 to config: that puts it on a wire, and the same config entry may assert
 ties the URLs could not prove.
+
+An entry is keyed by any of the project's presences: the local id, or a
+forge reference compared without case. An adoption made while a bird is
+forge-only therefore holds when a clone appears and the project's id
+becomes the local path. Two entries naming one project are a conflict:
+the one keyed by the project's id applies and the project is flagged.
+Joins and ignores name presences the same way. The scanner never
+rewrites config. Decided 23 October 2026.

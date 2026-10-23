@@ -2,6 +2,7 @@
 // uses no Node modules, so the renderer may import the lookups below.
 
 import { parse } from "smol-toml";
+import { candidateRefs } from "./refs.ts";
 import type {
   DayThresholds,
   ExpectationName,
@@ -70,7 +71,10 @@ export interface Config {
   ignore: string[];
   thresholds: Thresholds;
   importance: { tiers: string[]; default: string };
-  /** Item entries keyed by item id; an entry adopts the item and marks a found repository set up. */
+  /**
+   * Item entries keyed by any of the item's presence references (see resolveEntry); an entry
+   * adopts the item and marks a found repository set up.
+   */
   items: Record<string, ItemEntry>;
   /** The two scan lanes: everything on the main interval, archived forge data on the slow one. */
   scan: { intervalMinutes: number; archivedIntervalHours: number };
@@ -461,14 +465,51 @@ export function accountForOwner(
   );
 }
 
+/** The entry an item resolves to, and every key naming the item. */
+export interface ResolvedEntry {
+  /** The entry that applies, null when no key names the item. */
+  entry: ItemEntry | null;
+  /** Every key naming the item, the one that applies first; more than one is a conflict. */
+  keys: string[];
+}
+
+/**
+ * The config entry for an item, given its id and presence references: an entry applies when its
+ * key names any of them, and the key naming the earliest wins, the id first, ties by key.
+ */
+export function resolveEntry(
+  config: Config,
+  id: string,
+  refs: readonly string[],
+): ResolvedEntry {
+  const names = [id, ...refs];
+  const ranked = Object.keys(config.items)
+    .map((key) => {
+      const candidates = [key, ...candidateRefs(key)];
+      const rank = names.findIndex((name) => candidates.includes(name));
+      return { key, rank };
+    })
+    .filter(({ rank }) => rank >= 0)
+    .sort((a, b) => a.rank - b.rank || (a.key < b.key ? -1 : 1));
+  const keys = ranked.map(({ key }) => key);
+  const first = keys[0];
+  return {
+    entry: first === undefined ? null : (config.items[first] ?? null),
+    keys,
+  };
+}
+
 /** The importance tier for an item: its entry's when one is set, else the default tier. */
-export function importanceFor(config: Config, itemId: string): string {
-  return config.items[itemId]?.importance ?? config.importance.default;
+export function importanceFor(config: Config, entry: ItemEntry | null): string {
+  return entry?.importance ?? config.importance.default;
 }
 
 /** The health windows for an item: the global values with its entry's overrides applied. */
-export function thresholdsFor(config: Config, itemId: string): Thresholds {
-  const overrides = config.items[itemId]?.thresholds ?? {
+export function thresholdsFor(
+  config: Config,
+  entry: ItemEntry | null,
+): Thresholds {
+  const overrides = entry?.thresholds ?? {
     unsafe: {},
     stalled: {},
     expectation: {},
@@ -477,9 +518,11 @@ export function thresholdsFor(config: Config, itemId: string): Thresholds {
 }
 
 /** The wire an adopted item sits on; null for an item config does not name, which is on the fence. */
-export function wireFor(config: Config, itemId: string): string | null {
-  const entry = config.items[itemId];
-  if (entry === undefined) return null;
+export function wireFor(
+  config: Config,
+  entry: ItemEntry | null,
+): string | null {
+  if (entry === null) return null;
   return entry.wire ?? config.wires.default;
 }
 
@@ -489,10 +532,10 @@ export function wireFor(config: Config, itemId: string): string | null {
  */
 export function zellijSessionFor(
   config: Config,
-  itemId: string,
+  entry: ItemEntry | null,
   path: string,
 ): string {
-  const asserted = config.items[itemId]?.zellijSession;
+  const asserted = entry?.zellijSession;
   if (asserted) return asserted;
   const byRoot = Object.entries(config.launch.zellijSessions)
     .filter(([root]) => path === root || path.startsWith(`${root}/`))

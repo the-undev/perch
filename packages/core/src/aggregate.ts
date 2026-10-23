@@ -1,5 +1,12 @@
 import { basename } from "node:path";
-import { type Config, importanceFor, thresholdsFor } from "./config.ts";
+import {
+  type Config,
+  type ItemEntry,
+  importanceFor,
+  type ResolvedEntry,
+  resolveEntry,
+  thresholdsFor,
+} from "./config.ts";
 import {
   deriveClaudeSessions,
   deriveExpectation,
@@ -13,11 +20,9 @@ import {
 import { polledSourceOrder, type RawStore } from "./gather.ts";
 import {
   type ForgeInput,
-  forgeRef,
+  type JoinResult,
   joinPresences,
   type LocalInput,
-  localRef,
-  normaliseRef,
   type Project,
 } from "./join.ts";
 import type {
@@ -29,6 +34,7 @@ import type {
   SourceStatus as RawSourceStatus,
   StatusFile,
 } from "./raw.ts";
+import { forgeRef, localRef } from "./refs.ts";
 import type {
   Backup,
   ConfigConflict,
@@ -92,13 +98,14 @@ function firstSeenFrom(previous: Snapshot | null): FirstSeen {
 
 function expectationsFor(
   itemId: string,
+  entry: ItemEntry | null,
   sources: ItemSources,
   config: Config,
   firstSeen: FirstSeen,
   observedAt: Date,
 ): Expectation[] {
-  const thresholds = thresholdsFor(config, itemId).expectation;
-  return (config.items[itemId]?.expect ?? []).map((name) =>
+  const thresholds = thresholdsFor(config, entry).expectation;
+  return (entry?.expect ?? []).map((name) =>
     deriveExpectation(
       name,
       expectationMet(name, sources),
@@ -176,6 +183,7 @@ function backupOf(project: Project & { local: LocalInput }): Backup {
 
 function localSources(
   project: Project & { local: LocalInput },
+  entry: ItemEntry | null,
   files: Partial<RawFiles>,
   config: Config,
 ): ItemSources {
@@ -187,7 +195,7 @@ function localSources(
   } else if (presence.git.state === "observed") {
     sources.git = deriveGit(
       presence.git.value,
-      thresholdsFor(config, id),
+      thresholdsFor(config, entry),
       observedAt,
       backupOf(project),
     );
@@ -207,17 +215,71 @@ function localSources(
   return sources;
 }
 
+/** A project's item id: the local id when a clone exists, else its first reference. */
+function projectId(project: Project): string {
+  return project.local ? project.local.id : (project.refs[0] ?? "");
+}
+
+/** The config entry a project resolves to, by its id and every presence reference. */
+function entryOf(project: Project, config: Config): ResolvedEntry {
+  return resolveEntry(config, projectId(project), project.refs);
+}
+
+/** Joins the presences in a set of raw files into projects, with config's hosts, joins and ignores. */
+export function joinRawFiles(
+  files: Partial<RawFiles>,
+  config: Config,
+): JoinResult {
+  const github = config.forges.github.hosts;
+  const forgejo = config.forges.forgejo.hosts;
+  return joinPresences({
+    locals: Object.entries(files.local?.data.presences ?? {}).map(
+      ([id, presence]) => ({
+        id,
+        presence,
+      }),
+    ),
+    forges: forgeNames.flatMap((forge) => forgePresences(forge, files)),
+    forgeForHost: (host) =>
+      github.includes(host)
+        ? "github"
+        : forgejo.includes(host)
+          ? "forgejo"
+          : null,
+    joins: config.joins,
+    ignore: config.ignore,
+  });
+}
+
+/**
+ * The config entry each local clone resolves to through the project it joins, for the gather
+ * rounds that need an entry before aggregation.
+ */
+export function localEntries(
+  files: Partial<RawFiles>,
+  config: Config,
+): Map<string, ItemEntry | null> {
+  return new Map(
+    joinRawFiles(files, config).projects.flatMap((project) =>
+      project.local
+        ? [[project.local.id, entryOf(project, config).entry] as const]
+        : [],
+    ),
+  );
+}
+
 function itemFor(
   project: Project,
+  entry: ItemEntry | null,
   files: Partial<RawFiles>,
   config: Config,
   expectations: { firstSeen: FirstSeen; observedAt: Date },
 ): Item {
   const local = project.local;
   const first = project.forges[0];
-  const id = local ? local.id : (project.refs[0] ?? "");
+  const id = projectId(project);
   const sources: ItemSources = local
-    ? localSources({ ...project, local }, files, config)
+    ? localSources({ ...project, local }, entry, files, config)
     : {};
   for (const forge of forgeNames) {
     const presence = project.forges.find((entry) => entry.forge === forge);
@@ -231,7 +293,7 @@ function itemFor(
     local &&
     include?.state === "observed" &&
     include.value === "directory" &&
-    config.items[local.id] === undefined
+    entry === null
   ) {
     flags.unshift({
       flag: "not-set-up",
@@ -244,7 +306,7 @@ function itemFor(
     name: local ? basename(local.presence.path) : (first?.repo.info.name ?? id),
     kind: local?.presence.obsidian.folder ? "vault" : "repo",
     path: local ? local.presence.path : null,
-    importance: importanceFor(config, id),
+    importance: importanceFor(config, entry),
     liveSources: [],
     presences: {
       local: local
@@ -261,6 +323,7 @@ function itemFor(
     flags,
     expectations: expectationsFor(
       id,
+      entry,
       sources,
       config,
       expectations.firstSeen,
@@ -304,50 +367,40 @@ export function aggregate(
 ): Snapshot {
   const { config } = input;
   const files = bundle.files;
-  const github = config.forges.github.hosts;
-  const forgejo = config.forges.forgejo.hosts;
-  const join = joinPresences({
-    locals: Object.entries(files.local?.data.presences ?? {}).map(
-      ([id, presence]) => ({
-        id,
-        presence,
-      }),
-    ),
-    forges: forgeNames.flatMap((forge) => forgePresences(forge, files)),
-    forgeForHost: (host) =>
-      github.includes(host)
-        ? "github"
-        : forgejo.includes(host)
-          ? "forgejo"
-          : null,
-    joins: config.joins,
-    ignore: config.ignore,
-  });
+  const join = joinRawFiles(files, config);
 
   const expectations = {
     firstSeen: firstSeenFrom(input.previous),
     observedAt: new Date(bundle.status.gatheredAt),
   };
-  const items = join.projects.map((project) =>
-    itemFor(project, files, config, expectations),
-  );
-  const idOf = new Map(
-    join.projects.map((project, index) => [project, items[index]?.id ?? ""]),
+  const resolved: { item: Item; keys: string[] }[] = join.projects.map(
+    (project) => {
+      const { entry, keys } = entryOf(project, config);
+      return {
+        item: itemFor(project, entry, files, config, expectations),
+        keys,
+      };
+    },
   );
   if (config.server !== null) {
-    items.push({
-      id: serverItemId,
-      name: config.server.name,
-      kind: "server",
-      path: null,
-      importance: importanceFor(config, serverItemId),
-      liveSources: [],
-      presences: { local: null, forges: [] },
-      flags: [],
-      expectations: [],
-      sources: files.kuma ? { kuma: deriveKuma(files.kuma.data) } : {},
+    const { entry, keys } = resolveEntry(config, serverItemId, []);
+    resolved.push({
+      item: {
+        id: serverItemId,
+        name: config.server.name,
+        kind: "server",
+        path: null,
+        importance: importanceFor(config, entry),
+        liveSources: [],
+        presences: { local: null, forges: [] },
+        flags: [],
+        expectations: [],
+        sources: files.kuma ? { kuma: deriveKuma(files.kuma.data) } : {},
+      },
+      keys,
     });
   }
+  const items = resolved.map(({ item }) => item);
   for (const item of items) {
     item.liveSources = input.liveSources
       .filter((source) => source.appliesTo(item))
@@ -355,24 +408,25 @@ export function aggregate(
   }
 
   const conflicts: ConfigConflict[] = [...join.conflicts];
-  const itemIds = new Set(items.map((item) => item.id));
-  for (const key of Object.keys(config.items)) {
-    if (itemIds.has(key)) continue;
-    const assertion = `items.${JSON.stringify(key)}`;
-    const project =
-      join.projectOf.get(normaliseRef(key)) ??
-      join.projectOf.get(localRef(key));
-    const owner = project
-      ? items.find((item) => item.id === idOf.get(project))
-      : undefined;
-    const detail = owner
-      ? `names a presence joined into ${owner.id}; key it by that id`
-      : `${key} was not observed`;
+  for (const { item, keys } of resolved) {
+    if (keys.length < 2) continue;
+    const assertion = keys
+      .map((key) => `items.${JSON.stringify(key)}`)
+      .join(", ");
+    const detail = `name one item, ${item.id}; items.${JSON.stringify(keys[0])} applies`;
     conflicts.push({ assertion, detail });
-    owner?.flags.push({
+    item.flags.push({
       flag: "config-conflict",
       level: null,
       detail: `${assertion}: ${detail}`,
+    });
+  }
+  const matched = new Set(resolved.flatMap(({ keys }) => keys));
+  for (const key of Object.keys(config.items)) {
+    if (matched.has(key)) continue;
+    conflicts.push({
+      assertion: `items.${JSON.stringify(key)}`,
+      detail: `${key} was not observed`,
     });
   }
 
@@ -386,7 +440,7 @@ export function aggregate(
         ref,
         fullName: presence.repo.info.fullName,
         url: presence.repo.info.url,
-        itemId: project ? (idOf.get(project) ?? null) : null,
+        itemId: project ? projectId(project) : null,
         ignored: join.ignored.has(ref),
       });
     }

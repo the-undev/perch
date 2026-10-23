@@ -1,7 +1,13 @@
 import { join } from "node:path";
 import { SourceFailure } from "../failure.ts";
 import { errorMessage } from "../fs.ts";
-import type { Entry, RawData, RawRoadmap, RawRoadmapFile } from "../raw.ts";
+import type {
+  Entry,
+  RawData,
+  RawFiles,
+  RawRoadmap,
+  RawRoadmapFile,
+} from "../raw.ts";
 import { sortedRecord } from "../records.ts";
 import { readRoadmapStructure } from "../roadmap-parser.ts";
 import type { PolledSource } from "./source.ts";
@@ -18,8 +24,13 @@ type RoadmapEntry = Entry<RawRoadmap, "no-roadmap-file">;
 
 export interface RoadmapSourceDeps {
   readText: (path: string) => Promise<string | null>;
-  /** Configured roadmap files for an item, relative to it, or null for the standard names. */
-  roadmapsFor: (itemId: string) => readonly string[] | null;
+  /**
+   * Configured roadmap files for each local presence, relative to it, or null for the standard
+   * names; built once per gather from the earlier rounds' files.
+   */
+  roadmapsFor: (
+    earlier: Partial<RawFiles>,
+  ) => (localId: string) => readonly string[] | null;
 }
 
 async function readFile(
@@ -76,10 +87,11 @@ export function createRoadmapSource(
           "no local presences to read roadmaps for",
         );
       }
+      const roadmapsFor = deps.roadmapsFor(earlier);
       const entries: RawData["roadmap"] = {};
       for (const [id, presence] of Object.entries(local.data.presences)) {
         try {
-          const configured = deps.roadmapsFor(id);
+          const configured = roadmapsFor(id);
           entries[id] =
             configured === null
               ? await standardRoadmap(presence.path, deps)

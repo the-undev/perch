@@ -5,7 +5,9 @@
 
 import {
   type Config,
+  type ItemEntry,
   importanceFor,
+  resolveEntry,
   wireFor,
   zellijSessionFor,
 } from "./config.ts";
@@ -347,6 +349,15 @@ function isBirdItem(item: Item): item is BirdItem {
   return item.kind !== "server";
 }
 
+/** The config entry an item resolves to, by its id and every presence reference it holds. */
+function entryFor(item: Item, config: Config): ItemEntry | null {
+  const refs = [
+    ...(item.presences.local ? [item.presences.local.ref] : []),
+    ...item.presences.forges.map((presence) => presence.ref),
+  ];
+  return resolveEntry(config, item.id, refs).entry;
+}
+
 /** A level as a severity: amber and red stand, green is not judged. */
 function severity(level: HealthLevel): Exclude<HealthLevel, "green"> | null {
   return level === "green" ? null : level;
@@ -609,7 +620,11 @@ function pullRequestsFor(item: Item): PullRequestLine[] {
 }
 
 /** The launch actions for a local item; one whose command config leaves out is not offered. */
-function actionsFor(item: Item, config: Config): LaunchAction[] {
+function actionsFor(
+  item: Item,
+  entry: ItemEntry | null,
+  config: Config,
+): LaunchAction[] {
   const path = item.path;
   if (path === null) return [];
   const commands = config.launch.commands;
@@ -625,7 +640,7 @@ function actionsFor(item: Item, config: Config): LaunchAction[] {
       ? {
           kind: "zellij-tab",
           verb: "Open the zellij tab",
-          session: zellijSessionFor(config, item.id, path),
+          session: zellijSessionFor(config, entry, path),
           tab: item.name,
           cwd: path,
         }
@@ -636,11 +651,11 @@ function actionsFor(item: Item, config: Config): LaunchAction[] {
   return offered.filter((action) => action !== null);
 }
 
-function keyFilesFor(item: Item, config: Config): KeyFile[] {
+function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {
   const path = item.path;
   if (path === null) return [];
   const roadmap = readable<RoadmapData>(item.sources.roadmap);
-  const files = config.items[item.id]?.keyFiles ?? [
+  const files = entry?.keyFiles ?? [
     "README.md",
     ...(roadmap?.files.map((file) => file.path) ?? []),
   ];
@@ -690,9 +705,21 @@ export function speechSubjectFor(
   config: Config,
   scannedAt: Date,
 ): SpeechSubject {
+  return speechSubject(
+    item,
+    wireFor(config, entryFor(item, config)),
+    scannedAt,
+  );
+}
+
+function speechSubject(
+  item: Item,
+  wire: string | null,
+  scannedAt: Date,
+): SpeechSubject {
   const git = readable<GitData>(item.sources.git);
   return {
-    fence: wireFor(config, item.id) === null ? fenceSituation(item) : null,
+    fence: wire === null ? fenceSituation(item) : null,
     causes: deriveHealth(item).causes,
     activity: git ? activityOf[git.activity] : null,
     branch: git?.branch ?? null,
@@ -713,12 +740,13 @@ export function deriveBird(
   const mood = moodOf[health.level];
   const git = readable<GitData>(item.sources.git);
   const activity = git ? activityOf[git.activity] : null;
-  const wire = wireFor(config, item.id);
+  const entry = entryFor(item, config);
+  const wire = wireFor(config, entry);
   const adopted = wire !== null;
-  const name = config.items[item.id]?.name ?? item.name;
+  const name = entry?.name ?? item.name;
   const outstanding = openItemsOf(readable<RoadmapData>(item.sources.roadmap));
-  const tier = importanceFor(config, item.id);
-  const speech = speak(speechSubjectFor(item, config, scannedAt));
+  const tier = importanceFor(config, entry);
+  const speech = speak(speechSubject(item, wire, scannedAt));
   const sleepsAtNight =
     !adopted || (mood === "content" && activity !== "editing");
   return {
@@ -759,12 +787,12 @@ export function deriveBird(
         detail: flag.detail,
         level: flag.level,
       })),
-      actions: actionsFor(item, config),
+      actions: actionsFor(item, entry, config),
       links: item.presences.forges.map((presence) => ({
         label: `${presence.fullName} on ${forgeLabel[presence.forge]}`,
         url: presence.url,
       })),
-      keyFiles: keyFilesFor(item, config),
+      keyFiles: keyFilesFor(item, entry),
       problems: problemsFor(item),
     },
   };

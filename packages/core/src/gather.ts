@@ -18,11 +18,14 @@ export type PolledSources = {
 
 /**
  * Collection rounds, run in order. Root collectors read config and the outside world; enrichers
- * read what the first round gathered. Sources within a round run together.
+ * read what earlier rounds gathered. The roadmap reader runs last, because a clone's config entry
+ * is resolved through the join, which needs the forge enrichers' files. Sources within a round
+ * run together.
  */
 export const gatherRounds: readonly (readonly PolledSourceName[])[] = [
   ["local", "githubAccounts", "forgejoAccounts", "kuma"],
-  ["roadmap", "claudeSessions", "github", "forgejo"],
+  ["claudeSessions", "github", "forgejo"],
+  ["roadmap"],
 ];
 
 /** Every polled source, in round order. */

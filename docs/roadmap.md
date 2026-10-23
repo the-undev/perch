@@ -53,20 +53,6 @@ key files, roadmaps, threshold overrides. The expected flow works
 today apart from the UI: adding an include path makes found repos
 appear on the fence after a scan, flagged not-set-up until adopted.
 
-## Item identity across joins
-
-An item entry is keyed by the project's id: the local path id when a
-clone exists, else the project's first ref such as
-`forgejo:owner/name` (`itemFor` in aggregate.ts). Joining is by
-observation: a clone's remote URLs pull the forge presences into its
-project, so forge birds vanish into the local bird when a clone
-appears. That changes the project's id, so an adoption keyed by the
-forge ref stops matching and the bird drops back to the fence,
-not-set-up. Two fixes to choose between: item entries match any ref of
-the project (with a conflict when two entries match one project), or
-the adopt flow and a scan-time migration rewrite the key to the local
-id. The same applies to ignores and joins keyed by refs that move.
-
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the

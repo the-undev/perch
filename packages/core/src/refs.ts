@@ -2,6 +2,15 @@
 // and the view model may import it.
 
 import type { ForgeName } from "./raw.ts";
+import type { Item } from "./snapshot.ts";
+
+/** Every presence reference an item holds: its local clone's, then its forges'. */
+export function itemRefs(item: Item): string[] {
+  return [
+    ...(item.presences.local ? [item.presences.local.ref] : []),
+    ...item.presences.forges.map((presence) => presence.ref),
+  ];
+}
 
 export function localRef(id: string): string {
   return `local:${id}`;

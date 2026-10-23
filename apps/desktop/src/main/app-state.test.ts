@@ -1,11 +1,26 @@
-import type { Config, LoadedConfig } from "@perch/core/config.ts";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+  type Config,
+  type LoadedConfig,
+  parseConfig,
+} from "@perch/core/config.ts";
+import { writeConfig } from "@perch/core/config-write.ts";
+import { emptyEntryValues } from "@perch/core/entry-form.ts";
+import { readTextIfExists } from "@perch/core/fs.ts";
 import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
 import type { Snapshot } from "@perch/core/snapshot.ts";
-import type { LaunchAction } from "@perch/core/viewmodel.ts";
-import { describe, expect, it, vi } from "vitest";
+import type { Aviary, LaunchAction } from "@perch/core/viewmodel.ts";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PerchState } from "../shared/ipc.ts";
 import { type AppStateDeps, createAppState } from "./app-state.ts";
-import type { ConfigState, ConfigStore } from "./config-store.ts";
+import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
+import {
+  type ConfigState,
+  type ConfigStore,
+  createConfigStore,
+} from "./config-store.ts";
 
 const loaded: LoadedConfig = { config: mockConfig, path: "/config.toml" };
 
@@ -50,6 +65,8 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
     },
     publish: (state) => published.push(state),
     writeStarter: vi.fn(async () => {}),
+    editConfig: vi.fn(async () => {}),
+    requestScan: vi.fn(async () => {}),
     ...overrides,
   };
   return { app: createAppState(deps), deps, config, published };
@@ -220,6 +237,7 @@ describe("the app state", () => {
 
     expect(deps.writeStarter).toHaveBeenCalledTimes(1);
     expect(published.at(-1)?.problems).toEqual([]);
+    expect(deps.requestScan).toHaveBeenCalledTimes(1);
   });
 
   it("says why the starter config was not written, until the next scan", async () => {
@@ -253,5 +271,153 @@ describe("the app state", () => {
       ["/home/owner/dev/perch/docs/roadmap.md", null],
     ]);
     expect(await app.keyFiles("dev/nobody")).toEqual([]);
+  });
+});
+
+describe("editing config entries", () => {
+  const home = "/home/owner";
+  let dir: string;
+  let configPath: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "perch-entries-"));
+    configPath = join(dir, "config.toml");
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  /** The app state on a real config file in the temp directory, holding the given config. */
+  async function onFile(config: Config) {
+    await writeFile(configPath, writeConfig(config));
+    const store = createConfigStore({
+      home,
+      path: configPath,
+      readText: readTextIfExists,
+    });
+    const file = { home, path: configPath, readText: readTextIfExists };
+    return appState({
+      config: store,
+      editConfig: (edit) =>
+        editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+    });
+  }
+
+  const written = async () => readFile(configPath, "utf8");
+  const writtenConfig = async () => parseConfig(await written(), home);
+
+  function wireOf(aviary: Aviary | null | undefined, birdId: string) {
+    if (aviary === null || aviary === undefined) return undefined;
+    if (aviary.fence.birds.some((bird) => bird.id === birdId)) return "fence";
+    return aviary.wires.find((wire) =>
+      wire.birds.some((bird) => bird.id === birdId),
+    )?.name;
+  }
+
+  /** The mock config with Perch's entry keyed by its GitHub reference instead of its id. */
+  function forgeKeyed(): Config {
+    const { "dev/perch": perch, ...rest } = mockConfig.items;
+    if (perch === undefined) throw new Error("the mock config has no Perch");
+    return {
+      ...mockConfig,
+      items: { ...rest, "github:finch/perch": perch },
+    };
+  }
+
+  it("adopts a fence bird: writes its entry and nothing else, perches it and rescans", async () => {
+    const { app, deps, published } = await onFile(mockConfig);
+    const before = await written();
+    await app.start();
+
+    await app.saveEntry("dev/odin/hello", {
+      ...emptyEntryValues(),
+      wire: "Machine & Home",
+      name: "Hello",
+    });
+
+    const after = await written();
+    const block =
+      '[items."dev/odin/hello"]\nwire = "Machine & Home"\nname = "Hello"\n\n';
+    expect(after).toContain(block);
+    expect(after.replace(block, "")).toBe(before);
+    expect(wireOf(published.at(-1)?.aviary, "dev/odin/hello")).toBe(
+      "Machine & Home",
+    );
+    expect(deps.requestScan).toHaveBeenCalledTimes(1);
+  });
+
+  it("edits a forge-keyed entry under that key, without a second entry", async () => {
+    const { app } = await onFile(forgeKeyed());
+    await app.start();
+    const form = app.entryForm("dev/perch");
+    if (form?.values == null) throw new Error("Perch has no entry");
+
+    await app.saveEntry("dev/perch", {
+      ...form.values,
+      importance: "machine",
+      thresholds: { stalled_amber_days: 3 },
+    });
+
+    const config = await writtenConfig();
+    expect(Object.keys(config.items)).toEqual(
+      Object.keys(forgeKeyed().items).sort(),
+    );
+    expect(config.items["github:finch/perch"]).toMatchObject({
+      name: "Perch",
+      importance: "machine",
+      thresholds: { stalled: { amberDays: 3 } },
+    });
+    expect(app.entryForm("dev/perch")?.key).toBe("github:finch/perch");
+  });
+
+  it("unadopts a bird: removes its entry and returns it to the fence", async () => {
+    const { app, deps, published } = await onFile(mockConfig);
+    await app.start();
+
+    await app.removeEntry("undev/spool");
+
+    expect((await writtenConfig()).items["undev/spool"]).toBeUndefined();
+    expect(wireOf(published.at(-1)?.aviary, "undev/spool")).toBe("fence");
+    expect(deps.requestScan).toHaveBeenCalledTimes(1);
+  });
+
+  it("says why nothing was written, without scanning, until the next scan", async () => {
+    const { app, deps, published } = await onFile(mockConfig);
+    await app.start();
+    const before = await written();
+
+    await app.saveEntry("dev/perch", {
+      ...emptyEntryValues(),
+      thresholds: { stalled_amber_days: 30 },
+    });
+
+    expect(await written()).toBe(before);
+    expect(published.at(-1)?.problems).toEqual([
+      'The config was not changed: config: items."dev/perch".stalled amber threshold must be below its red threshold',
+    ]);
+    expect(deps.requestScan).not.toHaveBeenCalled();
+
+    await rm(configPath);
+    await app.removeEntry("dev/perch");
+    expect(published.at(-1)?.problems).toEqual([
+      `The config was not changed: ${configPath} does not exist`,
+    ]);
+
+    await writeFile(configPath, before);
+    await app.scan();
+    expect(published.at(-1)?.problems).toEqual([]);
+  });
+
+  it("writes nothing for a bird the aviary does not hold", async () => {
+    const { app, deps } = await onFile(mockConfig);
+    await app.start();
+    const before = await written();
+
+    await app.saveEntry("dev/nobody", emptyEntryValues());
+    await app.removeEntry("server");
+
+    expect(await written()).toBe(before);
+    expect(deps.requestScan).not.toHaveBeenCalled();
+    expect(app.entryForm("dev/nobody")).toBeNull();
   });
 });

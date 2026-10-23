@@ -165,7 +165,9 @@ repositories, vault state. Observation joins what remote URLs prove;
 config asserts what they cannot, and on conflict the observation wins,
 flagged. Everything found starts on the fence; adopting a bird means
 adding it to config, which puts it on a wire and may assert further
-ties, importance, thresholds and expectations. Forks are ignored by
+ties, importance, thresholds and expectations. A fence bird's detail
+page adopts it onto a wire; an adopted bird's detail page edits its entry
+or removes it, and the app writes the config file. Forks are ignored by
 default; archived repositories are gathered but never on the main view.
 Details and open questions (composite multi-repo projects among them):
 [decisions/project-model.md](decisions/project-model.md).

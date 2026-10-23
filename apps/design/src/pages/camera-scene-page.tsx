@@ -2,7 +2,7 @@ import { mockAviary } from "@perch/core/mock.ts";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
-import { mockBird } from "../specimens.ts";
+import { mockBird, mockEntryForm } from "../specimens.ts";
 import {
   Choice,
   Code,
@@ -76,6 +76,11 @@ export function CameraScenePage() {
           sheets={sheets}
           scanning={scanning === "scanning"}
           onRescan={() => setPressed("onRescan()")}
+          entry={{
+            form: place.at === "detail" ? mockEntryForm(place.birdId) : null,
+            onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
+            onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
+          }}
         />
       </SceneFrame>
       <Pressed text={pressed} />
@@ -122,6 +127,11 @@ export function CameraScenePage() {
             name: "onRescan",
             type: "() => void",
             what: "The header's scan line, which reads the phase, the scan's time and its age, was pressed.",
+          },
+          {
+            name: "entry",
+            type: "EntryControls",
+            what: "The open bird's entry form and the calls that save or remove its entry, for the detail page.",
           },
         ]}
       >

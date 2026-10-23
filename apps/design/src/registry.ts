@@ -11,6 +11,7 @@ import { CameraScenePage } from "./pages/camera-scene-page.tsx";
 import { ChipPage } from "./pages/chip-page.tsx";
 import { CrowdedPage } from "./pages/crowded-page.tsx";
 import { DetailScenePage } from "./pages/detail-scene-page.tsx";
+import { AdoptFormPage, EntryEditorPage } from "./pages/entry-forms-pages.tsx";
 import { LedgerPage } from "./pages/ledger-page.tsx";
 import { PaperPage } from "./pages/paper-page.tsx";
 import {
@@ -197,6 +198,22 @@ export const pages: DesignPage[] = [
     title: "Key-file paper",
     summary: "Markdown on paper behind folder tabs.",
     component: PaperPage,
+  },
+  {
+    slug: "adopt-form",
+    group: "components",
+    title: "Adopt form",
+    summary:
+      "A fence bird's Adopt verb and its form: a wire and a name, written as a new entry.",
+    component: AdoptFormPage,
+  },
+  {
+    slug: "entry-editor",
+    group: "components",
+    title: "Entry editor",
+    summary:
+      "An adopted bird's config entry: wire, name, importance, expectations, paths and threshold overrides.",
+    component: EntryEditorPage,
   },
   {
     slug: "aviary",

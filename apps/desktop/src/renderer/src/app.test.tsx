@@ -1,5 +1,12 @@
-import { mockAviary } from "@perch/core/mock.ts";
-import type { Aviary } from "@perch/core/viewmodel.ts";
+import type { Config } from "@perch/core/config.ts";
+import {
+  type EntryForm,
+  type EntryValues,
+  entryFormFor,
+  withEntry,
+} from "@perch/core/entry-form.ts";
+import { mockAviary, mockConfig, mockSnapshot } from "@perch/core/mock.ts";
+import { type Aviary, deriveAviary } from "@perch/core/viewmodel.ts";
 import { mockBird } from "@perch/ui/mock-birds.ts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
@@ -10,6 +17,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { KeyFileSheet, PerchState } from "../../shared/ipc.ts";
@@ -35,8 +43,9 @@ function renderApp(
   initial: PerchState,
   path = "/",
   sheetsFor?: (birdId: string) => KeyFileSheet[],
+  formFor?: (birdId: string) => EntryForm | null,
 ) {
-  const fake = fakeApi(initial, sheetsFor);
+  const fake = fakeApi(initial, sheetsFor, formFor);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -239,5 +248,117 @@ describe("the window", () => {
     expect(
       container.querySelector("[data-phase]")?.getAttribute("data-phase"),
     ).toBe("night");
+  });
+
+  describe("config entries", () => {
+    /** The config the fake main process holds, which a save changes as the real one would. */
+    function configHolder() {
+      let config: Config = mockConfig;
+      const item = (birdId: string) => {
+        const found = mockSnapshot.items.find((entry) => entry.id === birdId);
+        if (found === undefined) throw new Error(`no item ${birdId}`);
+        return found;
+      };
+      return {
+        formFor: (birdId: string) => entryFormFor(config, item(birdId)),
+        save: (birdId: string, values: EntryValues) => {
+          config = withEntry(config, item(birdId), values);
+          return idle(deriveAviary(mockSnapshot, config));
+        },
+      };
+    }
+
+    it("adopts a fence bird from its detail page onto the wire picked", async () => {
+      const holder = configHolder();
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/bird/dev/odin/hello",
+        undefined,
+        holder.formFor,
+      );
+
+      fireEvent.click(await screen.findByRole("button", { name: "Adopt" }));
+      fireEvent.click(screen.getByRole("radio", { name: "Machine & Home" }));
+      fireEvent.change(screen.getByRole("textbox", { name: "Name" }), {
+        target: { value: "Hello" },
+      });
+      fireEvent.click(
+        within(screen.getByRole("form", { name: "Adopt hello" })).getByRole(
+          "button",
+          { name: "Adopt" },
+        ),
+      );
+
+      expect(fake.entrySaves).toEqual([
+        {
+          birdId: "dev/odin/hello",
+          values: {
+            wire: "Machine & Home",
+            name: "Hello",
+            importance: null,
+            expect: [],
+            keyFiles: null,
+            roadmaps: null,
+            thresholds: {},
+          },
+        },
+      ]);
+      act(() =>
+        fake.push(
+          holder.save(
+            "dev/odin/hello",
+            fake.entrySaves[0]?.values as EntryValues,
+          ),
+        ),
+      );
+
+      expect(
+        await screen.findByRole("button", { name: "Edit entry" }),
+      ).toBeDefined();
+      expect(screen.getByTitle("Machine & Home, as a tab row")).toBeDefined();
+      expect(
+        screen.getByRole("article", { name: "Hello in full" }),
+      ).toBeDefined();
+    });
+
+    it("edits an adopted bird's entry, and unadopts it", async () => {
+      const holder = configHolder();
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/bird/dev/perch",
+        undefined,
+        holder.formFor,
+      );
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Edit entry" }),
+      );
+      fireEvent.click(screen.getByRole("checkbox", { name: "Tickets" }));
+      fireEvent.change(
+        screen.getByRole("spinbutton", {
+          name: "Stalled flight, amber after days",
+        }),
+        { target: { value: "3" } },
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      expect(fake.entrySaves).toEqual([
+        {
+          birdId: "dev/perch",
+          values: expect.objectContaining({
+            name: "Perch",
+            expect: ["ci", "tickets"],
+            thresholds: { stalled_amber_days: 3 },
+          }),
+        },
+      ]);
+
+      fireEvent.click(screen.getByRole("button", { name: "Edit entry" }));
+      fireEvent.click(screen.getByRole("button", { name: "Unadopt" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Return to the fence" }),
+      );
+      expect(fake.entryRemovals).toEqual(["dev/perch"]);
+    });
   });
 });

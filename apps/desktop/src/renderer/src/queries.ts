@@ -1,6 +1,7 @@
 // What the renderer reads from the main process, through the query cache: the state, kept
-// current by the main process's pushes, and the open bird's key files.
+// current by the main process's pushes, the open bird's key files and its config entry.
 
+import type { EntryForm } from "@perch/core/entry-form.ts";
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { KeyFileSheet, PerchApi, PerchState } from "../../shared/ipc.ts";
@@ -43,4 +44,25 @@ export function useKeyFiles(
       previousQuery?.queryKey[1] === birdId ? previous : undefined,
   });
   return query.data ?? [];
+}
+
+/**
+ * The open bird's config entry and its form's choices, read with the state known, again after
+ * every scan and every change the bird shows; null until read.
+ */
+export function useEntryForm(
+  api: PerchApi,
+  birdId: string | null,
+  version: string | null,
+): EntryForm | null {
+  const query = useQuery({
+    queryKey: ["entryForm", birdId, version],
+    queryFn:
+      birdId === null || version === null
+        ? skipToken
+        : () => api.entryForm(birdId),
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[1] === birdId ? previous : undefined,
+  });
+  return query.data ?? null;
 }

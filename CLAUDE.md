@@ -73,10 +73,12 @@ it. A page is a component in `src/pages` and one entry in
 `apps/desktop` (`@perch/desktop`) is the Electron app, built with
 electron-vite. The main process (`src/main`) reads the config, runs the scan
 at start, on the config's interval, on window focus and on request
-(`scan-scheduler.ts`), keeps the snapshot cache, derives the aviary and
-reads key files (`app-state.ts`), and runs launch actions (`launch.ts`).
-Its data lives in `~/.local/share/perch`, Electron's userData. The renderer
-(`src/renderer`) receives only view model types: TanStack Query holds the
+(`scan-scheduler.ts`), keeps the snapshot cache, derives the aviary,
+reads key files and turns entry edits into config edits (`app-state.ts`),
+writes the config file (`config-edit.ts`), and runs launch actions
+(`launch.ts`). Its data lives in `~/.local/share/perch`, Electron's
+userData. The renderer (`src/renderer`) receives only view model types and
+the entry form types from `@perch/core/entry-form.ts`: TanStack Query holds the
 pushed state, TanStack Router holds where the camera points (`/` and
 `/bird/<id>`), and `CameraView` draws it. The sandboxed preload
 (`src/preload`) exposes the calls declared in `src/shared/ipc.ts`. Main

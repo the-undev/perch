@@ -10,6 +10,7 @@ import { channels, type PerchState } from "../shared/ipc.ts";
 import { appPaths, examplePathFor } from "./app-paths.ts";
 import { createAppState } from "./app-state.ts";
 import { handOver, parseArguments } from "./command-line.ts";
+import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
 import { createConfigStore } from "./config-store.ts";
 import { isWebUrl } from "./external-links.ts";
 import { iconPaths, resourceDirFor } from "./icons.ts";
@@ -121,6 +122,18 @@ function start(): void {
     readText: (path) => readFile(path, "utf8"),
     writeStarter: () =>
       writeStarterConfig(paths.examplePath, paths.userConfigPath),
+    editConfig: (edit) =>
+      editConfigFile(
+        {
+          home,
+          path: paths.userConfigPath,
+          readText: readTextIfExists,
+          writeText: writeTextAtomic,
+        },
+        edit,
+      ),
+    // The scheduler is made below; nothing asks for a scan before then.
+    requestScan: () => scheduler.request(),
     publish: (next: PerchState) => {
       if (mainWindow === undefined || mainWindow.isDestroyed()) return;
       mainWindow.webContents.send(channels.onState, next);
@@ -168,11 +181,10 @@ function start(): void {
       rescan: () => scheduler.request(),
       keyFiles: (birdId) => state.keyFiles(birdId),
       launch: (action) => state.launch(action),
-      // The request reads the config path again and scans once the file is there.
-      writeStarterConfig: async () => {
-        await state.writeStarterConfig();
-        await scheduler.request();
-      },
+      writeStarterConfig: () => state.writeStarterConfig(),
+      entryForm: async (birdId) => state.entryForm(birdId),
+      saveEntry: (birdId, values) => state.saveEntry(birdId, values),
+      removeEntry: (birdId) => state.removeEntry(birdId),
     });
     const window = createWindow(icons.window, !launchArguments.hidden);
     mainWindow = window;

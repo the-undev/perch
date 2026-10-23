@@ -302,3 +302,32 @@ build-time calls so they can be revisited.
   scan after every attempt, which rechecks first.
 - The example config no longer has a `[launch.zellij_sessions]` table;
   the launch section's comment names it with a sample entry instead.
+- Adopting and editing birds in the UI: the entry form model lives in
+  `packages/core/src/entry-form.ts`, beside the parser and free of Node
+  imports. Its `EntryValues` and `EntryOptions` are the small types the
+  ui forms take and the IPC carries, rather than a copy of each in
+  `packages/ui`; the renderer never receives a `Config`.
+- The IPC adds three calls: `entryForm(birdId)` reads the entry and the
+  form's choices, `saveEntry(birdId, values)` adopts or edits, and
+  `removeEntry(birdId)` unadopts. Adopting is a save with only the wire
+  and name set, written under the item id.
+- Unadopting removes every key naming the bird, so a second, conflicting
+  key cannot keep it on a wire.
+- Choosing the default wire or the default tier in a form stores null,
+  so the entry holds only what differs. An empty name keeps the scanned
+  name. Key files and roadmaps keep three states: null for the defaults,
+  an empty list for none, or the paths, each once.
+- The config write follows a symlink to the file it names and renames a
+  `.part` sibling over it, keeping its mode, so a stowed config stays a
+  symlink into the dotfiles. The edited config is parsed back before
+  anything is written, so an edit that would not read back (amber after
+  red, say) writes nothing and becomes a problem in the state.
+- After a write the main process rereads the config and publishes before
+  it scans, so the bird moves to its wire at once. The app state now asks
+  for scans itself through a `requestScan` dependency; the starter config
+  write uses it too, in place of the IPC handler doing it.
+- The renderer reads the open bird's entry form again after every scan,
+  as soon as the bird's wire or name changes, and once a save or removal
+  settles. The detail page shows its entry verb only while the form
+  agrees with the bird: Adopt needs no entry, Edit entry needs one.
+- Unadopt asks for a second press, Return to the fence, before it writes.

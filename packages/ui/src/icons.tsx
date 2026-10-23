@@ -1,9 +1,17 @@
-// The board's line icons for launch actions and links out, stroked in the accent.
+// The board's line icons for launch actions, links out and the config entry's verbs, stroked in
+// the accent.
 
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import type { ReactNode } from "react";
 
-export type IconName = "terminal" | "code" | "folder" | "forge" | "obsidian";
+export type IconName =
+  | "terminal"
+  | "code"
+  | "folder"
+  | "forge"
+  | "obsidian"
+  | "adopt"
+  | "edit";
 
 const paths: Record<IconName, ReactNode> = {
   terminal: (
@@ -31,6 +39,18 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <path d="M12 2l7 6-3 13H8L5 8z" />
       <path d="M12 2l-2 9 6 10M10 11l-5-3" />
+    </>
+  ),
+  adopt: (
+    <>
+      <path d="M3 17h18" />
+      <path d="M12 5v8M8 9h8" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="M4 20h4L19 9l-4-4L4 16z" />
+      <path d="M13 7l4 4" />
     </>
   ),
 };

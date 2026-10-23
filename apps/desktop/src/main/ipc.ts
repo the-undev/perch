@@ -1,3 +1,4 @@
+import type { EntryValues } from "@perch/core/entry-form.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import { ipcMain } from "electron";
 import { channels, type PerchCalls } from "../shared/ipc.ts";
@@ -14,5 +15,16 @@ export function registerIpc(handlers: PerchCalls): void {
   );
   ipcMain.handle(channels.writeStarterConfig, () =>
     handlers.writeStarterConfig(),
+  );
+  ipcMain.handle(channels.entryForm, (_event, birdId: string) =>
+    handlers.entryForm(birdId),
+  );
+  ipcMain.handle(
+    channels.saveEntry,
+    (_event, birdId: string, values: EntryValues) =>
+      handlers.saveEntry(birdId, values),
+  );
+  ipcMain.handle(channels.removeEntry, (_event, birdId: string) =>
+    handlers.removeEntry(birdId),
   );
 }

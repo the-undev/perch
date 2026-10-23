@@ -4,7 +4,8 @@
 import type { LaunchAction, LinkOut } from "@perch/core/viewmodel.ts";
 import { actionIcon, Icon } from "./icons.tsx";
 
-const actionClass =
+/** A verb on the detail page's action row: quiet until hovered. */
+export const actionClass =
   "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-transparent px-3.25 py-2.25 font-body font-medium text-[13.5px] text-ink-muted no-underline hover:border-edge hover:bg-panel hover:text-ink focus-visible:outline-2 focus-visible:outline-ink-accent focus-visible:outline-offset-1";
 
 function Away() {

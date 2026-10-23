@@ -1,6 +1,7 @@
 // A stand-in for the preload's API in renderer tests: it answers from what the test gives it,
 // records every call, and pushes states when the test says so.
 
+import type { EntryForm, EntryValues } from "@perch/core/entry-form.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import type { KeyFileSheet, PerchApi, PerchState } from "../../shared/ipc.ts";
 
@@ -12,11 +13,14 @@ export interface FakeApi {
   launches: LaunchAction[];
   keyFileReads: string[];
   starterWrites: number;
+  entrySaves: { birdId: string; values: EntryValues }[];
+  entryRemovals: string[];
 }
 
 export function fakeApi(
   initial: PerchState,
   sheetsFor: (birdId: string) => KeyFileSheet[] = () => [],
+  formFor: (birdId: string) => EntryForm | null = () => null,
 ): FakeApi {
   const listeners = new Set<(state: PerchState) => void>();
   let current = initial;
@@ -40,6 +44,13 @@ export function fakeApi(
       writeStarterConfig: async () => {
         fake.starterWrites += 1;
       },
+      entryForm: async (birdId) => formFor(birdId),
+      saveEntry: async (birdId, values) => {
+        fake.entrySaves.push({ birdId, values });
+      },
+      removeEntry: async (birdId) => {
+        fake.entryRemovals.push(birdId);
+      },
     },
     push(state) {
       current = state;
@@ -49,6 +60,8 @@ export function fakeApi(
     launches: [],
     keyFileReads: [],
     starterWrites: 0,
+    entrySaves: [],
+    entryRemovals: [],
   };
   return fake;
 }

@@ -6,29 +6,20 @@ they land.
 ## Settings UI
 
 Everything in config becomes editable in the app, even where the form
-is a plain text field. `writeConfig` in `packages/core` serialises a
-`Config`; it writes paths expanded against the home directory, and
-whether the UI collapses them back to `~` is `TBD`. The main process
-owns the write: atomic save to `~/.config/perch/config.toml`, then a
-rescan, since config feeds every derivation. Stow is unaffected; the file is edited in place through the
-symlink. Collisions (file edited while a form is open): last write
-wins, with a reload when the file changes on disk, fine for one person
-on one machine.
+is a plain text field. Item entries already are, from each bird's detail
+page. `writeConfig` in `packages/core` serialises a `Config`; it writes
+paths expanded against the home directory, and whether the UI collapses
+them back to `~` is `TBD`. The write path exists: `editConfigFile` in the
+desktop main process rereads the file, applies the edit and renames the
+result over the file a stow symlink names, and the app state rereads the
+config and scans. Collisions (file edited while a form is open): last
+write wins, with a reload when the file changes on disk, fine for one
+person on one machine.
 
 Rough order of worth: include and ignore paths, wires (ordered names
 plus default), thresholds, scan intervals as plain forms; launch
 command templates and forge accounts (names bound to keyring keys) as
 raw text fields, rarely touched.
-
-## Adopt and edit birds in the UI
-
-The highest-value slice of the settings work, needing no settings page:
-a fence bird's detail gets an adopt button (pick a wire, optionally
-rename), which writes the item entry and rescans. An adopted bird's
-detail edits the same entry: wire, name, importance, expectations,
-key files, roadmaps, threshold overrides. The expected flow works
-today apart from the UI: adding an include path makes found repos
-appear on the fence after a scan, flagged not-set-up until adopted.
 
 ## Session restore beside autostart
 
@@ -70,10 +61,21 @@ not one named after the project.
 no TUI action yet; it needs a config marker for which items are TUIs and the
 window raising above.
 
-## Launch failures on the detail page
+## Main-process problems on the detail page
 
-A failed launch shows in the sky's notices until the next scan, which the
-detail page hides. The detail has no place for it yet.
+A failed launch, or a config entry write that failed, shows in the sky's
+notices until the next scan, which the detail page hides. The detail has
+no place for them yet, so an adoption that wrote nothing looks like a
+press that did nothing.
+
+## A config write during a scan
+
+A config entry write asks for a scan, and a request while a scan runs
+joins it. That scan read the config before the write, so its snapshot's
+flags (not set up, config conflicts) and its roadmap reads follow the old
+entry until the next scan. The aviary itself follows the new entry at
+once. The fix is a scheduler request that queues one more scan when one
+is running.
 
 ## Claude Code integration
 

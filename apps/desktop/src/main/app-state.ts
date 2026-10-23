@@ -70,10 +70,10 @@ export interface AppState {
   /** A bird's key files with what was read from each; none for a bird the aviary does not hold. */
   keyFiles(birdId: string): Promise<KeyFileSheet[]>;
   /**
-   * Writes the starter config, then asks for a scan; a refusal becomes a problem until the next
-   * attempt or scan.
+   * Writes the starter config and starts a scan, resolving whether it wrote before the scan
+   * settles; a refusal becomes a problem until the next attempt or scan.
    */
-  writeStarterConfig(): Promise<void>;
+  writeStarterConfig(): Promise<boolean>;
   /** A bird's config entry and the form's choices; null for a bird the aviary does not hold. */
   entryForm(birdId: string): EntryForm | null;
   /**
@@ -250,14 +250,18 @@ export function createAppState(deps: AppStateDeps): AppState {
       );
     },
     async writeStarterConfig() {
+      let written = true;
       try {
         await deps.writeStarter();
         starterError = null;
       } catch (error) {
-        starterError = `The starter config was not written: ${errorMessage(error)}`;
+        written = false;
+        starterError = `The config file was not created: ${errorMessage(error)}`;
       }
       publish();
-      await deps.requestScan();
+      // A file already there is read by the scan, which leaves the welcome as a new one does.
+      void deps.requestScan();
+      return written;
     },
     entryForm(birdId) {
       const item = birdItem(birdId);

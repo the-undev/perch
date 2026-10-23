@@ -1,4 +1,5 @@
 import type { Config } from "@perch/core/config.ts";
+import { defaultConfig } from "@perch/core/config-default.ts";
 import {
   type EntryForm,
   type EntryValues,
@@ -96,22 +97,53 @@ describe("the window", () => {
   });
 
   it("welcomes the owner without a config, naming its path, and hands both buttons to the main process", async () => {
-    const { fake } = renderApp({ ...idle(null), noConfig: true });
+    const { fake, router } = renderApp({ ...idle(null), noConfig: true });
 
     expect(await screen.findByRole("main", { name: "perch" })).toBeDefined();
     expect(screen.getByText("~/.config/perch/config.toml")).toBeDefined();
+    expect(
+      screen.getByText(/one wire, the standard windows and no sources yet/),
+    ).toBeDefined();
     expect(screen.queryByRole("status")).toBeNull();
 
+    fake.starterWritten = false;
     fireEvent.click(
-      screen.getByRole("button", { name: "Write a starter config" }),
+      screen.getByRole("button", { name: "Create the config file" }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+    await act(async () => {});
 
     expect(fake.starterWrites).toBe(1);
     expect(fake.rescans).toBe(1);
+    expect(pathOf(router)).toBe("/");
   });
 
-  it("says why the starter config was not written, then leaves for the first scan once a config is found", async () => {
+  it("lands on the settings page's sources once the config file is created", async () => {
+    const { fake, router } = renderApp(
+      { ...idle(null), noConfig: true },
+      "/",
+      undefined,
+      undefined,
+      settingsFormFor(defaultConfig(), mockHome),
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Create the config file" }),
+    );
+    await waitFor(() => expect(pathOf(router)).toBe("/settings"));
+    expect(fake.starterWrites).toBe(1);
+    act(() => fake.push({ ...idle(null), scanning: true }));
+
+    expect(
+      await screen.findByRole("region", { name: "Sources" }),
+    ).toBeDefined();
+    expect(screen.getByText("Nowhere to look yet")).toBeDefined();
+    expect(
+      screen.getByRole("button", { name: "Add Local folders" }),
+    ).toBeDefined();
+  });
+
+  it("says why the config file was not created, then leaves for the first scan once a config is found", async () => {
     const { fake } = renderApp({ ...idle(null), noConfig: true });
     await screen.findByRole("main", { name: "perch" });
 
@@ -120,13 +152,13 @@ describe("the window", () => {
         ...idle(null),
         noConfig: true,
         problems: [
-          "The starter config was not written: /home/owner/.config/perch/config.toml already exists",
+          "The config file was not created: /home/owner/.config/perch/config.toml already exists",
         ],
       }),
     );
     expect(
       await screen.findByText(
-        "The starter config was not written: /home/owner/.config/perch/config.toml already exists",
+        "The config file was not created: /home/owner/.config/perch/config.toml already exists",
       ),
     ).toBeDefined();
 

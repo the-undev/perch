@@ -17,6 +17,8 @@ export interface FakeApi {
   launches: LaunchAction[];
   keyFileReads: string[];
   starterWrites: number;
+  /** What the next starter write resolves: whether it wrote. */
+  starterWritten: boolean;
   entrySaves: { birdId: string; values: EntryValues }[];
   entryRemovals: string[];
   settingsSaves: SettingsValues[];
@@ -52,6 +54,7 @@ export function fakeApi(
       },
       writeStarterConfig: async () => {
         fake.starterWrites += 1;
+        return fake.starterWritten;
       },
       entryForm: async (birdId) => formFor(birdId),
       saveEntry: async (birdId, values) => {
@@ -73,6 +76,7 @@ export function fakeApi(
     launches: [],
     keyFileReads: [],
     starterWrites: 0,
+    starterWritten: true,
     entrySaves: [],
     entryRemovals: [],
     settingsSaves: [],

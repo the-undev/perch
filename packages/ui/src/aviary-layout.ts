@@ -3,7 +3,7 @@
 // and the bubble's place against a beak. Proportions are the board's (design/perch.html).
 
 import type { Aviary, Bird, Mood, Wire } from "@perch/core/viewmodel.ts";
-import { birdScale, type Facing } from "./bird.tsx";
+import { birdScale, type Facing, type NamePlace, roomyName } from "./bird.tsx";
 import type { BubbleTail } from "./bubble.tsx";
 import type { PixelSize } from "./hooks.ts";
 import { sceneWidth } from "./scene.tsx";
@@ -12,8 +12,9 @@ import {
   edgeMargin,
   facingAt,
   fenceGap,
-  fenceLabelDrop,
+  namePlace,
   placeAt,
+  placeSpacing,
   wireGap,
   wireHeight,
 } from "./wire.tsx";
@@ -32,8 +33,8 @@ export interface PlacedBird {
   y: number;
   facing: Facing;
   scale: number;
-  /** How far below the perch its name sits. */
-  labelDrop: number;
+  /** Where its name sits: crowded neighbours alternate baselines. */
+  namePlace: NamePlace;
   /** The beak tip in scene units: a bubble's tail tip meets it. */
   beak: ScenePoint;
 }
@@ -82,12 +83,12 @@ const rowStagger = 150;
 const wireStep = 1;
 const rowStep = 0.6;
 
-function placeOnWire(bird: Bird, x: number, rowY: number): PlacedBird {
-  const y = wireHeight(rowY, x, sceneWidth);
-  return perched(bird, x, y, 30);
-}
-
-function perched(bird: Bird, x: number, y: number, labelDrop: number) {
+function perched(
+  bird: Bird,
+  x: number,
+  y: number,
+  name: NamePlace,
+): PlacedBird {
   const scale = birdScale(bird);
   const facing = facingAt(x, sceneWidth);
   const face = facing === "right" ? 1 : -1;
@@ -98,7 +99,7 @@ function perched(bird: Bird, x: number, y: number, labelDrop: number) {
     y,
     facing,
     scale,
-    labelDrop,
+    namePlace: name,
     beak: { x: x + 37 * scale * face, y: y - 45 * scale },
   };
 }
@@ -109,6 +110,7 @@ function wireRows(wire: Wire, ys: number[]): WireRow[] {
   const rows = ys.length;
   return ys.map((y, index) => {
     const inRow = birds.filter((_, i) => i % rows === index);
+    const spacing = placeSpacing(inRow.length, wireGap, sceneWidth);
     return {
       wire,
       index,
@@ -118,7 +120,12 @@ function wireRows(wire: Wire, ys: number[]): WireRow[] {
           sceneWidth - edgeMargin,
           placeAt(slot, inRow.length, wireGap, sceneWidth) + index * rowStagger,
         );
-        return placeOnWire(bird, x, y);
+        return perched(
+          bird,
+          x,
+          wireHeight(y, x, sceneWidth),
+          namePlace(slot, spacing, roomyName.drop),
+        );
       }),
     };
   });
@@ -150,6 +157,7 @@ export function layoutAviary(aviary: Aviary, size: PixelSize): AviaryLayout {
     return wireRows(wire, ys);
   });
   const fenceBirds = byPosition(aviary.fence.birds);
+  const fenceSpacing = placeSpacing(fenceBirds.length, fenceGap, sceneWidth);
   return {
     height,
     rows,
@@ -160,7 +168,7 @@ export function layoutAviary(aviary: Aviary, size: PixelSize): AviaryLayout {
           bird,
           placeAt(i, fenceBirds.length, fenceGap, sceneWidth),
           fenceY + 2,
-          fenceLabelDrop(i),
+          namePlace(i, fenceSpacing, roomyName.drop),
         ),
       ),
     },

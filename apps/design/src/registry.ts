@@ -262,9 +262,9 @@ export const pages: DesignPage[] = [
   {
     slug: "crowded-wire",
     group: "scenes",
-    title: "A crowded wire",
+    title: "Crowded wires and fence",
     summary:
-      "A wire holding more birds than one row fits splits over two rows, or more.",
+      "A wire holding more birds than one row fits splits over two rows, or more; a crowded fence alternates its names between two baselines.",
     component: CrowdedPage,
   },
   {

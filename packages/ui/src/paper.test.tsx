@@ -63,6 +63,26 @@ describe("the key-file paper", () => {
     );
   });
 
+  it("scrolls a long document inside its own sheet, capped short of the window", () => {
+    const long = Array.from(
+      { length: 200 },
+      (_, i) => `## Section ${i}\n\nA paragraph.\n`,
+    ).join("\n");
+    render(
+      <KeyFilePaper
+        sheets={[{ file: file("docs/spec.md"), markdown: long }]}
+      />,
+    );
+    const sheet = screen.getByRole("tabpanel");
+    const classes = sheet.className.split(" ");
+
+    expect(classes).toContain("overflow-y-auto");
+    expect(classes).toContain("max-h-[max(20rem,calc(100vh-18rem))]");
+    expect(sheet.getAttribute("tabindex")).toBe("0");
+    expect(sheet.style.height).toBe("");
+    expect(sheet.querySelectorAll("h2")).toHaveLength(200);
+  });
+
   it("draws nothing for a bird without key files", () => {
     const { container } = render(<KeyFilePaper sheets={[]} />);
 

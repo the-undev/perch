@@ -302,9 +302,9 @@ export function BirdPage() {
             what: "Bird only: where the toes rest on the wire line, in scene units.",
           },
           {
-            name: "labelDrop",
-            type: "number",
-            what: "Bird only: how far below the wire the name sits; the fence staggers it.",
+            name: "namePlace",
+            type: '{ drop: number; size: "full" | "small" }',
+            what: "Bird only: how far below the wire the name sits and its type size; crowded neighbours alternate baselines and step down a size, from namePlace().",
           },
           {
             name: "speaking",

@@ -76,8 +76,9 @@ speech continue onto the page, then a ledger of facts in full words
 (clean zeros as a quiet green "none", counts toned by severity),
 branches, the default branch's newest commits on the forge, flags,
 launch actions as verbs, links out, and a configurable list of key
-files rendered as paper, the bubble's material, with folder tabs.
-Concrete nouns link wherever a page exists for them. Headings name the
+files rendered as paper, the bubble's material, with folder tabs. A
+long file scrolls inside its sheet, which stops short of the window's
+height, so the page keeps its rhythm. Concrete nouns link wherever a page exists for them. Headings name the
 actual thing ("main on GitHub"), never a concept.
 
 The visual language is specified on the board: the field guide

@@ -234,35 +234,6 @@ working tree is clean and everything is pushed"). Deriving it in the
 renderer would mean matching ledger labels; it needs a view model field
 first.
 
-## Key-file paper scrolling
-
-A long markdown file stretches the detail page and the whole page
-scrolls. Observed on first live use, 22 October 2026. Options: each
-document scrolls inside its own fixed-height section; a collapsed view
-per document opened on demand; one document shown at a time with a
-picker. Decide after living with it.
-
-## Attention count against the heading
-
-The wire heading's attention count sits flush against the name
-("Machine & Home1 attention"). It needs a gap, and possibly its own
-line or a chip.
-
-## Crowded fence
-
-With twenty or so fence birds the name labels overlap and the birds
-nearly touch. The fence needs a crowd story: wrap onto more fence rows,
-thin or stagger the names, hide names until hover past a density, or
-scale the scene. The wires have the same limit later; rowCapacity only
-staggers rows in the aviary view.
-
-## Empty wire tab
-
-A configured wire always gets a header tab, decided 22 October 2026.
-An empty one's tab is dead (`tabDestination` returns null) and says
-nothing about why. It could carry an "empty" word, or go somewhere that
-says how to adopt a bird onto the wire.
-
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

@@ -6,7 +6,8 @@ import type {
   Fence as FenceModel,
   Wire as WireModel,
 } from "@perch/core/viewmodel.ts";
-import { Bird, type Facing } from "./bird.tsx";
+import { Fragment } from "react";
+import { Bird, type Facing, type NamePlace, roomyName } from "./bird.tsx";
 
 /** The margin no bird is placed inside, at either end of the scene. */
 export const edgeMargin = 120;
@@ -24,6 +25,41 @@ export function placeAt(
   const steps = Math.max(count - 1, 1);
   const span = Math.min((count - 1) * gap, width - 2 * edgeMargin);
   return (width - span) / 2 + (span / steps) * index;
+}
+
+/** How far apart neighbours sit among count places at most `gap` apart: the room shared out. */
+export function placeSpacing(
+  count: number,
+  gap: number,
+  width: number,
+): number {
+  return Math.min(gap, (width - 2 * edgeMargin) / Math.max(count - 1, 1));
+}
+
+/** Neighbours closer than this alternate their names between a near and a lower baseline. */
+export const alternateBelow = 150;
+
+/** Neighbours closer than this also set their names a size smaller. */
+export const smallerBelow = 100;
+
+/** How far the lower baseline sits beneath the near one: a line of names and a clear gap. */
+export const lowerRowDrop = 22;
+
+/**
+ * Where the index-th bird's name goes when neighbours sit `spacing` apart: every other name drops
+ * to the lower baseline once they are close, and all of them take the smaller size once closer
+ * still. `nearDrop` is the near baseline's drop below the perch.
+ */
+export function namePlace(
+  index: number,
+  spacing: number,
+  nearDrop: number,
+): NamePlace {
+  const lower = spacing < alternateBelow && index % 2 === 1;
+  return {
+    drop: nearDrop + (lower ? lowerRowDrop : 0),
+    size: spacing < smallerBelow ? "small" : "full",
+  };
 }
 
 /** Birds on the left half face right, birds on the right half face left. */
@@ -57,21 +93,36 @@ export function wireTally(birds: BirdModel[]): {
   };
 }
 
-/** The tally as tspans, for a wire's name to carry. */
-export function Tally({ birds }: { birds: BirdModel[] }) {
+/** The space between a wire's name and its tally, in scene units. */
+export const tallyGap = 18;
+
+/** The tally's words in order, each with its ink; "all settled" when nothing else is said. */
+function tallyWords(
+  birds: BirdModel[],
+): { words: string; ink: string | undefined }[] {
   const { attention, drifting } = wireTally(birds);
-  if (attention === 0 && drifting === 0)
-    return <tspan dx={18}>all settled</tspan>;
+  const said = [
+    { count: attention, words: `${attention} attention`, ink: "fill-red" },
+    { count: drifting, words: `${drifting} drifting`, ink: "fill-amber" },
+  ].filter((part) => part.count > 0);
+  return said.length > 0 ? said : [{ words: "all settled", ink: undefined }];
+}
+
+/**
+ * The tally as tspans, for a wire's name to carry. The gap rides on the first word itself: an
+ * empty tspan holds no character for an offset to move.
+ */
+export function Tally({ birds }: { birds: BirdModel[] }) {
   return (
     <>
-      <tspan dx={18} />
-      {attention > 0 && (
-        <tspan className="fill-red">{attention} attention</tspan>
-      )}
-      {attention > 0 && drifting > 0 && <tspan> · </tspan>}
-      {drifting > 0 && (
-        <tspan className="fill-amber">{drifting} drifting</tspan>
-      )}
+      {tallyWords(birds).map((part, index) => (
+        <Fragment key={part.words}>
+          {index > 0 && <tspan> · </tspan>}
+          <tspan dx={index === 0 ? tallyGap : undefined} className={part.ink}>
+            {part.words}
+          </tspan>
+        </Fragment>
+      ))}
     </>
   );
 }
@@ -165,11 +216,6 @@ export const wireGap = 340;
 /** The gap between birds on the fence, at most. */
 export const fenceGap = 205;
 
-/** The fence staggers names over two rows so neighbours' names never collide. */
-export function fenceLabelDrop(index: number): number {
-  return index % 2 === 1 ? 48 : 30;
-}
-
 export interface WireProps {
   wire: WireModel;
   /** The wire's height in scene units, at its ends before the sag. */
@@ -181,6 +227,7 @@ export interface WireProps {
 /** One priority band: the wire, its name and tally, and its birds leftmost first. */
 export function Wire({ wire, y, width, night }: WireProps) {
   const birds = byPosition(wire.birds);
+  const spacing = placeSpacing(birds.length, wireGap, width);
   return (
     <g data-wire={wire.name}>
       <WireLine y={y} width={width} label={{ name: wire.name, birds }} />
@@ -194,7 +241,7 @@ export function Wire({ wire, y, width, night }: WireProps) {
             y={wireHeight(y, x, width)}
             facing={facingAt(x, width)}
             night={night}
-            labelDrop={30}
+            namePlace={namePlace(i, spacing, roomyName.drop)}
             speaking={false}
           />
         );
@@ -216,6 +263,7 @@ export interface FenceProps {
 /** The fence beneath the wires: a rail on posts, every unadopted bird dimmed upon it. */
 export function Fence({ fence, y, width, height, night }: FenceProps) {
   const birds = byPosition(fence.birds);
+  const spacing = placeSpacing(birds.length, fenceGap, width);
   return (
     <g data-fence="">
       <FenceRail y={y} width={width} height={height} count={birds.length} />
@@ -229,7 +277,7 @@ export function Fence({ fence, y, width, height, night }: FenceProps) {
             y={y + 2}
             facing={facingAt(x, width)}
             night={night}
-            labelDrop={fenceLabelDrop(i)}
+            namePlace={namePlace(i, spacing, roomyName.drop)}
             speaking={false}
           />
         );

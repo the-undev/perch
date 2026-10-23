@@ -164,6 +164,15 @@ export function BirdFigure({ look, id, speaking }: BirdFigureProps) {
   );
 }
 
+/** Where a bird's name sits: how far below the perch, and at which of two type sizes. */
+export interface NamePlace {
+  drop: number;
+  size: "full" | "small";
+}
+
+/** A name with room around it: just beneath the perch, at full size. */
+export const roomyName: NamePlace = { drop: 30, size: "full" };
+
 export interface BirdProps {
   bird: BirdModel;
   /** Where the toes rest, on the wire line, in scene units. */
@@ -171,16 +180,22 @@ export interface BirdProps {
   y: number;
   facing: Facing;
   night: boolean;
-  /** How far below the wire the name sits; the fence staggers it so names do not collide. */
-  labelDrop: number;
+  /** Where the name sits; crowded neighbours alternate baselines so names do not collide. */
+  namePlace: NamePlace;
   /** Its bubble has just opened: the beak wiggles. */
   speaking: boolean;
 }
 
-/** The name's ink: muted, brighter when an enclosing group is hovered or focused from the keyboard. */
+/** The name's ink and size: muted, brighter when an enclosing group is hovered or focused from the keyboard. */
 const labelClass = {
-  wire: "fill-ink-muted font-body font-medium text-[13.5px]",
-  fence: "fill-ink-fence font-body font-medium text-[12.5px]",
+  wire: {
+    full: "fill-ink-muted font-body font-medium text-[13.5px]",
+    small: "fill-ink-muted font-body font-medium text-[12px]",
+  },
+  fence: {
+    full: "fill-ink-fence font-body font-medium text-[12.5px]",
+    small: "fill-ink-fence font-body font-medium text-[11px]",
+  },
 };
 
 const labelReacts =
@@ -193,7 +208,7 @@ export function Bird({
   y,
   facing,
   night,
-  labelDrop,
+  namePlace,
   speaking,
 }: BirdProps) {
   const look = birdLook(bird, night);
@@ -230,9 +245,10 @@ export function Bird({
         )}
       </g>
       <text
-        y={labelDrop + 3 * scale}
+        y={namePlace.drop + 3 * scale}
         textAnchor="middle"
-        className={`${look.dim ? labelClass.fence : labelClass.wire} ${labelReacts}`}
+        data-name-size={namePlace.size}
+        className={`${labelClass[look.dim ? "fence" : "wire"][namePlace.size]} ${labelReacts}`}
       >
         {bird.name}
       </text>
@@ -298,7 +314,7 @@ export function BirdPortrait({ bird, facing, night }: BirdPortraitProps) {
         y={0}
         facing={facing}
         night={night}
-        labelDrop={30}
+        namePlace={roomyName}
         speaking={false}
       />
     </svg>

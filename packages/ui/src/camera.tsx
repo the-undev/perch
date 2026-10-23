@@ -41,7 +41,7 @@ import type { KeyFileSheet } from "./paper.tsx";
 import { sceneWidth, skyBackground } from "./scene.tsx";
 import { isNight, type SkyPhase, skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
-import { byPosition, facingAt, Tally } from "./wire.tsx";
+import { byPosition, facingAt, namePlace, Tally, tallyGap } from "./wire.tsx";
 
 /** Where the camera points: the whole aviary, or one bird's detail page. */
 export type CameraPlace = { at: "aviary" } | { at: "detail"; birdId: string };
@@ -89,7 +89,7 @@ function tabOf(tabs: CameraTab[], bird: Bird): BirdTab | undefined {
 /**
  * Where pressing a tab goes: home for The Aviary; for a wire or the fence, the bird last open
  * there while it still sits there, else the leftmost, which needs attention first. Null for a
- * wire with no birds.
+ * wire with no birds, whose tab says "empty" and cannot be pressed.
  */
 export function tabDestination(
   tab: CameraTab,
@@ -118,11 +118,22 @@ export const stripHeight = 198;
 const stripWireY = 150;
 const stripScale = { wire: 1, fence: 0.8 };
 
-/** Birds in the strip sit at most 175 apart, inside a 200 margin. */
-function stripX(index: number, count: number): number {
-  const span = Math.min((count - 1) * 175, sceneWidth - 400);
-  return (sceneWidth - span) / 2 + (span / Math.max(count - 1, 1)) * index;
+/** How far apart birds in the strip sit: at most 175, inside a 200 margin. */
+function stripSpacing(count: number): number {
+  return Math.min(175, (sceneWidth - 400) / Math.max(count - 1, 1));
 }
+
+/** The x of the index-th of count birds in the strip, the row centred. */
+function stripX(index: number, count: number): number {
+  const span = stripSpacing(count) * (count - 1);
+  return (sceneWidth - span) / 2 + stripSpacing(count) * index;
+}
+
+/** A strip bird's near baseline, beneath its perch: the lower one still clears the strip's foot. */
+const stripNameDrop = 22;
+
+/** The strip's name sizes, full and a step smaller. */
+const stripNameSize = { full: "text-[13px]", small: "text-[11.5px]" };
 
 /** A point and a bird's drawn scale, in pixels, for a flight's ends. */
 interface FlightEnd {
@@ -271,6 +282,7 @@ function Strip({
 }) {
   const dim = tab.kind === "fence";
   const base = dim ? stripScale.fence : stripScale.wire;
+  const spacing = stripSpacing(tab.birds.length);
   return (
     <svg
       viewBox={`0 0 ${sceneWidth} ${stripHeight}`}
@@ -300,7 +312,7 @@ function Strip({
           {tab.label}
         </tspan>
         {dim ? (
-          <tspan dx={18}>{tab.birds.length} not adopted</tspan>
+          <tspan dx={tallyGap}>{tab.birds.length} not adopted</tspan>
         ) : (
           <Tally birds={tab.birds} />
         )}
@@ -309,6 +321,7 @@ function Strip({
         const x = stripX(index, tab.birds.length);
         const face = facingAt(x, sceneWidth) === "right" ? 1 : -1;
         const open = bird.id === openId;
+        const name = namePlace(index, spacing, stripNameDrop);
         return (
           // biome-ignore lint/a11y/useSemanticElements: an svg group cannot be a button element.
           <g
@@ -335,9 +348,10 @@ function Strip({
               />
             </g>
             <text
-              y={26}
+              y={name.drop}
               textAnchor="middle"
-              className={`font-body font-medium text-[13px] group-hover:fill-ink group-focus-visible:fill-ink group-focus-visible:underline ${dim ? "fill-ink-fence" : "fill-ink-muted"}`}
+              data-name-size={name.size}
+              className={`font-body font-medium ${stripNameSize[name.size]} group-hover:fill-ink group-focus-visible:fill-ink group-focus-visible:underline ${dim ? "fill-ink-fence" : "fill-ink-muted"}`}
             >
               {bird.name}
             </text>
@@ -535,18 +549,29 @@ export function CameraView({
         >
           {tabs.map((tab) => {
             const destination = tabDestination(tab, remembered);
+            if (destination === null) {
+              return (
+                <span
+                  key={memoryKey(tab)}
+                  data-empty-tab=""
+                  className="cursor-default px-4 py-1.5 font-semibold text-[12.5px] text-ink-faint"
+                >
+                  {tab.label}{" "}
+                  <span className="font-normal text-ink-faint/80">empty</span>
+                </span>
+              );
+            }
             const on = tab === currentTab;
             return (
               <button
                 key={memoryKey(tab)}
                 type="button"
-                disabled={destination === null}
                 aria-current={on ? "page" : undefined}
-                onClick={() => destination && onNavigate(destination)}
+                onClick={() => onNavigate(destination)}
                 className={
                   on
                     ? "cursor-pointer rounded-full bg-panel-hi px-4 py-1.5 font-semibold text-[12.5px] text-ink"
-                    : "cursor-pointer rounded-full px-4 py-1.5 font-semibold text-[12.5px] text-ink-muted transition-colors hover:text-ink disabled:cursor-default disabled:text-ink-faint/60"
+                    : "cursor-pointer rounded-full px-4 py-1.5 font-semibold text-[12.5px] text-ink-muted transition-colors hover:text-ink"
                 }
               >
                 {tab.label}

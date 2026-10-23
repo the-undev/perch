@@ -1,8 +1,31 @@
 import { mockAviary } from "@perch/core/mock.ts";
 import { crowdedGap, rowCapacity, rowsFor } from "@perch/ui/aviary-layout.ts";
 import { AviaryView } from "@perch/ui/aviary-view.tsx";
-import { aviaryWith, crowdedWire, mockWire, scanMoment } from "../specimens.ts";
+import { CameraView } from "@perch/ui/camera.tsx";
+import { sceneWidth } from "@perch/ui/scene.tsx";
+import {
+  alternateBelow,
+  edgeMargin,
+  fenceGap,
+  placeSpacing,
+  smallerBelow,
+} from "@perch/ui/wire.tsx";
+import {
+  aviaryWith,
+  crowdedFence,
+  crowdedWire,
+  mockWire,
+  scanMoment,
+} from "../specimens.ts";
 import { Code, SceneFrame, Section, Specimen, Usage } from "../usage.tsx";
+
+/** The fewest fence birds whose neighbours sit closer than a limit. */
+function fenceCountBelow(limit: number): number {
+  return Math.floor((sceneWidth - 2 * edgeMargin) / limit) + 2;
+}
+
+/** The live machine's fence on first look: 21 birds. */
+const liveFence = 21;
 
 const counts = [
   rowCapacity,
@@ -48,6 +71,58 @@ export function CrowdedPage() {
               now={scanMoment}
               onLaunch={() => {}}
               onFullStory={() => {}}
+            />
+          </SceneFrame>
+        </Specimen>
+      </Section>
+
+      <Section
+        title="A crowded fence"
+        rule={`Every bird stays on the one fence. While neighbours sit ${alternateBelow} units apart or more their names share one baseline; closer, every other name drops to a lower baseline; under ${smallerBelow} apart every name also steps down a size. The strip of the fence's tab row follows the same rule.`}
+        min={900}
+      >
+        <Specimen
+          label={`${fenceCountBelow(alternateBelow)} birds, names alternate`}
+          rule={`Neighbours ${Math.round(placeSpacing(fenceCountBelow(alternateBelow), fenceGap, sceneWidth))} units apart: two baselines at full size.`}
+        >
+          <SceneFrame height="560px">
+            <AviaryView
+              aviary={crowdedFence(fenceCountBelow(alternateBelow))}
+              now={scanMoment}
+              onLaunch={() => {}}
+              onFullStory={() => {}}
+            />
+          </SceneFrame>
+        </Specimen>
+        <Specimen
+          label={`${liveFence} birds, the live machine's fence`}
+          rule={`Neighbours ${placeSpacing(liveFence, fenceGap, sceneWidth)} units apart: two baselines, a size smaller. Copies of the mock's fence birds, numbered, ordered by name.`}
+        >
+          <SceneFrame height="560px">
+            <AviaryView
+              aviary={crowdedFence(liveFence)}
+              now={scanMoment}
+              onLaunch={() => {}}
+              onFullStory={() => {}}
+            />
+          </SceneFrame>
+        </Specimen>
+        <Specimen
+          label={`${liveFence} birds in the fence's strip`}
+          rule="A fence bird's page: its wire-mates in the tab row alternate their names the same way."
+        >
+          <SceneFrame height="560px">
+            <CameraView
+              aviary={crowdedFence(liveFence)}
+              now={scanMoment}
+              place={{ at: "detail", birdId: "fence/0" }}
+              onNavigate={() => {}}
+              onLaunch={() => {}}
+              sheets={[]}
+              scanning={false}
+              onRescan={() => {}}
+              onSettings={() => {}}
+              entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
             />
           </SceneFrame>
         </Specimen>

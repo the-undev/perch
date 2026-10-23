@@ -1,4 +1,5 @@
 import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
+import type { Bird } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type CameraPlace, CameraView } from "./camera.tsx";
@@ -10,13 +11,18 @@ const now = new Date(mockSnapshot.scannedAt);
 const aviaryPlace: CameraPlace = { at: "aviary" };
 const detailOf = (birdId: string): CameraPlace => ({ at: "detail", birdId });
 
-function camera(place: CameraPlace, scanning = false, clock = now) {
+function camera(
+  place: CameraPlace,
+  scanning = false,
+  clock = now,
+  aviary = mockAviary,
+) {
   const onNavigate = vi.fn();
   const onRescan = vi.fn();
   const onSettings = vi.fn();
   const view = (at: CameraPlace) => (
     <CameraView
-      aviary={mockAviary}
+      aviary={aviary}
       now={clock}
       place={at}
       onNavigate={onNavigate}
@@ -84,6 +90,27 @@ describe("the camera", () => {
     );
   });
 
+  it("shows an empty wire's tab, quietly saying so, and goes nowhere from it", () => {
+    const withEmpty = {
+      ...mockAviary,
+      wires: [...mockAviary.wires, { name: "Servers", birds: [] }],
+    };
+    const { container, onNavigate } = camera(
+      aviaryPlace,
+      false,
+      now,
+      withEmpty,
+    );
+    const empty = container.querySelector("[data-empty-tab]");
+    if (empty === null) throw new Error("no empty tab drawn");
+
+    expect(empty.textContent).toBe("Servers empty");
+    expect(screen.queryByRole("button", { name: /Servers/ })).toBeNull();
+    fireEvent.click(empty);
+
+    expect(onNavigate).not.toHaveBeenCalled();
+  });
+
   it("rides down to a bird's detail from its bubble", () => {
     const { onNavigate } = camera(aviaryPlace);
     const skiff = mockBird("undev/skiff");
@@ -116,6 +143,34 @@ describe("the camera", () => {
         .toSorted((a, b) => a.position - b.position)
         .map((bird) => bird.id),
     );
+  });
+
+  it("keeps the strip's tally clear of the wire's name", () => {
+    const { container } = camera(detailOf("undev/skiff"));
+    const name = [...container.querySelectorAll("tspan")].find(
+      (tspan) => tspan.textContent === "Projects",
+    );
+
+    expect(name?.nextElementSibling?.textContent).toBe("4 attention");
+    expect(name?.nextElementSibling?.getAttribute("dx")).toBe("18");
+  });
+
+  it("alternates the names of a crowded fence's strip between two baselines", () => {
+    const birds = Array.from({ length: 21 }, (_, position) => ({
+      ...(mockAviary.fence.birds[position % 3] as Bird),
+      id: `fence-${position}`,
+      position,
+    }));
+    const { container } = camera(detailOf("fence-0"), false, now, {
+      ...mockAviary,
+      fence: { birds },
+    });
+    const names = [...container.querySelectorAll("[data-strip-bird] > text")];
+
+    expect(names).toHaveLength(21);
+    expect(names[0]?.getAttribute("y")).not.toBe(names[1]?.getAttribute("y"));
+    expect(names[0]?.getAttribute("y")).toBe(names[2]?.getAttribute("y"));
+    expect(names[0]?.getAttribute("data-name-size")).toBe("small");
   });
 
   it("switches to a wire-mate from the strip", () => {

@@ -12,6 +12,13 @@ export interface KeyFileSheet {
   markdown: string | null;
 }
 
+/**
+ * The open sheet stops short of the window's height and scrolls inside itself, so long or many
+ * documents keep the page's rhythm; a short one keeps its natural height.
+ */
+export const paperScroll =
+  "max-h-[max(20rem,calc(100vh-18rem))] overflow-y-auto overscroll-contain [scrollbar-color:var(--color-paper-quiet)_transparent]";
+
 /** A sheet of paper holding one rendered markdown file. */
 export function MarkdownPaper({ markdown }: { markdown: string }) {
   return (
@@ -60,7 +67,9 @@ export function KeyFilePaper({ sheets }: { sheets: KeyFileSheet[] }) {
         id={panelId}
         role="tabpanel"
         aria-label={open.file.path}
-        className="rounded-paper bg-paper px-9.5 pt-7 pb-8.5 text-paper-ink shadow-paper"
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: a sheet that scrolls takes focus so the keys scroll it.
+        tabIndex={0}
+        className={`${paperScroll} rounded-paper bg-paper px-9.5 pt-7 pb-8.5 text-paper-ink shadow-paper focus-visible:outline-2 focus-visible:outline-ink-accent`}
       >
         {open.markdown === null ? (
           <p className="m-0 text-[14px] text-paper-quiet">

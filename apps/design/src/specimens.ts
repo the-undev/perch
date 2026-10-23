@@ -65,6 +65,26 @@ export function crowdedWire(name: string, count: number): Wire {
   return { name, birds: onWire(birds) };
 }
 
+/** The mock aviary with a fence of `count` birds: the mock's fence birds over again, each copy numbered. */
+export function crowdedFence(count: number): Aviary {
+  const fence = mockAviary.fence.birds;
+  const birds = Array.from({ length: count }, (_, i) => {
+    const source = fence[i % fence.length] as Bird;
+    const copy = `${source.name} ${Math.floor(i / fence.length) + 1}`;
+    return {
+      ...source,
+      id: `fence/${i}`,
+      name: copy,
+      bubble: { ...source.bubble, name: copy },
+    };
+  });
+  // The fence is ordered by name.
+  const byName = birds
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((bird, position) => ({ ...bird, position }));
+  return { ...mockAviary, fence: { birds: byName } };
+}
+
 /** The mock aviary after a scan in which config adopts Hello onto Projects: a large change. */
 export function withHelloAdopted(): Aviary {
   const hello = mockBird("dev/odin/hello");

@@ -30,6 +30,11 @@ export interface PerchApi {
   keyFiles(birdId: string): Promise<KeyFileSheet[]>;
   /** Performs a launch action a bird offers; a failure arrives as a problem in the state. */
   launch(action: LaunchAction): Promise<void>;
+  /**
+   * Copies the shipped example to the config path, then reads it and scans; refuses, writing
+   * nothing, when the file exists, and the refusal arrives as a problem in the state.
+   */
+  writeStarterConfig(): Promise<void>;
 }
 
 /** The calls the main process answers: everything but the pushed state. */
@@ -42,4 +47,5 @@ export const channels = {
   rescan: "scan:request",
   keyFiles: "bird:key-files",
   launch: "bird:launch",
+  writeStarterConfig: "config:write-starter",
 } as const satisfies Record<keyof PerchApi, string>;

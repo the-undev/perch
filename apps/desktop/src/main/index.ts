@@ -16,6 +16,7 @@ import { iconPaths, resourceDirFor } from "./icons.ts";
 import { registerIpc } from "./ipc.ts";
 import { createSpawnDetached, launch } from "./launch.ts";
 import { createScanScheduler } from "./scan-scheduler.ts";
+import { writeStarterConfig } from "./starter-config.ts";
 import { trayMenu } from "./tray-menu.ts";
 import { hideOnClose, present } from "./window-presence.ts";
 
@@ -118,6 +119,8 @@ function start(): void {
     launch: (action, current) =>
       launch(action, current.launch.commands, { run, spawnDetached }),
     readText: (path) => readFile(path, "utf8"),
+    writeStarter: () =>
+      writeStarterConfig(paths.examplePath, paths.userConfigPath),
     publish: (next: PerchState) => {
       if (mainWindow === undefined || mainWindow.isDestroyed()) return;
       mainWindow.webContents.send(channels.onState, next);
@@ -165,6 +168,11 @@ function start(): void {
       rescan: () => scheduler.request(),
       keyFiles: (birdId) => state.keyFiles(birdId),
       launch: (action) => state.launch(action),
+      // The request reads the config path again and scans once the file is there.
+      writeStarterConfig: async () => {
+        await state.writeStarterConfig();
+        await scheduler.request();
+      },
     });
     const window = createWindow(icons.window, !launchArguments.hidden);
     mainWindow = window;

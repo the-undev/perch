@@ -8,6 +8,7 @@ import { useCallback, useMemo } from "react";
 import type { PerchApi } from "../../shared/ipc.ts";
 import { useKeyFiles, usePerchState } from "./queries.ts";
 import { useNow } from "./use-now.ts";
+import { Welcome } from "./welcome.tsx";
 
 /** How often the clock is read again: the sky changes on the hour, ages by the hour. */
 const clockTickMs = 60_000;
@@ -65,6 +66,15 @@ export function AppView({ api }: { api: PerchApi }) {
   );
 
   if (state === undefined) return null;
+  if (state.noConfig) {
+    return (
+      <Welcome
+        problems={state.problems}
+        onWriteStarter={() => void api.writeStarterConfig()}
+        onCheckAgain={() => void api.rescan()}
+      />
+    );
+  }
   if (aviary === undefined) {
     return <FirstScan scanning={state.scanning} problems={state.problems} />;
   }

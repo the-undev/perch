@@ -278,7 +278,7 @@ describe("roadmap source", () => {
     ]);
     const source = createRoadmapSource({
       readText: async (path) => files.get(path) ?? null,
-      roadmapsFor: (id) =>
+      roadmapsFor: () => (id) =>
         id === "vault" ? ["Tech/Tech Plans.md", "Missing.md"] : null,
     });
 

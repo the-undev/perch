@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { importanceFor, thresholdsFor } from "../src/config.ts";
+import { importanceFor, resolveEntry, thresholdsFor } from "../src/config.ts";
 import {
   deriveActivity,
   deriveDrift,
@@ -119,8 +119,12 @@ describe("the mock dataset", () => {
 
   it("agrees with the derivation rules wherever it states a judged value", () => {
     for (const item of mockSnapshot.items) {
-      expect(item.importance).toBe(importanceFor(mockConfig, item.id));
-      const thresholds = thresholdsFor(mockConfig, item.id);
+      const entry = resolveEntry(mockConfig, item.id, [
+        ...(item.presences.local ? [item.presences.local.ref] : []),
+        ...item.presences.forges.map((presence) => presence.ref),
+      ]).entry;
+      expect(item.importance).toBe(importanceFor(mockConfig, entry));
+      const thresholds = thresholdsFor(mockConfig, entry);
       expect(item.expectations).toEqual(
         item.expectations.map((expectation) =>
           deriveExpectation(
@@ -133,7 +137,7 @@ describe("the mock dataset", () => {
         ),
       );
       expect(item.expectations.map((entry) => entry.name)).toEqual(
-        mockConfig.items[item.id]?.expect ?? [],
+        entry?.expect ?? [],
       );
       const git = item.sources.git;
       if (git === undefined || "error" in git) continue;

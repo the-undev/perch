@@ -525,7 +525,8 @@ describe("the detail", () => {
       {
         flag: "config-conflict",
         level: null,
-        detail: 'items."github:finch/perch": key it by dev/perch',
+        detail:
+          'items."dev/perch", items."github:finch/perch": name one item, dev/perch; items."dev/perch" applies',
       },
     ],
     presences: {
@@ -654,7 +655,8 @@ describe("the detail", () => {
       {
         flag: "config-conflict",
         text: "config conflict",
-        detail: 'items."github:finch/perch": key it by dev/perch',
+        detail:
+          'items."dev/perch", items."github:finch/perch": name one item, dev/perch; items."dev/perch" applies',
         level: null,
       },
     ]);

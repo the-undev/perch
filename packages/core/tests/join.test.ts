@@ -1,14 +1,16 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { aggregate } from "../src/aggregate.ts";
-import { parseConfig } from "../src/config.ts";
+import { aggregate, localEntries } from "../src/aggregate.ts";
+import { type Config, parseConfig } from "../src/config.ts";
 import {
   type ForgeInput,
   joinPresences,
   type LocalInput,
 } from "../src/join.ts";
-import type { ForgeName, RawForgeRepo } from "../src/raw.ts";
+import type { ForgeName, RawFiles, RawForgeRepo } from "../src/raw.ts";
+import type { Snapshot } from "../src/snapshot.ts";
+import { deriveAviary } from "../src/viewmodel.ts";
 import {
   forgeRepo,
   gatheredAt,
@@ -223,6 +225,19 @@ describe("asserted joins", () => {
     ]);
   });
 
+  it("name a local clone by its bare id as well as by local:<id>", () => {
+    const result = joined({
+      locals: [local("dev/notes", [])],
+      forges: [forge("forgejo", forgeRepo("finch/notes", {}))],
+      joins: [["dev/notes", "forgejo:finch/notes"]],
+    });
+
+    expect(refsOf(result)).toEqual([
+      ["local:dev/notes", "forgejo:finch/notes"],
+    ]);
+    expect(result.conflicts).toEqual([]);
+  });
+
   it("lose to the observation when they would join two local clones, flagging both", () => {
     const result = joined({
       locals: [local("dev/a", []), local("dev/b", [])],
@@ -286,6 +301,23 @@ describe("ignores", () => {
       "local:dev/perch uses it, so it stays",
       "github:finch/gone was not observed",
     ]);
+  });
+  it("drop a project named by any of its references, not only its id", () => {
+    const result = joined({
+      forges: [
+        forge("github", forgeRepo("finch/notes", {})),
+        forge("forgejo", forgeRepo("finch/notes", {})),
+      ],
+      joins: [["github:finch/notes", "forgejo:finch/notes"]],
+      ignore: ["forgejo:Finch/Notes"],
+    });
+
+    expect(refsOf(result)).toEqual([]);
+    expect([...result.ignored]).toEqual([
+      "github:finch/notes",
+      "forgejo:finch/notes",
+    ]);
+    expect(result.conflicts).toEqual([]);
   });
 });
 
@@ -428,35 +460,103 @@ describe("aggregating joined projects", () => {
     ).toBe(false);
   });
 
-  it("records config entries that name nothing observed or a presence joined into another item", async () => {
-    const snapshot = aggregate(
-      { status: okStatus({}), files },
-      {
-        config: await config(
-          '[items."dev/vanished"]\n[items."github:finch/perch"]\n',
-        ),
-        configPath: "c",
-        liveSources: [],
-        previous: null,
-      },
+  function aggregated(snapshotFiles: Partial<RawFiles>, configured: Config) {
+    return aggregate(
+      { status: okStatus({}), files: snapshotFiles },
+      { config: configured, configPath: "c", liveSources: [], previous: null },
       new Date(gatheredAt),
     );
+  }
 
-    expect(
-      snapshot.conflicts.filter(
-        (entry) => !entry.assertion.includes("obsidian"),
-      ),
-    ).toEqual([
+  const itemConflicts = (snapshot: Snapshot) =>
+    snapshot.conflicts.filter((entry) => !entry.assertion.includes("obsidian"));
+
+  it("records a config entry that names nothing observed", async () => {
+    const snapshot = aggregated(
+      files,
+      await config('[items."dev/vanished"]\n'),
+    );
+
+    expect(itemConflicts(snapshot)).toEqual([
       {
         assertion: 'items."dev/vanished"',
         detail: "dev/vanished was not observed",
       },
+    ]);
+  });
+
+  it("keeps a forge-keyed entry's adoption, name, wire, thresholds, key files and roadmaps after a local clone joins", async () => {
+    const configured = await config(
+      [
+        '[items."github:Finch/Perch"]',
+        'wire = "Machine & Home"',
+        'name = "Perch"',
+        "unsafe_amber_hours = 300",
+        "unsafe_red_hours = 400",
+        'key_files = ["docs/spec.md"]',
+        'roadmaps = ["docs/plan.md"]',
+        "",
+      ].join("\n"),
+    );
+    const forgeOnly = rawFiles({
+      includes: { "/home/test/dev": "directory" },
+      locals: {},
+      forges: { github: [forgeRepo("finch/perch", {})] },
+    });
+    const birdNamed = (snapshot: Snapshot, id: string) => {
+      const aviary = deriveAviary(snapshot, configured);
+      return [
+        ...aviary.wires.flatMap((wire) => wire.birds),
+        ...aviary.fence.birds,
+      ].find((bird) => bird.id === id);
+    };
+
+    const before = birdNamed(
+      aggregated(forgeOnly, configured),
+      "github:finch/perch",
+    );
+    const snapshot = aggregated(files, configured);
+    const after = birdNamed(snapshot, "dev/perch");
+    const perch = snapshot.items.find((item) => item.id === "dev/perch");
+
+    expect([before?.wire, before?.name]).toEqual(["Machine & Home", "Perch"]);
+    expect([after?.wire, after?.name]).toEqual(["Machine & Home", "Perch"]);
+    expect(perch?.flags.map((flag) => flag.flag)).not.toContain("not-set-up");
+    expect(perch?.sources.git).toMatchObject({
+      drift: { unpushed: { hours: 240, level: "green" } },
+    });
+    expect(after?.detail.keyFiles.map((file) => file.path)).toEqual([
+      "docs/spec.md",
+    ]);
+    expect(localEntries(files, configured).get("dev/perch")?.roadmaps).toEqual([
+      "docs/plan.md",
+    ]);
+    expect(itemConflicts(snapshot)).toEqual([]);
+  });
+
+  it("flags two entries naming one project, and the one keyed by its id applies", async () => {
+    const configured = await config(
+      '[items."github:finch/perch"]\nname = "Forge"\n\n[items."dev/perch"]\nname = "Local"\n',
+    );
+
+    const snapshot = aggregated(files, configured);
+    const perch = snapshot.items.find((item) => item.id === "dev/perch");
+    const bird = deriveAviary(snapshot, configured)
+      .wires.flatMap((wire) => wire.birds)
+      .find((candidate) => candidate.id === "dev/perch");
+
+    expect(itemConflicts(snapshot)).toEqual([
       {
-        assertion: 'items."github:finch/perch"',
-        detail: "names a presence joined into dev/perch; key it by that id",
+        assertion: 'items."dev/perch", items."github:finch/perch"',
+        detail: 'name one item, dev/perch; items."dev/perch" applies',
       },
     ]);
-    const perch = snapshot.items.find((item) => item.id === "dev/perch");
-    expect(perch?.flags.map((flag) => flag.flag)).toContain("config-conflict");
+    expect(perch?.flags).toContainEqual({
+      flag: "config-conflict",
+      level: null,
+      detail:
+        'items."dev/perch", items."github:finch/perch": name one item, dev/perch; items."dev/perch" applies',
+    });
+    expect(bird?.name).toBe("Local");
   });
 });

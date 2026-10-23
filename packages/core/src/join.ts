@@ -3,6 +3,7 @@
 // disagreement is recorded.
 
 import type { ForgeName, RawForgeRepo, RawLocalPresence } from "./raw.ts";
+import { candidateRefs, forgeRef, localRef } from "./refs.ts";
 import { parseRemoteUrl, remoteUrls } from "./remote-url.ts";
 import type { ConfigConflict, ItemFlag } from "./snapshot.ts";
 import { repoKey } from "./sources/forge.ts";
@@ -46,20 +47,6 @@ export interface JoinResult {
   projectOf: Map<string, Project>;
 }
 
-export function localRef(id: string): string {
-  return `local:${id}`;
-}
-
-export function forgeRef(forge: ForgeName, key: string): string {
-  return `${forge}:${key}`;
-}
-
-/** Normalises a configured reference: forge owner/name parts compare without case. */
-export function normaliseRef(ref: string): string {
-  const match = /^(github|forgejo):(.+)$/.exec(ref);
-  return match ? `${match[1]}:${(match[2] ?? "").toLowerCase()}` : ref;
-}
-
 function conflict(
   conflicts: ConfigConflict[],
   assertion: string,
@@ -90,6 +77,8 @@ function conflict(
  *   the conflict is recorded.
  * - An ignored presence's forge-only project leaves the item list. Ignoring a presence a local
  *   clone uses, or one not observed, is a conflict.
+ * - Joins and ignores name a presence by any of its references: a forge reference without case,
+ *   `local:<id>`, or the bare local id.
  */
 export function joinPresences(input: JoinInput): JoinResult {
   const byRef = new Map<string, ForgeInput>();
@@ -171,9 +160,19 @@ export function joinPresences(input: JoinInput): JoinResult {
     projectOf.set(ref, project);
   }
 
+  /** The reference a configured one names: one on a project, else an archived one, else normalised. */
+  const named = (configured: string): string => {
+    const candidates = candidateRefs(configured);
+    return (
+      candidates.find((ref) => projectOf.has(ref)) ??
+      candidates.find((ref) => archived.has(ref)) ??
+      candidates[0]
+    );
+  };
+
   for (const group of input.joins) {
     const assertion = `joins ${JSON.stringify(group)}`;
-    const refs = group.map(normaliseRef);
+    const refs = group.map(named);
     const missing = refs.filter((ref) => !projectOf.has(ref));
     if (missing.length > 0) {
       const detail = missing
@@ -210,7 +209,7 @@ export function joinPresences(input: JoinInput): JoinResult {
 
   const ignored = new Set<string>();
   for (const configured of input.ignore) {
-    const ref = normaliseRef(configured);
+    const ref = named(configured);
     const assertion = `ignore ${JSON.stringify(configured)}`;
     if (archived.has(ref)) {
       ignored.add(ref);

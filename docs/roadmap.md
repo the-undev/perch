@@ -26,14 +26,11 @@ the fake preload; the starter write refuses when the file exists.
 ## Settings UI
 
 Everything in config becomes editable in the app, even where the form
-is a plain text field. Decided 22 October 2026: the live config file is
-machine-written TOML without comments, which drops the comment
-requirement in `docs/decisions/config.md` (revise that doc). The
-mechanism: `parseConfig` already gives the typed `Config`; the reverse
-is serialising it back (smol-toml; deterministic output keeps dotfiles
-diffs readable). The main process owns the write: atomic save to
-`~/.config/perch/config.toml`, then a rescan, since config feeds every
-derivation. Stow is unaffected; the file is edited in place through the
+is a plain text field. `writeConfig` in `packages/core` serialises a
+`Config`; it writes paths expanded against the home directory, and
+whether the UI collapses them back to `~` is `TBD`. The main process
+owns the write: atomic save to `~/.config/perch/config.toml`, then a
+rescan, since config feeds every derivation. Stow is unaffected; the file is edited in place through the
 symlink. Collisions (file edited while a form is open): last write
 wins, with a reload when the file changes on disk, fine for one person
 on one machine.
@@ -52,20 +49,6 @@ detail edits the same entry: wire, name, importance, expectations,
 key files, roadmaps, threshold overrides. The expected flow works
 today apart from the UI: adding an include path makes found repos
 appear on the fence after a scan, flagged not-set-up until adopted.
-
-## Item identity across joins
-
-An item entry is keyed by the project's id: the local path id when a
-clone exists, else the project's first ref such as
-`forgejo:owner/name` (`itemFor` in aggregate.ts). Joining is by
-observation: a clone's remote URLs pull the forge presences into its
-project, so forge birds vanish into the local bird when a clone
-appears. That changes the project's id, so an adoption keyed by the
-forge ref stops matching and the bird drops back to the fence,
-not-set-up. Two fixes to choose between: item entries match any ref of
-the project (with a conflict when two entries match one project), or
-the adopt flow and a scan-time migration rewrite the key to the local
-id. The same applies to ignores and joins keyed by refs that move.
 
 ## Session restore beside autostart
 

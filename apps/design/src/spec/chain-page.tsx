@@ -129,7 +129,7 @@ export function ChainPage() {
           <p>
             As <Code>gatherRounds</Code> in <Code>src/gather.ts</Code> declares
             them. Sources within a round run together; enrichers read what the
-            first round wrote.
+            earlier rounds wrote.
           </p>
           <ol className="m-0 list-decimal space-y-1 pl-5">
             {gatherRounds.map((round, index) => (

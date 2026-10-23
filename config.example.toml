@@ -91,9 +91,12 @@ folder = ["dolphin", "{path}"]
 # {vault} is the vault's folder name, encoded for a URI.
 obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 
-# Item entries, keyed by item id. An entry adopts the bird and puts it on a
-# wire. A repository found inside an include directory is flagged as not set
-# up until it has an entry here, even an empty one.
+# Item entries. An entry adopts the bird and puts it on a wire. Its key names
+# any presence of the item: a local id, or a forge presence such as
+# "forgejo:owner/name", which still applies once a local clone joins it. When
+# two entries name one item, the one keyed by the item's id applies and the
+# clash is flagged. A repository found inside an include directory is flagged
+# as not set up until it has an entry here, even an empty one.
 [items."obsidian/Hothouse"]
 wire = "Machine & Home"
 name = "Hothouse Vault"

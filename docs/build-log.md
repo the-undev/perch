@@ -269,3 +269,22 @@ build-time calls so they can be revisited.
   `--toggle`, `--toggle` and `--scan` each quit with exit 0 in about 0.2
   seconds, the first kept running, and `--scan` wrote a new snapshot.
   Whether the window took focus was not checked; see the roadmap.
+
+## 23 October 2026
+
+- `writeConfig` lives in `src/config-write.ts`, beside the parser and
+  free of Node imports like it. Item entries and zellij session roots
+  are written sorted by key; every list keeps its order. In an item
+  entry, unset fields and an empty `expect` are left out; an empty
+  `key_files` or `roadmaps` is written, since it differs from none.
+- Item entry lookups take the resolved entry, not an item id:
+  `resolveEntry` in `src/config.ts` is the only code that reads
+  `config.items` by key. When several keys name one project, the key
+  naming the earliest of the id and the project's references applies,
+  ties broken by key.
+- The view model resolves each bird's entry from the snapshot item's own
+  presence references rather than a key stored on the item, so a config
+  change applies to a cached snapshot without a rescan.
+- The roadmap reader moved to a third gather round. It needs each
+  clone's entry for configured roadmap paths, and resolving that through
+  the same join as aggregation needs the forge enrichers' files.

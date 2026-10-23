@@ -229,8 +229,9 @@ const roadmaps: SourceSpec = {
     <p>
       For every local presence, the roadmap files its config entry names in{" "}
       <Code>roadmaps</Code>, else the first of the standard names that exists.
-      Each file is parsed into its headings, the bullets directly under each,
-      and the prose between.
+      The entry is resolved through the project the clone joins, so it runs
+      after the forge enrichers. Each file is parsed into its headings, the
+      bullets directly under each, and the prose between.
     </p>
   ),
   moduleNames: [

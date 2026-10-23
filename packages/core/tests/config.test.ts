@@ -2,9 +2,11 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  type Config,
   importanceFor,
   loadConfig,
   parseConfig,
+  resolveEntry,
   thresholdsFor,
   userConfigPath,
   wireFor,
@@ -19,6 +21,10 @@ const examplePath = join(
   "config.example.toml",
 );
 const home = "/home/test";
+
+/** The entry config resolves for a local item with no forge presence. */
+const entryOf = (config: Config, id: string) =>
+  resolveEntry(config, id, [`local:${id}`]).entry;
 
 async function exampleText(): Promise<string> {
   return readFile(examplePath, "utf8");
@@ -112,8 +118,12 @@ describe("example config", () => {
   it("gives every item the default tier and global thresholds when nothing is overridden", async () => {
     const config = parseConfig(await exampleText(), home);
 
-    expect(importanceFor(config, "dev/perch")).toBe("projects");
-    expect(thresholdsFor(config, "dev/perch")).toEqual(config.thresholds);
+    expect(importanceFor(config, entryOf(config, "dev/perch"))).toBe(
+      "projects",
+    );
+    expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toEqual(
+      config.thresholds,
+    );
   });
 
   it("shows every entry field in its commented example, and each parses", async () => {
@@ -161,14 +171,18 @@ describe("item overrides", () => {
     );
     const config = parseConfig(text, home);
 
-    expect(importanceFor(config, ".dotfiles")).toBe("machine");
-    expect(thresholdsFor(config, ".dotfiles")).toEqual({
+    expect(importanceFor(config, entryOf(config, ".dotfiles"))).toBe("machine");
+    expect(thresholdsFor(config, entryOf(config, ".dotfiles"))).toEqual({
       unsafe: { amberHours: 3, redHours: 72 },
       stalled: { amberDays: 7, redDays: 60 },
       expectation: { amberDays: 7, redDays: 30 },
     });
-    expect(importanceFor(config, "dev/perch")).toBe("projects");
-    expect(thresholdsFor(config, "dev/perch")).toEqual(config.thresholds);
+    expect(importanceFor(config, entryOf(config, "dev/perch"))).toBe(
+      "projects",
+    );
+    expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toEqual(
+      config.thresholds,
+    );
   });
 
   it("put an adopted item on its wire, the default wire without one, and the rest on the fence", async () => {
@@ -177,9 +191,11 @@ describe("item overrides", () => {
     );
     const config = parseConfig(text, home);
 
-    expect(wireFor(config, ".dotfiles")).toBe("Machine & Home");
-    expect(wireFor(config, "dev/perch")).toBe("Projects");
-    expect(wireFor(config, "dev/hello")).toBeNull();
+    expect(wireFor(config, entryOf(config, ".dotfiles"))).toBe(
+      "Machine & Home",
+    );
+    expect(wireFor(config, entryOf(config, "dev/perch"))).toBe("Projects");
+    expect(wireFor(config, entryOf(config, "dev/hello"))).toBeNull();
   });
 
   it("choose the zellij session from the entry, then the longest root, then the default", async () => {
@@ -192,17 +208,29 @@ describe("item overrides", () => {
     const config = parseConfig(text, home);
 
     expect(
-      zellijSessionFor(config, "undev/spool", "/home/test/undev/spool"),
+      zellijSessionFor(
+        config,
+        entryOf(config, "undev/spool"),
+        "/home/test/undev/spool",
+      ),
     ).toBe("spool");
     expect(
-      zellijSessionFor(config, "undev/x", "/home/test/undev/tools/x"),
+      zellijSessionFor(
+        config,
+        entryOf(config, "undev/x"),
+        "/home/test/undev/tools/x",
+      ),
     ).toBe("tools");
-    expect(zellijSessionFor(config, "undev/y", "/home/test/undev/y")).toBe(
-      "undev",
-    );
-    expect(zellijSessionFor(config, "undevx", "/home/test/undevx")).toBe(
-      "home",
-    );
+    expect(
+      zellijSessionFor(
+        config,
+        entryOf(config, "undev/y"),
+        "/home/test/undev/y",
+      ),
+    ).toBe("undev");
+    expect(
+      zellijSessionFor(config, entryOf(config, "undevx"), "/home/test/undevx"),
+    ).toBe("home");
   });
 
   it("reject a wire that is not in the wire list", async () => {

@@ -482,3 +482,7 @@ build-time calls so they can be revisited.
 - The account listings stay keyed by account name, not by table, and
   each forge card reads its account's entry. Giving each Forgejo table
   its own entry is in the roadmap.
+- The desktop app pushes the cards in its state as `sourceCards`, null
+  until a snapshot holding them exists and without config, as the
+  aviary is. The renderer takes the type from the view model, which
+  re-exports it as it does `HealthLevel`.

@@ -23,6 +23,7 @@ import {
   type Bird,
   deriveAviary,
   type LaunchAction,
+  type SourceCard,
 } from "@perch/core/viewmodel.ts";
 import type { KeyFileSheet, PerchState } from "../shared/ipc.ts";
 import type { ConfigEdit } from "./config-edit.ts";
@@ -124,6 +125,12 @@ export function createAppState(deps: AppStateDeps): AppState {
     return derived.aviary;
   }
 
+  /** The latest snapshot's source cards; a snapshot cached before they existed has none. */
+  function sourceCards(): SourceCard[] | null {
+    if (deps.config.current().loaded === null) return null;
+    return snapshot?.sourceCards ?? null;
+  }
+
   function problems(): string[] {
     const { loaded, error } = deps.config.current();
     const list: string[] = [];
@@ -143,6 +150,7 @@ export function createAppState(deps: AppStateDeps): AppState {
     return {
       noConfig: deps.config.current().missing,
       aviary: aviary(),
+      sourceCards: sourceCards(),
       scanning,
       problems: problems(),
     };

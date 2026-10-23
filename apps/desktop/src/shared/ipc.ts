@@ -3,7 +3,12 @@ import type {
   SettingsForm,
   SettingsValues,
 } from "@perch/core/settings-form.ts";
-import type { Aviary, KeyFile, LaunchAction } from "@perch/core/viewmodel.ts";
+import type {
+  Aviary,
+  KeyFile,
+  LaunchAction,
+  SourceCard,
+} from "@perch/core/viewmodel.ts";
 
 /** What the window shows, pushed whenever it changes. */
 export interface PerchState {
@@ -11,6 +16,8 @@ export interface PerchState {
   noConfig: boolean;
   /** The aviary from the latest snapshot; null until the first scan has finished, or without config. */
   aviary: Aviary | null;
+  /** Each configured source table's last scan, from the latest snapshot; null until one holds them, or without config. */
+  sourceCards: SourceCard[] | null;
   /** A scan is running. */
   scanning: boolean;
   /**

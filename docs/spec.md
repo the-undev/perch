@@ -143,7 +143,8 @@ read. A table the raw files hold nothing for, such as one added since
 the last gather, is never scanned. A source that fails as a whole fails
 every table it holds. When a table last read is carried from the
 previous snapshot. The coarse status per polled source stays beside
-it for the sky's notices.
+it for the sky's notices. The app pushes the records to the renderer
+with the aviary.
 
 `pnpm scan` runs both, with the default config when the owner has
 none; `pnpm check` runs Biome, tsc and vitest. A full

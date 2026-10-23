@@ -110,6 +110,52 @@ describe("the app state", () => {
     expect(published.at(-1)?.aviary?.scannedAt).toBe(fresh.scannedAt);
   });
 
+  it("carries the cached snapshot's source cards before any scan", async () => {
+    const { app } = appState();
+
+    await app.start();
+
+    expect(app.state().sourceCards).toEqual(mockSnapshot.sourceCards);
+  });
+
+  it("publishes the fresh snapshot's source cards when a scan finishes", async () => {
+    const fresh: Snapshot = {
+      ...mockSnapshot,
+      sourceCards: [
+        {
+          id: "kuma:Silo",
+          kind: "kuma",
+          label: "Silo",
+          result: {
+            state: "ok",
+            at: "2026-10-22T12:00:00.000Z",
+            count: 3,
+            missingIncludes: [],
+          },
+        },
+      ],
+    };
+    const { app, published } = appState({
+      aggregate: vi.fn(async () => fresh),
+    });
+    await app.start();
+
+    await app.scan();
+
+    expect(published.at(-1)?.sourceCards).toEqual(fresh.sourceCards);
+  });
+
+  it("has no source cards from a snapshot cached before they existed", async () => {
+    const { sourceCards: _cards, ...older } = mockSnapshot;
+    const { app } = appState({
+      readCached: async () => older as Snapshot,
+    });
+
+    await app.start();
+
+    expect(app.state().sourceCards).toBeNull();
+  });
+
   it("scans with the config read before when an edit does not parse, and says so", async () => {
     const { app, deps, config, published } = appState();
     await app.start();
@@ -141,6 +187,7 @@ describe("the app state", () => {
     expect(published.at(-1)).toEqual({
       noConfig: false,
       aviary: null,
+      sourceCards: null,
       scanning: false,
       problems: ["config: wires must be a table"],
     });
@@ -157,6 +204,7 @@ describe("the app state", () => {
     expect(published.at(-1)).toEqual({
       noConfig: true,
       aviary: null,
+      sourceCards: null,
       scanning: false,
       problems: [],
     });

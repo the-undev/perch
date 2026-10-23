@@ -135,6 +135,8 @@ export interface AggregateRun {
   config: Config;
   /** The config file the config was read from, recorded in the snapshot. */
   configPath: string;
+  /** The home directory, written as ~ in the source cards' paths. */
+  home: string;
   rawDir: string;
   /** The snapshot to read first, for its first-seen record, and then replace. */
   snapshotPath: string;
@@ -152,6 +154,7 @@ export async function runAggregate(run: AggregateRun): Promise<Snapshot> {
     {
       config: run.config,
       configPath: run.configPath,
+      home: run.home,
       liveSources: [dockerContainersSource],
       previous,
     },

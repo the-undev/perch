@@ -39,6 +39,7 @@ afterEach(() => {
 const idle = (aviary: Aviary | null): PerchState => ({
   noConfig: false,
   aviary,
+  sourceCards: null,
   scanning: false,
   problems: [],
 });
@@ -81,6 +82,7 @@ describe("the window", () => {
     const { fake } = renderApp({
       noConfig: false,
       aviary: null,
+      sourceCards: null,
       scanning: true,
       problems: [],
     });
@@ -143,6 +145,7 @@ describe("the window", () => {
       fake.push({
         noConfig: false,
         aviary: { ...mockAviary, scannedAt: "2026-10-21T08:00:00.000Z" },
+        sourceCards: null,
         scanning: true,
         problems: [],
       }),
@@ -156,6 +159,7 @@ describe("the window", () => {
     renderApp({
       noConfig: false,
       aviary: mockAviary,
+      sourceCards: null,
       scanning: false,
       problems: [
         "config: wires must be a table; the config read before stands",

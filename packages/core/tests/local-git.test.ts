@@ -155,7 +155,13 @@ describe("not set up", () => {
 
     const snapshot = aggregate(
       { status: okStatus({}), files },
-      { config, configPath: "c", liveSources: [], previous: null },
+      {
+        config,
+        configPath: "c",
+        home: "/home/test",
+        liveSources: [],
+        previous: null,
+      },
       new Date(gatheredAt),
     );
     const flags = Object.fromEntries(

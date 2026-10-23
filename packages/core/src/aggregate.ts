@@ -15,6 +15,7 @@ import {
   deriveGit,
   deriveKuma,
   deriveRoadmap,
+  deriveSourceCards,
   emptyRoadmap,
   expectationMet,
 } from "./derivations.ts";
@@ -70,6 +71,8 @@ export interface RawBundle {
 export interface AggregateInput {
   config: Config;
   configPath: string;
+  /** The home directory, written as ~ in the source cards' paths. */
+  home: string;
   liveSources: readonly AnyLiveSource[];
   /** The previous snapshot, which carries each unmet expectation's first-seen time; null for none. */
   previous: Snapshot | null;
@@ -473,6 +476,14 @@ export function aggregate(
     conflicts,
     forges,
     sources,
+    sourceCards: deriveSourceCards({
+      sources: config.sources,
+      files,
+      status: bundle.status,
+      // A snapshot written before source cards existed has none to carry.
+      previous: input.previous?.sourceCards ?? [],
+      home: input.home,
+    }),
     items,
   };
 }

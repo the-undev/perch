@@ -1,17 +1,22 @@
 // Every derivation rule perch applies to raw facts, in one place. Gathering never judges; each
 // rule here can be read and changed without touching how the machine is read.
 
+import { collapseHome, type SourcesConfig } from "./config.ts";
 import type {
+  Entry,
   RawBullet,
   RawCi,
   RawClaudeSessions,
+  RawFiles,
   RawForgeRepo,
   RawGit,
   RawKuma,
+  RawLocal,
   RawPullRequest,
   RawRoadmap,
   RawSection,
   RoadmapStructure,
+  StatusFile,
 } from "./raw.ts";
 import type {
   ActivityState,
@@ -36,6 +41,9 @@ import type {
   PullRequest,
   RoadmapData,
   RoadmapFile,
+  SourceCard,
+  SourceCardKind,
+  SourceCardResult,
   Stall,
   WorkItem,
   WorkItemCounts,
@@ -693,4 +701,183 @@ export function deriveKuma(raw: RawKuma): KumaData {
       monitors.every((monitor) => monitor.status === "up"),
     monitors,
   };
+}
+
+// Source cards
+
+/** What the raw files hold for one card: nothing yet, an error, or what it read. */
+type CardGrain =
+  | null
+  | { state: "error"; message: string }
+  | { state: "read"; count: number; missingIncludes: string[] };
+
+/** A configured source table: its identity, the raw file it lands in, and how to find its grain. */
+export interface ConfiguredCard {
+  id: string;
+  kind: SourceCardKind;
+  label: string;
+  polled: "local" | "githubAccounts" | "forgejoAccounts" | "kuma";
+  grain: (files: Partial<RawFiles>) => CardGrain;
+}
+
+/** A URL's host and port, or the text itself when it does not parse as a URL. */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
+function entryGrain<T>(
+  entry: Entry<T, never> | undefined,
+  count: (value: T) => number,
+): CardGrain {
+  if (entry === undefined || entry.state === "absent") return null;
+  if (entry.state === "error") return { state: "error", message: entry.error };
+  return { state: "read", count: count(entry.value), missingIncludes: [] };
+}
+
+/**
+ * A local card is read once every one of its include paths has a recorded outcome: its count is
+ * the repositories found under them, and the ones not found are listed.
+ */
+function localGrain(
+  include: readonly string[],
+  local: RawLocal | undefined,
+  home: string,
+): CardGrain {
+  if (local === undefined) return null;
+  const outcomes = include.map((path) => ({
+    path,
+    outcome: local.includes[path],
+  }));
+  if (outcomes.some(({ outcome }) => outcome === undefined)) return null;
+  return {
+    state: "read",
+    count: Object.values(local.presences).filter((presence) =>
+      include.includes(presence.include),
+    ).length,
+    missingIncludes: outcomes
+      .filter(({ outcome }) => outcome?.state === "absent")
+      .map(({ path }) => collapseHome(path, home)),
+  };
+}
+
+/** Every configured source table in config order, local, github, forgejo, then kuma. */
+export function configuredCards(
+  sources: SourcesConfig,
+  home: string,
+): ConfiguredCard[] {
+  return [
+    ...sources.local.map((card): ConfiguredCard => {
+      const paths = card.include.map((path) => collapseHome(path, home));
+      return {
+        id: `local:${paths[0] ?? ""}`,
+        kind: "local",
+        label: paths.join(", "),
+        polled: "local",
+        grain: (files) => localGrain(card.include, files.local?.data, home),
+      };
+    }),
+    ...sources.github.map(
+      (card): ConfiguredCard => ({
+        id: `github:${card.account}`,
+        kind: "github",
+        label: card.account,
+        polled: "githubAccounts",
+        grain: (files) =>
+          entryGrain(
+            files.githubAccounts?.data[card.account],
+            (value) => value.repos.length,
+          ),
+      }),
+    ),
+    ...sources.forgejo.map((card): ConfiguredCard => {
+      const label = `${card.account}@${hostOf(card.baseUrl)}`;
+      return {
+        id: `forgejo:${label}`,
+        kind: "forgejo",
+        label,
+        polled: "forgejoAccounts",
+        grain: (files) =>
+          entryGrain(
+            files.forgejoAccounts?.data[card.account],
+            (value) => value.repos.length,
+          ),
+      };
+    }),
+    ...sources.kuma.map(
+      (card): ConfiguredCard => ({
+        id: `kuma:${card.name}`,
+        kind: "kuma",
+        label: card.name,
+        polled: "kuma",
+        grain: (files) =>
+          entryGrain(
+            files.kuma?.data[card.name],
+            (value) => value.monitors.length,
+          ),
+      }),
+    ),
+  ];
+}
+
+/** When a card last read, from its record in the previous snapshot; null when it has none. */
+function lastRead(previous: SourceCard | undefined): string | null {
+  if (previous?.result.state === "ok") return previous.result.at;
+  if (previous?.result.state === "failed") {
+    return previous.result.lastSucceededAt;
+  }
+  return null;
+}
+
+export interface SourceCardInput {
+  sources: SourcesConfig;
+  files: Partial<RawFiles>;
+  status: StatusFile;
+  /** The previous snapshot's cards, which carry each card's last read through a failure. */
+  previous: readonly SourceCard[];
+  home: string;
+}
+
+/**
+ * One card's last scan. A card the gather never ran or whose raw file holds nothing for it, such
+ * as one added since, is never scanned. A source that failed fails every card it holds; otherwise
+ * the card's own error fails it. An ok card counts what it read, as of its raw file's gather.
+ */
+function cardResult(
+  card: ConfiguredCard,
+  input: SourceCardInput,
+  previous: SourceCard | undefined,
+): SourceCardResult {
+  const failed = (message: string): SourceCardResult => ({
+    state: "failed",
+    message,
+    lastSucceededAt: lastRead(previous),
+  });
+  const status = input.status.sources[card.polled];
+  const file = input.files[card.polled];
+  if (status === undefined) return { state: "never-scanned" };
+  if (status.state === "error") return failed(status.message);
+  const grain = card.grain(input.files);
+  if (file === undefined || grain === null) return { state: "never-scanned" };
+  if (grain.state === "error") return failed(grain.message);
+  return {
+    state: "ok",
+    at: file.gatheredAt,
+    count: grain.count,
+    missingIncludes: grain.missingIncludes,
+  };
+}
+
+/** Each configured card with its last scan, in config order. */
+export function deriveSourceCards(input: SourceCardInput): SourceCard[] {
+  const previous = new Map(input.previous.map((card) => [card.id, card]));
+  return configuredCards(input.sources, input.home).map((card) => ({
+    id: card.id,
+    kind: card.kind,
+    label: card.label,
+    result: cardResult(card, input, previous.get(card.id)),
+  }));
 }

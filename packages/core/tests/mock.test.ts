@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { importanceFor, resolveEntry, thresholdsFor } from "../src/config.ts";
 import {
+  configuredCards,
   deriveActivity,
   deriveDrift,
   deriveExpectation,
@@ -115,6 +116,28 @@ describe("the mock dataset", () => {
     expect(birds.some((bird) => bird.kind === "vault")).toBe(true);
     expect(mockAviary.sourceErrors).toHaveLength(1);
     expect(mockAviary.warnings).toHaveLength(1);
+  });
+
+  it("has a source card per configured table, covering every scan state", () => {
+    const cards = mockSnapshot.sourceCards;
+    const states = cards.map((card) =>
+      card.result.state === "ok" && card.result.missingIncludes.length > 0
+        ? "ok-missing-include"
+        : card.result.state,
+    );
+
+    expect(cards.map(({ id, kind, label }) => ({ id, kind, label }))).toEqual(
+      configuredCards(mockConfig.sources, "/home/owner").map(
+        ({ id, kind, label }) => ({ id, kind, label }),
+      ),
+    );
+    expect(new Set(states)).toEqual(
+      new Set(["never-scanned", "ok", "ok-missing-include", "failed"]),
+    );
+    expect(cards.find((card) => card.kind === "local")?.result).toMatchObject({
+      count: mockSnapshot.items.filter((item) => item.presences.local !== null)
+        .length,
+    });
   });
 
   it("agrees with the derivation rules wherever it states a judged value", () => {

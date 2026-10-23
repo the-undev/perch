@@ -311,6 +311,37 @@ export interface SourceStatus {
   durationMs: number;
 }
 
+export type SourceCardKind = "local" | "github" | "forgejo" | "kuma";
+
+/** A source card's last scan: never read, read with what it found, or failed. */
+export type SourceCardResult =
+  | { state: "never-scanned" }
+  | {
+      state: "ok";
+      /** When the card's raw file was gathered. */
+      at: string;
+      /** Repositories found or listed, or a kuma page's monitors. */
+      count: number;
+      /** A local card's include paths that do not exist, home as ~; empty for other kinds. */
+      missingIncludes: string[];
+    }
+  | {
+      state: "failed";
+      message: string;
+      /** When the card last read, carried from the previous snapshot; null when unknown. */
+      lastSucceededAt: string | null;
+    };
+
+/** One configured source table, as its settings card shows it, with its last scan. */
+export interface SourceCard {
+  /** Stable identity: local:<first include>, github:<account>, forgejo:<account>@<host>, kuma:<name>. */
+  id: string;
+  kind: SourceCardKind;
+  /** The card's heading: the account, account@host, the kuma name, or the include paths, home as ~. */
+  label: string;
+  result: SourceCardResult;
+}
+
 export interface Snapshot {
   /** When the raw files were gathered, and how long gathering took. */
   scannedAt: string;
@@ -322,5 +353,7 @@ export interface Snapshot {
   conflicts: ConfigConflict[];
   forges: Record<ForgeName, ForgeListing>;
   sources: Partial<Record<PolledSourceName, SourceStatus>>;
+  /** One per configured source table, in config order: local, github, forgejo, then kuma. */
+  sourceCards: SourceCard[];
   items: Item[];
 }

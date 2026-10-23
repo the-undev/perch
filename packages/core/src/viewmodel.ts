@@ -34,6 +34,9 @@ import type {
   PolledSourceName,
   RoadmapData,
   Snapshot,
+  SourceCard,
+  SourceCardKind,
+  SourceCardResult,
   Stall,
 } from "./snapshot.ts";
 import {
@@ -43,7 +46,8 @@ import {
   wakingPrefix,
 } from "./speech.ts";
 
-export type { HealthLevel };
+/** The source cards pass to the renderer as the snapshot holds them; the settings page words them. */
+export type { HealthLevel, SourceCard, SourceCardKind, SourceCardResult };
 
 // Health
 

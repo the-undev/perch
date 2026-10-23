@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { aggregate, type RawBundle } from "../src/aggregate.ts";
+import type { Config } from "../src/config.ts";
+import { defaultConfig } from "../src/config-default.ts";
 import { deriveExpectation, expectationMet } from "../src/derivations.ts";
-import type { ForgeData } from "../src/snapshot.ts";
+import type { RawFiles } from "../src/raw.ts";
+import type {
+  ForgeData,
+  Snapshot,
+  SourceCard,
+  SourceCardResult,
+} from "../src/snapshot.ts";
 import { dockerContainersSource } from "../src/sources/docker-containers.ts";
 import { testConfig } from "./helpers/config.ts";
 import {
+  forgeRepo,
   gatheredAt,
   localPresence,
   okStatus,
@@ -61,6 +70,7 @@ const bundle: RawBundle = {
 const input = {
   config,
   configPath: "config.toml",
+  home: "/home/test",
   liveSources: [dockerContainersSource],
   previous: null,
 };
@@ -276,5 +286,242 @@ describe("expectations", () => {
       level: "green",
       thresholds: { amberDays: 7, redDays: 30 },
     });
+  });
+});
+
+describe("source cards", () => {
+  const listing = (...names: string[]) => ({
+    state: "observed" as const,
+    value: {
+      repos: names.map((name) => forgeRepo(name, {}).info),
+      skippedForks: [],
+    },
+  });
+  const cardFiles: Partial<RawFiles> = {
+    ...rawFiles({
+      includes: {
+        "/home/test/dev": "directory",
+        "/home/test/.dotfiles": "repo",
+        "/home/test/undev": "directory",
+      },
+      locals: {
+        "dev/perch": localPresence("/home/test/dev/perch", {
+          include: "/home/test/dev",
+        }),
+        "dev/harbour": localPresence("/home/test/dev/harbour", {
+          include: "/home/test/dev",
+        }),
+        ".dotfiles": localPresence("/home/test/.dotfiles", {
+          include: "/home/test/.dotfiles",
+        }),
+        "undev/skiff": localPresence("/home/test/undev/skiff", {
+          include: "/home/test/undev",
+        }),
+      },
+      forges: {},
+    }),
+    githubAccounts: {
+      source: "githubAccounts",
+      gatheredAt,
+      data: {
+        finch: listing("finch/perch", "finch/harbour", "finch/toy"),
+        "the-undev": listing(),
+        "skiff-app": { state: "error", error: "HTTP 401" },
+      },
+    },
+    forgejoAccounts: {
+      source: "forgejoAccounts",
+      gatheredAt,
+      data: {
+        finch: listing("finch/perch"),
+        "the-undev": listing("the-undev/notes", "the-undev/box"),
+      },
+    },
+    kuma: {
+      source: "kuma",
+      gatheredAt,
+      data: {
+        Silo: {
+          state: "observed",
+          value: {
+            statusPage: "perch",
+            monitors: [
+              { id: 1, name: "web", group: "", heartbeats: [] },
+              { id: 2, name: "db", group: "", heartbeats: [] },
+            ],
+          },
+        },
+      },
+    },
+  };
+  const cardBundle: RawBundle = { status: okStatus({}), files: cardFiles };
+  const cardsOf = (
+    bundleGiven: RawBundle,
+    configGiven: Config,
+    previous: Snapshot | null = null,
+  ) =>
+    aggregate(
+      bundleGiven,
+      { ...input, config: configGiven, previous },
+      new Date(),
+    ).sourceCards;
+  const resultOf = (cards: SourceCard[], id: string) =>
+    cards.find((card) => card.id === id)?.result;
+  const ok = (
+    count: number,
+    missingIncludes: string[] = [],
+  ): SourceCardResult => ({
+    state: "ok",
+    at: gatheredAt,
+    count,
+    missingIncludes,
+  });
+
+  it("makes one card per configured source in config order, headed with home as ~", () => {
+    const cards = cardsOf(cardBundle, config);
+
+    expect(cards.map(({ id, kind, label }) => [id, kind, label])).toEqual([
+      ["local:~/dev", "local", "~/dev, ~/.dotfiles"],
+      ["github:finch", "github", "finch"],
+      ["github:the-undev", "github", "the-undev"],
+      ["github:skiff-app", "github", "skiff-app"],
+      [
+        "forgejo:finch@forge.example.lan:3000",
+        "forgejo",
+        "finch@forge.example.lan:3000",
+      ],
+      [
+        "forgejo:the-undev@forge.example.lan:3000",
+        "forgejo",
+        "the-undev@forge.example.lan:3000",
+      ],
+      ["kuma:Silo", "kuma", "Silo"],
+    ]);
+  });
+
+  it("counts what each kind read, as of its raw file's gather", () => {
+    const cards = cardsOf(cardBundle, config);
+
+    expect(resultOf(cards, "local:~/dev")).toEqual(ok(3));
+    expect(resultOf(cards, "github:finch")).toEqual(ok(3));
+    expect(resultOf(cards, "github:the-undev")).toEqual(ok(0));
+    expect(resultOf(cards, "forgejo:the-undev@forge.example.lan:3000")).toEqual(
+      ok(2),
+    );
+    expect(resultOf(cards, "kuma:Silo")).toEqual(ok(2));
+  });
+
+  it("fails a forge card on its account's error, carrying its last read from the previous snapshot", () => {
+    const first = cardsOf(cardBundle, config);
+    expect(resultOf(first, "github:skiff-app")).toEqual({
+      state: "failed",
+      message: "HTTP 401",
+      lastSucceededAt: null,
+    });
+
+    const earlier = "2026-10-20T09:00:00.000Z";
+    const previous = aggregate(cardBundle, input, new Date());
+    previous.sourceCards = previous.sourceCards.map((card) =>
+      card.id === "github:skiff-app"
+        ? { ...card, result: { ...ok(1), at: earlier } }
+        : card,
+    );
+    expect(
+      resultOf(cardsOf(cardBundle, config, previous), "github:skiff-app"),
+    ).toEqual({
+      state: "failed",
+      message: "HTTP 401",
+      lastSucceededAt: earlier,
+    });
+  });
+
+  it("fails a kuma card whose status page could not be read", () => {
+    const pageError: RawBundle = {
+      ...cardBundle,
+      files: {
+        ...cardFiles,
+        kuma: {
+          source: "kuma",
+          gatheredAt,
+          data: { Silo: { state: "error", error: "HTTP 502" } },
+        },
+      },
+    };
+
+    expect(resultOf(cardsOf(pageError, config), "kuma:Silo")).toEqual({
+      state: "failed",
+      message: "HTTP 502",
+      lastSucceededAt: null,
+    });
+  });
+
+  it("fails every card of a source that failed as a whole", () => {
+    const failing: RawBundle = {
+      ...cardBundle,
+      status: okStatus({
+        forgejoAccounts: {
+          state: "error",
+          reason: "request-failed",
+          message: "unreachable",
+          lastSucceededAt: { state: "absent", reason: "never-succeeded" },
+          durationMs: 3,
+        },
+      }),
+    };
+    const cards = cardsOf(failing, config).filter(
+      (card) => card.kind === "forgejo",
+    );
+
+    expect(cards.map((card) => card.result)).toEqual([
+      { state: "failed", message: "unreachable", lastSucceededAt: null },
+      { state: "failed", message: "unreachable", lastSucceededAt: null },
+    ]);
+  });
+
+  it("lists a local card's include paths that do not exist, counting only its own", async () => {
+    const twoLocal = await testConfig(
+      '[[sources.local]]\ninclude = ["~/undev", "~/gone"]\n',
+    );
+    const withGone = structuredClone(cardFiles);
+    if (withGone.local) {
+      withGone.local.data.includes["/home/test/gone"] = {
+        state: "absent",
+        reason: "path-not-found",
+      };
+    }
+
+    const cards = cardsOf({ ...cardBundle, files: withGone }, twoLocal);
+
+    expect(resultOf(cards, "local:~/dev")).toEqual(ok(3));
+    expect(resultOf(cards, "local:~/undev")).toEqual(ok(1, ["~/gone"]));
+  });
+
+  it("says never scanned for a card added since the last gather", async () => {
+    const added = await testConfig(
+      '[[sources.local]]\ninclude = ["~/new"]\n\n[[sources.github]]\naccount = "newcomer"\nkey = "github-newcomer"\nhosts = ["github.com"]\n\n[[sources.kuma]]\nname = "Box"\nbase_url = "http://kuma.invalid"\nstatus_page = "box"\n',
+    );
+
+    const cards = cardsOf(cardBundle, added);
+
+    for (const id of ["local:~/new", "github:newcomer", "kuma:Box"]) {
+      expect(resultOf(cards, id), id).toEqual({ state: "never-scanned" });
+    }
+    expect(resultOf(cards, "github:finch")).toEqual(ok(3));
+  });
+
+  it("says never scanned for a source the gather did not run", () => {
+    const { kuma: _kuma, ...sources } = okStatus({}).sources;
+    const unrun: RawBundle = {
+      status: { ...okStatus({}), sources },
+      files: cardFiles,
+    };
+
+    expect(resultOf(cardsOf(unrun, config), "kuma:Silo")).toEqual({
+      state: "never-scanned",
+    });
+  });
+
+  it("makes no cards when config declares no sources", () => {
+    expect(cardsOf(cardBundle, defaultConfig())).toEqual([]);
   });
 });

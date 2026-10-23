@@ -250,6 +250,16 @@ machine-specific lives in config, no personal names or paths in the
 repository, and the aviary works with any project set. See
 `docs/decisions/bird-language.md`.
 
+## One Forgejo account name at two instances
+
+The account listings are keyed by account name, so two Forgejo tables
+for one account at two instances share one listing entry: the later
+table's listing replaces the earlier's, and both source cards show it.
+The enricher also finds a repository's account by owner alone, so the
+second instance's repositories would be read through the first's
+client. Keying the listings by table and the repositories by instance
+would fix both.
+
 ## Other sources
 
 Candidates that fit the derived-only rule: the vault roadmaps as tiles of their

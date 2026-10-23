@@ -31,9 +31,10 @@ path a parameter: the CLI writes under the gitignored `.scan/` at the
 repository root, the desktop app under `~/.local/share/perch/scan/`. Two
 stages:
 
-- Gather (`pnpm gather`) reads this machine and the forge accounts in two
-  rounds (root collectors, then enrichers) and writes raw facts, one JSON
-  file per source, to `raw/`. Types in `src/raw.ts`.
+- Gather (`pnpm gather`) reads this machine and the forge accounts in three
+  rounds (root collectors, then enrichers, then the roadmap reader, which
+  resolves each clone's config entry through the join) and writes raw
+  facts, one JSON file per source, to `raw/`. Types in `src/raw.ts`.
 - Aggregate (`pnpm aggregate`) reads only those files, the config and the
   previous snapshot, joins presences into projects (`src/join.ts`), and
   writes `snapshot.json`. Types in `src/snapshot.ts`; every derivation rule

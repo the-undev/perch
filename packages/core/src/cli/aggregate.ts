@@ -1,17 +1,11 @@
 // Entry point for `pnpm aggregate`: reads only the raw files, the config and the previous
 // snapshot, derives every value, and writes .scan/snapshot.json. It does not read the machine.
 
-import { loadConfig } from "../config.ts";
-import { readTextIfExists } from "../fs.ts";
 import { runAggregate } from "../scan.ts";
-import { examplePath, home, rawDir, snapshotPath, userPath } from "./paths.ts";
+import { cliConfig } from "./config.ts";
+import { rawDir, snapshotPath } from "./paths.ts";
 
-const { config, path: configPath } = await loadConfig({
-  home,
-  userPath,
-  examplePath,
-  readText: readTextIfExists,
-});
+const { config, path: configPath } = await cliConfig();
 const snapshot = await runAggregate({
   config,
   configPath,

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { parse } from "smol-toml";
 import { describe, expect, it } from "vitest";
 import { parseConfig } from "../src/config.ts";
+import { defaultConfig } from "../src/config-default.ts";
 import { writeConfig } from "../src/config-write.ts";
 import { mockConfig } from "../src/mock.ts";
 import {
@@ -17,7 +18,10 @@ import {
 
 const home = "/home/owner";
 
-async function starterText(): Promise<string> {
+/** The starter config file the app writes: the default config. */
+const starterText = () => writeConfig(defaultConfig(), home);
+
+async function exampleText(): Promise<string> {
   return readFile(
     join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
     "utf8",
@@ -34,25 +38,28 @@ const changed = (change: Partial<SettingsValues>): SettingsValues => ({
 
 describe("the settings form", () => {
   it("reads config into values and puts them back unchanged", async () => {
-    const starter = parseConfig(await starterText(), home);
+    const starter = parseConfig(starterText(), home);
+    const example = parseConfig(await exampleText(), home);
 
-    for (const config of [mockConfig, starter]) {
+    for (const config of [mockConfig, starter, example]) {
       const { values } = settingsFormFor(config, home);
       expect(settingsProblems(values)).toEqual([]);
       expect(withSettings(config, values, home)).toEqual(config);
     }
   });
 
-  it("saves the starter unchanged as the same TOML document", async () => {
-    const text = await starterText();
-    const config = parseConfig(text, home);
+  it("saves the starter unchanged as the same bytes, and the example as the same TOML document", async () => {
+    const save = (text: string) => {
+      const config = parseConfig(text, home);
+      return writeConfig(
+        withSettings(config, settingsFormFor(config, home).values, home),
+        home,
+      );
+    };
+    const example = await exampleText();
 
-    const saved = writeConfig(
-      withSettings(config, settingsFormFor(config, home).values, home),
-      home,
-    );
-
-    expect(parse(saved)).toEqual(parse(text));
+    expect(save(starterText())).toBe(starterText());
+    expect(parse(save(example))).toEqual(parse(example));
   });
 
   it("shows zellij session roots as typed with ~, and keeps ~ entries added beside them", () => {

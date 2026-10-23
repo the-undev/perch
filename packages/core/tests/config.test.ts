@@ -461,24 +461,18 @@ describe("launch commands", () => {
 });
 
 describe("loadConfig", () => {
-  it("prefers the user config and falls back to the example", async () => {
+  it("reads the owner's config, and nothing when there is none", async () => {
     const userPath = "/elsewhere/perch.toml";
-    const example = await exampleText();
-    const files = new Map([[examplePath, example]]);
+    const files = new Map<string, string>();
     const readText = async (path: string) => files.get(path) ?? null;
+    const deps = { home, userPath, readText };
 
-    const deps = { home, userPath, examplePath, readText };
+    expect(await loadConfig(deps)).toBeNull();
 
-    const fallback = await loadConfig(deps);
-    expect(fallback.path).toBe(examplePath);
-
-    files.set(
-      userPath,
-      example.replace("stalled_amber_days = 7", "stalled_amber_days = 5"),
-    );
+    files.set(userPath, await fixtureConfigText(""));
     const user = await loadConfig(deps);
-    expect(user.path).toBe(userPath);
-    expect(user.config.thresholds.stalled.amberDays).toBe(5);
+    expect(user?.path).toBe(userPath);
+    expect(user?.config.wires.default).toBe("Projects");
   });
 
   it("finds the owner's config under ~/.config/perch", () => {

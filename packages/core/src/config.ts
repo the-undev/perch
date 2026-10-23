@@ -678,27 +678,16 @@ export function userConfigPath(home: string): string {
 export interface ConfigDeps {
   /** The home directory a leading ~ in config paths expands to. */
   home: string;
-  /** The owner's config, read when it exists. */
+  /** The owner's config. */
   userPath: string;
-  /** The example config, read when the owner's does not exist. */
-  examplePath: string;
   readText: (path: string) => Promise<string | null>;
 }
 
-/** Reads the owner's config when it exists, else the example config. */
-export async function loadConfig(deps: ConfigDeps): Promise<LoadedConfig> {
-  const { userPath } = deps;
-  const userText = await deps.readText(userPath);
-  if (userText !== null)
-    return { config: parseConfig(userText, deps.home), path: userPath };
-
-  const exampleText = await deps.readText(deps.examplePath);
-  if (exampleText === null)
-    throw new Error(
-      `config: neither ${userPath} nor ${deps.examplePath} exists`,
-    );
-  return {
-    config: parseConfig(exampleText, deps.home),
-    path: deps.examplePath,
-  };
+/** Reads the owner's config, or null when the file does not exist. */
+export async function loadConfig(
+  deps: ConfigDeps,
+): Promise<LoadedConfig | null> {
+  const text = await deps.readText(deps.userPath);
+  if (text === null) return null;
+  return { config: parseConfig(text, deps.home), path: deps.userPath };
 }

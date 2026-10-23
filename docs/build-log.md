@@ -355,3 +355,7 @@ build-time calls so they can be revisited.
 - The global thresholds use the entry forms' rule: `thresholdProblems`
   in `entry-form.ts` serves both. Include and ignore paths and zellij
   session roots must start with `/` or `~`.
+- The IPC adds `settingsForm()` and `saveSettings(values)`. The main
+  process checks the values with `settingsProblems` before it writes, and
+  a refusal is the same problem in the state as a refused entry write.
+  The app state's two write errors became one: the latest config write's.

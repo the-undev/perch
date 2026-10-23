@@ -12,6 +12,7 @@ import { readTextIfExists } from "@perch/core/fs.ts";
 import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
 import type { Snapshot } from "@perch/core/snapshot.ts";
 import type { Aviary, LaunchAction } from "@perch/core/viewmodel.ts";
+import { parse } from "smol-toml";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PerchState } from "../shared/ipc.ts";
 import { type AppStateDeps, createAppState } from "./app-state.ts";
@@ -54,6 +55,7 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
   const config = configStore({ loaded, error: null, missing: false });
   const published: PerchState[] = [];
   const deps: AppStateDeps = {
+    home: "/home/owner",
     config: config.store,
     readCached: async () => mockSnapshot,
     gather: vi.fn(async (_config: Config) => {}),
@@ -419,5 +421,119 @@ describe("editing config entries", () => {
     expect(await written()).toBe(before);
     expect(deps.requestScan).not.toHaveBeenCalled();
     expect(app.entryForm("dev/nobody")).toBeNull();
+  });
+});
+
+describe("the settings", () => {
+  const home = "/home/owner";
+  let dir: string;
+  let configPath: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "perch-settings-"));
+    configPath = join(dir, "config.toml");
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const starterPath = join(
+    import.meta.dirname,
+    "..",
+    "..",
+    "..",
+    "..",
+    "config.example.toml",
+  );
+
+  /** The app state on a real config file in the temp directory holding the text. */
+  async function onText(text: string) {
+    await writeFile(configPath, text);
+    const file = { home, path: configPath, readText: readTextIfExists };
+    const app = appState({
+      config: createConfigStore(file),
+      editConfig: (edit) =>
+        editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+    });
+    await app.app.start();
+    return app;
+  }
+
+  const written = async () => readFile(configPath, "utf8");
+
+  function formOf(app: ReturnType<typeof appState>["app"]) {
+    const form = app.settingsForm();
+    if (form === null) throw new Error("no settings form");
+    return form;
+  }
+
+  it("saves the starter unchanged with only its comments and layout lost, the same bytes every time", async () => {
+    const starter = await readFile(starterPath, "utf8");
+    const { app } = await onText(starter);
+
+    await app.saveSettings(formOf(app).values);
+    const first = await written();
+    await app.saveSettings(formOf(app).values);
+
+    expect(parse(first)).toEqual(parse(starter));
+    expect(first).toContain('include = [ "~/dev", "~/.dotfiles" ]');
+    expect(await written()).toBe(first);
+    expect(formOf(app).values.local.include).toEqual(["~/dev", "~/.dotfiles"]);
+  });
+
+  it("adds include paths under ~, rereads the config and asks for a scan", async () => {
+    const { app, deps, published } = await onText(
+      await readFile(starterPath, "utf8"),
+    );
+    const { values } = formOf(app);
+
+    await app.saveSettings({
+      ...values,
+      local: {
+        ...values.local,
+        include: [...values.local.include, "~/undev", "~/obsidian/Hothouse"],
+      },
+    });
+
+    expect(parse(await written()).local).toMatchObject({
+      include: ["~/dev", "~/.dotfiles", "~/undev", "~/obsidian/Hothouse"],
+    });
+    expect(formOf(app).values.local.include).toEqual([
+      "~/dev",
+      "~/.dotfiles",
+      "~/undev",
+      "~/obsidian/Hothouse",
+    ]);
+    expect(published.at(-1)?.problems).toEqual([]);
+    expect(deps.requestScan).toHaveBeenCalledTimes(1);
+  });
+
+  it("says why nothing was written, without scanning", async () => {
+    const { app, deps, published } = await onText(
+      writeConfig(mockConfig, home),
+    );
+    const before = await written();
+    const { values } = formOf(app);
+
+    await app.saveSettings({
+      ...values,
+      wires: { names: ["Projects"], default: "Someday" },
+    });
+
+    expect(await written()).toBe(before);
+    expect(published.at(-1)?.problems).toEqual([
+      "The config was not changed: Wires: the default wire must be one of the wires",
+    ]);
+    expect(deps.requestScan).not.toHaveBeenCalled();
+  });
+
+  it("has no settings form without a config", async () => {
+    const { app } = appState({
+      config: configStore({ loaded: null, error: null, missing: true }).store,
+    });
+
+    await app.start();
+
+    expect(app.settingsForm()).toBeNull();
   });
 });

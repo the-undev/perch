@@ -2,6 +2,10 @@
 // records every call, and pushes states when the test says so.
 
 import type { EntryForm, EntryValues } from "@perch/core/entry-form.ts";
+import type {
+  SettingsForm,
+  SettingsValues,
+} from "@perch/core/settings-form.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import type { KeyFileSheet, PerchApi, PerchState } from "../../shared/ipc.ts";
 
@@ -15,15 +19,20 @@ export interface FakeApi {
   starterWrites: number;
   entrySaves: { birdId: string; values: EntryValues }[];
   entryRemovals: string[];
+  settingsSaves: SettingsValues[];
+  /** Sets what the settings form reads next, as an edit to the config file would. */
+  setSettings(form: SettingsForm | null): void;
 }
 
 export function fakeApi(
   initial: PerchState,
   sheetsFor: (birdId: string) => KeyFileSheet[] = () => [],
   formFor: (birdId: string) => EntryForm | null = () => null,
+  settings: SettingsForm | null = null,
 ): FakeApi {
   const listeners = new Set<(state: PerchState) => void>();
   let current = initial;
+  let settingsForm = settings;
   const fake: FakeApi = {
     api: {
       state: async () => current,
@@ -51,6 +60,10 @@ export function fakeApi(
       removeEntry: async (birdId) => {
         fake.entryRemovals.push(birdId);
       },
+      settingsForm: async () => settingsForm,
+      saveSettings: async (values) => {
+        fake.settingsSaves.push(values);
+      },
     },
     push(state) {
       current = state;
@@ -62,6 +75,10 @@ export function fakeApi(
     starterWrites: 0,
     entrySaves: [],
     entryRemovals: [],
+    settingsSaves: [],
+    setSettings(form) {
+      settingsForm = form;
+    },
   };
   return fake;
 }

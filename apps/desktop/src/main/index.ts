@@ -97,6 +97,7 @@ function start(): void {
     runCommand(program ?? "", args, { cwd: home, env });
   const now = () => new Date();
   const state = createAppState({
+    home,
     config,
     // The cache is only a head start: one that cannot be read is no cache.
     readCached: () => readSnapshot(paths.snapshotPath).catch(() => null),
@@ -185,6 +186,8 @@ function start(): void {
       entryForm: async (birdId) => state.entryForm(birdId),
       saveEntry: (birdId, values) => state.saveEntry(birdId, values),
       removeEntry: (birdId) => state.removeEntry(birdId),
+      settingsForm: async () => state.settingsForm(),
+      saveSettings: (values) => state.saveSettings(values),
     });
     const window = createWindow(icons.window, !launchArguments.hidden);
     mainWindow = window;

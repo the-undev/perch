@@ -81,9 +81,10 @@ at start, on the config's interval, on window focus and on request
 (`scan-scheduler.ts`), keeps the snapshot cache, derives the aviary,
 reads key files and turns entry and settings edits into config edits
 (`app-state.ts`), writes the config file (`config-edit.ts`), rereads it
-when it changes on disk (`config-watch.ts`), and runs launch actions
-(`launch.ts`). Its data lives in `~/.local/share/perch`, Electron's
-userData. The renderer (`src/renderer`) receives only view model types and
+when it changes on disk (`config-watch.ts`), runs launch actions
+(`launch.ts`), and stores a pasted token in the keyring and tests a
+forge card's connection (`keyring.ts`). Its data lives in
+`~/.local/share/perch`, Electron's userData. The renderer (`src/renderer`) receives only view model types and
 the form types from `@perch/core/entry-form.ts` and
 `@perch/core/settings-form.ts`, never a `Config`: TanStack Query holds the
 pushed state and rereads the open forms on every push, TanStack Router

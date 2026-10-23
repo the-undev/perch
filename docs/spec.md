@@ -226,7 +226,16 @@ names its include paths that do not exist. Opened, a card shows its
 fields: a local card's folders searched and excluded, paths kept with
 `~`; a forge card's account, keyring key with the `secret-tool store`
 command beside it, hosts and tracked forks, and a Forgejo card's base
-URL; a kuma card's name, base URL and status page. "Add a source" opens
+URL; a kuma card's name, base URL and status page. A GitHub or Forgejo
+card also has a token field and two buttons. Store in the keyring writes
+the pasted token under the card's keyring key, and the field empties
+once it is stored. Test lists the account's repositories with the
+stored token, as a scan does, and answers in a sentence on the card:
+"someone: 18 repositories readable", or what failed (no token under the
+key, no answer from the host, the HTTP status the forge answered). Both
+are held while either runs and while the card has no keyring key, and
+Test while it has no account or address. A kuma card has no token
+field: its status pages are public reads. "Add a source" opens
 a picker in place offering every kind, each with what it reads and what
 it needs; on a config with no sources it is open from the start.
 Picking a kind adds an empty card of it. Removing a card asks twice.
@@ -245,7 +254,11 @@ saved, and the open page or form shows it; the last write wins.
 Tokens live in the desktop keyring, read at run time with
 `secret-tool lookup`, service `perch`: `github-finch`,
 `github-the-undev`, `github-skiff-app`, `forgejo-finch`,
-`forgejo-the-undev`. All read-only. `gh` is not used at run time; its
+`forgejo-the-undev`. All read-only. perch writes a token into the
+keyring only from a forge card's token field, with `secret-tool store`
+and the token on its stdin; it never reads one back for display, and
+neither the store nor the test answers, logs or writes the token. `gh`
+is not used at run time; its
 tokens carry write scopes and its account state is shared with
 interactive use. A password manager holds the human backups only and is never
 read at run time, its CLI prompts. Creation and replacement runbook:

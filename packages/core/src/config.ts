@@ -188,7 +188,7 @@ function expandHome(path: string, home: string): string {
 }
 
 /** The threshold keys, the same globally and per item, with the window and field each sets. */
-const thresholdKeys = [
+export const thresholdKeys = [
   ["unsafe", "amberHours", "unsafe_amber_hours"],
   ["unsafe", "redHours", "unsafe_red_hours"],
   ["stalled", "amberDays", "stalled_amber_days"],

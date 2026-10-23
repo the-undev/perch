@@ -336,3 +336,22 @@ build-time calls so they can be revisited.
   optional tables when they are empty (`items`, `launch.zellij_sessions`,
   `launch.commands`), so the starter saved unchanged reads as the same
   TOML document, only its comments and layout gone.
+- The settings form model lives in `packages/core/src/settings-form.ts`
+  beside the entry form's: `settingsFormFor(config, home)`,
+  `withSettings(config, values, home)`, `settingsProblems(values)` and
+  `settingsWarnings(named, values)`. Both functions take the home
+  directory because the form shows paths with `~`. `SettingsValues` covers
+  all of `Config` but the item entries; the renderer never receives a
+  `Config`.
+- A launch command, and each join, is one line in the config file's own
+  list form, `["code", "{path}"]`, read with `JSON.parse`. Splitting on
+  spaces would break arguments that hold spaces, and shell words would
+  need a hand-rolled parser. An emptied command removes its action; `[]`
+  is a problem, since it names no program.
+- Removing a wire or a tier that item entries name moves those entries
+  to the default: the save sets their `wire` or `importance` to null,
+  since the parser refuses an entry naming a wire or tier config lacks.
+  The form names the entries before it is saved.
+- The global thresholds use the entry forms' rule: `thresholdProblems`
+  in `entry-form.ts` serves both. Include and ignore paths and zellij
+  session roots must start with `/` or `~`.

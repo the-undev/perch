@@ -96,7 +96,8 @@ export function emptyEntryValues(): EntryValues {
   };
 }
 
-function flatThresholds(
+/** Thresholds keyed as config writes them, a window left out leaving its keys out. */
+export function flatThresholds(
   thresholds: ThresholdOverrides,
 ): Partial<Record<ThresholdKey, number>> {
   const flat: Partial<Record<ThresholdKey, number>> = {};
@@ -109,7 +110,8 @@ function flatThresholds(
   return flat;
 }
 
-function nestedThresholds(
+/** Thresholds keyed as config writes them, back in their windows. */
+export function nestedThresholds(
   flat: Partial<Record<ThresholdKey, number>>,
 ): ThresholdOverrides {
   const overrides: ThresholdOverrides = {
@@ -205,10 +207,21 @@ export function entryProblems(
   values: EntryValues,
   options: EntryOptions,
 ): string[] {
+  return thresholdProblems(values.thresholds, options.thresholds);
+}
+
+/**
+ * Why thresholds cannot be written: a value that is not a whole number above zero, or an amber
+ * that does not open before its red, a key left out taking its fallback.
+ */
+export function thresholdProblems(
+  thresholds: Partial<Record<ThresholdKey, number>>,
+  fallback: Record<ThresholdKey, number>,
+): string[] {
   const problems: string[] = [];
   for (const window of thresholdWindows) {
-    const amber = values.thresholds[window.amber];
-    const red = values.thresholds[window.red];
+    const amber = thresholds[window.amber];
+    const red = thresholds[window.red];
     const bad = [amber, red].some(
       (value) => value !== undefined && !(Number.isInteger(value) && value > 0),
     );
@@ -218,10 +231,7 @@ export function entryProblems(
       );
       continue;
     }
-    if (
-      (amber ?? options.thresholds[window.amber]) >=
-      (red ?? options.thresholds[window.red])
-    ) {
+    if ((amber ?? fallback[window.amber]) >= (red ?? fallback[window.red])) {
       problems.push(`${window.label}: amber must come before red`);
     }
   }

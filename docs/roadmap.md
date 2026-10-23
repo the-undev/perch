@@ -26,14 +26,11 @@ the fake preload; the starter write refuses when the file exists.
 ## Settings UI
 
 Everything in config becomes editable in the app, even where the form
-is a plain text field. Decided 22 October 2026: the live config file is
-machine-written TOML without comments, which drops the comment
-requirement in `docs/decisions/config.md` (revise that doc). The
-mechanism: `parseConfig` already gives the typed `Config`; the reverse
-is serialising it back (smol-toml; deterministic output keeps dotfiles
-diffs readable). The main process owns the write: atomic save to
-`~/.config/perch/config.toml`, then a rescan, since config feeds every
-derivation. Stow is unaffected; the file is edited in place through the
+is a plain text field. `writeConfig` in `packages/core` serialises a
+`Config`; it writes paths expanded against the home directory, and
+whether the UI collapses them back to `~` is `TBD`. The main process
+owns the write: atomic save to `~/.config/perch/config.toml`, then a
+rescan, since config feeds every derivation. Stow is unaffected; the file is edited in place through the
 symlink. Collisions (file edited while a form is open): last write
 wins, with a reload when the file changes on disk, fine for one person
 on one machine.

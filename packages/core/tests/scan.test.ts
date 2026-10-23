@@ -76,6 +76,7 @@ describe("the scan with its directories passed in", () => {
     const snapshot = await runAggregate({
       config,
       configPath: "/configs/perch.toml",
+      home,
       rawDir,
       snapshotPath,
       now,
@@ -104,6 +105,7 @@ describe("the scan with its directories passed in", () => {
     const snapshot = await runAggregate({
       config,
       configPath: "/configs/perch.toml",
+      home,
       rawDir,
       snapshotPath,
       now,

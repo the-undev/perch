@@ -119,6 +119,7 @@ export function snapshotOf(items: Item[]): Snapshot {
       forgejo: ok,
       kuma: ok,
     },
+    sourceCards: [],
     items,
   };
 }

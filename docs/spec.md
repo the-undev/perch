@@ -132,6 +132,19 @@ directories and config path as parameters: the app scans into
   lives in `src/derivations.ts`. It reads the previous snapshot first:
   that is the first-seen record for unmet expectations.
 
+The snapshot holds one scan record per configured source table, in
+config order, for the settings page's source cards. Each has an
+identity (`local:~/dev`, `github:<account>`,
+`forgejo:<account>@<host>`, `kuma:<name>`), a heading, and its last
+scan: never scanned, ok with when it was read and what it counted
+(repositories, or a kuma page's monitors, and a local table's include
+paths that do not exist), or failed with the message and when it last
+read. A table the raw files hold nothing for, such as one added since
+the last gather, is never scanned. A source that fails as a whole fails
+every table it holds. When a table last read is carried from the
+previous snapshot. The coarse status per polled source stays beside
+it for the sky's notices.
+
 `pnpm scan` runs both, with the default config when the owner has
 none; `pnpm check` runs Biome, tsc and vitest. A full
 scan of this machine took about 4 to 7 seconds on 22 October 2026.

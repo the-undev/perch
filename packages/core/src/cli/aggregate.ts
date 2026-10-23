@@ -3,12 +3,13 @@
 
 import { runAggregate } from "../scan.ts";
 import { cliConfig } from "./config.ts";
-import { rawDir, snapshotPath } from "./paths.ts";
+import { home, rawDir, snapshotPath } from "./paths.ts";
 
 const { config, path: configPath } = await cliConfig();
 const snapshot = await runAggregate({
   config,
   configPath,
+  home,
   rawDir,
   snapshotPath,
   now: () => new Date(),

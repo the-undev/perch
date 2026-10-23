@@ -467,3 +467,18 @@ build-time calls so they can be revisited.
   zellij session `main`, no launch commands, the example's windows,
   tiers and scan values. Finalised commits moves into the settings
   page's scan group with the key.
+- The per-card scan record phase. `Snapshot.sourceCards` is derived in
+  `src/derivations.ts`: a forgejo card's heading and identity use the
+  base URL's host with its port, so `finch@forge.example.lan:3000`.
+  Paths in local identities and headings are written with `~`, so
+  aggregation takes the home directory as an input.
+- An ok card's time is its raw file's gatheredAt. A failed card's last
+  read is carried from its record in the previous snapshot, since the
+  raw files keep no per-account success time; without one it is null.
+- The source's status is checked before the card's grain: a source that
+  failed as a whole fails every card it holds, even one added since. A
+  local card counts as scanned only once every one of its include paths
+  has an outcome in the raw file.
+- The account listings stay keyed by account name, not by table, and
+  each forge card reads its account's entry. Giving each Forgejo table
+  its own entry is in the roadmap.

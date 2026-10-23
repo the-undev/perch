@@ -368,6 +368,7 @@ describe("aggregating joined projects", () => {
           '[items."dev/perch"]\n[items."dev/toy"]\n[items."dev/gone"]\n',
         ),
         configPath: "c",
+        home: "/home/test",
         liveSources: [],
         previous: null,
       },
@@ -412,6 +413,7 @@ describe("aggregating joined projects", () => {
       {
         config: await config(""),
         configPath: "c",
+        home: "/home/test",
         liveSources: [],
         previous: null,
       },
@@ -453,7 +455,13 @@ describe("aggregating joined projects", () => {
   function aggregated(snapshotFiles: Partial<RawFiles>, configured: Config) {
     return aggregate(
       { status: okStatus({}), files: snapshotFiles },
-      { config: configured, configPath: "c", liveSources: [], previous: null },
+      {
+        config: configured,
+        configPath: "c",
+        home: "/home/test",
+        liveSources: [],
+        previous: null,
+      },
       new Date(gatheredAt),
     );
   }

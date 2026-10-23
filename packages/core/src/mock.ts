@@ -2,7 +2,8 @@
 // site and the app to render every view model state without a scan. The scan is at 09:00 on
 // 22 October 2026, and every age below is measured from it. Between them the birds cover every
 // mood and activity, the fence's three situations, failing CI, an unpushed backlog, a stalled
-// branch, unmet expectations and clean zeros; tests/mock.test.ts keeps it so. Roadmap files carry
+// branch, unmet expectations and clean zeros, and the source cards every scan state;
+// tests/mock.test.ts keeps it so. Roadmap files carry
 // their paths only: the counts stand for their items.
 
 import type { Config, ItemEntry } from "./config.ts";
@@ -19,6 +20,7 @@ import type {
   PullRequest,
   RoadmapData,
   Snapshot,
+  SourceCard,
 } from "./snapshot.ts";
 import { type Aviary, deriveAviary } from "./viewmodel.ts";
 
@@ -1341,6 +1343,29 @@ const ok = (durationMs: number) => ({
   durationMs,
 });
 
+function githubCard(account: string, count: number): SourceCard {
+  return {
+    id: `github:${account}`,
+    kind: "github",
+    label: account,
+    result: { state: "ok", at: scannedAt, count, missingIncludes: [] },
+  };
+}
+
+/** A Forgejo card on the instance whose source timed out this scan. */
+function forgejoCard(account: string): SourceCard {
+  return {
+    id: `forgejo:${account}@forge.example.lan:3000`,
+    kind: "forgejo",
+    label: `${account}@forge.example.lan:3000`,
+    result: {
+      state: "failed",
+      message: "fetch failed: connect ETIMEDOUT forge.example.lan:3000",
+      lastSucceededAt: "2026-10-22T08:45:00.000Z",
+    },
+  };
+}
+
 export const mockSnapshot: Snapshot = {
   scannedAt,
   durationMs: 6200,
@@ -1365,6 +1390,32 @@ export const mockSnapshot: Snapshot = {
     github: ok(2400),
     forgejo: ok(700),
   },
+  sourceCards: [
+    {
+      id: "local:~/dev",
+      kind: "local",
+      label:
+        "~/dev, ~/undev, ~/.dotfiles, ~/obsidian/Hothouse, ~/obsidian/Pocket, ~/work",
+      result: {
+        state: "ok",
+        at: scannedAt,
+        count: 14,
+        missingIncludes: ["~/work"],
+      },
+    },
+    githubCard("finch", 5),
+    githubCard("the-undev", 4),
+    githubCard("skiff-app", 1),
+    forgejoCard("finch"),
+    forgejoCard("the-undev"),
+    // The raw kuma file holds nothing for Silo yet, which is why its item has no kuma data.
+    {
+      id: "kuma:Silo",
+      kind: "kuma",
+      label: "Silo",
+      result: { state: "never-scanned" },
+    },
+  ],
   items,
 };
 

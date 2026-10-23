@@ -114,6 +114,7 @@ function start(): void {
       runAggregate({
         config: loaded.config,
         configPath: loaded.path,
+        home,
         rawDir: paths.rawDir,
         snapshotPath: paths.snapshotPath,
         now,

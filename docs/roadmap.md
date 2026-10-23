@@ -242,12 +242,6 @@ document scrolls inside its own fixed-height section; a collapsed view
 per document opened on demand; one document shown at a time with a
 picker. Decide after living with it.
 
-## Attention count against the heading
-
-The wire heading's attention count sits flush against the name
-("Machine & Home1 attention"). It needs a gap, and possibly its own
-line or a chip.
-
 ## Crowded fence
 
 With twenty or so fence birds the name labels overlap and the birds

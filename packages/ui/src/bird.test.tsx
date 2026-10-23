@@ -1,11 +1,11 @@
 import { mockAviary } from "@perch/core/mock.ts";
-import type { Bird } from "@perch/core/viewmodel.ts";
+import type { Bird, Wire as WireModel } from "@perch/core/viewmodel.ts";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { BirdPortrait, birdScale, fenceScale, portraitFrame } from "./bird.tsx";
 import { mockBird } from "./mock-birds.ts";
 import { Scene } from "./scene.tsx";
-import { Fence, Wire } from "./wire.tsx";
+import { Fence, tallyGap, Wire, WireLine } from "./wire.tsx";
 
 afterEach(cleanup);
 
@@ -127,6 +127,37 @@ describe("the wire and the fence", () => {
     expect(xs).toEqual([...xs].sort((a, b) => a - b));
     expect(container.textContent).toContain("Projects");
     expect(container.textContent).toContain("4 attention");
+  });
+
+  it("sets the tally apart from the wire's name on its first word", () => {
+    const [machine, projects] = mockAviary.wires as [WireModel, WireModel];
+    const settled = {
+      name: "Quiet",
+      birds: projects.birds.filter((bird) => bird.mood === "content"),
+    };
+    const firstWords = [machine, projects, settled].map((wire) => {
+      const { container } = render(
+        <Scene phase="day" height={400} label="test">
+          <WireLine
+            y={200}
+            width={2000}
+            label={{ name: wire.name, birds: wire.birds }}
+          />
+        </Scene>,
+      );
+      const name = [...container.querySelectorAll("tspan")].find(
+        (tspan) => tspan.textContent === wire.name,
+      );
+      const first = name?.nextElementSibling;
+      cleanup();
+      return { dx: first?.getAttribute("dx"), words: first?.textContent };
+    });
+
+    expect(firstWords).toEqual([
+      { dx: String(tallyGap), words: "2 drifting" },
+      { dx: String(tallyGap), words: "4 attention" },
+      { dx: String(tallyGap), words: "all settled" },
+    ]);
   });
 
   it("dims every fence bird and counts them", () => {

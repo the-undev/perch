@@ -118,6 +118,16 @@ describe("the camera", () => {
     );
   });
 
+  it("keeps the strip's tally clear of the wire's name", () => {
+    const { container } = camera(detailOf("undev/skiff"));
+    const name = [...container.querySelectorAll("tspan")].find(
+      (tspan) => tspan.textContent === "Projects",
+    );
+
+    expect(name?.nextElementSibling?.textContent).toBe("4 attention");
+    expect(name?.nextElementSibling?.getAttribute("dx")).toBe("18");
+  });
+
   it("switches to a wire-mate from the strip", () => {
     const { onNavigate } = camera(detailOf("undev/skiff"));
 

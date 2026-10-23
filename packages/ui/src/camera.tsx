@@ -41,7 +41,7 @@ import type { KeyFileSheet } from "./paper.tsx";
 import { sceneWidth, skyBackground } from "./scene.tsx";
 import { isNight, type SkyPhase, skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
-import { byPosition, facingAt, Tally } from "./wire.tsx";
+import { byPosition, facingAt, Tally, tallyGap } from "./wire.tsx";
 
 /** Where the camera points: the whole aviary, or one bird's detail page. */
 export type CameraPlace = { at: "aviary" } | { at: "detail"; birdId: string };
@@ -300,7 +300,7 @@ function Strip({
           {tab.label}
         </tspan>
         {dim ? (
-          <tspan dx={18}>{tab.birds.length} not adopted</tspan>
+          <tspan dx={tallyGap}>{tab.birds.length} not adopted</tspan>
         ) : (
           <Tally birds={tab.birds} />
         )}

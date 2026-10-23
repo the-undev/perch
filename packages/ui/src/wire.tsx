@@ -6,6 +6,7 @@ import type {
   Fence as FenceModel,
   Wire as WireModel,
 } from "@perch/core/viewmodel.ts";
+import { Fragment } from "react";
 import { Bird, type Facing } from "./bird.tsx";
 
 /** The margin no bird is placed inside, at either end of the scene. */
@@ -57,21 +58,36 @@ export function wireTally(birds: BirdModel[]): {
   };
 }
 
-/** The tally as tspans, for a wire's name to carry. */
-export function Tally({ birds }: { birds: BirdModel[] }) {
+/** The space between a wire's name and its tally, in scene units. */
+export const tallyGap = 18;
+
+/** The tally's words in order, each with its ink; "all settled" when nothing else is said. */
+function tallyWords(
+  birds: BirdModel[],
+): { words: string; ink: string | undefined }[] {
   const { attention, drifting } = wireTally(birds);
-  if (attention === 0 && drifting === 0)
-    return <tspan dx={18}>all settled</tspan>;
+  const said = [
+    { count: attention, words: `${attention} attention`, ink: "fill-red" },
+    { count: drifting, words: `${drifting} drifting`, ink: "fill-amber" },
+  ].filter((part) => part.count > 0);
+  return said.length > 0 ? said : [{ words: "all settled", ink: undefined }];
+}
+
+/**
+ * The tally as tspans, for a wire's name to carry. The gap rides on the first word itself: an
+ * empty tspan holds no character for an offset to move.
+ */
+export function Tally({ birds }: { birds: BirdModel[] }) {
   return (
     <>
-      <tspan dx={18} />
-      {attention > 0 && (
-        <tspan className="fill-red">{attention} attention</tspan>
-      )}
-      {attention > 0 && drifting > 0 && <tspan> · </tspan>}
-      {drifting > 0 && (
-        <tspan className="fill-amber">{drifting} drifting</tspan>
-      )}
+      {tallyWords(birds).map((part, index) => (
+        <Fragment key={part.words}>
+          {index > 0 && <tspan> · </tspan>}
+          <tspan dx={index === 0 ? tallyGap : undefined} className={part.ink}>
+            {part.words}
+          </tspan>
+        </Fragment>
+      ))}
     </>
   );
 }

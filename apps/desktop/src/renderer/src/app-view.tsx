@@ -1,12 +1,14 @@
 // The window: the camera over the aviary, bound to the router. The URL holds where the camera
 // points; the main process's state holds what it shows.
 
-import type { Aviary } from "@perch/core/viewmodel.ts";
+import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
+import type { EntryControls } from "@perch/ui/entry-forms.tsx";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useCallback, useMemo } from "react";
 import type { PerchApi } from "../../shared/ipc.ts";
-import { useKeyFiles, usePerchState } from "./queries.ts";
+import { useEntryForm, useKeyFiles, usePerchState } from "./queries.ts";
 import { useNow } from "./use-now.ts";
 import { Welcome } from "./welcome.tsx";
 
@@ -36,6 +38,23 @@ function FirstScan({
   );
 }
 
+function findBird(aviary: Aviary, id: string): Bird | undefined {
+  return [
+    ...aviary.wires.flatMap((wire) => wire.birds),
+    ...aviary.fence.birds,
+  ].find((bird) => bird.id === id);
+}
+
+/**
+ * When the open bird's entry is read again: after every scan, and as soon as a reread config
+ * moves the bird or renames it, before the scan that follows. Null until there is an aviary.
+ */
+function entryVersion(aviary: Aviary | null, birdId: string | null) {
+  if (aviary === null) return null;
+  const bird = birdId === null ? undefined : findBird(aviary, birdId);
+  return [aviary.scannedAt, bird?.wire ?? "fence", bird?.name ?? ""].join("\n");
+}
+
 /** The aviary with the main process's problems ahead of the scan's own warnings. */
 function withProblems(aviary: Aviary, problems: string[]): Aviary {
   return { ...aviary, warnings: [...problems, ...aviary.warnings] };
@@ -49,6 +68,22 @@ export function AppView({ api }: { api: PerchApi }) {
   const place: CameraPlace =
     birdId === null ? { at: "aviary" } : { at: "detail", birdId };
   const sheets = useKeyFiles(api, birdId, state?.aviary?.scannedAt ?? null);
+  const queryClient = useQueryClient();
+  const entryForm = useEntryForm(
+    api,
+    birdId,
+    entryVersion(state?.aviary ?? null, birdId),
+  );
+  const entry = useMemo((): EntryControls => {
+    // A write settles once its scan has, which reads the entry again whatever changed.
+    const reread = () =>
+      void queryClient.invalidateQueries({ queryKey: ["entryForm"] });
+    return {
+      form: entryForm,
+      onSave: (id, values) => void api.saveEntry(id, values).finally(reread),
+      onRemove: (id) => void api.removeEntry(id).finally(reread),
+    };
+  }, [api, entryForm, queryClient]);
   const aviary = useMemo(
     () =>
       state?.aviary ? withProblems(state.aviary, state.problems) : undefined,
@@ -88,6 +123,7 @@ export function AppView({ api }: { api: PerchApi }) {
       sheets={sheets}
       scanning={state.scanning}
       onRescan={() => void api.rescan()}
+      entry={entry}
     />
   );
 }

@@ -1,7 +1,7 @@
 import { DetailView } from "@perch/ui/detail-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
-import { mockBird, scanMoment } from "../specimens.ts";
+import { mockBird, mockEntryForm, scanMoment } from "../specimens.ts";
 import { Choice, Code, Pressed, Section, Usage } from "../usage.tsx";
 
 const birds = [
@@ -68,6 +68,11 @@ export function DetailScenePage() {
           now={scanMoment}
           onLaunch={(action) => setPressed(`${bird.name}: ${action.verb}`)}
           sheets={birdSheets(bird)}
+          entry={{
+            form: mockEntryForm(id),
+            onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
+            onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
+          }}
         />
       </div>
       <Pressed text={pressed} />
@@ -90,6 +95,11 @@ export function DetailScenePage() {
             name: "sheets",
             type: "KeyFileSheet[]",
             what: "bird.detail.keyFiles with the markdown read from each, null where a file could not be read; empty until read.",
+          },
+          {
+            name: "entry",
+            type: "EntryControls",
+            what: "The bird's entry form, null until read, and the calls that save or remove the entry: Adopt on a fence bird, Edit entry on an adopted one.",
           },
         ]}
       >

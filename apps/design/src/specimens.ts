@@ -10,7 +10,7 @@ import {
 } from "@perch/core/viewmodel.ts";
 import { mockBird } from "@perch/ui/mock-birds.ts";
 
-export { mockBird, mockBirds } from "@perch/ui/mock-birds.ts";
+export { mockBird, mockBirds, mockEntryForm } from "@perch/ui/mock-birds.ts";
 
 /** The mock scan's moment: times on the pages are measured to it, so they never drift. */
 export const scanMoment = new Date(mockAviary.scannedAt);

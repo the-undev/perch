@@ -23,6 +23,7 @@ function camera(place: CameraPlace, scanning = false, clock = now) {
       sheets={[]}
       scanning={scanning}
       onRescan={onRescan}
+      entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
     />
   );
   const { container, rerender } = render(view(place));

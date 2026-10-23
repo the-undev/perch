@@ -1,6 +1,7 @@
-// The mock dataset's birds by id, for the tests and the design site.
+// The mock dataset's birds by id, and their entry forms, for the tests and the design site.
 
-import { mockAviary } from "@perch/core/mock.ts";
+import { type EntryForm, entryFormFor } from "@perch/core/entry-form.ts";
+import { mockAviary, mockConfig, mockSnapshot } from "@perch/core/mock.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
 
 /** Every bird in the mock aviary: the wires top to bottom, then the fence. */
@@ -14,4 +15,12 @@ export function mockBird(id: string): Bird {
   const bird = mockBirds.find((candidate) => candidate.id === id);
   if (bird === undefined) throw new Error(`the mock aviary has no bird ${id}`);
   return bird;
+}
+
+/** One mock bird's entry form from the mock config; throws when the mock holds no such item. */
+export function mockEntryForm(id: string): EntryForm {
+  const item = mockSnapshot.items.find((candidate) => candidate.id === id);
+  if (item === undefined)
+    throw new Error(`the mock snapshot has no item ${id}`);
+  return entryFormFor(mockConfig, item);
 }

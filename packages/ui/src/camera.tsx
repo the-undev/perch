@@ -30,6 +30,7 @@ import {
 import { AviaryScene, sourceErrorWords } from "./aviary-view.tsx";
 import { BirdFigure, birdLook, type Facing } from "./bird.tsx";
 import { DetailView } from "./detail-view.tsx";
+import type { EntryControls } from "./entry-forms.tsx";
 import {
   type PixelSize,
   useElementSize,
@@ -435,6 +436,8 @@ export interface CameraViewProps {
   scanning: boolean;
   /** The header's scan line was pressed: scan now. */
   onRescan: () => void;
+  /** Adopting the open bird or editing its config entry, from its detail page. */
+  entry: EntryControls;
 }
 
 /** Until the first measurement the camera assumes a small monitor's window. */
@@ -450,6 +453,7 @@ export function CameraView({
   sheets,
   scanning,
   onRescan,
+  entry,
 }: CameraViewProps) {
   const phase = skyPhase(now);
   const night = isNight(phase);
@@ -623,6 +627,7 @@ export function CameraView({
                   now={now}
                   onLaunch={onLaunch}
                   sheets={sheets}
+                  entry={entry}
                 />
               </div>
             )}

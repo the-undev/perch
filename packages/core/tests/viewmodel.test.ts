@@ -664,7 +664,10 @@ describe("the detail", () => {
   });
 
   it("offers launch actions as verbs, in the item's zellij session", async () => {
-    const config = await adoptAll(["dev/perch", "undev/notes"]);
+    const config = await adoptAll(
+      ["dev/perch", "undev/notes"],
+      '[launch.zellij_sessions]\n"~/undev" = "undev"\n',
+    );
     const vault = item("undev/notes", { kind: "vault" });
 
     expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([

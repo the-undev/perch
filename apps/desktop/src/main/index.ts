@@ -12,6 +12,7 @@ import { createAppState } from "./app-state.ts";
 import { handOver, parseArguments } from "./command-line.ts";
 import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
 import { createConfigStore } from "./config-store.ts";
+import { createConfigWatch } from "./config-watch.ts";
 import { isWebUrl } from "./external-links.ts";
 import { iconPaths, resourceDirFor } from "./icons.ts";
 import { registerIpc } from "./ipc.ts";
@@ -25,6 +26,8 @@ import { hideOnClose, present } from "./window-presence.ts";
 const focusGapMs = 60_000;
 /** With a config file that has never parsed, the next attempt to read it and scan comes this soon. */
 const noConfigRetryMs = 60_000;
+/** An edit to the config file outside the app is read once the file has been quiet this long. */
+const configQuietMs = 300;
 
 /** Held for the life of the app: a tray icon that is collected leaves the tray. */
 let tray: Tray | null = null;
@@ -121,8 +124,11 @@ function start(): void {
     launch: (action, current) =>
       launch(action, current.launch.commands, { run, spawnDetached }),
     readText: (path) => readFile(path, "utf8"),
-    writeStarter: () =>
-      writeStarterConfig(paths.examplePath, paths.userConfigPath),
+    writeStarter: async () => {
+      await writeStarterConfig(paths.examplePath, paths.userConfigPath);
+      // Without a config directory at start there was nothing to watch.
+      await configWatch.start();
+    },
     editConfig: (edit) =>
       editConfigFile(
         {
@@ -154,6 +160,13 @@ function start(): void {
     now: Date.now,
     onScanning: (scanning) => state.setScanning(scanning),
   });
+  // Last write wins: an edit by hand is read and shown, and the next save from the app replaces it.
+  const configWatch = createConfigWatch({
+    path: paths.userConfigPath,
+    quietMs: configQuietMs,
+    onChange: () => void state.recheck(),
+    onError: (message) => console.warn(message),
+  });
   const ready = state.start();
 
   // A second launch quits at once; the running instance does what its command line asks.
@@ -171,6 +184,7 @@ function start(): void {
   app.on("before-quit", () => {
     quitting = true;
     scheduler.stop();
+    configWatch.stop();
   });
 
   void app.whenReady().then(async () => {
@@ -209,6 +223,7 @@ function start(): void {
     tray.on("click", () => present(window, "toggle"));
     await ready;
     scheduler.start();
+    await configWatch.start();
   });
 }
 

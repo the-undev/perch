@@ -359,3 +359,11 @@ build-time calls so they can be revisited.
   process checks the values with `settingsProblems` before it writes, and
   a refusal is the same problem in the state as a refused entry write.
   The app state's two write errors became one: the latest config write's.
+- The main process watches the config file (`config-watch.ts`): the
+  directory of `~/.config/perch/config.toml` and, when it is a stow
+  symlink, the directory of the file it names, since an editor or the
+  app's own write renames a file there and the link never changes. Once
+  the file has been quiet for 300 ms the app rereads the config and
+  publishes, without a scan. A directory that cannot be watched is a
+  console warning; the starter write starts the watch again, since its
+  directory may not have existed at launch.

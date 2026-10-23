@@ -4,6 +4,11 @@ import type {
   SettingsValues,
 } from "@perch/core/settings-form.ts";
 import type {
+  SourceTested,
+  SourceTestValues,
+  TokenStored,
+} from "@perch/core/sources-form.ts";
+import type {
   Aviary,
   KeyFile,
   LaunchAction,
@@ -67,6 +72,13 @@ export interface PerchApi {
    * arrives as a problem in the state.
    */
   saveSettings(values: SettingsValues): Promise<void>;
+  /**
+   * Writes a pasted token into the keyring under service perch and the key; nothing ever reads
+   * it back for the window.
+   */
+  storeToken(key: string, token: string): Promise<TokenStored>;
+  /** Lists a forge card's repositories with the token its key holds, as its draft values say. */
+  testSource(values: SourceTestValues): Promise<SourceTested>;
 }
 
 /** The calls the main process answers: everything but the pushed state. */
@@ -85,4 +97,6 @@ export const channels = {
   removeEntry: "bird:remove-entry",
   settingsForm: "config:settings-form",
   saveSettings: "config:save-settings",
+  storeToken: "keyring:store-token",
+  testSource: "keyring:test-source",
 } as const satisfies Record<keyof PerchApi, string>;

@@ -19,6 +19,9 @@ const api: PerchApi = {
   removeEntry: (birdId) => ipcRenderer.invoke(channels.removeEntry, birdId),
   settingsForm: () => ipcRenderer.invoke(channels.settingsForm),
   saveSettings: (values) => ipcRenderer.invoke(channels.saveSettings, values),
+  storeToken: (key, token) =>
+    ipcRenderer.invoke(channels.storeToken, key, token),
+  testSource: (values) => ipcRenderer.invoke(channels.testSource, values),
 };
 
 contextBridge.exposeInMainWorld("perch", api);

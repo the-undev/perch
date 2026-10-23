@@ -1,5 +1,6 @@
 import type { EntryValues } from "@perch/core/entry-form.ts";
 import type { SettingsValues } from "@perch/core/settings-form.ts";
+import type { SourceTestValues } from "@perch/core/sources-form.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import { ipcMain } from "electron";
 import { channels, type PerchCalls } from "../shared/ipc.ts";
@@ -31,5 +32,11 @@ export function registerIpc(handlers: PerchCalls): void {
   ipcMain.handle(channels.settingsForm, () => handlers.settingsForm());
   ipcMain.handle(channels.saveSettings, (_event, values: SettingsValues) =>
     handlers.saveSettings(values),
+  );
+  ipcMain.handle(channels.storeToken, (_event, key: string, token: string) =>
+    handlers.storeToken(key, token),
+  );
+  ipcMain.handle(channels.testSource, (_event, values: SourceTestValues) =>
+    handlers.testSource(values),
   );
 }

@@ -4,7 +4,9 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { runCommand } from "@perch/core/exec.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
+import { createFetchJson } from "@perch/core/http.ts";
 import { readSnapshot, runAggregate, runGather } from "@perch/core/scan.ts";
+import { createKeyringTokenLookup } from "@perch/core/secrets.ts";
 import { app, BrowserWindow, Menu, shell, Tray } from "electron";
 import { channels, type PerchState } from "../shared/ipc.ts";
 import { appPaths } from "./app-paths.ts";
@@ -16,6 +18,7 @@ import { createConfigWatch } from "./config-watch.ts";
 import { isWebUrl } from "./external-links.ts";
 import { iconPaths, resourceDirFor } from "./icons.ts";
 import { registerIpc } from "./ipc.ts";
+import { createStoreToken, testSource } from "./keyring.ts";
 import { createSpawnDetached, launch } from "./launch.ts";
 import { createScanScheduler } from "./scan-scheduler.ts";
 import { writeStarterConfig } from "./starter-config.ts";
@@ -28,6 +31,8 @@ const focusGapMs = 60_000;
 const noConfigRetryMs = 60_000;
 /** An edit to the config file outside the app is read once the file has been quiet this long. */
 const configQuietMs = 300;
+/** A connection test gives up on a forge that has not answered in this long, as a scan does. */
+const testTimeoutMs = 10_000;
 
 /** Held for the life of the app: a tray icon that is collected leaves the tray. */
 let tray: Tray | null = null;
@@ -95,6 +100,11 @@ function start(): void {
   const spawnDetached = createSpawnDetached(spawn, { cwd: home, env });
   const run = ([program, ...args]: string[]) =>
     runCommand(program ?? "", args, { cwd: home, env });
+  const storeToken = createStoreToken(spawn, { cwd: home, env });
+  const testDeps = {
+    lookupToken: createKeyringTokenLookup(home, env),
+    fetchJson: createFetchJson(testTimeoutMs),
+  };
   const now = () => new Date();
   const state = createAppState({
     home,
@@ -200,6 +210,8 @@ function start(): void {
       removeEntry: (birdId) => state.removeEntry(birdId),
       settingsForm: async () => state.settingsForm(),
       saveSettings: (values) => state.saveSettings(values),
+      storeToken,
+      testSource: (values) => testSource(values, testDeps),
     });
     const window = createWindow(icons.window, !launchArguments.hidden);
     mainWindow = window;

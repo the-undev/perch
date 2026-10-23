@@ -352,3 +352,24 @@ export function sourceProblemLine({
   const label = sourceFieldLabels[field];
   return `${kindName(kind)} source ${index + 1}, ${label.charAt(0).toLowerCase()}${label.slice(1)}: ${problem}`;
 }
+
+/** A forge card's draft values, as a connection test reads them. */
+export type SourceTestValues =
+  | { kind: "github"; account: string; key: string }
+  | { kind: "forgejo"; account: string; key: string; baseUrl: string };
+
+/** What storing a token answered: stored, or why not in a sentence. */
+export type TokenStored = { ok: true } | { ok: false; problem: string };
+
+/** What a connection test answered: the account's repositories it read, or why not. */
+export type SourceTested =
+  | { ok: true; count: number }
+  | { ok: false; problem: string };
+
+/** The keyring calls a forge card makes; neither ever answers with the token. */
+export interface KeyringCalls {
+  /** Writes a token into the keyring under service perch and the key. */
+  storeToken(key: string, token: string): Promise<TokenStored>;
+  /** Lists the account's repositories with the token stored under the card's key. */
+  testSource(values: SourceTestValues): Promise<SourceTested>;
+}

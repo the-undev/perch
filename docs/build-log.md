@@ -396,3 +396,6 @@ build-time calls so they can be revisited.
   renders each group in its states, editable, with the problems the
   editor would list beneath each, and "The settings page" scene renders
   the whole page with a control that changes the file on disk.
+- An empty wire's header tab is a quiet label, its name and "empty",
+  rather than a disabled button: there is nothing to press, so it is
+  not a control.

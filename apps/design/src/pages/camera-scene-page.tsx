@@ -2,7 +2,7 @@ import { mockAviary } from "@perch/core/mock.ts";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
-import { mockBird, mockEntryForm } from "../specimens.ts";
+import { aviaryWith, mockBird, mockEntryForm } from "../specimens.ts";
 import {
   Choice,
   Code,
@@ -16,6 +16,19 @@ import { clockFor, clockOptions } from "./aviary-scene-page.tsx";
 type Clock = Parameters<typeof clockFor>[0];
 
 type Scanning = "idle" | "scanning";
+
+type Wires = "mock" | "withEmpty";
+
+const wiresOptions: { value: Wires; label: string }[] = [
+  { value: "mock", label: "The mock's" },
+  { value: "withEmpty", label: "With an empty wire" },
+];
+
+/** The mock aviary with a configured wire no bird sits on yet. */
+const withEmptyWire = aviaryWith([
+  ...mockAviary.wires,
+  { name: "Servers", birds: [] },
+]);
 
 const scanningOptions: { value: Scanning; label: string }[] = [
   { value: "idle", label: "Idle" },
@@ -32,6 +45,7 @@ export function CameraScenePage() {
   const [place, setPlace] = useState<CameraPlace>({ at: "aviary" });
   const [clock, setClock] = useState<Clock>("clock");
   const [scanning, setScanning] = useState<Scanning>("idle");
+  const [wires, setWires] = useState<Wires>("mock");
   const [pressed, setPressed] = useState("nothing yet");
   const sheets =
     place.at === "detail" ? birdSheets(mockBird(place.birdId)) : [];
@@ -39,7 +53,7 @@ export function CameraScenePage() {
     <>
       <Section
         title="The camera, end to end"
-        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The header's tabs switch wires; each remembers the bird last open on it. The brand, The Aviary and Escape ride home. The scan line at the right says how old the scan is and scans again when pressed; settings, beside it, leaves for the settings page."
+        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The header's tabs switch wires; each remembers the bird last open on it, and an empty wire's tab says so. The brand, The Aviary and Escape ride home. The scan line at the right says how old the scan is and scans again when pressed; settings, beside it, leaves for the settings page."
         min={600}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -55,6 +69,12 @@ export function CameraScenePage() {
             value={scanning}
             onChange={setScanning}
           />
+          <Choice
+            label="Wires"
+            options={wiresOptions}
+            value={wires}
+            onChange={setWires}
+          />
           <p className="m-0 text-[12.5px] text-ink-faint">
             place:{" "}
             <code className="font-mono text-ink-muted">
@@ -65,7 +85,7 @@ export function CameraScenePage() {
       </Section>
       <SceneFrame height="max(640px, calc(100vh - 260px))">
         <CameraView
-          aviary={mockAviary}
+          aviary={wires === "mock" ? mockAviary : withEmptyWire}
           now={clockFor(clock)}
           place={place}
           onNavigate={(next) => {
@@ -147,7 +167,7 @@ export function CameraScenePage() {
           prints it above. What the camera keeps for itself is the bird last
           open under each tab, and the bird left on the ground while it rides
           home. Tabs follow <Code>cameraTabs(aviary)</Code>; a wire with no
-          birds has its tab, disabled.
+          birds keeps its tab, which says empty and cannot be pressed.
         </p>
       </Usage>
     </>

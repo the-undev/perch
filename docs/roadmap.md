@@ -250,13 +250,6 @@ thin or stagger the names, hide names until hover past a density, or
 scale the scene. The wires have the same limit later; rowCapacity only
 staggers rows in the aviary view.
 
-## Empty wire tab
-
-A configured wire always gets a header tab, decided 22 October 2026.
-An empty one's tab is dead (`tabDestination` returns null) and says
-nothing about why. It could carry an "empty" word, or go somewhere that
-says how to adopt a bird onto the wire.
-
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

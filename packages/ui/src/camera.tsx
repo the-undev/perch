@@ -89,7 +89,7 @@ function tabOf(tabs: CameraTab[], bird: Bird): BirdTab | undefined {
 /**
  * Where pressing a tab goes: home for The Aviary; for a wire or the fence, the bird last open
  * there while it still sits there, else the leftmost, which needs attention first. Null for a
- * wire with no birds.
+ * wire with no birds, whose tab says "empty" and cannot be pressed.
  */
 export function tabDestination(
   tab: CameraTab,
@@ -535,18 +535,29 @@ export function CameraView({
         >
           {tabs.map((tab) => {
             const destination = tabDestination(tab, remembered);
+            if (destination === null) {
+              return (
+                <span
+                  key={memoryKey(tab)}
+                  data-empty-tab=""
+                  className="cursor-default px-4 py-1.5 font-semibold text-[12.5px] text-ink-faint"
+                >
+                  {tab.label}{" "}
+                  <span className="font-normal text-ink-faint/80">empty</span>
+                </span>
+              );
+            }
             const on = tab === currentTab;
             return (
               <button
                 key={memoryKey(tab)}
                 type="button"
-                disabled={destination === null}
                 aria-current={on ? "page" : undefined}
-                onClick={() => destination && onNavigate(destination)}
+                onClick={() => onNavigate(destination)}
                 className={
                   on
                     ? "cursor-pointer rounded-full bg-panel-hi px-4 py-1.5 font-semibold text-[12.5px] text-ink"
-                    : "cursor-pointer rounded-full px-4 py-1.5 font-semibold text-[12.5px] text-ink-muted transition-colors hover:text-ink disabled:cursor-default disabled:text-ink-faint/60"
+                    : "cursor-pointer rounded-full px-4 py-1.5 font-semibold text-[12.5px] text-ink-muted transition-colors hover:text-ink"
                 }
               >
                 {tab.label}

@@ -10,13 +10,18 @@ const now = new Date(mockSnapshot.scannedAt);
 const aviaryPlace: CameraPlace = { at: "aviary" };
 const detailOf = (birdId: string): CameraPlace => ({ at: "detail", birdId });
 
-function camera(place: CameraPlace, scanning = false, clock = now) {
+function camera(
+  place: CameraPlace,
+  scanning = false,
+  clock = now,
+  aviary = mockAviary,
+) {
   const onNavigate = vi.fn();
   const onRescan = vi.fn();
   const onSettings = vi.fn();
   const view = (at: CameraPlace) => (
     <CameraView
-      aviary={mockAviary}
+      aviary={aviary}
       now={clock}
       place={at}
       onNavigate={onNavigate}
@@ -82,6 +87,27 @@ describe("the camera", () => {
       2,
       detailOf(mockAviary.fence.birds[0]?.id ?? ""),
     );
+  });
+
+  it("shows an empty wire's tab, quietly saying so, and goes nowhere from it", () => {
+    const withEmpty = {
+      ...mockAviary,
+      wires: [...mockAviary.wires, { name: "Servers", birds: [] }],
+    };
+    const { container, onNavigate } = camera(
+      aviaryPlace,
+      false,
+      now,
+      withEmpty,
+    );
+    const empty = container.querySelector("[data-empty-tab]");
+    if (empty === null) throw new Error("no empty tab drawn");
+
+    expect(empty.textContent).toBe("Servers empty");
+    expect(screen.queryByRole("button", { name: /Servers/ })).toBeNull();
+    fireEvent.click(empty);
+
+    expect(onNavigate).not.toHaveBeenCalled();
   });
 
   it("rides down to a bird's detail from its bubble", () => {

@@ -507,7 +507,7 @@ function SourceCardView({
 }
 
 /** The kinds of source, each a row saying what it reads and needs, every kind always offered. */
-function SourcePicker({
+export function SourcePicker({
   onPick,
   onClose,
 }: {

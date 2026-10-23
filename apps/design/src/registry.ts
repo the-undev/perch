@@ -25,6 +25,7 @@ import {
   SettingsGroupsPage,
   SettingsScenePage,
 } from "./pages/settings-pages.tsx";
+import { SettingsSourcesPage } from "./pages/settings-sources-page.tsx";
 import { SkyPage } from "./pages/sky-page.tsx";
 import { TokensPage } from "./pages/tokens-page.tsx";
 import { WirePage } from "./pages/wire-page.tsx";
@@ -222,10 +223,18 @@ export const pages: DesignPage[] = [
   {
     slug: "settings-groups",
     group: "components",
-    title: "Settings groups",
+    title: "Settings pages",
     summary:
-      "Each part of config as the settings page edits it, in its states, with what the editor says of each.",
+      "Each page of config but the sources as the settings page edits it, in its states, with what the editor says of each.",
     component: SettingsGroupsPage,
+  },
+  {
+    slug: "settings-sources",
+    group: "components",
+    title: "Sources page",
+    summary:
+      "A card per configured source with its last scan in words, the picker that adds any kind, the first-run page and each card's problems.",
+    component: SettingsSourcesPage,
   },
   {
     slug: "aviary",
@@ -256,7 +265,7 @@ export const pages: DesignPage[] = [
     group: "scenes",
     title: "The settings page",
     summary:
-      "Every group of config on one page, its problems and Save, and a file changed on disk while it is open.",
+      "The rail of pages beside one reading-width column, the draft and Save across them, the first-run Sources page, and a file changed on disk while it is open.",
     component: SettingsScenePage,
   },
   {

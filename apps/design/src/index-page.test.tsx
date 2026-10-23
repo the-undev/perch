@@ -44,6 +44,23 @@ describe("the design site", () => {
     ).toBeDefined();
   });
 
+  it("opens the settings scene on Sources beside the rail, the mock's cards in it", async () => {
+    const router = createDesignRouter(
+      createMemoryHistory({ initialEntries: ["/settings"] }),
+    );
+    render(<RouterProvider router={router} />);
+
+    const rail = await screen.findByRole("navigation", {
+      name: "Settings pages",
+    });
+    expect(rail.textContent).toBe(
+      "SourcesJoining upWiresTiersJudgementScanningLaunching",
+    );
+    expect(
+      screen.getAllByRole("region", { name: "Uptime Kuma · Silo" }),
+    ).toHaveLength(1);
+  });
+
   it.each(pages.filter((page) => page.group !== "spec"))(
     "ends the $title page with its usage note",
     async (page) => {

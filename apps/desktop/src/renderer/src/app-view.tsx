@@ -133,6 +133,7 @@ export function AppView({ api }: { api: PerchApi }) {
         cards={state.sourceCards}
         now={now}
         problems={state.problems}
+        keyring={{ storeToken: api.storeToken, testSource: api.testSource }}
         onSave={(values) =>
           void api
             .saveSettings(values)

@@ -4,9 +4,11 @@
 
 import type { GithubSourceConfig, SourcesConfig } from "@perch/core/config.ts";
 import {
+  type KeyringCalls,
   type SourceCardValues,
   type SourceField,
   type SourceProblem,
+  type SourceTestValues,
   sourceCardId,
   sourceCardsOf,
   sourceFieldLabels,
@@ -27,6 +29,7 @@ import {
   buttonClass,
   FormNotes,
   monoInputClass,
+  primaryClass,
   quietClass,
   SettingsPageHead,
   StringList,
@@ -185,15 +188,136 @@ const quietLineClass =
 const suggestedKey = (kind: "github" | "forgejo", account: string) =>
   account.trim() === "" ? "" : `${kind}-${account.trim()}`;
 
-/** A forge card's fields: the account and its keyring key, then its hosts and tracked forks. */
+/** What a keyring call answered, or that it is running, as the card's quiet sentence. */
+interface KeyringAnswer {
+  tone: "busy" | "ok" | "failed";
+  text: string;
+}
+
+const answerTone: Record<KeyringAnswer["tone"], string> = {
+  busy: "text-ink-faint",
+  ok: "text-ink-muted",
+  failed: "text-red",
+};
+
+/**
+ * The write-only token field, with Store and Test beside a sentence saying what the last call
+ * answered. The field is never filled from anywhere and empties once its token is stored.
+ */
+function TokenRow({
+  values,
+  keyring,
+}: {
+  /** The card's draft values: the key the token goes under, and what a test reads. */
+  values: SourceTestValues;
+  keyring: KeyringCalls;
+}) {
+  const [token, setToken] = useState("");
+  const [answer, setAnswer] = useState<KeyringAnswer | null>(null);
+  const busy = answer?.tone === "busy";
+  const keyed = values.key.trim() !== "";
+  const testable =
+    keyed &&
+    values.account.trim() !== "" &&
+    (values.kind === "github" || values.baseUrl.trim() !== "");
+  const failed = (error: unknown) => ({
+    ok: false as const,
+    problem: `the call did not reach perch: ${error instanceof Error ? error.message : String(error)}`,
+  });
+  const store = () => {
+    const key = values.key;
+    setAnswer({ tone: "busy", text: "storing in the keyring" });
+    void keyring
+      .storeToken(key, token)
+      .catch(failed)
+      .then((stored) => {
+        if (!stored.ok) {
+          setAnswer({ tone: "failed", text: stored.problem });
+          return;
+        }
+        setToken("");
+        setAnswer({ tone: "ok", text: `stored in the keyring under ${key}` });
+      });
+  };
+  const test = () => {
+    const account = values.account.trim();
+    setAnswer({ tone: "busy", text: "testing" });
+    void keyring
+      .testSource(values)
+      .catch(failed)
+      .then((tested) =>
+        setAnswer(
+          tested.ok
+            ? {
+                tone: "ok",
+                text: `${account}: ${plural(tested.count, "repository", "repositories")} readable`,
+              }
+            : { tone: "failed", text: tested.problem },
+        ),
+      );
+  };
+  return (
+    <>
+      <CardField
+        label="Token"
+        sub="paste once, kept only in the system keyring"
+        problems={[]}
+      >
+        {() => (
+          <input
+            type="password"
+            aria-label="Token"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="paste the token here"
+            value={token}
+            onChange={(event) => setToken(event.target.value)}
+            className={monoInputClass}
+          />
+        )}
+      </CardField>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <button
+          type="button"
+          disabled={busy || !keyed || token.trim() === ""}
+          onClick={store}
+          className={primaryClass}
+        >
+          Store in the keyring
+        </button>
+        <button
+          type="button"
+          disabled={busy || !testable}
+          onClick={test}
+          className={secondaryClass}
+        >
+          Test
+        </button>
+        <span
+          role="status"
+          className={`ml-1 text-[12.5px] ${answer === null ? "" : answerTone[answer.tone]}`}
+        >
+          {answer?.text}
+        </span>
+      </div>
+    </>
+  );
+}
+
+/** A forge card's fields: the account and its keyring key, the token, then its hosts and tracked forks. */
 function AccountFields<Source extends GithubSourceConfig>({
   kind,
   source,
+  testValues,
+  keyring,
   problems,
   onChange,
 }: {
   kind: "github" | "forgejo";
   source: Source;
+  /** What a connection test reads from the card. */
+  testValues: SourceTestValues;
+  keyring: KeyringCalls;
   problems: (field: SourceField) => string[];
   onChange: (source: Source) => void;
 }) {
@@ -229,10 +353,12 @@ function AccountFields<Source extends GithubSourceConfig>({
           onChange={(next) => onChange({ ...source, key: next })}
         />
       </div>
+      <TokenRow values={testValues} keyring={keyring} />
       <p className={quietLineClass}>
         The read-only token lives in the system keyring under this key, never in
-        the file. A fine-grained token with read-only contents, metadata,
-        actions and pull requests is enough. Store it from a terminal:{" "}
+        the file, and perch never shows it back. A fine-grained token with
+        read-only contents, metadata, actions and pull requests is enough.
+        Prefer the terminal?{" "}
         <code className="rounded border border-edge bg-panel px-1.25 py-px font-mono text-[12px] text-ink">
           secret-tool store --label perch service perch key {key}
         </code>
@@ -262,10 +388,12 @@ function AccountFields<Source extends GithubSourceConfig>({
 /** A card's fields by its kind, each with its problems, and what its findings become. */
 function CardBody({
   card,
+  keyring,
   problems,
   onChange,
 }: {
   card: SourceCardValues;
+  keyring: KeyringCalls;
   problems: (field: SourceField) => string[];
   onChange: (card: SourceCardValues) => void;
 }) {
@@ -307,6 +435,12 @@ function CardBody({
           <AccountFields
             kind="github"
             source={card.source}
+            testValues={{
+              kind: "github",
+              account: card.source.account,
+              key: card.source.key,
+            }}
+            keyring={keyring}
             problems={problems}
             onChange={(source) => onChange({ ...card, source })}
           />
@@ -332,6 +466,13 @@ function CardBody({
           <AccountFields
             kind="forgejo"
             source={card.source}
+            testValues={{
+              kind: "forgejo",
+              account: card.source.account,
+              key: card.source.key,
+              baseUrl: card.source.baseUrl,
+            }}
+            keyring={keyring}
             problems={problems}
             onChange={(source) => onChange({ ...card, source })}
           />
@@ -397,6 +538,7 @@ function SourceCardView({
   card,
   result,
   now,
+  keyring,
   problems,
   onChange,
   onRemove,
@@ -405,6 +547,7 @@ function SourceCardView({
   /** The card's scan record, or null when the snapshot holds none for it. */
   result: SourceCardResult | null;
   now: Date;
+  keyring: KeyringCalls;
   problems: SourceProblem[];
   onChange: (card: SourceCardValues) => void;
   onRemove: () => void;
@@ -466,7 +609,12 @@ function SourceCardView({
           id={bodyId}
           className="@container grid gap-3.5 border-edge border-t bg-band p-4"
         >
-          <CardBody card={card} problems={fieldProblems} onChange={onChange} />
+          <CardBody
+            card={card}
+            keyring={keyring}
+            problems={fieldProblems}
+            onChange={onChange}
+          />
           <div className="flex flex-wrap items-center gap-2">
             {confirming ? (
               <>
@@ -594,11 +742,19 @@ export interface SourcesPageProps {
   cards: SourceCard[] | null;
   /** The moment the scan times are measured to. */
   now: Date;
+  /** Stores a forge card's pasted token and tests its connection. */
+  keyring: KeyringCalls;
   onChange: (value: SourcesConfig) => void;
 }
 
 /** The Sources page: every source's card in config order, then the picker that adds one. */
-export function SourcesPage({ value, cards, now, onChange }: SourcesPageProps) {
+export function SourcesPage({
+  value,
+  cards,
+  now,
+  keyring,
+  onChange,
+}: SourcesPageProps) {
   const drafts = sourceCardsOf(value);
   const [picking, setPicking] = useState(drafts.length === 0);
   const problems = sourceProblems(value);
@@ -617,6 +773,7 @@ export function SourcesPage({ value, cards, now, onChange }: SourcesPageProps) {
           card={card}
           result={records.get(sourceCardId(card)) ?? null}
           now={now}
+          keyring={keyring}
           problems={problems.filter(
             (problem) =>
               problem.kind === card.kind && problem.index === card.index,

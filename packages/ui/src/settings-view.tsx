@@ -6,6 +6,7 @@ import type {
   SettingsForm,
   SettingsValues,
 } from "@perch/core/settings-form.ts";
+import type { KeyringCalls } from "@perch/core/sources-form.ts";
 import type { SourceCard } from "@perch/core/viewmodel.ts";
 import { useEffect, useState } from "react";
 import {
@@ -23,6 +24,8 @@ export interface SettingsViewProps {
   now: Date;
   /** What went wrong outside any one source, a refused save among them. */
   problems: string[];
+  /** Stores a forge card's pasted token and tests its connection. */
+  keyring: KeyringCalls;
   onSave: (values: SettingsValues) => void;
   /** The brand, the way back or Escape was pressed. */
   onHome: () => void;
@@ -65,6 +68,7 @@ export function SettingsView({
   cards,
   now,
   problems,
+  keyring,
   onSave,
   onHome,
 }: SettingsViewProps) {
@@ -120,6 +124,7 @@ export function SettingsView({
                 page={page}
                 cards={cards}
                 now={now}
+                keyring={keyring}
                 onSave={onSave}
               />
             )}

@@ -6,6 +6,11 @@ import type {
   SettingsForm,
   SettingsValues,
 } from "@perch/core/settings-form.ts";
+import type {
+  SourceTested,
+  SourceTestValues,
+  TokenStored,
+} from "@perch/core/sources-form.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import type { KeyFileSheet, PerchApi, PerchState } from "../../shared/ipc.ts";
 
@@ -24,6 +29,12 @@ export interface FakeApi {
   settingsSaves: SettingsValues[];
   /** Sets what the settings form reads next, as an edit to the config file would. */
   setSettings(form: SettingsForm | null): void;
+  tokenStores: { key: string; token: string }[];
+  /** What the next token store answers. */
+  tokenStored: TokenStored;
+  sourceTests: SourceTestValues[];
+  /** What the next connection test answers. */
+  sourceTested: SourceTested;
 }
 
 export function fakeApi(
@@ -67,6 +78,14 @@ export function fakeApi(
       saveSettings: async (values) => {
         fake.settingsSaves.push(values);
       },
+      storeToken: async (key, token) => {
+        fake.tokenStores.push({ key, token });
+        return fake.tokenStored;
+      },
+      testSource: async (values) => {
+        fake.sourceTests.push(values);
+        return fake.sourceTested;
+      },
     },
     push(state) {
       current = state;
@@ -83,6 +102,10 @@ export function fakeApi(
     setSettings(form) {
       settingsForm = form;
     },
+    tokenStores: [],
+    tokenStored: { ok: true },
+    sourceTests: [],
+    sourceTested: { ok: true, count: 0 },
   };
   return fake;
 }

@@ -21,6 +21,7 @@ import {
 } from "@perch/ui/settings-forms.tsx";
 import { SettingsView } from "@perch/ui/settings-view.tsx";
 import { type ReactNode, useState } from "react";
+import { stubKeyring } from "../specimens.ts";
 import {
   Choice,
   Code,
@@ -275,6 +276,11 @@ export function SettingsGroupsPage() {
             what: "The moment the source cards' scan times are measured to.",
           },
           {
+            name: "keyring",
+            type: "KeyringCalls",
+            what: "Stores a forge card's pasted token and tests its connection, each resolving to a result the card puts in a sentence.",
+          },
+          {
             name: "onSave",
             type: "(values: SettingsValues) => void",
             what: "Save was pressed with values that changed and can be written.",
@@ -340,6 +346,10 @@ export function SettingsScenePage() {
   const [form, setForm] = useState(mockForm);
   const [problems, setProblems] = useState<Problems>("none");
   const [pressed, setPressed] = useState("nothing yet");
+  const keyring = stubKeyring(
+    { stored: { ok: true }, tested: { ok: true, count: 5 } },
+    setPressed,
+  );
   return (
     <>
       <Section
@@ -385,6 +395,7 @@ export function SettingsScenePage() {
           form={form}
           cards={mockSnapshot.sourceCards}
           now={afterScan}
+          keyring={keyring}
           problems={
             problems === "refused"
               ? ["The config was not changed: Wires: each wire once"]
@@ -415,6 +426,11 @@ export function SettingsScenePage() {
             name: "now",
             type: "Date",
             what: "The moment the source cards' scan times are measured to.",
+          },
+          {
+            name: "keyring",
+            type: "KeyringCalls",
+            what: "Stores a forge card's pasted token and tests its connection, each resolving to a result the card puts in a sentence.",
           },
           {
             name: "problems",

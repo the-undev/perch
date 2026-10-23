@@ -33,7 +33,14 @@ Applications, Generate New Token, with scopes `read:repository`,
 
 ## Storing
 
-Each command prompts for the token, so it never enters shell history:
+From the app: open the source's card on the settings Sources page, paste
+the token into its token field and press Store in the keyring. It goes
+under the card's keyring key, and Test then lists the account's
+repositories with it. The field is write-only: perch never shows a
+stored token.
+
+From a terminal, each command prompts for the token, so it never enters
+shell history:
 
 ```bash
 secret-tool store --label "perch github finch" service perch key github-finch
@@ -49,7 +56,8 @@ under Tech.
 
 ## Replacing
 
-Regenerate the token on the forge with the scopes needed, then run the
-same `secret-tool store` command; it overwrites the entry. perch picks the
+Regenerate the token on the forge with the scopes needed, then store it
+again from the card or with the same `secret-tool store` command; either
+overwrites the entry. perch picks the
 new value up on the next scan. A scope that is too narrow shows up as a
 source error naming the failing call.

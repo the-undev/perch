@@ -511,3 +511,23 @@ build-time calls so they can be revisited.
 - Creating the config resolves whether it wrote before its scan
   settles, and the window then goes to `/settings`; a refusal reads "The
   config file was not created: ..." and the welcome stays.
+- The keyring write phase. `storeToken` and `testSource` live in
+  `apps/desktop/src/main/keyring.ts`, beside app-state rather than in
+  it, since neither reads config or the pushed state. Their answers
+  show on the card only, never among the state's problems.
+- The pasted token is trimmed before it is stored; the key is used as
+  the card holds it, as the lookup uses it. The entry's label is
+  `perch`.
+- The fetch errors are typed (`NoAnswerError`, `HttpStatusError`, same
+  messages as before) so a test can say "no answer from <host>" or
+  "<host> answered HTTP <status>" without parsing a message. GitHub's
+  host in those sentences is `api.github.com`; Forgejo's is the base
+  URL's host and port.
+- Test counts the repositories the account owns among the token's full
+  listing, the owner match the gather uses, forks included. Any failure
+  sentence has the token replaced by `[token]` in case a message ever
+  carried it.
+- Once stored, the token field empties rather than showing dots as the
+  board drew it, so the renderer holds no copy. Store is also held
+  while the field is empty, and Test while the card has no account or,
+  for Forgejo, no address.

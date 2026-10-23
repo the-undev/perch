@@ -514,6 +514,44 @@ describe("the window", () => {
       ]);
     });
 
+    it("stores a forge card's token and tests its connection through the main process", async () => {
+      const { fake } = renderApp(
+        { ...idle(mockAviary), sourceCards: mockSnapshot.sourceCards },
+        "/settings",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+      fake.sourceTested = { ok: true, count: 5 };
+      const github = within(
+        await screen.findByRole("region", { name: "GitHub · finch" }),
+      );
+      fireEvent.click(
+        github.getByRole("button", { name: "GitHub · finch" }),
+      );
+
+      fireEvent.change(github.getByLabelText("Token"), {
+        target: { value: "github_pat_11ABC" },
+      });
+      fireEvent.click(
+        github.getByRole("button", { name: "Store in the keyring" }),
+      );
+      expect(
+        await github.findByText("stored in the keyring under github-finch"),
+      ).toBeDefined();
+      fireEvent.click(github.getByRole("button", { name: "Test" }));
+
+      expect(
+        await github.findByText("finch: 5 repositories readable"),
+      ).toBeDefined();
+      expect(fake.tokenStores).toEqual([
+        { key: "github-finch", token: "github_pat_11ABC" },
+      ]);
+      expect(fake.sourceTests).toEqual([
+        { kind: "github", account: "finch", key: "github-finch" },
+      ]);
+    });
+
     it("shows the file's new values when it changes on disk", async () => {
       const { fake } = renderApp(
         idle(mockAviary),

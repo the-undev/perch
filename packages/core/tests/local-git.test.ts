@@ -1,11 +1,10 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { aggregate } from "../src/aggregate.ts";
-import { parseConfig } from "../src/config.ts";
 import { fileMtime } from "../src/fs.ts";
 import { createLocalSource } from "../src/sources/local.ts";
+import { testConfig } from "./helpers/config.ts";
 import {
   fixtureGit,
   git,
@@ -134,15 +133,7 @@ describe("local source", () => {
 
 describe("not set up", () => {
   it("flags red a repository found in an include directory that config does not know", async () => {
-    const config = parseConfig(
-      (
-        await readFile(
-          join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
-          "utf8",
-        )
-      ).replace("[forges]\n", '[items."dev/known"]\n\n[forges]\n'),
-      "/home/test",
-    );
+    const config = await testConfig('[items."dev/known"]\n');
     const files = rawFiles({
       includes: {
         "/home/test/dev": "directory",

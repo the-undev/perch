@@ -111,10 +111,7 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
         ThresholdKey,
         number
       >,
-      scan: {
-        ...config.scan,
-        finalisedCommits: config.forges.finalisedCommits,
-      },
+      scan: { ...config.scan },
       importance: {
         tiers: [...config.importance.tiers],
         default: config.importance.default,
@@ -314,7 +311,7 @@ export function withSettings(
   const { tiers } = values.importance;
   return {
     wires: { names: [...wires], default: values.wires.default },
-    local: config.local,
+    sources: config.sources,
     joins: values.joins.map(listOf),
     ignore: [...values.ignore],
     thresholds: nestedThresholds(values.thresholds) as Thresholds,
@@ -335,10 +332,7 @@ export function withSettings(
         },
       ]),
     ),
-    scan: {
-      intervalMinutes: values.scan.intervalMinutes,
-      archivedIntervalHours: values.scan.archivedIntervalHours,
-    },
+    scan: { ...values.scan },
     launch: {
       zellijSession: values.launch.zellijSession,
       zellijSessions: Object.fromEntries(
@@ -349,10 +343,5 @@ export function withSettings(
       ),
       commands,
     },
-    forges: {
-      ...config.forges,
-      finalisedCommits: values.scan.finalisedCommits,
-    },
-    server: config.server,
   };
 }

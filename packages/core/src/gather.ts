@@ -11,7 +11,7 @@ import type {
 } from "./raw.ts";
 import type { PolledSource } from "./sources/source.ts";
 
-/** One polled source per name; kuma is null when config has no server to monitor. */
+/** One polled source per name; kuma is null when config declares no kuma source. */
 export type PolledSources = {
   [N in Exclude<PolledSourceName, "kuma">]: PolledSource<N>;
 } & { kuma: PolledSource<"kuma"> | null };

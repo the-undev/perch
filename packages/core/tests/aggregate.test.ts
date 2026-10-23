@@ -1,11 +1,9 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { aggregate, type RawBundle } from "../src/aggregate.ts";
-import { parseConfig } from "../src/config.ts";
 import { deriveExpectation, expectationMet } from "../src/derivations.ts";
 import type { ForgeData } from "../src/snapshot.ts";
 import { dockerContainersSource } from "../src/sources/docker-containers.ts";
+import { testConfig } from "./helpers/config.ts";
 import {
   gatheredAt,
   localPresence,
@@ -13,21 +11,8 @@ import {
   rawFiles,
 } from "./helpers/raw.ts";
 
-const config = parseConfig(
-  (
-    await readFile(
-      join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
-      "utf8",
-    )
-  )
-    .concat(
-      '\n[server]\nname = "Silo"\nkuma_base_url = "http://forge.example.lan:3001"\nkuma_status_page = "perch"\n',
-    )
-    .replace(
-      "[forges]\n",
-      '[items."dev/perch"]\nimportance = "machine"\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\nexpect = ["ci", "tickets"]\n\n[forges]\n',
-    ),
-  "/home/test",
+const config = await testConfig(
+  '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://forge.example.lan:3001"\nstatus_page = "perch"\n\n[items."dev/perch"]\nimportance = "machine"\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\nexpect = ["ci", "tickets"]\n',
 );
 
 const files = rawFiles({
@@ -93,7 +78,7 @@ describe("aggregate", () => {
       ]),
     ).toEqual([
       ["dev/perch", "repo", "machine", []],
-      ["server", "server", "projects", ["dockerContainers"]],
+      ["server:Silo", "server", "projects", ["dockerContainers"]],
     ]);
     expect(snapshot.items[1]?.name).toBe("Silo");
     expect(snapshot.scannedAt).toBe(gatheredAt);
@@ -103,14 +88,44 @@ describe("aggregate", () => {
     ]);
   });
 
-  it("adds no server item when config has no server", async () => {
-    const withoutServer = parseConfig(
-      await readFile(
-        join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
-        "utf8",
-      ),
-      "/home/test",
+  it("adds a server item per kuma source, each with its own status page", async () => {
+    const twoServers = await testConfig(
+      '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://kuma.invalid"\nstatus_page = "silo"\n\n[[sources.kuma]]\nname = "Box"\nbase_url = "http://kuma.invalid"\nstatus_page = "box"\n',
     );
+    const withKuma: RawBundle = {
+      ...bundle,
+      files: {
+        ...files,
+        kuma: {
+          source: "kuma",
+          gatheredAt,
+          data: {
+            Silo: {
+              state: "observed",
+              value: { statusPage: "silo", monitors: [] },
+            },
+            Box: { state: "error", error: "HTTP 502" },
+          },
+        },
+      },
+    };
+
+    const servers = aggregate(
+      withKuma,
+      { ...input, config: twoServers },
+      new Date(),
+    ).items.filter((item) => item.kind === "server");
+
+    expect(
+      servers.map((item) => [item.id, item.name, item.sources.kuma]),
+    ).toEqual([
+      ["server:Silo", "Silo", { allUp: false, monitors: [] }],
+      ["server:Box", "Box", { error: "HTTP 502" }],
+    ]);
+  });
+
+  it("adds no server item when config has no kuma source", async () => {
+    const withoutServer = await testConfig("");
 
     const snapshot = aggregate(
       bundle,

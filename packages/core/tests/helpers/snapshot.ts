@@ -1,8 +1,5 @@
 // Builders for snapshot-shaped data, for view model tests that never run a scan.
 
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-import { type Config, parseConfig } from "../../src/config.ts";
 import type {
   AgedWork,
   ForgeData,
@@ -124,16 +121,4 @@ export function snapshotOf(items: Item[]): Snapshot {
     },
     items,
   };
-}
-
-/** The example config with extra TOML, such as item entries, added before the forges section. */
-export async function testConfig(extra: string): Promise<Config> {
-  const example = await readFile(
-    join(import.meta.dirname, "..", "..", "..", "..", "config.example.toml"),
-    "utf8",
-  );
-  return parseConfig(
-    example.replace("[forges]\n", `${extra}\n[forges]\n`),
-    "/home/test",
-  );
 }

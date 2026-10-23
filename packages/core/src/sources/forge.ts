@@ -1,7 +1,7 @@
 import {
   accountForOwner,
-  type ForgeAccount,
-  type ForgeConfig,
+  type GithubSourceConfig,
+  hostsOf,
 } from "../config.ts";
 import { mapWithLimit } from "../exec.ts";
 import { SourceFailure } from "../failure.ts";
@@ -34,10 +34,18 @@ export interface ForgeClient {
   readDetails(info: RawForgeRepoInfo, token: string): Promise<RawForgeDetails>;
 }
 
+/** One configured account of a forge with the client that reads it. */
+export type ForgeCard = GithubSourceConfig & { client: ForgeClient };
+
 export interface ForgeSourceDeps {
-  client: ForgeClient;
-  forge: ForgeConfig;
+  /** The forge's configured accounts, in config order. */
+  cards: ForgeCard[];
   tokenFor: TokenLookup;
+}
+
+/** Every fork the forge's accounts track, as owner/name. */
+function trackedForksOf(cards: readonly ForgeCard[]): string[] {
+  return cards.flatMap((card) => card.trackedForks);
 }
 
 /** The lower-case owner/name a forge repository is keyed by. */
@@ -57,7 +65,7 @@ function isTracked(
 /** A token lookup that asks the keyring once per key for the length of one gather. */
 function cachedTokens(
   tokenFor: TokenLookup,
-): (account: ForgeAccount) => Promise<string> {
+): (account: ForgeCard) => Promise<string> {
   const tokens = new Map<string, Promise<string>>();
   return (account) => {
     const cached = tokens.get(account.key) ?? tokenFor(account.key);
@@ -78,15 +86,16 @@ export function createForgeAccountsSource<
     name,
     async gather() {
       const entries: Record<string, Entry<RawForgeAccount, never>> = {};
-      for (const account of deps.forge.accounts) {
+      const trackedForks = trackedForksOf(deps.cards);
+      for (const account of deps.cards) {
         try {
           const token = await deps.tokenFor(account.key);
-          const owned = (await deps.client.listRepos(token)).filter(
+          const owned = (await account.client.listRepos(token)).filter(
             (info) =>
               info.owner.toLowerCase() === account.account.toLowerCase(),
           );
           const kept = owned.filter(
-            (info) => !info.fork || isTracked(info, deps.forge.trackedForks),
+            (info) => !info.fork || isTracked(info, trackedForks),
           );
           entries[account.account] = {
             state: "observed",
@@ -113,14 +122,14 @@ export function createForgeAccountsSource<
 interface Candidate {
   info: RawForgeRepoInfo;
   foundBy: RawForgeRepo["foundBy"];
-  account: ForgeAccount;
+  account: ForgeCard;
   aliases: string[];
 }
 
 /**
  * Enricher: every listed repository, plus any repository a local clone's remote names on one of
- * this forge's hosts that the listings missed, looked up with the token of the account that owns
- * it. Pull requests, CI and finalised commits are read for those not archived.
+ * this forge's hosts that the listings missed, looked up through the account that owns it on that
+ * host. Pull requests, CI and finalised commits are read for those not archived.
  */
 export function createForgeSource<N extends ForgeName>(
   name: N,
@@ -138,11 +147,13 @@ export function createForgeSource<N extends ForgeName>(
         );
       }
       const tokenFor = cachedTokens(deps.tokenFor);
+      const hosts = hostsOf(deps.cards);
+      const trackedForks = trackedForksOf(deps.cards);
       const candidates = new Map<string, Candidate>();
       for (const [owner, entry] of Object.entries(
         earlier[accountsName]?.data ?? {},
       )) {
-        const account = accountForOwner(deps.forge, owner);
+        const account = accountForOwner(deps.cards, owner);
         if (entry.state !== "observed" || account === null) continue;
         for (const info of entry.value.repos) {
           candidates.set(repoKey(info.owner, info.name), {
@@ -165,12 +176,14 @@ export function createForgeSource<N extends ForgeName>(
         if (remotes.state !== "observed") continue;
         for (const url of remotes.value.flatMap(remoteUrls)) {
           const location = parseRemoteUrl(url);
-          if (location === null || !deps.forge.hosts.includes(location.host))
-            continue;
+          if (location === null || !hosts.includes(location.host)) continue;
           const key = repoKey(location.owner, location.repo);
           if (candidates.has(key) || lookedUp.has(key)) continue;
           lookedUp.add(key);
-          const account = accountForOwner(deps.forge, location.owner);
+          const account = accountForOwner(
+            deps.cards.filter((card) => card.hosts.includes(location.host)),
+            location.owner,
+          );
           if (account === null) {
             entries[key] = {
               state: "error",
@@ -180,12 +193,12 @@ export function createForgeSource<N extends ForgeName>(
           }
           try {
             const token = await tokenFor(account);
-            const info = await deps.client.getRepo(
+            const info = await account.client.getRepo(
               location.owner,
               location.repo,
               token,
             );
-            if (info.fork && !isTracked(info, deps.forge.trackedForks)) {
+            if (info.fork && !isTracked(info, trackedForks)) {
               entries[key] = { state: "absent", reason: "fork-not-tracked" };
               continue;
             }
@@ -216,7 +229,10 @@ export function createForgeSource<N extends ForgeName>(
             const token = await tokenFor(candidate.account);
             details = {
               state: "observed",
-              value: await deps.client.readDetails(candidate.info, token),
+              value: await candidate.account.client.readDetails(
+                candidate.info,
+                token,
+              ),
             };
           } catch (error) {
             details = { state: "error", error: errorMessage(error) };

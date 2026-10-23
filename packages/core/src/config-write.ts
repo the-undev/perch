@@ -5,7 +5,7 @@ import { stringify } from "smol-toml";
 import {
   type Config,
   collapseHome,
-  type ForgeConfig,
+  type GithubSourceConfig,
   type ItemEntry,
   type LaunchCommandName,
   launchPlaceholders,
@@ -47,12 +47,40 @@ function entryTable(entry: ItemEntry): Table {
   return { ...out, ...thresholdTable(entry.thresholds) };
 }
 
-function forgeTable(forge: ForgeConfig): Table {
+function githubTable(source: GithubSourceConfig): Table {
   return {
-    hosts: forge.hosts,
-    accounts: forge.accounts.map(({ account, key }) => ({ account, key })),
-    tracked_forks: forge.trackedForks,
+    account: source.account,
+    key: source.key,
+    hosts: source.hosts,
+    tracked_forks: source.trackedForks,
   };
+}
+
+/** The [[sources.*]] arrays in the order configured; a kind with no source is left out. */
+function sourcesTable(
+  sources: Config["sources"],
+  path: (stored: string) => string,
+): Table {
+  const out: Table = {
+    local: sources.local.map((source) => ({
+      include: source.include.map(path),
+      exclude: source.exclude.map(path),
+    })),
+    github: sources.github.map(githubTable),
+    forgejo: sources.forgejo.map((source) => ({
+      base_url: source.baseUrl,
+      ...githubTable(source),
+    })),
+    kuma: sources.kuma.map((source) => ({
+      name: source.name,
+      base_url: source.baseUrl,
+      status_page: source.statusPage,
+    })),
+  };
+  for (const [kind, list] of Object.entries(out)) {
+    if ((list as unknown[]).length === 0) delete out[kind];
+  }
+  return out;
 }
 
 function commandsTable(commands: Config["launch"]["commands"]): Table {
@@ -71,9 +99,9 @@ function unlessEmpty(table: Table): Table | undefined {
 
 /**
  * Serialises config to TOML that parseConfig reads back to an equal config, deterministic because
- * item entries and zellij session roots are sorted by key and every list keeps its order.
- * Paths at or under the home directory are written with a leading ~, and empty optional tables
- * are left out.
+ * item entries and zellij session roots are sorted by key and every list, sources among them,
+ * keeps its order. Paths at or under the home directory are written with a leading ~, and empty
+ * optional tables and source kinds are left out.
  */
 export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);
@@ -81,10 +109,7 @@ export function writeConfig(config: Config, home: string): string {
     joins: config.joins,
     ignore: config.ignore,
     wires: { names: config.wires.names, default: config.wires.default },
-    local: {
-      include: config.local.include.map(path),
-      ignore: config.local.ignore.map(path),
-    },
+    sources: unlessEmpty(sourcesTable(config.sources, path)),
     thresholds: thresholdTable(config.thresholds),
     importance: {
       tiers: config.importance.tiers,
@@ -93,6 +118,7 @@ export function writeConfig(config: Config, home: string): string {
     scan: {
       interval_minutes: config.scan.intervalMinutes,
       archived_interval_hours: config.scan.archivedIntervalHours,
+      finalised_commits: config.scan.finalisedCommits,
     },
     launch: {
       zellij_session: config.launch.zellijSession,
@@ -115,21 +141,6 @@ export function writeConfig(config: Config, home: string): string {
         ]),
       ),
     ),
-    forges: {
-      finalised_commits: config.forges.finalisedCommits,
-      github: forgeTable(config.forges.github),
-      forgejo: {
-        base_url: config.forges.forgejo.baseUrl,
-        ...forgeTable(config.forges.forgejo),
-      },
-    },
   };
-  if (config.server !== null) {
-    document.server = {
-      name: config.server.name,
-      kuma_base_url: config.server.kumaBaseUrl,
-      kuma_status_page: config.server.kumaStatusPage,
-    };
-  }
   return `${stringify(document).trimEnd()}\n`;
 }

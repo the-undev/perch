@@ -1,8 +1,6 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { aggregate, localEntries } from "../src/aggregate.ts";
-import { type Config, parseConfig } from "../src/config.ts";
+import type { Config } from "../src/config.ts";
 import {
   type ForgeInput,
   joinPresences,
@@ -11,6 +9,7 @@ import {
 import type { ForgeName, RawFiles, RawForgeRepo } from "../src/raw.ts";
 import type { Snapshot } from "../src/snapshot.ts";
 import { deriveAviary } from "../src/viewmodel.ts";
+import { testConfig } from "./helpers/config.ts";
 import {
   forgeRepo,
   gatheredAt,
@@ -322,16 +321,7 @@ describe("ignores", () => {
 });
 
 describe("aggregating joined projects", () => {
-  async function config(extra: string) {
-    const text = await readFile(
-      join(import.meta.dirname, "..", "..", "..", "config.example.toml"),
-      "utf8",
-    );
-    return parseConfig(
-      text.replace("[forges]\n", `${extra}\n[forges]\n`),
-      "/home/test",
-    );
-  }
+  const config = testConfig;
 
   const files = rawFiles({
     includes: { "/home/test/dev": "directory" },

@@ -28,12 +28,6 @@ ignore = []
 names = ["Machine & Home", "Projects"]
 default = "Projects"
 
-[local]
-# Each include is a repository, or a directory searched for repositories.
-include = ["~/dev", "~/.dotfiles"]
-# Nothing at or below these paths is searched.
-ignore = ["~/dev/archived", "~/dev/third-party", "~/dev/all/delete"]
-
 # Health windows: amber at the first, red at the second. Unsafe work
 # (uncommitted changes, unpushed commits) ages in hours from its oldest
 # change. Stalled flight, parked on a non-default branch with no new commit,
@@ -60,6 +54,8 @@ default = "projects"
 [scan]
 interval_minutes = 15
 archived_interval_hours = 24
+# Commits on each forge repository's default branch to read as finalised.
+finalised_commits = 10
 
 # The zellij session that holds a project's terminal tab: the item's own
 # zellij_session, else the session of the longest root containing the project
@@ -107,36 +103,56 @@ obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 # expectation_amber_days = 3
 # expectation_red_days = 14
 
-[forges]
-# Commits on each forge repository's default branch to read as finalised.
-finalised_commits = 10
+# Sources: one table per connection, repeated for each. A config with no
+# sources is valid and scans nothing.
 
-# Each account lists the repositories it owns, read with its own read-only
+# A local source: each include is a repository, or a directory searched for
+# repositories. Nothing at or below an exclude is searched.
+[[sources.local]]
+include = ["~/dev", "~/.dotfiles"]
+exclude = ["~/dev/archived", "~/dev/third-party", "~/dev/all/delete"]
+
+# A forge account lists the repositories it owns, read with its own read-only
 # token from the keyring (secret-tool, service perch, the key named here; see
 # docs/tokens.md). A remote that no listing holds is looked up with the token
-# of the account that owns it. Hosts are the remote hosts and SSH aliases that
-# are this forge.
-[forges.github]
+# of the account that owns it on that host. Hosts are the remote hosts and SSH
+# aliases that reach the account; tracked_forks names forks to track, as
+# owner/name, and every other fork is skipped.
+[[sources.github]]
+account = "finch"
+key = "github-finch"
 hosts = ["github.com", "github-work"]
-accounts = [
-  { account = "finch", key = "github-finch" },
-  { account = "the-undev", key = "github-the-undev" },
-  { account = "skiff-app", key = "github-skiff-app" },
-]
-# Forks to track, as owner/name. Every other fork is skipped.
 tracked_forks = []
 
-[forges.forgejo]
+[[sources.github]]
+account = "the-undev"
+key = "github-the-undev"
+hosts = ["github.com", "github-work"]
+tracked_forks = []
+
+[[sources.github]]
+account = "skiff-app"
+key = "github-skiff-app"
+hosts = ["github.com", "github-work"]
+tracked_forks = []
+
+# A Forgejo account adds the instance's base URL.
+[[sources.forgejo]]
 base_url = "http://forge.example.lan:3000"
+account = "finch"
+key = "forgejo-finch"
 hosts = ["forgejo", "forge-work", "forge.example.lan"]
-accounts = [
-  { account = "finch", key = "forgejo-finch" },
-  { account = "the-undev", key = "forgejo-the-undev" },
-]
 tracked_forks = []
 
-# Uncomment this section to enable server monitoring.
-# [server]
+[[sources.forgejo]]
+base_url = "http://forge.example.lan:3000"
+account = "the-undev"
+key = "forgejo-the-undev"
+hosts = ["forgejo", "forge-work", "forge.example.lan"]
+tracked_forks = []
+
+# An Uptime Kuma status page, monitored as the server it names.
+# [[sources.kuma]]
 # name = "Silo"
-# kuma_base_url = "http://kuma.example.lan:3001"
-# kuma_status_page = "perch"
+# base_url = "http://kuma.example.lan:3001"
+# status_page = "perch"

@@ -89,9 +89,8 @@ describe("the settings form", () => {
       home,
     );
 
-    expect(next.forges).toEqual({ ...mockConfig.forges, finalisedCommits: 4 });
-    expect(next.local).toEqual(mockConfig.local);
-    expect(next.server).toEqual(mockConfig.server);
+    expect(next.scan.finalisedCommits).toBe(4);
+    expect(next.sources).toEqual(mockConfig.sources);
   });
 });
 

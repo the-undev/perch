@@ -7,10 +7,10 @@ import { dirname, join } from "node:path";
 import { aggregate, localEntries, readRawBundle } from "./aggregate.ts";
 import type { Config } from "./config.ts";
 import { fileMtime, readTextIfExists } from "./fs.ts";
-import { createRawStore, gather } from "./gather.ts";
-import { createFetchJson } from "./http.ts";
+import { createRawStore, gather, type PolledSources } from "./gather.ts";
+import { createFetchJson, type FetchJson } from "./http.ts";
 import type { StatusFile } from "./raw.ts";
-import { createKeyringTokenLookup } from "./secrets.ts";
+import { createKeyringTokenLookup, type TokenLookup } from "./secrets.ts";
 import type { Snapshot } from "./snapshot.ts";
 import { createClaudeSessionsSource } from "./sources/claude-sessions.ts";
 import { dockerContainersSource } from "./sources/docker-containers.ts";
@@ -35,63 +35,85 @@ export interface GatherRun {
   now: () => Date;
 }
 
-/** Gathers every source config asks for into the raw directory, and returns the gather's status. */
-export async function runGather(run: GatherRun): Promise<StatusFile> {
-  const { config, home, env } = run;
-  const fetchJson = createFetchJson(10_000);
-  const tokenFor = createKeyringTokenLookup(home, env);
+/** What the sources reach the outside world through. */
+export interface SourceIo {
+  /** The home directory: Claude Code's sessions live under it and git runs from it. */
+  home: string;
+  env: NodeJS.ProcessEnv;
+  fetchJson: FetchJson;
+  tokenFor: TokenLookup;
+}
+
+/**
+ * The polled sources config declares: one local source over every local table's paths, one
+ * client per forge account, and kuma only when some kuma table is declared.
+ */
+export function gatherSources(config: Config, io: SourceIo): PolledSources {
+  const { home, fetchJson, tokenFor } = io;
+  const { sources, scan } = config;
   const github = {
-    client: createGithubClient({
-      fetchJson,
-      finalisedCommits: config.forges.finalisedCommits,
-    }),
-    forge: config.forges.github,
+    cards: sources.github.map((card) => ({
+      ...card,
+      client: createGithubClient({
+        fetchJson,
+        finalisedCommits: scan.finalisedCommits,
+      }),
+    })),
     tokenFor,
   };
   const forgejo = {
-    client: createForgejoClient({
-      fetchJson,
-      baseUrl: config.forges.forgejo.baseUrl,
-      finalisedCommits: config.forges.finalisedCommits,
-    }),
-    forge: config.forges.forgejo,
+    cards: sources.forgejo.map((card) => ({
+      ...card,
+      client: createForgejoClient({
+        fetchJson,
+        baseUrl: card.baseUrl,
+        finalisedCommits: scan.finalisedCommits,
+      }),
+    })),
     tokenFor,
   };
+  return {
+    local: createLocalSource({
+      home,
+      include: [...new Set(sources.local.flatMap((card) => card.include))],
+      ignore: [...new Set(sources.local.flatMap((card) => card.exclude))],
+      runGit: createGitRunner(io.env),
+      mtimeOf: fileMtime,
+      concurrency: 8,
+    }),
+    githubAccounts: createForgeAccountsSource("githubAccounts", github),
+    forgejoAccounts: createForgeAccountsSource("forgejoAccounts", forgejo),
+    kuma:
+      sources.kuma.length === 0
+        ? null
+        : createKumaSource({ fetchJson, cards: sources.kuma }),
+    roadmap: createRoadmapSource({
+      readText: readTextIfExists,
+      roadmapsFor: (earlier) => {
+        const entries = localEntries(earlier, config);
+        return (localId) => entries.get(localId)?.roadmaps ?? null;
+      },
+    }),
+    claudeSessions: createClaudeSessionsSource(
+      join(home, ".claude", "projects"),
+    ),
+    github: createForgeSource("github", "githubAccounts", github),
+    forgejo: createForgeSource("forgejo", "forgejoAccounts", forgejo),
+  };
+}
+
+/** Gathers every source config declares into the raw directory, and returns the gather's status. */
+export async function runGather(run: GatherRun): Promise<StatusFile> {
+  const { home, env } = run;
   return gather({
     now: run.now,
     store: createRawStore(run.rawDir),
-    sources: {
-      local: createLocalSource({
-        home,
-        include: config.local.include,
-        ignore: config.local.ignore,
-        runGit: createGitRunner(env),
-        mtimeOf: fileMtime,
-        concurrency: 8,
-      }),
-      githubAccounts: createForgeAccountsSource("githubAccounts", github),
-      forgejoAccounts: createForgeAccountsSource("forgejoAccounts", forgejo),
-      kuma:
-        config.server === null
-          ? null
-          : createKumaSource({
-              fetchJson,
-              baseUrl: config.server.kumaBaseUrl,
-              statusPage: config.server.kumaStatusPage,
-            }),
-      roadmap: createRoadmapSource({
-        readText: readTextIfExists,
-        roadmapsFor: (earlier) => {
-          const entries = localEntries(earlier, config);
-          return (localId) => entries.get(localId)?.roadmaps ?? null;
-        },
-      }),
-      claudeSessions: createClaudeSessionsSource(
-        join(home, ".claude", "projects"),
-      ),
-      github: createForgeSource("github", "githubAccounts", github),
-      forgejo: createForgeSource("forgejo", "forgejoAccounts", forgejo),
-    },
+    sources: gatherSources(run.config, {
+      home,
+      env,
+      fetchJson: createFetchJson(10_000),
+      tokenFor: createKeyringTokenLookup(home, env),
+    }),
   });
 }
 

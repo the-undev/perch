@@ -47,16 +47,63 @@ function entry(fields: Partial<ItemEntry>): ItemEntry {
 
 export const mockConfig: Config = {
   wires: { names: ["Machine & Home", "Projects"], default: "Projects" },
-  local: {
-    include: [
-      `${home}/dev`,
-      `${home}/undev`,
-      `${home}/.dotfiles`,
-      `${home}/obsidian/Hothouse`,
-      `${home}/obsidian/Pocket`,
-      `${home}/work`,
+  sources: {
+    local: [
+      {
+        include: [
+          `${home}/dev`,
+          `${home}/undev`,
+          `${home}/.dotfiles`,
+          `${home}/obsidian/Hothouse`,
+          `${home}/obsidian/Pocket`,
+          `${home}/work`,
+        ],
+        exclude: [`${home}/dev/archived`, `${home}/dev/third-party`],
+      },
     ],
-    ignore: [`${home}/dev/archived`, `${home}/dev/third-party`],
+    github: [
+      {
+        account: "finch",
+        key: "github-finch",
+        hosts: ["github.com", "github-work"],
+        trackedForks: [],
+      },
+      {
+        account: "the-undev",
+        key: "github-the-undev",
+        hosts: ["github.com", "github-work"],
+        trackedForks: [],
+      },
+      {
+        account: "skiff-app",
+        key: "github-skiff-app",
+        hosts: ["github.com", "github-work"],
+        trackedForks: [],
+      },
+    ],
+    forgejo: [
+      {
+        account: "finch",
+        key: "forgejo-finch",
+        baseUrl: forgejoBase,
+        hosts: ["forgejo", "forge-work", "forge.example.lan"],
+        trackedForks: [],
+      },
+      {
+        account: "the-undev",
+        key: "forgejo-the-undev",
+        baseUrl: forgejoBase,
+        hosts: ["forgejo", "forge-work", "forge.example.lan"],
+        trackedForks: [],
+      },
+    ],
+    kuma: [
+      {
+        name: "Silo",
+        baseUrl: "http://forge.example.lan:3001",
+        statusPage: "perch",
+      },
+    ],
   },
   joins: [],
   ignore: [],
@@ -97,7 +144,11 @@ export const mockConfig: Config = {
     "undev/spool": entry({ name: "Spool" }),
     "undev/glyph-docs": entry({ name: "Glyph Docs" }),
   },
-  scan: { intervalMinutes: 15, archivedIntervalHours: 24 },
+  scan: {
+    intervalMinutes: 15,
+    archivedIntervalHours: 24,
+    finalisedCommits: 10,
+  },
   launch: {
     zellijSession: "home",
     zellijSessions: { [`${home}/undev`]: "undev" },
@@ -108,32 +159,6 @@ export const mockConfig: Config = {
       folder: ["dolphin", "{path}"],
       obsidian: ["xdg-open", "obsidian://open?vault={vault}"],
     },
-  },
-  forges: {
-    finalisedCommits: 10,
-    github: {
-      hosts: ["github.com", "github-work"],
-      accounts: [
-        { account: "finch", key: "github-finch" },
-        { account: "the-undev", key: "github-the-undev" },
-        { account: "skiff-app", key: "github-skiff-app" },
-      ],
-      trackedForks: [],
-    },
-    forgejo: {
-      baseUrl: forgejoBase,
-      hosts: ["forgejo", "forge-work", "forge.example.lan"],
-      accounts: [
-        { account: "finch", key: "forgejo-finch" },
-        { account: "the-undev", key: "forgejo-the-undev" },
-      ],
-      trackedForks: [],
-    },
-  },
-  server: {
-    name: "Silo",
-    kumaBaseUrl: "http://forge.example.lan:3001",
-    kumaStatusPage: "perch",
   },
 };
 
@@ -1249,7 +1274,7 @@ const obsidianTidy: Item = {
 
 /** The server item, which waits for server monitoring and is not a bird. */
 const server: Item = {
-  id: "server",
+  id: "server:Silo",
   name: "Silo",
   kind: "server",
   path: null,

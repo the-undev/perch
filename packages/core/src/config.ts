@@ -46,25 +46,51 @@ export interface ItemEntry {
   zellijSession: string | null;
 }
 
-export interface ForgeAccount {
+/** A local source: repositories found at or under its include paths, home expanded. */
+export interface LocalSourceConfig {
+  /** Each a repository, or a directory searched for repositories. */
+  include: string[];
+  /** Nothing at or below these paths is searched. */
+  exclude: string[];
+}
+
+/** A GitHub account, read with its own read-only token. */
+export interface GithubSourceConfig {
   /** The user or organisation whose own repositories this account lists. */
   account: string;
   /** The keyring key, under service perch, holding the account's read-only token. */
   key: string;
-}
-
-export interface ForgeConfig {
-  /** Remote hosts or SSH aliases that are this forge. */
+  /** Remote hosts or SSH aliases that reach this account's repositories. */
   hosts: string[];
-  accounts: ForgeAccount[];
   /** Forks worth tracking, as owner/name; every other fork is skipped. */
   trackedForks: string[];
+}
+
+/** A Forgejo account on the instance at its base URL. */
+export interface ForgejoSourceConfig extends GithubSourceConfig {
+  baseUrl: string;
+}
+
+/** An Uptime Kuma status page, monitored as the server it names. */
+export interface KumaSourceConfig {
+  /** The server's name, which is also the source's identity. */
+  name: string;
+  baseUrl: string;
+  statusPage: string;
+}
+
+/** Every source config declares, each kind in the order configured. */
+export interface SourcesConfig {
+  local: LocalSourceConfig[];
+  github: GithubSourceConfig[];
+  forgejo: ForgejoSourceConfig[];
+  kuma: KumaSourceConfig[];
 }
 
 export interface Config {
   /** The wires top to bottom, and the one an adopted item sits on when its entry names none. */
   wires: { names: string[]; default: string };
-  local: { include: string[]; ignore: string[] };
+  sources: SourcesConfig;
   /** Groups of presence references asserted to be one project. */
   joins: string[][];
   /** Presence references to leave off the main view. */
@@ -76,8 +102,15 @@ export interface Config {
    * adopts the item and marks a found repository set up.
    */
   items: Record<string, ItemEntry>;
-  /** The two scan lanes: everything on the main interval, archived forge data on the slow one. */
-  scan: { intervalMinutes: number; archivedIntervalHours: number };
+  /**
+   * The two scan lanes, everything on the main interval and archived forge data on the slow one,
+   * and the commits read on each forge repository's default branch.
+   */
+  scan: {
+    intervalMinutes: number;
+    archivedIntervalHours: number;
+    finalisedCommits: number;
+  };
   launch: {
     /** The zellij session for an item no root or entry assigns. */
     zellijSession: string;
@@ -85,13 +118,6 @@ export interface Config {
     zellijSessions: Record<string, string>;
     commands: LaunchCommands;
   };
-  forges: {
-    finalisedCommits: number;
-    github: ForgeConfig;
-    forgejo: ForgeConfig & { baseUrl: string };
-  };
-  /** The server to monitor through Uptime Kuma; null when config has no [server] section. */
-  server: { name: string; kumaBaseUrl: string; kumaStatusPage: string } | null;
 }
 
 /** A launch command's name in config, which is also the launch action it serves. */
@@ -314,23 +340,122 @@ function parseEntry(
   };
 }
 
-function parseForge(forge: Table, where: string): ForgeConfig {
-  const accounts = forge.accounts;
-  if (!Array.isArray(accounts)) {
-    throw new Error(`config: ${where}accounts must be an array of tables`);
+/** Throws on a key the table may not hold, naming it. */
+function onlyKeys(source: Table, allowed: readonly string[], where: string) {
+  for (const key of Object.keys(source)) {
+    if (!allowed.includes(key)) {
+      throw new Error(`config: ${where}${key} is not a config key`);
+    }
   }
+}
+
+/** The tables of one source kind, each passed to read with its position; none when absent. */
+function cards<T>(
+  sources: Table,
+  kind: keyof SourcesConfig,
+  read: (card: Table, where: string) => T,
+): T[] {
+  const value = sources[kind];
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    throw new Error(`config: sources.${kind} must be an array of tables`);
+  }
+  return value.map((card, index) => {
+    const where = `sources.${kind}[${index}]`;
+    if (!isTable(card)) throw new Error(`config: ${where} must be a table`);
+    return read(card, `${where}.`);
+  });
+}
+
+function optionalStrings(source: Table, key: string, where: string): string[] {
+  if (source[key] === undefined) return [];
+  return stringArray(source[key], `${where}${key}`);
+}
+
+const githubKeys = ["account", "key", "hosts", "tracked_forks"] as const;
+
+function parseGithubSource(card: Table, where: string): GithubSourceConfig {
   return {
-    hosts: stringArray(forge.hosts, `${where}hosts`),
-    accounts: accounts.map((entry, index) => {
-      const name = `${where}accounts[${index}]`;
-      if (!isTable(entry)) throw new Error(`config: ${name} must be a table`);
+    account: string(card, "account", where),
+    key: string(card, "key", where),
+    hosts: stringArray(card.hosts, `${where}hosts`),
+    trackedForks: optionalStrings(card, "tracked_forks", where),
+  };
+}
+
+/** Throws when two sources share an identity, naming the kind and the identity. */
+function checkDistinct<T>(
+  kind: string,
+  sources: readonly T[],
+  identity: (source: T) => string,
+  shown: (source: T) => string,
+): void {
+  const seen = new Set<string>();
+  for (const source of sources) {
+    const id = identity(source);
+    if (seen.has(id)) {
+      throw new Error(
+        `config: two sources.${kind} tables name ${shown(source)}; each may appear once`,
+      );
+    }
+    seen.add(id);
+  }
+}
+
+function parseSources(document: Table, home: string): SourcesConfig {
+  const sources = optionalTable(document, "sources", "");
+  onlyKeys(sources, ["local", "github", "forgejo", "kuma"], "sources.");
+  const paths = (card: Table, key: string, where: string) =>
+    optionalStrings(card, key, where).map((path) => expandHome(path, home));
+  const parsed: SourcesConfig = {
+    local: cards(sources, "local", (card, where) => {
+      onlyKeys(card, ["include", "exclude"], where);
       return {
-        account: string(entry, "account", `${name}.`),
-        key: string(entry, "key", `${name}.`),
+        include: stringArray(card.include, `${where}include`).map((path) =>
+          expandHome(path, home),
+        ),
+        exclude: paths(card, "exclude", where),
       };
     }),
-    trackedForks: stringArray(forge.tracked_forks, `${where}tracked_forks`),
+    github: cards(sources, "github", (card, where) => {
+      onlyKeys(card, githubKeys, where);
+      return parseGithubSource(card, where);
+    }),
+    forgejo: cards(sources, "forgejo", (card, where) => {
+      onlyKeys(card, [...githubKeys, "base_url"], where);
+      return {
+        ...parseGithubSource(card, where),
+        baseUrl: string(card, "base_url", where),
+      };
+    }),
+    kuma: cards(sources, "kuma", (card, where) => {
+      onlyKeys(card, ["name", "base_url", "status_page"], where);
+      return {
+        name: string(card, "name", where),
+        baseUrl: string(card, "base_url", where),
+        statusPage: string(card, "status_page", where),
+      };
+    }),
   };
+  checkDistinct(
+    "github",
+    parsed.github,
+    (source) => source.account.toLowerCase(),
+    (source) => `account ${source.account}`,
+  );
+  checkDistinct(
+    "forgejo",
+    parsed.forgejo,
+    (source) => `${source.account.toLowerCase()} ${source.baseUrl}`,
+    (source) => `account ${source.account} at ${source.baseUrl}`,
+  );
+  checkDistinct(
+    "kuma",
+    parsed.kuma,
+    (source) => source.name,
+    (source) => `name ${source.name}`,
+  );
+  return parsed;
 }
 
 function parseLaunchCommands(commands: Table): LaunchCommands {
@@ -366,9 +491,23 @@ function stringArrays(value: unknown, name: string): string[][] {
   return value.map((entry, index) => stringArray(entry, `${name}[${index}]`));
 }
 
+/** Every key config may hold at its top level. */
+const topLevelKeys = [
+  "wires",
+  "sources",
+  "joins",
+  "ignore",
+  "thresholds",
+  "importance",
+  "items",
+  "scan",
+  "launch",
+] as const;
+
 /** Parses and validates config TOML, expanding a leading ~ in paths against the home directory. */
 export function parseConfig(text: string, home: string): Config {
   const document: Table = parse(text);
+  onlyKeys(document, topLevelKeys, "");
 
   const wires = table(document, "wires", "");
   const wireNames = stringArray(wires.names, "wires.names");
@@ -380,7 +519,6 @@ export function parseConfig(text: string, home: string): Config {
     wireNames,
     "wires.default",
   );
-  const local = table(document, "local", "");
   const thresholds = globalThresholds(table(document, "thresholds", ""));
   checkOrder(thresholds, "thresholds.");
   const importance = table(document, "importance", "");
@@ -394,19 +532,10 @@ export function parseConfig(text: string, home: string): Config {
   const scan = table(document, "scan", "");
   const launch = table(document, "launch", "");
   const sessions = optionalTable(launch, "zellij_sessions", "launch.");
-  const forges = table(document, "forges", "");
-  const forgejo = table(forges, "forgejo", "forges.");
-  const server =
-    document.server === undefined ? null : table(document, "server", "");
-  const paths = (value: unknown, name: string) =>
-    stringArray(value, name).map((path) => expandHome(path, home));
 
   return {
     wires: { names: wireNames, default: defaultWire },
-    local: {
-      include: paths(local.include, "local.include"),
-      ignore: paths(local.ignore, "local.ignore"),
-    },
+    sources: parseSources(document, home),
     joins: stringArrays(document.joins, "joins"),
     ignore: stringArray(document.ignore, "ignore"),
     thresholds,
@@ -426,6 +555,10 @@ export function parseConfig(text: string, home: string): Config {
         scan.archived_interval_hours,
         "scan.archived_interval_hours",
       ),
+      finalisedCommits: positiveInteger(
+        scan.finalised_commits,
+        "scan.finalised_commits",
+      ),
     },
     launch: {
       zellijSession: string(launch, "zellij_session", "launch."),
@@ -439,38 +572,24 @@ export function parseConfig(text: string, home: string): Config {
         optionalTable(launch, "commands", "launch."),
       ),
     },
-    forges: {
-      finalisedCommits: positiveInteger(
-        forges.finalised_commits,
-        "forges.finalised_commits",
-      ),
-      github: parseForge(table(forges, "github", "forges."), "forges.github."),
-      forgejo: {
-        ...parseForge(forgejo, "forges.forgejo."),
-        baseUrl: string(forgejo, "base_url", "forges.forgejo."),
-      },
-    },
-    server:
-      server === null
-        ? null
-        : {
-            name: string(server, "name", "server."),
-            kumaBaseUrl: string(server, "kuma_base_url", "server."),
-            kumaStatusPage: string(server, "kuma_status_page", "server."),
-          },
   };
 }
 
-/** The configured account for a repository owner, matched without case, or null. */
-export function accountForOwner(
-  forge: ForgeConfig,
+/** The configured source for a repository owner, its account matched without case, or null. */
+export function accountForOwner<S extends { account: string }>(
+  sources: readonly S[],
   owner: string,
-): ForgeAccount | null {
+): S | null {
   return (
-    forge.accounts.find(
-      (entry) => entry.account.toLowerCase() === owner.toLowerCase(),
+    sources.find(
+      (source) => source.account.toLowerCase() === owner.toLowerCase(),
     ) ?? null
   );
+}
+
+/** Every remote host or SSH alias the sources of one forge name, each once, in order. */
+export function hostsOf(sources: readonly { hosts: string[] }[]): string[] {
+  return [...new Set(sources.flatMap((source) => source.hosts))];
 }
 
 /** The entry an item resolves to, and every key naming the item. */

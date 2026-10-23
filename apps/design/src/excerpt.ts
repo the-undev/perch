@@ -115,8 +115,13 @@ export function gatherRoundsFrom(source: string): string[][] {
 
 /** One table of a TOML file: its header path, and its text with the comment above it. */
 export interface TomlTable {
-  /** The header's keys, unquoted; empty for the keys above the first table. */
+  /**
+   * The header's keys, unquoted, and for a table of an array its position in the array; empty
+   * for the keys above the first table.
+   */
   path: string[];
+  /** Whether the header is an array table's, [[like.this]]. */
+  array: boolean;
   text: string;
 }
 
@@ -129,16 +134,26 @@ function headerPath(header: string): string[] {
 /** A TOML file cut into its tables, each with the comment lines directly above its header. */
 export function tomlTables(text: string): TomlTable[] {
   const lines = text.trimEnd().split("\n");
+  const arrayLengths = new Map<string, number>();
   const starts = lines.flatMap((line, index) => {
-    const header = /^\[([^\]]+)\]\s*$/.exec(line)?.[1];
+    const match = /^(\[\[?)([^[\]]+)\]\]?\s*$/.exec(line);
+    const header = match?.[2];
     if (header === undefined) return [];
     let start = index;
     while (start > 0 && (lines[start - 1] ?? "").startsWith("#")) start -= 1;
-    return [{ start, path: headerPath(header) }];
+    if (match?.[1] !== "[[") {
+      return [{ start, path: headerPath(header), array: false }];
+    }
+    const position = arrayLengths.get(header) ?? 0;
+    arrayLengths.set(header, position + 1);
+    return [
+      { start, path: [...headerPath(header), String(position)], array: true },
+    ];
   });
-  const chunks = [{ start: 0, path: [] as string[] }, ...starts];
+  const chunks = [{ start: 0, path: [] as string[], array: false }, ...starts];
   return chunks.map((chunk, index) => ({
     path: chunk.path,
+    array: chunk.array,
     text: lines
       .slice(chunk.start, chunks[index + 1]?.start ?? lines.length)
       .join("\n")

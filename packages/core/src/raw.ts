@@ -268,7 +268,8 @@ export interface RawData {
   local: RawLocal;
   githubAccounts: Record<string, Entry<RawForgeAccount, never>>;
   forgejoAccounts: Record<string, Entry<RawForgeAccount, never>>;
-  kuma: RawKuma;
+  /** Status pages keyed by their source's name. */
+  kuma: Record<string, Entry<RawKuma, never>>;
   roadmap: Record<string, Entry<RawRoadmap, "no-roadmap-file">>;
   claudeSessions: Record<string, Entry<RawClaudeSessions, never>>;
   /** Forge repositories keyed by lower-case owner/name. */
@@ -303,6 +304,6 @@ export type SourceStatus =
 export interface StatusFile {
   gatheredAt: string;
   durationMs: number;
-  /** A source that did not run, such as kuma without a [server] section, has no entry. */
+  /** A source that did not run, such as kuma with no [[sources.kuma]] table, has no entry. */
   sources: Partial<Record<PolledSourceName, SourceStatus>>;
 }

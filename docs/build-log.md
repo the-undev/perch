@@ -392,3 +392,7 @@ build-time calls so they can be revisited.
   again, since the config may have changed on disk. The query cache keeps
   an equal answer as the same object, so an untouched form keeps its
   draft.
+- The design site shows the settings on two pages: "Settings groups"
+  renders each group in its states, editable, with the problems the
+  editor would list beneath each, and "The settings page" scene renders
+  the whole page with a control that changes the file on disk.

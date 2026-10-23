@@ -13,6 +13,7 @@ const detailOf = (birdId: string): CameraPlace => ({ at: "detail", birdId });
 function camera(place: CameraPlace, scanning = false, clock = now) {
   const onNavigate = vi.fn();
   const onRescan = vi.fn();
+  const onSettings = vi.fn();
   const view = (at: CameraPlace) => (
     <CameraView
       aviary={mockAviary}
@@ -23,6 +24,7 @@ function camera(place: CameraPlace, scanning = false, clock = now) {
       sheets={[]}
       scanning={scanning}
       onRescan={onRescan}
+      onSettings={onSettings}
       entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
     />
   );
@@ -31,6 +33,7 @@ function camera(place: CameraPlace, scanning = false, clock = now) {
     container,
     onNavigate,
     onRescan,
+    onSettings,
     moveTo: (at: CameraPlace) => rerender(view(at)),
   };
 }
@@ -188,6 +191,15 @@ describe("the camera", () => {
 
     expect(onRescan).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("leaves for the settings from the header's last word", () => {
+    const { onSettings, onNavigate } = camera(detailOf("dev/perch"));
+
+    fireEvent.click(screen.getByRole("button", { name: "settings" }));
+
+    expect(onSettings).toHaveBeenCalledTimes(1);
+    expect(onNavigate).not.toHaveBeenCalled();
   });
 
   it("says quietly while a scan runs, and waits for it", () => {

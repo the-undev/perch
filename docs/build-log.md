@@ -381,3 +381,14 @@ build-time calls so they can be revisited.
   wire or tier in place keeps it the default.
 - The settings groups flow into CSS columns 36rem wide: two on a small
   monitor, five or so on the ultrawide, each group whole.
+- The settings page is the `/settings` route, reached from "settings",
+  the camera header's last word in the scan line's voice. It takes the
+  camera's place rather than riding inside it: the camera's tabs and
+  strip have nothing to show there. The brand, "back to the aviary" and
+  Escape go home, Escape even from inside a field, as on a bird's page.
+  The page lists the main process's problems above the form, so a
+  refused save is seen where it was made.
+- Every pushed state reads the open entry form and the settings form
+  again, since the config may have changed on disk. The query cache keeps
+  an equal answer as the same object, so an untouched form keeps its
+  draft.

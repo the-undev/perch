@@ -39,7 +39,7 @@ export function CameraScenePage() {
     <>
       <Section
         title="The camera, end to end"
-        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The header's tabs switch wires; each remembers the bird last open on it. The brand, The Aviary and Escape ride home. The scan line at the right says how old the scan is and scans again when pressed."
+        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The header's tabs switch wires; each remembers the bird last open on it. The brand, The Aviary and Escape ride home. The scan line at the right says how old the scan is and scans again when pressed; settings, beside it, leaves for the settings page."
         min={600}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -76,6 +76,7 @@ export function CameraScenePage() {
           sheets={sheets}
           scanning={scanning === "scanning"}
           onRescan={() => setPressed("onRescan()")}
+          onSettings={() => setPressed("onSettings()")}
           entry={{
             form: place.at === "detail" ? mockEntryForm(place.birdId) : null,
             onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
@@ -127,6 +128,11 @@ export function CameraScenePage() {
             name: "onRescan",
             type: "() => void",
             what: "The header's scan line, which reads the phase, the scan's time and its age, was pressed.",
+          },
+          {
+            name: "onSettings",
+            type: "() => void",
+            what: "The header's last word, settings, was pressed: the app leaves for its settings page.",
           },
           {
             name: "entry",

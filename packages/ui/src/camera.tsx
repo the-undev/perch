@@ -2,7 +2,8 @@
 // camera back, the sky collapsing into a strip that shows the bird's own wire while its wire-mates
 // fly there, and the detail rises beneath. The header's tabs, in the scene's own order, are the
 // only switcher: The Aviary, one tab per wire, On the fence. Each wire tab remembers the bird last
-// open on it. The brand, The Aviary and Escape ride the camera home.
+// open on it. The brand, The Aviary and Escape ride the camera home. The header's last word leaves
+// for the settings page.
 //
 // Where the camera points is the caller's: it arrives as `place` and every move leaves through
 // `onNavigate`, so an app can bind it to its router.
@@ -436,6 +437,8 @@ export interface CameraViewProps {
   scanning: boolean;
   /** The header's scan line was pressed: scan now. */
   onRescan: () => void;
+  /** The header's settings control was pressed. */
+  onSettings: () => void;
   /** Adopting the open bird or editing its config entry, from its detail page. */
   entry: EntryControls;
 }
@@ -453,6 +456,7 @@ export function CameraView({
   sheets,
   scanning,
   onRescan,
+  onSettings,
   entry,
 }: CameraViewProps) {
   const phase = skyPhase(now);
@@ -558,6 +562,13 @@ export function CameraView({
           scanning={scanning}
           onRescan={onRescan}
         />
+        <button
+          type="button"
+          onClick={onSettings}
+          className="cursor-pointer text-[12px] text-ink-faint hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-ink-accent"
+        >
+          settings
+        </button>
       </header>
       <main ref={mainRef} className="relative min-h-0 flex-1 overflow-hidden">
         <div className="flex h-full flex-col">

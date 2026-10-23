@@ -61,7 +61,7 @@ export function WirePage() {
 
       <Section
         title="The fence · not adopted"
-        rule="The fence below holds the unadopted, dimmed, ordered by name: it holds no priority. Names alternate between two rows so they never collide."
+        rule="The fence below holds the unadopted, dimmed, ordered by name: it holds no priority. Names share one baseline while neighbours have room; once they sit closer they alternate between two, and closer still they step down a size."
         min={900}
       >
         <Specimen
@@ -154,9 +154,11 @@ export function WirePage() {
           from <Code>aviary.wires</Code> in config order, the fence from{" "}
           <Code>aviary.fence</Code>. Birds are spread evenly, at most 340 units
           apart on a wire and 205 on the fence, and turned to face the middle.
-          Splitting a crowded wire over two rows, the arrival and hover tips
-          belong to <Code>AviaryView</Code>, which draws the same line and rail
-          through <Code>WireLine</Code> and <Code>FenceRail</Code>.
+          Where each name sits comes from <Code>namePlace</Code>, by its index
+          and how far apart its neighbours are. Splitting a crowded wire over
+          two rows, the arrival and hover tips belong to <Code>AviaryView</Code>
+          , which draws the same line and rail through <Code>WireLine</Code> and{" "}
+          <Code>FenceRail</Code>.
         </p>
       </Usage>
     </>

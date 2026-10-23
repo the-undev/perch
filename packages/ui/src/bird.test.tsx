@@ -182,4 +182,29 @@ describe("the wire and the fence", () => {
     ).toBe(true);
     expect(container.textContent).toContain("On the fence · 3 not adopted");
   });
+
+  it("drops every other name to a lower baseline on a crowded fence", () => {
+    const birds = Array.from({ length: 21 }, (_, position) => ({
+      ...(mockAviary.fence.birds[position % 3] as Bird),
+      id: `fence-${position}`,
+      position,
+    }));
+    const { container } = render(
+      <Scene phase="day" height={400} label="test">
+        <Fence
+          fence={{ birds }}
+          y={300}
+          width={2000}
+          height={400}
+          night={false}
+        />
+      </Scene>,
+    );
+    const names = [...container.querySelectorAll("[data-bird] > text")];
+    const [first, second] = names;
+
+    expect(names).toHaveLength(21);
+    expect(first?.getAttribute("y")).not.toBe(second?.getAttribute("y"));
+    expect(first?.getAttribute("data-name-size")).toBe("small");
+  });
 });

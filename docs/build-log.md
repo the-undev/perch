@@ -403,3 +403,17 @@ build-time calls so they can be revisited.
   at least 20rem, and scrolls inside itself. 18rem is about the header,
   the strip and the folder tabs, so a capped sheet fits the ground
   beneath them. The sheet takes keyboard focus so the keys scroll it.
+- A crowded perch's names: neighbours under 150 units apart alternate
+  between a near baseline and one 22 units lower; under 100 apart every
+  name also steps down a size (12.5 to 11 on the fence, 13.5 to 12 on a
+  wire, 13 to 11.5 in the strip). 150 is about the widest name the live
+  machine has (15 characters) at full size with room either side; 100
+  keeps neighbours on different baselines from overlapping much. The live
+  fence of 21 birds sits 88 apart, so it takes both. Below the limits a
+  fence keeps one baseline.
+- `namePlace(index, spacing, nearDrop)` decides it for the aviary's
+  wires and fence, the `Wire` and `Fence` components and the camera's
+  strip. Aviary wire rows never come under the limits (a row holds six
+  birds at most, 340 apart), so only the strip's crowded wires change.
+  The strip's near baseline sits 22 below the perch so its lower one
+  clears the strip's foot.

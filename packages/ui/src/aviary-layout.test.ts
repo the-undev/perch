@@ -14,6 +14,14 @@ import {
   toPixels,
 } from "./aviary-layout.ts";
 import { mockBird, mockBirds } from "./mock-birds.ts";
+import {
+  alternateBelow,
+  fenceGap,
+  lowerRowDrop,
+  namePlace,
+  placeSpacing,
+  smallerBelow,
+} from "./wire.tsx";
 
 const window = { width: 1400, height: 800 };
 
@@ -33,6 +41,17 @@ function wireOf(count: number): Wire {
 
 function aviaryOf(wires: Wire[]): Aviary {
   return { ...mockAviary, wires };
+}
+
+/** A fence of `count` birds, copies of the mock's fence birds with their own ids. */
+function fenceOf(count: number): Aviary {
+  const birds: Bird[] = Array.from({ length: count }, (_, position) => {
+    const source = mockAviary.fence.birds[
+      position % mockAviary.fence.birds.length
+    ] as Bird;
+    return { ...source, id: `fence-${position}`, position };
+  });
+  return { ...mockAviary, fence: { birds } };
 }
 
 describe("the aviary's layout", () => {
@@ -106,6 +125,53 @@ describe("the aviary's layout", () => {
       x: (3440 - 2000 * k) / 2,
       y: 0,
     });
+  });
+});
+
+describe("the names on a crowded perch", () => {
+  it("keeps every name on one baseline at full size while neighbours have room", () => {
+    const spacing = placeSpacing(3, fenceGap, 2000);
+
+    expect(spacing).toBe(fenceGap);
+    expect([0, 1, 2].map((index) => namePlace(index, spacing, 30))).toEqual([
+      { drop: 30, size: "full" },
+      { drop: 30, size: "full" },
+      { drop: 30, size: "full" },
+    ]);
+  });
+
+  it("alternates names between two baselines once neighbours are close", () => {
+    const spacing = alternateBelow - 1;
+
+    expect([0, 1, 2, 3].map((index) => namePlace(index, spacing, 30))).toEqual([
+      { drop: 30, size: "full" },
+      { drop: 30 + lowerRowDrop, size: "full" },
+      { drop: 30, size: "full" },
+      { drop: 30 + lowerRowDrop, size: "full" },
+    ]);
+  });
+
+  it("alternates and drops a size step at the live machine's fence of 21 birds", () => {
+    const spacing = placeSpacing(21, fenceGap, 2000);
+
+    expect(spacing).toBe(88);
+    expect(spacing).toBeLessThan(smallerBelow);
+    expect([0, 1].map((index) => namePlace(index, spacing, 30))).toEqual([
+      { drop: 30, size: "small" },
+      { drop: 30 + lowerRowDrop, size: "small" },
+    ]);
+  });
+
+  it("lays a crowded fence's names out alternately, and a sparse one's on one line", () => {
+    const crowded = layoutAviary(fenceOf(21), window).fence.birds;
+    const sparse = layoutAviary(mockAviary, window).fence.birds;
+
+    expect(crowded.map((entry) => entry.namePlace.drop)).toEqual(
+      crowded.map((_, i) => (i % 2 === 1 ? 30 + lowerRowDrop : 30)),
+    );
+    expect(new Set(sparse.map((entry) => entry.namePlace.drop))).toEqual(
+      new Set([30]),
+    );
   });
 });
 

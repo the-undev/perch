@@ -234,14 +234,6 @@ working tree is clean and everything is pushed"). Deriving it in the
 renderer would mean matching ledger labels; it needs a view model field
 first.
 
-## Crowded fence
-
-With twenty or so fence birds the name labels overlap and the birds
-nearly touch. The fence needs a crowd story: wrap onto more fence rows,
-thin or stagger the names, hide names until hover past a density, or
-scale the scene. The wires have the same limit later; rowCapacity only
-staggers rows in the aviary view.
-
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

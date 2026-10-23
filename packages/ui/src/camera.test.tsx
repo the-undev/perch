@@ -1,4 +1,5 @@
 import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
+import type { Bird } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type CameraPlace, CameraView } from "./camera.tsx";
@@ -152,6 +153,24 @@ describe("the camera", () => {
 
     expect(name?.nextElementSibling?.textContent).toBe("4 attention");
     expect(name?.nextElementSibling?.getAttribute("dx")).toBe("18");
+  });
+
+  it("alternates the names of a crowded fence's strip between two baselines", () => {
+    const birds = Array.from({ length: 21 }, (_, position) => ({
+      ...(mockAviary.fence.birds[position % 3] as Bird),
+      id: `fence-${position}`,
+      position,
+    }));
+    const { container } = camera(detailOf("fence-0"), false, now, {
+      ...mockAviary,
+      fence: { birds },
+    });
+    const names = [...container.querySelectorAll("[data-strip-bird] > text")];
+
+    expect(names).toHaveLength(21);
+    expect(names[0]?.getAttribute("y")).not.toBe(names[1]?.getAttribute("y"));
+    expect(names[0]?.getAttribute("y")).toBe(names[2]?.getAttribute("y"));
+    expect(names[0]?.getAttribute("data-name-size")).toBe("small");
   });
 
   it("switches to a wire-mate from the strip", () => {

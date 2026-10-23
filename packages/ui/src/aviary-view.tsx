@@ -129,7 +129,7 @@ function PerchedBird({
               y={0}
               facing={placed.facing}
               night={night}
-              labelDrop={placed.labelDrop}
+              namePlace={placed.namePlace}
               speaking={speaking}
             />
           </g>

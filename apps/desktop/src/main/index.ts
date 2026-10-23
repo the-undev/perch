@@ -2,7 +2,6 @@ import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { loadConfig } from "@perch/core/config.ts";
 import { runCommand } from "@perch/core/exec.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
 import { readSnapshot, runAggregate, runGather } from "@perch/core/scan.ts";
@@ -22,7 +21,7 @@ import { hideOnClose, present } from "./window-presence.ts";
 
 /** A focus scans only once this long has passed since the last scan finished. */
 const focusGapMs = 60_000;
-/** Without any config, the next attempt to read it and scan comes this soon. */
+/** With a config file that has never parsed, the next attempt to read it and scan comes this soon. */
 const noConfigRetryMs = 60_000;
 
 /** Held for the life of the app: a tray icon that is collected leaves the tray. */
@@ -86,14 +85,11 @@ function start(): void {
   const launchArguments = parseArguments(process.argv);
   let mainWindow: BrowserWindow | undefined;
 
-  const config = createConfigStore(() =>
-    loadConfig({
-      home,
-      userPath: paths.userConfigPath,
-      examplePath: paths.examplePath,
-      readText: readTextIfExists,
-    }),
-  );
+  const config = createConfigStore({
+    home,
+    path: paths.userConfigPath,
+    readText: readTextIfExists,
+  });
   const spawnDetached = createSpawnDetached(spawn, { cwd: home, env });
   const run = ([program, ...args]: string[]) =>
     runCommand(program ?? "", args, { cwd: home, env });
@@ -129,6 +125,8 @@ function start(): void {
   });
   const scheduler = createScanScheduler({
     scan: () => state.scan(),
+    hasConfig: () => !config.current().missing,
+    recheck: () => state.recheck(),
     intervalMs: () => {
       const loaded = config.current().loaded;
       return loaded === null

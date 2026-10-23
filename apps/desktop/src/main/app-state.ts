@@ -36,6 +36,8 @@ export interface AppState {
   state(): PerchState;
   /** Rereads the config, then gathers and aggregates; failures become problems, never throws. */
   scan(): Promise<void>;
+  /** Rereads the config and publishes the state, without scanning. */
+  recheck(): Promise<void>;
   setScanning(scanning: boolean): void;
   /**
    * Performs a launch action when some bird in the aviary offers it, else nothing; a failure
@@ -90,7 +92,12 @@ export function createAppState(deps: AppStateDeps): AppState {
   }
 
   function state(): PerchState {
-    return { aviary: aviary(), scanning, problems: problems() };
+    return {
+      noConfig: deps.config.current().missing,
+      aviary: aviary(),
+      scanning,
+      problems: problems(),
+    };
   }
 
   function bird(birdId: string): Bird | undefined {
@@ -121,6 +128,10 @@ export function createAppState(deps: AppStateDeps): AppState {
       } catch (error) {
         scanError = errorMessage(error);
       }
+      publish();
+    },
+    async recheck() {
+      await deps.config.reload();
       publish();
     },
     setScanning(next) {

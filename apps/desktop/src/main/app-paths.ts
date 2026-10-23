@@ -11,7 +11,7 @@ export interface AppPaths {
   snapshotPath: string;
   /** The owner's config. */
   userConfigPath: string;
-  /** The example config, read when the owner's does not exist. */
+  /** The example config shipped with the app. */
   examplePath: string;
 }
 

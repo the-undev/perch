@@ -25,6 +25,7 @@ afterEach(() => {
 });
 
 const idle = (aviary: Aviary | null): PerchState => ({
+  noConfig: false,
   aviary,
   scanning: false,
   problems: [],
@@ -63,7 +64,12 @@ const pathOf = (router: ReturnType<typeof renderApp>["router"]) =>
 
 describe("the window", () => {
   it("says the first scan is running, then perches the aviary the scan pushes", async () => {
-    const { fake } = renderApp({ aviary: null, scanning: true, problems: [] });
+    const { fake } = renderApp({
+      noConfig: false,
+      aviary: null,
+      scanning: true,
+      problems: [],
+    });
 
     expect((await screen.findByRole("status")).textContent).toBe(
       "First scan running",
@@ -80,6 +86,7 @@ describe("the window", () => {
 
     act(() =>
       fake.push({
+        noConfig: false,
         aviary: { ...mockAviary, scannedAt: "2026-10-21T08:00:00.000Z" },
         scanning: true,
         problems: [],
@@ -92,6 +99,7 @@ describe("the window", () => {
 
   it("puts the main process's problems in the sky beside the scan's warnings", async () => {
     renderApp({
+      noConfig: false,
       aviary: mockAviary,
       scanning: false,
       problems: [

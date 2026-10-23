@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Config } from "../src/config.ts";
 import type { Item } from "../src/snapshot.ts";
 import { type Bird, deriveAviary } from "../src/viewmodel.ts";
+import { testConfig } from "./helpers/config.ts";
 import {
   aged,
   forgeData,
@@ -10,7 +11,6 @@ import {
   item,
   scannedAt,
   snapshotOf,
-  testConfig,
 } from "./helpers/snapshot.ts";
 
 const adoptAll = (ids: string[], extra = "") =>

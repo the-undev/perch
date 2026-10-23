@@ -6,9 +6,6 @@ files:
   - out/**
   - package.json
 extraResources:
-  # Read when the owner has no ~/.config/perch/config.toml.
-  - from: ../../config.example.toml
-    to: config.example.toml
   # The window's and the tray's icons, found where the dev build finds them in resources/.
   - from: resources
     to: .

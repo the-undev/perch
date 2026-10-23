@@ -6,6 +6,7 @@ import {
   type LoadedConfig,
   parseConfig,
 } from "@perch/core/config.ts";
+import { defaultConfig } from "@perch/core/config-default.ts";
 import { writeConfig } from "@perch/core/config-write.ts";
 import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
@@ -437,14 +438,8 @@ describe("the settings", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  const starterPath = join(
-    import.meta.dirname,
-    "..",
-    "..",
-    "..",
-    "..",
-    "config.example.toml",
-  );
+  /** The starter config file the app writes. */
+  const starter = () => writeConfig(defaultConfig(), home);
 
   /** The app state on a real config file in the temp directory holding the text. */
   async function onText(text: string) {
@@ -467,42 +462,34 @@ describe("the settings", () => {
     return form;
   }
 
-  it("saves the starter unchanged with only its comments and layout lost, the same bytes every time", async () => {
-    const starter = await readFile(starterPath, "utf8");
-    const { app } = await onText(starter);
+  it("saves the starter unchanged, the same bytes every time", async () => {
+    const { app } = await onText(starter());
 
     await app.saveSettings(formOf(app).values);
     const first = await written();
     await app.saveSettings(formOf(app).values);
 
-    expect(parse(first)).toEqual(parse(starter));
-    expect(first).toContain('include = [ "~/dev", "~/.dotfiles" ]');
+    expect(first).toBe(starter());
     expect(await written()).toBe(first);
-    expect(formOf(app).values.local.include).toEqual(["~/dev", "~/.dotfiles"]);
   });
 
-  it("adds include paths under ~, rereads the config and asks for a scan", async () => {
-    const { app, deps, published } = await onText(
-      await readFile(starterPath, "utf8"),
-    );
+  it("adds a zellij session root under ~, rereads the config and asks for a scan", async () => {
+    const { app, deps, published } = await onText(starter());
     const { values } = formOf(app);
 
     await app.saveSettings({
       ...values,
-      local: {
-        ...values.local,
-        include: [...values.local.include, "~/undev", "~/obsidian/Hothouse"],
+      launch: {
+        ...values.launch,
+        zellijSessions: [{ root: "~/work", session: "work" }],
       },
     });
 
-    expect(parse(await written()).local).toMatchObject({
-      include: ["~/dev", "~/.dotfiles", "~/undev", "~/obsidian/Hothouse"],
+    expect(parse(await written()).launch).toMatchObject({
+      zellij_sessions: { "~/work": "work" },
     });
-    expect(formOf(app).values.local.include).toEqual([
-      "~/dev",
-      "~/.dotfiles",
-      "~/undev",
-      "~/obsidian/Hothouse",
+    expect(formOf(app).values.launch.zellijSessions).toEqual([
+      { root: "~/work", session: "work" },
     ]);
     expect(published.at(-1)?.problems).toEqual([]);
     expect(deps.requestScan).toHaveBeenCalledTimes(1);

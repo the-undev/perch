@@ -1,5 +1,5 @@
-// The settings page's groups, one per part of config, and the editor that holds them: local
-// paths, wires, thresholds, scan, importance, launch, forges, server, and the presence lists.
+// The settings page's groups, one per part of config, and the editor that holds them: wires,
+// thresholds, scan, importance, launch, and the presence lists.
 // Each group is presentational, its value in and every change out; the editor holds the draft.
 
 import {
@@ -8,8 +8,6 @@ import {
 } from "@perch/core/config.ts";
 import { thresholdWindows } from "@perch/core/entry-form.ts";
 import {
-  type ForgeValues,
-  type ServerValues,
   type SettingsForm,
   type SettingsValues,
   settingsProblems,
@@ -20,7 +18,6 @@ import { type ReactNode, useState } from "react";
 import {
   FormNotes,
   FormRow,
-  inputClass,
   monoInputClass,
   NumberInput,
   PillChoice,
@@ -124,39 +121,6 @@ export interface GroupProps<T> {
   onChange: (value: T) => void;
 }
 
-/** The include and ignore paths, shown as typed with ~. */
-export function LocalPathsGroup({
-  value,
-  onChange,
-}: GroupProps<SettingsValues["local"]>) {
-  return (
-    <SettingsGroup
-      title="Local paths"
-      table="[local]"
-      note="Each path starts with / or ~, the home directory. A path under the home directory is saved with ~."
-    >
-      <FormRow label="Include" sub="Repositories, or folders searched for them">
-        <StringList
-          noun="include path"
-          placeholder="~/dev"
-          values={value.include}
-          ordered={false}
-          onChange={(include) => onChange({ ...value, include })}
-        />
-      </FormRow>
-      <FormRow label="Ignore" sub="Nothing at or below is searched">
-        <StringList
-          noun="ignore path"
-          placeholder="~/dev/archived"
-          values={value.ignore}
-          ordered={false}
-          onChange={(ignore) => onChange({ ...value, ignore })}
-        />
-      </FormRow>
-    </SettingsGroup>
-  );
-}
-
 /** The wires top to bottom and the default; removing a wire entries name says what moves. */
 export function WiresGroup({
   value,
@@ -217,7 +181,7 @@ export function ThresholdsGroup({
   );
 }
 
-/** The two scan intervals. */
+/** The two scan intervals and the finalised commits read on each default branch. */
 export function ScanGroup({
   value,
   onChange,
@@ -245,6 +209,16 @@ export function ScanGroup({
           placeholder=""
           onChange={(archivedIntervalHours) =>
             onChange({ ...value, archivedIntervalHours })
+          }
+        />
+      </FormRow>
+      <FormRow label="Finalised commits" sub="Read on each default branch">
+        <NumberInput
+          label="Finalised commits"
+          value={value.finalisedCommits}
+          placeholder=""
+          onChange={(finalisedCommits) =>
+            onChange({ ...value, finalisedCommits })
           }
         />
       </FormRow>
@@ -430,184 +404,6 @@ export function LaunchGroup({
   );
 }
 
-/** One forge's hosts, accounts and tracked forks. */
-function ForgeRows({
-  forge,
-  value,
-  onChange,
-}: {
-  forge: string;
-  value: ForgeValues;
-  onChange: (value: ForgeValues) => void;
-}) {
-  return (
-    <>
-      <FormRow label="Hosts" sub="Remote hosts and SSH aliases">
-        <StringList
-          noun={`${forge} host`}
-          placeholder="github.com"
-          values={value.hosts}
-          ordered={false}
-          onChange={(hosts) => onChange({ ...value, hosts })}
-        />
-      </FormRow>
-      <FormRow label="Accounts" sub="Each with its keyring key">
-        <RecordRows
-          noun={`${forge} account`}
-          fields={[
-            { key: "account", label: "name", placeholder: "owner" },
-            { key: "key", label: "keyring key", placeholder: "forge-owner" },
-          ]}
-          rows={value.accounts}
-          onChange={(accounts) => onChange({ ...value, accounts })}
-        />
-      </FormRow>
-      <FormRow label="Tracked forks" sub="owner/name; others skipped">
-        <StringList
-          noun={`${forge} tracked fork`}
-          placeholder="owner/name"
-          values={value.trackedForks}
-          ordered={false}
-          onChange={(trackedForks) => onChange({ ...value, trackedForks })}
-        />
-      </FormRow>
-    </>
-  );
-}
-
-function ForgeHeading({ children }: { children: string }) {
-  return (
-    <h3 className="mt-3 mb-0 border-edge border-t pt-2.5 font-body font-semibold text-[13px] text-ink">
-      {children}
-    </h3>
-  );
-}
-
-/** The finalised commit count and each forge's hosts, accounts and tracked forks. */
-export function ForgesGroup({
-  value,
-  onChange,
-}: GroupProps<SettingsValues["forges"]>) {
-  return (
-    <SettingsGroup
-      title="Forges"
-      table="[forges]"
-      note="Tokens live in the desktop keyring under service perch, never in this file: each account names the key that holds its read-only token."
-    >
-      <FormRow label="Finalised commits" sub="Read on each default branch">
-        <NumberInput
-          label="Finalised commits"
-          value={value.finalisedCommits}
-          placeholder=""
-          onChange={(finalisedCommits) =>
-            onChange({ ...value, finalisedCommits })
-          }
-        />
-      </FormRow>
-      <ForgeHeading>GitHub</ForgeHeading>
-      <ForgeRows
-        forge="GitHub"
-        value={value.github}
-        onChange={(github) => onChange({ ...value, github })}
-      />
-      <ForgeHeading>Forgejo</ForgeHeading>
-      <FormRow label="Address" sub="The instance's base URL">
-        <input
-          type="text"
-          aria-label="Forgejo address"
-          value={value.forgejo.baseUrl}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              forgejo: { ...value.forgejo, baseUrl: event.target.value },
-            })
-          }
-          className={monoInputClass}
-        />
-      </FormRow>
-      <ForgeRows
-        forge="Forgejo"
-        value={value.forgejo}
-        onChange={(forgejo) =>
-          onChange({
-            ...value,
-            forgejo: { ...forgejo, baseUrl: value.forgejo.baseUrl },
-          })
-        }
-      />
-    </SettingsGroup>
-  );
-}
-
-const serverFields: {
-  key: keyof ServerValues;
-  label: string;
-  placeholder: string;
-}[] = [
-  { key: "name", label: "Name", placeholder: "Silo" },
-  {
-    key: "kumaBaseUrl",
-    label: "Uptime Kuma address",
-    placeholder: "http://forge.example.lan:3001",
-  },
-  { key: "kumaStatusPage", label: "Status page", placeholder: "perch" },
-];
-
-/** The server to monitor, or none: absent until enabled, and disabled back to none. */
-export function ServerGroup({
-  value,
-  onChange,
-}: GroupProps<ServerValues | null>) {
-  return (
-    <SettingsGroup
-      title="Server"
-      table="[server]"
-      note="With a server set, each scan reads its Uptime Kuma status page. The scene does not show it yet."
-    >
-      {value === null ? (
-        <div className="flex flex-wrap items-center gap-3 py-2">
-          <span className="text-[13px] text-ink-faint">
-            No server is monitored.
-          </span>
-          <button
-            type="button"
-            onClick={() =>
-              onChange({ name: "", kumaBaseUrl: "", kumaStatusPage: "" })
-            }
-            className={`${secondaryClass} px-2.75 py-1.5`}
-          >
-            Monitor a server
-          </button>
-        </div>
-      ) : (
-        <>
-          {serverFields.map((field) => (
-            <FormRow key={field.key} label={field.label} sub="">
-              <input
-                type="text"
-                aria-label={`Server ${field.label.toLowerCase()}`}
-                placeholder={field.placeholder}
-                value={value[field.key]}
-                onChange={(event) =>
-                  onChange({ ...value, [field.key]: event.target.value })
-                }
-                className={field.key === "name" ? inputClass : monoInputClass}
-              />
-            </FormRow>
-          ))}
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className={`${quietClass} mt-1`}
-          >
-            Stop monitoring
-          </button>
-        </>
-      )}
-    </SettingsGroup>
-  );
-}
-
 /** The presence lists: joins, each a list line, and the presences ignored. */
 export function PresencesGroup({
   value,
@@ -689,10 +485,6 @@ export function SettingsEditor({ form, onSave }: SettingsEditorProps) {
       }}
     >
       <div className="columns-[36rem] gap-5">
-        <LocalPathsGroup
-          value={draft.local}
-          onChange={(local) => update({ local })}
-        />
         <WiresGroup
           value={draft.wires}
           named={form.named.wires}
@@ -711,14 +503,6 @@ export function SettingsEditor({ form, onSave }: SettingsEditorProps) {
         <LaunchGroup
           value={draft.launch}
           onChange={(launch) => update({ launch })}
-        />
-        <ForgesGroup
-          value={draft.forges}
-          onChange={(forges) => update({ forges })}
-        />
-        <ServerGroup
-          value={draft.server}
-          onChange={(server) => update({ server })}
         />
         <PresencesGroup
           value={{ joins: draft.joins, ignore: draft.ignore }}

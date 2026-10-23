@@ -177,14 +177,15 @@ const github: SourceSpec = {
   polled: ["githubAccounts", "github"],
   reads: (
     <p>
-      The REST API at <Code>api.github.com</Code>, each configured account with
-      its own fine-grained read-only token from the keyring. First the
-      accounts&apos; own repositories (<Code>/user/repos</Code>), untracked
-      forks left out by name. Then, for every listed repository and any that a
-      local remote names on a GitHub host the listings missed: open pull
-      requests, the latest workflow run on the default branch, and its newest
-      commits, as many as <Code>forges.finalised_commits</Code>. Archived
-      repositories keep their info and skip the details.
+      The REST API at <Code>api.github.com</Code>, each{" "}
+      <Code>[[sources.github]]</Code> account with its own fine-grained
+      read-only token from the keyring. First the accounts&apos; own
+      repositories (<Code>/user/repos</Code>), untracked forks left out by name.
+      Then, for every listed repository and any that a local remote names on a
+      GitHub host the listings missed: open pull requests, the latest workflow
+      run on the default branch, and its newest commits, as many as{" "}
+      <Code>scan.finalised_commits</Code>. Archived repositories keep their info
+      and skip the details.
     </p>
   ),
   moduleNames: [
@@ -205,12 +206,12 @@ const forgejo: SourceSpec = {
   polled: ["forgejoAccounts", "forgejo"],
   reads: (
     <p>
-      The v1 API at <Code>forges.forgejo.base_url</Code>, each configured
-      account with its own read-only token from the keyring. The same two rounds
-      as GitHub: the accounts&apos; own repositories, then pull requests, CI and
-      finalised commits for each. CI is the default branch head&apos;s combined
-      commit status, since Forgejo&apos;s Actions API cannot filter runs by
-      branch.
+      The v1 API at each <Code>[[sources.forgejo]]</Code> account&apos;s{" "}
+      <Code>base_url</Code>, with its own read-only token from the keyring. The
+      same two rounds as GitHub: the accounts&apos; own repositories, then pull
+      requests, CI and finalised commits for each. CI is the default branch
+      head&apos;s combined commit status, since Forgejo&apos;s Actions API
+      cannot filter runs by branch.
     </p>
   ),
   moduleNames: [
@@ -305,12 +306,13 @@ const kuma: SourceSpec = {
   polled: ["kuma"],
   reads: (
     <p>
-      The Uptime Kuma status page named by <Code>server.kuma_status_page</Code>{" "}
-      at <Code>server.kuma_base_url</Code>: its monitor groups and their
-      heartbeats. The gather reads it on every scan, and the aggregate puts the
-      result on the server item. The view model leaves the server off the scene
-      until server monitoring is picked up, so nothing it reads is shown; see
-      the roadmap&apos;s Server monitoring.
+      Each <Code>[[sources.kuma]]</Code> table&apos;s Uptime Kuma status page,{" "}
+      <Code>status_page</Code> at <Code>base_url</Code>: its monitor groups and
+      their heartbeats, keyed by the table&apos;s <Code>name</Code>. The gather
+      reads them on every scan, and the aggregate puts each on the server item
+      that name gives. The view model leaves the server off the scene until
+      server monitoring is picked up, so nothing it reads is shown; see the
+      roadmap&apos;s Server monitoring.
     </p>
   ),
   moduleNames: [{ file: "src/sources/kuma.ts", names: ["createKumaSource"] }],
@@ -323,7 +325,7 @@ const kuma: SourceSpec = {
   ),
   derivations: ["deriveKuma"],
   snapshotTypes: ["KumaData", "Monitor", "MonitorStatus"],
-  example: { itemId: "server", source: "kuma" },
+  example: { itemId: "server:Silo", source: "kuma" },
 };
 
 export function LocalGitPage() {

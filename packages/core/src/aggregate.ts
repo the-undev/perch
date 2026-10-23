@@ -1,6 +1,7 @@
 import { basename } from "node:path";
 import {
   type Config,
+  hostsOf,
   type ItemEntry,
   importanceFor,
   type ResolvedEntry,
@@ -53,8 +54,10 @@ import type { LiveSource } from "./sources/source.ts";
 /** Any live source, whatever data it returns. */
 export type AnyLiveSource = LiveSource<LiveSourceName, unknown>;
 
-/** Id of the one server item. */
-export const serverItemId = "server";
+/** Id of the server item a kuma source monitors, by the source's name. */
+export function serverItemId(name: string): string {
+  return `server:${name}`;
+}
 
 const forgeNames: readonly ForgeName[] = ["github", "forgejo"];
 
@@ -230,8 +233,8 @@ export function joinRawFiles(
   files: Partial<RawFiles>,
   config: Config,
 ): JoinResult {
-  const github = config.forges.github.hosts;
-  const forgejo = config.forges.forgejo.hosts;
+  const github = hostsOf(config.sources.github);
+  const forgejo = hostsOf(config.sources.forgejo);
   return joinPresences({
     locals: Object.entries(files.local?.data.presences ?? {}).map(
       ([id, presence]) => ({
@@ -382,12 +385,18 @@ export function aggregate(
       };
     },
   );
-  if (config.server !== null) {
-    const { entry, keys } = resolveEntry(config, serverItemId, []);
+  for (const card of config.sources.kuma) {
+    const id = serverItemId(card.name);
+    const { entry, keys } = resolveEntry(config, id, []);
+    const kuma = fromEntry(
+      files.kuma?.data[card.name],
+      deriveKuma,
+      () => undefined,
+    );
     resolved.push({
       item: {
-        id: serverItemId,
-        name: config.server.name,
+        id,
+        name: card.name,
         kind: "server",
         path: null,
         importance: importanceFor(config, entry),
@@ -395,7 +404,7 @@ export function aggregate(
         presences: { local: null, forges: [] },
         flags: [],
         expectations: [],
-        sources: files.kuma ? { kuma: deriveKuma(files.kuma.data) } : {},
+        sources: kuma === undefined ? {} : { kuma },
       },
       keys,
     });

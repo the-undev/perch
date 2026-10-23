@@ -1,14 +1,14 @@
-import { SourceFailure } from "../failure.ts";
+import type { KumaSourceConfig } from "../config.ts";
 import { errorMessage } from "../fs.ts";
 import type { FetchJson } from "../http.ts";
 import { asArray, asRecord, numberField, stringField } from "../json.ts";
-import type { RawHeartbeat, RawKuma, RawMonitor } from "../raw.ts";
+import type { Entry, RawHeartbeat, RawKuma, RawMonitor } from "../raw.ts";
 import type { PolledSource } from "./source.ts";
 
 export interface KumaSourceDeps {
   fetchJson: FetchJson;
-  baseUrl: string;
-  statusPage: string;
+  /** The configured status pages, at least one: with none the source does not run. */
+  cards: KumaSourceConfig[];
 }
 
 function readHeartbeats(value: unknown): RawHeartbeat[] {
@@ -24,15 +24,15 @@ function readHeartbeats(value: unknown): RawHeartbeat[] {
 }
 
 /** Reads the monitors on an Uptime Kuma status page with their heartbeats. */
-export async function readStatusPage(deps: KumaSourceDeps): Promise<RawKuma> {
-  const slug = encodeURIComponent(deps.statusPage);
+export async function readStatusPage(
+  fetchJson: FetchJson,
+  card: KumaSourceConfig,
+): Promise<RawKuma> {
+  const slug = encodeURIComponent(card.statusPage);
   const headers = { Accept: "application/json" };
   const [page, heartbeat] = await Promise.all([
-    deps.fetchJson(`${deps.baseUrl}/api/status-page/${slug}`, headers),
-    deps.fetchJson(
-      `${deps.baseUrl}/api/status-page/heartbeat/${slug}`,
-      headers,
-    ),
+    fetchJson(`${card.baseUrl}/api/status-page/${slug}`, headers),
+    fetchJson(`${card.baseUrl}/api/status-page/heartbeat/${slug}`, headers),
   ]);
   const heartbeatList = asRecord(
     asRecord(heartbeat, "heartbeat").heartbeatList,
@@ -57,16 +57,26 @@ export async function readStatusPage(deps: KumaSourceDeps): Promise<RawKuma> {
       };
     });
   });
-  return { statusPage: deps.statusPage, monitors };
+  return { statusPage: card.statusPage, monitors };
 }
 
-/** Root collector: reads the configured Uptime Kuma status page for the server. */
+/** Root collector: reads each configured status page, keyed by its name; a page unread is its error. */
 export function createKumaSource(deps: KumaSourceDeps): PolledSource<"kuma"> {
   return {
     name: "kuma",
-    gather: () =>
-      readStatusPage(deps).catch((error: unknown) => {
-        throw new SourceFailure("request-failed", errorMessage(error));
-      }),
+    async gather() {
+      const entries: Record<string, Entry<RawKuma, never>> = {};
+      for (const card of deps.cards) {
+        try {
+          entries[card.name] = {
+            state: "observed",
+            value: await readStatusPage(deps.fetchJson, card),
+          };
+        } catch (error) {
+          entries[card.name] = { state: "error", error: errorMessage(error) };
+        }
+      }
+      return entries;
+    },
   };
 }

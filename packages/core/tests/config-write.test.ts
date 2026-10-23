@@ -4,6 +4,7 @@ import { parse } from "smol-toml";
 import { describe, expect, it } from "vitest";
 import { type Config, parseConfig } from "../src/config.ts";
 import { writeConfig } from "../src/config-write.ts";
+import { fixtureConfigText } from "./helpers/config.ts";
 
 const home = "/home/test";
 
@@ -23,9 +24,42 @@ ignore = ["github:finch/scratch", "forgejo:the-undev/old"]
 names = ["Machine & Home", "Projects", "Someday"]
 default = "Someday"
 
-[local]
+[[sources.local]]
 include = ["~/dev", "/srv/repos"]
-ignore = ["~/dev/archived"]
+exclude = ["~/dev/archived"]
+
+[[sources.local]]
+include = ["~/work"]
+exclude = []
+
+[[sources.github]]
+account = "the-undev"
+key = "github-the-undev"
+hosts = ["github.com", "github-work"]
+tracked_forks = []
+
+[[sources.github]]
+account = "finch"
+key = "github-finch"
+hosts = ["github.com"]
+tracked_forks = ["someone/fork"]
+
+[[sources.forgejo]]
+base_url = "http://forgejo.invalid:3000"
+account = "finch"
+key = "forgejo-finch"
+hosts = ["forgejo"]
+tracked_forks = []
+
+[[sources.kuma]]
+name = "Silo"
+base_url = "http://kuma.invalid:3001"
+status_page = "perch"
+
+[[sources.kuma]]
+name = "Box"
+base_url = "http://kuma.invalid:3002"
+status_page = "box"
 
 [thresholds]
 unsafe_amber_hours = 12
@@ -42,6 +76,7 @@ default = "machine"
 [scan]
 interval_minutes = 5
 archived_interval_hours = 12
+finalised_commits = 25
 
 [launch]
 zellij_session = "main"
@@ -76,28 +111,6 @@ key_files = []
 roadmaps = []
 
 [items.".dotfiles"]
-
-[forges]
-finalised_commits = 25
-
-[forges.github]
-hosts = ["github.com", "github-work"]
-accounts = [
-  { account = "finch", key = "github-finch" },
-  { account = "the-undev", key = "github-the-undev" },
-]
-tracked_forks = ["someone/fork"]
-
-[forges.forgejo]
-base_url = "http://forgejo.invalid:3000"
-hosts = ["forgejo"]
-accounts = []
-tracked_forks = []
-
-[server]
-name = "Silo"
-kuma_base_url = "http://kuma.invalid:3001"
-kuma_status_page = "perch"
 `;
 
 function roundTrip(config: Config): Config {
@@ -114,19 +127,48 @@ describe("writeConfig", () => {
   it("writes every field back to an equal config", () => {
     const config = parseConfig(maximalText, home);
 
-    expect(config.server).not.toBeNull();
+    expect(config.sources.kuma).toHaveLength(2);
     expect(config.items["forgejo:finch/hollow"]?.keyFiles).toEqual([]);
     expect(config.launch.commands.zellij).toBeNull();
     expect(roundTrip(config)).toEqual(config);
   });
 
-  it("leaves the [server] section out when there is no server", () => {
-    const config: Config = { ...parseConfig(maximalText, home), server: null };
+  it("leaves out a source kind with no tables, and the sources table with none at all", () => {
+    const config = parseConfig(maximalText, home);
+    const noKuma: Config = {
+      ...config,
+      sources: { ...config.sources, kuma: [] },
+    };
+    const none: Config = {
+      ...config,
+      sources: { local: [], github: [], forgejo: [], kuma: [] },
+    };
 
-    const text = writeConfig(config, home);
+    expect(writeConfig(noKuma, home)).not.toContain("sources.kuma");
+    expect(roundTrip(noKuma)).toEqual(noKuma);
+    expect(writeConfig(none, home)).not.toContain("sources");
+    expect(roundTrip(none)).toEqual(none);
+  });
 
-    expect(text).not.toContain("[server]");
-    expect(roundTrip(config)).toEqual(config);
+  it("keeps each kind's tables in the order configured", () => {
+    const config = parseConfig(maximalText, home);
+    const reversed: Config = {
+      ...config,
+      sources: {
+        ...config.sources,
+        github: [...config.sources.github].reverse(),
+      },
+    };
+
+    const text = writeConfig(reversed, home);
+
+    expect(text.indexOf('account = "finch"')).toBeLessThan(
+      text.indexOf('account = "the-undev"'),
+    );
+    expect(text).toContain(
+      '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://kuma.invalid:3001"\nstatus_page = "perch"\n\n[[sources.kuma]]\nname = "Box"',
+    );
+    expect(roundTrip(reversed)).toEqual(reversed);
   });
 
   it("writes a config with no item entries", async () => {
@@ -158,8 +200,16 @@ describe("writeConfig", () => {
     expect(writeConfig(reordered, home)).toBe(text);
   });
 
-  it("writes the example back as the same TOML document, its ~ paths as they were typed", async () => {
+  it("writes the example back as the same TOML document", async () => {
     const text = await exampleText();
+
+    const written = writeConfig(parseConfig(text, home), home);
+
+    expect(parse(written)).toEqual(parse(text));
+  });
+
+  it("writes the fixture back as the same TOML document, its ~ paths as they were typed", async () => {
+    const text = await fixtureConfigText("");
 
     const written = writeConfig(parseConfig(text, home), home);
 
@@ -171,9 +221,14 @@ describe("writeConfig", () => {
     const config = parseConfig(maximalText, home);
     const paths: Config = {
       ...config,
-      local: {
-        include: [home, `${home}/dev`, "/srv/repos", `${home}2/elsewhere`],
-        ignore: [`${home}/dev/archived`],
+      sources: {
+        ...config.sources,
+        local: [
+          {
+            include: [home, `${home}/dev`, "/srv/repos", `${home}2/elsewhere`],
+            exclude: [`${home}/dev/archived`],
+          },
+        ],
       },
       launch: {
         ...config.launch,
@@ -183,10 +238,12 @@ describe("writeConfig", () => {
 
     const document = parse(writeConfig(paths, home));
 
-    expect(document.local).toEqual({
-      include: ["~", "~/dev", "/srv/repos", "/home/test2/elsewhere"],
-      ignore: ["~/dev/archived"],
-    });
+    expect((document.sources as Record<string, unknown>).local).toEqual([
+      {
+        include: ["~", "~/dev", "/srv/repos", "/home/test2/elsewhere"],
+        exclude: ["~/dev/archived"],
+      },
+    ]);
     expect(
       (document.launch as Record<string, unknown>).zellij_sessions,
     ).toEqual({ "/srv": "srv", "~/undev": "undev" });

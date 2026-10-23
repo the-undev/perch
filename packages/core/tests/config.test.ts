@@ -12,6 +12,7 @@ import {
   wireFor,
   zellijSessionFor,
 } from "../src/config.ts";
+import { fixtureConfigText } from "./helpers/config.ts";
 
 const examplePath = join(
   import.meta.dirname,
@@ -34,19 +35,16 @@ describe("example config", () => {
   it("parses with every path expanded against the home directory", async () => {
     const config = parseConfig(await exampleText(), home);
 
-    expect(config.local.include).toEqual([
-      "/home/test/dev",
-      "/home/test/.dotfiles",
-    ]);
-    expect(config.local.ignore).toEqual([
-      "/home/test/dev/archived",
-      "/home/test/dev/third-party",
-      "/home/test/dev/all/delete",
+    expect(config.sources.local).toEqual([
+      {
+        include: ["/home/test/projects"],
+        exclude: ["/home/test/projects/archive"],
+      },
     ]);
     expect(config.joins).toEqual([]);
     expect(config.ignore).toEqual([]);
     expect(config.wires).toEqual({
-      names: ["Machine & Home", "Projects"],
+      names: ["Home", "Projects"],
       default: "Projects",
     });
     expect(config.thresholds).toEqual({
@@ -56,13 +54,13 @@ describe("example config", () => {
     });
     expect(config.importance.default).toBe("projects");
     expect(config.items).toEqual({});
-    expect(config.forges.finalisedCommits).toBe(10);
     expect(config.scan).toEqual({
       intervalMinutes: 15,
       archivedIntervalHours: 24,
+      finalisedCommits: 10,
     });
     expect(config.launch).toEqual({
-      zellijSession: "home",
+      zellijSession: "main",
       zellijSessions: {},
       commands: {
         zellij: ["zellij"],
@@ -81,41 +79,48 @@ describe("example config", () => {
         obsidian: ["xdg-open", "obsidian://open?vault={vault}"],
       },
     });
-    expect(config.forges.github.trackedForks).toEqual([]);
-    expect(config.forges.github.hosts).toEqual(["github.com", "github-work"]);
-    expect(config.forges.github.accounts).toEqual([
-      { account: "finch", key: "github-finch" },
-      { account: "the-undev", key: "github-the-undev" },
-      { account: "skiff-app", key: "github-skiff-app" },
+    expect(config.sources.github).toEqual([
+      {
+        account: "someone",
+        key: "github-someone",
+        hosts: ["github.com"],
+        trackedForks: [],
+      },
     ]);
-    expect(config.forges.forgejo.accounts.map((entry) => entry.key)).toEqual([
-      "forgejo-finch",
-      "forgejo-the-undev",
+    expect(config.sources.forgejo).toEqual([
+      {
+        account: "someone",
+        key: "forgejo-someone",
+        hosts: ["forge.example.lan"],
+        trackedForks: [],
+        baseUrl: "https://forge.example.lan",
+      },
     ]);
-    expect(config.forges.forgejo.baseUrl).toBe("http://forge.example.lan:3000");
-    expect(config.server).toBeNull();
+    expect(config.sources.kuma).toEqual([]);
   });
 
-  it("parses the [server] section when it is present", async () => {
-    const config = parseConfig(
-      `${await exampleText()}\n[server]\nname = "Silo"\nkuma_base_url = "http://kuma.example.lan:3001"\nkuma_status_page = "perch"\n`,
-      home,
+  it("parses its commented kuma source once uncommented", async () => {
+    const text = (await exampleText()).replace(
+      /^# (\[\[sources\.kuma\]\]|name = |base_url = |status_page = )/gm,
+      "$1",
     );
 
-    expect(config.server).toEqual({
-      name: "Silo",
-      kumaBaseUrl: "http://kuma.example.lan:3001",
-      kumaStatusPage: "perch",
-    });
+    expect(parseConfig(text, home).sources.kuma).toEqual([
+      {
+        name: "Server",
+        baseUrl: "http://kuma.example.lan:3001",
+        statusPage: "status",
+      },
+    ]);
   });
 
   it("gives every item the default tier and global thresholds when nothing is overridden", async () => {
     const config = parseConfig(await exampleText(), home);
 
-    expect(importanceFor(config, entryOf(config, "dev/perch"))).toBe(
+    expect(importanceFor(config, entryOf(config, "projects/example"))).toBe(
       "projects",
     );
-    expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toEqual(
+    expect(thresholdsFor(config, entryOf(config, "projects/example"))).toEqual(
       config.thresholds,
     );
   });
@@ -123,20 +128,17 @@ describe("example config", () => {
   it("shows every entry field in its commented example, and each parses", async () => {
     const text = await exampleText();
     const lines = text.split("\n");
-    const start = lines.indexOf('# [items."dev/perch"]');
+    const start = lines.indexOf('# [items."projects/example"]');
     const block = [];
     for (const line of lines.slice(start)) {
       if (!line.startsWith("# ")) break;
       block.push(line.slice(2));
     }
-    const config = parseConfig(
-      text.replace("[forges]\n", `${block.join("\n")}\n\n[forges]\n`),
-      home,
-    );
+    const config = parseConfig(`${text}\n${block.join("\n")}\n`, home);
 
-    expect(config.items["dev/perch"]).toEqual({
+    expect(config.items["projects/example"]).toEqual({
       wire: "Projects",
-      name: "Perch",
+      name: "Example",
       importance: "machine",
       thresholds: {
         unsafe: { amberHours: 12, redHours: 48 },
@@ -146,18 +148,24 @@ describe("example config", () => {
       expect: ["ci", "tickets"],
       keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
-      zellijSession: "home",
+      zellijSession: "main",
     });
+  });
+
+  it("names no real account, key or address", async () => {
+    const config = parseConfig(await exampleText(), home);
+    const forges = [...config.sources.github, ...config.sources.forgejo];
+
+    expect(forges.map((source) => source.account)).toEqual([
+      "someone",
+      "someone",
+    ]);
+    expect(await exampleText()).not.toMatch(/\d+\.\d+\.\d+\.\d+/);
   });
 });
 
 describe("item overrides", () => {
-  async function withOverrides(overrides: string): Promise<string> {
-    return (await exampleText()).replace(
-      "[forges]\n",
-      `${overrides}\n[forges]\n`,
-    );
-  }
+  const withOverrides = fixtureConfigText;
 
   it("apply importance and thresholds to the named item only", async () => {
     const text = await withOverrides(
@@ -259,12 +267,179 @@ describe("item overrides", () => {
   });
 });
 
+describe("sources", () => {
+  /** The fixture's scalar tables only, with these source tables. */
+  async function withSources(sources: string): Promise<string> {
+    const text = await fixtureConfigText("");
+    const start = text.indexOf("[[sources.local]]");
+    const end = text.indexOf("[thresholds]");
+    return `${text.slice(0, start)}${sources}\n${text.slice(end)}`;
+  }
+
+  it("parses each kind's tables in order, paths expanded", async () => {
+    const config = parseConfig(
+      await withSources(`
+[[sources.local]]
+include = ["~/one"]
+
+[[sources.local]]
+include = ["/srv/two"]
+exclude = ["/srv/two/old"]
+
+[[sources.github]]
+account = "someone"
+key = "github-someone"
+hosts = ["github.com"]
+tracked_forks = ["someone/fork"]
+
+[[sources.forgejo]]
+base_url = "https://forge.example.lan"
+account = "someone"
+key = "forgejo-someone"
+hosts = ["forge.example.lan"]
+
+[[sources.kuma]]
+name = "Box"
+base_url = "http://kuma.example.lan"
+status_page = "box"
+`),
+      home,
+    );
+
+    expect(config.sources).toEqual({
+      local: [
+        { include: ["/home/test/one"], exclude: [] },
+        { include: ["/srv/two"], exclude: ["/srv/two/old"] },
+      ],
+      github: [
+        {
+          account: "someone",
+          key: "github-someone",
+          hosts: ["github.com"],
+          trackedForks: ["someone/fork"],
+        },
+      ],
+      forgejo: [
+        {
+          account: "someone",
+          key: "forgejo-someone",
+          hosts: ["forge.example.lan"],
+          trackedForks: [],
+          baseUrl: "https://forge.example.lan",
+        },
+      ],
+      kuma: [
+        {
+          name: "Box",
+          baseUrl: "http://kuma.example.lan",
+          statusPage: "box",
+        },
+      ],
+    });
+  });
+
+  it("reads a config with no sources as declaring none", async () => {
+    const config = parseConfig(await withSources(""), home);
+
+    expect(config.sources).toEqual({
+      local: [],
+      github: [],
+      forgejo: [],
+      kuma: [],
+    });
+  });
+
+  it("refuses two github tables for one account, whatever its case", async () => {
+    const text = await withSources(`
+[[sources.github]]
+account = "Someone"
+key = "a"
+hosts = ["github.com"]
+
+[[sources.github]]
+account = "someone"
+key = "b"
+hosts = ["github-alias"]
+`);
+
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: two sources.github tables name account someone; each may appear once",
+    );
+  });
+
+  it("refuses two forgejo tables for one account at one address, and allows it at two", async () => {
+    const card = (url: string) =>
+      `[[sources.forgejo]]\nbase_url = "${url}"\naccount = "someone"\nkey = "k"\nhosts = []\n`;
+
+    const twice = await withSources(
+      card("https://a.lan") + card("https://a.lan"),
+    );
+
+    expect(() => parseConfig(twice, home)).toThrow(
+      "config: two sources.forgejo tables name account someone at https://a.lan; each may appear once",
+    );
+    expect(
+      parseConfig(
+        await withSources(card("https://a.lan") + card("https://b.lan")),
+        home,
+      ).sources.forgejo,
+    ).toHaveLength(2);
+  });
+
+  it("refuses two kuma tables with one name", async () => {
+    const card =
+      '[[sources.kuma]]\nname = "Box"\nbase_url = "http://k.lan"\nstatus_page = "p"\n';
+
+    const text = await withSources(card + card);
+
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: two sources.kuma tables name name Box; each may appear once",
+    );
+  });
+
+  it("names a key a source table may not hold", async () => {
+    const text = await withSources(
+      '[[sources.local]]\ninclude = ["~/dev"]\nignore = ["~/dev/old"]\n',
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: sources.local[0].ignore is not a config key",
+    );
+  });
+
+  it("wants finalised commits under [scan]", async () => {
+    const text = (await fixtureConfigText("")).replace(
+      "finalised_commits = 10\n",
+      "",
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: scan.finalised_commits must be a positive integer",
+    );
+  });
+
+  it("refuses the [local], [forges] and [server] tables", async () => {
+    for (const table of [
+      '[local]\ninclude = ["~/dev"]\nignore = []\n',
+      "[forges]\nfinalised_commits = 10\n",
+      '[server]\nname = "Silo"\n',
+    ]) {
+      const text = await fixtureConfigText(table);
+      const name = table.slice(1, table.indexOf("]"));
+
+      expect(() => parseConfig(text, home)).toThrow(
+        `config: ${name} is not a config key`,
+      );
+    }
+  });
+});
+
 describe("launch commands", () => {
+  /** The fixture with its launch commands, its last table, replaced. */
   async function withCommands(commands: string): Promise<string> {
-    const example = await exampleText();
-    const start = example.indexOf("[launch.commands]");
-    const end = example.indexOf("\n[forges]", start);
-    return `${example.slice(0, start)}[launch.commands]\n${commands}\n${example.slice(end)}`;
+    const text = await fixtureConfigText("");
+    const start = text.indexOf("[launch.commands]");
+    return `${text.slice(0, start)}[launch.commands]\n${commands}\n`;
   }
 
   it("leave a command out as null", async () => {
@@ -300,24 +475,18 @@ describe("launch commands", () => {
 });
 
 describe("loadConfig", () => {
-  it("prefers the user config and falls back to the example", async () => {
+  it("reads the owner's config, and nothing when there is none", async () => {
     const userPath = "/elsewhere/perch.toml";
-    const example = await exampleText();
-    const files = new Map([[examplePath, example]]);
+    const files = new Map<string, string>();
     const readText = async (path: string) => files.get(path) ?? null;
+    const deps = { home, userPath, readText };
 
-    const deps = { home, userPath, examplePath, readText };
+    expect(await loadConfig(deps)).toBeNull();
 
-    const fallback = await loadConfig(deps);
-    expect(fallback.path).toBe(examplePath);
-
-    files.set(
-      userPath,
-      example.replace("stalled_amber_days = 7", "stalled_amber_days = 5"),
-    );
+    files.set(userPath, await fixtureConfigText(""));
     const user = await loadConfig(deps);
-    expect(user.path).toBe(userPath);
-    expect(user.config.thresholds.stalled.amberDays).toBe(5);
+    expect(user?.path).toBe(userPath);
+    expect(user?.config.wires.default).toBe("Projects");
   });
 
   it("finds the owner's config under ~/.config/perch", () => {

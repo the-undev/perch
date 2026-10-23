@@ -40,6 +40,19 @@ Decided 20 October 2026.
   another tool's login. Human backup copies live in a password manager, which
   is never read at run time. Decided 21 October 2026.
 
+- Sources are repeatable tables. Decided 23 October 2026: one
+  `[[sources.<kind>]]` table per connection (`local`, `github`,
+  `forgejo`, `kuma`), each carrying everything that connection needs,
+  so two GitHub accounts are two tables and a new source kind is a new
+  table name. The `[local]`, `[forges]` and `[server]` tables are gone
+  and `finalised_commits` lives under `[scan]`. A config with no
+  sources is valid: perch starts from nothing and every source is
+  added, never assumed. The starter config is generated from the
+  default `Config` through the writer; `config.example.toml` is a
+  commented reference whose values are placeholders only. Perch may
+  store a pasted token into the keyring, and never reads one back to
+  show.
+
 ## Known contents so far
 
 Superseded on the same day by [project-model](project-model.md): config is

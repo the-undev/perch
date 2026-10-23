@@ -1,9 +1,11 @@
-# perch configuration.
+# perch configuration: a reference showing every field, with placeholder
+# values.
 #
-# The live copy is ~/.config/perch/config.toml. The app writes this file there
-# as a starter when asked; the command line scanner reads this file when the
-# live copy does not exist. No secrets here: tokens come from the desktop
-# keyring at run time.
+# The live copy is ~/.config/perch/config.toml. The app writes a starter
+# there when asked: one wire, the standard windows and tiers, no sources. The
+# command line scanner runs with those defaults when the live copy does not
+# exist. The app writes the file back without comments. No secrets here:
+# tokens come from the desktop keyring at run time.
 #
 # Config asserts only what leaves no trace on disk or on a forge. When an
 # assertion and an observation disagree, the observation wins and the
@@ -14,7 +16,7 @@
 # directory.
 
 # Presences that are one project although no remote URL proves it, for
-# example [["github:finch/notes", "forgejo:finch/notes"]].
+# example [["github:someone/notes", "forgejo:someone/notes"]].
 joins = []
 
 # Presences to leave off the main view. They still appear in their forge's
@@ -25,14 +27,45 @@ ignore = []
 # sits on the wire its entry names, else the default. Everything config does
 # not name sits on the fence beneath.
 [wires]
-names = ["Machine & Home", "Projects"]
+names = ["Home", "Projects"]
 default = "Projects"
 
-[local]
-# Each include is a repository, or a directory searched for repositories.
-include = ["~/dev", "~/.dotfiles"]
-# Nothing at or below these paths is searched.
-ignore = ["~/dev/archived", "~/dev/third-party", "~/dev/all/delete"]
+# Sources: one table per connection, repeated for each. Nothing is assumed:
+# a config with no sources is valid and scans nothing.
+
+# A local source. Each include is a repository, or a directory searched for
+# repositories. Nothing at or below an exclude is searched.
+[[sources.local]]
+include = ["~/projects"]
+exclude = ["~/projects/archive"]
+
+# A GitHub account lists the repositories it owns, read with its own
+# read-only token from the keyring (secret-tool, service perch, the key named
+# here; see docs/tokens.md). A remote that no listing holds is looked up with
+# the token of the account that owns it on that host. Hosts are the remote
+# hosts and SSH aliases that reach the account. Forks to track are written
+# owner/name; every other fork is skipped. Each account appears once.
+[[sources.github]]
+account = "someone"
+key = "github-someone"
+hosts = ["github.com"]
+tracked_forks = []
+
+# A Forgejo account adds the instance's base URL. Each account appears once
+# per instance.
+[[sources.forgejo]]
+base_url = "https://forge.example.lan"
+account = "someone"
+key = "forgejo-someone"
+hosts = ["forge.example.lan"]
+tracked_forks = []
+
+# An Uptime Kuma status page, monitored as the server it names. Each name
+# appears once.
+# [[sources.kuma]]
+# name = "Server"
+# base_url = "http://kuma.example.lan:3001"
+# status_page = "status"
 
 # Health windows: amber at the first, red at the second. Unsafe work
 # (uncommitted changes, unpushed commits) ages in hours from its oldest
@@ -55,18 +88,19 @@ default = "projects"
 
 # The two scan lanes. Everything is scanned on the main interval, counted
 # from the end of the last scan; archived forge repositories change rarely
-# and are meant to refresh on the slow one, which nothing reads yet. Both are
-# placeholders until the defaults are chosen.
+# and are meant to refresh on the slow one, which nothing reads yet.
 [scan]
 interval_minutes = 15
 archived_interval_hours = 24
+# Commits on each forge repository's default branch to read as finalised.
+finalised_commits = 10
 
 # The zellij session that holds a project's terminal tab: the item's own
 # zellij_session, else the session of the longest root containing the project
 # in a [launch.zellij_sessions] table of roots and sessions, such as
 # "~/work" = "work", else zellij_session here.
 [launch]
-zellij_session = "home"
+zellij_session = "main"
 
 # The commands behind the launch actions, each an argument list run without
 # a shell. Placeholders in braces are filled in at launch. Leave a command
@@ -92,51 +126,17 @@ obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 # as not set up until it has an entry here, even an empty one.
 #
 # Every field an entry can hold, each optional:
-# [items."dev/perch"]
+# [items."projects/example"]
 # wire = "Projects"                  # one of wires.names
-# name = "Perch"                     # the bird's name; default the folder or repository name
+# name = "Example"                   # the bird's name; default the folder or repository name
 # importance = "machine"             # one of importance.tiers
 # expect = ["ci", "tickets"]         # sources this item should have
 # key_files = ["README.md", "docs/spec.md", "docs/roadmap.md"]  # default the README and roadmaps
 # roadmaps = ["docs/roadmap.md"]     # replaces the standard roadmap names
-# zellij_session = "home"
+# zellij_session = "main"
 # unsafe_amber_hours = 12
 # unsafe_red_hours = 48
 # stalled_amber_days = 14
 # stalled_red_days = 60
 # expectation_amber_days = 3
 # expectation_red_days = 14
-
-[forges]
-# Commits on each forge repository's default branch to read as finalised.
-finalised_commits = 10
-
-# Each account lists the repositories it owns, read with its own read-only
-# token from the keyring (secret-tool, service perch, the key named here; see
-# docs/tokens.md). A remote that no listing holds is looked up with the token
-# of the account that owns it. Hosts are the remote hosts and SSH aliases that
-# are this forge.
-[forges.github]
-hosts = ["github.com", "github-work"]
-accounts = [
-  { account = "finch", key = "github-finch" },
-  { account = "the-undev", key = "github-the-undev" },
-  { account = "skiff-app", key = "github-skiff-app" },
-]
-# Forks to track, as owner/name. Every other fork is skipped.
-tracked_forks = []
-
-[forges.forgejo]
-base_url = "http://forge.example.lan:3000"
-hosts = ["forgejo", "forge-work", "forge.example.lan"]
-accounts = [
-  { account = "finch", key = "forgejo-finch" },
-  { account = "the-undev", key = "forgejo-the-undev" },
-]
-tracked_forks = []
-
-# Uncomment this section to enable server monitoring.
-# [server]
-# name = "Silo"
-# kuma_base_url = "http://kuma.example.lan:3001"
-# kuma_status_page = "perch"

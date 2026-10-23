@@ -1,4 +1,4 @@
-// The whole config but the item entries as the settings page edits it: the values the form
+// The config but the item entries and the sources as the settings page edits it: the values the form
 // holds, what they cannot be, and the edit that puts them back into config. No Node modules, so
 // the renderer may import it.
 
@@ -6,7 +6,6 @@ import {
   type Config,
   collapseHome,
   expandHome,
-  type ForgeAccount,
   type ItemEntry,
   type LaunchCommandName,
   launchPlaceholders,
@@ -19,21 +18,6 @@ import {
   thresholdProblems,
 } from "./entry-form.ts";
 
-/** One forge's hosts, accounts and tracked forks as the form edits them. */
-export interface ForgeValues {
-  hosts: string[];
-  accounts: ForgeAccount[];
-  /** Forks worth tracking, as owner/name. */
-  trackedForks: string[];
-}
-
-/** The server to monitor through Uptime Kuma. */
-export interface ServerValues {
-  name: string;
-  kumaBaseUrl: string;
-  kumaStatusPage: string;
-}
-
 /** A zellij session and the root directory whose items it holds. */
 export interface SessionRoot {
   /** The root as shown: a path under the home directory starts with ~. */
@@ -41,13 +25,15 @@ export interface SessionRoot {
   session: string;
 }
 
-/** Everything in config but the item entries, which each bird's detail page edits. */
+/** Everything in config but the item entries and the sources, which have pages of their own. */
 export interface SettingsValues {
-  /** Paths as shown: a path under the home directory starts with ~. */
-  local: { include: string[]; ignore: string[] };
   wires: { names: string[]; default: string };
   thresholds: Record<ThresholdKey, number>;
-  scan: { intervalMinutes: number; archivedIntervalHours: number };
+  scan: {
+    intervalMinutes: number;
+    archivedIntervalHours: number;
+    finalisedCommits: number;
+  };
   importance: { tiers: string[]; default: string };
   launch: {
     zellijSession: string;
@@ -55,13 +41,6 @@ export interface SettingsValues {
     /** Each command's argument list as one list line (see listLine); empty for no command. */
     commands: Record<LaunchCommandName, string>;
   };
-  forges: {
-    finalisedCommits: number;
-    github: ForgeValues;
-    forgejo: ForgeValues & { baseUrl: string };
-  };
-  /** Null when no server is monitored. */
-  server: ServerValues | null;
   /** Each join's presence references as one list line. */
   joins: string[];
   /** Presence references left off the main view. */
@@ -117,14 +96,6 @@ function namedBy(
   return named;
 }
 
-function forgeValues(forge: Config["forges"]["github"]): ForgeValues {
-  return {
-    hosts: [...forge.hosts],
-    accounts: forge.accounts.map(({ account, key }) => ({ account, key })),
-    trackedForks: [...forge.trackedForks],
-  };
-}
-
 /** The settings form for a config, paths under the home directory shown with ~. */
 export function settingsFormFor(config: Config, home: string): SettingsForm {
   const path = (stored: string) => collapseHome(stored, home);
@@ -135,10 +106,6 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
   }
   return {
     values: {
-      local: {
-        include: config.local.include.map(path),
-        ignore: config.local.ignore.map(path),
-      },
       wires: { names: [...config.wires.names], default: config.wires.default },
       thresholds: flatThresholds(config.thresholds) as Record<
         ThresholdKey,
@@ -156,15 +123,6 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
         ),
         commands,
       },
-      forges: {
-        finalisedCommits: config.forges.finalisedCommits,
-        github: forgeValues(config.forges.github),
-        forgejo: {
-          ...forgeValues(config.forges.forgejo),
-          baseUrl: config.forges.forgejo.baseUrl,
-        },
-      },
-      server: config.server === null ? null : { ...config.server },
       joins: config.joins.map(listLine),
       ignore: [...config.ignore],
     },
@@ -221,31 +179,9 @@ function commandProblem(name: LaunchCommandName, line: string): string | null {
   return null;
 }
 
-function forgeProblems(label: string, forge: ForgeValues): string[] {
-  const problems: string[] = [];
-  if (forge.hosts.some(isBlank)) {
-    problems.push(`${label}: every host needs a name`);
-  }
-  if (
-    forge.accounts.some(({ account, key }) => isBlank(account) || isBlank(key))
-  ) {
-    problems.push(`${label}: every account needs a name and a keyring key`);
-  }
-  if (!forge.trackedForks.every((fork) => /^[^/\s]+\/[^/\s]+$/.test(fork))) {
-    problems.push(`${label}: tracked forks are written owner/name`);
-  }
-  return problems;
-}
-
 /** Why the values cannot be saved, in words; empty when they can. */
 export function settingsProblems(values: SettingsValues): string[] {
   const problems: string[] = [];
-  if (!values.local.include.every(isAbsolute)) {
-    problems.push("Include paths: each must start with / or ~");
-  }
-  if (!values.local.ignore.every(isAbsolute)) {
-    problems.push("Ignore paths: each must start with / or ~");
-  }
   problems.push(
     ...namesProblems("Wires", "wire", values.wires.names, values.wires.default),
     ...thresholdProblems(values.thresholds, values.thresholds),
@@ -255,6 +191,9 @@ export function settingsProblems(values: SettingsValues): string[] {
   }
   if (!isWhole(values.scan.archivedIntervalHours)) {
     problems.push("Archived scan interval: must be whole hours above zero");
+  }
+  if (!isWhole(values.scan.finalisedCommits)) {
+    problems.push("Finalised commits: must be a whole number above zero");
   }
   problems.push(
     ...namesProblems(
@@ -281,25 +220,6 @@ export function settingsProblems(values: SettingsValues): string[] {
   for (const name of Object.keys(launchPlaceholders) as LaunchCommandName[]) {
     const problem = commandProblem(name, launch.commands[name]);
     if (problem !== null) problems.push(problem);
-  }
-  if (!isWhole(values.forges.finalisedCommits)) {
-    problems.push("Finalised commits: must be a whole number above zero");
-  }
-  problems.push(
-    ...forgeProblems("GitHub", values.forges.github),
-    ...forgeProblems("Forgejo", values.forges.forgejo),
-  );
-  if (isBlank(values.forges.forgejo.baseUrl)) {
-    problems.push("Forgejo: the address cannot be empty");
-  }
-  const { server } = values;
-  if (
-    server !== null &&
-    [server.name, server.kumaBaseUrl, server.kumaStatusPage].some(isBlank)
-  ) {
-    problems.push(
-      "Server: the name, the Uptime Kuma address and the status page each need a value",
-    );
   }
   for (const line of values.joins) {
     const parsed = parseListLine(line);
@@ -362,14 +282,6 @@ export function settingsWarnings(
   ];
 }
 
-function forgeConfig(forge: ForgeValues): Config["forges"]["github"] {
-  return {
-    hosts: [...forge.hosts],
-    accounts: forge.accounts.map(({ account, key }) => ({ account, key })),
-    trackedForks: [...forge.trackedForks],
-  };
-}
-
 /** A list line's strings; the line has passed settingsProblems. */
 function listOf(line: string): string[] {
   const parsed = parseListLine(line);
@@ -378,7 +290,7 @@ function listOf(line: string): string[] {
 }
 
 /**
- * Config with everything but its item entries set to the values, paths expanded against the
+ * Config with everything but its item entries and sources set to the values, paths expanded against the
  * home directory; an entry naming a wire or tier the values remove falls to the default. Throws
  * when settingsProblems finds any.
  */
@@ -399,10 +311,7 @@ export function withSettings(
   const { tiers } = values.importance;
   return {
     wires: { names: [...wires], default: values.wires.default },
-    local: {
-      include: values.local.include.map(path),
-      ignore: values.local.ignore.map(path),
-    },
+    sources: config.sources,
     joins: values.joins.map(listOf),
     ignore: [...values.ignore],
     thresholds: nestedThresholds(values.thresholds) as Thresholds,
@@ -434,14 +343,5 @@ export function withSettings(
       ),
       commands,
     },
-    forges: {
-      finalisedCommits: values.forges.finalisedCommits,
-      github: forgeConfig(values.forges.github),
-      forgejo: {
-        ...forgeConfig(values.forges.forgejo),
-        baseUrl: values.forges.forgejo.baseUrl,
-      },
-    },
-    server: values.server === null ? null : { ...values.server },
   };
 }

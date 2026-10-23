@@ -417,3 +417,53 @@ build-time calls so they can be revisited.
   birds at most, 340 apart), so only the strip's crowded wires change.
   The strip's near baseline sits 22 below the perch so its lower one
   clears the strip's foot.
+- The sources design round (mockups/sources.html) is approved: perch
+  starts from nothing and every data source is added, never assumed.
+  Each connection is its own card carrying its own last-scan sentence,
+  and the picker is a registry, so a new source kind is one row.
+- Config moves to repeatable source tables: `[[sources.local]]`,
+  `[[sources.github]]`, `[[sources.forgejo]]`, `[[sources.kuma]]`. The
+  `[local]`, `[forges]` and `[server]` tables go, with no migration:
+  the only config this breaks is on this machine. `finalised_commits`
+  moves to `[scan]`. A local source holds `include` and `exclude`
+  (renamed from `ignore`); a github source holds `account`, `key`,
+  `hosts` and `tracked_forks`; a forgejo source adds `base_url`; a
+  kuma source holds `name`, `base_url` and `status_page`. A config
+  with no sources is valid and scans to an empty snapshot.
+- The starter config is generated from a default `Config` through
+  `writeConfig`, not copied from the example: one wire, the standard
+  thresholds and tiers, no sources. `config.example.toml` becomes a
+  commented reference with placeholder values only, and the CLI
+  without a config runs the defaults instead of the example, so the
+  AppImage stops shipping it.
+- Perch may write a pasted token into the keyring (Secret Service,
+  the same `secret-tool` entries as before). It never reads one back
+  for display: the field is write-only and the manual `secret-tool
+  store` command stays printed beside it.
+- Claude Code sessions stay an automatic source, not a card.
+- A card's identity for its scan record: a github card is its
+  account, a forgejo card its account at its base URL, a kuma card
+  its name, a local card its include paths.
+- Built in four phases: the config schema end to end, the per-card
+  scan record in the snapshot, the settings rebuild (a left rail of
+  pages beside one reading-width column), and the keyring write with
+  the token test.
+- The config schema phase. A config key outside the model is refused by
+  name (`config: local is not a config key`), at the top level, in
+  `[sources]` and in each source table, so the old `[local]`, `[forges]`
+  and `[server]` tables fail loudly. `exclude` and `tracked_forks` may be
+  left out and read as empty; every other source key is required.
+- A forge source's tracked forks are the union across that kind's
+  tables, as one forge's list was before. A remote is looked up through
+  the table whose account owns it and whose hosts name its host.
+- Each kuma table makes a server item with id `server:<name>`, so two
+  tables make two items; the old single item's id was `server`.
+  `RawData.kuma` is keyed by the table's name, an unreadable page that
+  name's error instead of the source's.
+- The raw account listings stay keyed by account, so two Forgejo tables
+  for one account name at two instances share one listing entry. The
+  per-table scan record phase gives each table its own.
+- `defaultConfig()` lives in `src/config-default.ts`: wire `projects`,
+  zellij session `main`, no launch commands, the example's windows,
+  tiers and scan values. Finalised commits moves into the settings
+  page's scan group with the key.

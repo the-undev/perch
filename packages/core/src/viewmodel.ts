@@ -5,6 +5,7 @@
 
 import {
   type Config,
+  hostsOf,
   type ItemEntry,
   importanceFor,
   resolveEntry,
@@ -401,7 +402,7 @@ function upstreamUrl(
   const location = remote ? parseRemoteUrl(remote.fetchUrl) : null;
   if (location === null) return null;
   const forge = forgeNames.find((name) =>
-    config.forges[name].hosts.includes(location.host),
+    hostsOf(config.sources[name]).includes(location.host),
   );
   const fullName = `${location.owner}/${location.repo}`.toLowerCase();
   const presence = item.presences.forges.find(

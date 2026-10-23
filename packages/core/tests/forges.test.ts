@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { GithubSourceConfig } from "../src/config.ts";
 import { deriveForge, githubCiState } from "../src/derivations.ts";
 import type { FetchJson } from "../src/http.ts";
 import type { RawFiles, RawForgeRepoInfo } from "../src/raw.ts";
@@ -7,6 +8,7 @@ import { tokenMissing } from "../src/secrets.ts";
 import {
   createForgeAccountsSource,
   createForgeSource,
+  type ForgeCard,
   type ForgeClient,
 } from "../src/sources/forge.ts";
 import { createForgejoClient } from "../src/sources/forgejo.ts";
@@ -69,15 +71,28 @@ function fakeKeyring(entries: Record<string, string>) {
   return { tokenFor, asked };
 }
 
-const github = {
-  hosts: ["github.com", "github-work"],
-  accounts: [
-    { account: "finch", key: "github-finch" },
-    { account: "the-undev", key: "github-the-undev" },
-    { account: "skiff-app", key: "github-skiff-app" },
-  ],
-  trackedForks: ["finch/kept-fork"],
-};
+const hosts = ["github.com", "github-work"];
+const github: GithubSourceConfig[] = [
+  {
+    account: "finch",
+    key: "github-finch",
+    hosts,
+    trackedForks: ["finch/kept-fork"],
+  },
+  { account: "the-undev", key: "github-the-undev", hosts, trackedForks: [] },
+  {
+    account: "skiff-app",
+    key: "github-skiff-app",
+    hosts,
+    trackedForks: [],
+  },
+];
+
+/** The configured accounts, each read through the one client given. */
+const cardsOf = (
+  client: ForgeClient,
+  sources: GithubSourceConfig[],
+): ForgeCard[] => sources.map((source) => ({ ...source, client }));
 
 const allKeys = {
   "github-finch": "finch-token",
@@ -142,8 +157,7 @@ describe("forge accounts source", () => {
     });
 
     const data = await createForgeAccountsSource("githubAccounts", {
-      client,
-      forge: github,
+      cards: cardsOf(client, github),
       tokenFor,
     }).gather({});
 
@@ -175,11 +189,10 @@ describe("forge accounts source", () => {
     const { tokenFor } = fakeKeyring({});
 
     const data = await createForgeAccountsSource("githubAccounts", {
-      client,
-      forge: {
-        ...github,
-        accounts: [{ account: "the-undev", key: "github-the-undev" }],
-      },
+      cards: cardsOf(
+        client,
+        github.filter((source) => source.account === "the-undev"),
+      ),
       tokenFor,
     }).gather({});
 
@@ -234,8 +247,7 @@ describe("forge source", () => {
     const { tokenFor } = fakeKeyring(allKeys);
 
     const data = await createForgeSource("github", "githubAccounts", {
-      client,
-      forge: github,
+      cards: cardsOf(client, github),
       tokenFor,
     }).gather(
       earlier([], {
@@ -270,8 +282,7 @@ describe("forge source", () => {
     const { tokenFor } = fakeKeyring(allKeys);
 
     const data = await createForgeSource("github", "githubAccounts", {
-      client,
-      forge: github,
+      cards: cardsOf(client, github),
       tokenFor,
     }).gather(
       earlier(
@@ -307,6 +318,42 @@ describe("forge source", () => {
     expect(Object.keys(data)).not.toContain("someone/other-forge");
   });
 
+  it("looks a remote up through the account whose hosts name the remote's host", async () => {
+    const first = fakeClient({ "a-token": [info("someone/one", {})] });
+    const second = fakeClient({ "b-token": [info("someone/two", {})] });
+    const { tokenFor } = fakeKeyring({
+      "key-a": "a-token",
+      "key-b": "b-token",
+    });
+
+    const data = await createForgeSource("github", "githubAccounts", {
+      cards: [
+        {
+          account: "someone",
+          key: "key-a",
+          hosts: ["a.lan"],
+          trackedForks: [],
+          client: first.client,
+        },
+        {
+          account: "someone",
+          key: "key-b",
+          hosts: ["b.lan"],
+          trackedForks: [],
+          client: second.client,
+        },
+      ],
+      tokenFor,
+    }).gather(earlier(["git@b.lan:someone/two.git"], {}));
+
+    expect(first.calls).toEqual([]);
+    expect(second.calls).toEqual([
+      "get someone/two with b-token",
+      "details someone/two with b-token",
+    ]);
+    expect(data["someone/two"]).toMatchObject({ state: "observed" });
+  });
+
   it("records the alias a renamed repository was reached by", async () => {
     const renamed = info("finch/PhotoMover", {});
     const client: ForgeClient = {
@@ -316,8 +363,7 @@ describe("forge source", () => {
     const { tokenFor } = fakeKeyring(allKeys);
 
     const data = await createForgeSource("github", "githubAccounts", {
-      client,
-      forge: github,
+      cards: cardsOf(client, github),
       tokenFor,
     }).gather(
       earlier(["https://github.com/finch/camera-mover.git"], {}),
@@ -333,8 +379,7 @@ describe("forge source", () => {
     const { tokenFor } = fakeKeyring({ "github-finch": "finch-token" });
 
     const data = await createForgeSource("github", "githubAccounts", {
-      client,
-      forge: github,
+      cards: cardsOf(client, github),
       tokenFor,
     }).gather(earlier(["git@github-work:skiff-app/skiff.git"], {}));
 
@@ -350,8 +395,7 @@ describe("forge source", () => {
 
     await expect(
       createForgeSource("github", "githubAccounts", {
-        client,
-        forge: github,
+        cards: cardsOf(client, github),
         tokenFor,
       }).gather({}),
     ).rejects.toThrow(/no local presences/);

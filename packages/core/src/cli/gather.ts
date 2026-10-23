@@ -1,17 +1,11 @@
 // Entry point for `pnpm gather`: reads this machine and the forges, and writes raw facts, one
 // file per source, to .scan/raw/. Nothing else is written.
 
-import { loadConfig } from "../config.ts";
-import { readTextIfExists } from "../fs.ts";
 import { runGather } from "../scan.ts";
-import { examplePath, home, rawDir, userPath } from "./paths.ts";
+import { cliConfig } from "./config.ts";
+import { home, rawDir } from "./paths.ts";
 
-const { config } = await loadConfig({
-  home,
-  userPath,
-  examplePath,
-  readText: readTextIfExists,
-});
+const { config } = await cliConfig();
 const status = await runGather({
   home,
   env: process.env,

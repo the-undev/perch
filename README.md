@@ -21,9 +21,10 @@ Needs Node 26 and pnpm 11. Run `pnpm install` once, then from the root:
 | `pnpm icons` | Renders the app and tray icons from their SVGs in `apps/desktop/resources/`. |
 
 The config is `~/.config/perch/config.toml`. Without it the app offers to
-write a starter there, a copy of `config.example.toml`, which shows every
-field. Forge tokens come from the
-desktop keyring, see [docs/tokens.md](docs/tokens.md).
+write a starter there: one wire, the standard windows and tiers, no
+sources. `config.example.toml` shows every field with placeholder values.
+Forge tokens come from the desktop keyring, see
+[docs/tokens.md](docs/tokens.md).
 
 ## Installing
 

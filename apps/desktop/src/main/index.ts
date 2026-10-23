@@ -7,7 +7,7 @@ import { readTextIfExists } from "@perch/core/fs.ts";
 import { readSnapshot, runAggregate, runGather } from "@perch/core/scan.ts";
 import { app, BrowserWindow, Menu, shell, Tray } from "electron";
 import { channels, type PerchState } from "../shared/ipc.ts";
-import { appPaths, examplePathFor } from "./app-paths.ts";
+import { appPaths } from "./app-paths.ts";
 import { createAppState } from "./app-state.ts";
 import { handOver, parseArguments } from "./command-line.ts";
 import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
@@ -72,10 +72,7 @@ function createWindow(icon: string, showWhenReady: boolean): BrowserWindow {
 function start(): void {
   const home = homedir();
   const env = process.env;
-  const paths = appPaths(
-    home,
-    examplePathFor(app.isPackaged, process.resourcesPath, import.meta.dirname),
-  );
+  const paths = appPaths(home);
   const icons = iconPaths(
     resourceDirFor(app.isPackaged, process.resourcesPath, import.meta.dirname),
   );
@@ -125,7 +122,7 @@ function start(): void {
       launch(action, current.launch.commands, { run, spawnDetached }),
     readText: (path) => readFile(path, "utf8"),
     writeStarter: async () => {
-      await writeStarterConfig(paths.examplePath, paths.userConfigPath);
+      await writeStarterConfig(paths.userConfigPath, home);
       // Without a config directory at start there was nothing to watch.
       await configWatch.start();
     },

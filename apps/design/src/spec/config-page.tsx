@@ -26,10 +26,13 @@ function modelKey(key: string): string {
     : key;
 }
 
-function tableName(path: string[]): string {
-  return path.length === 0
-    ? "top level"
-    : `[${path.map((key) => (bareKey.test(key) ? key : `"${key}"`)).join(".")}]`;
+function tableName(table: TomlTable): string {
+  if (table.path.length === 0) return "top level";
+  const keys = table.array ? table.path.slice(0, -1) : table.path;
+  const name = keys
+    .map((key) => (bareKey.test(key) ? key : `"${key}"`))
+    .join(".");
+  return table.array ? `[[${name}]]` : `[${name}]`;
 }
 
 /** What parseConfig made of one table: its part of the model, less the tables nested in it. */
@@ -60,7 +63,13 @@ function parsedTable(
 
 function modelPath(path: string[]): string {
   return path
-    .map((key) => (bareKey.test(key) ? `.${modelKey(key)}` : `["${key}"]`))
+    .map((key) =>
+      bareKey.test(key)
+        ? `.${modelKey(key)}`
+        : /^\d+$/.test(key)
+          ? `[${key}]`
+          : `["${key}"]`,
+    )
     .join("");
 }
 
@@ -81,9 +90,9 @@ export function ConfigPage() {
           </p>
         </Prose>
         {tables.map((table) => (
-          <CodeGrid key={tableName(table.path)} min={560}>
+          <CodeGrid key={table.path.join(".")} min={560}>
             <CodeBlock
-              title={`config.example.toml · ${tableName(table.path)}`}
+              title={`config.example.toml · ${tableName(table)}`}
               code={table.text}
             />
             <CodeBlock
@@ -109,8 +118,11 @@ export function ConfigPage() {
             "ItemEntry",
             "Thresholds",
             "ThresholdOverrides",
-            "ForgeConfig",
-            "ForgeAccount",
+            "SourcesConfig",
+            "LocalSourceConfig",
+            "GithubSourceConfig",
+            "ForgejoSourceConfig",
+            "KumaSourceConfig",
             "expectationNames",
           ]}
         />

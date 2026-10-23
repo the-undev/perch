@@ -1,0 +1,72 @@
+# The config the scanner tests run against: every table set, values modelled on a real machine.
+# Tests append item entries and further sources to it.
+
+joins = []
+ignore = []
+
+[wires]
+names = ["Machine & Home", "Projects"]
+default = "Projects"
+
+[[sources.local]]
+include = ["~/dev", "~/.dotfiles"]
+exclude = ["~/dev/archived", "~/dev/third-party", "~/dev/all/delete"]
+
+[[sources.github]]
+account = "finch"
+key = "github-finch"
+hosts = ["github.com", "github-work"]
+tracked_forks = []
+
+[[sources.github]]
+account = "the-undev"
+key = "github-the-undev"
+hosts = ["github.com", "github-work"]
+tracked_forks = []
+
+[[sources.github]]
+account = "skiff-app"
+key = "github-skiff-app"
+hosts = ["github.com", "github-work"]
+tracked_forks = []
+
+[[sources.forgejo]]
+base_url = "http://forge.example.lan:3000"
+account = "finch"
+key = "forgejo-finch"
+hosts = ["forgejo", "forge-work", "forge.example.lan"]
+tracked_forks = []
+
+[[sources.forgejo]]
+base_url = "http://forge.example.lan:3000"
+account = "the-undev"
+key = "forgejo-the-undev"
+hosts = ["forgejo", "forge-work", "forge.example.lan"]
+tracked_forks = []
+
+[thresholds]
+unsafe_amber_hours = 24
+unsafe_red_hours = 72
+stalled_amber_days = 7
+stalled_red_days = 30
+expectation_amber_days = 7
+expectation_red_days = 30
+
+[importance]
+tiers = ["server", "machine", "projects"]
+default = "projects"
+
+[scan]
+interval_minutes = 15
+archived_interval_hours = 24
+finalised_commits = 10
+
+[launch]
+zellij_session = "home"
+
+[launch.commands]
+zellij = ["zellij"]
+terminal = ["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
+vscode = ["code", "{path}"]
+folder = ["dolphin", "{path}"]
+obsidian = ["xdg-open", "obsidian://open?vault={vault}"]

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { deriveKuma } from "../src/derivations.ts";
-import { SourceFailure } from "../src/failure.ts";
 import type { FetchJson } from "../src/http.ts";
 import type { RawKuma } from "../src/raw.ts";
 import { createKumaSource } from "../src/sources/kuma.ts";
@@ -14,11 +13,10 @@ function fetchFrom(responses: Record<string, unknown>): FetchJson {
   };
 }
 
-describe("gathering the kuma status page", () => {
-  it("records each monitor with its group and heartbeats as returned", async () => {
+describe("gathering the kuma status pages", () => {
+  it("records each monitor with its group and heartbeats as returned, keyed by the source's name", async () => {
     const source = createKumaSource({
-      baseUrl: base,
-      statusPage: "perch",
+      cards: [{ name: "Silo", baseUrl: base, statusPage: "perch" }],
       fetchJson: fetchFrom({
         [`${base}/api/status-page/perch`]: {
           publicGroupList: [
@@ -36,33 +34,48 @@ describe("gathering the kuma status page", () => {
 
     const data = await source.gather({});
 
-    expect(data).toEqual({
-      statusPage: "perch",
-      monitors: [
-        {
-          id: 1,
-          name: "Plex",
-          group: "Media",
-          heartbeats: [
-            { status: 1, time: "2026-10-21 08:01:00.000", message: "" },
-          ],
-        },
-        { id: 3, name: "Forgejo", group: "Infra", heartbeats: [] },
-      ],
+    expect(data.Silo).toEqual({
+      state: "observed",
+      value: {
+        statusPage: "perch",
+        monitors: [
+          {
+            id: 1,
+            name: "Plex",
+            group: "Media",
+            heartbeats: [
+              { status: 1, time: "2026-10-21 08:01:00.000", message: "" },
+            ],
+          },
+          { id: 3, name: "Forgejo", group: "Infra", heartbeats: [] },
+        ],
+      },
     });
   });
 
-  it("fails as a whole with request-failed when the page cannot be read", async () => {
+  it("records a page that cannot be read as that source's error, and reads the others", async () => {
+    const other = "http://kuma.other";
     const source = createKumaSource({
-      baseUrl: base,
-      statusPage: "missing",
-      fetchJson: fetchFrom({}),
+      cards: [
+        { name: "Missing", baseUrl: base, statusPage: "missing" },
+        { name: "Box", baseUrl: other, statusPage: "box" },
+      ],
+      fetchJson: fetchFrom({
+        [`${other}/api/status-page/box`]: { publicGroupList: [] },
+        [`${other}/api/status-page/heartbeat/box`]: { heartbeatList: {} },
+      }),
     });
 
-    const failure = await source.gather({}).catch((error: unknown) => error);
+    const data = await source.gather({});
 
-    expect(failure).toBeInstanceOf(SourceFailure);
-    expect((failure as SourceFailure).reason).toBe("request-failed");
+    expect(data.Missing).toEqual({
+      state: "error",
+      error: `request to ${base}/api/status-page/missing failed`,
+    });
+    expect(data.Box).toEqual({
+      state: "observed",
+      value: { statusPage: "box", monitors: [] },
+    });
   });
 });
 

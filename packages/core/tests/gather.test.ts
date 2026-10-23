@@ -57,7 +57,12 @@ function sources(overrides: Partial<PolledSources>): PolledSources {
     local: returning("local", localData),
     githubAccounts: returning("githubAccounts", {}),
     forgejoAccounts: returning("forgejoAccounts", {}),
-    kuma: returning("kuma", { statusPage: "perch", monitors: [] }),
+    kuma: returning("kuma", {
+      Silo: {
+        state: "observed",
+        value: { statusPage: "perch", monitors: [] },
+      },
+    }),
     roadmap: returning("roadmap", {}),
     claudeSessions: returning("claudeSessions", {}),
     github: returning("github", {}),
@@ -101,7 +106,7 @@ describe("gather", () => {
     expect(seen).toEqual([["finch/a"]]);
   });
 
-  it("skips the kuma collector and writes no kuma file when there is no server", async () => {
+  it("skips the kuma collector and writes no kuma file when config declares no kuma source", async () => {
     const status = await gather({
       now: stepClock(9),
       store: createRawStore(rawDir),

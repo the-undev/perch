@@ -89,7 +89,7 @@ describe("excerpts of the real sources", () => {
 });
 
 describe("tables of a TOML file", () => {
-  it("cuts at each header, the comment above it going with it", () => {
+  it("cuts at each header, the comment above it going with it, numbering an array's tables", () => {
     const toml = `# The file.
 joins = []
 
@@ -101,20 +101,34 @@ names = ["a"]
 wire = "a"
 
 # Accounts.
-[forges.github]
-hosts = []
+[[sources.github]]
+account = "a"
+
+[[sources.github]]
+account = "b"
 `;
 
     expect(tomlTables(toml)).toEqual([
-      { path: [], text: "# The file.\njoins = []" },
-      { path: ["wires"], text: '# The wires.\n[wires]\nnames = ["a"]' },
+      { path: [], array: false, text: "# The file.\njoins = []" },
+      {
+        path: ["wires"],
+        array: false,
+        text: '# The wires.\n[wires]\nnames = ["a"]',
+      },
       {
         path: ["items", "obsidian/Hothouse"],
+        array: false,
         text: '[items."obsidian/Hothouse"]\nwire = "a"',
       },
       {
-        path: ["forges", "github"],
-        text: "# Accounts.\n[forges.github]\nhosts = []",
+        path: ["sources", "github", "0"],
+        array: true,
+        text: '# Accounts.\n[[sources.github]]\naccount = "a"',
+      },
+      {
+        path: ["sources", "github", "1"],
+        array: true,
+        text: '[[sources.github]]\naccount = "b"',
       },
     ]);
   });

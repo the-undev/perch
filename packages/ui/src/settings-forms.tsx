@@ -15,6 +15,7 @@ import {
   tierWarnings,
   wireWarnings,
 } from "@perch/core/settings-form.ts";
+import type { KeyringCalls } from "@perch/core/sources-form.ts";
 import type { SourceCard } from "@perch/core/viewmodel.ts";
 import { type ReactNode, useState } from "react";
 import {
@@ -470,6 +471,8 @@ export interface SettingsEditorProps {
   cards: SourceCard[] | null;
   /** The moment the source cards' scan times are measured to. */
   now: Date;
+  /** Stores a forge card's pasted token and tests its connection. */
+  keyring: KeyringCalls;
   /** Save was pressed with values that changed and can be written. */
   onSave: (values: SettingsValues) => void;
 }
@@ -484,6 +487,7 @@ export function SettingsEditor({
   page,
   cards,
   now,
+  keyring,
   onSave,
 }: SettingsEditorProps) {
   const [base, setBase] = useState(form.values);
@@ -521,6 +525,7 @@ export function SettingsEditor({
           value={draft.sources}
           cards={cards}
           now={now}
+          keyring={keyring}
           onChange={(sources) => update({ sources })}
         />
       )}

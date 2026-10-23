@@ -1,4 +1,5 @@
 import type { SettingsForm } from "@perch/core/settings-form.ts";
+import type { KeyringCalls } from "@perch/core/sources-form.ts";
 import {
   cleanup,
   fireEvent,
@@ -15,6 +16,12 @@ afterEach(cleanup);
 
 const now = new Date("2026-10-22T09:04:00.000Z");
 
+/** Keyring calls these tests never make. */
+const keyring: KeyringCalls = {
+  storeToken: async () => ({ ok: true }),
+  testSource: async () => ({ ok: true, count: 0 }),
+};
+
 /** The editor on one page, with no scan records. */
 const editorOn = (
   page: SettingsPageName,
@@ -26,6 +33,7 @@ const editorOn = (
     page={page}
     cards={null}
     now={now}
+    keyring={keyring}
     onSave={onSave}
   />
 );
@@ -360,6 +368,7 @@ describe("the settings page", () => {
         form={mockSettingsForm()}
         cards={null}
         now={now}
+        keyring={keyring}
         problems={["The config was not changed: Wires: each wire once"]}
         onSave={() => {}}
         onHome={onHome}
@@ -386,6 +395,7 @@ describe("the settings page", () => {
         form={form}
         cards={null}
         now={now}
+        keyring={keyring}
         problems={[]}
         onSave={onSave}
         onHome={() => {}}
@@ -443,6 +453,7 @@ describe("the settings page", () => {
         form={null}
         cards={null}
         now={now}
+        keyring={keyring}
         problems={[]}
         onSave={() => {}}
         onHome={() => {}}

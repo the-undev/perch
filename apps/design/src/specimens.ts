@@ -2,6 +2,11 @@
 // hand-built variants for states the mock does not hold.
 
 import { mockAviary } from "@perch/core/mock.ts";
+import type {
+  KeyringCalls,
+  SourceTested,
+  TokenStored,
+} from "@perch/core/sources-form.ts";
 import {
   type Aviary,
   type Bird,
@@ -105,6 +110,35 @@ export function withHelloAdopted(): Aviary {
       birds: mockAviary.fence.birds
         .filter((bird) => bird.id !== hello.id)
         .map((bird, position) => ({ ...bird, position })),
+    },
+  };
+}
+
+/** What stub keyring calls answer; never leaves the call running. */
+export interface KeyringAnswers {
+  stored: TokenStored;
+  tested: SourceTested | "never";
+}
+
+/**
+ * Keyring calls that answer after a moment, as the main process would, and report each call by
+ * its key or card, never the token.
+ */
+export function stubKeyring(
+  answers: KeyringAnswers,
+  onCall: (call: string) => void,
+): KeyringCalls {
+  const later = <T>(value: T) =>
+    new Promise<T>((resolve) => setTimeout(() => resolve(value), 700));
+  return {
+    storeToken: (key) => {
+      onCall(`storeToken("${key}", token)`);
+      return later(answers.stored);
+    },
+    testSource: (values) => {
+      onCall(`testSource({ kind: "${values.kind}", key: "${values.key}" })`);
+      const { tested } = answers;
+      return tested === "never" ? new Promise(() => {}) : later(tested);
     },
   };
 }

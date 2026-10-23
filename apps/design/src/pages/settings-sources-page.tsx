@@ -8,6 +8,7 @@ import type { SourceCard } from "@perch/core/viewmodel.ts";
 import { mockSettingsForm } from "@perch/ui/mock-birds.ts";
 import { SourcePicker, SourcesPage } from "@perch/ui/sources-page.tsx";
 import { useState } from "react";
+import { type KeyringAnswers, stubKeyring } from "../specimens.ts";
 import { Code, Pressed, Section, Specimen, Usage } from "../usage.tsx";
 
 /** Four minutes after the mock's scan, the moment the cards are measured to. */
@@ -41,19 +42,28 @@ const withProblems: SourcesConfig = withSourceAdded(
   "kuma",
 );
 
-/** The page in a state, editable here. */
+/** The keyring as it answers when the token is stored and reads the account. */
+const keyringTakes: KeyringAnswers = {
+  stored: { ok: true },
+  tested: { ok: true, count: 5 },
+};
+
+/** The page in a state, editable here, its keyring calls answering as given. */
 function PageSpecimen({
   label,
   rule,
   start,
   cards,
+  answers,
 }: {
   label: string;
   rule: string;
   start: SourcesConfig;
   cards: SourceCard[] | null;
+  answers: KeyringAnswers;
 }) {
   const [value, setValue] = useState(start);
+  const [pressed, setPressed] = useState("nothing yet");
   return (
     <Specimen label={label} rule={rule}>
       <div className="max-w-190">
@@ -61,9 +71,11 @@ function PageSpecimen({
           value={value}
           cards={cards}
           now={afterScan}
+          keyring={stubKeyring(answers, setPressed)}
           onChange={setValue}
         />
       </div>
+      <Pressed text={pressed} />
     </Specimen>
   );
 }
@@ -82,18 +94,21 @@ export function SettingsSourcesPage() {
           rule="Local folders found 14 and misses ~/work; three GitHub accounts read; both Forgejo cards fail with the instance, last read 19 minutes before; the Silo page is never scanned. Press a heading to open its card."
           start={mockSources}
           cards={mockSnapshot.sourceCards}
+          answers={keyringTakes}
         />
         <PageSpecimen
           label="A failure before any read"
           rule="The Forgejo instance has never answered: the card says why, and no last read."
           start={mockSources}
           cards={neverRead}
+          answers={keyringTakes}
         />
         <PageSpecimen
           label="Before the first scan"
           rule="No snapshot holds the cards yet: every card is never scanned."
           start={mockSources}
           cards={null}
+          answers={keyringTakes}
         />
       </Section>
       <Section
@@ -106,6 +121,7 @@ export function SettingsSourcesPage() {
           rule="A fresh config holds none. The invitation shows with the picker already open."
           start={none}
           cards={[]}
+          answers={keyringTakes}
         />
         <Specimen
           label="The picker on its own"
@@ -130,6 +146,7 @@ export function SettingsSourcesPage() {
           rule="Finch repeats finch; the new Uptime Kuma card has no name, address or status page."
           start={withProblems}
           cards={mockSnapshot.sourceCards}
+          answers={keyringTakes}
         />
       </Section>
       <Usage
@@ -149,6 +166,11 @@ export function SettingsSourcesPage() {
             name: "now",
             type: "Date",
             what: "The moment the scan times are measured to.",
+          },
+          {
+            name: "keyring",
+            type: "KeyringCalls",
+            what: "storeToken(key, token) writes a pasted token into the keyring; testSource(values) lists a forge card's repositories with the token its key holds. Each resolves ok or with a problem sentence, never with the token.",
           },
           {
             name: "onChange",

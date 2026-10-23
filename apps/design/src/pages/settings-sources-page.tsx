@@ -42,6 +42,18 @@ const withProblems: SourcesConfig = withSourceAdded(
   "kuma",
 );
 
+/** One GitHub card, the-undev's, and nothing else. */
+const oneGithub: SourcesConfig = {
+  ...none,
+  github: [...mockSources.github.slice(1, 2)],
+};
+
+/** One Forgejo card, finch's at the mock's instance. */
+const oneForgejo: SourcesConfig = {
+  ...none,
+  forgejo: [...mockSources.forgejo.slice(0, 1)],
+};
+
 /** The keyring as it answers when the token is stored and reads the account. */
 const keyringTakes: KeyringAnswers = {
   stored: { ok: true },
@@ -135,6 +147,60 @@ export function SettingsSourcesPage() {
           </div>
           <Pressed text={pressed} />
         </Specimen>
+      </Section>
+      <Section
+        title="The token and its test"
+        rule="A GitHub or Forgejo card takes a pasted token into the system keyring under its keyring key, write-only: the field is never filled and empties once stored. Test lists the account's repositories with the stored token, as a scan does, and says so in one quiet sentence; a failure says what the keyring or the forge answered. Both are held while either runs and while the card has no key, and Test while it has no account or address. The manual command stays beside the key. An Uptime Kuma card has no token: its status pages are public reads. These stubs answer after a moment."
+        min={640}
+      >
+        <PageSpecimen
+          label="Stored and readable"
+          rule="Open the card, paste anything and store it: the field empties and the sentence names the key. Test then reads the-undev: 5 repositories readable."
+          start={oneGithub}
+          cards={mockSnapshot.sourceCards}
+          answers={keyringTakes}
+        />
+        <PageSpecimen
+          label="The keyring refuses, and holds no token"
+          rule="Storing answers with the keyring's own words and the pasted token stays in the field. Testing finds nothing under the key."
+          start={oneGithub}
+          cards={mockSnapshot.sourceCards}
+          answers={{
+            stored: {
+              ok: false,
+              problem:
+                "the keyring did not take it: Cannot create an item in a locked collection",
+            },
+            tested: {
+              ok: false,
+              problem: "no token in the keyring under github-the-undev",
+            },
+          }}
+        />
+        <PageSpecimen
+          label="The forge does not answer"
+          rule="A Forgejo card tests at its own address; one that does not answer is named by host and port. A forge that refuses the token reads as its status, api.github.com answered HTTP 401."
+          start={oneForgejo}
+          cards={mockSnapshot.sourceCards}
+          answers={{
+            stored: { ok: true },
+            tested: { ok: false, problem: "no answer from forge.example.lan:3000" },
+          }}
+        />
+        <PageSpecimen
+          label="A test still running"
+          rule="This stub never answers: after Test, both buttons stay held and the sentence says testing."
+          start={oneGithub}
+          cards={mockSnapshot.sourceCards}
+          answers={{ stored: { ok: true }, tested: "never" }}
+        />
+        <PageSpecimen
+          label="A new card with no key yet"
+          rule="Store and Test are held until the card has a keyring key, which follows the account as it is typed."
+          start={withSourceAdded(none, "github")}
+          cards={[]}
+          answers={keyringTakes}
+        />
       </Section>
       <Section
         title="Problems"

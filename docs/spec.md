@@ -183,6 +183,12 @@ action whose command is left out is not offered), per-project assertions
 file lists, zellij session names). An entry for an item adopts it. No
 secrets, ever. Every field is shown in `config.example.toml`.
 
+The settings page, reached from the camera header, edits everything but
+the item entries, which each bird's detail page edits. The app writes
+the file without comments, paths under the home directory with `~`. An
+edit to the file by hand is read as soon as it is saved, and the open
+page or form shows it; the last write wins.
+
 ## Secrets
 
 Tokens live in the desktop keyring, read at run time with
@@ -231,7 +237,8 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   age, and "scanning" while a scan runs. The sky follows the clock,
   read again every minute.
 - The URL holds where the camera points: `/` for the aviary,
-  `/bird/<id>` for a bird's detail.
+  `/bird/<id>` for a bird's detail. `/settings` is the settings page in
+  the camera's place; Escape goes home from it as from a bird.
 - Launch actions run their commands from config, detached, and only
   ones some bird offers. Links open in the browser; the window never
   navigates. Key files are read by the main process when a detail opens

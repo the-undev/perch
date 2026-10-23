@@ -1,7 +1,6 @@
 // The main process's one source of truth: the config, the latest snapshot and the aviary derived
-// from them, what went wrong outside any one source, and the scan, launch, key-file reads and
-// config entry edits that act on the aviary's birds. Electron stays outside: every effect is a
-// dependency.
+// from them, what went wrong outside any one source, and the scan, launch, key-file reads, config
+// entry edits and settings that act on them. Electron stays outside: every effect is a dependency.
 
 import type { Config, LoadedConfig } from "@perch/core/config.ts";
 import {
@@ -12,6 +11,12 @@ import {
   withoutEntry,
 } from "@perch/core/entry-form.ts";
 import { errorMessage } from "@perch/core/fs.ts";
+import {
+  type SettingsForm,
+  type SettingsValues,
+  settingsFormFor,
+  withSettings,
+} from "@perch/core/settings-form.ts";
 import type { Item, Snapshot } from "@perch/core/snapshot.ts";
 import {
   type Aviary,
@@ -24,6 +29,8 @@ import type { ConfigEdit } from "./config-edit.ts";
 import type { ConfigStore } from "./config-store.ts";
 
 export interface AppStateDeps {
+  /** The home directory, against which the settings page shows paths with ~. */
+  home: string;
   config: ConfigStore;
   /** The snapshot cached by the last scan, or null. */
   readCached: () => Promise<Snapshot | null>;
@@ -75,6 +82,13 @@ export interface AppState {
   saveEntry(birdId: string, values: EntryValues): Promise<void>;
   /** Removes every config entry naming a bird, returning it to the fence, as saveEntry writes. */
   removeEntry(birdId: string): Promise<void>;
+  /** Everything in config but the item entries, as the settings page edits it; null without config. */
+  settingsForm(): SettingsForm | null;
+  /**
+   * Sets everything in config but the item entries, then rereads the config and asks for a scan;
+   * a failure writes nothing and becomes a problem until the next scan.
+   */
+  saveSettings(values: SettingsValues): Promise<void>;
 }
 
 /** Two launch actions are the same when every field is: they are flat records of strings. */
@@ -96,7 +110,8 @@ export function createAppState(deps: AppStateDeps): AppState {
   let scanError: string | null = null;
   let launchError: string | null = null;
   let starterError: string | null = null;
-  let entryError: string | null = null;
+  /** Why the latest config write wrote nothing, an entry's or the settings'. */
+  let writeError: string | null = null;
   let derived: { snapshot: Snapshot; config: Config; aviary: Aviary } | null =
     null;
 
@@ -120,7 +135,7 @@ export function createAppState(deps: AppStateDeps): AppState {
     if (scanError !== null) list.push(`The scan failed: ${scanError}`);
     if (launchError !== null) list.push(launchError);
     if (starterError !== null) list.push(starterError);
-    if (entryError !== null) list.push(entryError);
+    if (writeError !== null) list.push(writeError);
     return list;
   }
 
@@ -147,23 +162,28 @@ export function createAppState(deps: AppStateDeps): AppState {
 
   const publish = () => deps.publish(state());
 
-  async function editEntry(
-    birdId: string,
-    edit: (config: Config, item: Item) => Config,
-  ): Promise<void> {
-    const item = birdItem(birdId);
-    if (item === undefined) return;
+  /** Writes an edit, then rereads the config, publishes and asks for a scan; a failure is a problem. */
+  async function edit(change: ConfigEdit): Promise<void> {
     try {
-      await deps.editConfig((config) => edit(config, item));
-      entryError = null;
+      await deps.editConfig(change);
+      writeError = null;
     } catch (error) {
-      entryError = `The config was not changed: ${errorMessage(error)}`;
+      writeError = `The config was not changed: ${errorMessage(error)}`;
       publish();
       return;
     }
     await deps.config.reload();
     publish();
     await deps.requestScan();
+  }
+
+  async function editEntry(
+    birdId: string,
+    change: (config: Config, item: Item) => Config,
+  ): Promise<void> {
+    const item = birdItem(birdId);
+    if (item === undefined) return;
+    await edit((config) => change(config, item));
   }
 
   return {
@@ -176,7 +196,7 @@ export function createAppState(deps: AppStateDeps): AppState {
       const { loaded } = await deps.config.reload();
       launchError = null;
       starterError = null;
-      entryError = null;
+      writeError = null;
       if (loaded === null) {
         publish();
         return;
@@ -241,5 +261,12 @@ export function createAppState(deps: AppStateDeps): AppState {
       editEntry(birdId, (config, item) => withEntry(config, item, values)),
     removeEntry: (birdId) =>
       editEntry(birdId, (config, item) => withoutEntry(config, item)),
+    settingsForm() {
+      const config = deps.config.current().loaded?.config;
+      if (config === undefined) return null;
+      return settingsFormFor(config, deps.home);
+    },
+    saveSettings: (values) =>
+      edit((config) => withSettings(config, values, deps.home)),
   };
 }

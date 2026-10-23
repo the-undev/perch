@@ -185,9 +185,17 @@ function oneOf(
   return value;
 }
 
-function expandHome(path: string, home: string): string {
+/** A path with a leading ~ expanded against the home directory; any other path as it is. */
+export function expandHome(path: string, home: string): string {
   if (path === "~") return home;
   if (path.startsWith("~/")) return `${home}/${path.slice(2)}`;
+  return path;
+}
+
+/** A path at or under the home directory written with a leading ~; any other path as it is. */
+export function collapseHome(path: string, home: string): string {
+  if (path === home) return "~";
+  if (path.startsWith(`${home}/`)) return `~/${path.slice(home.length + 1)}`;
   return path;
 }
 

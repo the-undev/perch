@@ -14,8 +14,9 @@ export interface RouterContext {
   queryClient: QueryClient;
 }
 
-// The camera is the root and stays mounted across every route, so moving between the aviary and
-// a bird flies rather than remounts. The routes only say where it points.
+// The camera is the root and stays mounted across the aviary and every bird, so moving between
+// them flies rather than remounts. Those routes only say where it points; the settings route
+// puts the settings page in its place.
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: function Root() {
     const { api } = rootRoute.useRouteContext();
@@ -35,7 +36,17 @@ const birdRoute = createRoute({
   path: "bird/$",
 });
 
-const routeTree = rootRoute.addChildren([aviaryRoute, birdRoute]);
+/** The settings page, in the camera's place. */
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "settings",
+});
+
+const routeTree = rootRoute.addChildren([
+  aviaryRoute,
+  birdRoute,
+  settingsRoute,
+]);
 
 /** Builds the router; the window passes hash history, tests pass memory history. */
 export function createAppRouter(

@@ -1,14 +1,20 @@
-// The window: the camera over the aviary, bound to the router. The URL holds where the camera
-// points; the main process's state holds what it shows.
+// The window: the camera over the aviary, bound to the router, or the settings page. The URL holds
+// where the camera points; the main process's state holds what it shows.
 
 import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
 import type { EntryControls } from "@perch/ui/entry-forms.tsx";
+import { SettingsView } from "@perch/ui/settings-view.tsx";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { useCallback, useMemo } from "react";
 import type { PerchApi } from "../../shared/ipc.ts";
-import { useEntryForm, useKeyFiles, usePerchState } from "./queries.ts";
+import {
+  useEntryForm,
+  useKeyFiles,
+  usePerchState,
+  useSettingsForm,
+} from "./queries.ts";
 import { useNow } from "./use-now.ts";
 import { Welcome } from "./welcome.tsx";
 
@@ -65,6 +71,10 @@ export function AppView({ api }: { api: PerchApi }) {
   const now = useNow(clockTickMs);
   const navigate = useNavigate();
   const birdId = useParams({ strict: false })._splat || null;
+  const atSettings = useLocation({
+    select: (location) => location.pathname === "/settings",
+  });
+  const settings = useSettingsForm(api, atSettings);
   const place: CameraPlace =
     birdId === null ? { at: "aviary" } : { at: "detail", birdId };
   const sheets = useKeyFiles(api, birdId, state?.aviary?.scannedAt ?? null);
@@ -89,6 +99,7 @@ export function AppView({ api }: { api: PerchApi }) {
       state?.aviary ? withProblems(state.aviary, state.problems) : undefined,
     [state],
   );
+  const home = useCallback(() => void navigate({ to: "/" }), [navigate]);
   const onNavigate = useCallback(
     (next: CameraPlace) => {
       if (next.at === "aviary") {
@@ -110,6 +121,23 @@ export function AppView({ api }: { api: PerchApi }) {
       />
     );
   }
+  if (atSettings) {
+    return (
+      <SettingsView
+        form={settings}
+        problems={state.problems}
+        onSave={(values) =>
+          void api
+            .saveSettings(values)
+            .finally(
+              () =>
+                void queryClient.invalidateQueries({ queryKey: ["settings"] }),
+            )
+        }
+        onHome={home}
+      />
+    );
+  }
   if (aviary === undefined) {
     return <FirstScan scanning={state.scanning} problems={state.problems} />;
   }
@@ -123,6 +151,7 @@ export function AppView({ api }: { api: PerchApi }) {
       sheets={sheets}
       scanning={state.scanning}
       onRescan={() => void api.rescan()}
+      onSettings={() => void navigate({ to: "/settings" })}
       entry={entry}
     />
   );

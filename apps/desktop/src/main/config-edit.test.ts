@@ -61,7 +61,7 @@ describe("writing the config", () => {
   });
 
   it("applies an edit to a fresh read and writes what reads back", async () => {
-    await writeFile(configPath, writeConfig(mockConfig));
+    await writeFile(configPath, writeConfig(mockConfig, "/home/owner"));
 
     await editConfigFile(deps(), (config) => ({
       ...config,
@@ -87,7 +87,7 @@ describe("writing the config", () => {
   });
 
   it("refuses, writing nothing, an edit that would not read back", async () => {
-    const before = writeConfig(mockConfig);
+    const before = writeConfig(mockConfig, "/home/owner");
     await writeFile(configPath, before);
 
     await expect(

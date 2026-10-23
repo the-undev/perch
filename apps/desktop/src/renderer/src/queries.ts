@@ -1,21 +1,33 @@
 // What the renderer reads from the main process, through the query cache: the state, kept
-// current by the main process's pushes, the open bird's key files and its config entry.
+// current by the main process's pushes, the open bird's key files and its config entry, and the
+// settings.
 
 import type { EntryForm } from "@perch/core/entry-form.ts";
+import type { SettingsForm } from "@perch/core/settings-form.ts";
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { KeyFileSheet, PerchApi, PerchState } from "../../shared/ipc.ts";
 
 const stateKey = ["state"] as const;
 
+/** The forms read from config, which every pushed state may have changed. */
+const configFormKeys = [["entryForm"], ["settings"]] as const;
+
 /**
  * The state: what the main process has at once, the cached snapshot's aviary at start, then
- * every state it pushes. Undefined only until the first answer.
+ * every state it pushes. Each push reads the open forms again, since the config they come from
+ * may have changed on disk; an answer equal to the last keeps the same object.
  */
 export function usePerchState(api: PerchApi): PerchState | undefined {
   const queryClient = useQueryClient();
   useEffect(
-    () => api.onState((state) => queryClient.setQueryData(stateKey, state)),
+    () =>
+      api.onState((state) => {
+        queryClient.setQueryData(stateKey, state);
+        for (const queryKey of configFormKeys) {
+          void queryClient.invalidateQueries({ queryKey });
+        }
+      }),
     [api, queryClient],
   );
   return useQuery({
@@ -63,6 +75,18 @@ export function useEntryForm(
         : () => api.entryForm(birdId),
     placeholderData: (previous, previousQuery) =>
       previousQuery?.queryKey[1] === birdId ? previous : undefined,
+  });
+  return query.data ?? null;
+}
+
+/** The settings form, read while the settings page is open and again with every pushed state. */
+export function useSettingsForm(
+  api: PerchApi,
+  open: boolean,
+): SettingsForm | null {
+  const query = useQuery({
+    queryKey: ["settings"],
+    queryFn: open ? () => api.settingsForm() : skipToken,
   });
   return query.data ?? null;
 }

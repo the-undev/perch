@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { parse } from "smol-toml";
 import { describe, expect, it } from "vitest";
 import { type Config, parseConfig } from "../src/config.ts";
 import { writeConfig } from "../src/config-write.ts";
@@ -100,7 +101,7 @@ kuma_status_page = "perch"
 `;
 
 function roundTrip(config: Config): Config {
-  return parseConfig(writeConfig(config), home);
+  return parseConfig(writeConfig(config, home), home);
 }
 
 describe("writeConfig", () => {
@@ -122,7 +123,7 @@ describe("writeConfig", () => {
   it("leaves the [server] section out when there is no server", () => {
     const config: Config = { ...parseConfig(maximalText, home), server: null };
 
-    const text = writeConfig(config);
+    const text = writeConfig(config, home);
 
     expect(text).not.toContain("[server]");
     expect(roundTrip(config)).toEqual(config);
@@ -150,15 +151,76 @@ describe("writeConfig", () => {
       },
     };
 
-    const text = writeConfig(config);
+    const text = writeConfig(config, home);
 
-    expect(writeConfig(config)).toBe(text);
-    expect(writeConfig(roundTrip(config))).toBe(text);
-    expect(writeConfig(reordered)).toBe(text);
+    expect(writeConfig(config, home)).toBe(text);
+    expect(writeConfig(roundTrip(config), home)).toBe(text);
+    expect(writeConfig(reordered, home)).toBe(text);
+  });
+
+  it("writes the example back as the same TOML document, its ~ paths as they were typed", async () => {
+    const text = await exampleText();
+
+    const written = writeConfig(parseConfig(text, home), home);
+
+    expect(parse(written)).toEqual(parse(text));
+    expect(written).toContain('include = [ "~/dev", "~/.dotfiles" ]');
+  });
+
+  it("writes paths at or under the home directory with ~, and any other path as it is", () => {
+    const config = parseConfig(maximalText, home);
+    const paths: Config = {
+      ...config,
+      local: {
+        include: [home, `${home}/dev`, "/srv/repos", `${home}2/elsewhere`],
+        ignore: [`${home}/dev/archived`],
+      },
+      launch: {
+        ...config.launch,
+        zellijSessions: { [`${home}/undev`]: "undev", "/srv": "srv" },
+      },
+    };
+
+    const document = parse(writeConfig(paths, home));
+
+    expect(document.local).toEqual({
+      include: ["~", "~/dev", "/srv/repos", "/home/test2/elsewhere"],
+      ignore: ["~/dev/archived"],
+    });
+    expect(
+      (document.launch as Record<string, unknown>).zellij_sessions,
+    ).toEqual({ "/srv": "srv", "~/undev": "undev" });
+    expect(roundTrip(paths)).toEqual(paths);
+  });
+
+  it("leaves out empty item, zellij session and command tables", () => {
+    const config = parseConfig(maximalText, home);
+    const empty: Config = {
+      ...config,
+      items: {},
+      launch: {
+        ...config.launch,
+        zellijSessions: {},
+        commands: {
+          zellij: null,
+          terminal: null,
+          vscode: null,
+          folder: null,
+          obsidian: null,
+        },
+      },
+    };
+
+    const text = writeConfig(empty, home);
+
+    expect(text).not.toContain("[items]");
+    expect(text).not.toContain("zellij_sessions");
+    expect(text).not.toContain("[launch.commands]");
+    expect(roundTrip(empty)).toEqual(empty);
   });
 
   it("writes no comments", async () => {
-    const text = writeConfig(parseConfig(await exampleText(), home));
+    const text = writeConfig(parseConfig(await exampleText(), home), home);
 
     expect(
       text.split("\n").some((line) => line.trimStart().startsWith("#")),

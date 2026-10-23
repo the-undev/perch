@@ -6,8 +6,12 @@ import {
   withEntry,
 } from "@perch/core/entry-form.ts";
 import { mockAviary, mockConfig, mockSnapshot } from "@perch/core/mock.ts";
+import {
+  type SettingsForm,
+  settingsFormFor,
+} from "@perch/core/settings-form.ts";
 import { type Aviary, deriveAviary } from "@perch/core/viewmodel.ts";
-import { mockBird } from "@perch/ui/mock-birds.ts";
+import { mockBird, mockHome, mockSettingsForm } from "@perch/ui/mock-birds.ts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import {
@@ -44,8 +48,9 @@ function renderApp(
   path = "/",
   sheetsFor?: (birdId: string) => KeyFileSheet[],
   formFor?: (birdId: string) => EntryForm | null,
+  settings: SettingsForm | null = null,
 ) {
-  const fake = fakeApi(initial, sheetsFor, formFor);
+  const fake = fakeApi(initial, sheetsFor, formFor, settings);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -359,6 +364,128 @@ describe("the window", () => {
         screen.getByRole("button", { name: "Return to the fence" }),
       );
       expect(fake.entryRemovals).toEqual(["dev/perch"]);
+    });
+  });
+
+  describe("settings", () => {
+    it("opens from the camera header at its own route, and rides home on Escape", async () => {
+      const { router } = renderApp(
+        idle(mockAviary),
+        "/bird/dev/perch",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+
+      fireEvent.click(await screen.findByRole("button", { name: "settings" }));
+
+      await waitFor(() => expect(pathOf(router)).toBe("/settings"));
+      expect(
+        await screen.findByRole("form", { name: "Settings" }),
+      ).toBeDefined();
+      fireEvent.keyDown(window, { key: "Escape" });
+
+      await waitFor(() => expect(pathOf(router)).toBe("/"));
+      expect(await birdButton("undev/skiff")).toBeDefined();
+    });
+
+    it("saves an edit through the main process, and shows a refusal among the problems", async () => {
+      const form = mockSettingsForm();
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/settings",
+        undefined,
+        undefined,
+        form,
+      );
+
+      fireEvent.change(
+        await screen.findByRole("textbox", { name: "Add an include path" }),
+        { target: { value: "~/code" } },
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Add the include path" }),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      expect(fake.settingsSaves).toEqual([
+        {
+          ...form.values,
+          local: {
+            ...form.values.local,
+            include: [...form.values.local.include, "~/code"],
+          },
+        },
+      ]);
+      act(() =>
+        fake.push({
+          ...idle(mockAviary),
+          problems: ["The config was not changed: Wires: each wire once"],
+        }),
+      );
+      expect(
+        await screen.findByText(
+          "The config was not changed: Wires: each wire once",
+        ),
+      ).toBeDefined();
+    });
+
+    it("shows the file's new values when it changes on disk", async () => {
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/settings",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+      const interval = async () =>
+        (
+          (await screen.findByRole("spinbutton", {
+            name: "Scan interval in minutes",
+          })) as HTMLInputElement
+        ).value;
+      expect(await interval()).toBe("15");
+
+      fake.setSettings(
+        settingsFormFor(
+          { ...mockConfig, scan: { ...mockConfig.scan, intervalMinutes: 20 } },
+          mockHome,
+        ),
+      );
+      act(() => fake.push(idle(mockAviary)));
+
+      await waitFor(async () => expect(await interval()).toBe("20"));
+    });
+
+    it("gives an open entry form the wires the file now has", async () => {
+      let config: Config = mockConfig;
+      const formFor = (birdId: string) => {
+        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
+        return item === undefined ? null : entryFormFor(config, item);
+      };
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/bird/dev/perch",
+        undefined,
+        formFor,
+      );
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Edit entry" }),
+      );
+      expect(screen.queryByRole("radio", { name: "Someday" })).toBeNull();
+
+      config = {
+        ...mockConfig,
+        wires: {
+          ...mockConfig.wires,
+          names: [...mockConfig.wires.names, "Someday"],
+        },
+      };
+      act(() => fake.push(idle(mockAviary)));
+
+      expect(
+        await screen.findByRole("radio", { name: "Someday" }),
+      ).toBeDefined();
     });
   });
 });

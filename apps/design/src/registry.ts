@@ -21,6 +21,10 @@ import {
   ProblemsPage,
   PullRequestsPage,
 } from "./pages/sections-pages.tsx";
+import {
+  SettingsGroupsPage,
+  SettingsScenePage,
+} from "./pages/settings-pages.tsx";
 import { SkyPage } from "./pages/sky-page.tsx";
 import { TokensPage } from "./pages/tokens-page.tsx";
 import { WirePage } from "./pages/wire-page.tsx";
@@ -216,6 +220,14 @@ export const pages: DesignPage[] = [
     component: EntryEditorPage,
   },
   {
+    slug: "settings-groups",
+    group: "components",
+    title: "Settings groups",
+    summary:
+      "Each part of config as the settings page edits it, in its states, with what the editor says of each.",
+    component: SettingsGroupsPage,
+  },
+  {
     slug: "aviary",
     group: "scenes",
     title: "The aviary",
@@ -238,6 +250,14 @@ export const pages: DesignPage[] = [
     summary:
       "The aviary and the detail joined: header tabs, the strip, the flights, Escape home.",
     component: CameraScenePage,
+  },
+  {
+    slug: "settings",
+    group: "scenes",
+    title: "The settings page",
+    summary:
+      "Every group of config on one page, its problems and Save, and a file changed on disk while it is open.",
+    component: SettingsScenePage,
   },
   {
     slug: "crowded-wire",

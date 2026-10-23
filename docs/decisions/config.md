@@ -19,6 +19,13 @@ Decided 20 October 2026.
   remains the commented reference for every field. This replaces the
   earlier requirement that the file carry comments for humans and Claude
   editing it by hand.
+- Paths are written and shown with `~`. Decided 23 October 2026: the
+  config holds include and ignore paths and zellij session roots expanded
+  against the home directory, and the writer and the settings page put a
+  path at or under the home directory back as `~/...`. A `~/dev` typed by
+  hand survives every save; an absolute path under the home directory,
+  such as `/home/owner/dev`, comes back as `~/dev`. Paths elsewhere stay
+  as they are.
 - No secrets in config. Tokens come from the desktop keyring at run time,
   the same entries in dev and in the app: `service perch` with one key per
   forge account (`github-finch`, `github-the-undev`,

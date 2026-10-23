@@ -4,6 +4,7 @@
 import { stringify } from "smol-toml";
 import {
   type Config,
+  collapseHome,
   type ForgeConfig,
   type ItemEntry,
   type LaunchCommandName,
@@ -63,17 +64,27 @@ function commandsTable(commands: Config["launch"]["commands"]): Table {
   return out;
 }
 
+/** The table, or nothing when it is empty: the parser reads a table left out as an empty one. */
+function unlessEmpty(table: Table): Table | undefined {
+  return Object.keys(table).length === 0 ? undefined : table;
+}
+
 /**
  * Serialises config to TOML that parseConfig reads back to an equal config, deterministic because
  * item entries and zellij session roots are sorted by key and every list keeps its order.
- * Paths are written as stored, already expanded against the home directory.
+ * Paths at or under the home directory are written with a leading ~, and empty optional tables
+ * are left out.
  */
-export function writeConfig(config: Config): string {
+export function writeConfig(config: Config, home: string): string {
+  const path = (stored: string) => collapseHome(stored, home);
   const document: Table = {
     joins: config.joins,
     ignore: config.ignore,
     wires: { names: config.wires.names, default: config.wires.default },
-    local: { include: config.local.include, ignore: config.local.ignore },
+    local: {
+      include: config.local.include.map(path),
+      ignore: config.local.ignore.map(path),
+    },
     thresholds: thresholdTable(config.thresholds),
     importance: {
       tiers: config.importance.tiers,
@@ -85,14 +96,24 @@ export function writeConfig(config: Config): string {
     },
     launch: {
       zellij_session: config.launch.zellijSession,
-      zellij_sessions: sortedByKey(config.launch.zellijSessions),
-      commands: commandsTable(config.launch.commands),
+      zellij_sessions: unlessEmpty(
+        sortedByKey(
+          Object.fromEntries(
+            Object.entries(config.launch.zellijSessions).map(
+              ([root, session]) => [path(root), session],
+            ),
+          ),
+        ),
+      ),
+      commands: unlessEmpty(commandsTable(config.launch.commands)),
     },
-    items: Object.fromEntries(
-      Object.entries(sortedByKey(config.items)).map(([key, entry]) => [
-        key,
-        entryTable(entry),
-      ]),
+    items: unlessEmpty(
+      Object.fromEntries(
+        Object.entries(sortedByKey(config.items)).map(([key, entry]) => [
+          key,
+          entryTable(entry),
+        ]),
+      ),
     ),
     forges: {
       finalised_commits: config.forges.finalisedCommits,

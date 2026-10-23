@@ -55,8 +55,10 @@ among its resources.
 
 `packages/ui` (`@perch/ui`) holds the React components of the design,
 typed against the view model only: the bird, wire, fence and sky scene, the
-bubble and chips, and the detail page's pieces (ledger and its sections,
-launch actions, links out, key-file paper). Components are presentational:
+bubble and chips, the detail page's pieces (ledger and its sections,
+launch actions, links out, key-file paper), and the config forms: the
+entry forms and the settings page's groups, built from `form-parts.tsx`.
+Components are presentational:
 no fetching and no clock; the caller passes `night`, a `now` Date and
 callbacks. `src/theme.css` is the one theme, Tailwind v4 tokens taken from
 `design/perch.html`; each app imports it after `tailwindcss`. shadcn
@@ -74,13 +76,17 @@ it. A page is a component in `src/pages` and one entry in
 electron-vite. The main process (`src/main`) reads the config, runs the scan
 at start, on the config's interval, on window focus and on request
 (`scan-scheduler.ts`), keeps the snapshot cache, derives the aviary,
-reads key files and turns entry edits into config edits (`app-state.ts`),
-writes the config file (`config-edit.ts`), and runs launch actions
+reads key files and turns entry and settings edits into config edits
+(`app-state.ts`), writes the config file (`config-edit.ts`), rereads it
+when it changes on disk (`config-watch.ts`), and runs launch actions
 (`launch.ts`). Its data lives in `~/.local/share/perch`, Electron's
 userData. The renderer (`src/renderer`) receives only view model types and
-the entry form types from `@perch/core/entry-form.ts`: TanStack Query holds the
-pushed state, TanStack Router holds where the camera points (`/` and
-`/bird/<id>`), and `CameraView` draws it. The sandboxed preload
+the form types from `@perch/core/entry-form.ts` and
+`@perch/core/settings-form.ts`, never a `Config`: TanStack Query holds the
+pushed state and rereads the open forms on every push, TanStack Router
+holds where the camera points (`/` and `/bird/<id>`), and `CameraView`
+draws it; `/settings` draws `SettingsView`, reached from the camera
+header, in its place. The sandboxed preload
 (`src/preload`) exposes the calls declared in `src/shared/ipc.ts`. Main
 tests run in node, renderer tests in jsdom against a fake preload API
 (`fake-api.ts`). Workspace packages are devDependencies because

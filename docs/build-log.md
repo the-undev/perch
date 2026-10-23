@@ -331,3 +331,68 @@ build-time calls so they can be revisited.
   settles. The detail page shows its entry verb only while the form
   agrees with the bird: Adopt needs no entry, Edit entry needs one.
 - Unadopt asks for a second press, Return to the fence, before it writes.
+- `writeConfig` takes the home directory and writes paths under it with
+  `~`, so a saved config keeps the starter's `~/dev`. It leaves out the
+  optional tables when they are empty (`items`, `launch.zellij_sessions`,
+  `launch.commands`), so the starter saved unchanged reads as the same
+  TOML document, only its comments and layout gone.
+- The settings form model lives in `packages/core/src/settings-form.ts`
+  beside the entry form's: `settingsFormFor(config, home)`,
+  `withSettings(config, values, home)`, `settingsProblems(values)` and
+  `settingsWarnings(named, values)`. Both functions take the home
+  directory because the form shows paths with `~`. `SettingsValues` covers
+  all of `Config` but the item entries; the renderer never receives a
+  `Config`.
+- A launch command, and each join, is one line in the config file's own
+  list form, `["code", "{path}"]`, read with `JSON.parse`. Splitting on
+  spaces would break arguments that hold spaces, and shell words would
+  need a hand-rolled parser. An emptied command removes its action; `[]`
+  is a problem, since it names no program.
+- Removing a wire or a tier that item entries name moves those entries
+  to the default: the save sets their `wire` or `importance` to null,
+  since the parser refuses an entry naming a wire or tier config lacks.
+  The form names the entries before it is saved.
+- The global thresholds use the entry forms' rule: `thresholdProblems`
+  in `entry-form.ts` serves both. Include and ignore paths and zellij
+  session roots must start with `/` or `~`.
+- The IPC adds `settingsForm()` and `saveSettings(values)`. The main
+  process checks the values with `settingsProblems` before it writes, and
+  a refusal is the same problem in the state as a refused entry write.
+  The app state's two write errors became one: the latest config write's.
+- The main process watches the config file (`config-watch.ts`): the
+  directory of `~/.config/perch/config.toml` and, when it is a stow
+  symlink, the directory of the file it names, since an editor or the
+  app's own write renames a file there and the link never changes. Once
+  the file has been quiet for 300 ms the app rereads the config and
+  publishes, without a scan. A directory that cannot be watched is a
+  console warning; the starter write starts the watch again, since its
+  directory may not have existed at launch.
+- The config forms share `packages/ui/src/form-parts.tsx`: the ruled
+  row, the pill choice, the list editor and the threshold field. A list
+  entry is now a text field edited in place, on the entry editor's key
+  files and roadmaps too; ordered lists (wires, tiers) move entries up
+  and down. An emptied number field reads as NaN, which every rule
+  refuses, rather than as 0.
+- The settings editor holds a draft. While untouched it follows the
+  file; once edited, a change to the file is noted, and saving writes
+  the form over it (last write wins) or Discard takes the file's values.
+  Save waits until something changed, so opening the page and saving
+  never rewrites a commented starter for nothing. Renaming the default
+  wire or tier in place keeps it the default.
+- The settings groups flow into CSS columns 36rem wide: two on a small
+  monitor, five or so on the ultrawide, each group whole.
+- The settings page is the `/settings` route, reached from "settings",
+  the camera header's last word in the scan line's voice. It takes the
+  camera's place rather than riding inside it: the camera's tabs and
+  strip have nothing to show there. The brand, "back to the aviary" and
+  Escape go home, Escape even from inside a field, as on a bird's page.
+  The page lists the main process's problems above the form, so a
+  refused save is seen where it was made.
+- Every pushed state reads the open entry form and the settings form
+  again, since the config may have changed on disk. The query cache keeps
+  an equal answer as the same object, so an untouched form keeps its
+  draft.
+- The design site shows the settings on two pages: "Settings groups"
+  renders each group in its states, editable, with the problems the
+  editor would list beneath each, and "The settings page" scene renders
+  the whole page with a control that changes the file on disk.

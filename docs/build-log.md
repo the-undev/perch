@@ -486,3 +486,28 @@ build-time calls so they can be revisited.
   until a snapshot holding them exists and without config, as the
   aviary is. The renderer takes the type from the view model, which
   re-exports it as it does `HealthLevel`.
+- The settings rebuild phase. The open page is the settings view's own
+  state, Sources each time the page opens; the router keeps only
+  `/settings`. Each former group is one page headed by its rail word,
+  its note become the page's lead.
+- The sources form holds config's own source tables with local paths
+  written with `~`. A card added from the picker goes after its kind's
+  last, so the draft's order is the order saved. A card's scan record
+  is matched by the id its draft values make, through the per-kind id
+  functions `configuredCards` uses, so a card whose account or name is
+  edited reads as never scanned until it is saved and scanned.
+- The form refuses more than the parser on two points: a local source
+  names at least one folder, every folder starting with `/` or `~`, and
+  a base URL starts with `http://` or `https://`. The repeat rules are
+  the parser's own. Each problem is shown beside its field and listed
+  beside Save as "GitHub source 2, account: ...".
+- A card that cannot be written when it appears, a new one among them,
+  starts open; the rest start closed. The keyring key follows the
+  account as `<kind>-<account>` while it is empty or still that
+  suggestion.
+- Card times are by the minute within the hour ("4 min ago"), then the
+  speech's hour words. The picker's closing line is the board's second
+  form on every page, and the page lead drops the board's "simply".
+- Creating the config resolves whether it wrote before its scan
+  settles, and the window then goes to `/settings`; a refusal reads "The
+  config file was not created: ..." and the welcome stays.

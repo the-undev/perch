@@ -210,11 +210,35 @@ account once per instance, each kuma name once. A config with no
 sources is valid and scans nothing.
 
 The settings page, reached from the camera header, edits everything but
-the item entries, which each bird's detail page edits, and the sources,
-which no page edits yet. The app writes
-the file without comments, paths under the home directory with `~`. An
-edit to the file by hand is read as soon as it is saved, and the open
-page or form shows it; the last write wins.
+the item entries, which each bird's detail page edits. A rail names its
+pages beside one reading-width column: Sources, with Joining up beneath
+it, then Wires, Tiers, Judgement, Scanning and Launching. It opens on
+Sources and shows one page at a time. An edit is kept while another
+page is open, and Save writes every page's edits. The page caps near
+1400px and centres; below about 900px the rail folds to a row of words
+above the column.
+
+The Sources page holds one card per source table, in config order. A
+card's head names the kind and its account, host or name, and says its
+last scan in words: what it found or read and how long ago, why it
+failed and when it last read, or never scanned yet. A local card also
+names its include paths that do not exist. Opened, a card shows its
+fields: a local card's folders searched and excluded, paths kept with
+`~`; a forge card's account, keyring key with the `secret-tool store`
+command beside it, hosts and tracked forks, and a Forgejo card's base
+URL; a kuma card's name, base URL and status page. "Add a source" opens
+a picker in place offering every kind, each with what it reads and what
+it needs; on a config with no sources it is open from the start.
+Picking a kind adds an empty card of it. Removing a card asks twice.
+Save is held while any field has a problem, named beside the field: an
+empty required field, a folder not starting with `/` or `~`, an address
+without `http://` or `https://`, or a repeat the config parser refuses
+(a GitHub account in any case, a Forgejo account at one base URL, a
+kuma name).
+
+The app writes the file without comments, paths under the home
+directory with `~`. An edit to the file by hand is read as soon as it is
+saved, and the open page or form shows it; the last write wins.
 
 ## Secrets
 
@@ -253,10 +277,10 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   window renders from it at start and the main process pushes the fresh
   aviary when a scan finishes. Before any snapshot exists the window
   says the first scan is running. Without a config file nothing scans:
-  the window names the path and offers to write a starter config, the
-  default config of one wire, the standard windows and tiers and no
-  sources, never over an existing file. Checking again,
-  or focusing the window, reads the path again. A failing source keeps its previous
+  the window names the path and offers to create it with the default
+  config of one wire, the standard windows and tiers and no sources,
+  never over an existing file, then opens the settings page on Sources.
+  Checking again, or focusing the window, reads the path again. A failing source keeps its previous
   result and shows the error and its age. A config that does not parse
   leaves the previous one in force, and a failed scan leaves the
   previous snapshot; either says so in the sky's notices, as does a

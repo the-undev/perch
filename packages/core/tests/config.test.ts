@@ -37,18 +37,14 @@ describe("example config", () => {
 
     expect(config.sources.local).toEqual([
       {
-        include: ["/home/test/dev", "/home/test/.dotfiles"],
-        exclude: [
-          "/home/test/dev/archived",
-          "/home/test/dev/third-party",
-          "/home/test/dev/all/delete",
-        ],
+        include: ["/home/test/projects"],
+        exclude: ["/home/test/projects/archive"],
       },
     ]);
     expect(config.joins).toEqual([]);
     expect(config.ignore).toEqual([]);
     expect(config.wires).toEqual({
-      names: ["Machine & Home", "Projects"],
+      names: ["Home", "Projects"],
       default: "Projects",
     });
     expect(config.thresholds).toEqual({
@@ -64,7 +60,7 @@ describe("example config", () => {
       finalisedCommits: 10,
     });
     expect(config.launch).toEqual({
-      zellijSession: "home",
+      zellijSession: "main",
       zellijSessions: {},
       commands: {
         zellij: ["zellij"],
@@ -83,22 +79,23 @@ describe("example config", () => {
         obsidian: ["xdg-open", "obsidian://open?vault={vault}"],
       },
     });
-    expect(config.sources.github[0]).toEqual({
-      account: "finch",
-      key: "github-finch",
-      hosts: ["github.com", "github-work"],
-      trackedForks: [],
-    });
-    expect(config.sources.github.map((source) => source.key)).toEqual([
-      "github-finch",
-      "github-the-undev",
-      "github-skiff-app",
+    expect(config.sources.github).toEqual([
+      {
+        account: "someone",
+        key: "github-someone",
+        hosts: ["github.com"],
+        trackedForks: [],
+      },
     ]);
-    expect(config.sources.forgejo.map((source) => source.key)).toEqual([
-      "forgejo-finch",
-      "forgejo-the-undev",
+    expect(config.sources.forgejo).toEqual([
+      {
+        account: "someone",
+        key: "forgejo-someone",
+        hosts: ["forge.example.lan"],
+        trackedForks: [],
+        baseUrl: "https://forge.example.lan",
+      },
     ]);
-    expect(config.sources.forgejo[0]?.baseUrl).toBe("http://forge.example.lan:3000");
     expect(config.sources.kuma).toEqual([]);
   });
 
@@ -108,16 +105,22 @@ describe("example config", () => {
       "$1",
     );
 
-    expect(parseConfig(text, home).sources.kuma).toHaveLength(1);
+    expect(parseConfig(text, home).sources.kuma).toEqual([
+      {
+        name: "Server",
+        baseUrl: "http://kuma.example.lan:3001",
+        statusPage: "status",
+      },
+    ]);
   });
 
   it("gives every item the default tier and global thresholds when nothing is overridden", async () => {
     const config = parseConfig(await exampleText(), home);
 
-    expect(importanceFor(config, entryOf(config, "dev/perch"))).toBe(
+    expect(importanceFor(config, entryOf(config, "projects/example"))).toBe(
       "projects",
     );
-    expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toEqual(
+    expect(thresholdsFor(config, entryOf(config, "projects/example"))).toEqual(
       config.thresholds,
     );
   });
@@ -125,7 +128,7 @@ describe("example config", () => {
   it("shows every entry field in its commented example, and each parses", async () => {
     const text = await exampleText();
     const lines = text.split("\n");
-    const start = lines.indexOf('# [items."dev/perch"]');
+    const start = lines.indexOf('# [items."projects/example"]');
     const block = [];
     for (const line of lines.slice(start)) {
       if (!line.startsWith("# ")) break;
@@ -133,9 +136,9 @@ describe("example config", () => {
     }
     const config = parseConfig(`${text}\n${block.join("\n")}\n`, home);
 
-    expect(config.items["dev/perch"]).toEqual({
+    expect(config.items["projects/example"]).toEqual({
       wire: "Projects",
-      name: "Perch",
+      name: "Example",
       importance: "machine",
       thresholds: {
         unsafe: { amberHours: 12, redHours: 48 },
@@ -145,8 +148,19 @@ describe("example config", () => {
       expect: ["ci", "tickets"],
       keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
-      zellijSession: "home",
+      zellijSession: "main",
     });
+  });
+
+  it("names no real account, key or address", async () => {
+    const config = parseConfig(await exampleText(), home);
+    const forges = [...config.sources.github, ...config.sources.forgejo];
+
+    expect(forges.map((source) => source.account)).toEqual([
+      "someone",
+      "someone",
+    ]);
+    expect(await exampleText()).not.toMatch(/\d+\.\d+\.\d+\.\d+/);
   });
 });
 

@@ -1,10 +1,18 @@
 // The main process's one source of truth: the config, the latest snapshot and the aviary derived
-// from them, what went wrong outside any one source, and the scan, launch and key-file reads
-// that act on the aviary's birds. Electron stays outside: every effect is a dependency.
+// from them, what went wrong outside any one source, and the scan, launch, key-file reads and
+// config entry edits that act on the aviary's birds. Electron stays outside: every effect is a
+// dependency.
 
 import type { Config, LoadedConfig } from "@perch/core/config.ts";
+import {
+  type EntryForm,
+  type EntryValues,
+  entryFormFor,
+  withEntry,
+  withoutEntry,
+} from "@perch/core/entry-form.ts";
 import { errorMessage } from "@perch/core/fs.ts";
-import type { Snapshot } from "@perch/core/snapshot.ts";
+import type { Item, Snapshot } from "@perch/core/snapshot.ts";
 import {
   type Aviary,
   type Bird,
@@ -12,6 +20,7 @@ import {
   type LaunchAction,
 } from "@perch/core/viewmodel.ts";
 import type { KeyFileSheet, PerchState } from "../shared/ipc.ts";
+import type { ConfigEdit } from "./config-edit.ts";
 import type { ConfigStore } from "./config-store.ts";
 
 export interface AppStateDeps {
@@ -28,6 +37,10 @@ export interface AppStateDeps {
   readText: (path: string) => Promise<string>;
   /** Writes the starter config; rejects, writing nothing, when the file exists. */
   writeStarter: () => Promise<void>;
+  /** Applies an edit to a fresh read of the config file; rejects, writing nothing, on failure. */
+  editConfig: (edit: ConfigEdit) => Promise<void>;
+  /** Asks for a scan now, or joins the one running, and settles when it has finished. */
+  requestScan: () => Promise<void>;
   /** Told every change to the state. */
   publish: (state: PerchState) => void;
 }
@@ -48,8 +61,20 @@ export interface AppState {
   launch(action: LaunchAction): Promise<void>;
   /** A bird's key files with what was read from each; none for a bird the aviary does not hold. */
   keyFiles(birdId: string): Promise<KeyFileSheet[]>;
-  /** Writes the starter config; a refusal becomes a problem until the next attempt or scan. */
+  /**
+   * Writes the starter config, then asks for a scan; a refusal becomes a problem until the next
+   * attempt or scan.
+   */
   writeStarterConfig(): Promise<void>;
+  /** A bird's config entry and the form's choices; null for a bird the aviary does not hold. */
+  entryForm(birdId: string): EntryForm | null;
+  /**
+   * Sets a bird's config entry, adopting it when it has none, then rereads the config and asks
+   * for a scan; a failure writes nothing and becomes a problem until the next scan.
+   */
+  saveEntry(birdId: string, values: EntryValues): Promise<void>;
+  /** Removes every config entry naming a bird, returning it to the fence, as saveEntry writes. */
+  removeEntry(birdId: string): Promise<void>;
 }
 
 /** Two launch actions are the same when every field is: they are flat records of strings. */
@@ -71,6 +96,7 @@ export function createAppState(deps: AppStateDeps): AppState {
   let scanError: string | null = null;
   let launchError: string | null = null;
   let starterError: string | null = null;
+  let entryError: string | null = null;
   let derived: { snapshot: Snapshot; config: Config; aviary: Aviary } | null =
     null;
 
@@ -94,6 +120,7 @@ export function createAppState(deps: AppStateDeps): AppState {
     if (scanError !== null) list.push(`The scan failed: ${scanError}`);
     if (launchError !== null) list.push(launchError);
     if (starterError !== null) list.push(starterError);
+    if (entryError !== null) list.push(entryError);
     return list;
   }
 
@@ -112,7 +139,32 @@ export function createAppState(deps: AppStateDeps): AppState {
     return birdsOf(current).find((candidate) => candidate.id === birdId);
   }
 
+  /** The snapshot item behind a bird the aviary holds. */
+  function birdItem(birdId: string): Item | undefined {
+    if (bird(birdId) === undefined) return undefined;
+    return snapshot?.items.find((item) => item.id === birdId);
+  }
+
   const publish = () => deps.publish(state());
+
+  async function editEntry(
+    birdId: string,
+    edit: (config: Config, item: Item) => Config,
+  ): Promise<void> {
+    const item = birdItem(birdId);
+    if (item === undefined) return;
+    try {
+      await deps.editConfig((config) => edit(config, item));
+      entryError = null;
+    } catch (error) {
+      entryError = `The config was not changed: ${errorMessage(error)}`;
+      publish();
+      return;
+    }
+    await deps.config.reload();
+    publish();
+    await deps.requestScan();
+  }
 
   return {
     async start() {
@@ -124,6 +176,7 @@ export function createAppState(deps: AppStateDeps): AppState {
       const { loaded } = await deps.config.reload();
       launchError = null;
       starterError = null;
+      entryError = null;
       if (loaded === null) {
         publish();
         return;
@@ -176,6 +229,17 @@ export function createAppState(deps: AppStateDeps): AppState {
         starterError = `The starter config was not written: ${errorMessage(error)}`;
       }
       publish();
+      await deps.requestScan();
     },
+    entryForm(birdId) {
+      const item = birdItem(birdId);
+      const config = deps.config.current().loaded?.config;
+      if (item === undefined || config === undefined) return null;
+      return entryFormFor(config, item);
+    },
+    saveEntry: (birdId, values) =>
+      editEntry(birdId, (config, item) => withEntry(config, item, values)),
+    removeEntry: (birdId) =>
+      editEntry(birdId, (config, item) => withoutEntry(config, item)),
   };
 }

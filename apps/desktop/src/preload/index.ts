@@ -13,6 +13,10 @@ const api: PerchApi = {
   keyFiles: (birdId) => ipcRenderer.invoke(channels.keyFiles, birdId),
   launch: (action) => ipcRenderer.invoke(channels.launch, action),
   writeStarterConfig: () => ipcRenderer.invoke(channels.writeStarterConfig),
+  entryForm: (birdId) => ipcRenderer.invoke(channels.entryForm, birdId),
+  saveEntry: (birdId, values) =>
+    ipcRenderer.invoke(channels.saveEntry, birdId, values),
+  removeEntry: (birdId) => ipcRenderer.invoke(channels.removeEntry, birdId),
 };
 
 contextBridge.exposeInMainWorld("perch", api);

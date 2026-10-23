@@ -1,3 +1,4 @@
+import type { EntryForm, EntryValues } from "@perch/core/entry-form.ts";
 import type { Aviary, KeyFile, LaunchAction } from "@perch/core/viewmodel.ts";
 
 /** What the window shows, pushed whenever it changes. */
@@ -8,7 +9,10 @@ export interface PerchState {
   aviary: Aviary | null;
   /** A scan is running. */
   scanning: boolean;
-  /** What went wrong outside any one source: an unreadable config, a failed scan or launch. */
+  /**
+   * What went wrong outside any one source: an unreadable config, a failed scan or launch, a
+   * config entry that was not written.
+   */
   problems: string[];
 }
 
@@ -35,6 +39,15 @@ export interface PerchApi {
    * nothing, when the file exists, and the refusal arrives as a problem in the state.
    */
   writeStarterConfig(): Promise<void>;
+  /** A bird's config entry and the choices its form offers; null for a bird the aviary does not hold. */
+  entryForm(birdId: string): Promise<EntryForm | null>;
+  /**
+   * Sets a bird's config entry, adopting it when it has none, then scans; a failure writes
+   * nothing and arrives as a problem in the state.
+   */
+  saveEntry(birdId: string, values: EntryValues): Promise<void>;
+  /** Removes every config entry naming a bird, returning it to the fence, as saveEntry writes. */
+  removeEntry(birdId: string): Promise<void>;
 }
 
 /** The calls the main process answers: everything but the pushed state. */
@@ -48,4 +61,7 @@ export const channels = {
   keyFiles: "bird:key-files",
   launch: "bird:launch",
   writeStarterConfig: "config:write-starter",
+  entryForm: "bird:entry-form",
+  saveEntry: "bird:save-entry",
+  removeEntry: "bird:remove-entry",
 } as const satisfies Record<keyof PerchApi, string>;

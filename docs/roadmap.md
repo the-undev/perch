@@ -234,14 +234,6 @@ working tree is clean and everything is pushed"). Deriving it in the
 renderer would mean matching ledger labels; it needs a view model field
 first.
 
-## Key-file paper scrolling
-
-A long markdown file stretches the detail page and the whole page
-scrolls. Observed on first live use, 22 October 2026. Options: each
-document scrolls inside its own fixed-height section; a collapsed view
-per document opened on demand; one document shown at a time with a
-picker. Decide after living with it.
-
 ## Crowded fence
 
 With twenty or so fence birds the name labels overlap and the birds

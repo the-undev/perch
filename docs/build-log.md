@@ -399,3 +399,7 @@ build-time calls so they can be revisited.
 - An empty wire's header tab is a quiet label, its name and "empty",
   rather than a disabled button: there is nothing to press, so it is
   not a control.
+- The open key-file sheet is capped at the window's height less 18rem,
+  at least 20rem, and scrolls inside itself. 18rem is about the header,
+  the strip and the folder tabs, so a capped sheet fits the ground
+  beneath them. The sheet takes keyboard focus so the keys scroll it.

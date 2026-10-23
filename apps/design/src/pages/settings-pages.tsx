@@ -1,13 +1,16 @@
-// The settings page: each group of config in its states, with what the editor would say of it,
-// and the whole page as the app shows it.
+// The settings page: each page of config but the sources in its states, with what the editor
+// would say of it, and the whole page as the app shows it, rail and all.
 
+import { defaultConfig } from "@perch/core/config-default.ts";
+import { mockSnapshot } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   type SettingsValues,
+  settingsFormFor,
   settingsProblems,
 } from "@perch/core/settings-form.ts";
 import { FormNotes } from "@perch/ui/form-parts.tsx";
-import { mockSettingsForm } from "@perch/ui/mock-birds.ts";
+import { mockHome, mockSettingsForm } from "@perch/ui/mock-birds.ts";
 import {
   ImportanceGroup,
   LaunchGroup,
@@ -27,6 +30,9 @@ import {
   Specimen,
   Usage,
 } from "../usage.tsx";
+
+/** Four minutes after the mock's scan, the moment the source cards are measured to. */
+const afterScan = new Date(Date.parse(mockSnapshot.scannedAt) + 4 * 60_000);
 
 const mockForm = mockSettingsForm();
 const mock = mockForm.values;
@@ -120,7 +126,7 @@ export function SettingsGroupsPage() {
   return (
     <>
       <Section
-        title="Wires and importance"
+        title="Wires and tiers"
         rule="Ordered names, moved up and down, and the default picked from them. Removing a wire or tier that item entries name is allowed: the form names the entries, and saving moves them to the default."
         min={560}
       >
@@ -156,7 +162,7 @@ export function SettingsGroupsPage() {
         />
       </Section>
       <Section
-        title="Thresholds and scan"
+        title="Judgement and scanning"
         rule="The six global thresholds use the entry forms' rule: whole numbers above zero, amber opening before red. The intervals and the finalised commit count are whole numbers above zero too; an emptied field counts as none."
         min={560}
       >
@@ -194,7 +200,7 @@ export function SettingsGroupsPage() {
         />
       </Section>
       <Section
-        title="Launch"
+        title="Launching"
         rule="The zellij session, sessions by root, and each command as one list line in the file's own form, read as JSON. Arguments are never split on spaces; an empty field removes the action."
         min={620}
       >
@@ -222,7 +228,7 @@ export function SettingsGroupsPage() {
         />
       </Section>
       <Section
-        title="Joins and ignores"
+        title="Joining up"
         rule="The presence lists as raw text: each join one list line of references, each ignore one reference."
         min={560}
       >
@@ -254,6 +260,21 @@ export function SettingsGroupsPage() {
             what: "The values as the file holds them, and the entries naming each wire and tier. The draft starts here and follows it while untouched.",
           },
           {
+            name: "page",
+            type: "SettingsPageName",
+            what: "The page the rail has open.",
+          },
+          {
+            name: "cards",
+            type: "SourceCard[] | null",
+            what: "Each configured source card's last scan, for the Sources page.",
+          },
+          {
+            name: "now",
+            type: "Date",
+            what: "The moment the source cards' scan times are measured to.",
+          },
+          {
             name: "onSave",
             type: "(values: SettingsValues) => void",
             what: "Save was pressed with values that changed and can be written.",
@@ -261,14 +282,16 @@ export function SettingsGroupsPage() {
         ]}
       >
         <p>
-          Each group (<Code>WiresGroup</Code>, <Code>ThresholdsGroup</Code>,{" "}
-          <Code>ScanGroup</Code>, <Code>ImportanceGroup</Code>,{" "}
-          <Code>LaunchGroup</Code>, <Code>PresencesGroup</Code>) takes its slice
-          of <Code>SettingsValues</Code> as <Code>value</Code> and every change
-          as <Code>onChange</Code>; the wire and importance groups take{" "}
-          <Code>named</Code> for their warnings. The editor composes them in
-          config's order and lists <Code>settingsProblems(values)</Code> beside
-          Save, as this page does beneath each specimen.
+          Each page (<Code>WiresGroup</Code>, <Code>ImportanceGroup</Code>,{" "}
+          <Code>ThresholdsGroup</Code>, <Code>ScanGroup</Code>,{" "}
+          <Code>LaunchGroup</Code>, <Code>PresencesGroup</Code>, and{" "}
+          <Code>SourcesPage</Code> on a page of its own) takes its slice of{" "}
+          <Code>SettingsValues</Code> as <Code>value</Code> and every change as{" "}
+          <Code>onChange</Code>; the wire and tier pages take <Code>named</Code>{" "}
+          for their warnings. The editor shows the page the rail has open, holds
+          the draft across every page, and lists{" "}
+          <Code>settingsProblems(values)</Code> beside Save, as this page does
+          beneath each specimen.
         </p>
         <p>
           The form comes from <Code>settingsFormFor(config, home)</Code> in{" "}
@@ -283,6 +306,18 @@ export function SettingsGroupsPage() {
 }
 
 type Problems = "none" | "refused";
+
+type Start = "mock" | "starter";
+
+const startOptions: { value: Start; label: string }[] = [
+  { value: "mock", label: "The mock's" },
+  { value: "starter", label: "The starter's, no sources" },
+];
+
+const startForms: Record<Start, SettingsForm> = {
+  mock: mockForm,
+  starter: settingsFormFor(defaultConfig(), mockHome),
+};
 
 const problemOptions: { value: Problems; label: string }[] = [
   { value: "none", label: "None" },
@@ -301,6 +336,7 @@ function editedOnDisk(
 }
 
 export function SettingsScenePage() {
+  const [start, setStart] = useState<Start>("mock");
   const [form, setForm] = useState(mockForm);
   const [problems, setProblems] = useState<Problems>("none");
   const [pressed, setPressed] = useState("nothing yet");
@@ -308,10 +344,19 @@ export function SettingsScenePage() {
     <>
       <Section
         title="The settings page, end to end"
-        rule="The camera header's settings word leads here, in the camera's place. The brand, back to the aviary and Escape go home. Edit a field, then change the file on disk: the draft is kept and the page says the file moved. Leave the form untouched and the change simply shows."
+        rule="The camera header's settings word leads here, in the camera's place, open on Sources. The rail names every page beside one reading-width column, capped near 1400px and centred; below about 900px it folds to a row of words above the column. The brand, back to the aviary and Escape go home. Edit a field, then change the file on disk: the draft is kept across pages and the page says the file moved. Leave the form untouched and the change shows."
         min={600}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+          <Choice
+            label="Config"
+            options={startOptions}
+            value={start}
+            onChange={(next) => {
+              setStart(next);
+              setForm(startForms[next]);
+            }}
+          />
           <Choice
             label="Problems"
             options={problemOptions}
@@ -336,7 +381,10 @@ export function SettingsScenePage() {
       </Section>
       <SceneFrame height="max(640px, calc(100vh - 260px))">
         <SettingsView
+          key={start}
           form={form}
+          cards={mockSnapshot.sourceCards}
+          now={afterScan}
           problems={
             problems === "refused"
               ? ["The config was not changed: Wires: each wire once"]
@@ -359,6 +407,16 @@ export function SettingsScenePage() {
             what: "The settings as the file holds them; null until read, when the page says so.",
           },
           {
+            name: "cards",
+            type: "SourceCard[] | null",
+            what: "Each configured source card's last scan from the pushed state; null until a snapshot holds them.",
+          },
+          {
+            name: "now",
+            type: "Date",
+            what: "The moment the source cards' scan times are measured to.",
+          },
+          {
             name: "problems",
             type: "string[]",
             what: "The main process's problems, a refused save among them, listed above the form.",
@@ -377,9 +435,11 @@ export function SettingsScenePage() {
       >
         <p>
           The desktop app renders it at <Code>/settings</Code> in place of the
-          camera. Every pushed state reads the form again, so an edit to the
-          file by hand, which the main process watches for, reaches an open
-          page; an equal answer keeps the same object and the draft.
+          camera, and goes there once the welcome creates the config file. The
+          open page is the view's own state, Sources each time it opens. Every
+          pushed state reads the form again, so an edit to the file by hand,
+          which the main process watches for, reaches an open page; an equal
+          answer keeps the same object and the draft.
         </p>
       </Usage>
     </>

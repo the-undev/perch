@@ -59,7 +59,8 @@ nothing reads it but the tests and the design site.
 typed against the view model only: the bird, wire, fence and sky scene, the
 bubble and chips, the detail page's pieces (ledger and its sections,
 launch actions, links out, key-file paper), and the config forms: the
-entry forms and the settings page's groups, built from `form-parts.tsx`.
+entry forms and the settings pages behind the rail, built from
+`form-parts.tsx`.
 Components are presentational:
 no fetching and no clock; the caller passes `night`, a `now` Date and
 callbacks. `src/theme.css` is the one theme, Tailwind v4 tokens taken from

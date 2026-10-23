@@ -1,6 +1,6 @@
-// The config but the item entries and the sources as the settings page edits it: the values the form
-// holds, what they cannot be, and the edit that puts them back into config. No Node modules, so
-// the renderer may import it.
+// The config but the item entries as the settings page edits it: the values the form holds, what
+// they cannot be, and the edit that puts them back into config. No Node modules, so the renderer
+// may import it.
 
 import {
   type Config,
@@ -9,6 +9,7 @@ import {
   type ItemEntry,
   type LaunchCommandName,
   launchPlaceholders,
+  type SourcesConfig,
   type Thresholds,
 } from "./config.ts";
 import {
@@ -17,6 +18,7 @@ import {
   type ThresholdKey,
   thresholdProblems,
 } from "./entry-form.ts";
+import { sourceProblemLine, sourceProblems } from "./sources-form.ts";
 
 /** A zellij session and the root directory whose items it holds. */
 export interface SessionRoot {
@@ -25,9 +27,11 @@ export interface SessionRoot {
   session: string;
 }
 
-/** Everything in config but the item entries and the sources, which have pages of their own. */
+/** Everything in config but the item entries, which each bird's page edits. */
 export interface SettingsValues {
   wires: { names: string[]; default: string };
+  /** Config's source tables, each kind in order, paths written with ~. */
+  sources: SourcesConfig;
   thresholds: Record<ThresholdKey, number>;
   scan: {
     intervalMinutes: number;
@@ -107,6 +111,7 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
   return {
     values: {
       wires: { names: [...config.wires.names], default: config.wires.default },
+      sources: mapSourcePaths(config.sources, path),
       thresholds: flatThresholds(config.thresholds) as Record<
         ThresholdKey,
         number
@@ -130,6 +135,29 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
       wires: namedBy(config.items, (entry) => entry.wire),
       tiers: namedBy(config.items, (entry) => entry.importance),
     },
+  };
+}
+
+/** The sources with every local path mapped, each list a copy. */
+function mapSourcePaths(
+  sources: SourcesConfig,
+  path: (path: string) => string,
+): SourcesConfig {
+  const forge = <T extends { hosts: string[]; trackedForks: string[] }>(
+    source: T,
+  ): T => ({
+    ...source,
+    hosts: [...source.hosts],
+    trackedForks: [...source.trackedForks],
+  });
+  return {
+    local: sources.local.map((source) => ({
+      include: source.include.map(path),
+      exclude: source.exclude.map(path),
+    })),
+    github: sources.github.map(forge),
+    forgejo: sources.forgejo.map(forge),
+    kuma: sources.kuma.map((source) => ({ ...source })),
   };
 }
 
@@ -234,6 +262,7 @@ export function settingsProblems(values: SettingsValues): string[] {
   if (values.ignore.some(isBlank)) {
     problems.push("Ignored presences: a reference cannot be empty");
   }
+  problems.push(...sourceProblems(values.sources).map(sourceProblemLine));
   return problems;
 }
 
@@ -290,9 +319,9 @@ function listOf(line: string): string[] {
 }
 
 /**
- * Config with everything but its item entries and sources set to the values, paths expanded against the
- * home directory; an entry naming a wire or tier the values remove falls to the default. Throws
- * when settingsProblems finds any.
+ * Config with everything but its item entries set to the values, paths expanded against the home
+ * directory; an entry naming a wire or tier the values remove falls to the default. Throws when
+ * settingsProblems finds any.
  */
 export function withSettings(
   config: Config,
@@ -311,7 +340,7 @@ export function withSettings(
   const { tiers } = values.importance;
   return {
     wires: { names: [...wires], default: values.wires.default },
-    sources: config.sources,
+    sources: mapSourcePaths(values.sources, path),
     joins: values.joins.map(listOf),
     ignore: [...values.ignore],
     thresholds: nestedThresholds(values.thresholds) as Thresholds,

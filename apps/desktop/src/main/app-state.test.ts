@@ -280,18 +280,18 @@ describe("the app state", () => {
     expect(published.at(-1)?.problems).toEqual([]);
   });
 
-  it("writes the starter config", async () => {
+  it("writes the starter config, saying so", async () => {
     const { app, deps, published } = appState();
     await app.start();
 
-    await app.writeStarterConfig();
+    expect(await app.writeStarterConfig()).toBe(true);
 
     expect(deps.writeStarter).toHaveBeenCalledTimes(1);
     expect(published.at(-1)?.problems).toEqual([]);
     expect(deps.requestScan).toHaveBeenCalledTimes(1);
   });
 
-  it("says why the starter config was not written, until the next scan", async () => {
+  it("says why the config file was not created, until the next scan", async () => {
     const { app, published } = appState({
       writeStarter: vi.fn(async () => {
         throw new Error("/home/owner/.config/perch/config.toml already exists");
@@ -299,9 +299,9 @@ describe("the app state", () => {
     });
     await app.start();
 
-    await app.writeStarterConfig();
+    expect(await app.writeStarterConfig()).toBe(false);
     expect(published.at(-1)?.problems).toEqual([
-      "The starter config was not written: /home/owner/.config/perch/config.toml already exists",
+      "The config file was not created: /home/owner/.config/perch/config.toml already exists",
     ]);
 
     await app.scan();

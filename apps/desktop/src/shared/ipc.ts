@@ -46,10 +46,11 @@ export interface PerchApi {
   /** Performs a launch action a bird offers; a failure arrives as a problem in the state. */
   launch(action: LaunchAction): Promise<void>;
   /**
-   * Copies the shipped example to the config path, then reads it and scans; refuses, writing
-   * nothing, when the file exists, and the refusal arrives as a problem in the state.
+   * Writes the default config (one wire, the standard windows and tiers, no sources) to the
+   * config path and starts a scan, resolving true once written; refuses, writing nothing, when
+   * the file exists, resolving false, and the refusal arrives as a problem in the state.
    */
-  writeStarterConfig(): Promise<void>;
+  writeStarterConfig(): Promise<boolean>;
   /** A bird's config entry and the choices its form offers; null for a bird the aviary does not hold. */
   entryForm(birdId: string): Promise<EntryForm | null>;
   /**

@@ -721,7 +721,7 @@ export interface ConfiguredCard {
 }
 
 /** A URL's host and port, or the text itself when it does not parse as a URL. */
-function hostOf(url: string): string {
+export function hostOf(url: string): string {
   try {
     return new URL(url).host;
   } catch {
@@ -764,6 +764,24 @@ function localGrain(
   };
 }
 
+/** A forgejo card's heading: its account at its base URL's host and port. */
+export function forgejoCardLabel(card: {
+  account: string;
+  baseUrl: string;
+}): string {
+  return `${card.account}@${hostOf(card.baseUrl)}`;
+}
+
+/** Each kind's card id, from a source table whose paths are written with ~. */
+export const sourceCardIds: {
+  [Kind in SourceCardKind]: (card: SourcesConfig[Kind][number]) => string;
+} = {
+  local: (card) => `local:${card.include[0] ?? ""}`,
+  github: (card) => `github:${card.account}`,
+  forgejo: (card) => `forgejo:${forgejoCardLabel(card)}`,
+  kuma: (card) => `kuma:${card.name}`,
+};
+
 /** Every configured source table in config order, local, github, forgejo, then kuma. */
 export function configuredCards(
   sources: SourcesConfig,
@@ -773,7 +791,7 @@ export function configuredCards(
     ...sources.local.map((card): ConfiguredCard => {
       const paths = card.include.map((path) => collapseHome(path, home));
       return {
-        id: `local:${paths[0] ?? ""}`,
+        id: sourceCardIds.local({ ...card, include: paths }),
         kind: "local",
         label: paths.join(", "),
         polled: "local",
@@ -782,7 +800,7 @@ export function configuredCards(
     }),
     ...sources.github.map(
       (card): ConfiguredCard => ({
-        id: `github:${card.account}`,
+        id: sourceCardIds.github(card),
         kind: "github",
         label: card.account,
         polled: "githubAccounts",
@@ -794,11 +812,10 @@ export function configuredCards(
       }),
     ),
     ...sources.forgejo.map((card): ConfiguredCard => {
-      const label = `${card.account}@${hostOf(card.baseUrl)}`;
       return {
-        id: `forgejo:${label}`,
+        id: sourceCardIds.forgejo(card),
         kind: "forgejo",
-        label,
+        label: forgejoCardLabel(card),
         polled: "forgejoAccounts",
         grain: (files) =>
           entryGrain(
@@ -809,7 +826,7 @@ export function configuredCards(
     }),
     ...sources.kuma.map(
       (card): ConfiguredCard => ({
-        id: `kuma:${card.name}`,
+        id: sourceCardIds.kuma(card),
         kind: "kuma",
         label: card.name,
         polled: "kuma",

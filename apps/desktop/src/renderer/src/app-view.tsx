@@ -116,7 +116,12 @@ export function AppView({ api }: { api: PerchApi }) {
     return (
       <Welcome
         problems={state.problems}
-        onWriteStarter={() => void api.writeStarterConfig()}
+        onCreateConfig={() =>
+          void api.writeStarterConfig().then((written) => {
+            // The settings page opens on Sources, where the first source is added.
+            if (written) void navigate({ to: "/settings" });
+          })
+        }
         onCheckAgain={() => void api.rescan()}
       />
     );
@@ -125,6 +130,8 @@ export function AppView({ api }: { api: PerchApi }) {
     return (
       <SettingsView
         form={settings}
+        cards={state.sourceCards}
+        now={now}
         problems={state.problems}
         onSave={(values) =>
           void api

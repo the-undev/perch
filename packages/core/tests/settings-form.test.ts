@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "smol-toml";
 import { describe, expect, it } from "vitest";
-import { type Config, parseConfig } from "../src/config.ts";
+import { parseConfig } from "../src/config.ts";
 import { writeConfig } from "../src/config-write.ts";
 import { mockConfig } from "../src/mock.ts";
 import {
@@ -55,62 +55,43 @@ describe("the settings form", () => {
     expect(parse(saved)).toEqual(parse(text));
   });
 
-  it("shows include paths as typed with ~, and keeps ~ entries added beside them", async () => {
-    const config = parseConfig(await starterText(), home);
-    const { values } = settingsFormFor(config, home);
-
-    expect(values.local.include).toEqual(["~/dev", "~/.dotfiles"]);
+  it("shows zellij session roots as typed with ~, and keeps ~ entries added beside them", () => {
+    const values = mockValues();
     const next = withSettings(
-      config,
+      mockConfig,
       {
         ...values,
-        local: {
-          ...values.local,
-          include: [
-            ...values.local.include,
-            "~/undev",
-            "~/obsidian/Hothouse",
-            "~/obsidian/Pocket",
+        launch: {
+          ...values.launch,
+          zellijSessions: [
+            ...values.launch.zellijSessions,
+            { root: "~/work", session: "work" },
           ],
         },
       },
       home,
     );
 
-    expect(next.local.include).toEqual([
-      `${home}/dev`,
-      `${home}/.dotfiles`,
-      `${home}/undev`,
-      `${home}/obsidian/Hothouse`,
-      `${home}/obsidian/Pocket`,
-    ]);
+    expect(next.launch.zellijSessions[`${home}/work`]).toBe("work");
     const written = writeConfig(next, home);
-    expect(written).toContain(
-      'include = [ "~/dev", "~/.dotfiles", "~/undev", "~/obsidian/Hothouse", "~/obsidian/Pocket" ]',
-    );
+    expect(written).toContain('"~/work" = "work"');
     expect(
-      settingsFormFor(parseConfig(written, home), home).values.local,
-    ).toEqual({
-      include: [
-        "~/dev",
-        "~/.dotfiles",
-        "~/undev",
-        "~/obsidian/Hothouse",
-        "~/obsidian/Pocket",
-      ],
-      ignore: values.local.ignore,
-    });
+      settingsFormFor(parseConfig(written, home), home).values.launch
+        .zellijSessions,
+    ).toContainEqual({ root: "~/work", session: "work" });
   });
 
-  it("refuses a path that is neither absolute nor under ~", () => {
-    expect(
-      settingsProblems(
-        changed({ local: { include: ["undev"], ignore: ["./archived"] } }),
-      ),
-    ).toEqual([
-      "Include paths: each must start with / or ~",
-      "Ignore paths: each must start with / or ~",
-    ]);
+  it("edits finalised commits in the scan group and leaves the sources alone", () => {
+    const values = mockValues();
+    const next = withSettings(
+      mockConfig,
+      { ...values, scan: { ...values.scan, finalisedCommits: 4 } },
+      home,
+    );
+
+    expect(next.forges).toEqual({ ...mockConfig.forges, finalisedCommits: 4 });
+    expect(next.local).toEqual(mockConfig.local);
+    expect(next.server).toEqual(mockConfig.server);
   });
 });
 
@@ -246,8 +227,11 @@ describe("what the settings cannot be", () => {
     expect(
       settingsProblems({
         ...values,
-        scan: { intervalMinutes: 0, archivedIntervalHours: Number.NaN },
-        forges: { ...values.forges, finalisedCommits: 2.5 },
+        scan: {
+          intervalMinutes: 0,
+          archivedIntervalHours: Number.NaN,
+          finalisedCommits: 2.5,
+        },
       }),
     ).toEqual([
       "Scan interval: must be whole minutes above zero",
@@ -256,7 +240,7 @@ describe("what the settings cannot be", () => {
     ]);
   });
 
-  it("wants zellij sessions, forge accounts, joins and a server filled in", () => {
+  it("wants zellij sessions and joins filled in", () => {
     const values = mockValues();
 
     expect(
@@ -270,16 +254,6 @@ describe("what the settings cannot be", () => {
             { root: "undev", session: "undev" },
           ],
         },
-        forges: {
-          ...values.forges,
-          github: {
-            ...values.forges.github,
-            accounts: [{ account: "finch", key: "" }],
-            trackedForks: ["someone"],
-          },
-          forgejo: { ...values.forges.forgejo, hosts: [""], baseUrl: "" },
-        },
-        server: { name: "Silo", kumaBaseUrl: "", kumaStatusPage: "perch" },
         joins: ['["github:finch/notes"]', "github:a/b forgejo:a/b"],
         ignore: [""],
       }),
@@ -288,11 +262,6 @@ describe("what the settings cannot be", () => {
       "Zellij sessions: each root must start with / or ~",
       "Zellij sessions: every root needs a session name",
       "Zellij sessions: each root once",
-      "GitHub: every account needs a name and a keyring key",
-      "GitHub: tracked forks are written owner/name",
-      "Forgejo: every host needs a name",
-      "Forgejo: the address cannot be empty",
-      "Server: the name, the Uptime Kuma address and the status page each need a value",
       "Joins: each join names two references or more",
       'Joins: each join must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
       "Ignored presences: a reference cannot be empty",
@@ -303,7 +272,13 @@ describe("what the settings cannot be", () => {
     expect(() =>
       withSettings(
         mockConfig,
-        changed({ scan: { intervalMinutes: 0, archivedIntervalHours: 24 } }),
+        changed({
+          scan: {
+            intervalMinutes: 0,
+            archivedIntervalHours: 24,
+            finalisedCommits: 10,
+          },
+        }),
         home,
       ),
     ).toThrow("Scan interval: must be whole minutes above zero");
@@ -352,33 +327,5 @@ describe("removing a wire or tier entries name", () => {
       mockConfig.items["obsidian/Pocket"]?.roadmaps,
     );
     expect(parseConfig(writeConfig(next, home), home)).toEqual(next);
-  });
-});
-
-describe("the server", () => {
-  it("turns monitoring off, leaving the [server] section out", () => {
-    const next = withSettings(mockConfig, changed({ server: null }), home);
-
-    expect(next.server).toBeNull();
-    expect(writeConfig(next, home)).not.toContain("[server]");
-  });
-
-  it("turns monitoring on with its three fields", () => {
-    const off: Config = { ...mockConfig, server: null };
-    const server = {
-      name: "Silo",
-      kumaBaseUrl: "http://kuma.invalid:3001",
-      kumaStatusPage: "perch",
-    };
-
-    expect(settingsFormFor(off, home).values.server).toBeNull();
-    const next = withSettings(
-      off,
-      { ...settingsFormFor(off, home).values, server },
-      home,
-    );
-
-    expect(next.server).toEqual(server);
-    expect(parseConfig(writeConfig(next, home), home).server).toEqual(server);
   });
 });

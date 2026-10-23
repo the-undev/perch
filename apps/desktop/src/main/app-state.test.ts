@@ -476,12 +476,10 @@ describe("the settings", () => {
     await app.saveSettings(formOf(app).values);
 
     expect(parse(first)).toEqual(parse(starter));
-    expect(first).toContain('include = [ "~/dev", "~/.dotfiles" ]');
     expect(await written()).toBe(first);
-    expect(formOf(app).values.local.include).toEqual(["~/dev", "~/.dotfiles"]);
   });
 
-  it("adds include paths under ~, rereads the config and asks for a scan", async () => {
+  it("adds a zellij session root under ~, rereads the config and asks for a scan", async () => {
     const { app, deps, published } = await onText(
       await readFile(starterPath, "utf8"),
     );
@@ -489,20 +487,17 @@ describe("the settings", () => {
 
     await app.saveSettings({
       ...values,
-      local: {
-        ...values.local,
-        include: [...values.local.include, "~/undev", "~/obsidian/Hothouse"],
+      launch: {
+        ...values.launch,
+        zellijSessions: [{ root: "~/work", session: "work" }],
       },
     });
 
-    expect(parse(await written()).local).toMatchObject({
-      include: ["~/dev", "~/.dotfiles", "~/undev", "~/obsidian/Hothouse"],
+    expect(parse(await written()).launch).toMatchObject({
+      zellij_sessions: { "~/work": "work" },
     });
-    expect(formOf(app).values.local.include).toEqual([
-      "~/dev",
-      "~/.dotfiles",
-      "~/undev",
-      "~/obsidian/Hothouse",
+    expect(formOf(app).values.launch.zellijSessions).toEqual([
+      { root: "~/work", session: "work" },
     ]);
     expect(published.at(-1)?.problems).toEqual([]);
     expect(deps.requestScan).toHaveBeenCalledTimes(1);

@@ -9,13 +9,10 @@ import {
 import { FormNotes } from "@perch/ui/form-parts.tsx";
 import { mockSettingsForm } from "@perch/ui/mock-birds.ts";
 import {
-  ForgesGroup,
   ImportanceGroup,
   LaunchGroup,
-  LocalPathsGroup,
   PresencesGroup,
   ScanGroup,
-  ServerGroup,
   ThresholdsGroup,
   WiresGroup,
 } from "@perch/ui/settings-forms.tsx";
@@ -65,15 +62,6 @@ const withMock = (change: Partial<SettingsValues>): SettingsValues => ({
   ...change,
 });
 
-const local = (
-  values: SettingsValues,
-  change: (c: Partial<SettingsValues>) => void,
-) => (
-  <LocalPathsGroup
-    value={values.local}
-    onChange={(next) => change({ local: next })}
-  />
-);
 const wires = (
   values: SettingsValues,
   change: (c: Partial<SettingsValues>) => void,
@@ -118,24 +106,6 @@ const launch = (
     onChange={(next) => change({ launch: next })}
   />
 );
-const forges = (
-  values: SettingsValues,
-  change: (c: Partial<SettingsValues>) => void,
-) => (
-  <ForgesGroup
-    value={values.forges}
-    onChange={(next) => change({ forges: next })}
-  />
-);
-const server = (
-  values: SettingsValues,
-  change: (c: Partial<SettingsValues>) => void,
-) => (
-  <ServerGroup
-    value={values.server}
-    onChange={(next) => change({ server: next })}
-  />
-);
 const presences = (
   values: SettingsValues,
   change: (c: Partial<SettingsValues>) => void,
@@ -149,26 +119,6 @@ const presences = (
 export function SettingsGroupsPage() {
   return (
     <>
-      <Section
-        title="Local paths"
-        rule="The include and ignore lists, each entry a text field edited in place. Config holds the paths expanded; the page shows a path under the home directory with ~, and the file is written so."
-        min={560}
-      >
-        <GroupSpecimen
-          label="As the mock holds them"
-          rule="Six includes, ~/undev and both vaults among them, and two ignores."
-          start={mock}
-          group={local}
-        />
-        <GroupSpecimen
-          label="A path neither absolute nor under ~"
-          rule="dev would be read against nothing in particular: every path starts with / or ~."
-          start={withMock({
-            local: { include: ["~/dev", "undev"], ignore: [] },
-          })}
-          group={local}
-        />
-      </Section>
       <Section
         title="Wires and importance"
         rule="Ordered names, moved up and down, and the default picked from them. Removing a wire or tier that item entries name is allowed: the form names the entries, and saving moves them to the default."
@@ -207,7 +157,7 @@ export function SettingsGroupsPage() {
       </Section>
       <Section
         title="Thresholds and scan"
-        rule="The six global thresholds use the entry forms' rule: whole numbers above zero, amber opening before red. The intervals are whole numbers above zero too; an emptied field counts as none."
+        rule="The six global thresholds use the entry forms' rule: whole numbers above zero, amber opening before red. The intervals and the finalised commit count are whole numbers above zero too; an emptied field counts as none."
         min={560}
       >
         <GroupSpecimen
@@ -230,7 +180,7 @@ export function SettingsGroupsPage() {
         />
         <GroupSpecimen
           label="Scan as the mock holds it"
-          rule="Every 15 minutes; the archived lane every 24 hours."
+          rule="Every 15 minutes; the archived lane every 24 hours; ten finalised commits."
           start={mock}
           group={scan}
         />
@@ -238,7 +188,7 @@ export function SettingsGroupsPage() {
           label="An interval of zero"
           rule="A scan every zero minutes cannot be written."
           start={withMock({
-            scan: { intervalMinutes: 0, archivedIntervalHours: 24 },
+            scan: { ...mock.scan, intervalMinutes: 0 },
           })}
           group={scan}
         />
@@ -269,59 +219,6 @@ export function SettingsGroupsPage() {
             },
           })}
           group={launch}
-        />
-      </Section>
-      <Section
-        title="Forges"
-        rule="The finalised commit count, then each forge's hosts, accounts and tracked forks as raw text. Each account names its keyring key; the token itself never touches the file."
-        min={620}
-      >
-        <GroupSpecimen
-          label="As the mock holds them"
-          rule="Three GitHub accounts and two on Forgejo."
-          start={mock}
-          group={forges}
-        />
-        <GroupSpecimen
-          label="An account without a key, a fork without its owner"
-          rule="Each account needs a name and a key; tracked forks are owner/name."
-          start={withMock({
-            forges: {
-              ...mock.forges,
-              github: {
-                ...mock.forges.github,
-                accounts: [{ account: "finch", key: "" }],
-                trackedForks: ["fork"],
-              },
-            },
-          })}
-          group={forges}
-        />
-      </Section>
-      <Section
-        title="Server"
-        rule="Absent by default. Monitor a server adds the section with three empty fields; Stop monitoring removes it again."
-        min={460}
-      >
-        <GroupSpecimen
-          label="Monitored"
-          rule="The mock's Silo through its Uptime Kuma status page."
-          start={mock}
-          group={server}
-        />
-        <GroupSpecimen
-          label="Not monitored"
-          rule="No [server] section in the file."
-          start={withMock({ server: null })}
-          group={server}
-        />
-        <GroupSpecimen
-          label="Turned on, not filled in"
-          rule="Each of the three fields needs a value before the form saves."
-          start={withMock({
-            server: { name: "", kumaBaseUrl: "", kumaStatusPage: "" },
-          })}
-          group={server}
         />
       </Section>
       <Section
@@ -364,13 +261,11 @@ export function SettingsGroupsPage() {
         ]}
       >
         <p>
-          Each group (<Code>LocalPathsGroup</Code>, <Code>WiresGroup</Code>,{" "}
-          <Code>ThresholdsGroup</Code>, <Code>ScanGroup</Code>,{" "}
-          <Code>ImportanceGroup</Code>, <Code>LaunchGroup</Code>,{" "}
-          <Code>ForgesGroup</Code>, <Code>ServerGroup</Code>,{" "}
-          <Code>PresencesGroup</Code>) takes its slice of{" "}
-          <Code>SettingsValues</Code> as <Code>value</Code> and every change as{" "}
-          <Code>onChange</Code>; the wire and importance groups take{" "}
+          Each group (<Code>WiresGroup</Code>, <Code>ThresholdsGroup</Code>,{" "}
+          <Code>ScanGroup</Code>, <Code>ImportanceGroup</Code>,{" "}
+          <Code>LaunchGroup</Code>, <Code>PresencesGroup</Code>) takes its slice
+          of <Code>SettingsValues</Code> as <Code>value</Code> and every change
+          as <Code>onChange</Code>; the wire and importance groups take{" "}
           <Code>named</Code> for their warnings. The editor composes them in
           config's order and lists <Code>settingsProblems(values)</Code> beside
           Save, as this page does beneath each specimen.

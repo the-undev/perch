@@ -400,22 +400,16 @@ describe("the window", () => {
       );
 
       fireEvent.change(
-        await screen.findByRole("textbox", { name: "Add an include path" }),
-        { target: { value: "~/code" } },
+        await screen.findByRole("textbox", { name: "Add an ignored presence" }),
+        { target: { value: "github:a/old" } },
       );
       fireEvent.click(
-        screen.getByRole("button", { name: "Add the include path" }),
+        screen.getByRole("button", { name: "Add the ignored presence" }),
       );
       fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
       expect(fake.settingsSaves).toEqual([
-        {
-          ...form.values,
-          local: {
-            ...form.values.local,
-            include: [...form.values.local.include, "~/code"],
-          },
-        },
+        { ...form.values, ignore: [...form.values.ignore, "github:a/old"] },
       ]);
       act(() =>
         fake.push({

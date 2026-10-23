@@ -51,49 +51,6 @@ describe("the settings editor", () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it("adds include paths beside the ~ entries, and edits one in place", () => {
-    const { onSave, form } = editor();
-    const local = group("Local paths");
-
-    expect(
-      (
-        local.getByRole("textbox", {
-          name: "include path 1",
-        }) as HTMLInputElement
-      ).value,
-    ).toBe("~/dev");
-    type(local.getByRole("textbox", { name: "Add an include path" }), "~/code");
-    fireEvent.click(
-      local.getByRole("button", { name: "Add the include path" }),
-    );
-    type(local.getByRole("textbox", { name: "include path 7" }), "~/src");
-    fireEvent.click(
-      local.getByRole("button", {
-        name: "Remove ignore path ~/dev/third-party",
-      }),
-    );
-    fireEvent.click(saveButton());
-
-    expect(onSave).toHaveBeenCalledWith({
-      ...form.values,
-      local: {
-        include: [...form.values.local.include, "~/src"],
-        ignore: ["~/dev/archived"],
-      },
-    });
-  });
-
-  it("refuses a path that is neither absolute nor under ~", () => {
-    editor();
-
-    type(screen.getByRole("textbox", { name: "include path 1" }), "dev");
-
-    expect(
-      screen.getByText("Include paths: each must start with / or ~"),
-    ).toBeDefined();
-    expect(saveButton().disabled).toBe(true);
-  });
-
   it("orders the wires, adds one and picks the default from them", () => {
     const { onSave, form } = editor();
     const wires = group("Wires");
@@ -198,6 +155,29 @@ describe("the settings editor", () => {
     expect(saveButton().disabled).toBe(true);
   });
 
+  it("edits the finalised commit count in the scan group", () => {
+    const { onSave, form } = editor();
+
+    type(
+      group("Scan").getByRole("spinbutton", { name: "Finalised commits" }),
+      "4",
+    );
+    fireEvent.click(saveButton());
+
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      scan: { ...form.values.scan, finalisedCommits: 4 },
+    });
+  });
+
+  it("shows no source groups, which have pages of their own", () => {
+    editor();
+
+    for (const name of ["Local paths", "Forges", "Server"]) {
+      expect(screen.queryByRole("region", { name })).toBeNull();
+    }
+  });
+
   it("says an interval must be whole minutes above zero", () => {
     editor();
 
@@ -240,7 +220,7 @@ describe("the settings editor", () => {
     });
   });
 
-  it("edits zellij sessions by root and forge accounts as rows", () => {
+  it("edits zellij sessions by root as rows", () => {
     const { onSave, form } = editor();
 
     fireEvent.click(
@@ -254,17 +234,8 @@ describe("the settings editor", () => {
       screen.getByRole("textbox", { name: "session root 2, session" }),
       "work",
     );
-    const forges = group("Forges");
-    fireEvent.click(
-      forges.getByRole("button", { name: "Remove GitHub account 3" }),
-    );
-    type(
-      forges.getByRole("textbox", { name: "Forgejo account 2, keyring key" }),
-      "forge-work",
-    );
     fireEvent.click(saveButton());
 
-    const { github, forgejo } = form.values.forges;
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
       launch: {
@@ -273,58 +244,6 @@ describe("the settings editor", () => {
           { root: "~/undev", session: "undev" },
           { root: "~/work", session: "work" },
         ],
-      },
-      forges: {
-        ...form.values.forges,
-        github: { ...github, accounts: github.accounts.slice(0, 2) },
-        forgejo: {
-          ...forgejo,
-          accounts: [
-            { account: "finch", key: "forgejo-finch" },
-            { account: "the-undev", key: "forge-work" },
-          ],
-        },
-      },
-    });
-  });
-
-  it("says tokens live in the keyring", () => {
-    editor();
-
-    expect(
-      group("Forges").getByText(/Tokens live in the desktop keyring/),
-    ).toBeDefined();
-  });
-
-  it("turns server monitoring off, and on again with its three fields", () => {
-    const { onSave, form } = editor();
-    const server = group("Server");
-
-    fireEvent.click(server.getByRole("button", { name: "Stop monitoring" }));
-    expect(server.getByText("No server is monitored.")).toBeDefined();
-    fireEvent.click(saveButton());
-    expect(onSave).toHaveBeenLastCalledWith({ ...form.values, server: null });
-
-    fireEvent.click(server.getByRole("button", { name: "Monitor a server" }));
-    expect(
-      screen.getByText(
-        "Server: the name, the Uptime Kuma address and the status page each need a value",
-      ),
-    ).toBeDefined();
-    type(server.getByRole("textbox", { name: "Server name" }), "Silo");
-    type(
-      server.getByRole("textbox", { name: "Server uptime kuma address" }),
-      "http://kuma.invalid",
-    );
-    type(server.getByRole("textbox", { name: "Server status page" }), "perch");
-    fireEvent.click(saveButton());
-
-    expect(onSave).toHaveBeenLastCalledWith({
-      ...form.values,
-      server: {
-        name: "Silo",
-        kumaBaseUrl: "http://kuma.invalid",
-        kumaStatusPage: "perch",
       },
     });
   });

@@ -12,6 +12,7 @@ import {
   zellijSessionFor,
 } from "./config.ts";
 import { deriveHealth, hoursSince } from "./derivations.ts";
+import { itemRefs } from "./refs.ts";
 import { parseRemoteUrl } from "./remote-url.ts";
 import type {
   AgedWork,
@@ -351,11 +352,7 @@ function isBirdItem(item: Item): item is BirdItem {
 
 /** The config entry an item resolves to, by its id and every presence reference it holds. */
 function entryFor(item: Item, config: Config): ItemEntry | null {
-  const refs = [
-    ...(item.presences.local ? [item.presences.local.ref] : []),
-    ...item.presences.forges.map((presence) => presence.ref),
-  ];
-  return resolveEntry(config, item.id, refs).entry;
+  return resolveEntry(config, item.id, itemRefs(item)).entry;
 }
 
 /** A level as a severity: amber and red stand, green is not judged. */

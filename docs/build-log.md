@@ -367,3 +367,17 @@ build-time calls so they can be revisited.
   publishes, without a scan. A directory that cannot be watched is a
   console warning; the starter write starts the watch again, since its
   directory may not have existed at launch.
+- The config forms share `packages/ui/src/form-parts.tsx`: the ruled
+  row, the pill choice, the list editor and the threshold field. A list
+  entry is now a text field edited in place, on the entry editor's key
+  files and roadmaps too; ordered lists (wires, tiers) move entries up
+  and down. An emptied number field reads as NaN, which every rule
+  refuses, rather than as 0.
+- The settings editor holds a draft. While untouched it follows the
+  file; once edited, a change to the file is noted, and saving writes
+  the form over it (last write wins) or Discard takes the file's values.
+  Save waits until something changed, so opening the page and saving
+  never rewrites a commented starter for nothing. Renaming the default
+  wire or tier in place keeps it the default.
+- The settings groups flow into CSS columns 36rem wide: two on a small
+  monitor, five or so on the ultrawide, each group whole.

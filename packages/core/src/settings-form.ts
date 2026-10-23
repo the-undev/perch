@@ -322,6 +322,32 @@ function entryNames(keys: string[]): string {
   return `${keys.slice(0, -1).join(", ")} and ${keys.at(-1)}`;
 }
 
+/** What saving removes from entries naming a wire the values no longer hold, in words. */
+export function wireWarnings(
+  named: Record<string, string[]>,
+  wires: SettingsValues["wires"],
+): string[] {
+  return Object.entries(named)
+    .filter(([wire]) => !wires.names.includes(wire))
+    .map(
+      ([wire, keys]) =>
+        `${entryNames(keys)} ${keys.length === 1 ? "sits" : "sit"} on ${wire}, which is removed: saving moves ${keys.length === 1 ? "it" : "them"} to the default wire, ${wires.default}.`,
+    );
+}
+
+/** What saving removes from entries naming a tier the values no longer hold, in words. */
+export function tierWarnings(
+  named: Record<string, string[]>,
+  importance: SettingsValues["importance"],
+): string[] {
+  return Object.entries(named)
+    .filter(([tier]) => !importance.tiers.includes(tier))
+    .map(
+      ([tier, keys]) =>
+        `${entryNames(keys)} ${keys.length === 1 ? "has" : "have"} importance ${tier}, which is removed: saving gives ${keys.length === 1 ? "it" : "them"} the default tier, ${importance.default}.`,
+    );
+}
+
 /**
  * What saving the values does to item entries, in words: an entry naming a wire or tier the
  * values remove falls to the default, and the form says so before it is saved.
@@ -330,20 +356,10 @@ export function settingsWarnings(
   named: SettingsForm["named"],
   values: SettingsValues,
 ): string[] {
-  const warnings: string[] = [];
-  for (const [wire, keys] of Object.entries(named.wires)) {
-    if (values.wires.names.includes(wire)) continue;
-    warnings.push(
-      `${entryNames(keys)} ${keys.length === 1 ? "sits" : "sit"} on ${wire}, which is removed: saving moves ${keys.length === 1 ? "it" : "them"} to the default wire, ${values.wires.default}.`,
-    );
-  }
-  for (const [tier, keys] of Object.entries(named.tiers)) {
-    if (values.importance.tiers.includes(tier)) continue;
-    warnings.push(
-      `${entryNames(keys)} ${keys.length === 1 ? "has" : "have"} importance ${tier}, which is removed: saving gives ${keys.length === 1 ? "it" : "them"} the default tier, ${values.importance.default}.`,
-    );
-  }
-  return warnings;
+  return [
+    ...wireWarnings(named.wires, values.wires),
+    ...tierWarnings(named.tiers, values.importance),
+  ];
 }
 
 function forgeConfig(forge: ForgeValues): Config["forges"]["github"] {

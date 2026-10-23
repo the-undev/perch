@@ -1,6 +1,7 @@
 // The detail page's config entry forms: adopting a bird from the fence, and editing the entry of
 // an adopted one. Rows are ruled like the ledger, a label on the left and its control on the
-// right. The forms hold only their draft; what is saved leaves through the callbacks.
+// right (form-parts.tsx). The forms hold only their draft; what is saved leaves through the
+// callbacks.
 
 import type { ExpectationName } from "@perch/core/config.ts";
 import {
@@ -11,7 +12,22 @@ import {
   type ThresholdKey,
   thresholdWindows,
 } from "@perch/core/entry-form.ts";
-import { type ReactNode, useId, useState } from "react";
+import { useState } from "react";
+import {
+  buttonClass,
+  FormNotes,
+  FormRow,
+  inputClass,
+  PillChoice,
+  panelClass,
+  pillClass,
+  pillGroupClass,
+  primaryClass,
+  quietClass,
+  StringList,
+  secondaryClass,
+  ThresholdField,
+} from "./form-parts.tsx";
 
 /** What the detail page needs to adopt its bird or edit its entry. */
 export interface EntryControls {
@@ -23,55 +39,12 @@ export interface EntryControls {
   onRemove: (birdId: string) => void;
 }
 
-const panelClass =
-  "mt-3.5 max-w-180 rounded-xl border border-edge bg-band px-5 pt-3 pb-4";
-
-const inputClass =
-  "w-full min-w-0 rounded-lg border border-edge bg-panel px-2.75 py-1.5 font-body text-[13px] text-ink placeholder:text-ink-faint focus-visible:outline-2 focus-visible:outline-ink-accent";
-
-const buttonClass =
-  "inline-flex cursor-pointer items-center rounded-lg px-3.5 py-2 font-body font-semibold text-[13px] focus-visible:outline-2 focus-visible:outline-ink-accent focus-visible:outline-offset-1 disabled:cursor-default disabled:opacity-50";
-
-const primaryClass = `${buttonClass} bg-paper text-paper-head hover:bg-paper-dim disabled:hover:bg-paper`;
-
-const secondaryClass = `${buttonClass} border border-edge text-ink-muted hover:bg-panel hover:text-ink`;
-
-const quietClass =
-  "cursor-pointer rounded px-1.5 py-0.5 font-body text-[12px] text-ink-faint hover:text-ink focus-visible:outline-2 focus-visible:outline-ink-accent";
-
-const pillGroupClass =
-  "m-0 flex min-w-0 flex-wrap gap-1 rounded-full border border-edge bg-panel p-0.75";
-
-const pillClass =
-  "cursor-pointer rounded-full px-3.5 py-1.25 font-semibold text-[12.5px] text-ink-muted hover:text-ink has-checked:bg-panel-hi has-checked:text-ink has-focus-visible:outline-2 has-focus-visible:outline-ink-accent";
+const entryPanelClass = `mt-3.5 max-w-180 ${panelClass}`;
 
 const expectationLabel: Record<ExpectationName, string> = {
   ci: "CI",
   tickets: "Tickets",
 };
-
-/** One ruled row: what it sets, with a quiet second line, and the control. */
-function FormRow({
-  label,
-  sub,
-  children,
-}: {
-  label: string;
-  sub: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 border-edge border-t px-0.5 py-2.75 first:border-t-0">
-      <div className="w-44 flex-none pt-1">
-        <span className="block font-body text-[13.5px] text-ink">{label}</span>
-        <span className="block text-[12px] text-ink-faint">{sub}</span>
-      </div>
-      <div className="flex min-w-0 flex-[1_1_18rem] flex-col items-start gap-1.5">
-        {children}
-      </div>
-    </div>
-  );
-}
 
 /** A form's heading, in the ledger's section voice, with the config key it writes. */
 function FormHeading({ title, entryKey }: { title: string; entryKey: string }) {
@@ -104,24 +77,13 @@ function DefaultingChoice({
   value: string | null;
   onChange: (value: string | null) => void;
 }) {
-  const name = useId();
-  const chosen = value ?? defaultValue;
   return (
-    <fieldset className={pillGroupClass}>
-      <legend className="sr-only">{label}</legend>
-      {options.map((option) => (
-        <label key={option} className={pillClass}>
-          <input
-            type="radio"
-            name={name}
-            className="sr-only"
-            checked={option === chosen}
-            onChange={() => onChange(option === defaultValue ? null : option)}
-          />
-          {option}
-        </label>
-      ))}
-    </fieldset>
+    <PillChoice
+      label={label}
+      options={options}
+      value={value ?? defaultValue}
+      onChange={(option) => onChange(option === defaultValue ? null : option)}
+    />
   );
 }
 
@@ -166,13 +128,6 @@ function PathList({
   value: string[] | null;
   onChange: (value: string[] | null) => void;
 }) {
-  const [draft, setDraft] = useState("");
-  const add = () => {
-    const path = draft.trim();
-    if (path === "") return;
-    if (!(value ?? []).includes(path)) onChange([...(value ?? []), path]);
-    setDraft("");
-  };
   return (
     <>
       {value === null && (
@@ -181,64 +136,23 @@ function PathList({
       {value !== null && value.length === 0 && (
         <span className="pt-1 text-[13px] text-ink-faint">None</span>
       )}
-      {value !== null && value.length > 0 && (
-        <ul className="m-0 w-full list-none p-0">
-          {value.map((path) => (
-            <li
-              key={path}
-              className="flex items-baseline justify-between gap-3 py-0.75"
-            >
-              <code className="min-w-0 break-all font-mono text-[12.5px] text-ink-muted">
-                {path}
-              </code>
-              <button
-                type="button"
-                aria-label={`Remove ${noun} ${path}`}
-                onClick={() =>
-                  onChange(value.filter((candidate) => candidate !== path))
-                }
-                className={quietClass}
-              >
-                remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="flex w-full max-w-110 items-center gap-1.5">
-        <input
-          type="text"
-          aria-label={`Add a ${noun}`}
-          placeholder="relative/path.md"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter") return;
-            event.preventDefault();
-            add();
-          }}
-          className={`${inputClass} font-mono text-[12.5px]`}
-        />
+      <StringList
+        noun={noun}
+        placeholder="relative/path.md"
+        values={value ?? []}
+        ordered={false}
+        onChange={onChange}
+      />
+      {value !== null && (
         <button
           type="button"
-          aria-label={`Add the ${noun}`}
-          onClick={add}
-          disabled={draft.trim() === ""}
-          className={`${secondaryClass} px-2.75 py-1.5`}
+          aria-label={`Use the default ${noun}s`}
+          onClick={() => onChange(null)}
+          className={`${quietClass} whitespace-nowrap`}
         >
-          Add
+          use the defaults
         </button>
-        {value !== null && (
-          <button
-            type="button"
-            aria-label={`Use the default ${noun}s`}
-            onClick={() => onChange(null)}
-            className={`${quietClass} whitespace-nowrap`}
-          >
-            use the defaults
-          </button>
-        )}
-      </div>
+      )}
     </>
   );
 }
@@ -255,29 +169,20 @@ function ThresholdPair({
   value: EntryValues["thresholds"];
   onChange: (value: EntryValues["thresholds"]) => void;
 }) {
-  const set = (key: ThresholdKey, text: string) => {
+  const set = (key: ThresholdKey, next: number) => {
     const { [key]: _, ...rest } = value;
-    onChange(text === "" ? rest : { ...rest, [key]: Number(text) });
+    onChange(Number.isNaN(next) ? rest : { ...rest, [key]: next });
   };
   const overridden =
     value[window.amber] !== undefined || value[window.red] !== undefined;
   const field = (key: ThresholdKey, level: "amber" | "red") => (
-    <label className="flex items-center gap-1.5 text-[12.5px] text-ink-faint">
-      <span className={level === "amber" ? "text-amber" : "text-red"}>
-        {level}
-      </span>
-      <input
-        type="number"
-        min={1}
-        step={1}
-        inputMode="numeric"
-        aria-label={`${window.label}, ${level} after ${window.unit}`}
-        placeholder={String(defaults[key])}
-        value={value[key] ?? ""}
-        onChange={(event) => set(key, event.target.value)}
-        className={`${inputClass} w-18 tabular-nums`}
-      />
-    </label>
+    <ThresholdField
+      window={window}
+      level={level}
+      value={value[key]}
+      placeholder={String(defaults[key])}
+      onChange={(next) => set(key, next)}
+    />
   );
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -338,7 +243,7 @@ export function AdoptForm({
   return (
     <form
       aria-label={`Adopt ${scannedName}`}
-      className={panelClass}
+      className={entryPanelClass}
       onSubmit={(event) => {
         event.preventDefault();
         onAdopt(adoption);
@@ -407,7 +312,7 @@ export function EntryEditor({
   return (
     <form
       aria-label={`Edit ${values.name ?? scannedName}`}
-      className={panelClass}
+      className={entryPanelClass}
       onSubmit={(event) => {
         event.preventDefault();
         if (problems.length === 0) onSave(values);
@@ -489,11 +394,7 @@ export function EntryEditor({
           />
         </FormRow>
       ))}
-      {problems.map((problem) => (
-        <p key={problem} className="mt-1 mb-0 text-[12.5px] text-amber">
-          {problem}
-        </p>
-      ))}
+      <FormNotes notes={problems} />
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="submit"

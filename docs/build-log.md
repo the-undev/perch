@@ -331,3 +331,8 @@ build-time calls so they can be revisited.
   settles. The detail page shows its entry verb only while the form
   agrees with the bird: Adopt needs no entry, Edit entry needs one.
 - Unadopt asks for a second press, Return to the fence, before it writes.
+- `writeConfig` takes the home directory and writes paths under it with
+  `~`, so a saved config keeps the starter's `~/dev`. It leaves out the
+  optional tables when they are empty (`items`, `launch.zellij_sessions`,
+  `launch.commands`), so the starter saved unchanged reads as the same
+  TOML document, only its comments and layout gone.

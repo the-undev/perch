@@ -289,7 +289,7 @@ describe("editing config entries", () => {
 
   /** The app state on a real config file in the temp directory, holding the given config. */
   async function onFile(config: Config) {
-    await writeFile(configPath, writeConfig(config));
+    await writeFile(configPath, writeConfig(config, home));
     const store = createConfigStore({
       home,
       path: configPath,

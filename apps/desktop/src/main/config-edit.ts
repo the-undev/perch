@@ -26,7 +26,7 @@ export async function editConfigFile(
 ): Promise<void> {
   const text = await deps.readText(deps.path);
   if (text === null) throw new Error(`${deps.path} does not exist`);
-  const next = writeConfig(edit(parseConfig(text, deps.home)));
+  const next = writeConfig(edit(parseConfig(text, deps.home)), deps.home);
   parseConfig(next, deps.home);
   await deps.writeText(deps.path, next);
 }

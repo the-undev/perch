@@ -288,3 +288,17 @@ build-time calls so they can be revisited.
 - The roadmap reader moved to a third gather round. It needs each
   clone's entry for configured roadmap paths, and resolving that through
   the same join as aggregation needs the forge enrichers' files.
+- The no-config state is a `noConfig` flag on the pushed state, set when
+  the latest read found no file. A config file removed while the app
+  runs drops the config held, so the window returns to the welcome
+  screen. A file that exists but has never parsed is not the no-config
+  state: it keeps the one-minute retry.
+- The welcome screen's "Check again" reuses the rescan call: without
+  config, a rescan reads the path again and scans only if the file is
+  there. A focus without config always rechecks, ignoring the focus gap.
+- The starter write opens the file with the exclusive flag, so the
+  refusal and the write are one step. A refusal stays among the problems
+  until the next attempt or the next scan; the main process requests a
+  scan after every attempt, which rechecks first.
+- The example config no longer has a `[launch.zellij_sessions]` table;
+  the launch section's comment names it with a sample entry instead.

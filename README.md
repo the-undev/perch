@@ -20,8 +20,9 @@ Needs Node 26 and pnpm 11. Run `pnpm install` once, then from the root:
 | `pnpm dist` | Builds the Linux AppImage into `apps/desktop/dist/`. |
 | `pnpm icons` | Renders the app and tray icons from their SVGs in `apps/desktop/resources/`. |
 
-The config is `~/.config/perch/config.toml`; without it the app reads
-`config.example.toml`, which shows every field. Forge tokens come from the
+The config is `~/.config/perch/config.toml`. Without it the app offers to
+write a starter there, a copy of `config.example.toml`, which shows every
+field. Forge tokens come from the
 desktop keyring, see [docs/tokens.md](docs/tokens.md).
 
 ## Installing

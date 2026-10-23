@@ -125,6 +125,8 @@ export function AppView({ api }: { api: PerchApi }) {
     return (
       <SettingsView
         form={settings}
+        cards={state.sourceCards}
+        now={now}
         problems={state.problems}
         onSave={(values) =>
           void api

@@ -1,5 +1,6 @@
 // The pieces the config forms are made of, the detail page's entry forms and the settings page
-// alike: ruled rows, pill choices, editable lists and threshold fields, in one set of styles.
+// alike: page headings, ruled rows, pill choices, editable lists and threshold fields, in one set
+// of styles.
 
 import type { thresholdWindows } from "@perch/core/entry-form.ts";
 import { type ReactNode, useId, useState } from "react";
@@ -27,6 +28,31 @@ export const pillGroupClass =
 
 export const pillClass =
   "cursor-pointer rounded-full px-3.5 py-1.25 font-semibold text-[12.5px] text-ink-muted hover:text-ink has-checked:bg-panel-hi has-checked:text-ink has-focus-visible:outline-2 has-focus-visible:outline-ink-accent";
+
+/** A settings page's heading: its title, the config table it writes, and a lead beneath. */
+export function SettingsPageHead({
+  title,
+  table,
+  lead,
+}: {
+  title: string;
+  table: string;
+  lead: ReactNode;
+}) {
+  return (
+    <>
+      <div className="mb-0.5 flex flex-wrap items-baseline justify-between gap-x-4">
+        <h2 className="m-0 font-bold font-display text-[20px] text-ink">
+          {title}
+        </h2>
+        <code className="font-mono text-[12px] text-ink-faint">{table}</code>
+      </div>
+      <p className="mt-0 mb-4.5 max-w-[64ch] text-[13px] text-ink-muted leading-normal">
+        {lead}
+      </p>
+    </>
+  );
+}
 
 /** One ruled row: what it sets, with a quiet second line, and the control. */
 export function FormRow({

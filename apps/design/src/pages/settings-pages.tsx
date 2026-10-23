@@ -1,6 +1,7 @@
 // The settings page: each group of config in its states, with what the editor would say of it,
 // and the whole page as the app shows it.
 
+import { mockSnapshot } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   type SettingsValues,
@@ -27,6 +28,9 @@ import {
   Specimen,
   Usage,
 } from "../usage.tsx";
+
+/** Four minutes after the mock's scan, the moment the source cards are measured to. */
+const afterScan = new Date(Date.parse(mockSnapshot.scannedAt) + 4 * 60_000);
 
 const mockForm = mockSettingsForm();
 const mock = mockForm.values;
@@ -337,6 +341,8 @@ export function SettingsScenePage() {
       <SceneFrame height="max(640px, calc(100vh - 260px))">
         <SettingsView
           form={form}
+          cards={mockSnapshot.sourceCards}
+          now={afterScan}
           problems={
             problems === "refused"
               ? ["The config was not changed: Wires: each wire once"]

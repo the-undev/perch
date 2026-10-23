@@ -1,6 +1,7 @@
-// The settings page's groups, one per part of config, and the editor that holds them: wires,
-// thresholds, scan, importance, launch, and the presence lists.
-// Each group is presentational, its value in and every change out; the editor holds the draft.
+// The settings page's pages, one per part of config, and the editor that holds them: sources,
+// joining up, wires, tiers, judgement, scanning and launching.
+// Each page is presentational, its value in and every change out; the editor holds the draft
+// across them and shows the page the rail has open.
 
 import {
   type LaunchCommandName,
@@ -14,6 +15,7 @@ import {
   tierWarnings,
   wireWarnings,
 } from "@perch/core/settings-form.ts";
+import type { SourceCard } from "@perch/core/viewmodel.ts";
 import { type ReactNode, useState } from "react";
 import {
   FormNotes,
@@ -24,38 +26,55 @@ import {
   panelClass,
   primaryClass,
   quietClass,
+  SettingsPageHead,
   StringList,
   secondaryClass,
   ThresholdField,
 } from "./form-parts.tsx";
+import { SourcesPage } from "./sources-page.tsx";
 
-/** One part of config: its title, the table it writes, and a quiet note beneath its rows. */
+/** A page the settings rail names. */
+export type SettingsPageName =
+  | "sources"
+  | "joining"
+  | "wires"
+  | "tiers"
+  | "judgement"
+  | "scanning"
+  | "launching";
+
+/** The rail's pages in order; Joining up sits under Sources, since joins act on what it finds. */
+export const settingsPages: readonly {
+  page: SettingsPageName;
+  label: string;
+  /** Drawn as a sub-page of the page above it. */
+  sub: boolean;
+}[] = [
+  { page: "sources", label: "Sources", sub: false },
+  { page: "joining", label: "Joining up", sub: true },
+  { page: "wires", label: "Wires", sub: false },
+  { page: "tiers", label: "Tiers", sub: false },
+  { page: "judgement", label: "Judgement", sub: false },
+  { page: "scanning", label: "Scanning", sub: false },
+  { page: "launching", label: "Launching", sub: false },
+];
+
+/** One page of config: its title, the table it writes, a lead beneath the title, and its rows. */
 function SettingsGroup({
   title,
   table,
-  note,
+  lead,
   children,
 }: {
   title: string;
   table: string;
-  note: ReactNode;
+  lead: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section
-      aria-label={title}
-      className={`${panelClass} mb-5 break-inside-avoid`}
-    >
-      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-4">
-        <h2 className="m-0 font-body font-semibold text-[13.5px] text-ink-faint">
-          {title}
-        </h2>
-        <code className="font-mono text-[12px] text-ink-faint">{table}</code>
-      </div>
-      {children}
-      <p className="mt-2 mb-0 max-w-[70ch] text-[12px] text-ink-faint leading-normal">
-        {note}
-      </p>
+    <section aria-label={title} className="pb-5">
+      <SettingsPageHead title={title} table={table} lead={lead} />
+      <div className={panelClass}>{children}</div>
     </section>
   );
 }
@@ -134,7 +153,7 @@ export function WiresGroup({
     <SettingsGroup
       title="Wires"
       table="[wires]"
-      note="The owner's priority bands, top to bottom. An adopted bird sits on the wire its entry names, else on the default."
+      lead="The owner's priority bands, top to bottom. An adopted bird sits on the wire its entry names, else on the default."
     >
       <NamesWithDefault
         noun="wire"
@@ -154,9 +173,9 @@ export function ThresholdsGroup({
 }: GroupProps<SettingsValues["thresholds"]>) {
   return (
     <SettingsGroup
-      title="Thresholds"
+      title="Judgement"
       table="[thresholds]"
-      note="Amber at the first, red at the second, each a whole number above zero. A bird's entry may override any of them."
+      lead="Amber at the first, red at the second, each a whole number above zero. A bird's entry may override any of them."
     >
       {thresholdWindows.map((window) => (
         <FormRow key={window.label} label={window.label} sub={window.unit}>
@@ -188,9 +207,9 @@ export function ScanGroup({
 }: GroupProps<SettingsValues["scan"]>) {
   return (
     <SettingsGroup
-      title="Scan"
+      title="Scanning"
       table="[scan]"
-      note="Every source is scanned on the interval, counted from the end of the last scan. The archived interval is read by nothing yet."
+      lead="Every source is scanned on the interval, counted from the end of the last scan. The archived interval is read by nothing yet."
     >
       <FormRow label="Interval" sub="minutes">
         <NumberInput
@@ -238,9 +257,9 @@ export function ImportanceGroup({
   const wires = { names: value.tiers, default: value.default };
   return (
     <SettingsGroup
-      title="Importance"
+      title="Tiers"
       table="[importance]"
-      note="Tiers set a bird's size, the most important first. A bird whose entry names none takes the default."
+      lead="Tiers set a bird's size, the most important first. A bird whose entry names none takes the default."
     >
       <NamesWithDefault
         noun="tier"
@@ -337,9 +356,9 @@ export function LaunchGroup({
 }: GroupProps<SettingsValues["launch"]>) {
   return (
     <SettingsGroup
-      title="Launch"
+      title="Launching"
       table="[launch]"
-      note={
+      lead={
         <>
           Each command is a list in brackets of strings in double quotes, as in
           the config file, with JSON's escapes:{" "}
@@ -411,9 +430,9 @@ export function PresencesGroup({
 }: GroupProps<Pick<SettingsValues, "joins" | "ignore">>) {
   return (
     <SettingsGroup
-      title="Joins and ignores"
+      title="Joining up"
       table="joins, ignore"
-      note="A presence is local: and a path under the home directory, github:owner/name or forgejo:owner/name. A join is a list line, as a launch command is."
+      lead="A presence is local: and a path under the home directory, github:owner/name or forgejo:owner/name. A join is a list line, as a launch command is."
     >
       <FormRow label="Joins" sub="Presences that are one project">
         <StringList
@@ -445,15 +464,28 @@ function same(a: SettingsValues, b: SettingsValues): boolean {
 export interface SettingsEditorProps {
   /** The config as the file holds it now; the draft starts here and follows it while untouched. */
   form: SettingsForm;
+  /** The page the rail has open. */
+  page: SettingsPageName;
+  /** Each configured source card's last scan; null until a snapshot holds them. */
+  cards: SourceCard[] | null;
+  /** The moment the source cards' scan times are measured to. */
+  now: Date;
   /** Save was pressed with values that changed and can be written. */
   onSave: (values: SettingsValues) => void;
 }
 
 /**
- * Every group in config's order, with Save and Discard beneath. While the draft is untouched it
- * follows the file; once edited, a change to the file is noted and saving writes over it.
+ * The open page, with Save and Discard beneath, the draft held across every page. While the draft
+ * is untouched it follows the file; once edited, a change to the file is noted and saving writes
+ * over it.
  */
-export function SettingsEditor({ form, onSave }: SettingsEditorProps) {
+export function SettingsEditor({
+  form,
+  page,
+  cards,
+  now,
+  onSave,
+}: SettingsEditorProps) {
   const [base, setBase] = useState(form.values);
   const [draft, setDraft] = useState(form.values);
   const [saving, setSaving] = useState(false);
@@ -484,32 +516,50 @@ export function SettingsEditor({ form, onSave }: SettingsEditorProps) {
         onSave(draft);
       }}
     >
-      <div className="columns-[36rem] gap-5">
+      {page === "sources" && (
+        <SourcesPage
+          value={draft.sources}
+          cards={cards}
+          now={now}
+          onChange={(sources) => update({ sources })}
+        />
+      )}
+      {page === "joining" && (
+        <PresencesGroup
+          value={{ joins: draft.joins, ignore: draft.ignore }}
+          onChange={(presences) => update(presences)}
+        />
+      )}
+      {page === "wires" && (
         <WiresGroup
           value={draft.wires}
           named={form.named.wires}
           onChange={(wires) => update({ wires })}
         />
-        <ThresholdsGroup
-          value={draft.thresholds}
-          onChange={(thresholds) => update({ thresholds })}
-        />
-        <ScanGroup value={draft.scan} onChange={(scan) => update({ scan })} />
+      )}
+      {page === "tiers" && (
         <ImportanceGroup
           value={draft.importance}
           named={form.named.tiers}
           onChange={(importance) => update({ importance })}
         />
+      )}
+      {page === "judgement" && (
+        <ThresholdsGroup
+          value={draft.thresholds}
+          onChange={(thresholds) => update({ thresholds })}
+        />
+      )}
+      {page === "scanning" && (
+        <ScanGroup value={draft.scan} onChange={(scan) => update({ scan })} />
+      )}
+      {page === "launching" && (
         <LaunchGroup
           value={draft.launch}
           onChange={(launch) => update({ launch })}
         />
-        <PresencesGroup
-          value={{ joins: draft.joins, ignore: draft.ignore }}
-          onChange={(presences) => update(presences)}
-        />
-      </div>
-      <div className="sticky bottom-0 -mx-7.5 border-edge border-t bg-rail px-7.5 py-3">
+      )}
+      <div className="sticky bottom-0 -mx-4 border-edge border-t bg-rail px-4 py-3 @min-[900px]:-mx-6.5 @min-[900px]:px-6.5">
         {stale && (
           <p className="mt-0 mb-1 text-[12.5px] text-ink-muted">
             The config file changed since this form was edited. Saving writes

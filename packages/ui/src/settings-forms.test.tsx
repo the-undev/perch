@@ -8,14 +8,31 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockSettingsForm } from "./mock-birds.ts";
-import { SettingsEditor } from "./settings-forms.tsx";
+import { SettingsEditor, type SettingsPageName } from "./settings-forms.tsx";
 import { SettingsView } from "./settings-view.tsx";
 
 afterEach(cleanup);
 
-function editor(form: SettingsForm = mockSettingsForm()) {
+const now = new Date("2026-10-22T09:04:00.000Z");
+
+/** The editor on one page, with no scan records. */
+const editorOn = (
+  page: SettingsPageName,
+  form: SettingsForm,
+  onSave: () => void,
+) => (
+  <SettingsEditor
+    form={form}
+    page={page}
+    cards={null}
+    now={now}
+    onSave={onSave}
+  />
+);
+
+function editor(page: SettingsPageName, form = mockSettingsForm()) {
   const onSave = vi.fn();
-  const view = render(<SettingsEditor form={form} onSave={onSave} />);
+  const view = render(editorOn(page, form, onSave));
   return { onSave, form, view };
 }
 
@@ -29,7 +46,7 @@ const type = (element: HTMLElement, value: string) =>
 
 describe("the settings editor", () => {
   it("holds Save until something changes, and discards back to the file's values", () => {
-    const { onSave } = editor();
+    const { onSave } = editor("scanning");
 
     expect(saveButton().disabled).toBe(true);
     type(
@@ -52,7 +69,7 @@ describe("the settings editor", () => {
   });
 
   it("orders the wires, adds one and picks the default from them", () => {
-    const { onSave, form } = editor();
+    const { onSave, form } = editor("wires");
     const wires = group("Wires");
 
     expect(
@@ -82,7 +99,7 @@ describe("the settings editor", () => {
   });
 
   it("keeps the default with a wire renamed in place, and says a wire needs a name", () => {
-    const { onSave, form } = editor();
+    const { onSave, form } = editor("wires");
     const wires = group("Wires");
 
     type(wires.getByRole("textbox", { name: "wire 2" }), "Work");
@@ -97,7 +114,7 @@ describe("the settings editor", () => {
   });
 
   it("warns that removing a wire entries name moves them to the default, and still saves", () => {
-    const { onSave } = editor();
+    const { onSave } = editor("wires");
     const wires = group("Wires");
 
     fireEvent.click(
@@ -115,7 +132,7 @@ describe("the settings editor", () => {
   });
 
   it("says a default wire must be one of the wires", () => {
-    editor();
+    editor("wires");
 
     fireEvent.click(
       group("Wires").getByRole("button", { name: "Remove wire Projects" }),
@@ -128,8 +145,8 @@ describe("the settings editor", () => {
   });
 
   it("holds the global thresholds to amber before red, in whole numbers", () => {
-    editor();
-    const thresholds = group("Thresholds");
+    editor("judgement");
+    const thresholds = group("Judgement");
 
     type(
       thresholds.getByRole("spinbutton", {
@@ -156,10 +173,10 @@ describe("the settings editor", () => {
   });
 
   it("edits the finalised commit count in the scan group", () => {
-    const { onSave, form } = editor();
+    const { onSave, form } = editor("scanning");
 
     type(
-      group("Scan").getByRole("spinbutton", { name: "Finalised commits" }),
+      group("Scanning").getByRole("spinbutton", { name: "Finalised commits" }),
       "4",
     );
     fireEvent.click(saveButton());
@@ -170,16 +187,8 @@ describe("the settings editor", () => {
     });
   });
 
-  it("shows no source groups, which have pages of their own", () => {
-    editor();
-
-    for (const name of ["Local paths", "Forges", "Server"]) {
-      expect(screen.queryByRole("region", { name })).toBeNull();
-    }
-  });
-
   it("says an interval must be whole minutes above zero", () => {
-    editor();
+    editor("scanning");
 
     type(
       screen.getByRole("spinbutton", { name: "Scan interval in minutes" }),
@@ -192,8 +201,8 @@ describe("the settings editor", () => {
   });
 
   it("edits a launch command as a list line, quoting kept, and removes one emptied", () => {
-    const { onSave, form } = editor();
-    const launch = group("Launch");
+    const { onSave, form } = editor("launching");
+    const launch = group("Launching");
     const vscode = launch.getByRole("textbox", { name: "VS Code command" });
 
     expect((vscode as HTMLInputElement).value).toBe('["code", "{path}"]');
@@ -221,10 +230,10 @@ describe("the settings editor", () => {
   });
 
   it("edits zellij sessions by root as rows", () => {
-    const { onSave, form } = editor();
+    const { onSave, form } = editor("launching");
 
     fireEvent.click(
-      group("Launch").getByRole("button", { name: "Add session root" }),
+      group("Launching").getByRole("button", { name: "Add session root" }),
     );
     type(
       screen.getByRole("textbox", { name: "session root 2, root" }),
@@ -249,8 +258,8 @@ describe("the settings editor", () => {
   });
 
   it("adds a join as a list line and an ignored presence", () => {
-    const { onSave, form } = editor();
-    const presences = group("Joins and ignores");
+    const { onSave, form } = editor("joining");
+    const presences = group("Joining up");
 
     type(
       presences.getByRole("textbox", { name: "Add a join" }),
@@ -280,7 +289,7 @@ describe("the settings editor", () => {
 
   it("follows the file while untouched, and notes a change to it once edited", () => {
     const first = mockSettingsForm();
-    const { view } = editor(first);
+    const { view } = editor("scanning", first);
     const fromDisk = (intervalMinutes: number): SettingsForm => ({
       ...first,
       values: {
@@ -295,7 +304,7 @@ describe("the settings editor", () => {
         }) as HTMLInputElement
       ).value;
 
-    view.rerender(<SettingsEditor form={fromDisk(20)} onSave={() => {}} />);
+    view.rerender(editorOn("scanning", fromDisk(20), () => {}));
     expect(interval()).toBe("20");
 
     type(
@@ -304,7 +313,7 @@ describe("the settings editor", () => {
       }),
       "48",
     );
-    view.rerender(<SettingsEditor form={fromDisk(25)} onSave={() => {}} />);
+    view.rerender(editorOn("scanning", fromDisk(25), () => {}));
     expect(interval()).toBe("20");
     expect(
       screen.getByText(/The config file changed since this form was edited/),
@@ -317,7 +326,7 @@ describe("the settings editor", () => {
 
   it("takes the file's values after its own save", () => {
     const first = mockSettingsForm();
-    const { view } = editor(first);
+    const { view } = editor("scanning", first);
 
     type(
       screen.getByRole("spinbutton", { name: "Scan interval in minutes" }),
@@ -325,16 +334,17 @@ describe("the settings editor", () => {
     );
     fireEvent.click(saveButton());
     view.rerender(
-      <SettingsEditor
-        form={{
+      editorOn(
+        "scanning",
+        {
           ...first,
           values: {
             ...first.values,
             scan: { ...first.values.scan, intervalMinutes: 30 },
           },
-        }}
-        onSave={() => {}}
-      />,
+        },
+        () => {},
+      ),
     );
 
     expect(screen.queryByText(/The config file changed/)).toBeNull();
@@ -348,6 +358,8 @@ describe("the settings page", () => {
     render(
       <SettingsView
         form={mockSettingsForm()}
+        cards={null}
+        now={now}
         problems={["The config was not changed: Wires: each wire once"]}
         onSave={() => {}}
         onHome={onHome}
@@ -366,10 +378,71 @@ describe("the settings page", () => {
     expect(onHome).toHaveBeenCalledTimes(2);
   });
 
+  it("opens on Sources, switches pages from the rail, and keeps the draft across them", () => {
+    const onSave = vi.fn();
+    const form = mockSettingsForm();
+    render(
+      <SettingsView
+        form={form}
+        cards={null}
+        now={now}
+        problems={[]}
+        onSave={onSave}
+        onHome={() => {}}
+      />,
+    );
+    const rail = within(
+      screen.getByRole("navigation", { name: "Settings pages" }),
+    );
+
+    expect(
+      rail.getAllByRole("button").map((button) => button.textContent),
+    ).toEqual([
+      "Sources",
+      "Joining up",
+      "Wires",
+      "Tiers",
+      "Judgement",
+      "Scanning",
+      "Launching",
+    ]);
+    expect(
+      rail
+        .getByRole("button", { name: "Sources" })
+        .getAttribute("aria-current"),
+    ).toBe("page");
+    expect(screen.getByRole("region", { name: "Sources" })).toBeDefined();
+    fireEvent.click(rail.getByRole("button", { name: "Scanning" }));
+
+    expect(screen.queryByRole("region", { name: "Sources" })).toBeNull();
+    expect(
+      rail
+        .getByRole("button", { name: "Scanning" })
+        .getAttribute("aria-current"),
+    ).toBe("page");
+    type(
+      group("Scanning").getByRole("spinbutton", { name: "Finalised commits" }),
+      "4",
+    );
+    fireEvent.click(rail.getByRole("button", { name: "Wires" }));
+    fireEvent.click(
+      group("Wires").getByRole("button", { name: "Move wire Projects up" }),
+    );
+    fireEvent.click(saveButton());
+
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      wires: { ...form.values.wires, names: ["Projects", "Machine & Home"] },
+      scan: { ...form.values.scan, finalisedCommits: 4 },
+    });
+  });
+
   it("says it is reading the config until the form arrives", () => {
     render(
       <SettingsView
         form={null}
+        cards={null}
+        now={now}
         problems={[]}
         onSave={() => {}}
         onHome={() => {}}

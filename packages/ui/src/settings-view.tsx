@@ -1,16 +1,26 @@
-// The settings page: the camera's header voice with the brand riding home, the main process's
-// problems, and the settings editor. Escape rides home, as it does from a bird's page.
+// The settings page: the camera's header voice with the brand riding home, a rail naming the
+// pages beside one reading-width column, the main process's problems at the column's top, and
+// the editor showing the page the rail has open. Escape rides home, as it does from a bird's page.
 
 import type {
   SettingsForm,
   SettingsValues,
 } from "@perch/core/settings-form.ts";
-import { useEffect } from "react";
-import { SettingsEditor } from "./settings-forms.tsx";
+import type { SourceCard } from "@perch/core/viewmodel.ts";
+import { useEffect, useState } from "react";
+import {
+  SettingsEditor,
+  type SettingsPageName,
+  settingsPages,
+} from "./settings-forms.tsx";
 
 export interface SettingsViewProps {
   /** The settings as the config file holds them; null until read. */
   form: SettingsForm | null;
+  /** Each configured source card's last scan; null until a snapshot holds them. */
+  cards: SourceCard[] | null;
+  /** The moment the source cards' scan times are measured to. */
+  now: Date;
   /** What went wrong outside any one source, a refused save among them. */
   problems: string[];
   onSave: (values: SettingsValues) => void;
@@ -18,13 +28,47 @@ export interface SettingsViewProps {
   onHome: () => void;
 }
 
-/** The whole settings page, its header and its editor. */
+/** The rail: every page by name, the open one marked; a row of words on a narrow window. */
+function SettingsRail({
+  page,
+  onPage,
+}: {
+  page: SettingsPageName;
+  onPage: (page: SettingsPageName) => void;
+}) {
+  return (
+    <nav
+      aria-label="Settings pages"
+      className="flex flex-wrap gap-1 border-edge border-b px-4 py-2.5 @min-[900px]:sticky @min-[900px]:top-0 @min-[900px]:flex-col @min-[900px]:gap-0 @min-[900px]:self-start @min-[900px]:border-r @min-[900px]:border-b-0 @min-[900px]:px-0 @min-[900px]:py-4.5"
+    >
+      {settingsPages.map((entry) => {
+        const open = entry.page === page;
+        return (
+          <button
+            key={entry.page}
+            type="button"
+            aria-current={open ? "page" : undefined}
+            onClick={() => onPage(entry.page)}
+            className={`cursor-pointer rounded-full px-2.5 py-1 text-left font-body text-[13px] focus-visible:outline-2 focus-visible:outline-ink-accent @min-[900px]:rounded-none @min-[900px]:border-l-2 @min-[900px]:py-1.5 ${entry.sub ? "@min-[900px]:pl-7 @min-[900px]:text-[12px]" : "@min-[900px]:pl-4"} ${open ? "bg-panel-hi text-ink @min-[900px]:border-ink-accent @min-[900px]:bg-band" : "text-ink-faint hover:text-ink-muted @min-[900px]:border-transparent"}`}
+          >
+            {entry.label}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** The whole settings page, its header, its rail and the open page. */
 export function SettingsView({
   form,
+  cards,
+  now,
   problems,
   onSave,
   onHome,
 }: SettingsViewProps) {
+  const [page, setPage] = useState<SettingsPageName>("sources");
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onHome();
@@ -57,19 +101,30 @@ export function SettingsView({
           </button>
         </div>
       </header>
-      <main className="min-h-0 flex-1 overflow-y-auto bg-ground px-7.5 pt-5.5">
-        {problems.map((problem) => (
-          <p key={problem} className="mt-0 mb-2 text-[12.5px] text-amber">
-            {problem}
-          </p>
-        ))}
-        {form === null ? (
-          <p role="status" className="m-0 text-[12.5px] text-ink-faint">
-            Reading the config
-          </p>
-        ) : (
-          <SettingsEditor form={form} onSave={onSave} />
-        )}
+      <main className="@container min-h-0 flex-1 overflow-y-auto bg-ground">
+        <div className="mx-auto grid min-h-full max-w-350 content-start @min-[900px]:grid-cols-[168px_minmax(0,1fr)]">
+          <SettingsRail page={page} onPage={setPage} />
+          <div className="flex min-w-0 max-w-190 flex-col px-4 pt-5.5 @min-[900px]:px-6.5">
+            {problems.map((problem) => (
+              <p key={problem} className="mt-0 mb-2 text-[12.5px] text-amber">
+                {problem}
+              </p>
+            ))}
+            {form === null ? (
+              <p role="status" className="m-0 text-[12.5px] text-ink-faint">
+                Reading the config
+              </p>
+            ) : (
+              <SettingsEditor
+                form={form}
+                page={page}
+                cards={cards}
+                now={now}
+                onSave={onSave}
+              />
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );

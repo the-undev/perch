@@ -403,6 +403,9 @@ describe("the window", () => {
         form,
       );
 
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Joining up" }),
+      );
       fireEvent.change(
         await screen.findByRole("textbox", { name: "Add an ignored presence" }),
         { target: { value: "github:a/old" } },
@@ -428,6 +431,57 @@ describe("the window", () => {
       ).toBeDefined();
     });
 
+    it("opens on the sources, each card with its pushed scan record, and saves a source added", async () => {
+      const form = mockSettingsForm();
+      const { fake } = renderApp(
+        { ...idle(mockAviary), sourceCards: mockSnapshot.sourceCards },
+        "/settings",
+        undefined,
+        undefined,
+        form,
+      );
+
+      const kuma = await screen.findByRole("region", {
+        name: "Uptime Kuma · Silo",
+      });
+      expect(within(kuma).getByText("never scanned yet")).toBeDefined();
+      expect(
+        within(
+          screen.getByRole("region", { name: "GitHub · finch" }),
+        ).getByText(/^read 5 repositories · /),
+      ).toBeDefined();
+      fireEvent.click(screen.getByRole("button", { name: "Add a source" }));
+      fireEvent.click(screen.getByRole("button", { name: "Add Uptime Kuma" }));
+      const added = within(screen.getByRole("region", { name: "Uptime Kuma" }));
+      fireEvent.change(added.getByRole("textbox", { name: "Name" }), {
+        target: { value: "Server" },
+      });
+      fireEvent.change(added.getByRole("textbox", { name: "Status page" }), {
+        target: { value: "server" },
+      });
+      fireEvent.change(added.getByRole("textbox", { name: "Base URL" }), {
+        target: { value: "http://kuma.example.lan:3001" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      expect(fake.settingsSaves).toEqual([
+        {
+          ...form.values,
+          sources: {
+            ...form.values.sources,
+            kuma: [
+              ...form.values.sources.kuma,
+              {
+                name: "Server",
+                baseUrl: "http://kuma.example.lan:3001",
+                statusPage: "server",
+              },
+            ],
+          },
+        },
+      ]);
+    });
+
     it("shows the file's new values when it changes on disk", async () => {
       const { fake } = renderApp(
         idle(mockAviary),
@@ -442,6 +496,7 @@ describe("the window", () => {
             name: "Scan interval in minutes",
           })) as HTMLInputElement
         ).value;
+      fireEvent.click(await screen.findByRole("button", { name: "Scanning" }));
       expect(await interval()).toBe("15");
 
       fake.setSettings(

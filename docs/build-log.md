@@ -417,3 +417,34 @@ build-time calls so they can be revisited.
   birds at most, 340 apart), so only the strip's crowded wires change.
   The strip's near baseline sits 22 below the perch so its lower one
   clears the strip's foot.
+- The sources design round (mockups/sources.html) is approved: perch
+  starts from nothing and every data source is added, never assumed.
+  Each connection is its own card carrying its own last-scan sentence,
+  and the picker is a registry, so a new source kind is one row.
+- Config moves to repeatable source tables: `[[sources.local]]`,
+  `[[sources.github]]`, `[[sources.forgejo]]`, `[[sources.kuma]]`. The
+  `[local]`, `[forges]` and `[server]` tables go, with no migration:
+  the only config this breaks is on this machine. `finalised_commits`
+  moves to `[scan]`. A local source holds `include` and `exclude`
+  (renamed from `ignore`); a github source holds `account`, `key`,
+  `hosts` and `tracked_forks`; a forgejo source adds `base_url`; a
+  kuma source holds `name`, `base_url` and `status_page`. A config
+  with no sources is valid and scans to an empty snapshot.
+- The starter config is generated from a default `Config` through
+  `writeConfig`, not copied from the example: one wire, the standard
+  thresholds and tiers, no sources. `config.example.toml` becomes a
+  commented reference with placeholder values only, and the CLI
+  without a config runs the defaults instead of the example, so the
+  AppImage stops shipping it.
+- Perch may write a pasted token into the keyring (Secret Service,
+  the same `secret-tool` entries as before). It never reads one back
+  for display: the field is write-only and the manual `secret-tool
+  store` command stays printed beside it.
+- Claude Code sessions stay an automatic source, not a card.
+- A card's identity for its scan record: a github card is its
+  account, a forgejo card its account at its base URL, a kuma card
+  its name, a local card its include paths.
+- Built in four phases: the config schema end to end, the per-card
+  scan record in the snapshot, the settings rebuild (a left rail of
+  pages beside one reading-width column), and the keyring write with
+  the token test.

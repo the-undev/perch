@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sources round</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* The sources round: perch starts from nothing and sources are added, never
+   assumed. Drawn on the approved ink palette from packages/ui/src/theme.css. */
+:root {
+  --bg: #101214;
+  --rail: #121517;
+  --band: #15181b;
+  --panel: #1a1e22;
+  --panel-hi: #20252a;
+  --edge: #2b3036;
+  --edge-hi: #3e454d;
+  --ink: #ece7db;
+  --muted: #aaa396;
+  --faint: #837d70;
+  --accent: #b9b2a2;
+  --green: #66bb86;
+  --amber: #d8a845;
+  --red: #e25d4f;
+  --paper: #e9e4d8;
+  --paper-dim: #ddd7c9;
+  --paper-head: #171a1e;
+  --paper-ink: #2f3338;
+  --paper-quiet: #6e695f;
+  --paper-rule: #c9c3b3;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --body: "Figtree", system-ui, sans-serif;
+  --mono: ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/1.55 var(--body);
+  padding: 0 max(16px, env(safe-area-inset-left)) 90px;
+}
+main { max-width: 1240px; margin: 0 auto; }
+
+/* Masthead */
+.mast { padding: 42px 0 10px; border-bottom: 1px solid var(--edge); }
+.mast h1 { font: 700 34px/1.1 var(--display); margin: 0 0 10px; }
+.mast .brief {
+  max-width: 72ch; color: var(--muted); margin: 0 0 6px;
+}
+.mast .brief b { color: var(--ink); font-weight: 600; }
+.mast .meta { color: var(--faint); font-size: 12.5px; margin: 10px 0 18px; }
+
+/* The rules strip */
+.rules { display: flex; flex-wrap: wrap; gap: 12px; padding: 22px 0 8px; }
+.rule {
+  flex: 1 1 260px; background: var(--band); border: 1px solid var(--edge);
+  border-radius: 10px; padding: 14px 16px;
+}
+.rule h3 { font: 600 14.5px/1.3 var(--display); margin: 0 0 5px; }
+.rule p { margin: 0; color: var(--muted); font-size: 13px; }
+
+/* Flow strip */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 26px 0 8px; }
+.flow .step {
+  flex: 1 1 150px; background: var(--panel); border: 1px solid var(--edge);
+  border-radius: 10px; padding: 11px 13px; position: relative;
+}
+.flow .step strong { display: block; font: 600 13.5px/1.3 var(--display); }
+.flow .step span { color: var(--faint); font-size: 12px; }
+.flow .arrow { align-self: center; color: var(--faint); }
+
+/* Sections */
+section { margin-top: 54px; }
+section > h2 { font: 700 23px/1.2 var(--display); margin: 0 0 4px; }
+section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
+section > .why code, .notes code, .mast code {
+  font: 12.5px var(--mono); background: var(--panel); border: 1px solid var(--edge);
+  border-radius: 4px; padding: 1px 5px; color: var(--ink);
+}
+
+/* A drawn screen and its notes */
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 22px; align-items: start; }
+@media (max-width: 980px) { .pair { grid-template-columns: 1fr; } }
+.screen {
+  background: var(--bg); border: 1px solid var(--edge-hi); border-radius: 14px;
+  overflow: hidden; box-shadow: 0 24px 60px -18px rgb(0 0 0 / .75);
+}
+.chrome {
+  display: flex; align-items: center; gap: 18px; padding: 10px 18px;
+  background: var(--rail); border-bottom: 1px solid var(--edge);
+}
+.chrome .brand { font: 700 14px var(--display); }
+.chrome .tabs { display: flex; gap: 14px; color: var(--faint); font-size: 12.5px; }
+.chrome .tabs .on { color: var(--ink); background: var(--panel-hi); border-radius: 99px; padding: 2px 10px; }
+.chrome .right { margin-left: auto; color: var(--faint); font-size: 12px; }
+.notes h3 { font: 600 13.5px/1.3 var(--display); margin: 0 0 6px; color: var(--accent); }
+.notes p { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.notes p b { color: var(--ink); font-weight: 600; }
+
+/* Form idiom shared by the mocks */
+.field label { display: block; font-size: 12px; color: var(--faint); margin: 0 0 3px; }
+.field input, .field .input {
+  width: 100%; background: var(--band); border: 1px solid var(--edge);
+  border-radius: 7px; color: var(--ink); font: 13px var(--mono); padding: 7px 10px;
+}
+.btn {
+  display: inline-block; border-radius: 8px; padding: 7px 14px;
+  font: 600 13px var(--body); border: 1px solid var(--edge);
+  color: var(--muted); background: transparent;
+}
+.btn.primary { background: var(--paper); color: var(--paper-head); border-color: var(--paper); }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 99px; margin-right: 7px; vertical-align: 1px; }
+.dot.green { background: var(--green); } .dot.red { background: var(--red); } .dot.faint { background: var(--edge-hi); }
+
+/* Screen 1: welcome */
+.welcome { padding: 64px 24px 72px; display: grid; justify-items: center; text-align: left; }
+.welcome .inner { max-width: 54ch; display: grid; gap: 12px; }
+.welcome h1 { font: 700 27px var(--display); margin: 0; }
+.welcome p { margin: 0; color: var(--muted); }
+.welcome .path { justify-self: start; font: 13px var(--mono); background: var(--panel); border: 1px solid var(--edge); border-radius: 8px; padding: 8px 12px; }
+.welcome .acts { display: flex; gap: 10px; margin-top: 6px; }
+
+/* Settings shell: rail plus column */
+.shell { display: grid; grid-template-columns: 168px minmax(0, 1fr); min-height: 430px; }
+.sidenav { background: var(--rail); border-right: 1px solid var(--edge); padding: 18px 0; }
+.sidenav a { display: block; padding: 6px 18px; color: var(--faint); font-size: 13px; text-decoration: none; }
+.sidenav a.on { color: var(--ink); border-left: 2px solid var(--accent); padding-left: 16px; background: var(--band); }
+.sidenav .sub { padding-left: 30px; font-size: 12px; }
+.content { padding: 22px 26px 30px; max-width: 760px; }
+.content h1 { font: 700 20px var(--display); margin: 0 0 2px; }
+.content .lead { color: var(--muted); font-size: 13px; margin: 0 0 18px; max-width: 64ch; }
+
+/* Source cards */
+.source {
+  border: 1px solid var(--edge); border-radius: 10px; background: var(--panel);
+  margin-bottom: 10px; overflow: hidden;
+}
+.source .head { display: flex; align-items: baseline; gap: 12px; padding: 12px 16px; }
+.source .head .name { font: 600 14.5px var(--display); }
+.source .head .what { color: var(--faint); font-size: 12.5px; }
+.source .head .state { margin-left: auto; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.source .head .state.bad { color: var(--red); }
+.source .body { border-top: 1px solid var(--edge); padding: 16px; display: grid; gap: 14px; background: var(--band); }
+.source .body .row { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.source .body .row.single { grid-template-columns: 1fr; }
+.source .quiet { color: var(--faint); font-size: 12.5px; max-width: 62ch; }
+.source .quiet code { font: 12px var(--mono); background: var(--panel); border: 1px solid var(--edge); border-radius: 4px; padding: 1px 5px; }
+.source .acts { display: flex; gap: 8px; align-items: center; }
+.source .verdict { font-size: 12.5px; color: var(--green); }
+.pathrow { display: flex; gap: 8px; align-items: center; }
+.pathrow .input { flex: 1; }
+.pathrow .x { color: var(--faint); }
+
+/* Add-a-source picker */
+.picker { border: 1px dashed var(--edge-hi); border-radius: 10px; }
+.picker .kind {
+  display: flex; align-items: baseline; gap: 12px; padding: 13px 16px;
+  border-bottom: 1px solid var(--edge);
+}
+.picker .kind:last-child { border-bottom: 0; }
+.picker .kind .name { font: 600 14px var(--display); min-width: 108px; }
+.picker .kind .what { color: var(--muted); font-size: 13px; }
+.picker .kind .needs { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; }
+.picker .kind .add { color: var(--ink); font-size: 13px; }
+.picker .later { padding: 11px 16px; color: var(--faint); font-size: 12.5px; }
+
+/* Empty state */
+.empty { text-align: center; padding: 34px 20px 10px; }
+.empty .fence { margin: 0 auto 18px; display: block; }
+.empty h2 { font: 700 18px var(--display); margin: 0 0 4px; }
+.empty p { color: var(--muted); margin: 0 0 20px; }
+
+/* Decisions */
+.decisions { display: grid; gap: 12px; max-width: 86ch; }
+.decision { background: var(--band); border: 1px solid var(--edge); border-radius: 10px; padding: 14px 18px; }
+.decision h3 { font: 600 14.5px var(--display); margin: 0 0 5px; }
+.decision p { margin: 0 0 6px; color: var(--muted); font-size: 13.5px; }
+.decision .rec { color: var(--ink); font-size: 13.5px; }
+.decision .rec::before { content: "Recommended: "; color: var(--green); font-weight: 600; }
+
+/* Width notes */
+.widths { display: flex; flex-wrap: wrap; gap: 12px; }
+.width { flex: 1 1 280px; background: var(--band); border: 1px solid var(--edge); border-radius: 10px; padding: 14px 16px; }
+.width h3 { font: 600 13.5px var(--display); margin: 0 0 5px; }
+.width p { margin: 0; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="mast">
+  <h1>Sources: perch starts from nothing</h1>
+  <p class="brief">The round answers: <b>the starter config mirrors the owner's real setup, and the
+  UI assumes Forgejo and every source exists.</b> After this round perch assumes nothing. A fresh
+  start holds no places to look; sources are added one at a time, each explaining itself, and new
+  kinds of source slot in without redesign.</p>
+  <p class="meta">Round of 23 October 2026 · drawn on the approved ink palette · verdicts to be recorded</p>
+</header>
+
+<div class="rules">
+  <div class="rule"><h3>A source is added, never assumed</h3>
+    <p>No source is present until the owner adds it. An absent source gathers nothing, judges
+    nothing, and leaves no trace in the UI: no empty Forgejo panel, no unmet expectation.</p></div>
+  <div class="rule"><h3>Each source carries its own truth</h3>
+    <p>A source card shows what its last scan found, in words: read 18 repositories, failed with
+    the reason, or never scanned. Status lives with the thing configured, not in a far-off log.</p></div>
+  <div class="rule"><h3>The list is a registry</h3>
+    <p>The picker renders whatever kinds core registers: name, one plain sentence, what it needs.
+    A future source (tickets, a reading list, a phone) is one more row, not a new screen.</p></div>
+</div>
+
+<div class="flow">
+  <div class="step"><strong>Nothing</strong><span>no config file</span></div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>Welcome</strong><span>creates a near-empty file</span></div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>First source</strong><span>the picker, in place</span></div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>First scan</strong><span>runs as the source lands</span></div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>Birds</strong><span>the fence fills; adopt from there</span></div>
+</div>
+
+<section>
+  <h2>1 · Welcome, revised</h2>
+  <p class="why">The button no longer writes a copy of anyone's setup. It creates a config holding
+  only defaults (one wire, the standard thresholds) and goes straight to Sources. The owner's own
+  places are typed by the owner.</p>
+  <div class="pair">
+    <div class="screen">
+      <div class="welcome"><div class="inner">
+        <h1>perch</h1>
+        <p>Birds need a wire before they can perch. perch watches the places you name and shows
+        what it finds as birds on wires. It only ever reads; you never type a status.</p>
+        <p>There is no config file yet:</p>
+        <span class="path">~/.config/perch/config.toml</span>
+        <p>Start one and add the first place to look, from inside the app. Or write the file
+        yourself; perch notices as soon as it exists.</p>
+        <div class="acts">
+          <span class="btn primary">Create the config file</span>
+          <span class="btn">Check again</span>
+        </div>
+      </div></div>
+    </div>
+    <aside class="notes">
+      <h3>What changed</h3>
+      <p><b>"Write a starter config" becomes "Create the config file"</b>: it now makes a
+      near-empty file, so the words promise less.</p>
+      <p>The second paragraph says what happens next, because the next screen is no longer the
+      aviary: it is Sources, empty.</p>
+      <p>The hand-written route stays one sentence; the watcher already notices the file appear.</p>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <h2>2 · Sources, empty: the first-run screen</h2>
+  <p class="why">After the file is created the camera goes to Sources. The empty state is an
+  invitation with the picker already open; nothing to hunt for. The same screen is the top of
+  settings forever after, so first run is not a separate mode.</p>
+  <div class="pair">
+    <div class="screen">
+      <div class="chrome"><span class="brand">perch</span>
+        <span class="tabs"><span>The Aviary</span><span class="on">Settings</span></span>
+        <span class="right">nothing scanned yet</span></div>
+      <div class="shell">
+        <nav class="sidenav">
+          <a class="on" href="#">Sources</a>
+          <a class="sub" href="#">Joining up</a>
+          <a href="#">Wires</a>
+          <a href="#">Tiers</a>
+          <a href="#">Judgement</a>
+          <a href="#">Scanning</a>
+          <a href="#">Launching</a>
+        </nav>
+        <div class="content">
+          <div class="empty">
+            <svg class="fence" width="220" height="44" viewBox="0 0 220 44" aria-hidden="true">
+              <line x1="0" y1="18" x2="220" y2="18" stroke="#3a3e46" stroke-width="2"/>
+              <rect x="30" y="18" width="5" height="26" fill="#2a2d34"/>
+              <rect x="185" y="18" width="5" height="26" fill="#2a2d34"/>
+            </svg>
+            <h2>Nowhere to look yet</h2>
+            <p>perch reads places you name and never asks again. Add the first one.</p>
+          </div>
+          <div class="picker">
+            <div class="kind"><span class="name">Local folders</span>
+              <span class="what">Git repositories and Obsidian vaults under folders on this machine.</span>
+              <span class="needs">needs nothing</span><span class="add">Add</span></div>
+            <div class="kind"><span class="name">GitHub</span>
+              <span class="what">The repositories your accounts own: branches, CI, pull requests.</span>
+              <span class="needs">needs a read-only token</span><span class="add">Add</span></div>
+            <div class="kind"><span class="name">Forgejo</span>
+              <span class="what">The same, from a Forgejo or Gitea server you run.</span>
+              <span class="needs">needs an address and a token</span><span class="add">Add</span></div>
+            <div class="kind"><span class="name">Uptime Kuma</span>
+              <span class="what">One server's monitors, shown as a single bird.</span>
+              <span class="needs">needs an address</span><span class="add">Add</span></div>
+            <div class="later">More kinds of source appear here as perch learns to read them.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <h3>Why a rail</h3>
+      <p>Settings had one long scroll. The rail names the six groups, <b>Sources first</b>, and
+      is the same map every visit. On a small window it folds to a row of words above the column.</p>
+      <h3>Joining up</h3>
+      <p>Joins and ignores move under Sources as a sub-page: they are statements about presences,
+      so they live where presences are configured.</p>
+      <h3>The picker rows</h3>
+      <p>Each row is a sentence and a cost, not a logo tile. The closing line keeps the door
+      visibly open for future kinds without promising any.</p>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <h2>3 · A forge source, opened: tokens without a terminal</h2>
+  <p class="why">The GitHub card expanded, one account added and a second being set up. The token
+  is pasted once and goes straight into the system keyring; perch never writes it to disk and can
+  never show it back. The manual <code>secret-tool</code> route stays as one quiet line for those
+  who prefer it.</p>
+  <div class="pair">
+    <div class="screen">
+      <div class="chrome"><span class="brand">perch</span>
+        <span class="tabs"><span>The Aviary</span><span class="on">Settings</span></span>
+        <span class="right">scanned 4 minutes ago</span></div>
+      <div class="shell">
+        <nav class="sidenav">
+          <a class="on" href="#">Sources</a>
+          <a class="sub" href="#">Joining up</a>
+          <a href="#">Wires</a>
+          <a href="#">Tiers</a>
+          <a href="#">Judgement</a>
+          <a href="#">Scanning</a>
+          <a href="#">Launching</a>
+        </nav>
+        <div class="content">
+          <h1>Sources</h1>
+          <p class="lead">The places perch looks. Every scan reads each one; remove a source and
+          perch simply stops looking there.</p>
+
+          <div class="source">
+            <div class="head"><span class="name">Local folders</span>
+              <span class="what">2 folders searched</span>
+              <span class="state"><span class="dot green"></span>found 14 repositories · 4 min ago</span></div>
+          </div>
+
+          <div class="source">
+            <div class="head"><span class="name">GitHub · someone</span>
+              <span class="state"><span class="dot green"></span>read 18 repositories · 4 min ago</span></div>
+            <div class="body">
+              <div class="row">
+                <div class="field"><label>Account</label><span class="input">someone</span></div>
+                <div class="field"><label>Keyring key</label><span class="input">github-someone</span></div>
+              </div>
+              <div class="row single">
+                <div class="field"><label>Token · paste once, kept only in the system keyring</label>
+                  <span class="input">github_pat_••••••••••••••••••••••••</span></div>
+              </div>
+              <div class="acts">
+                <span class="btn primary">Store in the keyring</span>
+                <span class="btn">Test</span>
+                <span class="verdict">someone: 18 repositories readable</span>
+              </div>
+              <p class="quiet">A fine-grained token with read-only contents, metadata, actions and
+              pull requests is enough. Prefer the terminal?
+              <code>secret-tool store --label perch service perch key github-someone</code></p>
+            </div>
+          </div>
+
+          <div class="source">
+            <div class="head"><span class="name">GitHub · someone-else</span>
+              <span class="state"><span class="dot faint"></span>never scanned yet</span></div>
+          </div>
+
+          <div class="source">
+            <div class="head"><span class="name">Forgejo · forge.example.lan</span>
+              <span class="state bad"><span class="dot red"></span>failed: no answer from forge.example.lan</span></div>
+          </div>
+
+          <div class="picker">
+            <div class="kind"><span class="name">GitHub</span>
+              <span class="what">Another account: each one is its own card.</span>
+              <span class="needs">needs a read-only token</span><span class="add">Add</span></div>
+            <div class="kind"><span class="name">Uptime Kuma</span>
+              <span class="what">One server's monitors, shown as a single bird.</span>
+              <span class="needs">needs an address</span><span class="add">Add</span></div>
+            <div class="later">Every kind can be added again · more kinds appear as perch learns to read them.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <h3>Status with the thing</h3>
+      <p>The collapsed card's right edge is the last scan's verdict in words. A failure names its
+      reason where you would fix it; the sky's notices stay for passing weather.</p>
+      <h3>The token field</h3>
+      <p><b>Write-only.</b> Pasting and storing puts it in the keyring under the key shown; the
+      field then shows only dots that cannot be revealed. The keyring key is suggested from the
+      account name and stays editable.</p>
+      <h3>Test before trusting</h3>
+      <p>Test reads the account's repository count with the stored token and says so in a sentence.
+      A failure says what the forge answered.</p>
+      <h3>Multiples</h3>
+      <p>Every kind can be added any number of times: <b>one card per connection</b>, each with
+      its own token, test and verdict. Two GitHub accounts are two cards; a second Forgejo server
+      is a third. The picker always offers every kind.</p>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <h2>4 · Local folders, opened</h2>
+  <p class="why">The simplest source, first in the picker because it needs nothing. Paths keep
+  their <code>~</code>. The skip list sits beside the search list rather than in a far-off group.</p>
+  <div class="pair">
+    <div class="screen">
+      <div class="chrome"><span class="brand">perch</span>
+        <span class="tabs"><span>The Aviary</span><span class="on">Settings</span></span>
+        <span class="right">scanned 4 minutes ago</span></div>
+      <div class="shell">
+        <nav class="sidenav">
+          <a class="on" href="#">Sources</a>
+          <a class="sub" href="#">Joining up</a>
+          <a href="#">Wires</a>
+          <a href="#">Tiers</a>
+          <a href="#">Judgement</a>
+          <a href="#">Scanning</a>
+          <a href="#">Launching</a>
+        </nav>
+        <div class="content">
+          <h1>Sources</h1>
+          <p class="lead">The places perch looks. Every scan reads each one; remove a source and
+          perch simply stops looking there.</p>
+          <div class="source">
+            <div class="head"><span class="name">Local folders</span>
+              <span class="what">2 folders searched</span>
+              <span class="state"><span class="dot green"></span>found 14 repositories · 4 min ago</span></div>
+            <div class="body">
+              <div class="field"><label>Folders perch searches · a folder of repositories, or one repository</label></div>
+              <div class="pathrow"><span class="input">~/dev</span><span class="x">remove</span></div>
+              <div class="pathrow"><span class="input">~/obsidian/Pocket</span><span class="x">remove</span></div>
+              <div class="acts"><span class="btn">Add a folder</span></div>
+              <div class="field"><label>Folders it excludes</label></div>
+              <div class="pathrow"><span class="input">~/dev/archive</span><span class="x">remove</span></div>
+              <div class="acts"><span class="btn">Add an exclude</span></div>
+              <p class="quiet">A repository found here appears on the fence until it is adopted
+              onto a wire. An Obsidian vault is known by its folder and watched the same way.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <h3>No assumptions</h3>
+      <p>The rows above are typed by this owner, not shipped. A fresh file holds no folders at
+      all.</p>
+      <h3>One sentence of consequence</h3>
+      <p>Each opened source ends with what its findings become in the aviary, in bird language,
+      so the model teaches itself.</p>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <h2>5 · Widths</h2>
+  <div class="widths">
+    <div class="width"><h3>Small monitor (often primary)</h3>
+      <p>Below about 900px the rail folds into a row of the six words above the column; the
+      column keeps its reading width with 16px gutters and no horizontal scroll.</p></div>
+    <div class="width"><h3>Desktop</h3>
+      <p>Rail 168px, column up to 760px of reading width. Cards never widen past the column;
+      status words wrap under the name before they truncate.</p></div>
+    <div class="width"><h3>Ultrawide (3440px)</h3>
+      <p>The shell caps near 1400px and centres, like the aviary's 2200px cap. Nothing
+      stretches; the extra ground stays sky.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>6 · What this round needs decided</h2>
+  <div class="decisions">
+    <div class="decision"><h3>Config grows a sources shape</h3>
+      <p>Every source becomes optional, repeatable and lives under one namespace, as array
+      tables: <code>[[sources.local]]</code>, <code>[[sources.github]]</code>,
+      <code>[[sources.forgejo]]</code>, <code>[[sources.kuma]]</code>. One table per card; none,
+      no source. The old <code>[local]</code>/<code>[forges]</code>/<code>[server]</code> shape
+      goes; nothing real uses it yet, so there is no migration to carry.</p>
+      <p class="rec">one breaking rename now, while the only config in the world is a starter.</p></div>
+    <div class="decision"><h3>The starter is generated, not copied</h3>
+      <p>"Create the config file" writes <code>writeConfig</code> of a default config: one wire
+      ("Projects"), standard thresholds, no sources. The repo's example file becomes a commented
+      reference with placeholder values only; no real accounts, addresses or key names anywhere
+      in the repository.</p>
+      <p class="rec">generate the starter; keep the example as documentation with fake values.</p></div>
+    <div class="decision"><h3>perch may store tokens into the keyring</h3>
+      <p>The paste-once field writes through the Secret Service API under service
+      <code>perch</code>. perch still never reads a token back for display and nothing touches
+      disk; the existing rule holds. The manual command remains printed beside it.</p>
+      <p class="rec">yes; it is the single biggest help to starting from nothing.</p></div>
+    <div class="decision"><h3>Claude Code sessions stay automatic</h3>
+      <p>Session recency rides along wherever local folders are configured, costing nothing to
+      set up. The registry leaves room for it to become a visible source row later.</p>
+      <p class="rec">leave it automatic this round.</p></div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

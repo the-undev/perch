@@ -25,6 +25,7 @@ afterEach(() => {
 });
 
 const idle = (aviary: Aviary | null): PerchState => ({
+  noConfig: false,
   aviary,
   scanning: false,
   problems: [],
@@ -63,7 +64,12 @@ const pathOf = (router: ReturnType<typeof renderApp>["router"]) =>
 
 describe("the window", () => {
   it("says the first scan is running, then perches the aviary the scan pushes", async () => {
-    const { fake } = renderApp({ aviary: null, scanning: true, problems: [] });
+    const { fake } = renderApp({
+      noConfig: false,
+      aviary: null,
+      scanning: true,
+      problems: [],
+    });
 
     expect((await screen.findByRole("status")).textContent).toBe(
       "First scan running",
@@ -73,6 +79,47 @@ describe("the window", () => {
     expect(await birdButton("undev/skiff")).toBeDefined();
   });
 
+  it("welcomes the owner without a config, naming its path, and hands both buttons to the main process", async () => {
+    const { fake } = renderApp({ ...idle(null), noConfig: true });
+
+    expect(await screen.findByRole("main", { name: "perch" })).toBeDefined();
+    expect(screen.getByText("~/.config/perch/config.toml")).toBeDefined();
+    expect(screen.queryByRole("status")).toBeNull();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Write a starter config" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+
+    expect(fake.starterWrites).toBe(1);
+    expect(fake.rescans).toBe(1);
+  });
+
+  it("says why the starter config was not written, then leaves for the first scan once a config is found", async () => {
+    const { fake } = renderApp({ ...idle(null), noConfig: true });
+    await screen.findByRole("main", { name: "perch" });
+
+    act(() =>
+      fake.push({
+        ...idle(null),
+        noConfig: true,
+        problems: [
+          "The starter config was not written: /home/owner/.config/perch/config.toml already exists",
+        ],
+      }),
+    );
+    expect(
+      await screen.findByText(
+        "The starter config was not written: /home/owner/.config/perch/config.toml already exists",
+      ),
+    ).toBeDefined();
+
+    act(() => fake.push({ ...idle(null), scanning: true }));
+    expect((await screen.findByRole("status")).textContent).toBe(
+      "First scan running",
+    );
+  });
+
   it("takes a later scan in place, without remounting the scene", async () => {
     const { fake, container } = renderApp(idle(mockAviary));
     await birdButton("undev/skiff");
@@ -80,6 +127,7 @@ describe("the window", () => {
 
     act(() =>
       fake.push({
+        noConfig: false,
         aviary: { ...mockAviary, scannedAt: "2026-10-21T08:00:00.000Z" },
         scanning: true,
         problems: [],
@@ -92,6 +140,7 @@ describe("the window", () => {
 
   it("puts the main process's problems in the sky beside the scan's warnings", async () => {
     renderApp({
+      noConfig: false,
       aviary: mockAviary,
       scanning: false,
       problems: [

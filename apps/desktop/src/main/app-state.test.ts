@@ -36,7 +36,7 @@ function configStore(first: ConfigState) {
 }
 
 function appState(overrides: Partial<AppStateDeps> = {}) {
-  const config = configStore({ loaded, error: null });
+  const config = configStore({ loaded, error: null, missing: false });
   const published: PerchState[] = [];
   const deps: AppStateDeps = {
     config: config.store,
@@ -49,6 +49,7 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
       throw new Error("ENOENT");
     },
     publish: (state) => published.push(state),
+    writeStarter: vi.fn(async () => {}),
     ...overrides,
   };
   return { app: createAppState(deps), deps, config, published };
@@ -95,6 +96,7 @@ describe("the app state", () => {
     config.nextRead({
       loaded,
       error: "config: wires must be a table",
+      missing: false,
     });
 
     await app.scan();
@@ -105,18 +107,51 @@ describe("the app state", () => {
     ]);
   });
 
-  it("neither scans nor crashes without any config, and says why", async () => {
+  it("neither scans nor crashes when no config has ever parsed, and says why", async () => {
     const { app, deps, config, published } = appState();
-    config.nextRead({ loaded: null, error: "config: neither file exists" });
+    config.nextRead({
+      loaded: null,
+      error: "config: wires must be a table",
+      missing: false,
+    });
 
     await app.scan();
 
     expect(deps.gather).not.toHaveBeenCalled();
     expect(published.at(-1)).toEqual({
+      noConfig: false,
       aviary: null,
       scanning: false,
-      problems: ["config: neither file exists"],
+      problems: ["config: wires must be a table"],
     });
+  });
+
+  it("says there is no config, with no aviary, when the file is missing", async () => {
+    const { app, deps, config, published } = appState();
+    config.nextRead({ loaded: null, error: null, missing: true });
+    await app.start();
+
+    await app.scan();
+
+    expect(deps.gather).not.toHaveBeenCalled();
+    expect(published.at(-1)).toEqual({
+      noConfig: true,
+      aviary: null,
+      scanning: false,
+      problems: [],
+    });
+  });
+
+  it("rechecks the config without scanning, and publishes what it found", async () => {
+    const { app, deps, config, published } = appState();
+    config.nextRead({ loaded: null, error: null, missing: true });
+    await app.start();
+    config.nextRead({ loaded, error: null, missing: false });
+
+    await app.recheck();
+
+    expect(deps.gather).not.toHaveBeenCalled();
+    expect(published.at(-1)?.noConfig).toBe(false);
   });
 
   it("keeps the previous aviary when a scan fails, and says so until one succeeds", async () => {
@@ -171,6 +206,33 @@ describe("the app state", () => {
     await app.launch(perchInCode);
     expect(published.at(-1)?.problems).toEqual([
       "Open in VS Code failed: spawn code ENOENT",
+    ]);
+
+    await app.scan();
+    expect(published.at(-1)?.problems).toEqual([]);
+  });
+
+  it("writes the starter config", async () => {
+    const { app, deps, published } = appState();
+    await app.start();
+
+    await app.writeStarterConfig();
+
+    expect(deps.writeStarter).toHaveBeenCalledTimes(1);
+    expect(published.at(-1)?.problems).toEqual([]);
+  });
+
+  it("says why the starter config was not written, until the next scan", async () => {
+    const { app, published } = appState({
+      writeStarter: vi.fn(async () => {
+        throw new Error("/home/owner/.config/perch/config.toml already exists");
+      }),
+    });
+    await app.start();
+
+    await app.writeStarterConfig();
+    expect(published.at(-1)?.problems).toEqual([
+      "The starter config was not written: /home/owner/.config/perch/config.toml already exists",
     ]);
 
     await app.scan();

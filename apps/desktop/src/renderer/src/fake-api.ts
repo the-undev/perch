@@ -11,6 +11,7 @@ export interface FakeApi {
   rescans: number;
   launches: LaunchAction[];
   keyFileReads: string[];
+  starterWrites: number;
 }
 
 export function fakeApi(
@@ -36,6 +37,9 @@ export function fakeApi(
       launch: async (action) => {
         fake.launches.push(action);
       },
+      writeStarterConfig: async () => {
+        fake.starterWrites += 1;
+      },
     },
     push(state) {
       current = state;
@@ -44,6 +48,7 @@ export function fakeApi(
     rescans: 0,
     launches: [],
     keyFileReads: [],
+    starterWrites: 0,
   };
   return fake;
 }

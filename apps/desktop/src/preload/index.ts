@@ -12,6 +12,7 @@ const api: PerchApi = {
   rescan: () => ipcRenderer.invoke(channels.rescan),
   keyFiles: (birdId) => ipcRenderer.invoke(channels.keyFiles, birdId),
   launch: (action) => ipcRenderer.invoke(channels.launch, action),
+  writeStarterConfig: () => ipcRenderer.invoke(channels.writeStarterConfig),
 };
 
 contextBridge.exposeInMainWorld("perch", api);

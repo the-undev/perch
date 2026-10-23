@@ -1,8 +1,9 @@
 # perch configuration.
 #
-# The live copy is ~/.config/perch/config.toml. When it does not exist the
-# scanner reads this file instead. No secrets here: tokens come from the
-# desktop keyring at run time.
+# The live copy is ~/.config/perch/config.toml. The app writes this file there
+# as a starter when asked; the command line scanner reads this file when the
+# live copy does not exist. No secrets here: tokens come from the desktop
+# keyring at run time.
 #
 # Config asserts only what leaves no trace on disk or on a forge. When an
 # assertion and an observation disagree, the observation wins and the
@@ -29,13 +30,7 @@ default = "Projects"
 
 [local]
 # Each include is a repository, or a directory searched for repositories.
-include = [
-  "~/dev",
-  "~/undev",
-  "~/.dotfiles",
-  "~/obsidian/Hothouse",
-  "~/obsidian/Pocket",
-]
+include = ["~/dev", "~/.dotfiles"]
 # Nothing at or below these paths is searched.
 ignore = ["~/dev/archived", "~/dev/third-party", "~/dev/all/delete"]
 
@@ -67,13 +62,11 @@ interval_minutes = 15
 archived_interval_hours = 24
 
 # The zellij session that holds a project's terminal tab: the item's own
-# zellij_session, else the session of the longest root below containing the
-# project, else zellij_session here.
+# zellij_session, else the session of the longest root containing the project
+# in a [launch.zellij_sessions] table of roots and sessions, such as
+# "~/work" = "work", else zellij_session here.
 [launch]
 zellij_session = "home"
-
-[launch.zellij_sessions]
-"~/undev" = "undev"
 
 # The commands behind the launch actions, each an argument list run without
 # a shell. Placeholders in braces are filled in at launch. Leave a command
@@ -97,16 +90,7 @@ obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 # two entries name one item, the one keyed by the item's id applies and the
 # clash is flagged. A repository found inside an include directory is flagged
 # as not set up until it has an entry here, even an empty one.
-[items."obsidian/Hothouse"]
-wire = "Machine & Home"
-name = "Hothouse Vault"
-roadmaps = ["Tech/Tech Plans.md", "Garden/Garden Plans.md"]
-
-[items."obsidian/Pocket"]
-wire = "Machine & Home"
-name = "Pocket Vault"
-roadmaps = ["Code/Code Plans.md", "Pocket Plans.md"]
-
+#
 # Every field an entry can hold, each optional:
 # [items."dev/perch"]
 # wire = "Projects"                  # one of wires.names

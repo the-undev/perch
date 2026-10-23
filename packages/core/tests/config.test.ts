@@ -36,10 +36,7 @@ describe("example config", () => {
 
     expect(config.local.include).toEqual([
       "/home/test/dev",
-      "/home/test/undev",
       "/home/test/.dotfiles",
-      "/home/test/obsidian/Hothouse",
-      "/home/test/obsidian/Pocket",
     ]);
     expect(config.local.ignore).toEqual([
       "/home/test/dev/archived",
@@ -58,10 +55,7 @@ describe("example config", () => {
       expectation: { amberDays: 7, redDays: 30 },
     });
     expect(config.importance.default).toBe("projects");
-    expect(config.items["obsidian/Hothouse"]?.roadmaps).toEqual([
-      "Tech/Tech Plans.md",
-      "Garden/Garden Plans.md",
-    ]);
+    expect(config.items).toEqual({});
     expect(config.forges.finalisedCommits).toBe(10);
     expect(config.scan).toEqual({
       intervalMinutes: 15,
@@ -69,7 +63,7 @@ describe("example config", () => {
     });
     expect(config.launch).toEqual({
       zellijSession: "home",
-      zellijSessions: { "/home/test/undev": "undev" },
+      zellijSessions: {},
       commands: {
         zellij: ["zellij"],
         terminal: [
@@ -199,11 +193,8 @@ describe("item overrides", () => {
   });
 
   it("choose the zellij session from the entry, then the longest root, then the default", async () => {
-    const text = (
-      await withOverrides('[items."undev/spool"]\nzellij_session = "spool"\n')
-    ).replace(
-      '"~/undev" = "undev"',
-      '"~/undev" = "undev"\n"~/undev/tools" = "tools"',
+    const text = await withOverrides(
+      '[items."undev/spool"]\nzellij_session = "spool"\n\n[launch.zellij_sessions]\n"~/undev" = "undev"\n"~/undev/tools" = "tools"\n',
     );
     const config = parseConfig(text, home);
 
@@ -272,7 +263,7 @@ describe("launch commands", () => {
   async function withCommands(commands: string): Promise<string> {
     const example = await exampleText();
     const start = example.indexOf("[launch.commands]");
-    const end = example.indexOf("\n[items.", start);
+    const end = example.indexOf("\n[forges]", start);
     return `${example.slice(0, start)}[launch.commands]\n${commands}\n${example.slice(end)}`;
   }
 

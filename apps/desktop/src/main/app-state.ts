@@ -26,6 +26,8 @@ export interface AppStateDeps {
   launch: (action: LaunchAction, config: Config) => Promise<void>;
   /** Reads a file's text; rejects when it cannot. */
   readText: (path: string) => Promise<string>;
+  /** Writes the starter config; rejects, writing nothing, when the file exists. */
+  writeStarter: () => Promise<void>;
   /** Told every change to the state. */
   publish: (state: PerchState) => void;
 }
@@ -36,6 +38,8 @@ export interface AppState {
   state(): PerchState;
   /** Rereads the config, then gathers and aggregates; failures become problems, never throws. */
   scan(): Promise<void>;
+  /** Rereads the config and publishes the state, without scanning. */
+  recheck(): Promise<void>;
   setScanning(scanning: boolean): void;
   /**
    * Performs a launch action when some bird in the aviary offers it, else nothing; a failure
@@ -44,6 +48,8 @@ export interface AppState {
   launch(action: LaunchAction): Promise<void>;
   /** A bird's key files with what was read from each; none for a bird the aviary does not hold. */
   keyFiles(birdId: string): Promise<KeyFileSheet[]>;
+  /** Writes the starter config; a refusal becomes a problem until the next attempt or scan. */
+  writeStarterConfig(): Promise<void>;
 }
 
 /** Two launch actions are the same when every field is: they are flat records of strings. */
@@ -64,6 +70,7 @@ export function createAppState(deps: AppStateDeps): AppState {
   let scanning = false;
   let scanError: string | null = null;
   let launchError: string | null = null;
+  let starterError: string | null = null;
   let derived: { snapshot: Snapshot; config: Config; aviary: Aviary } | null =
     null;
 
@@ -86,11 +93,17 @@ export function createAppState(deps: AppStateDeps): AppState {
     }
     if (scanError !== null) list.push(`The scan failed: ${scanError}`);
     if (launchError !== null) list.push(launchError);
+    if (starterError !== null) list.push(starterError);
     return list;
   }
 
   function state(): PerchState {
-    return { aviary: aviary(), scanning, problems: problems() };
+    return {
+      noConfig: deps.config.current().missing,
+      aviary: aviary(),
+      scanning,
+      problems: problems(),
+    };
   }
 
   function bird(birdId: string): Bird | undefined {
@@ -110,6 +123,7 @@ export function createAppState(deps: AppStateDeps): AppState {
     async scan() {
       const { loaded } = await deps.config.reload();
       launchError = null;
+      starterError = null;
       if (loaded === null) {
         publish();
         return;
@@ -121,6 +135,10 @@ export function createAppState(deps: AppStateDeps): AppState {
       } catch (error) {
         scanError = errorMessage(error);
       }
+      publish();
+    },
+    async recheck() {
+      await deps.config.reload();
       publish();
     },
     setScanning(next) {
@@ -149,6 +167,15 @@ export function createAppState(deps: AppStateDeps): AppState {
           markdown: await deps.readText(file.absolutePath).catch(() => null),
         })),
       );
+    },
+    async writeStarterConfig() {
+      try {
+        await deps.writeStarter();
+        starterError = null;
+      } catch (error) {
+        starterError = `The starter config was not written: ${errorMessage(error)}`;
+      }
+      publish();
     },
   };
 }

@@ -39,6 +39,8 @@ function scheduler(
   const scanning: boolean[] = [];
   const schedule = createScanScheduler({
     scan: stub.scan,
+    hasConfig: () => true,
+    recheck: vi.fn(async () => {}),
     intervalMs: () => 15 * minute,
     focusGapMs: minute,
     now: () => Date.now(),
@@ -138,6 +140,60 @@ describe("the scan scheduler", () => {
 
     expect(stub.scan).toHaveBeenCalledTimes(2);
     expect(scanning).toEqual([true, false, true]);
+  });
+
+  it("stays idle in the no-config state", async () => {
+    const stub = stubScan();
+    const recheck = vi.fn(async () => {});
+    const { schedule, scanning } = scheduler(stub, {
+      hasConfig: () => false,
+      recheck,
+    });
+
+    schedule.start();
+    await vi.advanceTimersByTimeAsync(60 * minute);
+
+    expect(stub.scan).not.toHaveBeenCalled();
+    expect(recheck).not.toHaveBeenCalled();
+    expect(scanning).toEqual([]);
+  });
+
+  it("rechecks the config on request and on every focus without config, and scans once it appears", async () => {
+    const stub = stubScan();
+    let exists = false;
+    const recheck = vi.fn(async () => {});
+    const { schedule } = scheduler(stub, { hasConfig: () => exists, recheck });
+    schedule.start();
+
+    await schedule.request();
+    schedule.focused();
+    schedule.focused();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(recheck).toHaveBeenCalledTimes(3);
+    expect(stub.scan).not.toHaveBeenCalled();
+
+    recheck.mockImplementation(async () => {
+      exists = true;
+    });
+    schedule.focused();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(stub.scan).toHaveBeenCalledTimes(1);
+    await stub.finish();
+    await vi.advanceTimersByTimeAsync(15 * minute);
+    expect(stub.scan).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops the timer when a scan finds the config gone", async () => {
+    const stub = stubScan();
+    let exists = true;
+    const { schedule } = scheduler(stub, { hasConfig: () => exists });
+    schedule.start();
+
+    exists = false;
+    await stub.finish();
+    await vi.advanceTimersByTimeAsync(60 * minute);
+
+    expect(stub.scan).toHaveBeenCalledTimes(1);
   });
 
   it("stops the timer", async () => {

@@ -217,7 +217,10 @@ read at run time, its CLI prompts. Creation and replacement runbook:
 - The latest snapshot is cached in `~/.local/share/perch/scan/`; the
   window renders from it at start and the main process pushes the fresh
   aviary when a scan finishes. Before any snapshot exists the window
-  says the first scan is running. A failing source keeps its previous
+  says the first scan is running. Without a config file nothing scans:
+  the window names the path and offers to write a starter config, a copy
+  of `config.example.toml`, never over an existing file. Checking again,
+  or focusing the window, reads the path again. A failing source keeps its previous
   result and shows the error and its age. A config that does not parse
   leaves the previous one in force, and a failed scan leaves the
   previous snapshot; either says so in the sky's notices, as does a

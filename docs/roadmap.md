@@ -3,26 +3,6 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
-## No config fallback, welcome screen
-
-Approved 22 October 2026. Three parts:
-
-- Trim `config.example.toml` to a genuine example: include only `~/dev`
-  and `~/.dotfiles`, drop the undev and vault includes, the two vault
-  item entries and the undev `launch.zellij_sessions` entry. The forge
-  sections stay as the template to copy.
-- The app reads only `~/.config/perch/config.toml`. A missing file is a
-  distinct no-config state: no scan runs and the renderer shows a
-  welcome screen naming the path, with a button that writes a starter
-  config from the shipped example (only when the file is absent, never
-  overwriting) and a check-again action; window focus also re-checks.
-- The CLI keeps reading the repository's example; it is a dev tool run
-  against `.scan/`.
-
-Tests: config-store returns no-config and never reads the example; the
-scheduler stays idle without config; the welcome screen renders against
-the fake preload; the starter write refuses when the file exists.
-
 ## Settings UI
 
 Everything in config becomes editable in the app, even where the form

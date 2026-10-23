@@ -47,11 +47,13 @@ hand-curated snapshot and config pair that covers every view model state,
 imported as `@perch/core/mock.ts`; `tests/mock.test.ts` fails if it drifts
 from the rules or loses a state.
 
-`pnpm scan` runs both. Config is `~/.config/perch/config.toml`. The CLI
-reads the root `config.example.toml` when that is absent. The app reads
-only the config file; without it the window shows a welcome screen that
-copies the example there as a starter. The AppImage ships the example
-among its resources.
+`pnpm scan` runs both. Config is `~/.config/perch/config.toml`, its
+sources declared as `[[sources.<kind>]]` tables. The CLI scans with
+`defaultConfig()` (`src/config-default.ts`) when that is absent. The app
+reads only the config file; without it the window shows a welcome screen
+that writes the default config there as a starter. The root
+`config.example.toml` is a commented reference with placeholder values;
+nothing reads it but the tests and the design site.
 
 `packages/ui` (`@perch/ui`) holds the React components of the design,
 typed against the view model only: the bird, wire, fence and sky scene, the

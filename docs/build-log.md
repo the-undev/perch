@@ -448,3 +448,22 @@ build-time calls so they can be revisited.
   scan record in the snapshot, the settings rebuild (a left rail of
   pages beside one reading-width column), and the keyring write with
   the token test.
+- The config schema phase. A config key outside the model is refused by
+  name (`config: local is not a config key`), at the top level, in
+  `[sources]` and in each source table, so the old `[local]`, `[forges]`
+  and `[server]` tables fail loudly. `exclude` and `tracked_forks` may be
+  left out and read as empty; every other source key is required.
+- A forge source's tracked forks are the union across that kind's
+  tables, as one forge's list was before. A remote is looked up through
+  the table whose account owns it and whose hosts name its host.
+- Each kuma table makes a server item with id `server:<name>`, so two
+  tables make two items; the old single item's id was `server`.
+  `RawData.kuma` is keyed by the table's name, an unreadable page that
+  name's error instead of the source's.
+- The raw account listings stay keyed by account, so two Forgejo tables
+  for one account name at two instances share one listing entry. The
+  per-table scan record phase gives each table its own.
+- `defaultConfig()` lives in `src/config-default.ts`: wire `projects`,
+  zellij session `main`, no launch commands, the example's windows,
+  tiers and scan values. Finalised commits moves into the settings
+  page's scan group with the key.

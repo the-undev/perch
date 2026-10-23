@@ -132,7 +132,8 @@ directories and config path as parameters: the app scans into
   lives in `src/derivations.ts`. It reads the previous snapshot first:
   that is the first-seen record for unmet expectations.
 
-`pnpm scan` runs both; `pnpm check` runs Biome, tsc and vitest. A full
+`pnpm scan` runs both, with the default config when the owner has
+none; `pnpm check` runs Biome, tsc and vitest. A full
 scan of this machine took about 4 to 7 seconds on 22 October 2026.
 
 The renderer consumes only the view model, never the raw or snapshot
@@ -154,8 +155,9 @@ blocks on aggregation and renders from the cached snapshot.
 Sources today: local repositories and vaults (git state, Obsidian
 markers), the GitHub and Forgejo account listings and per-repository
 detail (PRs, CI, newest default-branch commits), roadmap files, Claude
-Code session times. Uptime Kuma exists and stays disabled in config
-until server monitoring is picked up. Forge tickets are a wanted
+Code session times. Uptime Kuma exists and runs only for a
+`[[sources.kuma]]` table, which config leaves out until server
+monitoring is picked up. Forge tickets are a wanted
 source, see the roadmap. The field inventory, with declared types
 beside live values, is the atlas (`design/atlas.html`).
 
@@ -176,16 +178,26 @@ Details and open questions (composite multi-repo projects among them):
 ## Configuration
 
 `~/.config/perch/config.toml`, stowed from the dotfiles so backup is a
-dotfiles push. It holds: the wires as an ordered named list, include
-and ignore paths, forge accounts and addresses, the health windows, the
-two scan lanes, the zellij session defaults, the launch commands (an
-action whose command is left out is not offered), per-project assertions
-(joins, wire, importance, display names, thresholds, expectations, key
-file lists, zellij session names). An entry for an item adopts it. No
-secrets, ever. Every field is shown in `config.example.toml`.
+dotfiles push. It holds: the wires as an ordered named list, the
+sources, the health windows, the two scan lanes and the finalised commit
+count, the zellij session defaults, the launch commands (an action whose
+command is left out is not offered), per-project assertions (joins,
+wire, importance, display names, thresholds, expectations, key file
+lists, zellij session names). An entry for an item adopts it. No
+secrets, ever. Every field is shown, with placeholder values, in
+`config.example.toml`.
+
+Sources are declared, never assumed: one `[[sources.<kind>]]` table per
+connection. `local` holds include and exclude paths; `github` an
+account, its keyring key, its hosts and its tracked forks; `forgejo`
+the same and the instance's base URL; `kuma` a server's name and its
+Uptime Kuma status page. Each GitHub account appears once, each Forgejo
+account once per instance, each kuma name once. A config with no
+sources is valid and scans nothing.
 
 The settings page, reached from the camera header, edits everything but
-the item entries, which each bird's detail page edits. The app writes
+the item entries, which each bird's detail page edits, and the sources,
+which no page edits yet. The app writes
 the file without comments, paths under the home directory with `~`. An
 edit to the file by hand is read as soon as it is saved, and the open
 page or form shows it; the last write wins.
@@ -227,8 +239,9 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   window renders from it at start and the main process pushes the fresh
   aviary when a scan finishes. Before any snapshot exists the window
   says the first scan is running. Without a config file nothing scans:
-  the window names the path and offers to write a starter config, a copy
-  of `config.example.toml`, never over an existing file. Checking again,
+  the window names the path and offers to write a starter config, the
+  default config of one wire, the standard windows and tiers and no
+  sources, never over an existing file. Checking again,
   or focusing the window, reads the path again. A failing source keeps its previous
   result and shows the error and its age. A config that does not parse
   leaves the previous one in force, and a failed scan leaves the

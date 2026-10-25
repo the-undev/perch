@@ -1,14 +1,18 @@
 // Tier C: a bird's full page. The mood and speech continue from the bubble, then the launch
-// actions, links out and the config entry's verb, then the ledger and its sections beside the
-// key files on paper. Only what exists is shown. The view fetches nothing: key-file contents,
-// launching and the entry's form and writes are the caller's.
+// actions, links out and the papers' verb, then the ledger and its sections beside the key files
+// on paper. Only what exists is shown. The view fetches nothing: key-file contents, launching and
+// the entry's form and writes are the caller's.
 
-import { emptyEntryValues } from "@perch/core/entry-form.ts";
+import {
+  type EntryForm,
+  type EntryValues,
+  sameEntryValues,
+} from "@perch/core/entry-form.ts";
 import type { Bird, LaunchAction } from "@perch/core/viewmodel.ts";
 import { useState } from "react";
 import { actionClass, LaunchActions, LinksOut } from "./actions.tsx";
+import { AdoptionPapers } from "./adoption-papers.tsx";
 import { DetailIntro } from "./detail-intro.tsx";
-import { AdoptForm, type EntryControls, EntryEditor } from "./entry-forms.tsx";
 import { Icon } from "./icons.tsx";
 import {
   BranchLines,
@@ -21,6 +25,16 @@ import {
 import { KeyFilePaper, type KeyFileSheet } from "./paper.tsx";
 import { isNight, skyPhase } from "./sky.ts";
 
+/** What the detail page needs to adopt its bird or amend its papers. */
+export interface EntryControls {
+  /** The open bird's entry and the form's choices; null until read, when no control shows. */
+  form: EntryForm | null;
+  /** Writes the bird's entry, adopting it when it has none. */
+  onSave: (birdId: string, values: EntryValues) => void;
+  /** Removes the bird's entry, returning it to the fence. */
+  onRemove: (birdId: string) => void;
+}
+
 export interface DetailViewProps {
   bird: Bird;
   /** The render's clock: ages are measured to it, and at night a sleeping bird's speech is woken. */
@@ -28,62 +42,88 @@ export interface DetailViewProps {
   onLaunch: (action: LaunchAction) => void;
   /** The bird's key files with what was read from each; empty until the caller has read them. */
   sheets: KeyFileSheet[];
-  /** Adopting the bird or editing its config entry. */
+  /** Adopting the bird or amending its papers. */
   entry: EntryControls;
+  /** The main process's problems, a refused write among them, which open papers show. */
+  problems: string[];
+  /** The papers unfold as the page opens, and again whenever this turns true. */
+  openPapers: boolean;
+}
+
+/** What was signed and is not yet in the entry read back: the values written, or the return. */
+type Signed = { kind: "values"; values: EntryValues } | { kind: "return" };
+
+/** Whether the entry read back shows what was signed. */
+function landed(signed: Signed, form: EntryForm): boolean {
+  if (signed.kind === "return") return form.values === null;
+  return form.values !== null && sameEntryValues(form.values, signed.values);
 }
 
 /**
- * The config entry's verb and, once pressed, its form: Adopt for a fence bird, Edit entry for an
- * adopted one. Nothing shows until the form's values are read and agree with the bird.
+ * The papers' verb and, once pressed, the papers: Adopt for a fence bird, The papers for an
+ * adopted one. Signed papers stay open until the entry read back shows the write, so a refused
+ * one keeps them open with the reason. Nothing shows until the form is read and agrees with the
+ * bird.
  */
-function EntryPart({ bird, entry }: { bird: Bird; entry: EntryControls }) {
-  const [open, setOpen] = useState(false);
+function EntryPart({
+  bird,
+  entry,
+  now,
+  problems,
+  openPapers,
+}: {
+  bird: Bird;
+  entry: EntryControls;
+  now: Date;
+  problems: string[];
+  openPapers: boolean;
+}) {
+  const [open, setOpen] = useState(openPapers);
+  const [asked, setAsked] = useState(openPapers);
+  const [signed, setSigned] = useState<Signed | null>(null);
   const { form } = entry;
+  if (openPapers !== asked) {
+    setAsked(openPapers);
+    if (openPapers) setOpen(true);
+  }
+  if (signed !== null && form !== null && landed(signed, form)) {
+    setSigned(null);
+    setOpen(false);
+  }
   if (form === null || (form.values !== null) !== bird.adopted) return null;
-  const close = () => setOpen(false);
-  const entryKey = form.key ?? bird.id;
+  const close = () => {
+    setSigned(null);
+    setOpen(false);
+  };
   return (
     <>
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={() => (open ? close() : setOpen(true))}
         className={`${actionClass} ${open ? "border-edge bg-panel text-ink" : ""}`}
       >
         <Icon name={form.values === null ? "adopt" : "edit"} size={15} />
-        {form.values === null ? "Adopt" : "Edit entry"}
+        {form.values === null ? "Adopt" : "The papers"}
       </button>
       {open && (
-        <div className="basis-full">
-          {form.values === null ? (
-            <AdoptForm
-              entryKey={entryKey}
-              scannedName={form.scannedName}
-              wires={form.options.wires}
-              defaultWire={form.options.defaultWire}
-              onAdopt={(adoption) => {
-                entry.onSave(bird.id, { ...emptyEntryValues(), ...adoption });
-                close();
-              }}
-              onCancel={close}
-            />
-          ) : (
-            <EntryEditor
-              entryKey={entryKey}
-              scannedName={form.scannedName}
-              values={form.values}
-              options={form.options}
-              onSave={(values) => {
-                entry.onSave(bird.id, values);
-                close();
-              }}
-              onUnadopt={() => {
-                entry.onRemove(bird.id);
-                close();
-              }}
-              onCancel={close}
-            />
-          )}
+        <div className="mt-3.5 basis-full">
+          <AdoptionPapers
+            bird={bird}
+            form={form}
+            night={isNight(skyPhase(now))}
+            now={now}
+            problems={problems}
+            onSign={(values) => {
+              setSigned({ kind: "values", values });
+              entry.onSave(bird.id, values);
+            }}
+            onReturn={() => {
+              setSigned({ kind: "return" });
+              entry.onRemove(bird.id);
+            }}
+            onClose={close}
+          />
         </div>
       )}
     </>
@@ -97,6 +137,8 @@ export function DetailView({
   onLaunch,
   sheets,
   entry,
+  problems,
+  openPapers,
 }: DetailViewProps) {
   const { detail } = bird;
   return (
@@ -108,7 +150,13 @@ export function DetailView({
       <div className="mt-3.5 flex flex-wrap items-center gap-1">
         <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
         <LinksOut links={detail.links} />
-        <EntryPart bird={bird} entry={entry} />
+        <EntryPart
+          bird={bird}
+          entry={entry}
+          now={now}
+          problems={problems}
+          openPapers={openPapers}
+        />
       </div>
       <div className="mt-4 grid items-start gap-10 @min-[1040px]:grid-cols-[minmax(330px,430px)_minmax(0,1fr)]">
         <div className="min-w-0">

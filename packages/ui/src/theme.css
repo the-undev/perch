@@ -261,6 +261,23 @@
   --color-post: #23262e;
 }
 
+/* The dark form parts set on paper, as in the adoption papers' fold: the
+   ground and ink they are drawn in, taken from the paper's own. */
+[data-material="paper"] {
+  --color-band: var(--color-paper);
+  --color-panel: var(--color-paper-code);
+  --color-panel-hi: var(--color-paper-dim);
+  --color-edge: var(--color-paper-rule);
+  --color-edge-hi: var(--color-paper-quiet);
+  --color-ink: var(--color-paper-strong);
+  --color-ink-muted: var(--color-paper-text);
+  --color-ink-faint: var(--color-paper-quiet);
+  --color-ink-accent: var(--color-paper-head);
+  --color-green: var(--color-paper-green);
+  --color-amber: var(--color-paper-amber);
+  --color-red: var(--color-paper-red);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

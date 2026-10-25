@@ -27,7 +27,7 @@ export function mockEntryForm(id: string): EntryForm {
   const item = mockSnapshot.items.find((candidate) => candidate.id === id);
   if (item === undefined)
     throw new Error(`the mock snapshot has no item ${id}`);
-  return entryFormFor(mockConfig, item);
+  return entryFormFor(mockConfig, item, mockHome);
 }
 
 /** The home directory the mock's paths sit under. */

@@ -219,6 +219,42 @@ describe("the window", () => {
     ).toBeDefined();
   });
 
+  it("rides to a fence bird's page with its papers unfolded from its bubble's adopt key", async () => {
+    const { router } = renderApp(idle(mockAviary), "/", undefined, (birdId) => {
+      const item = mockSnapshot.items.find((entry) => entry.id === birdId);
+      return item === undefined
+        ? null
+        : entryFormFor(mockConfig, item, mockHome);
+    });
+
+    fireEvent.click(await birdButton("dev/odin/hello"));
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+
+    await waitFor(() => expect(pathOf(router)).toBe("/bird/dev/odin/hello"));
+    expect(router.state.location.search).toEqual({ papers: true });
+    expect(
+      await screen.findByRole("form", { name: "Adoption papers for hello" }),
+    ).toBeDefined();
+  });
+
+  it("unfolds the papers where the URL asks", async () => {
+    renderApp(
+      idle(mockAviary),
+      "/bird/dev/perch?papers=true",
+      undefined,
+      (birdId) => {
+        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
+        return item === undefined
+          ? null
+          : entryFormFor(mockConfig, item, mockHome);
+      },
+    );
+
+    expect(
+      await screen.findByRole("form", { name: "Adoption papers for Perch" }),
+    ).toBeDefined();
+  });
+
   it("points the camera where the URL says, and rides home on Escape", async () => {
     const { router } = renderApp(idle(mockAviary), "/bird/dev/perch");
 
@@ -301,7 +337,8 @@ describe("the window", () => {
         return found;
       };
       return {
-        formFor: (birdId: string) => entryFormFor(config, item(birdId)),
+        formFor: (birdId: string) =>
+          entryFormFor(config, item(birdId), mockHome),
         save: (birdId: string, values: EntryValues) => {
           config = withEntry(config, item(birdId), values);
           return idle(deriveAviary(mockSnapshot, config));
@@ -320,14 +357,13 @@ describe("the window", () => {
 
       fireEvent.click(await screen.findByRole("button", { name: "Adopt" }));
       fireEvent.click(screen.getByRole("radio", { name: "Machine & Home" }));
-      fireEvent.change(screen.getByRole("textbox", { name: "Name" }), {
+      fireEvent.change(screen.getByRole("textbox", { name: "Goes by" }), {
         target: { value: "Hello" },
       });
       fireEvent.click(
-        within(screen.getByRole("form", { name: "Adopt hello" })).getByRole(
-          "button",
-          { name: "Adopt" },
-        ),
+        within(
+          screen.getByRole("form", { name: "Adoption papers for hello" }),
+        ).getByRole("button", { name: "Adopt onto Machine & Home" }),
       );
 
       expect(fake.entrySaves).toEqual([
@@ -341,6 +377,7 @@ describe("the window", () => {
             keyFiles: null,
             roadmaps: null,
             thresholds: {},
+            zellijSession: null,
           },
         },
       ]);
@@ -354,15 +391,16 @@ describe("the window", () => {
       );
 
       expect(
-        await screen.findByRole("button", { name: "Edit entry" }),
+        await screen.findByRole("button", { name: "The papers" }),
       ).toBeDefined();
+      await waitFor(() => expect(screen.queryByRole("form")).toBeNull());
       expect(screen.getByTitle("Machine & Home, as a tab row")).toBeDefined();
       expect(
         screen.getByRole("article", { name: "Hello in full" }),
       ).toBeDefined();
     });
 
-    it("edits an adopted bird's entry, and unadopts it", async () => {
+    it("amends an adopted bird's papers, shows a refusal on them, and returns it to the fence", async () => {
       const holder = configHolder();
       const { fake } = renderApp(
         idle(mockAviary),
@@ -372,16 +410,19 @@ describe("the window", () => {
       );
 
       fireEvent.click(
-        await screen.findByRole("button", { name: "Edit entry" }),
+        await screen.findByRole("button", { name: "The papers" }),
       );
-      fireEvent.click(screen.getByRole("checkbox", { name: "Tickets" }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /^tickets/ }));
+      fireEvent.click(
+        screen.getByRole("button", { name: /^More particulars/ }),
+      );
       fireEvent.change(
         screen.getByRole("spinbutton", {
           name: "Stalled flight, amber after days",
         }),
         { target: { value: "3" } },
       );
-      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      fireEvent.click(screen.getByRole("button", { name: "Amend the papers" }));
 
       expect(fake.entrySaves).toEqual([
         {
@@ -393,11 +434,21 @@ describe("the window", () => {
           }),
         },
       ]);
+      act(() =>
+        fake.push({
+          ...idle(mockAviary),
+          problems: ["The config was not changed: the disk is read-only"],
+        }),
+      );
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "The config was not changed: the disk is read-only",
+      );
 
-      fireEvent.click(screen.getByRole("button", { name: "Edit entry" }));
-      fireEvent.click(screen.getByRole("button", { name: "Unadopt" }));
       fireEvent.click(
         screen.getByRole("button", { name: "Return to the fence" }),
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Return it to the fence" }),
       );
       expect(fake.entryRemovals).toEqual(["dev/perch"]);
     });
@@ -580,11 +631,11 @@ describe("the window", () => {
       await waitFor(async () => expect(await interval()).toBe("20"));
     });
 
-    it("gives an open entry form the wires the file now has", async () => {
+    it("gives open papers the wires the file now has", async () => {
       let config: Config = mockConfig;
       const formFor = (birdId: string) => {
         const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-        return item === undefined ? null : entryFormFor(config, item);
+        return item === undefined ? null : entryFormFor(config, item, mockHome);
       };
       const { fake } = renderApp(
         idle(mockAviary),
@@ -593,7 +644,7 @@ describe("the window", () => {
         formFor,
       );
       fireEvent.click(
-        await screen.findByRole("button", { name: "Edit entry" }),
+        await screen.findByRole("button", { name: "The papers" }),
       );
       expect(screen.queryByRole("radio", { name: "Someday" })).toBeNull();
 

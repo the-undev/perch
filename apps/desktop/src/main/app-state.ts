@@ -267,7 +267,7 @@ export function createAppState(deps: AppStateDeps): AppState {
       const item = birdItem(birdId);
       const config = deps.config.current().loaded?.config;
       if (item === undefined || config === undefined) return null;
-      return entryFormFor(config, item);
+      return entryFormFor(config, item, deps.home);
     },
     saveEntry: (birdId, values) =>
       editEntry(birdId, (config, item) => withEntry(config, item, values)),

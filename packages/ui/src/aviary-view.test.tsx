@@ -18,15 +18,17 @@ const night = new Date(2026, 9, 22, 23, 30);
 function show(now = morning) {
   const onLaunch = vi.fn();
   const onFullStory = vi.fn();
+  const onAdopt = vi.fn();
   const { container } = render(
     <AviaryView
       aviary={mockAviary}
       now={now}
       onLaunch={onLaunch}
       onFullStory={onFullStory}
+      onAdopt={onAdopt}
     />,
   );
-  return { container, onLaunch, onFullStory };
+  return { container, onLaunch, onFullStory, onAdopt };
 }
 
 function birdButton(id: string): HTMLElement {
@@ -98,6 +100,19 @@ describe("the aviary view", () => {
     expect(onLaunch).toHaveBeenCalledWith(perch.detail.actions[1]);
     expect(onFullStory).toHaveBeenCalledWith(perch);
     expect(screen.queryByRole("region", { name: "Perch says" })).toBeNull();
+  });
+
+  it("hands back a fence bird's adopt key, closing its bubble, and gives an adopted bird none", () => {
+    const { onAdopt } = show();
+    const hello = mockBird("dev/odin/hello");
+
+    fireEvent.click(birdButton("dev/perch"));
+    expect(screen.queryByRole("button", { name: "Adopt" })).toBeNull();
+    fireEvent.click(birdButton("dev/odin/hello"));
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+
+    expect(onAdopt).toHaveBeenCalledWith(hello);
+    expect(screen.queryByRole("region", { name: "hello says" })).toBeNull();
   });
 
   it("wakes a sleeping bird clicked at night", () => {

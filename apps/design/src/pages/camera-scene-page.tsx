@@ -38,7 +38,7 @@ const scanningOptions: { value: Scanning; label: string }[] = [
 function placeWords(place: CameraPlace): string {
   return place.at === "aviary"
     ? "{ at: aviary }"
-    : `{ at: detail, birdId: ${place.birdId} }`;
+    : `{ at: detail, birdId: ${place.birdId}, papers: ${place.papers} }`;
 }
 
 export function CameraScenePage() {
@@ -102,6 +102,7 @@ export function CameraScenePage() {
             onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
             onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
           }}
+          problems={[]}
         />
       </SceneFrame>
       <Pressed text={pressed} />
@@ -121,7 +122,7 @@ export function CameraScenePage() {
           },
           {
             name: "place",
-            type: '{ at: "aviary" } | { at: "detail"; birdId: string }',
+            type: '{ at: "aviary" } | { at: "detail"; birdId: string; papers: boolean }',
             what: "Where the camera points. The caller holds it; a bird the aviary no longer holds shows the aviary.",
           },
           {
@@ -157,7 +158,12 @@ export function CameraScenePage() {
           {
             name: "entry",
             type: "EntryControls",
-            what: "The open bird's entry form and the calls that save or remove its entry, for the detail page.",
+            what: "The open bird's entry form and the calls that save or remove its entry, for the detail page's papers.",
+          },
+          {
+            name: "problems",
+            type: "string[]",
+            what: "The main process's problems, a refused write among them, which the open bird's papers show above their signature.",
           },
         ]}
       >

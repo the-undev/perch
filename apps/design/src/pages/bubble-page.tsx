@@ -215,6 +215,11 @@ export function BubblePage() {
             what: "Rides the camera down to the bird's detail page.",
           },
           {
+            name: "onAdopt",
+            type: "(() => void) | null",
+            what: "A fence bird's one key: rides to the bird's page with its adoption papers unfolded. Null for an adopted bird, whose bubble has no adopt key; the caller decides from bird.adopted.",
+          },
+          {
             name: "tail",
             type: '{ side: "left" | "right"; inset: number }',
             what: "Which edge the tail hangs from, and the distance from that edge to its tip.",

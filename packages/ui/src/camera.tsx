@@ -30,8 +30,7 @@ import {
 } from "./aviary-layout.ts";
 import { AviaryScene, sourceErrorWords } from "./aviary-view.tsx";
 import { BirdFigure, birdLook, type Facing } from "./bird.tsx";
-import { DetailView } from "./detail-view.tsx";
-import type { EntryControls } from "./entry-forms.tsx";
+import { DetailView, type EntryControls } from "./detail-view.tsx";
 import {
   type PixelSize,
   useElementSize,
@@ -43,8 +42,10 @@ import { isNight, type SkyPhase, skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
 import { byPosition, facingAt, namePlace, Tally, tallyGap } from "./wire.tsx";
 
-/** Where the camera points: the whole aviary, or one bird's detail page. */
-export type CameraPlace = { at: "aviary" } | { at: "detail"; birdId: string };
+/** Where the camera points: the whole aviary, or one bird's detail page, its papers unfolded or not. */
+export type CameraPlace =
+  | { at: "aviary" }
+  | { at: "detail"; birdId: string; papers: boolean };
 
 /** A header tab: the aviary, one wire, or the fence. */
 export type CameraTab =
@@ -99,7 +100,9 @@ export function tabDestination(
   const last = remembered[memoryKey(tab)];
   const bird =
     tab.birds.find((candidate) => candidate.id === last) ?? tab.birds[0];
-  return bird === undefined ? null : { at: "detail", birdId: bird.id };
+  return bird === undefined
+    ? null
+    : { at: "detail", birdId: bird.id, papers: false };
 }
 
 function findBird(aviary: Aviary, id: string): Bird | undefined {
@@ -453,8 +456,10 @@ export interface CameraViewProps {
   onRescan: () => void;
   /** The header's settings control was pressed. */
   onSettings: () => void;
-  /** Adopting the open bird or editing its config entry, from its detail page. */
+  /** Adopting the open bird or amending its papers, from its detail page. */
   entry: EntryControls;
+  /** The main process's problems, which the open bird's papers show. */
+  problems: string[];
 }
 
 /** Until the first measurement the camera assumes a small monitor's window. */
@@ -472,6 +477,7 @@ export function CameraView({
   onRescan,
   onSettings,
   entry,
+  problems,
 }: CameraViewProps) {
   const phase = skyPhase(now);
   const night = isNight(phase);
@@ -622,7 +628,10 @@ export function CameraView({
                 size={size}
                 onLaunch={onLaunch}
                 onFullStory={(chosen) =>
-                  onNavigate({ at: "detail", birdId: chosen.id })
+                  onNavigate({ at: "detail", birdId: chosen.id, papers: false })
+                }
+                onAdopt={(chosen) =>
+                  onNavigate({ at: "detail", birdId: chosen.id, papers: true })
                 }
               />
             </div>
@@ -642,7 +651,11 @@ export function CameraView({
                   openId={shown.id}
                   night={night}
                   onOpen={(chosen) =>
-                    onNavigate({ at: "detail", birdId: chosen.id })
+                    onNavigate({
+                      at: "detail",
+                      birdId: chosen.id,
+                      papers: false,
+                    })
                   }
                 />
               )}
@@ -664,6 +677,8 @@ export function CameraView({
                   onLaunch={onLaunch}
                   sheets={sheets}
                   entry={entry}
+                  problems={problems}
+                  openPapers={place.at === "detail" && place.papers}
                 />
               </div>
             )}

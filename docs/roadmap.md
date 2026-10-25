@@ -293,6 +293,16 @@ from the owners in the URL paths. The seeded card is a suggestion the
 owner confirms and gives a key and token; config keeps the assertion.
 Asked for at first setup.
 
+## Birds paint twice during the arrival
+
+A screenshot taken mid-arrival shows every fence bird twice: one row
+solid, one faded, the fade matching the arrive keyframes' opacity.
+The bird should be one `motion-safe:animate-arrive` group
+(`scene.tsx`, `--animate-arrive` in `theme.css`), so a second copy
+suggests part of the bird's drawing sits outside the animated group
+and rests while the group drops. Cause TBD: reproduce with the
+animation slowed and see which elements make up each copy.
+
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

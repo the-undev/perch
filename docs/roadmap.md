@@ -306,6 +306,26 @@ arrival is shorter and the doubling was not seen again. Cause TBD:
 reproduce with everything on the fence and the animation slowed, and
 see which elements make up each copy.
 
+## The threshold fields
+
+A threshold row is a pair of bare number inputs labelled amber and
+red, one row per window. The form never says what the number counts,
+what unit it is in, or what crossing it looks like on the bird. The
+rows need their own design round: the unit and the consequence beside
+the field, and the default shown as more than a placeholder. Raised at
+the adoption round's review.
+
+## Picking paths and sessions from what the scan knows
+
+Key files, roadmaps and the zellij session are typed into bare text
+fields, though perch could offer the real candidates: the files that
+exist in the clone for the path lists, the sessions zellij reports for
+the session field. The scan does not carry a file listing today, so
+the suggestions need either a raw field for each clone's candidate
+files or a main-process read when the form opens. Launch integrations
+(the editor, the terminal) deserve the same treatment over bare
+command strings. Raised at the adoption round's review.
+
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

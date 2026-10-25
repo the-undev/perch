@@ -281,6 +281,18 @@ save requests a scan, and watching that scan run and finish from the
 settings page would show the save took. Reuse the camera's scan line
 in the settings header. Asked for at first setup.
 
+## Seeding a forge card from the clones
+
+The scan already holds every clone's remote URLs, so the sources page
+could offer the remotes no source reads and seed a card from them:
+hosts from the hostnames and SSH aliases in use (aliases resolved
+through ~/.ssh/config, a read-only look like every other), the kind
+certain for github.com and probed for self-hosted Forgejo
+(`/api/v1/version` answers unauthenticated), and the account guessed
+from the owners in the URL paths. The seeded card is a suggestion the
+owner confirms and gives a key and token; config keeps the assertion.
+Asked for at first setup.
+
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

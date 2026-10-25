@@ -265,6 +265,22 @@ its input ends a button's width short of the rows above. Seen on the
 hosts and local folder lists. The add input should end flush with the
 value inputs, its button in the gutter the remove labels use.
 
+## Opening the config file from its path
+
+The settings header names the config file but the path is plain text.
+It should open: the file through the launch commands the config
+already holds (`vscode` with the path, or `folder` on its directory as
+the fallback), through the main process like every other launch.
+Asked for at first setup.
+
+## The scan line on the settings page
+
+The settings header has only the path and the way back; the camera
+header's scan line (when the last scan ran, scan now) is missing. A
+save requests a scan, and watching that scan run and finish from the
+settings page would show the save took. Reuse the camera's scan line
+in the settings header. Asked for at first setup.
+
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

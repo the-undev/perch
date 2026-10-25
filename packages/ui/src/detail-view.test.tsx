@@ -138,6 +138,7 @@ describe("the detail view", () => {
       keyFiles: null,
       roadmaps: null,
       thresholds: {},
+      zellijSession: null,
     });
     expect(screen.queryByRole("form")).toBeNull();
   });

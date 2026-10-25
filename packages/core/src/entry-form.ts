@@ -4,12 +4,14 @@
 
 import {
   type Config,
+  collapseHome,
   type ExpectationName,
   expectationNames,
   type ItemEntry,
   resolveEntry,
   type ThresholdOverrides,
   thresholdKeys,
+  zellijSessionFor,
 } from "./config.ts";
 import { itemRefs } from "./refs.ts";
 import type { Item } from "./snapshot.ts";
@@ -17,7 +19,7 @@ import type { Item } from "./snapshot.ts";
 /** A threshold's key in config, the same globally and per item. */
 export type ThresholdKey = (typeof thresholdKeys)[number][2];
 
-/** The entry fields the detail page edits; the zellij session is left as config has it. */
+/** The entry fields the detail page edits. */
 export interface EntryValues {
   /** The wire the bird sits on; null puts it on the default wire. */
   wire: string | null;
@@ -32,6 +34,8 @@ export interface EntryValues {
   roadmaps: string[] | null;
   /** The overrides set; a key left out takes the global value. */
   thresholds: Partial<Record<ThresholdKey, number>>;
+  /** The zellij session holding the item's tab; null takes it from the launch section. */
+  zellijSession: string | null;
 }
 
 /** The choices the entry form offers, and the defaults a value left unset takes. */
@@ -45,12 +49,32 @@ export interface EntryOptions {
   thresholds: Record<ThresholdKey, number>;
 }
 
+/** The newest commit the scan read for an item. */
+export interface SeenCommit {
+  at: string;
+  /** Null when the scan read no subject for it, as on a detached HEAD. */
+  subject: string | null;
+}
+
+/** What the scan found for an item, which the papers show and cannot change. */
+export interface EntrySeen {
+  /** Where the clone is on disk, home as ~; null for an item with no clone here. */
+  foundAt: string | null;
+  /** The forges that also hold it, each as its web address without the scheme. */
+  forges: string[];
+  /** The checked-out commit, else the newest on a forge's default branch; null when none was read. */
+  lastCommit: SeenCommit | null;
+}
+
 /** What the detail page needs to adopt a bird or edit its entry. */
 export interface EntryForm {
   /** The config key the entry sits under; null for a bird config does not name. */
   key: string | null;
   /** The name the scan found, which a name left unset keeps. */
   scannedName: string;
+  seen: EntrySeen;
+  /** The session the launch rules give the clone, which a session left unset takes; null without one. */
+  defaultSession: string | null;
   /** The entry's values; null for a bird on the fence. */
   values: EntryValues | null;
   options: EntryOptions;
@@ -93,6 +117,7 @@ export function emptyEntryValues(): EntryValues {
     keyFiles: null,
     roadmaps: null,
     thresholds: {},
+    zellijSession: null,
   };
 }
 
@@ -137,6 +162,7 @@ export function entryValues(entry: ItemEntry): EntryValues {
     keyFiles: entry.keyFiles === null ? null : [...entry.keyFiles],
     roadmaps: entry.roadmaps === null ? null : [...entry.roadmaps],
     thresholds: flatThresholds(entry.thresholds),
+    zellijSession: entry.zellijSession,
   };
 }
 
@@ -156,12 +182,57 @@ export function entryOptions(config: Config): EntryOptions {
   };
 }
 
-/** The entry form for an item: the entry that applies to it, if any, and the form's choices. */
-export function entryFormFor(config: Config, item: Item): EntryForm {
+/** The newest commit the scan read: git's checked-out one, else the newest any forge finalised. */
+function lastCommitOf(item: Item): SeenCommit | null {
+  const git = item.sources.git;
+  if (git !== undefined && !("error" in git) && git.lastCommitAt !== null) {
+    const head = git.branches.find((branch) => branch.name === git.branch);
+    return { at: git.lastCommitAt, subject: head?.subject ?? null };
+  }
+  const finalised = [item.sources.github, item.sources.forgejo].flatMap(
+    (forge) =>
+      forge === undefined || "error" in forge ? [] : forge.finalisedCommits,
+  );
+  const newest = finalised.reduce<(typeof finalised)[number] | null>(
+    (best, commit) =>
+      best === null ||
+      Date.parse(commit.committedAt) > Date.parse(best.committedAt)
+        ? commit
+        : best,
+    null,
+  );
+  return newest === null
+    ? null
+    : { at: newest.committedAt, subject: newest.subject };
+}
+
+/** What the scan found for an item: its clone, its forges and its newest commit. */
+export function entrySeen(item: Item, home: string): EntrySeen {
+  return {
+    foundAt: item.path === null ? null : collapseHome(item.path, home),
+    forges: item.presences.forges.map((presence) =>
+      presence.url.replace(/^[a-z]+:\/\//, ""),
+    ),
+    lastCommit: lastCommitOf(item),
+  };
+}
+
+/**
+ * The entry form for an item: the entry that applies to it, if any, what the scan found, and the
+ * form's choices. Paths are written with ~ for the home directory.
+ */
+export function entryFormFor(
+  config: Config,
+  item: Item,
+  home: string,
+): EntryForm {
   const { entry, keys } = resolveEntry(config, item.id, itemRefs(item));
   return {
     key: keys[0] ?? null,
     scannedName: item.name,
+    seen: entrySeen(item, home),
+    defaultSession:
+      item.path === null ? null : zellijSessionFor(config, null, item.path),
     values: entry === null ? null : entryValues(entry),
     options: entryOptions(config),
   };
@@ -169,14 +240,14 @@ export function entryFormFor(config: Config, item: Item): EntryForm {
 
 /**
  * Config with an item's entry set to the values: under the key that already applies to the item,
- * else under its id. The zellij session the entry had is kept.
+ * else under its id.
  */
 export function withEntry(
   config: Config,
   item: Item,
   values: EntryValues,
 ): Config {
-  const { entry, keys } = resolveEntry(config, item.id, itemRefs(item));
+  const { keys } = resolveEntry(config, item.id, itemRefs(item));
   const key = keys[0] ?? item.id;
   const next: ItemEntry = {
     wire: values.wire,
@@ -186,7 +257,7 @@ export function withEntry(
     expect: [...values.expect],
     keyFiles: values.keyFiles === null ? null : [...values.keyFiles],
     roadmaps: values.roadmaps === null ? null : [...values.roadmaps],
-    zellijSession: entry?.zellijSession ?? null,
+    zellijSession: values.zellijSession,
   };
   return { ...config, items: { ...config.items, [key]: next } };
 }

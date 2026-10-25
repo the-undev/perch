@@ -16,8 +16,10 @@ function mockItem(id: string): Item {
   return item;
 }
 
+const home = "/home/owner";
 const perch = mockItem("dev/perch");
 const hello = mockItem("dev/odin/hello");
+const obsidianTidy = mockItem("github:finch/obsidian-tidy");
 
 /** The mock config with Perch's entry keyed by its GitHub reference instead of its id. */
 function forgeKeyed(): Config {
@@ -34,7 +36,7 @@ function forgeKeyed(): Config {
 
 describe("the entry form", () => {
   it("reads an adopted bird's entry with the choices config offers", () => {
-    const form = entryFormFor(mockConfig, perch);
+    const form = entryFormFor(mockConfig, perch, home);
 
     expect(form.key).toBe("dev/perch");
     expect(form.scannedName).toBe("perch");
@@ -46,6 +48,7 @@ describe("the entry form", () => {
       keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
       roadmaps: null,
       thresholds: {},
+      zellijSession: null,
     });
     expect(form.options).toEqual({
       wires: ["Machine & Home", "Projects"],
@@ -65,10 +68,47 @@ describe("the entry form", () => {
   });
 
   it("has no values for a bird on the fence", () => {
-    const form = entryFormFor(mockConfig, hello);
+    const form = entryFormFor(mockConfig, hello, home);
 
     expect(form.key).toBeNull();
     expect(form.values).toBeNull();
+  });
+
+  it("says what the scan found: the clone with home as ~, the forges, and the checked-out commit", () => {
+    expect(entryFormFor(mockConfig, perch, home).seen).toEqual({
+      foundAt: "~/dev/perch",
+      forges: ["github.com/finch/perch", "forge.example.lan:3000/finch/perch"],
+      lastCommit: {
+        at: "2026-10-22T06:30:00.000Z",
+        subject: "Derive the view model: aviary, birds, bubbles and detail",
+      },
+    });
+    expect(entryFormFor(mockConfig, hello, home).seen).toEqual({
+      foundAt: "~/dev/odin/hello",
+      forges: [],
+      lastCommit: { at: "2025-10-14T15:45:44.000Z", subject: "mli for shape" },
+    });
+  });
+
+  it("takes a forge-only bird's last commit from its forge, with nothing found on disk", () => {
+    expect(entryFormFor(mockConfig, obsidianTidy, home).seen).toEqual({
+      foundAt: null,
+      forges: ["github.com/finch/obsidian-tidy"],
+      lastCommit: {
+        at: "2026-03-02T11:02:48Z",
+        subject: "vault backup: 2026-03-02 11:02:48",
+      },
+    });
+  });
+
+  it("names the session the launch rules give a clone, and none without one", () => {
+    expect(entryFormFor(mockConfig, perch, home).defaultSession).toBe("home");
+    expect(
+      entryFormFor(mockConfig, mockItem("undev/spool"), home).defaultSession,
+    ).toBe("undev");
+    expect(
+      entryFormFor(mockConfig, obsidianTidy, home).defaultSession,
+    ).toBeNull();
   });
 
   it("adopts a fence bird under its item id", () => {
@@ -93,7 +133,7 @@ describe("the entry form", () => {
     );
   });
 
-  it("edits a forge-keyed entry under that key, keeping its zellij session", () => {
+  it("edits a forge-keyed entry under that key", () => {
     const config = withEntry(forgeKeyed(), perch, {
       ...emptyEntryValues(),
       name: "Perch app",
@@ -104,9 +144,26 @@ describe("the entry form", () => {
     expect(config.items["github:finch/perch"]).toMatchObject({
       name: "Perch app",
       thresholds: { unsafe: {}, stalled: { amberDays: 3 }, expectation: {} },
-      zellijSession: "dev",
     });
-    expect(entryFormFor(config, perch).key).toBe("github:finch/perch");
+    expect(entryFormFor(config, perch, home).key).toBe("github:finch/perch");
+  });
+
+  it("reads the zellij session into the values and writes the one given, null for none", () => {
+    const form = entryFormFor(forgeKeyed(), perch, home);
+    if (form.values === null) throw new Error("Perch has no entry");
+    expect(form.values.zellijSession).toBe("dev");
+
+    const moved = withEntry(forgeKeyed(), perch, {
+      ...form.values,
+      zellijSession: "work",
+    });
+    const cleared = withEntry(forgeKeyed(), perch, {
+      ...form.values,
+      zellijSession: null,
+    });
+
+    expect(moved.items["github:finch/perch"]?.zellijSession).toBe("work");
+    expect(cleared.items["github:finch/perch"]?.zellijSession).toBeNull();
   });
 
   it("unadopts by removing every key naming the bird", () => {
@@ -120,14 +177,14 @@ describe("the entry form", () => {
 
     const config = withoutEntry(both, perch);
 
-    expect(entryFormFor(config, perch).values).toBeNull();
+    expect(entryFormFor(config, perch, home).values).toBeNull();
     expect(Object.keys(config.items)).toEqual(
       Object.keys(mockConfig.items).filter((key) => key !== "dev/perch"),
     );
   });
 
   it("says why thresholds cannot be saved: not whole, or amber not before red", () => {
-    const { options } = entryFormFor(mockConfig, perch);
+    const { options } = entryFormFor(mockConfig, perch, home);
     const values = (thresholds: Record<string, number>) => ({
       ...emptyEntryValues(),
       thresholds,

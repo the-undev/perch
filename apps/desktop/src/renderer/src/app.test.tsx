@@ -301,7 +301,8 @@ describe("the window", () => {
         return found;
       };
       return {
-        formFor: (birdId: string) => entryFormFor(config, item(birdId)),
+        formFor: (birdId: string) =>
+          entryFormFor(config, item(birdId), mockHome),
         save: (birdId: string, values: EntryValues) => {
           config = withEntry(config, item(birdId), values);
           return idle(deriveAviary(mockSnapshot, config));
@@ -341,6 +342,7 @@ describe("the window", () => {
             keyFiles: null,
             roadmaps: null,
             thresholds: {},
+            zellijSession: null,
           },
         },
       ]);
@@ -584,7 +586,7 @@ describe("the window", () => {
       let config: Config = mockConfig;
       const formFor = (birdId: string) => {
         const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-        return item === undefined ? null : entryFormFor(config, item);
+        return item === undefined ? null : entryFormFor(config, item, mockHome);
       };
       const { fake } = renderApp(
         idle(mockAviary),

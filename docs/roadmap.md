@@ -235,6 +235,16 @@ working tree is clean and everything is pushed"). Deriving it in the
 renderer would mean matching ledger labels; it needs a view model field
 first.
 
+## Images on the key-file paper
+
+A README's images arrive broken: the window's content security policy
+is `img-src 'self' data:`, so a remote badge image is blocked, and a
+repository-relative image has nothing serving it. Seen on Skiff's
+status badges at first setup. Either render an image as its alt text
+on the paper, or let the paper show real images: `https:` in the
+policy for remote ones, and a main-process read behind a custom
+protocol for relative ones.
+
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

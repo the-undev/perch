@@ -30,8 +30,7 @@ import {
 } from "./aviary-layout.ts";
 import { AviaryScene, sourceErrorWords } from "./aviary-view.tsx";
 import { BirdFigure, birdLook, type Facing } from "./bird.tsx";
-import { DetailView } from "./detail-view.tsx";
-import type { EntryControls } from "./entry-forms.tsx";
+import { DetailView, type EntryControls } from "./detail-view.tsx";
 import {
   type PixelSize,
   useElementSize,
@@ -453,8 +452,10 @@ export interface CameraViewProps {
   onRescan: () => void;
   /** The header's settings control was pressed. */
   onSettings: () => void;
-  /** Adopting the open bird or editing its config entry, from its detail page. */
+  /** Adopting the open bird or amending its papers, from its detail page. */
   entry: EntryControls;
+  /** The main process's problems, which the open bird's papers show. */
+  problems: string[];
 }
 
 /** Until the first measurement the camera assumes a small monitor's window. */
@@ -472,6 +473,7 @@ export function CameraView({
   onRescan,
   onSettings,
   entry,
+  problems,
 }: CameraViewProps) {
   const phase = skyPhase(now);
   const night = isNight(phase);
@@ -664,6 +666,8 @@ export function CameraView({
                   onLaunch={onLaunch}
                   sheets={sheets}
                   entry={entry}
+                  problems={problems}
+                  openPapers={false}
                 />
               </div>
             )}

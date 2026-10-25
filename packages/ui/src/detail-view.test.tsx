@@ -1,34 +1,70 @@
-import type { EntryForm } from "@perch/core/entry-form.ts";
-import { mockSnapshot } from "@perch/core/mock.ts";
-import type { Bird } from "@perch/core/viewmodel.ts";
+import {
+  type EntryForm,
+  emptyEntryValues,
+  entryFormFor,
+  withEntry,
+} from "@perch/core/entry-form.ts";
+import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
+import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
+import { deriveAviary } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DetailView } from "./detail-view.tsx";
-import { mockBird, mockEntryForm } from "./mock-birds.ts";
+import { mockBird, mockEntryForm, mockHome } from "./mock-birds.ts";
 import type { KeyFileSheet } from "./paper.tsx";
 
 afterEach(cleanup);
 
 const now = new Date(mockSnapshot.scannedAt);
 
-function page(
-  bird: Bird,
-  sheets: KeyFileSheet[] = [],
-  form: EntryForm | null = null,
-) {
+const helloItem = (() => {
+  const item = mockSnapshot.items.find(
+    (entry) => entry.id === "dev/odin/hello",
+  );
+  if (item === undefined) throw new Error("the mock snapshot has no hello");
+  return item;
+})();
+
+function findBird(aviary: Aviary, id: string): Bird {
+  const bird = [
+    ...aviary.wires.flatMap((wire) => wire.birds),
+    ...aviary.fence.birds,
+  ].find((candidate) => candidate.id === id);
+  if (bird === undefined) throw new Error(`the aviary has no ${id}`);
+  return bird;
+}
+
+interface PageOptions {
+  sheets?: KeyFileSheet[];
+  form?: EntryForm | null;
+  problems?: string[];
+  openPapers?: boolean;
+}
+
+function page(bird: Bird, options: PageOptions = {}) {
   const onLaunch = vi.fn();
   const onSave = vi.fn();
   const onRemove = vi.fn();
-  const { container } = render(
+  const view = (next: Bird, given: PageOptions) => (
     <DetailView
-      bird={bird}
+      bird={next}
       now={now}
       onLaunch={onLaunch}
-      sheets={sheets}
-      entry={{ form, onSave, onRemove }}
-    />,
+      sheets={given.sheets ?? []}
+      entry={{ form: given.form ?? null, onSave, onRemove }}
+      problems={given.problems ?? []}
+      openPapers={given.openPapers ?? false}
+    />
   );
-  return { container, onLaunch, onSave, onRemove };
+  const { container, rerender } = render(view(bird, options));
+  return {
+    container,
+    onLaunch,
+    onSave,
+    onRemove,
+    /** The same page given a new bird and new options, as a push would. */
+    push: (next: Bird, given: PageOptions) => rerender(view(next, given)),
+  };
 }
 
 /** Each ledger row's label and value, as drawn. */
@@ -101,13 +137,12 @@ describe("the detail view", () => {
 
   it("puts the key files the caller read on paper", () => {
     const perch = mockBird("dev/perch");
-    page(
-      perch,
-      perch.detail.keyFiles.map((file) => ({
+    page(perch, {
+      sheets: perch.detail.keyFiles.map((file) => ({
         file,
         markdown: `# ${file.path}\n`,
       })),
-    );
+    });
 
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
       "README.md",
@@ -119,54 +154,113 @@ describe("the detail view", () => {
     );
   });
 
-  it("offers a fence bird adoption, and writes the entry on confirming", () => {
+  it("offers a fence bird adoption, and signs the papers onto the wire chosen", () => {
     const hello = mockBird("dev/odin/hello");
-    const { onSave } = page(hello, [], mockEntryForm(hello.id));
+    const { onSave } = page(hello, { form: mockEntryForm(hello.id) });
 
-    expect(screen.queryByRole("button", { name: "Edit entry" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "The papers" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
     fireEvent.click(screen.getByRole("radio", { name: "Machine & Home" }));
     fireEvent.click(
-      screen.getAllByRole("button", { name: "Adopt" }).at(-1) as HTMLElement,
+      screen.getByRole("button", { name: "Adopt onto Machine & Home" }),
     );
 
     expect(onSave).toHaveBeenCalledWith("dev/odin/hello", {
+      ...emptyEntryValues(),
       wire: "Machine & Home",
-      name: null,
-      importance: null,
-      expect: [],
-      keyFiles: null,
-      roadmaps: null,
-      thresholds: {},
-      zellijSession: null,
     });
-    expect(screen.queryByRole("form")).toBeNull();
   });
 
-  it("offers an adopted bird its entry to edit, and to unadopt", () => {
+  it("folds signed papers once the entry read back shows the write", () => {
+    const hello = mockBird("dev/odin/hello");
+    const { push } = page(hello, { form: mockEntryForm(hello.id) });
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Machine & Home" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Adopt onto Machine & Home" }),
+    );
+    expect(
+      screen.getByRole("form", { name: "Adoption papers for hello" }),
+    ).toBeDefined();
+
+    const config = withEntry(mockConfig, helloItem, {
+      ...emptyEntryValues(),
+      wire: "Machine & Home",
+    });
+    const adopted = findBird(deriveAviary(mockSnapshot, config), hello.id);
+    push(adopted, { form: entryFormFor(config, helloItem, mockHome) });
+
+    expect(screen.queryByRole("form")).toBeNull();
+    expect(screen.getByRole("button", { name: "The papers" })).toBeDefined();
+  });
+
+  it("keeps refused papers open, with the reason above the signature", () => {
+    const hello = mockBird("dev/odin/hello");
+    const form = mockEntryForm(hello.id);
+    const { push } = page(hello, { form });
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Adopt onto Projects" }),
+    );
+
+    push(hello, {
+      form: mockEntryForm(hello.id),
+      problems: ["The config was not changed: the disk is read-only"],
+    });
+
+    expect(
+      screen.getByRole("form", { name: "Adoption papers for hello" }),
+    ).toBeDefined();
+    expect(screen.getByRole("alert").textContent).toBe(
+      "The config was not changed: the disk is read-only",
+    );
+  });
+
+  it("offers an adopted bird its papers to amend, and to return it to the fence", () => {
     const perch = mockBird("dev/perch");
     const form = mockEntryForm(perch.id);
-    const { onSave, onRemove } = page(perch, [], form);
+    const { onSave, onRemove } = page(perch, { form });
 
     expect(screen.queryByRole("button", { name: "Adopt" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Edit entry" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "The papers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Amend the papers" }));
     expect(onSave).toHaveBeenCalledWith("dev/perch", form.values);
+    expect(screen.queryByRole("form")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit entry" }));
-    fireEvent.click(screen.getByRole("button", { name: "Unadopt" }));
+    fireEvent.click(screen.getByRole("button", { name: "The papers" }));
     fireEvent.click(
       screen.getByRole("button", { name: "Return to the fence" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Return it to the fence" }),
     );
     expect(onRemove).toHaveBeenCalledWith("dev/perch");
   });
 
+  it("unfolds the papers as the page opens when asked, and again each time it is asked", () => {
+    const hello = mockBird("dev/odin/hello");
+    const form = mockEntryForm(hello.id);
+    const { push } = page(hello, { form, openPapers: true });
+
+    expect(
+      screen.getByRole("form", { name: "Adoption papers for hello" }),
+    ).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Not now" }));
+    expect(screen.queryByRole("form")).toBeNull();
+
+    push(hello, { form, openPapers: false });
+    push(hello, { form, openPapers: true });
+    expect(
+      screen.getByRole("form", { name: "Adoption papers for hello" }),
+    ).toBeDefined();
+  });
+
   it("offers neither until the entry is read, or while it disagrees with the bird", () => {
     page(mockBird("dev/perch"));
-    expect(screen.queryByRole("button", { name: "Edit entry" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "The papers" })).toBeNull();
     cleanup();
 
-    page(mockBird("dev/perch"), [], mockEntryForm("dev/odin/hello"));
+    page(mockBird("dev/perch"), { form: mockEntryForm("dev/odin/hello") });
     expect(screen.queryByRole("button", { name: "Adopt" })).toBeNull();
   });
 });

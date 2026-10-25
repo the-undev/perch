@@ -5,7 +5,6 @@
 
 import type { ExpectationName } from "@perch/core/config.ts";
 import {
-  type EntryForm,
   type EntryOptions,
   type EntryValues,
   entryProblems,
@@ -28,16 +27,6 @@ import {
   secondaryClass,
   ThresholdField,
 } from "./form-parts.tsx";
-
-/** What the detail page needs to adopt its bird or edit its entry. */
-export interface EntryControls {
-  /** The open bird's entry and the form's choices; null until read, when no control shows. */
-  form: EntryForm | null;
-  /** Writes the bird's entry, adopting it when it has none. */
-  onSave: (birdId: string, values: EntryValues) => void;
-  /** Removes the bird's entry, returning it to the fence. */
-  onRemove: (birdId: string) => void;
-}
 
 const entryPanelClass = `mt-3.5 max-w-180 ${panelClass}`;
 

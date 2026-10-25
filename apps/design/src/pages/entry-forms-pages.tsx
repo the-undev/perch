@@ -73,6 +73,8 @@ export function AdoptFormPage() {
                   setPressed(`onSave(${birdId}, ${savedWords(values)})`),
                 onRemove: (birdId) => setPressed(`onRemove(${birdId})`),
               }}
+              problems={[]}
+              openPapers={false}
             />
           </div>
         </Specimen>

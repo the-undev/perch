@@ -4,6 +4,7 @@ import {
   emptyEntryValues,
   entryFormFor,
   entryProblems,
+  sameEntryValues,
   withEntry,
   withoutEntry,
 } from "../src/entry-form.ts";
@@ -180,6 +181,23 @@ describe("the entry form", () => {
     expect(entryFormFor(config, perch, home).values).toBeNull();
     expect(Object.keys(config.items)).toEqual(
       Object.keys(mockConfig.items).filter((key) => key !== "dev/perch"),
+    );
+  });
+
+  it("knows values that write the same entry, whatever order the thresholds were set in", () => {
+    const values = {
+      ...emptyEntryValues(),
+      thresholds: { stalled_red_days: 40, unsafe_amber_hours: 12 },
+    };
+
+    expect(
+      sameEntryValues(values, {
+        ...values,
+        thresholds: { unsafe_amber_hours: 12, stalled_red_days: 40 },
+      }),
+    ).toBe(true);
+    expect(sameEntryValues(values, { ...values, zellijSession: "work" })).toBe(
+      false,
     );
   });
 

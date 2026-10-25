@@ -123,6 +123,7 @@ export function CrowdedPage() {
               onRescan={() => {}}
               onSettings={() => {}}
               entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
+              problems={[]}
             />
           </SceneFrame>
         </Specimen>

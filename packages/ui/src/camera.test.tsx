@@ -32,6 +32,7 @@ function camera(
       onRescan={onRescan}
       onSettings={onSettings}
       entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
+      problems={[]}
     />
   );
   const { container, rerender } = render(view(place));

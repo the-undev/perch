@@ -73,6 +73,8 @@ export function DetailScenePage() {
             onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
             onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
           }}
+          problems={[]}
+          openPapers={false}
         />
       </div>
       <Pressed text={pressed} />
@@ -99,7 +101,17 @@ export function DetailScenePage() {
           {
             name: "entry",
             type: "EntryControls",
-            what: "The bird's entry form, null until read, and the calls that save or remove the entry: Adopt on a fence bird, Edit entry on an adopted one.",
+            what: "The bird's entry form, null until read, and the calls that save or remove the entry: Adopt on a fence bird, The papers on an adopted one.",
+          },
+          {
+            name: "problems",
+            type: "string[]",
+            what: "The main process's problems, a refused write among them, which open papers show above their signature.",
+          },
+          {
+            name: "openPapers",
+            type: "boolean",
+            what: "The papers unfold as the page opens, and again whenever it turns true: the bubble's adopt key leads here with it set.",
           },
         ]}
       >

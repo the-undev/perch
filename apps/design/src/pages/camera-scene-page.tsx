@@ -102,6 +102,7 @@ export function CameraScenePage() {
             onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
             onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
           }}
+          problems={[]}
         />
       </SceneFrame>
       <Pressed text={pressed} />
@@ -157,7 +158,12 @@ export function CameraScenePage() {
           {
             name: "entry",
             type: "EntryControls",
-            what: "The open bird's entry form and the calls that save or remove its entry, for the detail page.",
+            what: "The open bird's entry form and the calls that save or remove its entry, for the detail page's papers.",
+          },
+          {
+            name: "problems",
+            type: "string[]",
+            what: "The main process's problems, a refused write among them, which the open bird's papers show above their signature.",
           },
         ]}
       >

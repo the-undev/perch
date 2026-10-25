@@ -262,6 +262,22 @@ export function withEntry(
   return { ...config, items: { ...config.items, [key]: next } };
 }
 
+/** Whether two sets of values write the same entry, whatever order their thresholds were set in. */
+export function sameEntryValues(a: EntryValues, b: EntryValues): boolean {
+  const canonical = (values: EntryValues) =>
+    JSON.stringify([
+      values.wire,
+      values.name,
+      values.importance,
+      values.expect,
+      values.keyFiles,
+      values.roadmaps,
+      flatThresholds(nestedThresholds(values.thresholds)),
+      values.zellijSession,
+    ]);
+  return canonical(a) === canonical(b);
+}
+
 /** Config without any entry naming the item, so it returns to the fence. */
 export function withoutEntry(config: Config, item: Item): Config {
   const { keys } = resolveEntry(config, item.id, itemRefs(item));

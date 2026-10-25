@@ -245,6 +245,16 @@ on the paper, or let the paper show real images: `https:` in the
 policy for remote ones, and a main-process read behind a custom
 protocol for relative ones.
 
+## Empty hosts on a forge card
+
+A forge card saved with no hosts gathers its listings but never joins
+them to a clone, so every repository shows twice: the join only
+recognises a remote whose host a card lists. Hit at first setup. The
+card should suggest the forge's usual host the way the keyring key
+suggests itself (`github.com` on a GitHub card, the base URL's host on
+a Forgejo card), and the page should say what hosts are for: the
+remote hosts and SSH aliases that reach the account.
+
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

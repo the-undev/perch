@@ -38,7 +38,7 @@ const scanningOptions: { value: Scanning; label: string }[] = [
 function placeWords(place: CameraPlace): string {
   return place.at === "aviary"
     ? "{ at: aviary }"
-    : `{ at: detail, birdId: ${place.birdId} }`;
+    : `{ at: detail, birdId: ${place.birdId}, papers: ${place.papers} }`;
 }
 
 export function CameraScenePage() {
@@ -122,7 +122,7 @@ export function CameraScenePage() {
           },
           {
             name: "place",
-            type: '{ at: "aviary" } | { at: "detail"; birdId: string }',
+            type: '{ at: "aviary" } | { at: "detail"; birdId: string; papers: boolean }',
             what: "Where the camera points. The caller holds it; a bird the aviary no longer holds shows the aviary.",
           },
           {

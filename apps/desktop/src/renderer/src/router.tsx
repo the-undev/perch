@@ -30,10 +30,20 @@ const aviaryRoute = createRoute({
   path: "/",
 });
 
-/** One bird's detail; the rest of the path is its id, which holds slashes ("dev/perch"). */
+/** What a bird's URL can carry beyond its id: papers=true unfolds its adoption papers. */
+export interface BirdSearch {
+  papers?: true;
+}
+
+/**
+ * One bird's detail; the rest of the path is its id, which holds slashes ("dev/perch"). The
+ * search says whether its papers unfold as the page opens.
+ */
 const birdRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "bird/$",
+  validateSearch: (search: Record<string, unknown>): BirdSearch =>
+    search.papers === true ? { papers: true } : {},
 });
 
 /** The settings page, in the camera's place. */

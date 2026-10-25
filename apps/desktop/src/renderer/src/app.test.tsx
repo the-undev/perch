@@ -219,6 +219,42 @@ describe("the window", () => {
     ).toBeDefined();
   });
 
+  it("rides to a fence bird's page with its papers unfolded from its bubble's adopt key", async () => {
+    const { router } = renderApp(idle(mockAviary), "/", undefined, (birdId) => {
+      const item = mockSnapshot.items.find((entry) => entry.id === birdId);
+      return item === undefined
+        ? null
+        : entryFormFor(mockConfig, item, mockHome);
+    });
+
+    fireEvent.click(await birdButton("dev/odin/hello"));
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+
+    await waitFor(() => expect(pathOf(router)).toBe("/bird/dev/odin/hello"));
+    expect(router.state.location.search).toEqual({ papers: true });
+    expect(
+      await screen.findByRole("form", { name: "Adoption papers for hello" }),
+    ).toBeDefined();
+  });
+
+  it("unfolds the papers where the URL asks", async () => {
+    renderApp(
+      idle(mockAviary),
+      "/bird/dev/perch?papers=true",
+      undefined,
+      (birdId) => {
+        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
+        return item === undefined
+          ? null
+          : entryFormFor(mockConfig, item, mockHome);
+      },
+    );
+
+    expect(
+      await screen.findByRole("form", { name: "Adoption papers for Perch" }),
+    ).toBeDefined();
+  });
+
   it("points the camera where the URL says, and rides home on Escape", async () => {
     const { router } = renderApp(idle(mockAviary), "/bird/dev/perch");
 

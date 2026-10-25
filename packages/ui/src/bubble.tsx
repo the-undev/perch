@@ -1,5 +1,6 @@
 // The speech bubble: paper against the sky, the bird's name and mood word, its first-person
-// speech, the chips it carries, and the launch actions, with a tail whose tip meets the beak.
+// speech, the chips it carries, the launch actions and, for a fence bird, the adopt key, with a
+// tail whose tip meets the beak.
 
 import type {
   Bubble as BubbleModel,
@@ -60,6 +61,8 @@ export interface BubbleProps {
   onLaunch: (action: LaunchAction) => void;
   /** Rides the camera down to the bird's detail page. */
   onFullStory: () => void;
+  /** Rides to the page with the adoption papers unfolded; null for an adopted bird, which has no adopt key. */
+  onAdopt: (() => void) | null;
   tail: BubbleTail;
 }
 
@@ -70,6 +73,7 @@ export function Bubble({
   actions,
   onLaunch,
   onFullStory,
+  onAdopt,
   tail,
 }: BubbleProps) {
   const origin =
@@ -108,6 +112,16 @@ export function Bubble({
             <Icon name={actionIcon[action.kind]} size={14} />
           </button>
         ))}
+        {onAdopt !== null && (
+          <button
+            type="button"
+            onClick={onAdopt}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-key px-3 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-key-hi"
+          >
+            <Icon name="adopt" size={14} />
+            Adopt
+          </button>
+        )}
         <button
           type="button"
           onClick={onFullStory}

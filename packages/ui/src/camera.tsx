@@ -42,8 +42,10 @@ import { isNight, type SkyPhase, skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
 import { byPosition, facingAt, namePlace, Tally, tallyGap } from "./wire.tsx";
 
-/** Where the camera points: the whole aviary, or one bird's detail page. */
-export type CameraPlace = { at: "aviary" } | { at: "detail"; birdId: string };
+/** Where the camera points: the whole aviary, or one bird's detail page, its papers unfolded or not. */
+export type CameraPlace =
+  | { at: "aviary" }
+  | { at: "detail"; birdId: string; papers: boolean };
 
 /** A header tab: the aviary, one wire, or the fence. */
 export type CameraTab =
@@ -98,7 +100,9 @@ export function tabDestination(
   const last = remembered[memoryKey(tab)];
   const bird =
     tab.birds.find((candidate) => candidate.id === last) ?? tab.birds[0];
-  return bird === undefined ? null : { at: "detail", birdId: bird.id };
+  return bird === undefined
+    ? null
+    : { at: "detail", birdId: bird.id, papers: false };
 }
 
 function findBird(aviary: Aviary, id: string): Bird | undefined {
@@ -624,7 +628,10 @@ export function CameraView({
                 size={size}
                 onLaunch={onLaunch}
                 onFullStory={(chosen) =>
-                  onNavigate({ at: "detail", birdId: chosen.id })
+                  onNavigate({ at: "detail", birdId: chosen.id, papers: false })
+                }
+                onAdopt={(chosen) =>
+                  onNavigate({ at: "detail", birdId: chosen.id, papers: true })
                 }
               />
             </div>
@@ -644,7 +651,11 @@ export function CameraView({
                   openId={shown.id}
                   night={night}
                   onOpen={(chosen) =>
-                    onNavigate({ at: "detail", birdId: chosen.id })
+                    onNavigate({
+                      at: "detail",
+                      birdId: chosen.id,
+                      papers: false,
+                    })
                   }
                 />
               )}
@@ -667,7 +678,7 @@ export function CameraView({
                   sheets={sheets}
                   entry={entry}
                   problems={problems}
-                  openPapers={false}
+                  openPapers={place.at === "detail" && place.papers}
                 />
               </div>
             )}

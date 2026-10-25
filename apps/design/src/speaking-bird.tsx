@@ -25,6 +25,7 @@ export function SpeakingBird({ bird, night, onPress }: SpeakingBirdProps) {
         actions={bird.detail.actions}
         onLaunch={(action) => onPress(`${bird.name}: ${action.verb}`)}
         onFullStory={() => onPress(`${bird.name}: Tell me the full story`)}
+        onAdopt={bird.adopted ? null : () => onPress(`${bird.name}: Adopt`)}
         tail={{ side: "left", inset: frame.beakX }}
       />
       <div style={{ marginTop: tailDrop - frame.beakY }}>

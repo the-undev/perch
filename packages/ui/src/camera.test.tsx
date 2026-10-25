@@ -9,7 +9,11 @@ afterEach(cleanup);
 
 const now = new Date(mockSnapshot.scannedAt);
 const aviaryPlace: CameraPlace = { at: "aviary" };
-const detailOf = (birdId: string): CameraPlace => ({ at: "detail", birdId });
+const detailOf = (birdId: string): CameraPlace => ({
+  at: "detail",
+  birdId,
+  papers: false,
+});
 
 function camera(
   place: CameraPlace,

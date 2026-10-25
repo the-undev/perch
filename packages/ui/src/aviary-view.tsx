@@ -146,6 +146,7 @@ interface AnchoredBubbleProps {
   night: boolean;
   onLaunch: (action: LaunchAction) => void;
   onFullStory: () => void;
+  onAdopt: (() => void) | null;
 }
 
 /** The speaking bird's bubble, its tail tip on the beak tip. */
@@ -156,6 +157,7 @@ function AnchoredBubble({
   night,
   onLaunch,
   onFullStory,
+  onAdopt,
 }: AnchoredBubbleProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
@@ -185,6 +187,7 @@ function AnchoredBubble({
         actions={placed.bird.detail.actions}
         onLaunch={onLaunch}
         onFullStory={onFullStory}
+        onAdopt={onAdopt}
         tail={placement.tail}
       />
     </div>
@@ -283,6 +286,8 @@ export interface AviarySceneProps {
   onLaunch: (action: LaunchAction) => void;
   /** A bubble's "Tell me the full story" was pressed. */
   onFullStory: (bird: BirdModel) => void;
+  /** A fence bird's bubble's Adopt was pressed. */
+  onAdopt: (bird: BirdModel) => void;
 }
 
 /** The aviary drawn into a window of a known size; AviaryView measures its own. */
@@ -292,6 +297,7 @@ export function AviaryScene({
   size,
   onLaunch,
   onFullStory,
+  onAdopt,
 }: AviarySceneProps) {
   const phase = skyPhase(now);
   const night = isNight(phase);
@@ -390,6 +396,14 @@ export function AviaryScene({
             setSpeakingId(null);
             onFullStory(speaker.bird);
           }}
+          onAdopt={
+            speaker.bird.adopted
+              ? null
+              : () => {
+                  setSpeakingId(null);
+                  onAdopt(speaker.bird);
+                }
+          }
         />
       )}
     </div>
@@ -406,6 +420,8 @@ export interface AviaryViewProps {
   onLaunch: (action: LaunchAction) => void;
   /** A bubble's "Tell me the full story" was pressed. */
   onFullStory: (bird: BirdModel) => void;
+  /** A fence bird's bubble's Adopt was pressed. */
+  onAdopt: (bird: BirdModel) => void;
 }
 
 /** Tiers A and B: the whole home scene, filling its parent and redrawn as it resizes. */

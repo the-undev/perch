@@ -9,6 +9,7 @@ afterEach(cleanup);
 function speak(bird: Bird, night = false) {
   const onLaunch = vi.fn();
   const onFullStory = vi.fn();
+  const onAdopt = vi.fn();
   const { container } = render(
     <Bubble
       bubble={bird.bubble}
@@ -16,10 +17,11 @@ function speak(bird: Bird, night = false) {
       actions={bird.detail.actions}
       onLaunch={onLaunch}
       onFullStory={onFullStory}
+      onAdopt={bird.adopted ? null : onAdopt}
       tail={{ side: "left", inset: 40 }}
     />,
   );
-  return { container, onLaunch, onFullStory };
+  return { container, onLaunch, onFullStory, onAdopt };
 }
 
 describe("the bubble", () => {
@@ -76,5 +78,19 @@ describe("the bubble", () => {
 
     expect(onLaunch).toHaveBeenCalledWith(perch.detail.actions[1]);
     expect(onFullStory).toHaveBeenCalledOnce();
+  });
+
+  it("offers adopt as a fence bird's one key beside the full story, and an adopted bird none", () => {
+    const { onAdopt } = speak(mockBird("dev/odin/hello"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+    expect(onAdopt).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole("button", { name: "Tell me the full story" }),
+    ).toBeDefined();
+    cleanup();
+
+    speak(mockBird("dev/perch"));
+    expect(screen.queryByRole("button", { name: "Adopt" })).toBeNull();
   });
 });

@@ -91,6 +91,7 @@ export function AviaryScenePage() {
           onFullStory={(bird) =>
             setPressed(`${bird.name}: Tell me the full story`)
           }
+          onAdopt={(bird) => setPressed(`${bird.name}: Adopt`)}
         />
       </SceneFrame>
       <Pressed text={pressed} />
@@ -117,6 +118,11 @@ export function AviaryScenePage() {
             name: "onFullStory",
             type: "(bird: Bird) => void",
             what: "A bubble's Tell me the full story was pressed; the camera rides down to the bird.",
+          },
+          {
+            name: "onAdopt",
+            type: "(bird: Bird) => void",
+            what: "A fence bird's bubble's Adopt was pressed; the camera rides down to the bird with its adoption papers unfolded. An adopted bird's bubble has no adopt key.",
           },
         ]}
       >

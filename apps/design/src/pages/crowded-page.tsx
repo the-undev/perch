@@ -57,6 +57,7 @@ export function CrowdedPage() {
                 now={scanMoment}
                 onLaunch={() => {}}
                 onFullStory={() => {}}
+                onAdopt={() => {}}
               />
             </SceneFrame>
           </Specimen>
@@ -71,6 +72,7 @@ export function CrowdedPage() {
               now={scanMoment}
               onLaunch={() => {}}
               onFullStory={() => {}}
+              onAdopt={() => {}}
             />
           </SceneFrame>
         </Specimen>
@@ -91,6 +93,7 @@ export function CrowdedPage() {
               now={scanMoment}
               onLaunch={() => {}}
               onFullStory={() => {}}
+              onAdopt={() => {}}
             />
           </SceneFrame>
         </Specimen>
@@ -104,6 +107,7 @@ export function CrowdedPage() {
               now={scanMoment}
               onLaunch={() => {}}
               onFullStory={() => {}}
+              onAdopt={() => {}}
             />
           </SceneFrame>
         </Specimen>
@@ -115,7 +119,7 @@ export function CrowdedPage() {
             <CameraView
               aviary={crowdedFence(liveFence)}
               now={scanMoment}
-              place={{ at: "detail", birdId: "fence/0" }}
+              place={{ at: "detail", birdId: "fence/0", papers: false }}
               onNavigate={() => {}}
               onLaunch={() => {}}
               sheets={[]}

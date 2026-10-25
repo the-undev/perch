@@ -300,8 +300,11 @@ solid, one faded, the fade matching the arrive keyframes' opacity.
 The bird should be one `motion-safe:animate-arrive` group
 (`scene.tsx`, `--animate-arrive` in `theme.css`), so a second copy
 suggests part of the bird's drawing sits outside the animated group
-and rests while the group drops. Cause TBD: reproduce with the
-animation slowed and see which elements make up each copy.
+and rests while the group drops. Seen only while every bird sat on
+the fence (24 of them, nothing adopted); with one bird adopted the
+arrival is shorter and the doubling was not seen again. Cause TBD:
+reproduce with everything on the fence and the animation slowed, and
+see which elements make up each copy.
 
 ## Links inside key files
 

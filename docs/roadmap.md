@@ -249,11 +249,12 @@ protocol for relative ones.
 
 A forge card saved with no hosts gathers its listings but never joins
 them to a clone, so every repository shows twice: the join only
-recognises a remote whose host a card lists. Hit at first setup. The
-card should suggest the forge's usual host the way the keyring key
-suggests itself (`github.com` on a GitHub card, the base URL's host on
-a Forgejo card), and the page should say what hosts are for: the
-remote hosts and SSH aliases that reach the account.
+recognises a remote whose host a card lists. Hit at first setup.
+Decided 25 October 2026: a new GitHub card starts with `github.com` in
+its hosts, a new Forgejo card with its base URL's host once the
+address is typed; only a custom SSH setup adds aliases such as
+`github-work`. The page should say what hosts are for: the remote
+hosts and SSH aliases that reach the account.
 
 ## Links inside key files
 

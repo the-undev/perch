@@ -235,6 +235,97 @@ working tree is clean and everything is pushed"). Deriving it in the
 renderer would mean matching ledger labels; it needs a view model field
 first.
 
+## Images on the key-file paper
+
+A README's images arrive broken: the window's content security policy
+is `img-src 'self' data:`, so a remote badge image is blocked, and a
+repository-relative image has nothing serving it. Seen on Skiff's
+status badges at first setup. Either render an image as its alt text
+on the paper, or let the paper show real images: `https:` in the
+policy for remote ones, and a main-process read behind a custom
+protocol for relative ones.
+
+## Empty hosts on a forge card
+
+A forge card saved with no hosts gathers its listings but never joins
+them to a clone, so every repository shows twice: the join only
+recognises a remote whose host a card lists. Hit at first setup.
+Decided 25 October 2026: a new GitHub card starts with `github.com` in
+its hosts, a new Forgejo card with its base URL's host once the
+address is typed; only a custom SSH setup adds aliases such as
+`github-work`. The page should say what hosts are for: the remote
+hosts and SSH aliases that reach the account.
+
+## The add line in list editors
+
+In the forms' shared list editor (`ListField` in `form-parts.tsx`) a
+value row's input fills the row with "remove" hanging beside it, but
+the add line fits its Add button inside the same `max-w-110` cap, so
+its input ends a button's width short of the rows above. Seen on the
+hosts and local folder lists. The add input should end flush with the
+value inputs, its button in the gutter the remove labels use.
+
+## Opening the config file from its path
+
+The settings header names the config file but the path is plain text.
+It should open: the file through the launch commands the config
+already holds (`vscode` with the path, or `folder` on its directory as
+the fallback), through the main process like every other launch.
+Asked for at first setup.
+
+## The scan line on the settings page
+
+The settings header has only the path and the way back; the camera
+header's scan line (when the last scan ran, scan now) is missing. A
+save requests a scan, and watching that scan run and finish from the
+settings page would show the save took. Reuse the camera's scan line
+in the settings header. Asked for at first setup.
+
+## Seeding a forge card from the clones
+
+The scan already holds every clone's remote URLs, so the sources page
+could offer the remotes no source reads and seed a card from them:
+hosts from the hostnames and SSH aliases in use (aliases resolved
+through ~/.ssh/config, a read-only look like every other), the kind
+certain for github.com and probed for self-hosted Forgejo
+(`/api/v1/version` answers unauthenticated), and the account guessed
+from the owners in the URL paths. The seeded card is a suggestion the
+owner confirms and gives a key and token; config keeps the assertion.
+Asked for at first setup.
+
+## Birds paint twice during the arrival
+
+A screenshot taken mid-arrival shows every fence bird twice: one row
+solid, one faded, the fade matching the arrive keyframes' opacity.
+The bird should be one `motion-safe:animate-arrive` group
+(`scene.tsx`, `--animate-arrive` in `theme.css`), so a second copy
+suggests part of the bird's drawing sits outside the animated group
+and rests while the group drops. Seen only while every bird sat on
+the fence (24 of them, nothing adopted); with one bird adopted the
+arrival is shorter and the doubling was not seen again. Cause TBD:
+reproduce with everything on the fence and the animation slowed, and
+see which elements make up each copy.
+
+## The threshold fields
+
+A threshold row is a pair of bare number inputs labelled amber and
+red, one row per window. The form never says what the number counts,
+what unit it is in, or what crossing it looks like on the bird. The
+rows need their own design round: the unit and the consequence beside
+the field, and the default shown as more than a placeholder. Raised at
+the adoption round's review.
+
+## Picking paths and sessions from what the scan knows
+
+Key files, roadmaps and the zellij session are typed into bare text
+fields, though perch could offer the real candidates: the files that
+exist in the clone for the path lists, the sessions zellij reports for
+the session field. The scan does not carry a file listing today, so
+the suggestions need either a raw field for each clone's candidate
+files or a main-process read when the form opens. Launch integrations
+(the editor, the terminal) deserve the same treatment over bare
+command strings. Raised at the adoption round's review.
+
 ## Links inside key files
 
 Markdown on the key-file paper renders relative links as plain anchors,

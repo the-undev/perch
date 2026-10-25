@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adoption papers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #101214; --rail: #121517; --panel: #1a1e22; --panel-hi: #20252a;
+    --edge: #2b3036; --edge-hi: #3e454d; --ground: #13161a;
+    --ink: #ece7db; --muted: #aaa396; --faint: #837d70; --accent: #b9b2a2;
+    --green: #66bb86; --amber: #d8a845; --red: #e25d4f;
+    --plumage: #272b31; --breast: #4a4f58; --leg: #4a4e55; --eye: #0d0f12;
+    --wire: #3a3e46; --post: #2a2d34;
+    --paper: #e9e4d8; --paper-dim: #ddd7c9; --paper-text: #2a2e35;
+    --paper-head: #171a1e; --paper-strong: #14171b; --paper-quiet: #6e695f;
+    --paper-rule: #c9c3b3; --paper-code: #dcd6c8; --key: #22262c; --key-hi: #2e333a;
+    --display: "Bricolage Grotesque", sans-serif;
+    --body: "Figtree", sans-serif;
+    --mono: "JetBrains Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--body); font-size: 15px; line-height: 1.55;
+  }
+  .board { max-width: 1060px; margin: 0 auto; padding: 48px 16px 120px; }
+  header.round { margin-bottom: 40px; }
+  header.round h1 { font-family: var(--display); font-weight: 800; font-size: 34px; margin: 0 0 6px; }
+  header.round p { color: var(--muted); max-width: 70ch; margin: 4px 0; }
+  .round-tag { color: var(--faint); font-size: 13px; }
+
+  section { margin: 56px 0; }
+  section > h2 {
+    font-family: var(--display); font-weight: 700; font-size: 22px; margin: 0 0 10px;
+  }
+  section > h2 .n { color: var(--faint); font-weight: 500; margin-right: 10px; }
+  section > p.lead { color: var(--muted); max-width: 74ch; margin: 0 0 22px; }
+  section > p.lead code, .note code, td code {
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 5px; padding: 1px 5px;
+  }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 14px; }
+  .flow .step {
+    flex: 1 1 220px; background: var(--panel); border: 1px solid var(--edge);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .flow .step b { display: block; font-family: var(--display); font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+  .flow .step p { margin: 0; color: var(--muted); font-size: 13.5px; }
+  .flow .step .how { display: block; margin-top: 10px; color: var(--faint); font-size: 12.5px; }
+
+  /* The stage: a slice of the bird's page with the papers on the ground. */
+  .stage {
+    background: linear-gradient(#0d1016, #1a1d24 70%, #13161a 70.2%);
+    border: 1px solid var(--edge); border-radius: 14px; padding: 34px 26px 44px;
+  }
+  .stage .perchline { display: flex; justify-content: center; margin-bottom: 30px; }
+
+  /* The papers. */
+  .papers {
+    width: min(620px, 100%); margin: 0 auto; background: var(--paper);
+    color: var(--paper-text); border-radius: 10px;
+    box-shadow: 0 24px 60px -18px rgb(0 0 0 / .75);
+    padding: 26px 30px 24px;
+  }
+  .papers .papers-kind {
+    font-size: 12.5px; color: var(--paper-quiet); letter-spacing: .02em; margin: 0 0 2px;
+  }
+  .papers h3.bird-name {
+    font-family: var(--display); font-weight: 800; font-size: 30px;
+    color: var(--paper-strong); margin: 0 0 2px;
+  }
+  .papers .ring { font-family: var(--mono); font-size: 12px; color: var(--paper-quiet); margin: 0; }
+  .papers .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .papers .portrait { flex: none; margin-top: 2px; }
+
+  .papers .part {
+    border-top: 1px solid var(--paper-rule); margin-top: 18px; padding-top: 14px;
+  }
+  .papers .part > .part-name {
+    font-size: 12.5px; color: var(--paper-quiet); margin: 0 0 10px;
+  }
+  .seen { font-family: var(--mono); font-size: 12.5px; line-height: 2; color: var(--paper-text); }
+  .seen .k { color: var(--paper-quiet); display: inline-block; min-width: 11ch; }
+
+  .field { margin: 14px 0; }
+  .field > label, .field > .flabel {
+    display: block; font-weight: 600; font-size: 13.5px; color: var(--paper-head); margin-bottom: 5px;
+  }
+  .field .hint { font-weight: 400; color: var(--paper-quiet); font-size: 12.5px; margin-left: 8px; }
+  .field input[type="text"] {
+    font-family: var(--mono); font-size: 13px; color: var(--paper-strong);
+    background: var(--paper-code); border: 1px solid var(--paper-rule); border-radius: 7px;
+    padding: 7px 10px; width: min(34ch, 100%);
+  }
+  .field input[type="text"]:focus-visible { outline: 2px solid var(--paper-head); outline-offset: 1px; }
+
+  /* The wire picker. */
+  .wirepick { border: 0; margin: 0; padding: 0; }
+  .wirepick .wirerow { position: relative; display: block; cursor: pointer; padding: 15px 0 9px; }
+  .wirepick .wirerow input { position: absolute; opacity: 0; }
+  .wirepick .wireline {
+    display: block; height: 3px; border-radius: 2px; background: #b4ad9d;
+    transition: background .15s;
+  }
+  .wirepick .wirerow .wname {
+    font-size: 13px; color: var(--paper-quiet); display: block; margin-top: 5px;
+  }
+  .wirepick .wirerow .sit {
+    position: absolute; top: -17px; left: 46px; opacity: 0; transition: opacity .15s;
+  }
+  .wirepick .wirerow:has(input:checked) .wireline { background: var(--paper-strong); height: 3.5px; }
+  .wirepick .wirerow:has(input:checked) .wname { color: var(--paper-head); font-weight: 600; }
+  .wirepick .wirerow:has(input:checked) .sit { opacity: 1; }
+  .wirepick .wirerow:has(input:focus-visible) .wireline { outline: 2px solid var(--paper-head); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { .wirepick .sit, .wirepick .wireline { transition: none; } }
+
+  .choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  .choices label {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    border: 1px solid var(--paper-rule); border-radius: 8px; padding: 6px 12px;
+    font-size: 13px; color: var(--paper-text); background: var(--paper);
+  }
+  .choices label:has(input:checked) {
+    background: var(--paper-strong); color: var(--paper); border-color: var(--paper-strong);
+  }
+  .choices label:has(input:focus-visible) { outline: 2px solid var(--paper-head); outline-offset: 1px; }
+  .choices input { position: absolute; opacity: 0; }
+  .choices .why { color: inherit; opacity: .65; font-size: 12px; }
+
+  /* The fold. */
+  details.more { border-top: 1px solid var(--paper-rule); margin-top: 18px; }
+  details.more summary {
+    cursor: pointer; list-style: none; padding: 12px 0;
+    font-size: 13px; color: var(--paper-quiet);
+  }
+  details.more summary::-webkit-details-marker { display: none; }
+  details.more summary .mark { display: inline-block; width: 1.2em; color: var(--paper-quiet); }
+  details.more[open] summary .mark { rotate: 90deg; }
+  details.more summary:focus-visible { outline: 2px solid var(--paper-head); outline-offset: 1px; }
+  details.more .folded { padding: 0 0 14px; }
+  details.more .folded .field input[type="text"] { width: min(44ch, 100%); }
+  .thresholds { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 16px; }
+  .thresholds label { font-size: 12.5px; color: var(--paper-text); display: block; }
+  .thresholds input {
+    font-family: var(--mono); font-size: 13px; width: 7ch; display: block; margin-top: 3px;
+    background: var(--paper-code); border: 1px solid var(--paper-rule); border-radius: 6px; padding: 5px 8px;
+    color: var(--paper-strong);
+  }
+
+  /* The signature line. */
+  .signoff {
+    border-top: 1px solid var(--paper-rule); margin-top: 6px; padding-top: 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  }
+  .signoff .signed { font-size: 12.5px; color: var(--paper-quiet); }
+  .signoff .acts { display: flex; align-items: center; gap: 14px; }
+  button.adopt {
+    font-family: var(--body); font-weight: 700; font-size: 13.5px; cursor: pointer;
+    background: var(--key); color: var(--ink); border: 0; border-radius: 9px; padding: 10px 16px;
+  }
+  button.adopt:hover { background: var(--key-hi); }
+  button.adopt:focus-visible { outline: 2px solid var(--paper-head); outline-offset: 2px; }
+  .notnow {
+    background: none; border: 0; cursor: pointer; font-family: var(--body);
+    font-size: 13px; color: var(--paper-quiet); text-decoration: underline; padding: 0;
+  }
+
+  /* Annotations beside things. */
+  .note { color: var(--muted); font-size: 13.5px; max-width: 74ch; margin: 18px auto 0; }
+  .note b { color: var(--ink); font-weight: 600; }
+  ul.notes { color: var(--muted); font-size: 13.5px; max-width: 76ch; padding-left: 20px; }
+  ul.notes li { margin: 7px 0; }
+  ul.notes b { color: var(--ink); font-weight: 600; }
+
+  /* States row. */
+  .states { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .state { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 16px 18px; }
+  .state b { display: block; font-family: var(--display); font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+  .state p { margin: 0 0 8px; color: var(--muted); font-size: 13.5px; }
+  .state .snip {
+    background: var(--paper); color: var(--paper-text); border-radius: 8px;
+    font-size: 12.5px; padding: 10px 12px; margin-top: 10px;
+  }
+  .state .snip .q { color: var(--paper-quiet); }
+  .state .snip b { font-family: var(--body); font-size: 12.5px; color: var(--paper-strong); display: inline; }
+
+  /* Decisions. */
+  .decision { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 18px 20px; margin: 14px 0; }
+  .decision h3 { font-family: var(--display); font-size: 16px; font-weight: 700; margin: 0 0 6px; }
+  .decision p { margin: 6px 0; color: var(--muted); font-size: 14px; }
+  .decision .rec { color: var(--ink); }
+  .decision .rec::before { content: "Recommendation: "; color: var(--faint); }
+</style>
+</head>
+<body>
+<div class="board">
+
+<header class="round">
+  <p class="round-tag">perch · design round · 25 October 2026</p>
+  <h1>Adoption papers</h1>
+  <p>Adopting a bird today is one press that hides every choice: the wire, the name, the tier
+  and the expectations only appear afterwards, inside an editor you have to know to open.
+  This round makes adoption a moment with a form of its own, the way a real aviary would
+  hand you papers.</p>
+</header>
+
+<section>
+  <h2><span class="n">1</span>The shape of it</h2>
+  <p class="lead">No floating dialog. perch draws a world, and the world already has one warm
+  material: paper, laid on the ground of a bird's page. The adoption form is a sheet of
+  <b>adoption papers</b> that unfolds there, and the same sheet reopens later to amend, so
+  there is no second, hidden editor to discover.</p>
+  <div class="flow">
+    <div class="step"><b>A fence bird</b>
+      <p>Its bubble and its page both offer one act: <i>adopt</i>.</p>
+      <span class="how">The bubble's key goes to the page with the papers already unfolded.</span>
+    </div>
+    <div class="step"><b>The papers unfold</b>
+      <p>One sheet: what perch has seen, then what you say. Nothing is hidden; the rare
+      choices sit behind a fold that names itself.</p>
+      <span class="how">Escape or "Not now" folds them away; nothing is written.</span>
+    </div>
+    <div class="step"><b>Signed</b>
+      <p>The button names the choice: <i>Adopt onto Projects</i>. The entry is written, a scan
+      is asked for, the bird moves to its wire.</p>
+      <span class="how">One save, however many fields were touched.</span>
+    </div>
+    <div class="step"><b>Amended later</b>
+      <p>The adopted bird's page says <i>the papers</i> where it now says <i>edit the entry</i>.
+      Same sheet, same order, saved with <i>Amend the papers</i>.</p>
+      <span class="how">"Return to the fence" stays on the papers, second press to confirm.</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">2</span>The papers</h2>
+  <p class="lead">Live sketch: pick a wire, open the fold. Set on a slice of the bird's page.</p>
+
+  <div class="stage">
+    <div class="papers" role="form" aria-label="Adoption papers for prism">
+      <div class="head">
+        <div>
+          <p class="papers-kind">Adoption papers</p>
+          <h3 class="bird-name">prism</h3>
+          <p class="ring">ring undev/prism</p>
+        </div>
+        <svg class="portrait" width="74" height="60" viewBox="0 0 74 60" aria-hidden="true">
+          <ellipse cx="38" cy="34" rx="22" ry="16" fill="var(--plumage)"/>
+          <ellipse cx="30" cy="38" rx="11" ry="9" fill="var(--breast)"/>
+          <circle cx="20" cy="22" r="11" fill="var(--plumage)"/>
+          <polygon points="10,21 1,24 10,27" fill="var(--ink)"/>
+          <circle cx="16.5" cy="20.5" r="1.8" fill="var(--eye)"/>
+          <path d="M52 30 L68 22" stroke="var(--plumage)" stroke-width="7" stroke-linecap="round"/>
+          <path d="M33 50 L33 57 M43 50 L43 57" stroke="var(--leg)" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div class="part">
+        <p class="part-name">What perch has seen</p>
+        <div class="seen">
+          <div><span class="k">found at</span> ~/undev/prism</div>
+          <div><span class="k">also lives at</span> github.com/the-undev/prism</div>
+          <div><span class="k">last commit</span> 3 days ago · "sharpen the capture timer"</div>
+        </div>
+      </div>
+
+      <div class="part">
+        <p class="part-name">What you say</p>
+
+        <div class="field">
+          <span class="flabel" id="wire-label">Its wire <span class="hint">where it perches; everything else stays on the fence</span></span>
+          <fieldset class="wirepick" aria-labelledby="wire-label">
+            <label class="wirerow">
+              <input type="radio" name="wire" value="Machine &amp; Home">
+              <svg class="sit" width="40" height="30" viewBox="0 0 40 30" aria-hidden="true">
+                <ellipse cx="20" cy="16" rx="11" ry="8" fill="var(--paper-strong)"/>
+                <circle cx="11" cy="10" r="5.5" fill="var(--paper-strong)"/>
+                <polygon points="6,9.4 1.5,11 6,12.6" fill="var(--paper-quiet)"/>
+                <path d="M17 24 L17 28 M23 24 L23 28" stroke="var(--paper-strong)" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              <span class="wireline"></span>
+              <span class="wname">Machine &amp; Home</span>
+            </label>
+            <label class="wirerow">
+              <input type="radio" name="wire" value="Projects" checked>
+              <svg class="sit" width="40" height="30" viewBox="0 0 40 30" aria-hidden="true">
+                <ellipse cx="20" cy="16" rx="11" ry="8" fill="var(--paper-strong)"/>
+                <circle cx="11" cy="10" r="5.5" fill="var(--paper-strong)"/>
+                <polygon points="6,9.4 1.5,11 6,12.6" fill="var(--paper-quiet)"/>
+                <path d="M17 24 L17 28 M23 24 L23 28" stroke="var(--paper-strong)" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              <span class="wireline"></span>
+              <span class="wname">Projects <span style="opacity:.6">· the default</span></span>
+            </label>
+          </fieldset>
+        </div>
+
+        <div class="field">
+          <label for="goes-by">Goes by <span class="hint">leave it and the scanned name stands</span></label>
+          <input id="goes-by" type="text" placeholder="prism">
+        </div>
+
+        <div class="field">
+          <span class="flabel" id="tier-label">How much it matters</span>
+          <div class="choices" role="radiogroup" aria-labelledby="tier-label">
+            <label><input type="radio" name="tier" value="server">server</label>
+            <label><input type="radio" name="tier" value="machine">machine</label>
+            <label><input type="radio" name="tier" value="projects" checked>projects <span class="why">· the default</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="flabel" id="expect-label">What it should have <span class="hint">an unmet one shows on the bird</span></span>
+          <div class="choices" aria-labelledby="expect-label">
+            <label><input type="checkbox" name="expect" value="ci">ci <span class="why">· a pipeline on its forge</span></label>
+            <label><input type="checkbox" name="expect" value="tickets">tickets <span class="why">· open issues to read</span></label>
+          </div>
+        </div>
+      </div>
+
+      <details class="more">
+        <summary><span class="mark">▸</span>More particulars · its windows, key files, roadmaps and session</summary>
+        <div class="folded">
+          <div class="field">
+            <label for="keyfiles">Key files <span class="hint">shown as paper on its page; blank keeps the README and roadmaps</span></label>
+            <input id="keyfiles" type="text" placeholder="README.md, docs/spec.md">
+          </div>
+          <div class="field">
+            <label for="roadmaps">Roadmaps <span class="hint">blank keeps the standard names</span></label>
+            <input id="roadmaps" type="text" placeholder="docs/roadmap.md">
+          </div>
+          <div class="field">
+            <label for="session">Zellij session <span class="hint">blank follows the launch rules</span></label>
+            <input id="session" type="text" placeholder="home">
+          </div>
+          <div class="field">
+            <span class="flabel">Its own windows <span class="hint">hours and days before amber and red; blank follows the judgement settings</span></span>
+            <div class="thresholds">
+              <label>unsafe, amber<input type="text" placeholder="24"></label>
+              <label>unsafe, red<input type="text" placeholder="72"></label>
+              <label>stalled, amber<input type="text" placeholder="7"></label>
+              <label>stalled, red<input type="text" placeholder="30"></label>
+              <label>expectation, amber<input type="text" placeholder="7"></label>
+              <label>expectation, red<input type="text" placeholder="30"></label>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div class="signoff">
+        <span class="signed">Signed, the owner</span>
+        <span class="acts">
+          <button type="button" class="notnow">Not now</button>
+          <button type="button" class="adopt" id="adopt-btn">Adopt onto Projects</button>
+        </span>
+      </div>
+    </div>
+
+    <p class="note" style="max-width:620px"><b>On the sheet:</b> the head carries the bird's
+    portrait and its ring, the id an entry is keyed by. "What perch has seen" is set in the
+    scanner's mono and cannot be edited: the papers teach, in passing, what is observed and
+    what is asserted. The fold is always visible and names what it holds, so nothing is
+    undiscoverable, and the signature button always names the wire it will write.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">3</span>Held states</h2>
+  <div class="states">
+    <div class="state">
+      <b>Amending</b>
+      <p>An adopted bird's page offers <i>the papers</i>. The sheet opens filled with the
+      entry as written, the head unchanged, the signature line reading:</p>
+      <div class="snip"><span class="q">Signed, the owner · first adopted 25 Oct 2026</span><br>
+      <b>Amend the papers</b> &nbsp; <span class="q">Return to the fence</span></div>
+    </div>
+    <div class="state">
+      <b>Returning to the fence</b>
+      <p>Stays on the papers, quiet, and asks twice as it does today. The second press
+      names the cost:</p>
+      <div class="snip"><span class="q">Every line of these papers is struck out.</span><br>
+      <b>Return it to the fence</b> &nbsp; <span class="q">Keep the papers</span></div>
+    </div>
+    <div class="state">
+      <b>A refused write</b>
+      <p>The papers stay open with the sentence from the main process above the signature
+      line, in the app's red on paper. Nothing pretends to have worked.</p>
+      <div class="snip" style="color:#b23325">The config file could not be written: the disk is read-only.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">4</span>Decisions wanting a verdict</h2>
+
+  <div class="decision">
+    <h3>1 · Papers on the page, not a dialog</h3>
+    <p>A floating modal is the web's reflex and sits outside perch's world. The papers unfold
+    in the ground area of the bird's page, where the entry form already lives; the bubble's
+    adopt key goes there and unfolds them.</p>
+    <p class="rec">in-world papers. A modal saves nothing and breaks the material language.</p>
+  </div>
+
+  <div class="decision">
+    <h3>2 · The wire picker is drawn as wires</h3>
+    <p>The round's one flourish: the wires as strokes on the paper, the bird sitting on the
+    chosen one. The alternative is a plain radio row like the tiers.</p>
+    <p class="rec">drawn wires. The choice it depicts is the one that confused the fence; seeing
+    the bird land on the wire is the explanation.</p>
+  </div>
+
+  <div class="decision">
+    <h3>3 · What sits above the fold</h3>
+    <p>Unfolded: wire, name, tier, expectations. Folded behind "More particulars", which names
+    its contents even when closed: thresholds, key files, roadmaps, zellij session. Everything
+    is one save either way.</p>
+    <p class="rec">as drawn. The four common choices cover almost every adoption; the fold cures
+    the discoverability failure without crowding the sheet.</p>
+  </div>
+
+  <div class="decision">
+    <h3>4 · One vocabulary: the papers</h3>
+    <p>"Edit the entry" goes. An adopted bird's page offers <i>the papers</i>; amending and
+    adopting are the same sheet with a different signature line. The config vocabulary
+    (entries, keys) stays in the config file and the spec.</p>
+    <p class="rec">rename it. The user should never need to learn that an adoption made an
+    "entry".</p>
+  </div>
+
+  <div class="decision">
+    <h3>5 · Where adopt is offered</h3>
+    <p>Today adoption lives on the bird's page. The fence bird's bubble gets adopt as its one
+    key beside the launches, going to the page with the papers unfolded.</p>
+    <p class="rec">both, one destination. The fence bubble saying only "adopt" is the aviary
+    telling you what a fence bird is for.</p>
+  </div>
+</section>
+
+</div>
+<script>
+  const btn = document.getElementById("adopt-btn");
+  for (const input of document.querySelectorAll('input[name="wire"]')) {
+    input.addEventListener("change", () => {
+      btn.textContent = "Adopt onto " + input.value.replace("&amp;", "&");
+    });
+  }
+</script>
+</body>
+</html>

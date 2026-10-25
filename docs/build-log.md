@@ -531,3 +531,21 @@ build-time calls so they can be revisited.
   board drew it, so the renderer holds no copy. Store is also held
   while the field is empty, and Test while the card has no account or,
   for Forgejo, no address.
+
+## 25 October 2026
+
+- The adoption round (`mockups/adoption.html`), all five verdicts
+  approved as recommended: adoption is a sheet of papers unfolding in
+  the ground area of the bird's page, not a modal; the wire picker is
+  drawn as wires with the bird sitting on the chosen one; wire, name,
+  tier and expectations sit above a named fold holding the overrides
+  (thresholds, key files, roadmaps, session); "the papers" replaces
+  "edit the entry" everywhere; the fence bubble offers adopt as its one
+  key, and bubble and page lead to the same sheet.
+- For the implementation: the tier row must say what a tier does, that
+  it sets the bird's size, first tier largest. Asked at review; the
+  mockup's "How much it matters" with the starter names read as
+  categories, not sizes.
+- The thresholds rows and the override fields (key files, roadmaps,
+  zellij session, launch integrations) stay as the current form parts
+  in this round; their redesign is parked on the roadmap.

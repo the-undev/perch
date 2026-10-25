@@ -190,7 +190,7 @@ describe("launch commands as list lines", () => {
 });
 
 describe("what the settings cannot be", () => {
-  it("holds the thresholds to the entry forms' rule", () => {
+  it("holds the thresholds to the adoption papers' rule", () => {
     const values = mockValues();
 
     expect(

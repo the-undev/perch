@@ -60,7 +60,9 @@ at risk of loss; is the rest quietly fine):
 - **B. The bubble**: click a bird and it speaks. The speech carries how
   it feels and why, in the first person; the chips beneath carry real
   numbers (CI, PRs, tickets, open items). Tier B is a strict subset of
-  what tier C knows.
+  what tier C knows. A fence bird's bubble has one key, Adopt, beside
+  "Tell me the full story": it leads to the bird's page with its
+  adoption papers unfolded.
 - **C. The detail**: everything, see below.
 
 Navigation is the camera. The aviary is the zoomed-in view; opening a
@@ -182,12 +184,33 @@ repositories, vault state. Observation joins what remote URLs prove;
 config asserts what they cannot, and on conflict the observation wins,
 flagged. Everything found starts on the fence; adopting a bird means
 adding it to config, which puts it on a wire and may assert further
-ties, importance, thresholds and expectations. A fence bird's detail
-page adopts it onto a wire; an adopted bird's detail page edits its entry
-or removes it, and the app writes the config file. Forks are ignored by
+ties, importance, thresholds and expectations. Forks are ignored by
 default; archived repositories are gathered but never on the main view.
 Details and open questions (composite multi-repo projects among them):
 [decisions/project-model.md](decisions/project-model.md).
+
+Adopting and amending are one sheet of adoption papers, unfolding on
+the ground of the bird's page beneath its action row: Adopt on a fence
+bird, The papers on an adopted one. The head carries the bird's name,
+its portrait and its ring, the config key the entry sits under. "What
+perch has seen" follows in mono and cannot be edited: where the clone
+is, home as `~`, the forges that also hold it, and the last commit (the
+checked-out one, else the newest on a forge's default branch). "What
+you say" holds the wire, drawn as wire strokes with the bird sitting on
+the chosen one, the name, the tier, which sets the bird's size, first
+tier largest, and the expectations. A fold, "More particulars", names
+what it holds while closed: the key files, roadmaps, zellij session and
+the bird's own thresholds. A choice left on its default is written as
+nothing, so config holds only what differs. The signature button names
+the destination ("Adopt onto Projects", or "Amend the papers"); Not now,
+or Escape pressed inside them, folds the papers away without writing. A threshold that
+cannot be written holds the signature and says why. "Return to the
+fence" sits on an adopted bird's signature line and asks twice, the
+second press saying "Every line of these papers is struck out." The app
+writes the config file; signed papers stay open until the entry read
+back shows the write, so a refused write leaves them open with the
+main process's sentence in red above the signature line. The config's
+vocabulary (entries, keys) stays in the config file and these docs.
 
 ## Configuration
 
@@ -210,7 +233,7 @@ account once per instance, each kuma name once. A config with no
 sources is valid and scans nothing.
 
 The settings page, reached from the camera header, edits everything but
-the item entries, which each bird's detail page edits. A rail names its
+the item entries, which each bird's adoption papers edit. A rail names its
 pages beside one reading-width column: Sources, with Joining up beneath
 it, then Wires, Tiers, Judgement, Scanning and Launching. It opens on
 Sources and shows one page at a time. An edit is kept while another
@@ -247,7 +270,7 @@ kuma name).
 
 The app writes the file without comments, paths under the home
 directory with `~`. An edit to the file by hand is read as soon as it is
-saved, and the open page or form shows it; the last write wins.
+saved, and the open page or papers show it; the last write wins.
 
 ## Secrets
 

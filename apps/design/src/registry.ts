@@ -3,6 +3,7 @@
 
 import type { ComponentType } from "react";
 import { ActionsPage, IntroPage, LinksPage } from "./pages/actions-pages.tsx";
+import { AdoptionPapersPage } from "./pages/adoption-papers-page.tsx";
 import { AviaryScenePage } from "./pages/aviary-scene-page.tsx";
 import { BirdPage } from "./pages/bird-page.tsx";
 import { BubblePage } from "./pages/bubble-page.tsx";
@@ -11,7 +12,6 @@ import { CameraScenePage } from "./pages/camera-scene-page.tsx";
 import { ChipPage } from "./pages/chip-page.tsx";
 import { CrowdedPage } from "./pages/crowded-page.tsx";
 import { DetailScenePage } from "./pages/detail-scene-page.tsx";
-import { AdoptFormPage, EntryEditorPage } from "./pages/entry-forms-pages.tsx";
 import { LedgerPage } from "./pages/ledger-page.tsx";
 import { PaperPage } from "./pages/paper-page.tsx";
 import {
@@ -205,20 +205,12 @@ export const pages: DesignPage[] = [
     component: PaperPage,
   },
   {
-    slug: "adopt-form",
+    slug: "adoption-papers",
     group: "components",
-    title: "Adopt form",
+    title: "Adoption papers",
     summary:
-      "A fence bird's Adopt verb and its form: a wire and a name, written as a new entry.",
-    component: AdoptFormPage,
-  },
-  {
-    slug: "entry-editor",
-    group: "components",
-    title: "Entry editor",
-    summary:
-      "An adopted bird's config entry: wire, name, importance, expectations, paths and threshold overrides.",
-    component: EntryEditorPage,
+      "The sheet that adopts a fence bird and amends an adopted one: what perch has seen, what you say, a named fold and the signature.",
+    component: AdoptionPapersPage,
   },
   {
     slug: "settings-groups",

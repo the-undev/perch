@@ -549,3 +549,38 @@ build-time calls so they can be revisited.
 - The thresholds rows and the override fields (key files, roadmaps,
   zellij session, launch integrations) stay as the current form parts
   in this round; their redesign is parked on the roadmap.
+- Building the papers: what perch has seen is the clone's path with
+  home as `~` (so the entry form takes the home directory), each forge
+  presence's address without its scheme, and the last commit. The last
+  commit is git's checked-out one with its branch's subject, else the
+  newest a forge finalised, so a forge-only bird still has one. A fact
+  the scan lacks leaves its line out; with no clone the forge lines read
+  "lives at" rather than "also lives at".
+- The entry form also names the session the launch rules give the
+  clone, as the zellij field's placeholder. The papers now write the
+  session they hold instead of keeping the old one.
+- The amend signature line reads "Signed, the owner" without the
+  mockup's "first adopted" date: config holds no adoption date and the
+  scan cannot derive one.
+- The fold's form parts stay the dark settings parts, drawn in the
+  paper's ink by a `data-material="paper"` block in `theme.css` that
+  maps the ground and ink tokens onto the paper tokens. No new colours.
+  The unchosen wire strokes are paper-quiet at half strength, close to
+  the mockup's untokened grey.
+- The fold is a button with `aria-expanded` rather than `<details>`, and
+  starts closed when amending too: its label names what it holds.
+- Signed papers stay open until the entry read back matches what was
+  signed, compared by `sameEntryValues`; a refused write leaves them
+  open with the main process's problems in paper-red. Every problem the
+  main process holds shows there while the papers are open.
+- Escape folds the papers only when pressed inside them, before the
+  camera hears it; anywhere else on the page it still rides home.
+- The bubble's Adopt key sits after the launch keys and before "Tell me
+  the full story", a dark key with the adopt icon and its word.
+- The camera place carries `papers`, kept in the URL as
+  `?papers=true` on the bird route. The papers unfold whenever it turns
+  true; Not now leaves the URL as it is.
+- On the page the papers sit beneath the action row, left-aligned with
+  it, at the mockup's 620px; the mockup centres them on a stage. Amend
+  mode keeps Not now beside "Amend the papers", with "Return to the
+  fence" first on the signature line.

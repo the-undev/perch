@@ -1,4 +1,4 @@
-// The pieces the config forms are made of, the detail page's entry forms and the settings page
+// The pieces the config forms are made of, the adoption papers' fold and the settings page
 // alike: page headings, ruled rows, pill choices, editable lists and threshold fields, in one set
 // of styles.
 

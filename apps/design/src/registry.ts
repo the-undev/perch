@@ -17,10 +17,10 @@ import { PaperPage } from "./pages/paper-page.tsx";
 import { RoostPage } from "./pages/roost-page.tsx";
 import {
   BranchesPage,
-  CommitsPage,
   FlagsPage,
   ProblemsPage,
   PullRequestsPage,
+  RiverPage,
 } from "./pages/sections-pages.tsx";
 import {
   SettingsGroupsPage,
@@ -166,11 +166,12 @@ export const pages: DesignPage[] = [
     component: BranchesPage,
   },
   {
-    slug: "commits",
+    slug: "river",
     group: "components",
-    title: "Newest commits",
-    summary: 'The default branch on each forge, headed "main on GitHub".',
-    component: CommitsPage,
+    title: "Commit river",
+    summary:
+      "Each commit once, with a mark per place for where it has reached, and a sentence when the forges differ.",
+    component: RiverPage,
   },
   {
     slug: "pull-requests",

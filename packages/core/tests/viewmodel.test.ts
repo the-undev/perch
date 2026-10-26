@@ -881,26 +881,10 @@ describe("the detail", () => {
     ]);
   });
 
-  it("heads the newest commits with the actual branch and forge, linking each", async () => {
+  it("lists pull requests newest first, the links out, the flags and the unread sources", async () => {
     const config = await adoptAll(["dev/perch"]);
     const detail = birdIn([perch], config, "dev/perch").detail;
 
-    expect(detail.newestCommits).toEqual([
-      {
-        forge: "github",
-        heading: "main on GitHub",
-        branchUrl: "https://github.com/finch/perch/tree/main",
-        commits: [
-          {
-            sha: "af0893d1234567",
-            shortSha: "af0893d",
-            subject: "Merge foundations",
-            committedAt: hoursBefore(72),
-            url: "https://github.com/finch/perch/commit/af0893d1234567",
-          },
-        ],
-      },
-    ]);
     expect(detail.pullRequests.map((pull) => pull.number)).toEqual([5, 4]);
     expect(detail.links).toEqual([
       {

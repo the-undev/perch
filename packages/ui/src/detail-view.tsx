@@ -25,10 +25,10 @@ import { DetailHeading } from "./detail-heading.tsx";
 import { Icon } from "./icons.tsx";
 import {
   BranchLines,
+  CommitRiver,
   FlagLines,
   type Landing,
   Ledger,
-  NewestCommits,
   PullRequestLines,
   SourceProblems,
 } from "./ledger.tsx";
@@ -259,13 +259,9 @@ export function DetailView({
               {detail.branches.length > 0 && (
                 <BranchLines branches={detail.branches} now={now} />
               )}
-              {detail.newestCommits.map((commits) => (
-                <NewestCommits
-                  key={commits.forge}
-                  commits={commits}
-                  now={now}
-                />
-              ))}
+              {detail.river.commits.length > 0 && (
+                <CommitRiver river={detail.river} now={now} />
+              )}
               {detail.pullRequests.length > 0 && (
                 <PullRequestLines
                   pullRequests={detail.pullRequests}

@@ -357,10 +357,26 @@ describe("the detail view", () => {
   });
 
   it("shows the sections that exist and leaves out the empty ones", () => {
-    page(mockBird("dev/perch"));
+    const perch = mockBird("dev/perch");
+    page(perch);
     expect(headings()).toEqual(
       expect.arrayContaining(["Branches", "Open pull requests"]),
     );
+    expect(
+      headings().filter(
+        (heading) => heading === "Where each commit has reached",
+      ),
+    ).toHaveLength(1);
+    cleanup();
+
+    page({
+      ...perch,
+      detail: {
+        ...perch.detail,
+        river: { ...perch.detail.river, commits: [] },
+      },
+    });
+    expect(headings()).not.toContain("Where each commit has reached");
     cleanup();
 
     page(mockBird("undev/prism"));

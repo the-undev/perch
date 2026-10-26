@@ -1,11 +1,11 @@
-// The ledger's sections, one usage page each: branches, newest commits, pull requests, flags and
-// sources not read.
+// The ledger's sections, one usage page each: branches, the commit river, pull requests, flags
+// and sources not read.
 
 import type { FlagLine } from "@perch/core/viewmodel.ts";
 import {
   BranchLines,
+  CommitRiver,
   FlagLines,
-  NewestCommits,
   PullRequestLines,
   SourceProblems,
 } from "@perch/ui/ledger.tsx";
@@ -77,34 +77,75 @@ export function BranchesPage() {
   );
 }
 
-export function CommitsPage() {
-  const perch = mockBird("dev/perch");
+/** The river's states, each from a mock bird and the rule that draws it. */
+const riverSpecimens: { id: string; label: string; rule: string }[] = [
+  {
+    id: "undev/oxbow",
+    label: "In step",
+    rule: "Oxbow: here and both forges hold every commit, so every mark is filled and no sentence is drawn.",
+  },
+  {
+    id: ".dotfiles",
+    label: "Unpushed on main",
+    rule: "Dotfiles: three commits on main that neither forge has. Their forge marks are hollow; the forges agree, so no sentence.",
+  },
+  {
+    id: "undev/harbour",
+    label: "Diverged",
+    rule: "Harbour: Forgejo missed the last push. Its mark is hollow and one amber sentence says it is behind GitHub.",
+  },
+  {
+    id: "dev/perch",
+    label: "Beyond a list",
+    rule: "Perch: Forgejo's list holds one commit, so the two older ones are beyond it. Their Forgejo reach is unknown, drawn as the faint dot, never hollow.",
+  },
+  {
+    id: "undev/spool",
+    label: "One forge",
+    rule: "Spool: here and Forgejo, in step.",
+  },
+  {
+    id: "dev/odin/hello",
+    label: "Only here",
+    rule: "hello: no remote, so the clone is the one place.",
+  },
+  {
+    id: "undev/prism",
+    label: "A place not read",
+    rule: "Prism: GitHub answered 404. Its name says not read in amber and every GitHub mark is unknown.",
+  },
+];
+
+export function RiverPage() {
   return (
     <>
       <Section
-        title="Newest commits"
-        rule={`The default branch's newest commits on each forge, headed by the actual thing ("main on GitHub"), never a concept. Each hash links to the commit.`}
+        title="The commit river"
+        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits. Each commit has a mark per place, here first and then the bird's forges: filled where the place holds it, hollow where it lacks it, a faint dot where its reach is unknown. A place's list is its newest commits, so a commit is lacking only when it is no older than the list's oldest; an older one is unknown. One amber sentence appears only when a forge lacks a commit another forge holds."
         min={420}
       >
-        {perch.detail.newestCommits.map((commits) => (
+        {riverSpecimens.map((specimen) => (
           <Specimen
-            key={commits.forge}
-            label={commits.heading}
-            rule="Perch, mirrored on both forges."
+            key={specimen.id}
+            label={specimen.label}
+            rule={specimen.rule}
           >
             <Ground>
-              <NewestCommits commits={commits} now={scanMoment} />
+              <CommitRiver
+                river={mockBird(specimen.id).detail.river}
+                now={scanMoment}
+              />
             </Ground>
           </Specimen>
         ))}
       </Section>
       <Usage
-        component="<NewestCommits>"
+        component="<CommitRiver>"
         props={[
           {
-            name: "commits",
-            type: "ForgeCommits",
-            what: "One of bird.detail.newestCommits: the forge, heading, branch link and commits.",
+            name: "river",
+            type: "River",
+            what: "bird.detail.river: the places, the commits with their reach per place, and the divergence sentence or null.",
           },
           {
             name: "now",
@@ -113,7 +154,10 @@ export function CommitsPage() {
           },
         ]}
       >
-        <p>One section per forge that has finalised commits.</p>
+        <p>
+          Draw it only when the river has commits. A commit links to the first
+          forge holding it; one only here is not linked.
+        </p>
       </Usage>
     </>
   );

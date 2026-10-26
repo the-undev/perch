@@ -1,5 +1,5 @@
-// Tier C's ruled ledger: facts in full words, then the sections beneath it (branches, newest
-// commits, pull requests, flags, unread sources). Every row is a label on the left and a value on
+// Tier C's ruled ledger: facts in full words, then the sections beneath it (branches, the commit
+// river, pull requests, flags, unread sources). Every row is a label on the left and a value on
 // the right; clean zeros read a quiet green "none", counts take their severity's tone. A row that
 // holds a bubble chip's working is marked with a dot and spells it out beneath, source by source.
 
@@ -7,9 +7,12 @@ import type {
   BranchLine,
   ChipKind,
   FlagLine,
-  ForgeCommits,
   LedgerEntry,
+  PlaceReach,
   PullRequestLine,
+  Reach,
+  River,
+  RiverPlace,
   SourceProblem,
   Tone,
   Working,
@@ -263,35 +266,97 @@ export function BranchLines({
   );
 }
 
-/** One forge's default branch, headed by its name on the forge, with its newest commits. */
-export function NewestCommits({
-  commits,
-  now,
-}: {
-  commits: ForgeCommits;
-  now: Date;
-}) {
+const reachWords: Record<Reach, string> = {
+  held: "has it",
+  lacking: "lacks it",
+  unknown: "not known",
+};
+
+/** Filled where held, hollow where lacking, and a faint dot, the quietest, where unknown. */
+const reachMarkClass: Record<Reach, string> = {
+  held: "size-2.25 bg-ink-accent",
+  lacking: "size-2.25 border-[1.5px] border-edge-hi",
+  unknown: "size-0.75 bg-edge-hi",
+};
+
+/** One place's mark for one commit, named for a screen reader and on hover. */
+function ReachMark({ mark }: { mark: PlaceReach }) {
+  const words = `${mark.place} ${reachWords[mark.reach]}`;
   return (
-    <section>
-      <LedgerHeading>
-        <OutLink href={commits.branchUrl}>{commits.heading}</OutLink>, newest
-        commits
-      </LedgerHeading>
-      {commits.commits.map((commit) => (
-        <LedgerRow
-          key={commit.sha}
-          label={commit.subject}
-          value={
-            <>
-              <OutLink href={commit.url}>
-                <code className="font-mono text-[12px]">{commit.shortSha}</code>
-              </OutLink>
-              {` · ${agoWords(commit.committedAt, now)}`}
-            </>
-          }
-          tone={null}
-        />
+    <span
+      role="img"
+      aria-label={words}
+      title={words}
+      data-reach={mark.reach}
+      className="inline-flex size-2.25 items-center justify-center"
+    >
+      <span className={`rounded-full ${reachMarkClass[mark.reach]}`} />
+    </span>
+  );
+}
+
+/** The places in their marks' order, a forge linked to its branch, a note in amber where unread. */
+function RiverLegend({ places }: { places: RiverPlace[] }) {
+  return (
+    <p
+      data-part="river-legend"
+      className="m-0 mb-1.5 flex flex-wrap gap-x-3.5 font-mono text-[11px] text-ink-faint"
+    >
+      {places.map((place) => (
+        <span key={place.name}>
+          {place.url === null ? (
+            place.name
+          ) : (
+            <OutLink href={place.url}>{place.name}</OutLink>
+          )}
+          {place.note !== null && (
+            <span className="text-amber"> {place.note}</span>
+          )}
+        </span>
       ))}
+    </p>
+  );
+}
+
+/** The newest commits on the default branch, each once, with a mark per place for where it has reached. */
+export function CommitRiver({ river, now }: { river: River; now: Date }) {
+  return (
+    <section data-part="river">
+      <LedgerHeading>Where each commit has reached</LedgerHeading>
+      <RiverLegend places={river.places} />
+      {river.divergence !== null && (
+        <p
+          data-part="divergence"
+          className="m-0 mt-1.5 mb-0.5 text-[12.5px] text-amber"
+        >
+          {river.divergence}
+        </p>
+      )}
+      <ul className="m-0 grid list-none grid-cols-[minmax(0,1fr)_auto_auto] gap-x-2.5 p-0">
+        {river.commits.map((commit) => (
+          <li
+            key={commit.sha}
+            data-part="river-commit"
+            className="col-span-full grid grid-cols-subgrid items-baseline py-0.75 font-mono text-[12.5px]"
+          >
+            <span className="truncate text-ink-muted" title={commit.subject}>
+              {commit.url === null ? (
+                commit.subject
+              ) : (
+                <OutLink href={commit.url}>{commit.subject}</OutLink>
+              )}
+            </span>
+            <span className="whitespace-nowrap text-right text-[11.5px] text-ink-faint">
+              {agoWords(commit.committedAt, now)}
+            </span>
+            <span className="flex justify-end gap-1.75 self-center">
+              {commit.reach.map((mark) => (
+                <ReachMark key={mark.place} mark={mark} />
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

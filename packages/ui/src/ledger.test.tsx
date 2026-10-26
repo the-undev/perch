@@ -2,7 +2,7 @@ import { mockSnapshot } from "@perch/core/mock.ts";
 import type { LedgerEntry } from "@perch/core/viewmodel.ts";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { BranchLines, FlagLines, Ledger, NewestCommits } from "./ledger.tsx";
+import { BranchLines, CommitRiver, FlagLines, Ledger } from "./ledger.tsx";
 import { mockBird } from "./mock-birds.ts";
 
 afterEach(cleanup);
@@ -16,6 +16,16 @@ function rows(container: HTMLElement): string[][] {
     value.textContent ?? "",
     value.getAttribute("data-tone") ?? "",
   ]);
+}
+
+/** Each river commit's marks, as drawn. */
+function marks(container: HTMLElement): string[][] {
+  return [...container.querySelectorAll('[data-part="river-commit"]')].map(
+    (row) =>
+      [...row.querySelectorAll("[data-reach]")].map(
+        (mark) => mark.getAttribute("data-reach") ?? "",
+      ),
+  );
 }
 
 describe("the ledger", () => {
@@ -262,15 +272,57 @@ describe("the ledger's sections", () => {
     );
   });
 
-  it("heads the newest commits with the branch on its forge", () => {
-    const [github] = mockBird("dev/perch").detail.newestCommits;
-    if (github === undefined) throw new Error("perch has commits on GitHub");
-    render(<NewestCommits commits={github} now={now} />);
+  it("draws each commit once with a mark per place, and the divergence in amber", () => {
+    const { container } = render(
+      <CommitRiver river={mockBird("undev/harbour").detail.river} now={now} />,
+    );
 
     expect(screen.getByRole("heading").textContent).toBe(
-      "main on GitHub, newest commits",
+      "Where each commit has reached",
     );
-    expect(screen.getByRole("link", { name: "af0893d" })).toBeDefined();
+    expect(marks(container)).toEqual([
+      ["held", "held", "lacking"],
+      ["held", "held", "held"],
+    ]);
+    expect(
+      screen.getByRole("img", { name: "forgejo lacks it" }).dataset.reach,
+    ).toBe("lacking");
+    const divergence = container.querySelector('[data-part="divergence"]');
+    expect(divergence?.textContent).toBe("forgejo is 1 commit behind github.");
+    expect(divergence?.className).toContain("text-amber");
+  });
+
+  it("says nothing when the forges are in step, and hollows them for unpushed commits", () => {
+    const { container } = render(
+      <CommitRiver river={mockBird(".dotfiles").detail.river} now={now} />,
+    );
+
+    expect(container.querySelector('[data-part="divergence"]')).toBeNull();
+    expect(marks(container)[0]).toEqual(["held", "lacking", "lacking"]);
+    expect(
+      screen.queryByRole("link", { name: "Open Alacritty at 140 by 40" }),
+    ).toBeNull();
+  });
+
+  it("names each place, linking a forge's branch and noting one not read, and links each commit", () => {
+    const { container } = render(
+      <CommitRiver river={mockBird("undev/prism").detail.river} now={now} />,
+    );
+
+    expect(
+      container.querySelector('[data-part="river-legend"]')?.textContent,
+    ).toBe("heregithub not readforgejo");
+    expect(
+      screen.getByRole("link", { name: "forgejo" }).getAttribute("href"),
+    ).toBe("http://forge.example.lan:3000/the-undev/prism/src/branch/main");
+    expect(marks(container)).toEqual([["held", "unknown", "held"]]);
+    expect(
+      screen
+        .getByRole("link", { name: /Merge composition-and-dispatch/ })
+        .getAttribute("href"),
+    ).toBe(
+      "http://forge.example.lan:3000/the-undev/prism/commit/76cb6256a466e8a0c2e4a6c8e0a2c4e6a8c0e2a4",
+    );
   });
 
   it("tones a flag by its level", () => {

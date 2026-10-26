@@ -94,9 +94,11 @@ const localGit: SourceSpec = {
       runs read-only git: <Code>status --porcelain=v2</Code>,{" "}
       <Code>for-each-ref</Code> over the local branches with their upstream
       tracking, <Code>remote -v</Code>, where <Code>origin/HEAD</Code> points,
-      and <Code>log --branches --not --remotes</Code> for the commits no remote
-      holds. It stats each dirty file for its mtime and checks for{" "}
-      <Code>.obsidian/</Code> and the LiveSync plugin.
+      <Code>log --branches --not --remotes</Code> for the commits no remote
+      holds, and <Code>log</Code> on the default branch for its newest commits,
+      as many as <Code>scan.finalised_commits</Code>. It stats each dirty file
+      for its mtime and checks for <Code>.obsidian/</Code> and the LiveSync
+      plugin.
     </p>
   ),
   moduleNames: [

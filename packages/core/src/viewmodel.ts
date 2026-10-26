@@ -240,22 +240,6 @@ export interface BranchLine {
   url: string | null;
 }
 
-export interface CommitLine {
-  sha: string;
-  shortSha: string;
-  subject: string;
-  committedAt: string;
-  url: string;
-}
-
-/** The newest commits on one forge's default branch, headed by the actual thing: "main on GitHub". */
-export interface ForgeCommits {
-  forge: ForgeName;
-  heading: string;
-  branchUrl: string;
-  commits: CommitLine[];
-}
-
 /** Whether a place holds a commit; lacking only within the place's list, unknown beyond it. */
 export type Reach = "held" | "lacking" | "unknown";
 
@@ -352,7 +336,6 @@ export interface Detail {
   forges: ForgeName[];
   ledger: LedgerEntry[];
   branches: BranchLine[];
-  newestCommits: ForgeCommits[];
   river: River;
   pullRequests: PullRequestLine[];
   flags: FlagLine[];
@@ -792,23 +775,6 @@ function branchesFor(item: Item, config: Config): BranchLine[] {
     );
 }
 
-function newestCommitsFor(item: Item): ForgeCommits[] {
-  return forgeData(item)
-    .filter(({ data }) => data.finalisedCommits.length > 0)
-    .map(({ forge, data }) => ({
-      forge,
-      heading: `${data.defaultBranch} on ${forgeLabel[forge]}`,
-      branchUrl: branchUrl(forge, data.url, data.defaultBranch),
-      commits: data.finalisedCommits.map((commit) => ({
-        sha: commit.sha,
-        shortSha: commit.sha.slice(0, 7),
-        subject: commit.subject,
-        committedAt: commit.committedAt,
-        url: `${data.url}/commit/${commit.sha}`,
-      })),
-    }));
-}
-
 /** A river place with the list its reach is read from: null when unread, with the forge's address. */
 interface PlaceList {
   place: RiverPlace;
@@ -1127,7 +1093,6 @@ export function deriveBird(
       ],
       ledger: ledgerFor(item, chips),
       branches: branchesFor(item, config),
-      newestCommits: newestCommitsFor(item),
       river: riverFor(item, config.scan.finalisedCommits),
       pullRequests: pullRequestsFor(item),
       flags: item.flags.map((flag) => ({

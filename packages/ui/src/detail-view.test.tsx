@@ -176,6 +176,18 @@ describe("the detail view", () => {
     expect(roost.parentElement?.className).toContain("@min-[1240px]:w-155");
   });
 
+  it("keeps the launch actions and links in the heading cell, not the record", () => {
+    const { container } = page(mockBird("dev/perch"));
+    const heading = container.querySelector('[data-part="heading"]');
+    const record = container.querySelector('[data-part="record"]');
+    const open = screen.getByRole("button", { name: /Open the folder/ });
+
+    expect(heading?.contains(open)).toBe(true);
+    expect(record?.contains(open)).toBe(false);
+    expect(heading?.querySelector("a")).not.toBeNull();
+    expect(record?.querySelector("button")).toBeNull();
+  });
+
   it("offers the launch actions as verbs, hands back the one pressed, and links out", () => {
     const perch = mockBird("dev/perch");
     const { onLaunch } = page(perch);

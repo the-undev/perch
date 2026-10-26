@@ -30,9 +30,6 @@ const headTopAboveBeak = 13.5;
 /** The gap between the row's bubble and the bird's drawing, which the sideways tail crosses. */
 export const roostRowGap = 28;
 
-/** How far below the bubble's top the sideways tail's tip falls: the beak is hung from here. */
-export const roostRowAnchorY = 26;
-
 /** Where the roost draws its bird, in pixels from the drawing's top left unless noted. */
 export interface RoostFrame {
   /** The drawing's height. */
@@ -54,13 +51,16 @@ export interface RoostFrame {
   stackBeakX: number;
   /** Row: the sideways tail's reach from the bubble's right edge to the beak. */
   rowReach: number;
-  /** Row: how far the bubble is lowered so its tail anchor lines up with the beak. */
-  rowLift: number;
+  /** Row: the tip's distance below the bubble's top, which is the band's top: the beak's height. */
+  rowTipY: number;
 }
 
 /** The pole's length below the crossbar, and the room left beneath it for its shadow. */
 const poleLength = 42;
 const shadowRoom = 10;
+
+/** In the row the drawing's bottom margin is this negative, so the pole and shadow hang below the band. */
+export const roostRowBleed = poleLength + shadowRoom;
 
 /** The roost's drawing for this bird, tall enough for its plumpness, the beak to the left. */
 export function roostFrame(bird: Bird): RoostFrame {
@@ -83,7 +83,7 @@ export function roostFrame(bird: Bird): RoostFrame {
     drop: Math.ceil(headTopAboveBeak * scale) + roostDaylight,
     stackBeakX: roostWidth / 2 - beakReach,
     rowReach: roostRowGap + beakX,
-    rowLift: beakY - roostRowAnchorY,
+    rowTipY: beakY,
   };
 }
 
@@ -111,7 +111,7 @@ export function Roost({ bird, night }: RoostProps) {
         style={
           {
             "--row-gap": `${roostRowGap}px`,
-            "--row-lift": `${frame.rowLift}px`,
+            "--row-bleed": `${roostRowBleed}px`,
             "--stack-gap": `${frame.drop - frame.beakY}px`,
             "--stack-left": `${frame.stackBeakX - frame.beakX}px`,
           } as CSSProperties
@@ -119,14 +119,14 @@ export function Roost({ bird, night }: RoostProps) {
       >
         <div
           data-part="roost-speech"
-          className="@min-[520px]:mt-(--row-lift) @min-[520px]:min-w-0 @min-[520px]:flex-1"
+          className="@min-[520px]:min-w-0 @min-[520px]:flex-1"
         >
           <RoostBubble
             bubble={bird.bubble}
             night={night}
             tail={{ side: "left", inset: frame.stackBeakX }}
             drop={frame.drop}
-            sideTail={{ reach: frame.rowReach, anchorY: roostRowAnchorY }}
+            sideTail={{ reach: frame.rowReach, tipY: frame.rowTipY }}
           />
         </div>
         <svg
@@ -137,7 +137,7 @@ export function Roost({ bird, night }: RoostProps) {
           viewBox={`0 0 ${frame.width} ${frame.height}`}
           width={frame.width}
           height={frame.height}
-          className="mt-(--stack-gap) ml-(--stack-left) block h-auto max-w-full shrink-0 overflow-visible @min-[520px]:mt-0 @min-[520px]:ml-0"
+          className="mt-(--stack-gap) ml-(--stack-left) block h-auto max-w-full shrink-0 overflow-visible @min-[520px]:-mb-(--row-bleed) @min-[520px]:mt-0 @min-[520px]:ml-0"
         >
           <g data-part="stand" fill="var(--color-post)">
             <rect

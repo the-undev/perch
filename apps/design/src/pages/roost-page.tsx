@@ -88,7 +88,7 @@ export function RoostPage() {
       </Section>
       <Section
         title="Two arrangements"
-        rule="The roost lays itself out by its own width, not the window's. Under 520px it is stacked: the bubble above, the bird below, the tail hanging from the bubble's bottom edge. The tail is long enough that the paper clears the top of the bird's head with 14px of daylight at the bird's drawn scale. From 520px it is a row: the bubble on the left, the bird on its stand to the right, a sideways tail leaving the bubble's right edge. The detail page gives the roost 330px up to a 1240px page and 620px beyond, so it stacks below 1240px and becomes a row above it."
+        rule="The roost lays itself out by its own width, not the window's. Under 520px it is stacked: the bubble above, the bird below, the tail hanging from the bubble's bottom edge. The tail is long enough that the paper clears the top of the bird's head with 14px of daylight at the bird's drawn scale. From 520px it is a row: the bubble on the left, the bird on its stand to the right, a tail leaving the bubble's right edge and slanting down to the beak. The bubble sits at the top of the band, and the stand's pole and shadow hang below the band into the space beneath. The detail page gives the roost 330px up to a 1240px page and 620px beyond, so it stacks below 1240px and becomes a row above it."
         min={660}
       >
         <Specimen
@@ -103,7 +103,7 @@ export function RoostPage() {
         </Specimen>
         <Specimen
           label="row, 620px"
-          rule="From 520px. The bird is hung from the tail's anchor, 26px below the bubble's top, so the tail meets the beak whatever the bubble's height. The drawing is only as wide as the stand and tail feathers need, and the bubble takes the rest."
+          rule="From 520px. The bubble is pinned to the top of the band and the tail's base is 12px below its top, so the tail slants down to the beak, which is the same distance below the band's top whatever the bubble's height. The drawing is only as wide as the stand and tail feathers need, and the bubble takes the rest."
         >
           <Ground>
             <Column width={roostRowWidth}>
@@ -113,7 +113,7 @@ export function RoostPage() {
         </Specimen>
         <Specimen
           label="row, short speech"
-          rule="Perch has a single chip row and a short bubble: the tail still lands on the beak, because the bubble is lowered to the beak's height, not the bird raised to the bubble's."
+          rule="Perch has a single chip row and a short bubble: the tail still lands on the beak, because the tail's tip is fixed to the beak's height below the band's top, not to the bubble's."
         >
           <Ground>
             <Column width={roostRowWidth}>

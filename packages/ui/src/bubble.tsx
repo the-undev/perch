@@ -74,18 +74,37 @@ function Tail({
   );
 }
 
-/** A tail leaving the bubble's right edge: its tip is `reach` pixels out and `anchorY` below the bubble's top. */
+/** A tail leaving the bubble's right edge and slanting down to its tip: `reach` pixels out, `tipY` below the bubble's top. */
 export interface SideTailShape {
   reach: number;
-  anchorY: number;
+  tipY: number;
 }
 
-/** The tip sits at (29, 14) in the 29 by 32 sideways drawing, and the base 3 pixels inside the paper. */
-const sideTailTipY = 14;
+/** The base starts this far below the bubble's top, is this tall, and starts this far inside the paper. */
+export const sideTailBaseTop = 12;
+export const sideTailBaseHeight = 16;
 export const sideTailOverlap = 3;
-export const sideTailHeight = 32;
 
-/** The sideways tail, for a bubble whose speaker stands to its right. */
+/** The drawing's width: the reach plus the part inside the paper. */
+export function sideTailWidth(tail: SideTailShape): number {
+  return tail.reach + sideTailOverlap;
+}
+
+/** The drawing's height: down to the tip, with a pixel to spare. */
+export function sideTailHeight(tail: SideTailShape): number {
+  return Math.ceil(tail.tipY) + 1;
+}
+
+/** The tail's outline: a base on the bubble's edge narrowing to a tip at (width, tipY). */
+export function sideTailPath(tail: SideTailShape): string {
+  const width = sideTailWidth(tail);
+  const top = sideTailBaseTop;
+  const bottom = sideTailBaseTop + sideTailBaseHeight;
+  const rise = tail.tipY - top;
+  return `M 0 ${top} Q ${width * 0.55} ${top + rise * 0.1} ${width} ${tail.tipY} Q ${width * 0.4} ${bottom + (tail.tipY - bottom) * 0.6} 0 ${bottom} Z`;
+}
+
+/** The sideways tail, for a bubble whose speaker stands to its right and below its top. */
 function SideTail({
   tail,
   className,
@@ -93,21 +112,19 @@ function SideTail({
   tail: SideTailShape;
   className: string;
 }) {
+  const width = sideTailWidth(tail);
+  const height = sideTailHeight(tail);
   return (
     <svg
       aria-hidden="true"
       data-part="tail-side"
-      viewBox="0 0 29 32"
-      preserveAspectRatio="none"
-      width={tail.reach + sideTailOverlap}
-      height={sideTailHeight}
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
       className={`pointer-events-none absolute ${className}`}
-      style={{
-        top: tail.anchorY - sideTailTipY,
-        left: `calc(100% - ${sideTailOverlap}px)`,
-      }}
+      style={{ top: 0, left: `calc(100% - ${sideTailOverlap}px)` }}
     >
-      <path d="M 0 2 Q 14 6 29 14 Q 14 20 0 30 Z" fill="var(--color-paper)" />
+      <path d={sideTailPath(tail)} fill="var(--color-paper)" />
     </svg>
   );
 }

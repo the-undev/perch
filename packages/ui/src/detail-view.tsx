@@ -186,15 +186,6 @@ export function DetailView({
           className="min-w-0 @min-[860px]:col-start-1 @min-[860px]:row-start-1"
         >
           <DetailHeading bird={bird} />
-        </div>
-        <div className="mx-auto w-82.5 max-w-full @min-[860px]:col-start-2 @min-[860px]:row-start-1 @min-[860px]:mx-0 @min-[1240px]:w-155">
-          <Roost bird={bird} night={night} />
-        </div>
-        <div
-          data-part="record"
-          className="@container col-span-full min-w-0 @min-[860px]:row-start-2"
-        >
-          {!papersShown && <MainProblems problems={problems} />}
           <div className="mt-3.5 flex flex-wrap items-center gap-1">
             <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
             <LinksOut links={detail.links} />
@@ -207,6 +198,15 @@ export function DetailView({
               setOpen={setOpen}
             />
           </div>
+        </div>
+        <div className="mx-auto w-82.5 max-w-full @min-[860px]:col-start-2 @min-[860px]:row-start-1 @min-[860px]:mx-0 @min-[1240px]:w-155">
+          <Roost bird={bird} night={night} />
+        </div>
+        <div
+          data-part="record"
+          className="@container col-span-full min-w-0 @min-[860px]:row-start-2"
+        >
+          {!papersShown && <MainProblems problems={problems} />}
           <div className="mt-4 grid items-start gap-10 @min-[960px]:grid-cols-[minmax(330px,430px)_minmax(0,1fr)]">
             <div className="min-w-0">
               <Ledger entries={detail.ledger} now={now} />

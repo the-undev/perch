@@ -10,11 +10,7 @@ import {
 import { mockAviary, mockConfig, mockHome, mockSnapshot } from "../src/mock.ts";
 import type { GitData } from "../src/snapshot.ts";
 import { speak } from "../src/speech.ts";
-import {
-  deriveAviary,
-  type River,
-  speechSubjectFor,
-} from "../src/viewmodel.ts";
+import { deriveAviary, speechSubjectFor } from "../src/viewmodel.ts";
 
 const scannedAt = new Date(mockSnapshot.scannedAt);
 const birds = [
@@ -179,46 +175,36 @@ describe("the mock dataset", () => {
     ).toBe(true);
   });
 
-  it("draws rivers in step, diverged, with only here, and with one forge", () => {
+  it("tones river commits for every spread, with a divergence and a forge not read", () => {
     const rivers = birds.map(({ detail }) => detail.river);
-    const placesOf = (river: River) =>
-      river.places.map((place) => place.name).join(" ");
-    const hollowForges = (river: River) =>
-      river.commits.some((commit) =>
-        commit.reach.some(
-          ({ place, reach }) => reach === "lacking" && place !== "here",
-        ),
-      );
+    const spreads = new Set(
+      rivers.flatMap((river) =>
+        river.commits.map((commit) => `${commit.tone} ${commit.spread}`),
+      ),
+    );
 
-    expect(
-      rivers.some(
-        (river) =>
-          placesOf(river) === "here github forgejo" &&
-          river.divergence === null &&
-          river.commits.length > 0,
-      ),
-    ).toBe(true);
-    expect(
-      rivers.some((river) => river.divergence !== null && hollowForges(river)),
-    ).toBe(true);
-    expect(
-      rivers.some(
-        (river) => placesOf(river) === "here" && river.commits.length > 0,
-      ),
-    ).toBe(true);
-    expect(
-      rivers.some(
-        (river) =>
-          placesOf(river) === "here forgejo" && river.commits.length > 0,
-      ),
-    ).toBe(true);
-    expect(
-      rivers.some((river) =>
-        river.commits.some((commit) =>
-          commit.reach.some(({ reach }) => reach === "unknown"),
-        ),
-      ),
-    ).toBe(true);
+    expect([...spreads]).toEqual(
+      expect.arrayContaining([
+        "green on github and forgejo",
+        "green on forgejo",
+        "amber only on github",
+        "amber not pushed to a remote",
+        "null no remote read",
+        "null no remote",
+      ]),
+    );
+    expect(rivers.some((river) => river.divergence !== null)).toBe(true);
+    expect(rivers.some((river) => river.notes.length > 0)).toBe(true);
+  });
+
+  it("counts Perch's commits beyond Forgejo's list as held there", () => {
+    const perch = birds.find((bird) => bird.id === "dev/perch");
+
+    expect(perch?.detail.river.commits.map((commit) => commit.tone)).toEqual([
+      "green",
+      "green",
+      "green",
+    ]);
   });
 
   it("has a source card per configured table, covering every scan state", () => {

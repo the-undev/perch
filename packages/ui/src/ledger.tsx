@@ -8,12 +8,11 @@ import type {
   ChipKind,
   FlagLine,
   LedgerEntry,
-  PlaceReach,
   PullRequestLine,
-  Reach,
   River,
-  RiverPlace,
+  RiverCommit,
   SourceProblem,
+  SpreadTone,
   Tone,
   Working,
 } from "@perch/core/viewmodel.ts";
@@ -266,79 +265,57 @@ export function BranchLines({
   );
 }
 
-const reachWords: Record<Reach, string> = {
-  held: "has it",
-  lacking: "lacks it",
-  unknown: "not known",
+/** Green or amber by the commit's spread, and the quietest faint dot when no forge was read. */
+const spreadDotClass: Record<NonNullable<SpreadTone> | "none", string> = {
+  green: "size-1.75 bg-green",
+  amber: "size-1.75 bg-amber",
+  none: "size-0.75 bg-edge-hi",
 };
 
-/** Filled where held, hollow where lacking, and a faint dot, the quietest, where unknown. */
-const reachMarkClass: Record<Reach, string> = {
-  held: "size-2.25 bg-ink-accent",
-  lacking: "size-2.25 border-[1.5px] border-edge-hi",
-  unknown: "size-0.75 bg-edge-hi",
-};
-
-/** One place's mark for one commit, named for a screen reader and on hover. */
-function ReachMark({ mark }: { mark: PlaceReach }) {
-  const words = `${mark.place} ${reachWords[mark.reach]}`;
+/** A commit's one dot, its spread spoken for a screen reader and on hover. */
+function SpreadDot({ commit }: { commit: RiverCommit }) {
+  const tone = commit.tone ?? "none";
   return (
     <span
       role="img"
-      aria-label={words}
-      title={words}
-      data-reach={mark.reach}
-      className="inline-flex size-2.25 items-center justify-center"
+      aria-label={commit.spread}
+      title={commit.spread}
+      data-spread-tone={tone}
+      className="inline-flex size-1.75 items-center justify-center self-center"
     >
-      <span className={`rounded-full ${reachMarkClass[mark.reach]}`} />
+      <span className={`rounded-full ${spreadDotClass[tone]}`} />
     </span>
   );
 }
 
-/** The places in their marks' order, a forge linked to its branch, a note in amber where unread. */
-function RiverLegend({ places }: { places: RiverPlace[] }) {
+/** A line in amber above the commits: a forge not read, or the divergence. */
+function RiverLine({ part, text }: { part: string; text: string }) {
   return (
-    <p
-      data-part="river-legend"
-      className="m-0 mb-1.5 flex flex-wrap gap-x-3.5 font-mono text-[11px] text-ink-faint"
-    >
-      {places.map((place) => (
-        <span key={place.name}>
-          {place.url === null ? (
-            place.name
-          ) : (
-            <OutLink href={place.url}>{place.name}</OutLink>
-          )}
-          {place.note !== null && (
-            <span className="text-amber"> {place.note}</span>
-          )}
-        </span>
-      ))}
+    <p data-part={part} className="m-0 mt-1.5 text-[12.5px] text-amber">
+      {text}
     </p>
   );
 }
 
-/** The newest commits on the default branch, each once, with a mark per place for where it has reached. */
+/** The newest commits on the default branch, each once, a dot before each saying how far it has spread. */
 export function CommitRiver({ river, now }: { river: River; now: Date }) {
   return (
     <section data-part="river">
       <LedgerHeading>Where each commit has reached</LedgerHeading>
-      <RiverLegend places={river.places} />
+      {river.notes.map((note) => (
+        <RiverLine key={note} part="river-note" text={note} />
+      ))}
       {river.divergence !== null && (
-        <p
-          data-part="divergence"
-          className="m-0 mt-1.5 mb-0.5 text-[12.5px] text-amber"
-        >
-          {river.divergence}
-        </p>
+        <RiverLine part="divergence" text={river.divergence} />
       )}
-      <ul className="m-0 grid list-none grid-cols-[minmax(0,1fr)_auto_auto] gap-x-2.5 p-0">
+      <ul className="m-0 mt-1 grid list-none grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2.5 p-0">
         {river.commits.map((commit) => (
           <li
             key={commit.sha}
             data-part="river-commit"
             className="col-span-full grid grid-cols-subgrid items-baseline py-0.75 font-mono text-[12.5px]"
           >
+            <SpreadDot commit={commit} />
             <span className="truncate text-ink-muted" title={commit.subject}>
               {commit.url === null ? (
                 commit.subject
@@ -348,11 +325,6 @@ export function CommitRiver({ river, now }: { river: River; now: Date }) {
             </span>
             <span className="whitespace-nowrap text-right text-[11.5px] text-ink-faint">
               {agoWords(commit.committedAt, now)}
-            </span>
-            <span className="flex justify-end gap-1.75 self-center">
-              {commit.reach.map((mark) => (
-                <ReachMark key={mark.place} mark={mark} />
-              ))}
             </span>
           </li>
         ))}

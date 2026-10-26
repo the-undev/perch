@@ -1278,7 +1278,7 @@ const glyphDocs = localItem("undev/glyph-docs", {
 
 // The fence
 
-/** Found under an include directory, joined to two forges, not yet decided. */
+/** Found under an include directory, joined to two forges, not yet decided; neither forge's detail read. */
 const homeItConfig = localItem("dev/hearth-config", {
   forges: [
     presence("github", "finch/hearth-config"),
@@ -1328,12 +1328,13 @@ const homeItConfig = localItem("dev/hearth-config", {
       stall: null,
     },
     roadmap: roadmap([]),
-    github: forge("github", "finch/hearth-config", {
-      finalisedCommits: [],
-    }),
-    forgejo: forge("forgejo", "finch/hearth-config", {
-      finalisedCommits: [],
-    }),
+    github: {
+      error:
+        "HTTP 404 from https://api.github.com/repos/finch/hearth-config/pulls?state=open&per_page=100",
+    },
+    forgejo: {
+      error: `HTTP 404 from ${forgejoBase}/api/v1/repos/finch/hearth-config/pulls?state=open`,
+    },
   },
 });
 

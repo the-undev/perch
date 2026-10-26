@@ -82,37 +82,42 @@ const riverSpecimens: { id: string; label: string; rule: string }[] = [
   {
     id: "undev/oxbow",
     label: "In step",
-    rule: "Oxbow: here and both forges hold every commit, so every mark is filled and no sentence is drawn.",
+    rule: "Oxbow: both forges hold every commit, so every dot is green and no sentence is drawn.",
   },
   {
     id: ".dotfiles",
     label: "Unpushed on main",
-    rule: "Dotfiles: three commits on main that neither forge has. Their forge marks are hollow; the forges agree, so no sentence.",
+    rule: "Dotfiles: three commits on main that no forge holds are amber, not pushed to a remote. The forges agree, so no sentence.",
   },
   {
     id: "undev/harbour",
     label: "Diverged",
-    rule: "Harbour: Forgejo missed the last push. Its mark is hollow and one amber sentence says it is behind GitHub.",
+    rule: "Harbour: Forgejo missed the last push. That commit is amber, only on github, and one amber sentence says Forgejo is behind.",
   },
   {
     id: "dev/perch",
     label: "Beyond a list",
-    rule: "Perch: Forgejo's list holds one commit, so the two older ones are beyond it. Their Forgejo reach is unknown, drawn as the faint dot, never hollow.",
+    rule: "Perch: Forgejo's list holds one commit, so the two older ones are beyond it. A forge counts as holding a commit older than its list, so they stay green.",
   },
   {
     id: "undev/spool",
     label: "One forge",
-    rule: "Spool: here and Forgejo, in step.",
-  },
-  {
-    id: "dev/odin/hello",
-    label: "Only here",
-    rule: "hello: no remote, so the clone is the one place.",
+    rule: "Spool: Forgejo holds every commit, green.",
   },
   {
     id: "undev/prism",
-    label: "A place not read",
-    rule: "Prism: GitHub answered 404. Its name says not read in amber and every GitHub mark is unknown.",
+    label: "A forge not read",
+    rule: "Prism: GitHub answered 404. An amber line says so and the dot is judged over Forgejo alone.",
+  },
+  {
+    id: "dev/hearth-config",
+    label: "No forge read",
+    rule: "hearth-config: neither forge's detail was read, so spread cannot be judged: the quiet dot.",
+  },
+  {
+    id: "dev/odin/hello",
+    label: "No remote",
+    rule: "hello: no remote, so the quiet dot.",
   },
 ];
 
@@ -121,7 +126,7 @@ export function RiverPage() {
     <>
       <Section
         title="The commit river"
-        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits. Each commit has a mark per place, here first and then the bird's forges: filled where the place holds it, hollow where it lacks it, a faint dot where its reach is unknown. A place's list is its newest commits, so a commit is lacking only when it is no older than the list's oldest; an older one is unknown. One amber sentence appears only when a forge lacks a commit another forge holds."
+        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits. One dot before each says how far it has spread over the forges read: green when every one holds it, amber when one lacks it or none does, the quiet dot when no forge was read. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The clone only adds commits. A forge not read gets an amber line, and one amber sentence appears only when a forge lacks a commit another forge holds."
         min={420}
       >
         {riverSpecimens.map((specimen) => (
@@ -145,7 +150,7 @@ export function RiverPage() {
           {
             name: "river",
             type: "River",
-            what: "bird.detail.river: the places, the commits with their reach per place, and the divergence sentence or null.",
+            what: "bird.detail.river: the commits with their tone and spoken spread, a note per forge not read, and the divergence sentence or null.",
           },
           {
             name: "now",

@@ -1099,12 +1099,9 @@ describe("the commit river", () => {
   }
 
   const rows = (river: River) =>
-    river.commits.map((commit) => [
-      commit.sha,
-      ...commit.reach.map(({ reach }) => reach),
-    ]);
+    river.commits.map((commit) => [commit.sha, commit.tone, commit.spread]);
 
-  it("tells each commit once, newest first, joined by hash, with no sentence when the forges agree", async () => {
+  it("tells each commit once, newest first, joined by hash, green and silent when every forge holds it", async () => {
     const commits = [at("c3", 3), at("c2", 5), at("c1", 9)];
     const river = await riverOf({
       here: commits,
@@ -1112,25 +1109,21 @@ describe("the commit river", () => {
       forgejo: [at("c2", 5), at("c3", 3), at("c1", 9)],
     });
 
-    expect(river.places.map((place) => [place.name, place.note])).toEqual([
-      ["here", null],
-      ["github", null],
-      ["forgejo", null],
-    ]);
     expect(rows(river)).toEqual([
-      ["c3", "held", "held", "held"],
-      ["c2", "held", "held", "held"],
-      ["c1", "held", "held", "held"],
+      ["c3", "green", "on github and forgejo"],
+      ["c2", "green", "on github and forgejo"],
+      ["c1", "green", "on github and forgejo"],
     ]);
     expect(river.commits[0]).toMatchObject({
       shortSha: "c3",
       subject: "Commit c3",
       url: "https://github.com/finch/river/commit/c3",
     });
+    expect(river.notes).toEqual([]);
     expect(river.divergence).toBeNull();
   });
 
-  it("joins unpushed commits on main with hollow forge marks and no sentence", async () => {
+  it("joins unpushed commits on main in amber, not pushed to a remote, with no sentence", async () => {
     const pushed = [at("c2", 5), at("c1", 9)];
     const river = await riverOf({
       here: [at("u1", 1), ...pushed],
@@ -1138,28 +1131,42 @@ describe("the commit river", () => {
       forgejo: pushed,
     });
 
-    expect(rows(river)[0]).toEqual(["u1", "held", "lacking", "lacking"]);
+    expect(rows(river)[0]).toEqual(["u1", "amber", "not pushed to a remote"]);
     expect(river.commits[0]?.url).toBeNull();
     expect(river.divergence).toBeNull();
   });
 
-  it("marks commits a forge lacks within its list hollow, and says it is behind", async () => {
+  it("tones a commit one forge lacks within its list amber, and says that forge is behind", async () => {
     const river = await riverOf({
       here: [at("c4", 1), at("c3", 2), at("c2", 5)],
       github: [at("c4", 1), at("c3", 2), at("c2", 5)],
       forgejo: [at("c2", 5), at("c1", 9)],
     });
 
-    expect(rows(river)).toEqual([
-      ["c4", "held", "held", "lacking"],
-      ["c3", "held", "held", "lacking"],
-      ["c2", "held", "held", "held"],
-      ["c1", "unknown", "unknown", "held"],
+    expect(rows(river).slice(0, 3)).toEqual([
+      ["c4", "amber", "only on github"],
+      ["c3", "amber", "only on github"],
+      ["c2", "green", "on github and forgejo"],
     ]);
     expect(river.commits[0]?.url).toBe(
       "https://github.com/finch/river/commit/c4",
     );
     expect(river.divergence).toBe("forgejo is 2 commits behind github.");
+  });
+
+  it("counts a commit older than a forge's list as held there, and leaves the clone out of the judgement", async () => {
+    const river = await riverOf({
+      here: [at("c4", 1), at("c3", 2)],
+      github: [at("c4", 1), at("c3", 2)],
+      forgejo: [at("c2", 5), at("c1", 9)],
+    });
+
+    expect(rows(river)).toEqual([
+      ["c4", "amber", "only on github"],
+      ["c3", "amber", "only on github"],
+      ["c2", "green", "on github and forgejo"],
+      ["c1", "green", "on github and forgejo"],
+    ]);
   });
 
   it("says the forges have diverged when each lacks a commit the other holds", async () => {
@@ -1170,9 +1177,9 @@ describe("the commit river", () => {
     });
 
     expect(rows(river)).toEqual([
-      ["g1", "lacking", "held", "lacking"],
-      ["f1", "lacking", "lacking", "held"],
-      ["c1", "held", "held", "held"],
+      ["g1", "amber", "only on github"],
+      ["f1", "amber", "only on forgejo"],
+      ["c1", "green", "on github and forgejo"],
     ]);
     expect(river.commits[1]?.url).toBe(`${forgejoUrl}/commit/f1`);
     expect(river.divergence).toBe(
@@ -1192,57 +1199,14 @@ describe("the commit river", () => {
     expect(river.divergence).toBe("forgejo is 3 commits behind github.");
   });
 
-  it("links each forge and commit, and tells here unknown until a scan reads main", async () => {
-    const cached = item("dev/river", {
-      presences: {
-        local: { ref: "local:dev/river", path: "/home/test/dev/river" },
-        forges: [presenceOn("github")],
-      },
-      sources: {
-        git: gitData({}),
-        github: forgeData({
-          url: "https://github.com/finch/river",
-          finalisedCommits: [at("af0893d1234567", 72)],
-        }),
-      },
-    });
-    const config = await adoptAll(["dev/river"]);
-
-    expect(birdIn([cached], config, "dev/river").detail.river).toEqual({
-      places: [
-        { name: "here", url: null, note: "not read yet" },
-        {
-          name: "github",
-          url: "https://github.com/finch/river/tree/main",
-          note: null,
-        },
-      ],
-      commits: [
-        {
-          sha: "af0893d1234567",
-          shortSha: "af0893d",
-          subject: "Commit af0893d1234567",
-          committedAt: hoursBefore(72),
-          url: "https://github.com/finch/river/commit/af0893d1234567",
-          reach: [
-            { place: "here", reach: "unknown" },
-            { place: "github", reach: "held" },
-          ],
-        },
-      ],
-      divergence: null,
-    });
-  });
-
-  it("tells reach as unknown, with a note, where a list was not read", async () => {
-    const noMain = await riverOf({ here: null, github: [at("c1", 1)] });
-    const unread = item("dev/river", {
+  it("judges over the forges read, noting one not read, whatever the clone's list", async () => {
+    const partly = item("dev/river", {
       presences: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
         forges: [presenceOn("github"), presenceOn("forgejo")],
       },
       sources: {
-        git: { error: "not a repository" },
+        git: gitData({}),
         github: forgeData({
           url: "https://github.com/finch/river",
           finalisedCommits: [at("c1", 1)],
@@ -1251,21 +1215,58 @@ describe("the commit river", () => {
       },
     });
     const config = await adoptAll(["dev/river"]);
-    const notRead = birdIn([unread], config, "dev/river").detail.river;
+    const river = birdIn([partly], config, "dev/river").detail.river;
 
-    expect(noMain.places[0]?.note).toBe("no default branch");
-    expect(rows(noMain)).toEqual([["c1", "unknown", "held"]]);
-    expect(notRead.places.map((place) => [place.name, place.note])).toEqual([
-      ["here", "not read"],
-      ["github", null],
-      ["forgejo", "not read"],
-    ]);
-    expect(rows(notRead)).toEqual([["c1", "unknown", "held", "unknown"]]);
-    expect(notRead.divergence).toBeNull();
+    expect(rows(river)).toEqual([["c1", "green", "on github"]]);
+    expect(river.notes).toEqual(["forgejo not read"]);
+    expect(river.divergence).toBeNull();
   });
 
-  it("has only here for a clone with no forge, and no here without a clone", async () => {
+  it("tones unpushed commits amber, on no remote read, while a forge is not read", async () => {
+    const partly = item("dev/river", {
+      presences: {
+        local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+        forges: [presenceOn("github"), presenceOn("forgejo")],
+      },
+      sources: {
+        git: gitData({ defaultBranchCommits: [at("u1", 1), at("c1", 5)] }),
+        github: forgeData({
+          url: "https://github.com/finch/river",
+          finalisedCommits: [at("c1", 5)],
+        }),
+        forgejo: { error: "HTTP 500" },
+      },
+    });
+    const config = await adoptAll(["dev/river"]);
+
+    expect(rows(birdIn([partly], config, "dev/river").detail.river)).toEqual([
+      ["u1", "amber", "on no remote read"],
+      ["c1", "green", "on github"],
+    ]);
+  });
+
+  it("gives no tone when no forge was read, or the clone has no forge", async () => {
+    const unread = item("dev/river", {
+      presences: {
+        local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+        forges: [presenceOn("github")],
+      },
+      sources: {
+        git: gitData({ defaultBranchCommits: [at("c1", 1)] }),
+        github: { error: "HTTP 404" },
+      },
+    });
+    const config = await adoptAll(["dev/river"]);
+    const notRead = birdIn([unread], config, "dev/river").detail.river;
     const localOnly = await riverOf({ here: [at("c1", 1)] });
+
+    expect(rows(notRead)).toEqual([["c1", null, "no remote read"]]);
+    expect(notRead.notes).toEqual(["github not read"]);
+    expect(rows(localOnly)).toEqual([["c1", null, "no remote"]]);
+    expect(localOnly.notes).toEqual([]);
+  });
+
+  it("tells a forge-only bird's commits from its forge", async () => {
     const forgeOnly = item("github:finch/river", {
       path: null,
       presences: { local: null, forges: [presenceOn("github")] },
@@ -1278,16 +1279,8 @@ describe("the commit river", () => {
     });
     const config = await adoptAll(["github:finch/river"]);
 
-    expect(localOnly.places.map((place) => place.name)).toEqual(["here"]);
-    expect(rows(localOnly)).toEqual([["c1", "held"]]);
     expect(
-      birdIn([forgeOnly], config, "github:finch/river").detail.river.places,
-    ).toEqual([
-      {
-        name: "github",
-        url: "https://github.com/finch/river/tree/main",
-        note: null,
-      },
-    ]);
+      rows(birdIn([forgeOnly], config, "github:finch/river").detail.river),
+    ).toEqual([["c1", "green", "on github"]]);
   });
 });

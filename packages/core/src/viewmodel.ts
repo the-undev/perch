@@ -240,27 +240,10 @@ export interface BranchLine {
   url: string | null;
 }
 
-/** Whether a place holds a commit; lacking only within the place's list, unknown beyond it. */
-export type Reach = "held" | "lacking" | "unknown";
+/** A commit's spread: green on every forge read, amber short of one, null when no forge was read. */
+export type SpreadTone = Exclude<HealthLevel, "red"> | null;
 
-export type RiverPlaceName = "here" | ForgeName;
-
-/** A place the river tells reach for: the clone here, then each forge holding the bird. */
-export interface RiverPlace {
-  name: RiverPlaceName;
-  /** The default branch on the forge; null for here. */
-  url: string | null;
-  /** Why no reach can be told there, such as "not read"; null when its list was read. */
-  note: string | null;
-}
-
-/** A commit's reach in one place. */
-export interface PlaceReach {
-  place: RiverPlaceName;
-  reach: Reach;
-}
-
-/** One commit, told once however many places hold it. */
+/** One commit on the default branch, told once however many places hold it. */
 export interface RiverCommit {
   sha: string;
   shortSha: string;
@@ -268,15 +251,17 @@ export interface RiverCommit {
   committedAt: string;
   /** The commit on the first forge holding it; null when no forge does. */
   url: string | null;
-  /** The commit's reach in each place, in the places' order. */
-  reach: PlaceReach[];
+  tone: SpreadTone;
+  /** The spread in words, such as "on github and forgejo" or "not pushed to a remote". */
+  spread: string;
 }
 
-/** The newest commits on the default branch, each once, with where each has reached. */
+/** The newest commits on the default branch, each once, with how far each has spread. */
 export interface River {
-  places: RiverPlace[];
   /** Newest first, at most the configured number of finalised commits. */
   commits: RiverCommit[];
+  /** A line per forge whose list was not read, such as "github not read". */
+  notes: string[];
   /** One sentence when the forges hold different commits; null when they agree. */
   divergence: string | null;
 }
@@ -775,43 +760,32 @@ function branchesFor(item: Item, config: Config): BranchLine[] {
     );
 }
 
-/** A river place with the list its reach is read from: null when unread, with the forge's address. */
+/** Whether a place holds a commit; lacking only within the place's list, unknown beyond it. */
+type Reach = "held" | "lacking" | "unknown";
+
+/** A place's list of commits on the default branch: null when unread, with a forge's address. */
 interface PlaceList {
-  place: RiverPlace;
+  name: "here" | ForgeName;
   commits: FinalisedCommit[] | null;
   repoUrl: string | null;
 }
 
-function unreadPlace(name: RiverPlaceName, note: string): PlaceList {
-  return { place: { name, url: null, note }, commits: null, repoUrl: null };
-}
-
-/** Here's list: local main's, unknown when git was not read, before a scan read it, or without main. */
+/** Local main's list: null when git was not read, before a scan read it, or without main. */
 function herePlace(item: Item): PlaceList {
   const git = readable<GitData>(item.sources.git);
-  if (git === null) return unreadPlace("here", "not read");
-  if (git.defaultBranchCommits === undefined)
-    return unreadPlace("here", "not read yet");
-  if (git.defaultBranchCommits === null)
-    return unreadPlace("here", "no default branch");
   return {
-    place: { name: "here", url: null, note: null },
-    commits: git.defaultBranchCommits,
+    name: "here",
+    commits: git?.defaultBranchCommits ?? null,
     repoUrl: null,
   };
 }
 
 function forgePlace(item: Item, forge: ForgeName): PlaceList {
   const data = readable<ForgeData>(item.sources[forge]);
-  if (data === null) return unreadPlace(forge, "not read");
   return {
-    place: {
-      name: forge,
-      url: branchUrl(forge, data.url, data.defaultBranch),
-      note: null,
-    },
-    commits: data.finalisedCommits,
-    repoUrl: data.url,
+    name: forge,
+    commits: data?.finalisedCommits ?? null,
+    repoUrl: data?.url ?? null,
   };
 }
 
@@ -863,10 +837,10 @@ function divergenceOf(
   const [only] = shortfalls;
   if (only === undefined) return null;
   if (shortfalls.length > 1) {
-    const names = shortfalls.map(({ list }) => list.place.name);
+    const names = shortfalls.map(({ list }) => list.name);
     const lacks = shortfalls.map(
       ({ list, lacking }) =>
-        `${list.place.name} lacks ${plural(lacking.length, "commit", "commits")}`,
+        `${list.name} lacks ${plural(lacking.length, "commit", "commits")}`,
     );
     return `${names.join(" and ")} have diverged: ${lacks.join(", ")}.`;
   }
@@ -875,21 +849,45 @@ function divergenceOf(
       other !== only.list &&
       only.lacking.some((commit) => reachIn(other.commits, commit) === "held"),
   );
-  return `${only.list.place.name} is ${plural(only.lacking.length, "commit", "commits")} behind ${holders.map(({ place }) => place.name).join(" and ")}.`;
+  return `${only.list.name} is ${plural(only.lacking.length, "commit", "commits")} behind ${holders.map(({ name }) => name).join(" and ")}.`;
+}
+
+/**
+ * A commit's spread over the forges read. A forge holds it unless the commit is lacking there, so
+ * one older than a forge's list counts as held. The clone only contributes commits.
+ */
+function spreadOf(
+  forgeCount: number,
+  forgeLists: PlaceList[],
+  commit: FinalisedCommit,
+): { tone: SpreadTone; spread: string } {
+  if (forgeCount === 0) return { tone: null, spread: "no remote" };
+  if (forgeLists.length === 0) return { tone: null, spread: "no remote read" };
+  const holders = forgeLists
+    .filter((list) => reachIn(list.commits, commit) !== "lacking")
+    .map((list) => list.name);
+  if (holders.length === forgeLists.length)
+    return { tone: "green", spread: `on ${holders.join(" and ")}` };
+  if (holders.length > 0)
+    return { tone: "amber", spread: `only on ${holders.join(" and ")}` };
+  if (forgeLists.length < forgeCount)
+    return { tone: "amber", spread: "on no remote read" };
+  return { tone: "amber", spread: "not pushed to a remote" };
 }
 
 /**
  * The commit river: local main's and each forge's newest commits joined by hash, told once each,
- * newest first and capped, with each commit's reach in every place and a sentence on divergence.
+ * newest first and capped, with each commit's spread over the forges and a sentence on divergence.
  */
 function riverFor(item: Item, cap: number): River {
+  const forgePlaces = forgeNames
+    .filter((forge) =>
+      item.presences.forges.some((presence) => presence.forge === forge),
+    )
+    .map((forge) => forgePlace(item, forge));
   const lists = [
     ...(item.path === null ? [] : [herePlace(item)]),
-    ...forgeNames
-      .filter((forge) =>
-        item.presences.forges.some((presence) => presence.forge === forge),
-      )
-      .map((forge) => forgePlace(item, forge)),
+    ...forgePlaces,
   ];
   const joined = new Map<string, FinalisedCommit>();
   for (const { commits } of lists) {
@@ -900,11 +898,8 @@ function riverFor(item: Item, cap: number): River {
   const commits = [...joined.values()].sort(
     (a, b) => Date.parse(b.committedAt) - Date.parse(a.committedAt),
   );
-  const forgeLists = lists.filter(
-    (list) => list.repoUrl !== null && list.commits !== null,
-  );
+  const forgeLists = forgePlaces.filter((list) => list.commits !== null);
   return {
-    places: lists.map(({ place }) => place),
     commits: commits.slice(0, cap).map((commit) => {
       const holderUrl =
         forgeLists.find((list) => reachIn(list.commits, commit) === "held")
@@ -915,12 +910,12 @@ function riverFor(item: Item, cap: number): River {
         subject: commit.subject,
         committedAt: commit.committedAt,
         url: holderUrl === null ? null : `${holderUrl}/commit/${commit.sha}`,
-        reach: lists.map((list) => ({
-          place: list.place.name,
-          reach: reachIn(list.commits, commit),
-        })),
+        ...spreadOf(forgePlaces.length, forgeLists, commit),
       };
     }),
+    notes: forgePlaces
+      .filter((list) => list.commits === null)
+      .map((list) => `${list.name} not read`),
     divergence: divergenceOf(forgeLists, commits),
   };
 }

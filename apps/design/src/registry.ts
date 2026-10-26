@@ -170,7 +170,7 @@ export const pages: DesignPage[] = [
     group: "components",
     title: "Commit river",
     summary:
-      "Each commit once, with a mark per place for where it has reached, and a sentence when the forges differ.",
+      "Each commit once, with one dot for how far it has spread, and a sentence when the forges differ.",
     component: RiverPage,
   },
   {

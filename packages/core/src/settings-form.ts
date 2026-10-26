@@ -27,9 +27,16 @@ export interface SessionRoot {
   session: string;
 }
 
+/** A wire on the settings page: the config wire it started as, null for one added, and its name now. */
+export interface WireRow {
+  from: string | null;
+  name: string;
+}
+
 /** Everything in config but the item entries, which each bird's page edits. */
 export interface SettingsValues {
-  wires: { names: string[]; default: string };
+  /** The wires top to bottom, and the default by its row's place among them. */
+  wires: { rows: WireRow[]; defaultRow: number };
   /** Config's source tables, each kind in order, paths written with ~. */
   sources: SourcesConfig;
   thresholds: Record<ThresholdKey, number>;
@@ -52,7 +59,7 @@ export interface SettingsValues {
 /** What the settings page needs: the values, and which item entries name each wire. */
 export interface SettingsForm {
   values: SettingsValues;
-  /** The keys of the entries naming each wire, which removing it moves to the default. */
+  /** The keys of the entries naming each config wire, which removing it moves to the default. */
   named: { wires: Record<string, string[]> };
 }
 
@@ -108,7 +115,10 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
   }
   return {
     values: {
-      wires: { names: [...config.wires.names], default: config.wires.default },
+      wires: {
+        rows: config.wires.names.map((name) => ({ from: name, name })),
+        defaultRow: config.wires.names.indexOf(config.wires.default),
+      },
       sources: mapSourcePaths(config.sources, path),
       thresholds: flatThresholds(config.thresholds) as Record<
         ThresholdKey,
@@ -161,22 +171,40 @@ const isAbsolute = (path: string) =>
 
 const isBlank = (text: string) => text.trim() === "";
 
-/** Why a list of names cannot be written: none at all, a blank, a repeat, or a default outside it. */
-function namesProblems(
-  label: string,
-  noun: string,
-  names: string[],
-  defaultName: string,
-): string[] {
+/** The default wire's name now, or undefined when the default row is not one of the rows. */
+export function defaultName(
+  wires: SettingsValues["wires"],
+): string | undefined {
+  return wires.rows[wires.defaultRow]?.name;
+}
+
+/** The names that appear more than once, each once, in order. */
+function repeats(names: readonly string[]): string[] {
+  return [...new Set(names.filter((name, at) => names.indexOf(name) !== at))];
+}
+
+/**
+ * Why the wires cannot be written: none at all, a blank, a name repeated, two rows starting as one
+ * wire, or a default outside them.
+ */
+function wiresProblems(wires: SettingsValues["wires"]): string[] {
+  const names = wires.rows.map((row) => row.name);
   const problems: string[] = [];
-  if (names.length === 0) problems.push(`${label}: name at least one ${noun}`);
-  if (names.some(isBlank))
-    problems.push(`${label}: every ${noun} needs a name`);
-  if (new Set(names).size !== names.length) {
-    problems.push(`${label}: each ${noun} once`);
+  if (names.length === 0) problems.push("Wires: name at least one wire");
+  if (names.some(isBlank)) problems.push("Wires: every wire needs a name");
+  for (const name of repeats(names.filter((name) => !isBlank(name)))) {
+    problems.push(
+      `Wires: two wires are named ${name}; each name may appear once`,
+    );
   }
-  if (!names.includes(defaultName)) {
-    problems.push(`${label}: the default ${noun} must be one of the ${noun}s`);
+  const froms = wires.rows.flatMap((row) =>
+    row.from === null ? [] : [row.from],
+  );
+  for (const from of repeats(froms)) {
+    problems.push(`Wires: two wires both start as ${from}`);
+  }
+  if (defaultName(wires) === undefined) {
+    problems.push("Wires: the default wire must be one of the wires");
   }
   return problems;
 }
@@ -204,7 +232,7 @@ function commandProblem(name: LaunchCommandName, line: string): string | null {
 export function settingsProblems(values: SettingsValues): string[] {
   const problems: string[] = [];
   problems.push(
-    ...namesProblems("Wires", "wire", values.wires.names, values.wires.default),
+    ...wiresProblems(values.wires),
     ...thresholdProblems(values.thresholds, values.thresholds),
   );
   if (!isWhole(values.scan.intervalMinutes)) {
@@ -253,16 +281,17 @@ function entryNames(keys: string[]): string {
   return `${keys.slice(0, -1).join(", ")} and ${keys.at(-1)}`;
 }
 
-/** What saving removes from entries naming a wire the values no longer hold, in words. */
+/** What saving does to entries naming a config wire no row starts as, in words. */
 export function wireWarnings(
   named: Record<string, string[]>,
   wires: SettingsValues["wires"],
 ): string[] {
+  const kept = new Set(wires.rows.map((row) => row.from));
   return Object.entries(named)
-    .filter(([wire]) => !wires.names.includes(wire))
+    .filter(([wire]) => !kept.has(wire))
     .map(
       ([wire, keys]) =>
-        `${entryNames(keys)} ${keys.length === 1 ? "sits" : "sit"} on ${wire}, which is removed: saving moves ${keys.length === 1 ? "it" : "them"} to the default wire, ${wires.default}.`,
+        `${entryNames(keys)} ${keys.length === 1 ? "sits" : "sit"} on ${wire}, which is removed: saving moves ${keys.length === 1 ? "it" : "them"} to the default wire, ${defaultName(wires)}.`,
     );
 }
 
@@ -275,7 +304,8 @@ function listOf(line: string): string[] {
 
 /**
  * Config with everything but its item entries set to the values, paths expanded against the home
- * directory; an entry naming a wire the values remove falls to the default. Throws when
+ * directory. An entry's wire follows the row that starts as it to that row's name, all in one
+ * pass; an entry naming a wire no row starts as falls to the default. Throws when
  * settingsProblems finds any.
  */
 export function withSettings(
@@ -291,9 +321,15 @@ export function withSettings(
     const line = values.launch.commands[name];
     commands[name] = isBlank(line) ? null : listOf(line);
   }
-  const { names: wires } = values.wires;
+  const { rows } = values.wires;
+  const renamed = new Map(
+    rows.flatMap((row) => (row.from === null ? [] : [[row.from, row.name]])),
+  );
   return {
-    wires: { names: [...wires], default: values.wires.default },
+    wires: {
+      names: rows.map((row) => row.name),
+      default: defaultName(values.wires) ?? "",
+    },
     sources: mapSourcePaths(values.sources, path),
     joins: values.joins.map(listOf),
     ignore: [...values.ignore],
@@ -303,10 +339,7 @@ export function withSettings(
         key,
         {
           ...entry,
-          wire:
-            entry.wire !== null && wires.includes(entry.wire)
-              ? entry.wire
-              : null,
+          wire: entry.wire === null ? null : (renamed.get(entry.wire) ?? null),
         },
       ]),
     ),

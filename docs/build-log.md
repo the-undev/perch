@@ -656,3 +656,32 @@ build-time calls so they can be revisited.
   timings are unchanged. A scene bird unhiding keeps its idle state, so
   the arrival does not replay.
 - The roadmap entry "Birds paint twice during the arrival" is removed.
+
+## 26 October 2026 (renaming a wire)
+
+- A settings wire row is `{from, name}`: `from` is the config wire the
+  row started as, null for one added. Only `from` carries entries, so an
+  added row named as a removed wire is still an add and the removed
+  wire's entries move to the default. A row whose `from` the config no
+  longer holds is an add by the same rule, since no entry names it.
+- The default is held as its row's place, `defaultRow`, not a name.
+  Swapping two names passes through two rows sharing one, and a name
+  cannot say which of them is the default. Moves and removals keep it on
+  its row; `withSettings` writes that row's name, so the rename reaches
+  the default without a step of its own.
+- A repeated name is refused per name, "Wires: two wires are named X;
+  each name may appear once", in place of "each wire once". Two rows
+  starting as one wire are refused too, "Wires: two wires both start as
+  X": the editor cannot make them, but the main process may be sent them.
+- The default wire's remove is held until another wire is the default,
+  so the removal line always names a wire the birds move to.
+- Remove arms on the first press: it turns red and reads "remove for
+  good", and a line beneath counts the entries naming the row's `from`.
+  The second press removes; "keep" disarms. The question is held by the
+  row object, so it follows its row on a move and drops on an edit to
+  it. The note beneath the page naming a removed wire's entries stays.
+- `StringList` lost its ordered mode: the wires were its one ordered
+  list, and they now have rows of their own.
+- The design site's Wires section gains a renamed specimen, and its
+  invalid specimen shows a repeated name in place of a default outside
+  the wires, which the editor can no longer reach.

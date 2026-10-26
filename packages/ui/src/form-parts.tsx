@@ -119,7 +119,7 @@ export function PillChoice({
 }
 
 /** A list moved one place: the entry at the index swapped with its neighbour. */
-function moved<T>(list: T[], index: number, by: -1 | 1): T[] {
+export function moved<T>(list: T[], index: number, by: -1 | 1): T[] {
   const next = [...list];
   const other = index + by;
   const [a, b] = [next[index], next[other]];
@@ -131,21 +131,18 @@ function moved<T>(list: T[], index: number, by: -1 | 1): T[] {
 
 /**
  * A list of strings, each a text field edited in place and removable, one more added at the end,
- * each once. An ordered list moves its entries up and down as well.
+ * each once.
  */
 export function StringList({
   noun,
   placeholder,
   values,
-  ordered,
   onChange,
 }: {
   /** What one entry is, for the add field and each entry's buttons. */
   noun: string;
   placeholder: string;
   values: string[];
-  /** The order means something: the entries move up and down. */
-  ordered: boolean;
   onChange: (values: string[]) => void;
 }) {
   const [draft, setDraft] = useState("");
@@ -180,28 +177,6 @@ export function StringList({
                 }
                 className={monoInputClass}
               />
-              {ordered && (
-                <>
-                  <button
-                    type="button"
-                    aria-label={`Move ${noun} ${entry} up`}
-                    disabled={index === 0}
-                    onClick={() => onChange(moved(values, index, -1))}
-                    className={quietClass}
-                  >
-                    up
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Move ${noun} ${entry} down`}
-                    disabled={index === values.length - 1}
-                    onClick={() => onChange(moved(values, index, 1))}
-                    className={quietClass}
-                  >
-                    down
-                  </button>
-                </>
-              )}
               <button
                 type="button"
                 aria-label={`Remove ${noun} ${entry}`}

@@ -52,6 +52,9 @@ const saveButton = () =>
 const type = (element: HTMLElement, value: string) =>
   fireEvent.change(element, { target: { value } });
 
+const machine = { from: "Machine & Home", name: "Machine & Home" };
+const projects = { from: "Projects", name: "Projects" };
+
 describe("the settings editor", () => {
   it("holds Save until something changes, and discards back to the file's values", () => {
     const { onSave } = editor("scanning");
@@ -100,56 +103,164 @@ describe("the settings editor", () => {
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
       wires: {
-        names: ["Projects", "Machine & Home", "Someday"],
-        default: "Someday",
+        rows: [projects, machine, { from: null, name: "Someday" }],
+        defaultRow: 2,
       },
     });
   });
 
-  it("keeps the default with a wire renamed in place, and says a wire needs a name", () => {
+  it("says a wire edited in place is a rename, keeps it the default, and says a wire needs a name", () => {
     const { onSave, form } = editor("wires");
     const wires = group("Wires");
 
+    expect(wires.queryByText(/^was /)).toBeNull();
     type(wires.getByRole("textbox", { name: "wire 2" }), "Work");
+    expect(wires.getByText("was Projects")).toBeDefined();
+    expect(
+      (wires.getByRole("radio", { name: "Work" }) as HTMLInputElement).checked,
+    ).toBe(true);
     fireEvent.click(saveButton());
     expect(onSave).toHaveBeenLastCalledWith({
       ...form.values,
-      wires: { names: ["Machine & Home", "Work"], default: "Work" },
+      wires: {
+        rows: [machine, { from: "Projects", name: "Work" }],
+        defaultRow: 1,
+      },
     });
 
+    type(wires.getByRole("textbox", { name: "wire 2" }), "Projects");
+    expect(wires.queryByText(/^was /)).toBeNull();
     type(wires.getByRole("textbox", { name: "wire 1" }), " ");
     expect(screen.getByText("Wires: every wire needs a name")).toBeDefined();
   });
 
-  it("warns that removing a wire entries name moves them to the default, and still saves", () => {
-    const { onSave } = editor("wires");
+  it("keeps a moved row's from, so its rename and the default move with it", () => {
+    const { onSave, form } = editor("wires");
     const wires = group("Wires");
 
-    fireEvent.click(
-      wires.getByRole("button", { name: "Remove wire Machine & Home" }),
-    );
+    type(wires.getByRole("textbox", { name: "wire 2" }), "Work");
+    fireEvent.click(wires.getByRole("button", { name: "Move wire Work up" }));
 
+    expect(
+      (wires.getByRole("textbox", { name: "wire 1" }) as HTMLInputElement)
+        .value,
+    ).toBe("Work");
+    expect(wires.getByText("was Projects")).toBeDefined();
+    expect(
+      (wires.getByRole("radio", { name: "Work" }) as HTMLInputElement).checked,
+    ).toBe(true);
+    fireEvent.click(saveButton());
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      wires: {
+        rows: [{ from: "Projects", name: "Work" }, machine],
+        defaultRow: 0,
+      },
+    });
+  });
+
+  it("swaps two wires' names, the default staying on its row", () => {
+    const { onSave, form } = editor("wires");
+    const wires = group("Wires");
+
+    type(wires.getByRole("textbox", { name: "wire 1" }), "Projects");
+    expect(
+      screen.getByText(
+        "Wires: two wires are named Projects; each name may appear once",
+      ),
+    ).toBeDefined();
+    type(wires.getByRole("textbox", { name: "wire 2" }), "Machine & Home");
+    fireEvent.click(saveButton());
+
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      wires: {
+        rows: [
+          { from: "Machine & Home", name: "Projects" },
+          { from: "Projects", name: "Machine & Home" },
+        ],
+        defaultRow: 1,
+      },
+    });
+  });
+
+  it("removes a wire on the second press, having said how many birds move to the default", () => {
+    const { onSave, form } = editor("wires");
+    const wires = group("Wires");
+    const remove = () =>
+      wires.getByRole("button", { name: "Remove wire Machine & Home" });
+
+    fireEvent.click(remove());
+    expect(
+      (wires.getByRole("textbox", { name: "wire 1" }) as HTMLInputElement)
+        .value,
+    ).toBe("Machine & Home");
+    expect(
+      wires.getByText("3 birds name this wire; they move to Projects."),
+    ).toBeDefined();
+    expect(remove().getAttribute("aria-describedby")).not.toBeNull();
+    expect(saveButton().disabled).toBe(true);
+
+    fireEvent.click(remove());
+    expect(
+      wires.queryByRole("button", { name: "Remove wire Machine & Home" }),
+    ).toBeNull();
     expect(
       wires.getByText(
         ".dotfiles, obsidian/Hothouse and obsidian/Pocket sit on Machine & Home, which is removed: saving moves them to the default wire, Projects.",
       ),
     ).toBeDefined();
-    expect(saveButton().disabled).toBe(false);
     fireEvent.click(saveButton());
-    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      wires: { rows: [projects], defaultRow: 0 },
+    });
   });
 
-  it("says a default wire must be one of the wires", () => {
+  it("counts a renamed wire's birds by the wire it was, asks through a move, keeps on keep, and says plainly when none name it", () => {
     editor("wires");
+    const wires = group("Wires");
 
-    fireEvent.click(
-      group("Wires").getByRole("button", { name: "Remove wire Projects" }),
-    );
+    type(wires.getByRole("textbox", { name: "wire 1" }), "Home");
+    fireEvent.click(wires.getByRole("button", { name: "Remove wire Home" }));
+    expect(
+      wires.getByText("3 birds name this wire; they move to Projects."),
+    ).toBeDefined();
+    fireEvent.click(wires.getByRole("button", { name: "Move wire Home down" }));
+    expect(
+      wires
+        .getByRole("button", { name: "Remove wire Home" })
+        .getAttribute("aria-describedby"),
+    ).not.toBeNull();
+    fireEvent.click(wires.getByRole("button", { name: "keep" }));
+    expect(wires.queryByText(/name this wire/)).toBeNull();
+
+    type(wires.getByRole("textbox", { name: "Add a wire" }), "Someday");
+    fireEvent.click(wires.getByRole("button", { name: "Add the wire" }));
+    fireEvent.click(wires.getByRole("button", { name: "Remove wire Someday" }));
+    expect(wires.getByText("No bird names this wire.")).toBeDefined();
+    fireEvent.click(wires.getByRole("button", { name: "Remove wire Someday" }));
 
     expect(
-      screen.getByText("Wires: the default wire must be one of the wires"),
+      wires.queryByRole("button", { name: "Remove wire Someday" }),
+    ).toBeNull();
+    expect(
+      wires.getByRole("button", { name: "Remove wire Home" }),
     ).toBeDefined();
-    expect(saveButton().disabled).toBe(true);
+  });
+
+  it("holds the default wire's removal until another wire is the default", () => {
+    editor("wires");
+    const wires = group("Wires");
+    const removeProjects = () =>
+      wires.getByRole("button", {
+        name: "Remove wire Projects",
+      }) as HTMLButtonElement;
+
+    expect(removeProjects().disabled).toBe(true);
+    fireEvent.click(wires.getByRole("radio", { name: "Machine & Home" }));
+
+    expect(removeProjects().disabled).toBe(false);
   });
 
   it("holds the global thresholds to amber before red, in whole numbers", () => {
@@ -369,7 +480,9 @@ describe("the settings page", () => {
         cards={null}
         now={now}
         keyring={keyring}
-        problems={["The config was not changed: Wires: each wire once"]}
+        problems={[
+          "The config was not changed: Wires: two wires are named Projects; each name may appear once",
+        ]}
         onSave={() => {}}
         onHome={onHome}
       />,
@@ -379,7 +492,9 @@ describe("the settings page", () => {
       screen.getByRole("heading", { level: 1, name: "Settings" }),
     ).toBeDefined();
     expect(
-      screen.getByText("The config was not changed: Wires: each wire once"),
+      screen.getByText(
+        "The config was not changed: Wires: two wires are named Projects; each name may appear once",
+      ),
     ).toBeDefined();
     fireEvent.keyDown(window, { key: "Escape" });
     fireEvent.click(screen.getByRole("button", { name: "perch" }));
@@ -441,7 +556,7 @@ describe("the settings page", () => {
 
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
-      wires: { ...form.values.wires, names: ["Projects", "Machine & Home"] },
+      wires: { rows: [projects, machine], defaultRow: 0 },
       scan: { ...form.values.scan, finalisedCommits: 4 },
     });
   });

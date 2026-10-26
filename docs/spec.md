@@ -269,6 +269,16 @@ without `http://` or `https://`, or a repeat the config parser refuses
 (a GitHub account in any case, a Forgejo account at one base URL, a
 kuma name).
 
+The Wires page lists the wires top to bottom, each a text field edited
+in place and moved up and down, and the default picked from them. A row
+keeps the wire it started as through a move: renamed, it says what it
+was, and saving moves the entries naming the old name to the new one,
+the default staying on its row, so two names can be swapped. Removing a
+wire takes a second press on its remove, after the row says how many
+birds name it and that they move to the default. The default cannot be
+removed until another wire is picked. Save is held while a wire has no
+name or two wires share one.
+
 The app writes the file without comments, paths under the home
 directory with `~`. An edit to the file by hand is read as soon as it is
 saved, and the open page or papers show it; the last write wins.

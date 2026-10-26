@@ -393,3 +393,14 @@ The phrasebook's examples say "since Monday" and "yesterday". The model
 speaks in durations measured at the scan, which needs no clock or time
 zone. Calendar words would need the render time and the local zone, so
 they belong in the renderer if they come back.
+
+## A forge read fails as a whole
+
+One failed request voids a forge's whole detail read. A 404 on the pull
+requests request for a repository outside a fine-grained token's grant
+threw away the commits and CI, which would have read fine. The bird then
+shows that forge as not read everywhere, though most of what it holds
+was there to be had. The fix is per-facet observations in the raw forge
+detail: commits, pull requests and CI each readable or failed on their
+own. The snapshot, the ledger's per-source "not read" lines and the
+commit river's judgement would then follow each facet.

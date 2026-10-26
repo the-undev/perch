@@ -175,6 +175,38 @@ describe("the mock dataset", () => {
     ).toBe(true);
   });
 
+  it("tones river commits for every spread, with a divergence and a forge not read", () => {
+    const rivers = birds.map(({ detail }) => detail.river);
+    const spreads = new Set(
+      rivers.flatMap((river) =>
+        river.commits.map((commit) => `${commit.tone} ${commit.spread}`),
+      ),
+    );
+
+    expect([...spreads]).toEqual(
+      expect.arrayContaining([
+        "green on github and forgejo",
+        "green on forgejo",
+        "amber only on github",
+        "amber not pushed to a remote",
+        "null no remote read",
+        "null no remote",
+      ]),
+    );
+    expect(rivers.some((river) => river.divergence !== null)).toBe(true);
+    expect(rivers.some((river) => river.notes.length > 0)).toBe(true);
+  });
+
+  it("counts Perch's commits beyond Forgejo's list as held there", () => {
+    const perch = birds.find((bird) => bird.id === "dev/perch");
+
+    expect(perch?.detail.river.commits.map((commit) => commit.tone)).toEqual([
+      "green",
+      "green",
+      "green",
+    ]);
+  });
+
   it("has a source card per configured table, covering every scan state", () => {
     const cards = mockSnapshot.sourceCards;
     const states = cards.map((card) =>
@@ -230,6 +262,19 @@ describe("the mock dataset", () => {
           thresholds.stalled,
           scannedAt,
         ),
+      );
+      const mainBranch = git.branches.find(
+        (branch) => branch.name === git.defaultBranch,
+      );
+      const [newestOnMain] = git.defaultBranchCommits ?? [];
+      expect(
+        newestOnMain && [
+          Date.parse(newestOnMain.committedAt),
+          newestOnMain.subject,
+        ],
+        item.id,
+      ).toEqual(
+        mainBranch && [Date.parse(mainBranch.lastCommitAt), mainBranch.subject],
       );
       expect(git.activity, item.id).toBe(
         deriveActivity({

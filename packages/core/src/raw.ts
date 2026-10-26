@@ -70,6 +70,11 @@ export interface RawGit {
    * remote at all this is every commit on every branch.
    */
   unpushedCommits: RawCommit[];
+  /**
+   * The newest commits on the default branch, newest first, at most the configured number;
+   * absent when that branch is not a local branch.
+   */
+  defaultBranchCommits: Observed<RawCommit[], "no-default-branch">;
 }
 
 // Roadmap

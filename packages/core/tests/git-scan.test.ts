@@ -29,7 +29,7 @@ const thresholds: GitThresholds = {
   unsafe: { amberHours: 7 * 24, redHours: 30 * 24 },
   stalled: { amberDays: 7, redDays: 30 },
 };
-const deps = { runGit: fixtureGit, mtimeOf: fileMtime };
+const deps = { runGit: fixtureGit, mtimeOf: fileMtime, finalisedCommits: 2 };
 
 let base: string;
 beforeEach(() => {
@@ -167,6 +167,46 @@ describe("gathering branches and tracking", () => {
   });
 });
 
+describe("gathering the default branch's commits", () => {
+  it("reads the newest commits on the default branch up to the cap, wherever HEAD is", async () => {
+    const { clone } = clonedRepo(base, daysBefore(5));
+    commit(clone, "a.txt", "Main one", daysBefore(4));
+    commit(clone, "b.txt", "Main two", daysBefore(3));
+    git(clone, ["switch", "--quiet", "-c", "feature"]);
+    commit(clone, "c.txt", "Feature one", daysBefore(2));
+
+    const raw = await readRepository(clone, deps);
+
+    expect(raw.defaultBranchCommits).toMatchObject({
+      state: "observed",
+      value: [
+        { subject: "Main two", committedAt: daysBefore(3).toISOString() },
+        { subject: "Main one", committedAt: daysBefore(4).toISOString() },
+      ],
+    });
+  });
+
+  it("states no default branch when that branch is not a local one, or there is none", async () => {
+    const { clone } = clonedRepo(base, daysBefore(5));
+    git(clone, ["switch", "--quiet", "-c", "develop"]);
+    git(clone, ["branch", "--quiet", "-D", "main"]);
+    const empty = initRepo(join(base, "empty"));
+
+    const elsewhere = await readRepository(clone, deps);
+    const unborn = await readRepository(empty, deps);
+
+    expect(elsewhere.originHead).toEqual({ state: "observed", value: "main" });
+    expect(elsewhere.defaultBranchCommits).toEqual({
+      state: "absent",
+      reason: "no-default-branch",
+    });
+    expect(unborn.defaultBranchCommits).toEqual({
+      state: "absent",
+      reason: "no-default-branch",
+    });
+  });
+});
+
 function commitAt(subject: string, date: Date): RawCommit {
   return { sha: subject, committedAt: date.toISOString(), subject };
 }
@@ -197,6 +237,10 @@ function rawGit(overrides: Partial<RawGit>): RawGit {
     },
     originHead: { state: "observed", value: "main" },
     unpushedCommits: [],
+    defaultBranchCommits: {
+      state: "observed",
+      value: [commitAt("Initial", daysBefore(20))],
+    },
     ...overrides,
   };
 }
@@ -252,6 +296,25 @@ describe("deriving git data", () => {
         "joined",
       ).activity,
     ).toBe("in-progress");
+  });
+
+  it("carries the default branch's commits, and null without a local default branch", () => {
+    expect(
+      deriveGit(rawGit({}), thresholds, now, "joined").defaultBranchCommits,
+    ).toEqual([commitAt("Initial", daysBefore(20))]);
+    expect(
+      deriveGit(
+        rawGit({
+          defaultBranchCommits: {
+            state: "absent",
+            reason: "no-default-branch",
+          },
+        }),
+        thresholds,
+        now,
+        "joined",
+      ).defaultBranchCommits,
+    ).toBeNull();
   });
 
   it("ranks editing over in progress", () => {

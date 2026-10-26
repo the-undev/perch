@@ -1,5 +1,5 @@
-// Tier C's ruled ledger: facts in full words, then the sections beneath it (branches, newest
-// commits, pull requests, flags, unread sources). Every row is a label on the left and a value on
+// Tier C's ruled ledger: facts in full words, then the sections beneath it (branches, the commit
+// river, pull requests, flags, unread sources). Every row is a label on the left and a value on
 // the right; clean zeros read a quiet green "none", counts take their severity's tone. A row that
 // holds a bubble chip's working is marked with a dot and spells it out beneath, source by source.
 
@@ -7,10 +7,12 @@ import type {
   BranchLine,
   ChipKind,
   FlagLine,
-  ForgeCommits,
   LedgerEntry,
   PullRequestLine,
+  River,
+  RiverCommit,
   SourceProblem,
+  SpreadTone,
   Tone,
   Working,
 } from "@perch/core/viewmodel.ts";
@@ -263,35 +265,70 @@ export function BranchLines({
   );
 }
 
-/** One forge's default branch, headed by its name on the forge, with its newest commits. */
-export function NewestCommits({
-  commits,
-  now,
-}: {
-  commits: ForgeCommits;
-  now: Date;
-}) {
+/** Green or amber by the commit's spread, and the quietest faint dot when no forge was read. */
+const spreadDotClass: Record<NonNullable<SpreadTone> | "none", string> = {
+  green: "size-1.75 bg-green",
+  amber: "size-1.75 bg-amber",
+  none: "size-0.75 bg-edge-hi",
+};
+
+/** A commit's one dot, its spread spoken for a screen reader and on hover. */
+function SpreadDot({ commit }: { commit: RiverCommit }) {
+  const tone = commit.tone ?? "none";
   return (
-    <section>
-      <LedgerHeading>
-        <OutLink href={commits.branchUrl}>{commits.heading}</OutLink>, newest
-        commits
-      </LedgerHeading>
-      {commits.commits.map((commit) => (
-        <LedgerRow
-          key={commit.sha}
-          label={commit.subject}
-          value={
-            <>
-              <OutLink href={commit.url}>
-                <code className="font-mono text-[12px]">{commit.shortSha}</code>
-              </OutLink>
-              {` · ${agoWords(commit.committedAt, now)}`}
-            </>
-          }
-          tone={null}
-        />
+    <span
+      role="img"
+      aria-label={commit.spread}
+      title={commit.spread}
+      data-spread-tone={tone}
+      className="inline-flex size-1.75 items-center justify-center self-center"
+    >
+      <span className={`rounded-full ${spreadDotClass[tone]}`} />
+    </span>
+  );
+}
+
+/** A line in amber above the commits: a forge not read, or the divergence. */
+function RiverLine({ part, text }: { part: string; text: string }) {
+  return (
+    <p data-part={part} className="m-0 mt-1.5 text-[12.5px] text-amber">
+      {text}
+    </p>
+  );
+}
+
+/** The newest commits on the default branch, each once, a dot before each saying how far it has spread. */
+export function CommitRiver({ river, now }: { river: River; now: Date }) {
+  return (
+    <section data-part="river">
+      <LedgerHeading>Where each commit has reached</LedgerHeading>
+      {river.notes.map((note) => (
+        <RiverLine key={note} part="river-note" text={note} />
       ))}
+      {river.divergence !== null && (
+        <RiverLine part="divergence" text={river.divergence} />
+      )}
+      <ul className="m-0 mt-1 grid list-none grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2.5 p-0">
+        {river.commits.map((commit) => (
+          <li
+            key={commit.sha}
+            data-part="river-commit"
+            className="col-span-full grid grid-cols-subgrid items-baseline py-0.75 font-mono text-[12.5px]"
+          >
+            <SpreadDot commit={commit} />
+            <span className="truncate text-ink-muted" title={commit.subject}>
+              {commit.url === null ? (
+                commit.subject
+              ) : (
+                <OutLink href={commit.url}>{commit.subject}</OutLink>
+              )}
+            </span>
+            <span className="whitespace-nowrap text-right text-[11.5px] text-ink-faint">
+              {agoWords(commit.committedAt, now)}
+            </span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

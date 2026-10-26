@@ -395,6 +395,10 @@ export function deriveGit(
       upstream:
         entry.tracking.state === "tracking" ? entry.tracking.upstream : null,
     })),
+    defaultBranchCommits:
+      raw.defaultBranchCommits.state === "observed"
+        ? raw.defaultBranchCommits.value
+        : null,
     remotes: raw.remotes.state === "observed" ? raw.remotes.value : [],
     activity: deriveActivity({
       uncommittedCount: raw.dirtyFiles.length,

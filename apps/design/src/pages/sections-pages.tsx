@@ -1,11 +1,11 @@
-// The ledger's sections, one usage page each: branches, newest commits, pull requests, flags and
-// sources not read.
+// The ledger's sections, one usage page each: branches, the commit river, pull requests, flags
+// and sources not read.
 
 import type { FlagLine } from "@perch/core/viewmodel.ts";
 import {
   BranchLines,
+  CommitRiver,
   FlagLines,
-  NewestCommits,
   PullRequestLines,
   SourceProblems,
 } from "@perch/ui/ledger.tsx";
@@ -77,34 +77,80 @@ export function BranchesPage() {
   );
 }
 
-export function CommitsPage() {
-  const perch = mockBird("dev/perch");
+/** The river's states, each from a mock bird and the rule that draws it. */
+const riverSpecimens: { id: string; label: string; rule: string }[] = [
+  {
+    id: "undev/oxbow",
+    label: "In step",
+    rule: "Oxbow: both forges hold every commit, so every dot is green and no sentence is drawn.",
+  },
+  {
+    id: ".dotfiles",
+    label: "Unpushed on main",
+    rule: "Dotfiles: three commits on main that no forge holds are amber, not pushed to a remote. The forges agree, so no sentence.",
+  },
+  {
+    id: "undev/harbour",
+    label: "Diverged",
+    rule: "Harbour: Forgejo missed the last push. That commit is amber, only on github, and one amber sentence says Forgejo is behind.",
+  },
+  {
+    id: "dev/perch",
+    label: "Beyond a list",
+    rule: "Perch: Forgejo's list holds one commit, so the two older ones are beyond it. A forge counts as holding a commit older than its list, so they stay green.",
+  },
+  {
+    id: "undev/spool",
+    label: "One forge",
+    rule: "Spool: Forgejo holds every commit, green.",
+  },
+  {
+    id: "undev/prism",
+    label: "A forge not read",
+    rule: "Prism: GitHub answered 404. An amber line says so and the dot is judged over Forgejo alone.",
+  },
+  {
+    id: "dev/hearth-config",
+    label: "No forge read",
+    rule: "hearth-config: neither forge's detail was read, so spread cannot be judged: the quiet dot.",
+  },
+  {
+    id: "dev/odin/hello",
+    label: "No remote",
+    rule: "hello: no remote, so the quiet dot.",
+  },
+];
+
+export function RiverPage() {
   return (
     <>
       <Section
-        title="Newest commits"
-        rule={`The default branch's newest commits on each forge, headed by the actual thing ("main on GitHub"), never a concept. Each hash links to the commit.`}
+        title="The commit river"
+        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits. One dot before each says how far it has spread over the forges read: green when every one holds it, amber when one lacks it or none does, the quiet dot when no forge was read. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The clone only adds commits. A forge not read gets an amber line, and one amber sentence appears only when a forge lacks a commit another forge holds."
         min={420}
       >
-        {perch.detail.newestCommits.map((commits) => (
+        {riverSpecimens.map((specimen) => (
           <Specimen
-            key={commits.forge}
-            label={commits.heading}
-            rule="Perch, mirrored on both forges."
+            key={specimen.id}
+            label={specimen.label}
+            rule={specimen.rule}
           >
             <Ground>
-              <NewestCommits commits={commits} now={scanMoment} />
+              <CommitRiver
+                river={mockBird(specimen.id).detail.river}
+                now={scanMoment}
+              />
             </Ground>
           </Specimen>
         ))}
       </Section>
       <Usage
-        component="<NewestCommits>"
+        component="<CommitRiver>"
         props={[
           {
-            name: "commits",
-            type: "ForgeCommits",
-            what: "One of bird.detail.newestCommits: the forge, heading, branch link and commits.",
+            name: "river",
+            type: "River",
+            what: "bird.detail.river: the commits with their tone and spoken spread, a note per forge not read, and the divergence sentence or null.",
           },
           {
             name: "now",
@@ -113,7 +159,10 @@ export function CommitsPage() {
           },
         ]}
       >
-        <p>One section per forge that has finalised commits.</p>
+        <p>
+          Draw it only when the river has commits. A commit links to the first
+          forge holding it; one only here is not linked.
+        </p>
       </Usage>
     </>
   );

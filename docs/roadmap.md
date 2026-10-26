@@ -43,15 +43,6 @@ change the view, the papers taking the page with an animated
 transition, and closing them returning to the detail. Part of a
 detail page design round.
 
-## Commits once, remotes beside them
-
-The detail page lists newest commits per forge, so GitHub and Forgejo
-in sync show the same commits twice and the page grows very tall. The
-scanner holds the commit lists for local main and every remote; the
-page should show each commit once, with where it has reached (local,
-which remotes) beside it, and only diverge into separate lists when
-the remotes genuinely differ. Part of a detail page design round.
-
 ## Moving the camera between birds
 
 Switching from one bird's page to another flashes the whole page in
@@ -402,3 +393,14 @@ The phrasebook's examples say "since Monday" and "yesterday". The model
 speaks in durations measured at the scan, which needs no clock or time
 zone. Calendar words would need the render time and the local zone, so
 they belong in the renderer if they come back.
+
+## A forge read fails as a whole
+
+One failed request voids a forge's whole detail read. A 404 on the pull
+requests request for a repository outside a fine-grained token's grant
+threw away the commits and CI, which would have read fine. The bird then
+shows that forge as not read everywhere, though most of what it holds
+was there to be had. The fix is per-facet observations in the raw forge
+detail: commits, pull requests and CI each readable or failed on their
+own. The snapshot, the ledger's per-source "not read" lines and the
+commit river's judgement would then follow each facet.

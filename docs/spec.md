@@ -89,7 +89,7 @@ where the bird lives: the clone's path with `~`, the forges that hold
 it, and its wire, "on the fence" for a fence bird. Then come the
 launch actions as verbs, links out, a ledger of facts in full words
 (clean zeros as a quiet green "none", counts toned by severity),
-branches, the default branch's newest commits on the forge, flags, and
+branches, the commit river, flags, and
 a configurable list of key files rendered as paper, the bubble's
 material, with folder tabs. A long file scrolls inside its sheet, which
 stops short of the window's height, so the page keeps its rhythm.
@@ -102,7 +102,29 @@ file; the age of the oldest uncommitted change or unpushed commit. A
 source with nothing to say is silent, and a forge not read says so in
 amber.
 Concrete nouns link wherever a page exists for them. Headings name the
-actual thing ("main on GitHub"), never a concept.
+actual thing, never a concept.
+
+The commit river answers what is on main and whether it has spread. It
+tells the default branch's newest commits once each, joined by hash
+across local main and each forge's list, newest first and capped at
+`scan.finalised_commits`. One dot before each commit judges its spread
+over the bird's forges that were read; the clone only adds commits,
+such as unpushed ones on main. Green: every forge read holds it, "on
+github and forgejo". Amber: a forge read lacks it, "only on github", or
+none holds it, "not pushed to a remote" ("on no remote read" while
+another forge is not read). The quiet dot, a faint speck, when no forge
+was read ("no remote read") or the bird has none ("no remote"). The dot
+speaks its words to a screen reader and on hover. A forge's list holds
+only its newest commits, so a forge lacks a commit only when the commit
+is no older than the list's oldest; an older one is beyond the list and
+counts as held, so old history never turns amber. Local main being
+behind a forge is not flagged. A forge not read gets an amber line,
+"github not read". When a forge lacks a commit another forge holds
+within its list, one amber sentence says so: "forgejo is 2 commits
+behind github." when one forge lacks, "github and forgejo have
+diverged: github lacks 1 commit, forgejo lacks 2 commits." when both
+do, counted over every listed commit. Forges in agreement earn no
+sentence. A commit links to the first forge holding it.
 
 The page centres as one block up to 1920px. From 860px wide the heading
 and the roost share the top band, the roost in a 480px column at the right
@@ -183,7 +205,7 @@ the home directory by pure functions, in the design's words: the
 aviary's wires and fence, each bird's mood, activity and plumpness, its
 bubble (the speech from `src/speech.ts`, which follows the phrasebook,
 and the chips) and its detail (the clone's path with `~` and the
-forges, ledger, branches, newest commits, pull requests, flags, launch
+forges, ledger, branches, commit river, pull requests, flags, launch
 actions, links, key files). The sky follows the clock at render
 and is not part of the model. `src/mock.ts` holds a hand-curated
 snapshot and config pair covering every view model state, for the
@@ -194,9 +216,10 @@ live machine. The scan feeds the glance unattended: no prompting
 routes, no SSH. Detail views may use live sources; the window never
 blocks on aggregation and renders from the cached snapshot.
 
-Sources today: local repositories and vaults (git state, Obsidian
-markers), the GitHub and Forgejo account listings and per-repository
-detail (PRs, CI, newest default-branch commits), roadmap files, Claude
+Sources today: local repositories and vaults (git state with the
+default branch's newest commits, Obsidian markers), the GitHub and
+Forgejo account listings and per-repository detail (PRs, CI, newest
+default-branch commits), roadmap files, Claude
 Code session times. Uptime Kuma exists and runs only for a
 `[[sources.kuma]]` table, which config leaves out until server
 monitoring is picked up. Forge tickets are a wanted

@@ -2,7 +2,7 @@ import { mockSnapshot } from "@perch/core/mock.ts";
 import type { LedgerEntry } from "@perch/core/viewmodel.ts";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { BranchLines, FlagLines, Ledger, NewestCommits } from "./ledger.tsx";
+import { BranchLines, CommitRiver, FlagLines, Ledger } from "./ledger.tsx";
 import { mockBird } from "./mock-birds.ts";
 
 afterEach(cleanup);
@@ -16,6 +16,20 @@ function rows(container: HTMLElement): string[][] {
     value.textContent ?? "",
     value.getAttribute("data-tone") ?? "",
   ]);
+}
+
+/** Each river commit's dot: its tone and its spoken spread, as drawn. */
+function dots(container: HTMLElement): string[][] {
+  return [...container.querySelectorAll('[data-part="river-commit"]')].map(
+    (row) => {
+      const dot = row.querySelector('[role="img"]');
+      return [
+        dot?.getAttribute("data-spread-tone") ?? "",
+        dot?.getAttribute("aria-label") ?? "",
+        dot?.getAttribute("title") ?? "",
+      ];
+    },
+  );
 }
 
 describe("the ledger", () => {
@@ -262,15 +276,79 @@ describe("the ledger's sections", () => {
     );
   });
 
-  it("heads the newest commits with the branch on its forge", () => {
-    const [github] = mockBird("dev/perch").detail.newestCommits;
-    if (github === undefined) throw new Error("perch has commits on GitHub");
-    render(<NewestCommits commits={github} now={now} />);
+  it("draws one dot per commit, spoken and titled, and the divergence in amber", () => {
+    const { container } = render(
+      <CommitRiver river={mockBird("undev/harbour").detail.river} now={now} />,
+    );
 
     expect(screen.getByRole("heading").textContent).toBe(
-      "main on GitHub, newest commits",
+      "Where each commit has reached",
     );
-    expect(screen.getByRole("link", { name: "af0893d" })).toBeDefined();
+    expect(dots(container)).toEqual([
+      ["amber", "only on github", "only on github"],
+      ["green", "on github and forgejo", "on github and forgejo"],
+    ]);
+    const divergence = container.querySelector('[data-part="divergence"]');
+    expect(divergence?.textContent).toBe("forgejo is 1 commit behind github.");
+    expect(divergence?.className).toContain("text-amber");
+  });
+
+  it("dots unpushed commits amber, unlinked, with no sentence and no column per place", () => {
+    const { container } = render(
+      <CommitRiver river={mockBird(".dotfiles").detail.river} now={now} />,
+    );
+
+    expect(container.querySelector('[data-part="divergence"]')).toBeNull();
+    expect(dots(container)[0]).toEqual([
+      "amber",
+      "not pushed to a remote",
+      "not pushed to a remote",
+    ]);
+    expect(
+      container.querySelectorAll('[data-part="river-commit"] [role="img"]'),
+    ).toHaveLength(dots(container).length);
+    expect(screen.queryByText("here")).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: "Open Alacritty at 140 by 40" }),
+    ).toBeNull();
+  });
+
+  it("notes a forge not read in amber and links each commit to the forge holding it", () => {
+    const { container } = render(
+      <CommitRiver river={mockBird("undev/prism").detail.river} now={now} />,
+    );
+
+    const note = container.querySelector('[data-part="river-note"]');
+    expect(note?.textContent).toBe("github not read");
+    expect(note?.className).toContain("text-amber");
+    expect(dots(container)).toEqual([["green", "on forgejo", "on forgejo"]]);
+    expect(
+      screen
+        .getByRole("link", { name: /Merge composition-and-dispatch/ })
+        .getAttribute("href"),
+    ).toBe(
+      "http://forge.example.lan:3000/the-undev/prism/commit/76cb6256a466e8a0c2e4a6c8e0a2c4e6a8c0e2a4",
+    );
+  });
+
+  it("draws the quiet dot when no forge was read or there is none", () => {
+    const { container } = render(
+      <CommitRiver
+        river={mockBird("dev/hearth-config").detail.river}
+        now={now}
+      />,
+    );
+    const { container: hello } = render(
+      <CommitRiver
+        river={mockBird("dev/odin/hello").detail.river}
+        now={now}
+      />,
+    );
+
+    expect(dots(container)).toEqual([
+      ["none", "no remote read", "no remote read"],
+    ]);
+    expect(dots(hello)).toEqual([["none", "no remote", "no remote"]]);
   });
 
   it("tones a flag by its level", () => {

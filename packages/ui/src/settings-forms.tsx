@@ -13,11 +13,12 @@ import {
   type SettingsForm,
   type SettingsValues,
   settingsProblems,
+  type WireRow,
   wireWarnings,
 } from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
 import type { SourceCard } from "@perch/core/viewmodel.ts";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import {
   FormNotes,
   FormRow,
@@ -106,18 +107,32 @@ function wiresWithout(wires: Wires, index: number): Wires {
   };
 }
 
+/** What removing a row does to the entries naming its config wire, in words. */
+function removalWords(count: number, defaultWire: string): string {
+  if (count === 0) return "No bird names this wire.";
+  if (count === 1) return `1 bird names this wire; it moves to ${defaultWire}.`;
+  return `${count} birds name this wire; they move to ${defaultWire}.`;
+}
+
 /**
  * The wires as rows edited in place, each keeping the config wire it started as through a rename
- * and a move, one more added at the end, each name once.
+ * and a move, one more added at the end, each name once. Removing a row takes a second press,
+ * after the row says what moves.
  */
 function WireRows({
   value,
+  named,
   onChange,
 }: {
   value: Wires;
+  /** The entry keys naming each config wire. */
+  named: Record<string, string[]>;
   onChange: (value: Wires) => void;
 }) {
   const [draft, setDraft] = useState("");
+  // The row asked about, by identity: a move keeps the question on its row, an edit to it drops it.
+  const [confirming, setConfirming] = useState<WireRow | null>(null);
+  const linePrefix = useId();
   const { rows } = value;
   const add = () => {
     const name = draft.trim();
@@ -133,54 +148,90 @@ function WireRows({
         <ul className="m-0 flex w-full list-none flex-col gap-1 p-0">
           {rows.map((row, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: rows are edited in place and carry their own from, so the position is the field's identity.
-            <li key={index} className="flex items-center gap-1">
-              <input
-                type="text"
-                aria-label={`wire ${index + 1}`}
-                value={row.name}
-                onChange={(event) => {
-                  const name = event.target.value;
-                  onChange({
-                    ...value,
-                    rows: rows.map((candidate, at) =>
-                      at === index ? { ...candidate, name } : candidate,
-                    ),
-                  });
-                }}
-                className={monoInputClass}
-              />
-              {row.from !== null && row.from !== row.name && (
-                <span className="flex-none whitespace-nowrap px-1 text-[12px] text-ink-faint">
-                  was {row.from}
-                </span>
+            <li key={index} className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  aria-label={`wire ${index + 1}`}
+                  value={row.name}
+                  onChange={(event) => {
+                    const name = event.target.value;
+                    onChange({
+                      ...value,
+                      rows: rows.map((candidate, at) =>
+                        at === index ? { ...candidate, name } : candidate,
+                      ),
+                    });
+                  }}
+                  className={monoInputClass}
+                />
+                {row.from !== null && row.from !== row.name && (
+                  <span className="flex-none whitespace-nowrap px-1 text-[12px] text-ink-faint">
+                    was {row.from}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  aria-label={`Move wire ${row.name} up`}
+                  disabled={index === 0}
+                  onClick={() => onChange(wiresMoved(value, index, -1))}
+                  className={quietClass}
+                >
+                  up
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Move wire ${row.name} down`}
+                  disabled={index === rows.length - 1}
+                  onClick={() => onChange(wiresMoved(value, index, 1))}
+                  className={quietClass}
+                >
+                  down
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Remove wire ${row.name}`}
+                  aria-describedby={
+                    row === confirming ? `${linePrefix}-${index}` : undefined
+                  }
+                  disabled={index === value.defaultRow}
+                  onClick={() => {
+                    if (row !== confirming) {
+                      setConfirming(row);
+                      return;
+                    }
+                    setConfirming(null);
+                    onChange(wiresWithout(value, index));
+                  }}
+                  className={
+                    row === confirming
+                      ? `${quietClass} whitespace-nowrap text-red hover:text-red`
+                      : quietClass
+                  }
+                >
+                  {row === confirming ? "remove for good" : "remove"}
+                </button>
+              </div>
+              {row === confirming && (
+                <div className="flex flex-wrap items-baseline gap-x-2 px-1 text-[12.5px]">
+                  <span
+                    id={`${linePrefix}-${index}`}
+                    className="text-ink-muted"
+                  >
+                    {removalWords(
+                      row.from === null ? 0 : (named[row.from]?.length ?? 0),
+                      defaultName(value) ?? "",
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(null)}
+                    className={quietClass}
+                  >
+                    keep
+                  </button>
+                </div>
               )}
-              <button
-                type="button"
-                aria-label={`Move wire ${row.name} up`}
-                disabled={index === 0}
-                onClick={() => onChange(wiresMoved(value, index, -1))}
-                className={quietClass}
-              >
-                up
-              </button>
-              <button
-                type="button"
-                aria-label={`Move wire ${row.name} down`}
-                disabled={index === rows.length - 1}
-                onClick={() => onChange(wiresMoved(value, index, 1))}
-                className={quietClass}
-              >
-                down
-              </button>
-              <button
-                type="button"
-                aria-label={`Remove wire ${row.name}`}
-                disabled={index === value.defaultRow}
-                onClick={() => onChange(wiresWithout(value, index))}
-                className={quietClass}
-              >
-                remove
-              </button>
             </li>
           ))}
         </ul>
@@ -229,7 +280,7 @@ export function WiresGroup({
       lead="The owner's priority bands, top to bottom. An adopted bird sits on the wire its entry names, else on the default. Renaming a wire takes its birds with it."
     >
       <FormRow label="Wires" sub="In order, first at the top">
-        <WireRows value={value} onChange={onChange} />
+        <WireRows value={value} named={named} onChange={onChange} />
       </FormRow>
       <FormRow
         label="Default"

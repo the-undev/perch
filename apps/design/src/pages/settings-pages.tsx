@@ -117,7 +117,7 @@ export function SettingsGroupsPage() {
     <>
       <Section
         title="Wires"
-        rule="Ordered rows, each edited in place and moved up and down, and the default picked from them. A row keeps the wire it started as, so a rename carries that wire's entries to the new name, and the default stays on its row. Removing a wire that item entries name is allowed: the form names the entries, and saving moves them to the default. The default itself cannot be removed."
+        rule="Ordered rows, each edited in place and moved up and down, and the default picked from them. A row keeps the wire it started as, so a rename carries that wire's entries to the new name, and the default stays on its row. Removing a wire takes a second press on its remove, after the row says how many birds name it and that they move to the default; the form then names the entries. The default itself cannot be removed."
         min={560}
       >
         <GroupSpecimen
@@ -402,7 +402,9 @@ export function SettingsScenePage() {
           keyring={keyring}
           problems={
             problems === "refused"
-              ? ["The config was not changed: Wires: each wire once"]
+              ? [
+                  "The config was not changed: Wires: two wires are named Projects; each name may appear once",
+                ]
               : []
           }
           onSave={(values) => {

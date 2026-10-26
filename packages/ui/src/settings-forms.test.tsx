@@ -184,22 +184,69 @@ describe("the settings editor", () => {
     });
   });
 
-  it("warns that removing a wire entries name moves them to the default, and still saves", () => {
-    const { onSave } = editor("wires");
+  it("removes a wire on the second press, having said how many birds move to the default", () => {
+    const { onSave, form } = editor("wires");
     const wires = group("Wires");
+    const remove = () =>
+      wires.getByRole("button", { name: "Remove wire Machine & Home" });
 
-    fireEvent.click(
-      wires.getByRole("button", { name: "Remove wire Machine & Home" }),
-    );
+    fireEvent.click(remove());
+    expect(
+      (wires.getByRole("textbox", { name: "wire 1" }) as HTMLInputElement)
+        .value,
+    ).toBe("Machine & Home");
+    expect(
+      wires.getByText("3 birds name this wire; they move to Projects."),
+    ).toBeDefined();
+    expect(remove().getAttribute("aria-describedby")).not.toBeNull();
+    expect(saveButton().disabled).toBe(true);
 
+    fireEvent.click(remove());
+    expect(
+      wires.queryByRole("button", { name: "Remove wire Machine & Home" }),
+    ).toBeNull();
     expect(
       wires.getByText(
         ".dotfiles, obsidian/Hothouse and obsidian/Pocket sit on Machine & Home, which is removed: saving moves them to the default wire, Projects.",
       ),
     ).toBeDefined();
-    expect(saveButton().disabled).toBe(false);
     fireEvent.click(saveButton());
-    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      wires: { rows: [projects], defaultRow: 0 },
+    });
+  });
+
+  it("counts a renamed wire's birds by the wire it was, asks through a move, keeps on keep, and says plainly when none name it", () => {
+    editor("wires");
+    const wires = group("Wires");
+
+    type(wires.getByRole("textbox", { name: "wire 1" }), "Home");
+    fireEvent.click(wires.getByRole("button", { name: "Remove wire Home" }));
+    expect(
+      wires.getByText("3 birds name this wire; they move to Projects."),
+    ).toBeDefined();
+    fireEvent.click(wires.getByRole("button", { name: "Move wire Home down" }));
+    expect(
+      wires
+        .getByRole("button", { name: "Remove wire Home" })
+        .getAttribute("aria-describedby"),
+    ).not.toBeNull();
+    fireEvent.click(wires.getByRole("button", { name: "keep" }));
+    expect(wires.queryByText(/name this wire/)).toBeNull();
+
+    type(wires.getByRole("textbox", { name: "Add a wire" }), "Someday");
+    fireEvent.click(wires.getByRole("button", { name: "Add the wire" }));
+    fireEvent.click(wires.getByRole("button", { name: "Remove wire Someday" }));
+    expect(wires.getByText("No bird names this wire.")).toBeDefined();
+    fireEvent.click(wires.getByRole("button", { name: "Remove wire Someday" }));
+
+    expect(
+      wires.queryByRole("button", { name: "Remove wire Someday" }),
+    ).toBeNull();
+    expect(
+      wires.getByRole("button", { name: "Remove wire Home" }),
+    ).toBeDefined();
   });
 
   it("holds the default wire's removal until another wire is the default", () => {
@@ -433,7 +480,9 @@ describe("the settings page", () => {
         cards={null}
         now={now}
         keyring={keyring}
-        problems={["The config was not changed: Wires: each wire once"]}
+        problems={[
+          "The config was not changed: Wires: two wires are named Projects; each name may appear once",
+        ]}
         onSave={() => {}}
         onHome={onHome}
       />,
@@ -443,7 +492,9 @@ describe("the settings page", () => {
       screen.getByRole("heading", { level: 1, name: "Settings" }),
     ).toBeDefined();
     expect(
-      screen.getByText("The config was not changed: Wires: each wire once"),
+      screen.getByText(
+        "The config was not changed: Wires: two wires are named Projects; each name may appear once",
+      ),
     ).toBeDefined();
     fireEvent.keyDown(window, { key: "Escape" });
     fireEvent.click(screen.getByRole("button", { name: "perch" }));

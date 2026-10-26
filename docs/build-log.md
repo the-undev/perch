@@ -740,3 +740,24 @@ build-time calls so they can be revisited.
   suggestions, a bird echoing the owner's expectations back.
   `design/phrasebook.html` and the decision docs keep their expectation
   passages as the record of what was approved then.
+
+## 26 October 2026 (the bird's page round)
+
+- The bird's page round (`mockups/bird-page.html`), five verdicts
+  approved: the bird leaves the wire for a perch, a T-stand at the
+  page's top right, full size, idle, always facing left toward its own
+  record, its bubble attached without the name-and-state header the
+  page's heading already carries; a bubble chip is a handle that lands
+  on the ledger row holding its working, each conclusion spelled out
+  per source, chosen over tooltips; commits are told once in a river
+  with a reach mark per remote, hollow where a remote lacks one, and
+  one amber sentence on divergence; the papers rise as a sheet over
+  the dimmed record, the bird staying through the signing; and the
+  camera pans the ground between birds under a still strip, replacing
+  the swap flash.
+- The round resolves five roadmap entries when implemented: the papers
+  as a view of their own, the bird on its own page, every chip spelled
+  out, commits once with remotes beside them, the empty top right, and
+  the camera's move between birds.
+- Every implementation phase keeps the design site current: moved or
+  new pieces get their page or specimen in the same phase.

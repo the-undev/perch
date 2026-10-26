@@ -45,7 +45,51 @@ while GitHub was green. Everything the bubble says should appear on
 the detail page with its sources spelled out: the CI line naming each
 forge's newest run, its state and its link, and the same for any chip
 that summarises more than one fact. Tooltips on the chips could carry
-the short form of the same detail.
+the short form of the same detail. The disconnect is wider than the
+chips: the bubble's speech and state word set an expectation the page
+does not visibly answer, so arriving from the bubble means losing the
+facts that prompted the visit. The detail should carry the bubble's
+content on, recognisably, not restate it differently.
+
+## The papers as a view of their own
+
+The adoption papers unfold above the project detail, pushing it down,
+which reads as clutter rather than a place. Opening the papers should
+change the view, the papers taking the page with an animated
+transition, and closing them returning to the detail. Part of a
+detail page design round.
+
+## The bird on its own page
+
+The detail page never shows the bird itself; it stays on the wire
+behind the camera. Bringing the bird into the detail and adoption
+views, off the wire, would tie the page to the creature it is about.
+Needs design thought: where it perches, its size, and what of its
+state (mood, plumpness, song) it shows there. Part of a detail page
+design round.
+
+## Commits once, remotes beside them
+
+The detail page lists newest commits per forge, so GitHub and Forgejo
+in sync show the same commits twice and the page grows very tall. The
+scanner holds the commit lists for local main and every remote; the
+page should show each commit once, with where it has reached (local,
+which remotes) beside it, and only diverge into separate lists when
+the remotes genuinely differ. Part of a detail page design round.
+
+## The detail page's empty top right
+
+The page's content hugs the left column and leaves a large gap top
+right. Room to bring something in: candidates include the bird
+itself, the meta line, or the bubble's facts carried over. Part of a
+detail page design round.
+
+## Moving the camera between birds
+
+Switching from one bird's page to another flashes the whole page in
+an unpleasant way (the swap animation remounts everything at once). A
+transition that reads as the camera moving, not the page being
+replaced, would suit the scene. Part of a detail page design round.
 
 ## A hand edit and the scan
 

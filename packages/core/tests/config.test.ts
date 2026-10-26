@@ -54,7 +54,6 @@ describe("example config", () => {
     expect(config.items).toEqual({});
     expect(config.scan).toEqual({
       intervalMinutes: 15,
-      archivedIntervalHours: 24,
       finalisedCommits: 10,
     });
     expect(config.launch).toEqual({
@@ -275,6 +274,17 @@ describe("removed keys", () => {
 
     expect(() => parseConfig(text, home)).toThrow(
       'config: items."dev/perch".importance is not a config key',
+    );
+  });
+
+  it("refuses the archived scan interval by name", async () => {
+    const text = (await fixtureConfigText("")).replace(
+      "[scan]\n",
+      "[scan]\narchived_interval_hours = 24\n",
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: scan.archived_interval_hours is not a config key",
     );
   });
 });

@@ -100,13 +100,9 @@ export interface Config {
    * adopts the item and marks a found repository set up.
    */
   items: Record<string, ItemEntry>;
-  /**
-   * The two scan lanes, everything on the main interval and archived forge data on the slow one,
-   * and the commits read on each forge repository's default branch.
-   */
+  /** The scan interval, and the commits read on each forge repository's default branch. */
   scan: {
     intervalMinutes: number;
-    archivedIntervalHours: number;
     finalisedCommits: number;
   };
   launch: {
@@ -527,6 +523,7 @@ export function parseConfig(text: string, home: string): Config {
   checkOrder(thresholds, "thresholds.");
   const items = optionalTable(document, "items", "");
   const scan = table(document, "scan", "");
+  onlyKeys(scan, ["interval_minutes", "finalised_commits"], "scan.");
   const launch = table(document, "launch", "");
   const sessions = optionalTable(launch, "zellij_sessions", "launch.");
 
@@ -546,10 +543,6 @@ export function parseConfig(text: string, home: string): Config {
       intervalMinutes: positiveInteger(
         scan.interval_minutes,
         "scan.interval_minutes",
-      ),
-      archivedIntervalHours: positiveInteger(
-        scan.archived_interval_hours,
-        "scan.archived_interval_hours",
       ),
       finalisedCommits: positiveInteger(
         scan.finalised_commits,

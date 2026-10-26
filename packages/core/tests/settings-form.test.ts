@@ -238,13 +238,11 @@ describe("what the settings cannot be", () => {
         ...values,
         scan: {
           intervalMinutes: 0,
-          archivedIntervalHours: Number.NaN,
           finalisedCommits: 2.5,
         },
       }),
     ).toEqual([
       "Scan interval: must be whole minutes above zero",
-      "Archived scan interval: must be whole hours above zero",
       "Finalised commits: must be a whole number above zero",
     ]);
   });
@@ -284,7 +282,6 @@ describe("what the settings cannot be", () => {
         changed({
           scan: {
             intervalMinutes: 0,
-            archivedIntervalHours: 24,
             finalisedCommits: 10,
           },
         }),

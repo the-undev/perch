@@ -180,9 +180,14 @@ describe("the settings editor", () => {
     expect(saveButton().disabled).toBe(true);
   });
 
-  it("edits the finalised commit count in the scan group", () => {
+  it("edits the finalised commit count in the scan group, which holds no archived interval", () => {
     const { onSave, form } = editor("scanning");
 
+    expect(
+      group("Scanning")
+        .getAllByRole("spinbutton")
+        .map((field) => field.getAttribute("aria-label")),
+    ).toEqual(["Scan interval in minutes", "Finalised commits"]);
     type(
       group("Scanning").getByRole("spinbutton", { name: "Finalised commits" }),
       "4",
@@ -315,12 +320,7 @@ describe("the settings editor", () => {
     view.rerender(editorOn("scanning", fromDisk(20), () => {}));
     expect(interval()).toBe("20");
 
-    type(
-      screen.getByRole("spinbutton", {
-        name: "Archived scan interval in hours",
-      }),
-      "48",
-    );
+    type(screen.getByRole("spinbutton", { name: "Finalised commits" }), "4");
     view.rerender(editorOn("scanning", fromDisk(25), () => {}));
     expect(interval()).toBe("20");
     expect(

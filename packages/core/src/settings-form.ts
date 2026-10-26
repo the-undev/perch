@@ -35,7 +35,6 @@ export interface SettingsValues {
   thresholds: Record<ThresholdKey, number>;
   scan: {
     intervalMinutes: number;
-    archivedIntervalHours: number;
     finalisedCommits: number;
   };
   launch: {
@@ -210,9 +209,6 @@ export function settingsProblems(values: SettingsValues): string[] {
   );
   if (!isWhole(values.scan.intervalMinutes)) {
     problems.push("Scan interval: must be whole minutes above zero");
-  }
-  if (!isWhole(values.scan.archivedIntervalHours)) {
-    problems.push("Archived scan interval: must be whole hours above zero");
   }
   if (!isWhole(values.scan.finalisedCommits)) {
     problems.push("Finalised commits: must be a whole number above zero");

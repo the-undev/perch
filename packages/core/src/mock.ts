@@ -144,7 +144,6 @@ export const mockConfig: Config = {
   },
   scan: {
     intervalMinutes: 15,
-    archivedIntervalHours: 24,
     finalisedCommits: 10,
   },
   launch: {

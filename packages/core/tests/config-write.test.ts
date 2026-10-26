@@ -71,7 +71,6 @@ expectation_red_days = 9
 
 [scan]
 interval_minutes = 5
-archived_interval_hours = 12
 finalised_commits = 25
 
 [launch]

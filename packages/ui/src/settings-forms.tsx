@@ -198,7 +198,7 @@ export function ThresholdsGroup({
   );
 }
 
-/** The two scan intervals and the finalised commits read on each default branch. */
+/** The scan interval and the finalised commits read on each default branch. */
 export function ScanGroup({
   value,
   onChange,
@@ -207,7 +207,7 @@ export function ScanGroup({
     <SettingsGroup
       title="Scanning"
       table="[scan]"
-      lead="Every source is scanned on the interval, counted from the end of the last scan. The archived interval is read by nothing yet."
+      lead="Every source is scanned on the interval, counted from the end of the last scan."
     >
       <FormRow label="Interval" sub="minutes">
         <NumberInput
@@ -216,16 +216,6 @@ export function ScanGroup({
           placeholder=""
           onChange={(intervalMinutes) =>
             onChange({ ...value, intervalMinutes })
-          }
-        />
-      </FormRow>
-      <FormRow label="Archived interval" sub="hours">
-        <NumberInput
-          label="Archived scan interval in hours"
-          value={value.archivedIntervalHours}
-          placeholder=""
-          onChange={(archivedIntervalHours) =>
-            onChange({ ...value, archivedIntervalHours })
           }
         />
       </FormRow>

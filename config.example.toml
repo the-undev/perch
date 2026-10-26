@@ -81,12 +81,10 @@ stalled_red_days = 30
 expectation_amber_days = 7
 expectation_red_days = 30
 
-# The two scan lanes. Everything is scanned on the main interval, counted
-# from the end of the last scan; archived forge repositories change rarely
-# and are meant to refresh on the slow one, which nothing reads yet.
+# Everything is scanned on the interval, counted from the end of the last
+# scan.
 [scan]
 interval_minutes = 15
-archived_interval_hours = 24
 # Commits on each forge repository's default branch to read as finalised.
 finalised_commits = 10
 

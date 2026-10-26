@@ -145,7 +145,7 @@ export function SettingsGroupsPage() {
       </Section>
       <Section
         title="Judgement and scanning"
-        rule="The six global thresholds use the adoption papers' rule: whole numbers above zero, amber opening before red. The intervals and the finalised commit count are whole numbers above zero too; an emptied field counts as none."
+        rule="The six global thresholds use the adoption papers' rule: whole numbers above zero, amber opening before red. The interval and the finalised commit count are whole numbers above zero too; an emptied field counts as none."
         min={560}
       >
         <GroupSpecimen

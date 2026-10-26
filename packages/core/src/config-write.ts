@@ -112,7 +112,6 @@ export function writeConfig(config: Config, home: string): string {
     thresholds: thresholdTable(config.thresholds),
     scan: {
       interval_minutes: config.scan.intervalMinutes,
-      archived_interval_hours: config.scan.archivedIntervalHours,
       finalised_commits: config.scan.finalisedCommits,
     },
     launch: {

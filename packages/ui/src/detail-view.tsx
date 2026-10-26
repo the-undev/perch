@@ -44,7 +44,7 @@ export interface DetailViewProps {
   sheets: KeyFileSheet[];
   /** Adopting the bird or amending its papers. */
   entry: EntryControls;
-  /** The main process's problems, a refused write among them, which open papers show. */
+  /** The main process's problems, a refused write among them, which the strip under the intro or open papers show. */
   problems: string[];
   /** The papers unfold as the page opens, and again whenever this turns true. */
   openPapers: boolean;
@@ -70,22 +70,18 @@ function EntryPart({
   entry,
   now,
   problems,
-  openPapers,
+  open,
+  setOpen,
 }: {
   bird: Bird;
   entry: EntryControls;
   now: Date;
   problems: string[];
-  openPapers: boolean;
+  open: boolean;
+  setOpen: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(openPapers);
-  const [asked, setAsked] = useState(openPapers);
   const [signed, setSigned] = useState<Signed | null>(null);
   const { form } = entry;
-  if (openPapers !== asked) {
-    setAsked(openPapers);
-    if (openPapers) setOpen(true);
-  }
   if (signed !== null && form !== null && landed(signed, form)) {
     setSigned(null);
     setOpen(false);
@@ -130,6 +126,28 @@ function EntryPart({
   );
 }
 
+/**
+ * The main process's problems, a failed launch or a refused write, under the intro in the
+ * sky's notice voice. Open papers carry the same lines beside the signature, so the strip
+ * stands down while they show.
+ */
+function MainProblems({ problems }: { problems: string[] }) {
+  if (problems.length === 0) return null;
+  return (
+    <div
+      data-part="problems"
+      role="alert"
+      className="mt-3 max-w-[90ch] text-[12px] leading-normal"
+    >
+      {problems.map((problem) => (
+        <p key={problem} className="m-0 text-amber">
+          {problem}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 /** The whole project page, centred as one block; the ledger and paper sit side by side when wide. */
 export function DetailView({
   bird,
@@ -141,12 +159,23 @@ export function DetailView({
   openPapers,
 }: DetailViewProps) {
   const { detail } = bird;
+  const [open, setOpen] = useState(openPapers);
+  const [asked, setAsked] = useState(openPapers);
+  if (openPapers !== asked) {
+    setAsked(openPapers);
+    if (openPapers) setOpen(true);
+  }
+  const papersShown =
+    open &&
+    entry.form !== null &&
+    (entry.form.values !== null) === bird.adopted;
   return (
     <article
       aria-label={`${bird.name} in full`}
       className="@container mx-auto max-w-390 motion-safe:animate-swap"
     >
       <DetailIntro bird={bird} night={isNight(skyPhase(now))} />
+      {!papersShown && <MainProblems problems={problems} />}
       <div className="mt-3.5 flex flex-wrap items-center gap-1">
         <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
         <LinksOut links={detail.links} />
@@ -155,7 +184,8 @@ export function DetailView({
           entry={entry}
           now={now}
           problems={problems}
-          openPapers={openPapers}
+          open={open}
+          setOpen={setOpen}
         />
       </div>
       <div className="mt-4 grid items-start gap-10 @min-[1040px]:grid-cols-[minmax(330px,430px)_minmax(0,1fr)]">

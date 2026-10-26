@@ -216,6 +216,40 @@ describe("the detail view", () => {
     );
   });
 
+  it("shows a main-process problem under the intro without the papers open", () => {
+    const hello = mockBird("dev/odin/hello");
+    page(hello, { problems: ["Could not open zellij: no such session"] });
+
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Could not open zellij: no such session",
+    );
+  });
+
+  it("shows no problem strip when there are none", () => {
+    const hello = mockBird("dev/odin/hello");
+    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+
+    expect(container.querySelector('[data-part="problems"]')).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("leaves the problems to the open papers, and brings the strip back when they close", () => {
+    const hello = mockBird("dev/odin/hello");
+    const problems = ["The config was not changed: the disk is read-only"];
+    const { container } = page(hello, {
+      form: mockEntryForm(hello.id),
+      problems,
+    });
+    expect(container.querySelector('[data-part="problems"]')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+    expect(container.querySelector('[data-part="problems"]')).toBeNull();
+    expect(screen.getAllByText(problems[0] ?? "")).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+    expect(container.querySelector('[data-part="problems"]')).not.toBeNull();
+  });
+
   it("offers an adopted bird its papers to amend, and to return it to the fence", () => {
     const perch = mockBird("dev/perch");
     const form = mockEntryForm(perch.id);

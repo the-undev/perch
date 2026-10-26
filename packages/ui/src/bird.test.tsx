@@ -2,7 +2,14 @@ import { mockAviary } from "@perch/core/mock.ts";
 import type { Bird, Wire as WireModel } from "@perch/core/viewmodel.ts";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { BirdPortrait, birdScale, fenceScale, portraitFrame } from "./bird.tsx";
+import {
+  BirdPortrait,
+  birdScale,
+  fenceScale,
+  plumpScale,
+  portraitFrame,
+  wireScale,
+} from "./bird.tsx";
 import { mockBird } from "./mock-birds.ts";
 import { Scene } from "./scene.tsx";
 import { Fence, tallyGap, Wire, WireLine } from "./wire.tsx";
@@ -80,17 +87,18 @@ describe("the bird", () => {
     ).toBeNull();
   });
 
-  it("grows with importance and with outstanding work", () => {
+  it("draws every bird on a wire at one size, grown only by outstanding work", () => {
     const base = mockBird("undev/spool");
-    const important = { ...base, size: { ...base.size, rank: 0 } };
     const plump = { ...base, plumpness: { outstanding: 50, fullness: 1 } };
+    const onWires = mockAviary.wires.flatMap((wire) => wire.birds);
 
-    expect(birdScale(base)).toBeCloseTo(0.9);
-    expect(birdScale(mockBird(".dotfiles"))).toBeGreaterThan(
-      birdScale(base) * 1.4,
-    );
-    expect(birdScale(important)).toBeCloseTo(1.8);
-    expect(birdScale(plump)).toBeCloseTo(0.9 * 1.65);
+    expect(birdScale(base)).toBeCloseTo(wireScale);
+    for (const bird of onWires) {
+      expect(birdScale(bird)).toBeCloseTo(
+        wireScale * plumpScale(bird.plumpness),
+      );
+    }
+    expect(birdScale(plump)).toBeCloseTo(wireScale * 1.65);
     expect(birdScale(mockBird("dev/odin/hello"))).toBeCloseTo(fenceScale);
   });
   it("frames a portrait with the beak tip above the wire, mirrored when facing left", () => {

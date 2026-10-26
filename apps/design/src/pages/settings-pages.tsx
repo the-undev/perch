@@ -12,7 +12,6 @@ import {
 import { FormNotes } from "@perch/ui/form-parts.tsx";
 import { mockHome, mockSettingsForm } from "@perch/ui/mock-birds.ts";
 import {
-  ImportanceGroup,
   LaunchGroup,
   PresencesGroup,
   ScanGroup,
@@ -94,16 +93,6 @@ const scan = (
 ) => (
   <ScanGroup value={values.scan} onChange={(next) => change({ scan: next })} />
 );
-const importance = (
-  values: SettingsValues,
-  change: (c: Partial<SettingsValues>) => void,
-) => (
-  <ImportanceGroup
-    value={values.importance}
-    named={named.tiers}
-    onChange={(next) => change({ importance: next })}
-  />
-);
 const launch = (
   values: SettingsValues,
   change: (c: Partial<SettingsValues>) => void,
@@ -127,8 +116,8 @@ export function SettingsGroupsPage() {
   return (
     <>
       <Section
-        title="Wires and tiers"
-        rule="Ordered names, moved up and down, and the default picked from them. Removing a wire or tier that item entries name is allowed: the form names the entries, and saving moves them to the default."
+        title="Wires"
+        rule="Ordered names, moved up and down, and the default picked from them. Removing a wire that item entries name is allowed: the form names the entries, and saving moves them to the default."
         min={560}
       >
         <GroupSpecimen
@@ -152,14 +141,6 @@ export function SettingsGroupsPage() {
             wires: { names: ["Machine & Home", " "], default: "Someday" },
           })}
           group={wires}
-        />
-        <GroupSpecimen
-          label="A tier removed that entries name"
-          rule="Two entries have importance machine: saving gives them the default tier."
-          start={withMock({
-            importance: { tiers: ["server", "projects"], default: "projects" },
-          })}
-          group={importance}
         />
       </Section>
       <Section
@@ -258,7 +239,7 @@ export function SettingsGroupsPage() {
           {
             name: "form",
             type: "SettingsForm",
-            what: "The values as the file holds them, and the entries naming each wire and tier. The draft starts here and follows it while untouched.",
+            what: "The values as the file holds them, and the entries naming each wire. The draft starts here and follows it while untouched.",
           },
           {
             name: "page",
@@ -288,16 +269,15 @@ export function SettingsGroupsPage() {
         ]}
       >
         <p>
-          Each page (<Code>WiresGroup</Code>, <Code>ImportanceGroup</Code>,{" "}
-          <Code>ThresholdsGroup</Code>, <Code>ScanGroup</Code>,{" "}
-          <Code>LaunchGroup</Code>, <Code>PresencesGroup</Code>, and{" "}
-          <Code>SourcesPage</Code> on a page of its own) takes its slice of{" "}
-          <Code>SettingsValues</Code> as <Code>value</Code> and every change as{" "}
-          <Code>onChange</Code>; the wire and tier pages take <Code>named</Code>{" "}
-          for their warnings. The editor shows the page the rail has open, holds
-          the draft across every page, and lists{" "}
-          <Code>settingsProblems(values)</Code> beside Save, as this page does
-          beneath each specimen.
+          Each page (<Code>WiresGroup</Code>, <Code>ThresholdsGroup</Code>,{" "}
+          <Code>ScanGroup</Code>, <Code>LaunchGroup</Code>,{" "}
+          <Code>PresencesGroup</Code>, and <Code>SourcesPage</Code> on a page of
+          its own) takes its slice of <Code>SettingsValues</Code> as{" "}
+          <Code>value</Code> and every change as <Code>onChange</Code>; the
+          wires page takes <Code>named</Code> for its warnings. The editor shows
+          the page the rail has open, holds the draft across every page, and
+          lists <Code>settingsProblems(values)</Code> beside Save, as this page
+          does beneath each specimen.
         </p>
         <p>
           The form comes from <Code>settingsFormFor(config, home)</Code> in{" "}

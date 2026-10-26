@@ -41,13 +41,13 @@ export function WirePage() {
       >
         <Specimen
           label="Machine & Home"
-          rule="Two restless birds, one content. Dotfiles and the Hothouse Vault are larger: the machine tier."
+          rule="Two restless birds, one content."
         >
           <WireScene wire={machineHome} night={false} />
         </Specimen>
         <Specimen
           label="Projects"
-          rule="Distressed leftmost, then restless, then content; within a mood the more important first, then by name."
+          rule="Distressed leftmost, then restless, then content; within a mood by name."
         >
           <WireScene wire={projects} night={false} />
         </Specimen>

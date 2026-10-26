@@ -1,5 +1,5 @@
 // The settings page's pages, one per part of config, and the editor that holds them: sources,
-// joining up, wires, tiers, judgement, scanning and launching.
+// joining up, wires, judgement, scanning and launching.
 // Each page is presentational, its value in and every change out; the editor holds the draft
 // across them and shows the page the rail has open.
 
@@ -12,7 +12,6 @@ import {
   type SettingsForm,
   type SettingsValues,
   settingsProblems,
-  tierWarnings,
   wireWarnings,
 } from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
@@ -39,7 +38,6 @@ export type SettingsPageName =
   | "sources"
   | "joining"
   | "wires"
-  | "tiers"
   | "judgement"
   | "scanning"
   | "launching";
@@ -54,7 +52,6 @@ export const settingsPages: readonly {
   { page: "sources", label: "Sources", sub: false },
   { page: "joining", label: "Joining up", sub: true },
   { page: "wires", label: "Wires", sub: false },
-  { page: "tiers", label: "Tiers", sub: false },
   { page: "judgement", label: "Judgement", sub: false },
   { page: "scanning", label: "Scanning", sub: false },
   { page: "launching", label: "Launching", sub: false },
@@ -95,7 +92,7 @@ function followDefault(
   return after[index] ?? current;
 }
 
-/** An ordered list of names and the default picked from them, wires or tiers. */
+/** An ordered list of names and the default picked from them. */
 function NamesWithDefault({
   noun,
   placeholder,
@@ -242,35 +239,6 @@ export function ScanGroup({
           }
         />
       </FormRow>
-    </SettingsGroup>
-  );
-}
-
-/** The importance tiers, most important first, and the default. */
-export function ImportanceGroup({
-  value,
-  named,
-  onChange,
-}: GroupProps<SettingsValues["importance"]> & {
-  /** The entry keys naming each tier. */
-  named: Record<string, string[]>;
-}) {
-  const wires = { names: value.tiers, default: value.default };
-  return (
-    <SettingsGroup
-      title="Tiers"
-      table="[importance]"
-      lead="Tiers set a bird's size, the most important first. A bird whose entry names none takes the default."
-    >
-      <NamesWithDefault
-        noun="tier"
-        placeholder="projects"
-        value={wires}
-        onChange={(next) =>
-          onChange({ tiers: next.names, default: next.default })
-        }
-      />
-      <FormNotes notes={tierWarnings(named, value)} />
     </SettingsGroup>
   );
 }
@@ -540,13 +508,6 @@ export function SettingsEditor({
           value={draft.wires}
           named={form.named.wires}
           onChange={(wires) => update({ wires })}
-        />
-      )}
-      {page === "tiers" && (
-        <ImportanceGroup
-          value={draft.importance}
-          named={form.named.tiers}
-          onChange={(importance) => update({ importance })}
         />
       )}
       {page === "judgement" && (

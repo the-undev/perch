@@ -66,7 +66,6 @@ describe("the adoption papers", () => {
     const { onSign } = papers("dev/odin/hello");
 
     expect(checked("radio", "Projects · the default")).toBe(true);
-    expect(checked("radio", "projects · the default")).toBe(true);
     press("Adopt onto Projects");
 
     expect(onSign).toHaveBeenCalledWith(emptyEntryValues());
@@ -87,11 +86,10 @@ describe("the adoption papers", () => {
     ).toBe("true");
   });
 
-  it("store null when the default wire or tier is chosen again, and what differs otherwise", () => {
+  it("store null when the default wire is chosen again, and what differs otherwise", () => {
     const { onSign } = papers("dev/odin/hello");
 
     fireEvent.click(screen.getByRole("radio", { name: "Machine & Home" }));
-    fireEvent.click(screen.getByRole("radio", { name: "server" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Goes by" }), {
       target: { value: "Hello" },
     });
@@ -103,15 +101,11 @@ describe("the adoption papers", () => {
       ...emptyEntryValues(),
       wire: "Machine & Home",
       name: "Hello",
-      importance: "server",
       expect: ["tickets"],
     });
 
     fireEvent.click(
       screen.getByRole("radio", { name: "Projects · the default" }),
-    );
-    fireEvent.click(
-      screen.getByRole("radio", { name: "projects · the default" }),
     );
     fireEvent.change(screen.getByRole("textbox", { name: "Goes by" }), {
       target: { value: " " },
@@ -123,14 +117,15 @@ describe("the adoption papers", () => {
     });
   });
 
-  it("say the tier sets the bird's size", () => {
+  it("hold no tier row: what you say is the wire, the name and the expectations", () => {
     papers("dev/odin/hello");
 
+    expect(screen.queryByText("How much it matters")).toBeNull();
+    expect(screen.queryByText(/tier|size/)).toBeNull();
+    expect(screen.getAllByRole("radio")).toHaveLength(2);
+    expect(screen.getByRole("radio", { name: "Machine & Home" })).toBeDefined();
     expect(
-      screen.getByRole("radiogroup", { name: "How much it matters" }),
-    ).toBeDefined();
-    expect(
-      screen.getByText("a tier sets the bird's size, the first largest"),
+      screen.getByRole("radio", { name: "Projects · the default" }),
     ).toBeDefined();
   });
 
@@ -200,7 +195,6 @@ describe("the adoption papers", () => {
     const { onSign, form } = papers("obsidian/Hothouse");
 
     expect(checked("radio", "Machine & Home")).toBe(true);
-    expect(checked("radio", "machine")).toBe(true);
     expect(
       (screen.getByRole("textbox", { name: "Goes by" }) as HTMLInputElement)
         .value,

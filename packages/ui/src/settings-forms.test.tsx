@@ -411,7 +411,6 @@ describe("the settings page", () => {
       "Sources",
       "Joining up",
       "Wires",
-      "Tiers",
       "Judgement",
       "Scanning",
       "Launching",

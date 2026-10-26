@@ -405,7 +405,7 @@ describe("editing config entries", () => {
 
     await app.saveEntry("dev/perch", {
       ...form.values,
-      importance: "machine",
+      wire: "Machine & Home",
       thresholds: { stalled_amber_days: 3 },
     });
 
@@ -415,7 +415,7 @@ describe("editing config entries", () => {
     );
     expect(config.items["github:finch/perch"]).toMatchObject({
       name: "Perch",
-      importance: "machine",
+      wire: "Machine & Home",
       thresholds: { stalled: { amberDays: 3 } },
     });
     expect(app.entryForm("dev/perch")?.key).toBe("github:finch/perch");

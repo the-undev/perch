@@ -372,7 +372,6 @@ describe("the window", () => {
           values: {
             wire: "Machine & Home",
             name: "Hello",
-            importance: null,
             expect: [],
             keyFiles: null,
             roadmaps: null,

@@ -181,47 +181,6 @@ function WirePicker({
   );
 }
 
-/** The tiers as chips on paper; the default stores null, so config only holds what differs. */
-function TierChoice({
-  labelId,
-  tiers,
-  defaultTier,
-  value,
-  onChange,
-}: {
-  labelId: string;
-  tiers: string[];
-  defaultTier: string;
-  value: string | null;
-  onChange: (tier: string | null) => void;
-}) {
-  const name = useId();
-  const chosen = value ?? defaultTier;
-  return (
-    <div
-      role="radiogroup"
-      aria-labelledby={labelId}
-      className="flex flex-wrap gap-2"
-    >
-      {tiers.map((tier) => (
-        <label key={tier} className={chipClass}>
-          <input
-            type="radio"
-            name={name}
-            className="sr-only"
-            checked={tier === chosen}
-            onChange={() => onChange(tier === defaultTier ? null : tier)}
-          />
-          {tier}{" "}
-          {tier === defaultTier && (
-            <span className="text-[12px] opacity-65">· the default</span>
-          )}
-        </label>
-      ))}
-    </div>
-  );
-}
-
 /**
  * A list of paths relative to the item, each once: each removable, one more added at the end.
  * Null keeps the defaults, which the list names; an empty list is none at all.
@@ -369,7 +328,6 @@ export function AdoptionPapers({
   const ids = {
     wire: `${id}-wire`,
     name: `${id}-name`,
-    tier: `${id}-tier`,
     expect: `${id}-expect`,
     more: `${id}-more`,
   };
@@ -468,20 +426,6 @@ export function AdoptionPapers({
               update({ name: blankAsNull(event.target.value) })
             }
             className={paperInputClass}
-          />
-        </div>
-        <div className="my-3.5">
-          <FieldHead
-            id={ids.tier}
-            label="How much it matters"
-            hint="a tier sets the bird's size, the first largest"
-          />
-          <TierChoice
-            labelId={ids.tier}
-            tiers={options.tiers}
-            defaultTier={options.defaultTier}
-            value={values.importance}
-            onChange={(importance) => update({ importance })}
           />
         </div>
         <div className="my-3.5">

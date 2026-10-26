@@ -188,16 +188,30 @@ describe("the ledger's workings", () => {
 });
 
 describe("a chip's landing", () => {
-  it("marks the row holding the pressed chip's working, only that row, and afresh on each press", () => {
+  it("marks the row holding the pressed chip's working, only that row, and afresh on each press, its working lines lit with the mark", () => {
     const entries = mockBird("dev/perch").detail.ledger;
     const { container, rerender } = render(
       <Ledger entries={entries} now={now} landing={{ chip: "ci", press: 1 }} />,
     );
     const first = container.querySelector('[data-part="landing"]');
+    /** The rows whose working lines are lit, by the chip each holds. */
+    const lit = () =>
+      [
+        ...container.querySelectorAll(
+          '[data-part="workings"].animate-land-ink',
+        ),
+      ].map((list) => list.parentElement?.getAttribute("data-chip"));
+    const firstInk = container.querySelector(
+      '[data-chip="ci"] [data-part="workings"]',
+    );
 
     expect(container.querySelectorAll('[data-part="landing"]')).toHaveLength(1);
     expect(first?.parentElement?.getAttribute("data-chip")).toBe("ci");
     expect(first?.getAttribute("class")).toContain("animate-land");
+    expect(lit()).toEqual(["ci"]);
+    expect(
+      container.querySelectorAll('[data-part="workings"]').length,
+    ).toBeGreaterThan(1);
 
     rerender(
       <Ledger entries={entries} now={now} landing={{ chip: "ci", press: 2 }} />,
@@ -205,6 +219,11 @@ describe("a chip's landing", () => {
     const again = container.querySelector('[data-part="landing"]');
     expect(again).not.toBeNull();
     expect(again).not.toBe(first);
+    const againInk = container.querySelector(
+      '[data-chip="ci"] [data-part="workings"]',
+    );
+    expect(againInk?.classList.contains("animate-land-ink")).toBe(true);
+    expect(againInk).not.toBe(firstInk);
 
     rerender(
       <Ledger
@@ -218,9 +237,11 @@ describe("a chip's landing", () => {
         .querySelector('[data-part="landing"]')
         ?.parentElement?.getAttribute("data-chip"),
     ).toBe("open-items");
+    expect(lit()).toEqual(["open-items"]);
 
     rerender(<Ledger entries={entries} now={now} landing={null} />);
     expect(container.querySelector('[data-part="landing"]')).toBeNull();
+    expect(lit()).toEqual([]);
   });
 });
 

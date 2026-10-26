@@ -174,7 +174,7 @@ function EntryRow({
       data-chip={chip ?? undefined}
       className="relative isolate border-edge border-t px-0.5 first:border-t-0"
     >
-      {landed && <LandingMark key={landing.press} />}
+      {landed && <LandingMark key={`mark-${landing.press}`} />}
       <div className="flex items-baseline justify-between gap-4 py-2.25">
         <span className="min-w-0">
           {chip !== null && <HandleMark />}
@@ -189,8 +189,9 @@ function EntryRow({
       </div>
       {workings.length > 0 && (
         <ul
+          key={landed ? `ink-${landing.press}` : "ink-resting"}
           data-part="workings"
-          className="m-0 -mt-1 list-none space-y-0.5 p-0 pb-2.25 font-mono text-[12px] text-ink-faint leading-normal"
+          className={`m-0 -mt-1 list-none space-y-0.5 p-0 pb-2.25 font-mono text-[12px] text-ink-faint leading-normal ${landed ? "animate-land-ink" : ""}`}
         >
           {workings.map((working) => (
             <WorkingLine key={working.source} working={working} now={now} />

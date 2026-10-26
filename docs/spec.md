@@ -104,25 +104,27 @@ amber.
 Concrete nouns link wherever a page exists for them. Headings name the
 actual thing, never a concept.
 
-The commit river tells the default branch's newest commits once each,
-joined by hash across local main and each forge's list, newest first and
-capped at `scan.finalised_commits`. Each commit carries a mark per
-place, here first and then the bird's forges, named in a legend above
-in mono: filled where the place holds the commit, hollow where it lacks
-it, a faint dot where its reach is unknown. A place's list holds only
-its newest commits, so a commit missing from it is lacking only when it
+The commit river answers what is on main and whether it has spread. It
+tells the default branch's newest commits once each, joined by hash
+across local main and each forge's list, newest first and capped at
+`scan.finalised_commits`. One dot before each commit judges its spread
+over the bird's forges that were read; the clone only adds commits,
+such as unpushed ones on main. Green: every forge read holds it, "on
+github and forgejo". Amber: a forge read lacks it, "only on github", or
+none holds it, "not pushed to a remote" ("on no remote read" while
+another forge is not read). The quiet dot, a faint speck, when no forge
+was read ("no remote read") or the bird has none ("no remote"). The dot
+speaks its words to a screen reader and on hover. A forge's list holds
+only its newest commits, so a forge lacks a commit only when the commit
 is no older than the list's oldest; an older one is beyond the list and
-unknown, never hollow. A place whose list was not read, a forge or git
-that failed, a clone with no local default branch, or a snapshot cached
-before the scanner read local main, says why beside its name in amber,
-and its marks are unknown. Unpushed commits on main join the river with
-hollow forge marks. When a forge lacks a commit another forge holds,
-one amber sentence above the commits says so: "forgejo is 2 commits
+counts as held, so old history never turns amber. Local main being
+behind a forge is not flagged. A forge not read gets an amber line,
+"github not read". When a forge lacks a commit another forge holds
+within its list, one amber sentence says so: "forgejo is 2 commits
 behind github." when one forge lacks, "github and forgejo have
 diverged: github lacks 1 commit, forgejo lacks 2 commits." when both
 do, counted over every listed commit. Forges in agreement earn no
-sentence, and here lacking a forge's commit is told by its marks alone.
-A commit links to the first forge holding it.
+sentence. A commit links to the first forge holding it.
 
 The page centres as one block up to 1920px. From 860px wide the heading
 and the roost share the top band, the roost in a 480px column at the right

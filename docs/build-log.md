@@ -884,3 +884,33 @@ build-time calls so they can be revisited.
   the commit its clone had already pushed.
 - The design site's Newest commits page is now the Commit river page,
   slug `river`, with a specimen per state.
+
+## 26 October 2026 (the river's one dot)
+
+- The river's per-place marks and its legend went after review: the
+  list answers what is on main and whether it has spread. Each commit
+  carries one dot, its tone and its words derived in the view model;
+  `RiverPlace` and `PlaceReach` left the model, and `River` gained
+  `notes`. The lists, `reachIn` and the window rule stay as the
+  machinery, and the divergence sentence is unchanged.
+- The dot is judged over forges read only. A commit beyond a forge's
+  list counts as held, and so does every commit against an empty list,
+  which has no window to judge within: the dot does not cry wolf.
+  The divergence sentence still counts only a strict lack against a
+  strict hold.
+- Two quiet phrases: "no remote read" when the bird's forges all failed,
+  "no remote" for a clone with no forge, where the clone's one-disk
+  state is already the fence's business. With one forge unread and no
+  read forge holding a commit, it reads "on no remote read" rather than
+  claiming it was never pushed.
+- The dot sits before the subject, as the ledger's handle mark sits
+  before its label: 7px in green or amber, the quiet dot a 3px speck in
+  the edge colour. Notes for a forge not read, which name only forges,
+  sit above the commits in amber with the divergence sentence. The
+  clone's own read state is no longer told on the river: it only adds
+  commits, so a snapshot cached before the scanner read local main
+  shows the forges' commits alone until the next scan.
+- The mock's hearth-config has both forges unread, 404s on their pull
+  requests, for the no-remote-read dot. Its empty forge lists went with
+  them.
+

@@ -21,8 +21,8 @@ export interface SourceKindWords {
   needs: string;
 }
 
-/** Every kind of source perch can read, in the order the picker offers them. */
-export const sourceKinds: readonly SourceKindWords[] = [
+/** The kinds the picker offers, in its order; Uptime Kuma waits for server monitoring. */
+export const pickerKinds: readonly SourceKindWords[] = [
   {
     kind: "local",
     name: "Local folders",
@@ -42,6 +42,11 @@ export const sourceKinds: readonly SourceKindWords[] = [
     reads: "The same, from a Forgejo or Gitea server you run.",
     needs: "needs an address and a token",
   },
+];
+
+/** Every kind of source perch can read: the picker's, then Uptime Kuma, which a config may still declare. */
+export const sourceKinds: readonly SourceKindWords[] = [
+  ...pickerKinds,
   {
     kind: "kuma",
     name: "Uptime Kuma",

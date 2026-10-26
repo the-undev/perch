@@ -91,7 +91,6 @@ function windowWords(hours: number): string {
 
 const expectationThing: Record<ExpectationName, string> = {
   ci: "CI",
-  tickets: "a ticket source",
 };
 
 const forgeLabel: Record<ForgeName, string> = {

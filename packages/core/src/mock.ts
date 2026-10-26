@@ -37,7 +37,6 @@ function entry(fields: Partial<ItemEntry>): ItemEntry {
   return {
     wire: null,
     name: null,
-    importance: null,
     thresholds: { unsafe: {}, stalled: {}, expectation: {} },
     expect: [],
     keyFiles: null,
@@ -114,17 +113,14 @@ export const mockConfig: Config = {
     stalled: dayWindows,
     expectation: dayWindows,
   },
-  importance: { tiers: ["server", "machine", "projects"], default: "projects" },
   items: {
     ".dotfiles": entry({
       wire: "Machine & Home",
       name: "Dotfiles",
-      importance: "machine",
     }),
     "obsidian/Hothouse": entry({
       wire: "Machine & Home",
       name: "Hothouse Vault",
-      importance: "machine",
       roadmaps: ["Tech/Tech Plans.md", "Garden/Garden Plans.md"],
     }),
     "obsidian/Pocket": entry({
@@ -141,14 +137,13 @@ export const mockConfig: Config = {
     "undev/skiff": entry({ name: "Skiff" }),
     "undev/prism": entry({ name: "Prism" }),
     "undev/Hollow-legacy": entry({ name: "Hollow (legacy)" }),
-    "undev/oxbow": entry({ name: "Oxbow", expect: ["tickets"] }),
+    "undev/oxbow": entry({ name: "Oxbow", expect: ["ci"] }),
     "undev/gramophone": entry({ name: "Gramophone" }),
     "undev/spool": entry({ name: "Spool" }),
     "undev/glyph-docs": entry({ name: "Glyph Docs" }),
   },
   scan: {
     intervalMinutes: 15,
-    archivedIntervalHours: 24,
     finalisedCommits: 10,
   },
   launch: {
@@ -232,7 +227,6 @@ function localItem(
   id: string,
   fields: {
     kind?: Item["kind"];
-    importance?: string;
     forges: ForgePresence[];
     flags?: Item["flags"];
     expectations?: Expectation[];
@@ -245,7 +239,6 @@ function localItem(
     name: id.slice(id.lastIndexOf("/") + 1),
     kind: fields.kind ?? "repo",
     path,
-    importance: fields.importance ?? "projects",
     liveSources: [],
     presences: { local: { ref: `local:${id}`, path }, forges: fields.forges },
     flags: fields.flags ?? [],
@@ -268,7 +261,6 @@ function notSetUp(include: string): Item["flags"] {
 
 /** Restless: three commits local only for 50 hours, in flight on main. */
 const dotfiles = localItem(".dotfiles", {
-  importance: "machine",
   forges: [
     presence("github", "finch/dotfiles"),
     presence("forgejo", "finch/dotfiles"),
@@ -345,7 +337,6 @@ const dotfiles = localItem(".dotfiles", {
 /** Restless and being edited: six changes uncommitted for 30 hours, a full roadmap. */
 const hothouse = localItem("obsidian/Hothouse", {
   kind: "vault",
-  importance: "machine",
   forges: [presence("forgejo", "finch/Hothouse", "account-listing")],
   sources: {
     git: {
@@ -899,7 +890,7 @@ const hollow = localItem("undev/Hollow-legacy", {
   },
 });
 
-/** Distressed: told to have a ticket source a month ago. */
+/** Distressed: told to have CI a month ago, and still has none. */
 const oxbow = localItem("undev/oxbow", {
   forges: [
     presence("github", "the-undev/oxbow"),
@@ -907,7 +898,7 @@ const oxbow = localItem("undev/oxbow", {
   ],
   expectations: [
     {
-      name: "tickets",
+      name: "ci",
       met: false,
       unmetSince: "2026-09-21T09:00:00.000Z",
       days: 31,
@@ -932,7 +923,7 @@ const oxbow = localItem("undev/oxbow", {
         branch(
           "main",
           "2026-10-09T21:05:29.000Z",
-          "Merge ci-fix: lint and uid-independent tests in CI",
+          "Show the tide table offline",
         ),
       ],
       remotes: [
@@ -955,13 +946,6 @@ const oxbow = localItem("undev/oxbow", {
       basis: "last-message",
     },
     github: forge("github", "the-undev/oxbow", {
-      latestCi: {
-        name: "ci",
-        state: "success",
-        forgeState: "completed/success",
-        url: "https://github.com/the-undev/oxbow/actions/runs/37991284725",
-        createdAt: "2026-10-09T21:05:33Z",
-      },
       finalisedCommits: [
         {
           sha: "5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e",
@@ -971,13 +955,6 @@ const oxbow = localItem("undev/oxbow", {
       ],
     }),
     forgejo: forge("forgejo", "the-undev/oxbow", {
-      latestCi: {
-        name: "ci / check (push)",
-        state: "success",
-        forgeState: "success",
-        url: `${forgejoBase}/the-undev/oxbow/actions/runs/2/jobs/0`,
-        createdAt: "2026-10-10T23:02:29+01:00",
-      },
       finalisedCommits: [
         {
           sha: "5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e",
@@ -1253,7 +1230,6 @@ const obsidianTidy: Item = {
   name: "obsidian-tidy",
   kind: "repo",
   path: null,
-  importance: "projects",
   liveSources: [],
   presences: {
     local: null,
@@ -1280,7 +1256,6 @@ const server: Item = {
   name: "Silo",
   kind: "server",
   path: null,
-  importance: "projects",
   liveSources: ["dockerContainers"],
   presences: { local: null, forges: [] },
   flags: [],

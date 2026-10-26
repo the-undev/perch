@@ -1,5 +1,5 @@
 import { BirdPortrait } from "@perch/ui/bird.tsx";
-import { atRank, mockBird, withOutstanding } from "../specimens.ts";
+import { mockBird, withOutstanding } from "../specimens.ts";
 import { Code, Plate, Section, Specimen, Usage } from "../usage.tsx";
 
 const spool = mockBird("undev/spool");
@@ -83,44 +83,8 @@ export function BirdPage() {
       </Section>
 
       <Section
-        title="Size · importance"
-        rule="The importance tier from config sets the bird's base size. Machine and home outrank projects. The view model gives the tier's rank and the tier count; the least important is 0.9, the most 1.8."
-        min={260}
-      >
-        <Specimen label="projects tier, rank 2 of 3" rule="Scale 0.9.">
-          <Plate phase="day">
-            <BirdPortrait bird={plainSpool} facing="right" night={false} />
-          </Plate>
-        </Specimen>
-        <Specimen
-          label="machine tier, rank 1 of 3"
-          rule="Scale 1.35, as Dotfiles and the Hothouse Vault."
-        >
-          <Plate phase="day">
-            <BirdPortrait
-              bird={atRank(plainSpool, 1)}
-              facing="right"
-              night={false}
-            />
-          </Plate>
-        </Specimen>
-        <Specimen
-          label="server tier, rank 0 of 3"
-          rule="Scale 1.8. Hand-built: no bird in the mock sits in the top tier."
-        >
-          <Plate phase="day">
-            <BirdPortrait
-              bird={atRank(plainSpool, 0)}
-              facing="right"
-              night={false}
-            />
-          </Plate>
-        </Specimen>
-      </Section>
-
-      <Section
         title="Plumpness · outstanding work"
-        rule="More open roadmap items and tickets means a plumper bird, capped at 50 so nobody bursts: up to 65 per cent larger. Volume at a glance; exact numbers live in the bubble."
+        rule="More open roadmap items means a plumper bird, capped at 50 so nobody bursts: up to 65 per cent larger. Volume at a glance; exact numbers live in the bubble."
         min={260}
       >
         {[0, 12, 25, 50].map((outstanding) => (
@@ -322,9 +286,9 @@ export function BirdPage() {
           a standalone SVG of one bird on a short wire at its true size.
         </p>
         <p>
-          The drawn scale is <Code>birdScale(bird)</Code>: the importance
-          tier&apos;s base, or 0.78 on the fence, times the plumpness.
-          Animations run behind <Code>motion-safe</Code>.
+          The drawn scale is <Code>birdScale(bird)</Code>: 0.9 on a wire, or
+          0.78 on the fence, times the plumpness. Animations run behind{" "}
+          <Code>motion-safe</Code>.
         </p>
       </Usage>
     </>

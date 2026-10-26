@@ -69,13 +69,8 @@ stalled_red_days = 20
 expectation_amber_days = 2
 expectation_red_days = 9
 
-[importance]
-tiers = ["server", "machine", "projects"]
-default = "machine"
-
 [scan]
 interval_minutes = 5
-archived_interval_hours = 12
 finalised_commits = 25
 
 [launch]
@@ -93,8 +88,7 @@ obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 [items."dev/perch"]
 wire = "Projects"
 name = "Perch"
-importance = "server"
-expect = ["ci", "tickets"]
+expect = ["ci"]
 key_files = ["README.md", "docs/spec.md"]
 roadmaps = ["docs/roadmap.md"]
 zellij_session = "perch"

@@ -544,20 +544,27 @@ export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
 
 // Expectations
 
+/** How each expectation is checked against an item's sources. */
+const expectationChecks: Record<
+  ExpectationName,
+  (sources: ItemSources) => boolean
+> = {
+  ci: (sources) =>
+    [sources.github, sources.forgejo].some(
+      (forge) =>
+        forge !== undefined && !("error" in forge) && forge.latestCi !== null,
+    ),
+};
+
 /**
  * Whether an item's sources meet an expectation. CI is met when any forge presence that could be
- * read has a CI result on its default branch. A ticket source is never met until perch reads
- * forge tickets.
+ * read has a CI result on its default branch.
  */
 export function expectationMet(
   name: ExpectationName,
   sources: ItemSources,
 ): boolean {
-  if (name === "tickets") return false;
-  return [sources.github, sources.forgejo].some(
-    (forge) =>
-      forge !== undefined && !("error" in forge) && forge.latestCi !== null,
-  );
+  return expectationChecks[name](sources);
 }
 
 /**

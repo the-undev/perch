@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { importanceFor, resolveEntry, thresholdsFor } from "../src/config.ts";
+import { resolveEntry, thresholdsFor } from "../src/config.ts";
 import {
   configuredCards,
   deriveActivity,
@@ -146,7 +146,6 @@ describe("the mock dataset", () => {
         ...(item.presences.local ? [item.presences.local.ref] : []),
         ...item.presences.forges.map((presence) => presence.ref),
       ]).entry;
-      expect(item.importance).toBe(importanceFor(mockConfig, entry));
       const thresholds = thresholdsFor(mockConfig, entry);
       expect(item.expectations).toEqual(
         item.expectations.map((expectation) =>

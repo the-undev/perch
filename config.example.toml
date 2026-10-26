@@ -2,10 +2,10 @@
 # values.
 #
 # The live copy is ~/.config/perch/config.toml. The app writes a starter
-# there when asked: one wire, the standard windows and tiers, no sources. The
-# command line scanner runs with those defaults when the live copy does not
-# exist. The app writes the file back without comments. No secrets here:
-# tokens come from the desktop keyring at run time.
+# there when asked: one wire, the standard windows, no sources. The command
+# line scanner runs with those defaults when the live copy does not exist.
+# The app writes the file back without comments. No secrets here: tokens
+# come from the desktop keyring at run time.
 #
 # Config asserts only what leaves no trace on disk or on a forge. When an
 # assertion and an observation disagree, the observation wins and the
@@ -81,17 +81,10 @@ stalled_red_days = 30
 expectation_amber_days = 7
 expectation_red_days = 30
 
-# Tiers, most important first. Items without an override get the default.
-[importance]
-tiers = ["server", "machine", "projects"]
-default = "projects"
-
-# The two scan lanes. Everything is scanned on the main interval, counted
-# from the end of the last scan; archived forge repositories change rarely
-# and are meant to refresh on the slow one, which nothing reads yet.
+# Everything is scanned on the interval, counted from the end of the last
+# scan.
 [scan]
 interval_minutes = 15
-archived_interval_hours = 24
 # Commits on each forge repository's default branch to read as finalised.
 finalised_commits = 10
 
@@ -129,8 +122,7 @@ obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 # [items."projects/example"]
 # wire = "Projects"                  # one of wires.names
 # name = "Example"                   # the bird's name; default the folder or repository name
-# importance = "machine"             # one of importance.tiers
-# expect = ["ci", "tickets"]         # sources this item should have
+# expect = ["ci"]                   # sources this item should have
 # key_files = ["README.md", "docs/spec.md", "docs/roadmap.md"]  # default the README and roadmaps
 # roadmaps = ["docs/roadmap.md"]     # replaces the standard roadmap names
 # zellij_session = "main"

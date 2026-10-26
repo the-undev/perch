@@ -12,7 +12,7 @@ import type {
 export type { ExpectationName };
 
 /** Every expectation config may assert. */
-export const expectationNames: readonly ExpectationName[] = ["ci", "tickets"];
+export const expectationNames: readonly ExpectationName[] = ["ci"];
 
 /** The three health windows: unsafe work in hours, stalled flight and unmet expectations in days. */
 export interface Thresholds {
@@ -34,7 +34,6 @@ export interface ItemEntry {
   wire: string | null;
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
-  importance: string | null;
   thresholds: ThresholdOverrides;
   /** Sources the owner says this item should have; an unmet one is a fact on the bird. */
   expect: ExpectationName[];
@@ -96,19 +95,14 @@ export interface Config {
   /** Presence references to leave off the main view. */
   ignore: string[];
   thresholds: Thresholds;
-  importance: { tiers: string[]; default: string };
   /**
    * Item entries keyed by any of the item's presence references (see resolveEntry); an entry
    * adopts the item and marks a found repository set up.
    */
   items: Record<string, ItemEntry>;
-  /**
-   * The two scan lanes, everything on the main interval and archived forge data on the slow one,
-   * and the commits read on each forge repository's default branch.
-   */
+  /** The scan interval, and the commits read on each forge repository's default branch. */
   scan: {
     intervalMinutes: number;
-    archivedIntervalHours: number;
     finalisedCommits: number;
   };
   launch: {
@@ -301,20 +295,28 @@ function globalThresholds(source: Table): Thresholds {
   };
 }
 
+/** Every key an item entry may hold. */
+const entryKeys = [
+  "wire",
+  "name",
+  "expect",
+  "key_files",
+  "roadmaps",
+  "zellij_session",
+  ...thresholdKeys.map(([, , key]) => key),
+];
+
 function parseEntry(
   id: string,
   value: unknown,
   context: {
-    tiers: readonly string[];
     wires: readonly string[];
     thresholds: Thresholds;
   },
 ): ItemEntry {
   const where = `items."${id}".`;
   if (!isTable(value)) throw new Error(`config: items."${id}" must be a table`);
-  const importance = optionalString(value, "importance", where);
-  if (importance !== null)
-    oneOf(importance, context.tiers, `${where}importance`);
+  onlyKeys(value, entryKeys, where);
   const wire = optionalString(value, "wire", where);
   if (wire !== null) oneOf(wire, context.wires, `${where}wire`);
   const thresholds = thresholdOverrides(value, where);
@@ -331,7 +333,6 @@ function parseEntry(
   return {
     wire,
     name: optionalString(value, "name", where),
-    importance,
     thresholds,
     expect,
     keyFiles: list("key_files"),
@@ -498,7 +499,6 @@ const topLevelKeys = [
   "joins",
   "ignore",
   "thresholds",
-  "importance",
   "items",
   "scan",
   "launch",
@@ -521,15 +521,9 @@ export function parseConfig(text: string, home: string): Config {
   );
   const thresholds = globalThresholds(table(document, "thresholds", ""));
   checkOrder(thresholds, "thresholds.");
-  const importance = table(document, "importance", "");
-  const tiers = stringArray(importance.tiers, "importance.tiers");
-  const defaultTier = oneOf(
-    string(importance, "default", "importance."),
-    tiers,
-    "importance.default",
-  );
   const items = optionalTable(document, "items", "");
   const scan = table(document, "scan", "");
+  onlyKeys(scan, ["interval_minutes", "finalised_commits"], "scan.");
   const launch = table(document, "launch", "");
   const sessions = optionalTable(launch, "zellij_sessions", "launch.");
 
@@ -539,21 +533,16 @@ export function parseConfig(text: string, home: string): Config {
     joins: stringArrays(document.joins, "joins"),
     ignore: stringArray(document.ignore, "ignore"),
     thresholds,
-    importance: { tiers, default: defaultTier },
     items: Object.fromEntries(
       Object.entries(items).map(([id, value]) => [
         id,
-        parseEntry(id, value, { tiers, wires: wireNames, thresholds }),
+        parseEntry(id, value, { wires: wireNames, thresholds }),
       ]),
     ),
     scan: {
       intervalMinutes: positiveInteger(
         scan.interval_minutes,
         "scan.interval_minutes",
-      ),
-      archivedIntervalHours: positiveInteger(
-        scan.archived_interval_hours,
-        "scan.archived_interval_hours",
       ),
       finalisedCommits: positiveInteger(
         scan.finalised_commits,
@@ -624,11 +613,6 @@ export function resolveEntry(
     entry: first === undefined ? null : (config.items[first] ?? null),
     keys,
   };
-}
-
-/** The importance tier for an item: its entry's when one is set, else the default tier. */
-export function importanceFor(config: Config, entry: ItemEntry | null): string {
-  return entry?.importance ?? config.importance.default;
 }
 
 /** The health windows for an item: the global values with its entry's overrides applied. */

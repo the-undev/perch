@@ -10,6 +10,8 @@ import {
   withSettings,
 } from "../src/settings-form.ts";
 import {
+  kindName,
+  pickerKinds,
   sourceCardId,
   sourceCardsOf,
   sourceHeading,
@@ -167,6 +169,15 @@ describe("the sources in the settings form", () => {
     expect(cards.map(sourceCardId)).toEqual(
       configuredCards(mockConfig.sources, home).map((card) => card.id),
     );
+  });
+
+  it("offers every kind but Uptime Kuma in the picker, and still names a kuma card", () => {
+    expect(pickerKinds.map((words) => words.kind)).toEqual([
+      "local",
+      "github",
+      "forgejo",
+    ]);
+    expect(kindName("kuma")).toBe("Uptime Kuma");
   });
 
   it("heads each card with its kind, then its account, host or name", () => {

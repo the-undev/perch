@@ -7,7 +7,6 @@ import {
   type Config,
   hostsOf,
   type ItemEntry,
-  importanceFor,
   resolveEntry,
   wireFor,
   zellijSessionFor,
@@ -120,13 +119,6 @@ export interface SourceError {
   lastSucceededAt: string | null;
 }
 
-/** Size from importance: the tier, its rank from the top (0 is the most important), and the tier count. */
-export interface BirdSize {
-  tier: string;
-  rank: number;
-  tiers: number;
-}
-
 /** Plumpness from outstanding work: the open roadmap items, and their share of the cap. */
 export interface Plumpness {
   outstanding: number;
@@ -151,7 +143,6 @@ export interface Bird {
   mood: Mood;
   /** Null without a local clone, which has no work-state. */
   activity: Activity | null;
-  size: BirdSize;
   plumpness: Plumpness;
   /** At night a content bird not being edited sleeps, as does every fence bird. */
   sleepsAtNight: boolean;
@@ -747,7 +738,6 @@ export function deriveBird(
   const adopted = wire !== null;
   const name = entry?.name ?? item.name;
   const outstanding = openItemsOf(readable<RoadmapData>(item.sources.roadmap));
-  const tier = importanceFor(config, entry);
   const speech = speak(speechSubject(item, wire, scannedAt));
   const sleepsAtNight =
     !adopted || (mood === "content" && activity !== "editing");
@@ -761,11 +751,6 @@ export function deriveBird(
     health,
     mood,
     activity,
-    size: {
-      tier,
-      rank: config.importance.tiers.indexOf(tier),
-      tiers: config.importance.tiers.length,
-    },
     plumpness: {
       outstanding,
       fullness: Math.min(outstanding, plumpnessCap) / plumpnessCap,
@@ -806,13 +791,9 @@ const moodRank: Record<Mood, number> = {
   content: 2,
 };
 
-/** Along a wire: the worst mood leftmost, then the more important, then by name. */
+/** Along a wire: the worst mood leftmost, then by name. */
 export function compareOnWire(a: Bird, b: Bird): number {
-  return (
-    moodRank[a.mood] - moodRank[b.mood] ||
-    a.size.rank - b.size.rank ||
-    a.name.localeCompare(b.name)
-  );
+  return moodRank[a.mood] - moodRank[b.mood] || a.name.localeCompare(b.name);
 }
 
 function placed(birds: Bird[], compare: (a: Bird, b: Bird) => number): Bird[] {

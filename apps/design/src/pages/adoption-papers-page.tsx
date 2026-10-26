@@ -157,8 +157,8 @@ export function AdoptionPapersPage() {
           {specimen("dev/perch")}
         </Specimen>
         <Specimen
-          label="Wire, tier and roadmaps"
-          rule="The Hothouse Vault: on Machine & Home, machine importance, two roadmap files in place of the standard names."
+          label="Wire and roadmaps"
+          rule="The Hothouse Vault: on Machine & Home, two roadmap files in place of the standard names."
         >
           {specimen("obsidian/Hothouse")}
         </Specimen>

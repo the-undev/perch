@@ -54,7 +54,7 @@ describe("the design site", () => {
       name: "Settings pages",
     });
     expect(rail.textContent).toBe(
-      "SourcesJoining upWiresTiersJudgementScanningLaunching",
+      "SourcesJoining upWiresJudgementScanningLaunching",
     );
     expect(
       screen.getAllByRole("region", { name: "Uptime Kuma · Silo" }),

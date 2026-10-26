@@ -25,8 +25,6 @@ export interface EntryValues {
   wire: string | null;
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
-  /** The importance tier; null takes the default tier. */
-  importance: string | null;
   expect: ExpectationName[];
   /** Key files relative to the item; null keeps the README and the roadmaps. */
   keyFiles: string[] | null;
@@ -42,8 +40,6 @@ export interface EntryValues {
 export interface EntryOptions {
   wires: string[];
   defaultWire: string;
-  tiers: string[];
-  defaultTier: string;
   expectations: ExpectationName[];
   /** The global thresholds, which an override left out takes. */
   thresholds: Record<ThresholdKey, number>;
@@ -112,7 +108,6 @@ export function emptyEntryValues(): EntryValues {
   return {
     wire: null,
     name: null,
-    importance: null,
     expect: [],
     keyFiles: null,
     roadmaps: null,
@@ -157,7 +152,6 @@ export function entryValues(entry: ItemEntry): EntryValues {
   return {
     wire: entry.wire,
     name: entry.name,
-    importance: entry.importance,
     expect: [...entry.expect],
     keyFiles: entry.keyFiles === null ? null : [...entry.keyFiles],
     roadmaps: entry.roadmaps === null ? null : [...entry.roadmaps],
@@ -175,8 +169,6 @@ export function entryOptions(config: Config): EntryOptions {
   return {
     wires: [...config.wires.names],
     defaultWire: config.wires.default,
-    tiers: [...config.importance.tiers],
-    defaultTier: config.importance.default,
     expectations: [...expectationNames],
     thresholds,
   };
@@ -252,7 +244,6 @@ export function withEntry(
   const next: ItemEntry = {
     wire: values.wire,
     name: values.name,
-    importance: values.importance,
     thresholds: nestedThresholds(values.thresholds),
     expect: [...values.expect],
     keyFiles: values.keyFiles === null ? null : [...values.keyFiles],
@@ -268,7 +259,6 @@ export function sameEntryValues(a: EntryValues, b: EntryValues): boolean {
     JSON.stringify([
       values.wire,
       values.name,
-      values.importance,
       values.expect,
       values.keyFiles,
       values.roadmaps,

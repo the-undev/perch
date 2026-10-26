@@ -3,13 +3,26 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
-## Renaming a wire or tier
+## Renaming a wire
 
-The settings page treats a wire or tier edited in place as one removed
-and one added: entries naming the old name move to the default when
-saved, and the form says so first. A rename would carry those entries
+The settings page treats a wire edited in place as one removed and one
+added: entries naming the old name move to the default wire when saved,
+and the form says so first. A rename would carry those entries
 to the new name. It needs the form to know which old name each new one
 replaces, which a list of text fields does not say.
+
+## Reintroducing importance
+
+Config held an importance tier per item: an `[importance]` table of
+`tiers` and a `default`, and an entry's `importance` key, edited on a
+Tiers settings page and a tier row on the adoption papers. Its one
+effect was the bird's size, first tier largest, and its place among
+birds of one mood on a wire. It was removed on 26 October 2026. The
+starter names (server, machine, projects) described the owner's setup
+rather than degrees of importance, and the axis overlapped the wires,
+which already carry the owner's priority. Config now refuses the keys
+by name. Bringing it back needs an effect the wires do not already give,
+and names that read as degrees.
 
 ## A hand edit and the scan
 
@@ -36,10 +49,11 @@ token.
 
 ## Archived scan lane
 
-`[scan] archived_interval_hours` is parsed and read by nothing. Gather reads
-every forge repository, archived or not, on the one interval. The slow lane
-needs gather to split the forge enricher by archived state and keep the
-archived half's raw file between its own runs.
+Gather reads every forge repository, archived or not, on the one interval.
+The slow lane needs gather to split the forge enricher by archived state and
+keep the archived half's raw file between its own runs. Its config key,
+`[scan] archived_interval_hours`, was removed while nothing read it and
+config refuses it; it returns with the lane.
 
 ## Raising the zellij window
 
@@ -133,7 +147,9 @@ Deferred as a whole: the Uptime Kuma aggregate, the live container list and
 the server tile. Projects come first; server and service monitoring is its
 own feature with its own prototype and sources. The scanner's kuma source
 exists and runs only for a `[[sources.kuma]]` table, which config leaves
-out until this is picked up.
+out until this is picked up. The settings page's sources picker leaves
+Uptime Kuma out until then; a kuma table already in the config keeps its
+card.
 
 ## Server container controls
 
@@ -166,7 +182,8 @@ a chore.
 
 Tickets from GitHub and Forgejo as a work source beside the in-repo
 roadmap, feeding the bubble's chips, the bird's plumpness and the detail
-page. Until it exists a `tickets` expectation is never met. Forgejo's API
+page. The `tickets` expectation name, removed while nothing could meet
+it and refused by config, returns with this source. Forgejo's API
 serves them and the tokens already carry read:issue. GitHub fine-grained
 tokens need the Issues read permission added, a regenerate per
 docs/tokens.md. GitHub's issues listing includes pull requests; the

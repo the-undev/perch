@@ -125,7 +125,7 @@ export function SettingsSourcesPage() {
       </Section>
       <Section
         title="Adding a source"
-        rule="The picker offers every kind, each a sentence and what it needs, and opens in place. Picking one appends a card of that kind after its kind's last, open, its empty fields named."
+        rule="The picker offers every kind but Uptime Kuma, which waits for server monitoring: each a sentence and what it needs, and it opens in place. Picking one appends a card of that kind after its kind's last, open, its empty fields named. A kuma table already in the config keeps its card."
         min={640}
       >
         <PageSpecimen

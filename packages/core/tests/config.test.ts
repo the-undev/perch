@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   type Config,
-  importanceFor,
   loadConfig,
   parseConfig,
   resolveEntry,
@@ -52,11 +51,9 @@ describe("example config", () => {
       stalled: { amberDays: 7, redDays: 30 },
       expectation: { amberDays: 7, redDays: 30 },
     });
-    expect(config.importance.default).toBe("projects");
     expect(config.items).toEqual({});
     expect(config.scan).toEqual({
       intervalMinutes: 15,
-      archivedIntervalHours: 24,
       finalisedCommits: 10,
     });
     expect(config.launch).toEqual({
@@ -114,12 +111,9 @@ describe("example config", () => {
     ]);
   });
 
-  it("gives every item the default tier and global thresholds when nothing is overridden", async () => {
+  it("gives every item the global thresholds when nothing is overridden", async () => {
     const config = parseConfig(await exampleText(), home);
 
-    expect(importanceFor(config, entryOf(config, "projects/example"))).toBe(
-      "projects",
-    );
     expect(thresholdsFor(config, entryOf(config, "projects/example"))).toEqual(
       config.thresholds,
     );
@@ -139,13 +133,12 @@ describe("example config", () => {
     expect(config.items["projects/example"]).toEqual({
       wire: "Projects",
       name: "Example",
-      importance: "machine",
       thresholds: {
         unsafe: { amberHours: 12, redHours: 48 },
         stalled: { amberDays: 14, redDays: 60 },
         expectation: { amberDays: 3, redDays: 14 },
       },
-      expect: ["ci", "tickets"],
+      expect: ["ci"],
       keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
       zellijSession: "main",
@@ -167,21 +160,17 @@ describe("example config", () => {
 describe("item overrides", () => {
   const withOverrides = fixtureConfigText;
 
-  it("apply importance and thresholds to the named item only", async () => {
+  it("apply thresholds to the named item only", async () => {
     const text = await withOverrides(
-      '[items.".dotfiles"]\nimportance = "machine"\nunsafe_amber_hours = 3\nstalled_red_days = 60\n',
+      '[items.".dotfiles"]\nunsafe_amber_hours = 3\nstalled_red_days = 60\n',
     );
     const config = parseConfig(text, home);
 
-    expect(importanceFor(config, entryOf(config, ".dotfiles"))).toBe("machine");
     expect(thresholdsFor(config, entryOf(config, ".dotfiles"))).toEqual({
       unsafe: { amberHours: 3, redHours: 72 },
       stalled: { amberDays: 7, redDays: 60 },
       expectation: { amberDays: 7, redDays: 30 },
     });
-    expect(importanceFor(config, entryOf(config, "dev/perch"))).toBe(
-      "projects",
-    );
     expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toEqual(
       config.thresholds,
     );
@@ -244,7 +233,7 @@ describe("item overrides", () => {
     );
 
     expect(() => parseConfig(text, home)).toThrow(
-      /expect must be one of ci, tickets/,
+      'config: items."dev/perch".expect must be one of ci',
     );
   });
 
@@ -258,12 +247,55 @@ describe("item overrides", () => {
     );
   });
 
-  it("reject a tier that is not in the tier list", async () => {
-    const text = await withOverrides(
-      '[items."dev/perch"]\nimportance = "urgent"\n',
+  it("name a key an entry may not hold", async () => {
+    const text = await withOverrides('[items."dev/perch"]\ncolour = "red"\n');
+
+    expect(() => parseConfig(text, home)).toThrow(
+      'config: items."dev/perch".colour is not a config key',
+    );
+  });
+});
+
+describe("removed keys", () => {
+  it("refuses the [importance] table by name", async () => {
+    const text = await fixtureConfigText(
+      '[importance]\ntiers = ["server", "projects"]\ndefault = "projects"\n',
     );
 
-    expect(() => parseConfig(text, home)).toThrow(/importance must be one of/);
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: importance is not a config key",
+    );
+  });
+
+  it("refuses an entry's importance by name", async () => {
+    const text = await fixtureConfigText(
+      '[items."dev/perch"]\nimportance = "machine"\n',
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      'config: items."dev/perch".importance is not a config key',
+    );
+  });
+
+  it("refuses the tickets expectation", async () => {
+    const text = await fixtureConfigText(
+      '[items."dev/perch"]\nexpect = ["ci", "tickets"]\n',
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      'config: items."dev/perch".expect must be one of ci',
+    );
+  });
+
+  it("refuses the archived scan interval by name", async () => {
+    const text = (await fixtureConfigText("")).replace(
+      "[scan]\n",
+      "[scan]\narchived_interval_hours = 24\n",
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: scan.archived_interval_hours is not a config key",
+    );
   });
 });
 

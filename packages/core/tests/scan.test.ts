@@ -33,12 +33,8 @@ stalled_amber_days = 7
 stalled_red_days = 30
 expectation_amber_days = 7
 expectation_red_days = 30
-[importance]
-tiers = ["projects"]
-default = "projects"
 [scan]
 interval_minutes = 15
-archived_interval_hours = 24
 finalised_commits = 10
 [launch]
 zellij_session = "home"

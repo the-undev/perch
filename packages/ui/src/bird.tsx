@@ -3,7 +3,6 @@
 
 import type {
   Bird as BirdModel,
-  BirdSize,
   Mood,
   Plumpness,
 } from "@perch/core/viewmodel.ts";
@@ -26,23 +25,20 @@ const restlessness: Record<Mood, number> = {
   distressed: 2.2,
 };
 
-/** The scale every fence bird starts from, whatever its importance. */
-export const fenceScale = 0.78;
+/** The scale every bird on a wire starts from. */
+export const wireScale = 0.9;
 
-/** Base scale from importance: the least important tier is 0.9, the most important 1.8. */
-export function sizeScale(size: BirdSize): number {
-  const steps = Math.max(size.tiers - 1, 1);
-  return 0.9 + (0.9 * (size.tiers - 1 - size.rank)) / steps;
-}
+/** The scale every fence bird starts from. */
+export const fenceScale = 0.78;
 
 /** Plumpness from outstanding work: up to 65 per cent larger at the cap. */
 export function plumpScale(plumpness: Plumpness): number {
   return 1 + 0.65 * plumpness.fullness;
 }
 
-/** The drawn scale of a bird: its importance on a wire, the fence's on the fence, times its plumpness. */
+/** The drawn scale of a bird: the wire's or the fence's, times its plumpness. */
 export function birdScale(bird: BirdModel): number {
-  const base = bird.adopted ? sizeScale(bird.size) : fenceScale;
+  const base = bird.adopted ? wireScale : fenceScale;
   return base * plumpScale(bird.plumpness);
 }
 

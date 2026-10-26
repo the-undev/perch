@@ -5,6 +5,7 @@
 import type { GithubSourceConfig, SourcesConfig } from "@perch/core/config.ts";
 import {
   type KeyringCalls,
+  pickerKinds,
   type SourceCardValues,
   type SourceField,
   type SourceProblem,
@@ -13,7 +14,6 @@ import {
   sourceCardsOf,
   sourceFieldLabels,
   sourceHeading,
-  sourceKinds,
   sourceProblems,
   withSourceAdded,
   withSourceCard,
@@ -654,7 +654,7 @@ function SourceCardView({
   );
 }
 
-/** The kinds of source, each a row saying what it reads and needs, every kind always offered. */
+/** The kinds of source the picker offers, each a row saying what it reads and needs, always offered. */
 export function SourcePicker({
   onPick,
   onClose,
@@ -665,7 +665,7 @@ export function SourcePicker({
   return (
     <div className="rounded-[10px] border border-edge-hi border-dashed">
       <ul aria-label="Kinds of source" className="m-0 list-none p-0">
-        {sourceKinds.map((words) => (
+        {pickerKinds.map((words) => (
           <li
             key={words.kind}
             className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-edge border-b px-4 py-3.25"

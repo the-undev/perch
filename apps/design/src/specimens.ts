@@ -20,11 +20,6 @@ export { mockBird, mockBirds, mockEntryForm } from "@perch/ui/mock-birds.ts";
 /** The mock scan's moment: times on the pages are measured to it, so they never drift. */
 export const scanMoment = new Date(mockAviary.scannedAt);
 
-/** A bird moved to another importance tier: rank 0 is the most important of three. */
-export function atRank(bird: Bird, rank: number): Bird {
-  return { ...bird, size: { ...bird.size, rank } };
-}
-
 /** A bird carrying a given amount of outstanding work, against the cap of 50. */
 export function withOutstanding(bird: Bird, outstanding: number): Bird {
   return {

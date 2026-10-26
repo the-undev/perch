@@ -372,7 +372,6 @@ describe("the window", () => {
           values: {
             wire: "Machine & Home",
             name: "Hello",
-            importance: null,
             expect: [],
             keyFiles: null,
             roadmaps: null,
@@ -412,7 +411,7 @@ describe("the window", () => {
       fireEvent.click(
         await screen.findByRole("button", { name: "The papers" }),
       );
-      fireEvent.click(screen.getByRole("checkbox", { name: /^tickets/ }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /^ci/ }));
       fireEvent.click(
         screen.getByRole("button", { name: /^More particulars/ }),
       );
@@ -429,7 +428,7 @@ describe("the window", () => {
           birdId: "dev/perch",
           values: expect.objectContaining({
             name: "Perch",
-            expect: ["ci", "tickets"],
+            expect: [],
             thresholds: { stalled_amber_days: 3 },
           }),
         },
@@ -534,16 +533,10 @@ describe("the window", () => {
         ).getByText(/^read 5 repositories · /),
       ).toBeDefined();
       fireEvent.click(screen.getByRole("button", { name: "Add a source" }));
-      fireEvent.click(screen.getByRole("button", { name: "Add Uptime Kuma" }));
-      const added = within(screen.getByRole("region", { name: "Uptime Kuma" }));
-      fireEvent.change(added.getByRole("textbox", { name: "Name" }), {
-        target: { value: "Server" },
-      });
-      fireEvent.change(added.getByRole("textbox", { name: "Status page" }), {
-        target: { value: "server" },
-      });
-      fireEvent.change(added.getByRole("textbox", { name: "Base URL" }), {
-        target: { value: "http://kuma.example.lan:3001" },
+      fireEvent.click(screen.getByRole("button", { name: "Add GitHub" }));
+      const added = within(screen.getByRole("region", { name: "GitHub" }));
+      fireEvent.change(added.getByRole("textbox", { name: "Account" }), {
+        target: { value: "someone" },
       });
       fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
@@ -552,12 +545,13 @@ describe("the window", () => {
           ...form.values,
           sources: {
             ...form.values.sources,
-            kuma: [
-              ...form.values.sources.kuma,
+            github: [
+              ...form.values.sources.github,
               {
-                name: "Server",
-                baseUrl: "http://kuma.example.lan:3001",
-                statusPage: "server",
+                account: "someone",
+                key: "github-someone",
+                hosts: [],
+                trackedForks: [],
               },
             ],
           },

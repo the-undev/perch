@@ -12,7 +12,7 @@ import {
   type SettingsValues,
   settingsFormFor,
   settingsProblems,
-  settingsWarnings,
+  wireWarnings,
   withSettings,
 } from "../src/settings-form.ts";
 
@@ -210,20 +210,23 @@ describe("what the settings cannot be", () => {
     ]);
   });
 
-  it("wants wires and tiers named, each once, the default among them", () => {
+  it("wants wires named, each once, the default among them", () => {
     expect(
       settingsProblems(
         changed({
           wires: { names: ["Projects", " ", "Projects"], default: "Someday" },
-          importance: { tiers: [], default: "projects" },
         }),
       ),
     ).toEqual([
       "Wires: every wire needs a name",
       "Wires: each wire once",
       "Wires: the default wire must be one of the wires",
-      "Importance: name at least one tier",
-      "Importance: the default tier must be one of the tiers",
+    ]);
+    expect(
+      settingsProblems(changed({ wires: { names: [], default: "Projects" } })),
+    ).toEqual([
+      "Wires: name at least one wire",
+      "Wires: the default wire must be one of the wires",
     ]);
   });
 
@@ -235,13 +238,11 @@ describe("what the settings cannot be", () => {
         ...values,
         scan: {
           intervalMinutes: 0,
-          archivedIntervalHours: Number.NaN,
           finalisedCommits: 2.5,
         },
       }),
     ).toEqual([
       "Scan interval: must be whole minutes above zero",
-      "Archived scan interval: must be whole hours above zero",
       "Finalised commits: must be a whole number above zero",
     ]);
   });
@@ -281,7 +282,6 @@ describe("what the settings cannot be", () => {
         changed({
           scan: {
             intervalMinutes: 0,
-            archivedIntervalHours: 24,
             finalisedCommits: 10,
           },
         }),
@@ -291,42 +291,38 @@ describe("what the settings cannot be", () => {
   });
 });
 
-describe("removing a wire or tier entries name", () => {
-  it("names the entries on each wire and tier", () => {
+describe("removing a wire entries name", () => {
+  it("names the entries on each wire", () => {
     const { named } = settingsFormFor(mockConfig, home);
 
-    expect(named.wires).toEqual({
-      "Machine & Home": [
-        ".dotfiles",
-        "obsidian/Hothouse",
-        "obsidian/Pocket",
-      ],
-    });
-    expect(named.tiers).toEqual({
-      machine: [".dotfiles", "obsidian/Hothouse"],
+    expect(named).toEqual({
+      wires: {
+        "Machine & Home": [
+          ".dotfiles",
+          "obsidian/Hothouse",
+          "obsidian/Pocket",
+        ],
+      },
     });
   });
 
-  it("warns before saving, then moves those entries to the defaults", () => {
+  it("warns before saving, then moves those entries to the default wire", () => {
     const form = settingsFormFor(mockConfig, home);
     const values: SettingsValues = {
       ...form.values,
       wires: { names: ["Projects"], default: "Projects" },
-      importance: { tiers: ["server", "projects"], default: "projects" },
     };
 
     expect(settingsProblems(values)).toEqual([]);
-    expect(settingsWarnings(form.named, values)).toEqual([
+    expect(wireWarnings(form.named.wires, values.wires)).toEqual([
       ".dotfiles, obsidian/Hothouse and obsidian/Pocket sit on Machine & Home, which is removed: saving moves them to the default wire, Projects.",
-      ".dotfiles and obsidian/Hothouse have importance machine, which is removed: saving gives them the default tier, projects.",
     ]);
-    expect(settingsWarnings(form.named, form.values)).toEqual([]);
+    expect(wireWarnings(form.named.wires, form.values.wires)).toEqual([]);
 
     const next = withSettings(mockConfig, values, home);
 
     expect(next.items[".dotfiles"]).toMatchObject({
       wire: null,
-      importance: null,
       name: "Dotfiles",
     });
     expect(next.items["obsidian/Pocket"]?.roadmaps).toEqual(

@@ -18,8 +18,8 @@ export type ActivityState = "settled" | "in-progress" | "editing";
 
 export type HealthLevel = "green" | "amber" | "red";
 
-/** A source the owner can assert an item should have: CI, or a ticket source. */
-export type ExpectationName = "ci" | "tickets";
+/** A source the owner can assert an item should have: CI. */
+export type ExpectationName = "ci";
 
 export interface Remote {
   name: string;
@@ -272,7 +272,6 @@ export interface Item {
   kind: ItemKind;
   /** Absolute path of the local clone, null without one. */
   path: string | null;
-  importance: string;
   /** Live sources a detail view may fetch for this item; never part of the scan. */
   liveSources: LiveSourceName[];
   presences: Presences;

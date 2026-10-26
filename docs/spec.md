@@ -27,9 +27,9 @@ this machine alongside.
   actions that change state are parked, see the roadmap.
 - **Facts, not suggestions.** The app exposes facts and never tells the
   owner how a project ought to be run. A source that does not exist for
-  a project shows nothing. Expectations (this project should have CI, a
-  ticket source) are the owner's, asserted in config; an unmet one is
-  itself a fact and shows as one.
+  a project shows nothing. Expectations (this project should have CI)
+  are the owner's, asserted in config; an unmet one is itself a fact
+  and shows as one.
 - **Gather everything, display what is earned.** The scanner collects
   all it can from day one; what surfaces, and at which level, is decided
   deliberately in [decisions/data-placement.md](decisions/data-placement.md),
@@ -55,8 +55,8 @@ Perch deals in three tiers above the project itself, each answering a
 share of the glance questions (which thing needs me first; is anything
 at risk of loss; is the rest quietly fine):
 
-- **A. The bird**: health worn as colour and behaviour, size from
-  importance, plumpness from outstanding work, song while being edited.
+- **A. The bird**: health worn as colour and behaviour, plumpness from
+  outstanding work, song while being edited.
 - **B. The bubble**: click a bird and it speaks. The speech carries how
   it feels and why, in the first person; the chips beneath carry real
   numbers (CI, PRs, tickets, open items). Tier B is a strict subset of
@@ -155,7 +155,7 @@ scan of this machine took about 4 to 7 seconds on 22 October 2026.
 The renderer consumes only the view model, never the raw or snapshot
 types. `src/viewmodel.ts` derives it from a snapshot and the config by
 pure functions, in the design's words: the aviary's wires and fence,
-each bird's mood, activity, size and plumpness, its bubble (the speech
+each bird's mood, activity and plumpness, its bubble (the speech
 from `src/speech.ts`, which follows the phrasebook, and the chips) and
 its detail (ledger, branches, newest commits, pull requests, flags,
 launch actions, links, key files). The sky follows the clock at render
@@ -184,7 +184,7 @@ repositories, vault state. Observation joins what remote URLs prove;
 config asserts what they cannot, and on conflict the observation wins,
 flagged. Everything found starts on the fence; adopting a bird means
 adding it to config, which puts it on a wire and may assert further
-ties, importance, thresholds and expectations. Forks are ignored by
+ties, thresholds and expectations. Forks are ignored by
 default; archived repositories are gathered but never on the main view.
 Details and open questions (composite multi-repo projects among them):
 [decisions/project-model.md](decisions/project-model.md).
@@ -197,8 +197,7 @@ perch has seen" follows in mono and cannot be edited: where the clone
 is, home as `~`, the forges that also hold it, and the last commit (the
 checked-out one, else the newest on a forge's default branch). "What
 you say" holds the wire, drawn as wire strokes with the bird sitting on
-the chosen one, the name, the tier, which sets the bird's size, first
-tier largest, and the expectations. A fold, "More particulars", names
+the chosen one, the name and the expectations. A fold, "More particulars", names
 what it holds while closed: the key files, roadmaps, zellij session and
 the bird's own thresholds. A choice left on its default is written as
 nothing, so config holds only what differs. The signature button names
@@ -216,10 +215,10 @@ vocabulary (entries, keys) stays in the config file and these docs.
 
 `~/.config/perch/config.toml`, stowed from the dotfiles so backup is a
 dotfiles push. It holds: the wires as an ordered named list, the
-sources, the health windows, the two scan lanes and the finalised commit
+sources, the health windows, the scan interval and the finalised commit
 count, the zellij session defaults, the launch commands (an action whose
 command is left out is not offered), per-project assertions (joins,
-wire, importance, display names, thresholds, expectations, key file
+wire, display names, thresholds, expectations, key file
 lists, zellij session names). An entry for an item adopts it. No
 secrets, ever. Every field is shown, with placeholder values, in
 `config.example.toml`.
@@ -235,7 +234,7 @@ sources is valid and scans nothing.
 The settings page, reached from the camera header, edits everything but
 the item entries, which each bird's adoption papers edit. A rail names its
 pages beside one reading-width column: Sources, with Joining up beneath
-it, then Wires, Tiers, Judgement, Scanning and Launching. It opens on
+it, then Wires, Judgement, Scanning and Launching. It opens on
 Sources and shows one page at a time. An edit is kept while another
 page is open, and Save writes every page's edits. The page caps near
 1400px and centres; below about 900px the rail folds to a row of words
@@ -259,8 +258,10 @@ key, no answer from the host, the HTTP status the forge answered). Both
 are held while either runs and while the card has no keyring key, and
 Test while it has no account or address. A kuma card has no token
 field: its status pages are public reads. "Add a source" opens
-a picker in place offering every kind, each with what it reads and what
-it needs; on a config with no sources it is open from the start.
+a picker in place offering every kind but Uptime Kuma, which waits for
+server monitoring, each with what it reads and what it needs; on a
+config with no sources it is open from the start. A kuma table already
+in the config keeps its card.
 Picking a kind adds an empty card of it. Removing a card asks twice.
 Save is held while any field has a problem, named beside the field: an
 empty required field, a folder not starting with `/` or `~`, an address
@@ -314,7 +315,7 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   aviary when a scan finishes. Before any snapshot exists the window
   says the first scan is running. Without a config file nothing scans:
   the window names the path and offers to create it with the default
-  config of one wire, the standard windows and tiers and no sources,
+  config of one wire, the standard windows and no sources,
   never over an existing file, then opens the settings page on Sources.
   Checking again, or focusing the window, reads the path again. A failing source keeps its previous
   result and shows the error and its age. A config that does not parse

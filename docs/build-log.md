@@ -761,3 +761,42 @@ build-time calls so they can be revisited.
   the camera's move between birds.
 - Every implementation phase keeps the design site current: moved or
   new pieces get their page or specimen in the same phase.
+
+## 26 October 2026 (the perch)
+
+- The round's first phase: the roost and the page's new shape. Chips as
+  handles, the commit river, the papers rising and the camera's pan are
+  the later phases.
+- `Detail` gains `clonePath`, the clone's path with home as `~`, and
+  `forges`, each forge that holds the bird once in the order its
+  presences were found. The wire stays on `Bird` and is not copied.
+  `deriveBird` had only the item, the config and the scan time, so
+  `deriveAviary` takes the home directory as a required third
+  parameter; the app passes its own, the mock exports `mockHome`.
+- The meta line names forges by their lower-case names in mono, as the
+  round's page does: "~/dev/perch · github, forgejo · on Projects".
+- The roost draws the bird at 1.3 times its plumpness scale, which puts
+  the mock's Perch near the round's 1.55. Wire and fence birds share
+  the one scale; the fence's dimness tells them apart. The stand is a
+  100 by 7 crossbar on an 8 by 42 pole with a shadow in the shade token,
+  and its drawing grows with the bird so a bird at the cap still fits.
+- The roost's bubble shares the aviary bubble's paper and chips, without
+  the pop: the page's own arrival already moves. At night it speaks
+  woken and a sleeping bird sleeps on its perch, as in the aviary.
+- `DetailIntro` became `DetailHeading`. The speech left it for the
+  roost. The name drops from 42px to the round's 30px. The state word
+  takes the bubble header's capitals and tracking, since the heading now
+  says what that header said. The activity words stay: nothing else on
+  the page says them.
+- The roost comes first in the document and the grid moves it to the
+  second column from 860px, so the narrow order is the reading order.
+  The page's cap grows from 1560px to 1920px, so the record beside the
+  roost keeps the width the ledger and paper had. The ledger and paper
+  split now reads the record's width, at 960px rather than the page's
+  1040px: in a 1400px window the record is about 974px, and the paper
+  stays beside the ledger.
+- The design site gains a Roost page. The Detail heading page moves to
+  the `detail-heading` slug with the meta line in every specimen, and
+  the Bubble page points to the roost's bubble.
+- The roadmap's "Every chip spelled out" entry loses its sentences on
+  the bubble's content not carrying on: the roost carries it.

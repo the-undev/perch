@@ -1,16 +1,17 @@
 // Tier C: a bird's full page. The roost at the top right holds the bird on its perch and its
 // bubble; the record beside it opens with the heading, then the launch actions, links out and the
-// papers' verb, then the ledger and its sections beside the key files on paper. Only what exists
-// is shown. The view fetches nothing: key-file contents, launching and the entry's form and
-// writes are the caller's.
+// papers' verb, then the ledger and its sections beside the key files on paper. A chip pressed in
+// the roost's bubble lands on the ledger row holding its working. Only what exists is shown. The
+// view fetches nothing: key-file contents, launching and the entry's form and writes are the
+// caller's.
 
 import {
   type EntryForm,
   type EntryValues,
   sameEntryValues,
 } from "@perch/core/entry-form.ts";
-import type { Bird, LaunchAction } from "@perch/core/viewmodel.ts";
-import { useState } from "react";
+import type { Bird, ChipKind, LaunchAction } from "@perch/core/viewmodel.ts";
+import { useRef, useState } from "react";
 import { actionClass, LaunchActions, LinksOut } from "./actions.tsx";
 import { AdoptionPapers } from "./adoption-papers.tsx";
 import { DetailHeading } from "./detail-heading.tsx";
@@ -18,6 +19,7 @@ import { Icon } from "./icons.tsx";
 import {
   BranchLines,
   FlagLines,
+  type Landing,
   Ledger,
   NewestCommits,
   PullRequestLines,
@@ -175,6 +177,14 @@ export function DetailView({
     entry.form !== null &&
     (entry.form.values !== null) === bird.adopted;
   const night = isNight(skyPhase(now));
+  const recordRef = useRef<HTMLDivElement>(null);
+  const [landing, setLanding] = useState<Landing | null>(null);
+  const landOn = (chip: ChipKind) => {
+    recordRef.current
+      ?.querySelector(`[data-chip="${chip}"]`)
+      ?.scrollIntoView({ block: "center" });
+    setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
+  };
   return (
     <article
       aria-label={`${bird.name} in full`}
@@ -200,16 +210,17 @@ export function DetailView({
           </div>
         </div>
         <div className="mx-auto w-120 max-w-full @min-[860px]:col-start-2 @min-[860px]:row-start-1 @min-[860px]:mx-0">
-          <Roost bird={bird} night={night} />
+          <Roost bird={bird} night={night} onChip={landOn} />
         </div>
         <div
+          ref={recordRef}
           data-part="record"
           className="@container col-span-full min-w-0 @min-[860px]:row-start-2"
         >
           {!papersShown && <MainProblems problems={problems} />}
           <div className="mt-4 grid items-start gap-10 @min-[960px]:grid-cols-[minmax(330px,430px)_minmax(0,1fr)]">
             <div className="min-w-0">
-              <Ledger entries={detail.ledger} now={now} />
+              <Ledger entries={detail.ledger} now={now} landing={landing} />
               {detail.branches.length > 0 && (
                 <BranchLines branches={detail.branches} now={now} />
               )}

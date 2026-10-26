@@ -5,6 +5,7 @@
 
 import type {
   BranchLine,
+  ChipKind,
   FlagLine,
   ForgeCommits,
   LedgerEntry,
@@ -136,17 +137,44 @@ function HandleMark() {
   );
 }
 
+/** A chip pressed on the roost: the row to mark, and the press's number, so a second press marks it again. */
+export interface Landing {
+  chip: ChipKind;
+  press: number;
+}
+
+/** The brief mark on the row a chip landed on, behind its words; drawn afresh for each press. */
+function LandingMark() {
+  return (
+    <span
+      aria-hidden="true"
+      data-part="landing"
+      className="pointer-events-none absolute -inset-x-2.5 inset-y-0 -z-10 animate-land rounded-md bg-panel-hi opacity-0 ring-1 ring-ink-accent"
+    />
+  );
+}
+
 /** A row of the ledger proper: the label and value, with the row's working beneath, source by source. */
-function EntryRow({ entry, now }: { entry: LedgerEntry; now: Date }) {
+function EntryRow({
+  entry,
+  now,
+  landing,
+}: {
+  entry: LedgerEntry;
+  now: Date;
+  landing: Landing | null;
+}) {
   const tone = entry.kind === "time" ? null : entry.tone;
   const chip = entry.kind === "time" ? null : entry.chip;
   const workings = entry.kind === "time" ? [] : entry.workings;
+  const landed = chip !== null && landing !== null && landing.chip === chip;
   return (
     <div
       data-part="ledger-entry"
       data-chip={chip ?? undefined}
-      className="border-edge border-t px-0.5 first:border-t-0"
+      className="relative isolate border-edge border-t px-0.5 first:border-t-0"
     >
+      {landed && <LandingMark key={landing.press} />}
       <div className="flex items-baseline justify-between gap-4 py-2.25">
         <span className="min-w-0">
           {chip !== null && <HandleMark />}
@@ -177,14 +205,16 @@ export interface LedgerProps {
   entries: LedgerEntry[];
   /** The moment times are measured to: the render's clock, passed in. */
   now: Date;
+  /** The chip last pressed on the roost, whose row is briefly marked; null when none has been. */
+  landing: Landing | null;
 }
 
 /** The facts that exist for a bird, in full words, each chip's working spelled out on its row. */
-export function Ledger({ entries, now }: LedgerProps) {
+export function Ledger({ entries, now, landing }: LedgerProps) {
   return (
     <div data-part="ledger">
       {entries.map((entry) => (
-        <EntryRow key={entry.label} entry={entry} now={now} />
+        <EntryRow key={entry.label} entry={entry} now={now} landing={landing} />
       ))}
     </div>
   );

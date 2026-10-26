@@ -196,6 +196,14 @@ describe("the camera", () => {
     );
   });
 
+  it("scrolls the ground smoothly unless motion is reduced, so a chip's landing glides to its row", () => {
+    const { container } = camera(detailOf("dev/perch"));
+    const ground = container.querySelector('[data-part="ground"]');
+
+    expect(ground?.className).toContain("overflow-y-auto");
+    expect(ground?.className).toContain("motion-safe:scroll-smooth");
+  });
+
   it("keeps the strip's tally clear of the wire's name", () => {
     const { container } = camera(detailOf("undev/skiff"));
     const name = [...container.querySelectorAll("tspan")].find(

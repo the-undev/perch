@@ -75,7 +75,7 @@ export function ChipPage() {
       </Section>
 
       <Usage
-        component="<Chip> and <Chips>"
+        component="<Chip>, <Chips> and <ChipHandles>"
         props={[
           {
             name: "chip",
@@ -85,7 +85,12 @@ export function ChipPage() {
           {
             name: "chips",
             type: "Chip[]",
-            what: "Chips: the whole row; draws nothing when empty.",
+            what: "Chips and ChipHandles: the whole row; draws nothing when empty.",
+          },
+          {
+            name: "onPress",
+            type: "(chip: ChipKind) => void",
+            what: "ChipHandles: a chip was pressed; the bird's page lands on the ledger row holding its working.",
           },
         ]}
       >
@@ -94,6 +99,12 @@ export function ChipPage() {
           <Code>3 unpushed</Code>, <Code>1 open PR</Code>). The chip only picks
           the paper tone from the severity. The CI neutral chip is hand-built:
           the mock&apos;s CI runs succeed, fail or wait.
+        </p>
+        <p>
+          The aviary&apos;s bubble draws <Code>{"<Chips>"}</Code>, which are
+          inert. The roost&apos;s bubble on the bird&apos;s page draws{" "}
+          <Code>{"<ChipHandles>"}</Code>: the same paper as buttons, each
+          landing on the ledger row holding its working.
         </p>
       </Usage>
     </>

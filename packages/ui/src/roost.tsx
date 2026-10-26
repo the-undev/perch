@@ -4,7 +4,7 @@
 // the bird with its tail hanging to the beak; wide enough, a row, the bubble on the left with a
 // sideways tail to the beak. The bird is hung from the beak, so the tail meets it at any bubble height.
 
-import type { Bird } from "@perch/core/viewmodel.ts";
+import type { Bird, ChipKind } from "@perch/core/viewmodel.ts";
 import type { CSSProperties } from "react";
 import { birdLook, PerchedFigure, plumpScale } from "./bird.tsx";
 import { RoostBubble } from "./bubble.tsx";
@@ -101,10 +101,12 @@ export interface RoostProps {
   bird: Bird;
   /** The sky is at night: a bird that sleeps sleeps here too, and its bubble speaks woken. */
   night: boolean;
+  /** A chip in the bubble was pressed: the page lands on the ledger row holding its working. */
+  onChip: (chip: ChipKind) => void;
 }
 
 /** The bird on its perch with its bubble above, or to its left when the roost is wide, for the top right of the bird's page. */
-export function Roost({ bird, night }: RoostProps) {
+export function Roost({ bird, night, onChip }: RoostProps) {
   const frame = roostFrame(bird);
   const look = birdLook(bird, night);
   const centre = frame.centreX;
@@ -137,6 +139,7 @@ export function Roost({ bird, night }: RoostProps) {
             tail={{ side: "left", inset: frame.stackBeakX }}
             drop={frame.drop}
             sideTail={{ reach: frame.rowReach, tipY: frame.rowTipY }}
+            onChip={onChip}
           />
         </div>
         <svg

@@ -59,6 +59,17 @@ describe("the bubble", () => {
     ]);
   });
 
+  it("keeps its chips inert in the aviary: only the bird's page makes them handles", () => {
+    const { container } = speak(mockBird("undev/prism"));
+
+    expect(
+      [...container.querySelectorAll("[data-kind]")].map(
+        (chip) => chip.tagName,
+      ),
+    ).toEqual(["SPAN", "SPAN", "SPAN", "SPAN"]);
+    expect(screen.queryByRole("button", { name: "ci failure" })).toBeNull();
+  });
+
   it("shows no chips row for a bird that carries none", () => {
     const { container } = speak(mockBird("undev/spool"));
 

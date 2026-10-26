@@ -1,5 +1,7 @@
 import type { LedgerEntry } from "@perch/core/viewmodel.ts";
-import { Ledger } from "@perch/ui/ledger.tsx";
+import { ChipHandles } from "@perch/ui/chip.tsx";
+import { type Landing, Ledger } from "@perch/ui/ledger.tsx";
+import { useState } from "react";
 import { mockBird, scanMoment } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 
@@ -84,6 +86,29 @@ const workingSpecimens: LedgerSpecimen[] = [
   },
 ];
 
+/** Perch's chips as handles above its ledger, each press landing on its row as the detail page does. */
+function LandingDemo() {
+  const perch = mockBird("dev/perch");
+  const [landing, setLanding] = useState<Landing | null>(null);
+  return (
+    <Ground>
+      <div className="mb-4 rounded-xl bg-paper px-4 pt-0.5 pb-3.5">
+        <ChipHandles
+          chips={perch.bubble.chips}
+          onPress={(chip) =>
+            setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }))
+          }
+        />
+      </div>
+      <Ledger
+        entries={perch.detail.ledger}
+        now={scanMoment}
+        landing={landing}
+      />
+    </Ground>
+  );
+}
+
 export function LedgerPage() {
   return (
     <>
@@ -102,6 +127,7 @@ export function LedgerPage() {
               <Ledger
                 entries={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}
+                landing={null}
               />
             </Ground>
           </Specimen>
@@ -111,7 +137,7 @@ export function LedgerPage() {
           rule="Hand-built: a session three weeks back reads in weeks."
         >
           <Ground>
-            <Ledger entries={handBuilt} now={scanMoment} />
+            <Ledger entries={handBuilt} now={scanMoment} landing={null} />
           </Ground>
         </Specimen>
       </Section>
@@ -131,10 +157,24 @@ export function LedgerPage() {
               <Ledger
                 entries={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}
+                landing={null}
               />
             </Ground>
           </Specimen>
         ))}
+      </Section>
+
+      <Section
+        title="A chip's landing"
+        rule="On the bird's page a bubble chip is a handle. Pressed, the page scrolls the row holding its working to the middle of the ground, smoothly unless motion is reduced, and marks it: the row lights behind its words with a ring, holds a moment and fades over 1.6 seconds. The fade is opacity only, so it runs with reduced motion too. Pressing again marks it again. In the aviary's bubble the chips stay inert."
+        min={360}
+      >
+        <Specimen
+          label="Perch's chips, pressed"
+          rule="Press a chip: its row is marked. The detail page also scrolls to it."
+        >
+          <LandingDemo />
+        </Specimen>
       </Section>
 
       <Usage
@@ -149,6 +189,11 @@ export function LedgerPage() {
             name: "now",
             type: "Date",
             what: "The moment times are measured to. The app passes its clock; these pages pass the mock scan's.",
+          },
+          {
+            name: "landing",
+            type: "Landing | null",
+            what: "The chip last pressed on the roost and the press's number; its row is marked afresh for each press. Null when none has been.",
           },
         ]}
       >

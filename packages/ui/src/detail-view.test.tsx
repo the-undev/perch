@@ -21,6 +21,18 @@ import type { KeyFileSheet } from "./paper.tsx";
 
 afterEach(cleanup);
 
+/** The elements scrolled into view and how, since jsdom does no scrolling. */
+const scrolled: { element: Element; options: unknown }[] = [];
+Element.prototype.scrollIntoView = function (
+  this: Element,
+  options?: boolean | ScrollIntoViewOptions,
+) {
+  scrolled.push({ element: this, options });
+};
+afterEach(() => {
+  scrolled.length = 0;
+});
+
 const now = new Date(mockSnapshot.scannedAt);
 
 const helloItem = (() => {
@@ -136,10 +148,46 @@ describe("the detail view", () => {
     ).toEqual(["distressed"]);
     expect(screen.getAllByText(prism.bubble.speech)).toHaveLength(1);
     expect(bubble.textContent).toContain(prism.bubble.speech);
-    expect(within(bubble).queryByRole("button")).toBeNull();
+    expect(
+      within(bubble)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual(prism.bubble.chips.map((chip) => chip.label));
     expect(container.querySelector('[data-part="meta"]')?.textContent).toMatch(
       /^~\/undev\/prism · /,
     );
+  });
+
+  it("lands a pressed chip on the ledger row holding its working: scrolled to the middle and marked", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch);
+    const bubble = screen.getByRole("region", { name: "Perch says" });
+    const [ci, , pulls] = perch.bubble.chips;
+    if (ci === undefined || pulls === undefined) {
+      throw new Error("perch carries a CI and a pull request chip");
+    }
+    const row = (chip: string) =>
+      container.querySelector(`[data-part="record"] [data-chip="${chip}"]`);
+    const markedRow = () =>
+      container
+        .querySelector('[data-part="landing"]')
+        ?.parentElement?.getAttribute("data-chip");
+
+    expect(container.querySelector('[data-part="landing"]')).toBeNull();
+    fireEvent.click(within(bubble).getByRole("button", { name: ci.label }));
+
+    expect(scrolled).toEqual([
+      { element: row("ci"), options: { block: "center" } },
+    ]);
+    expect(markedRow()).toBe("ci");
+    expect(row("ci")?.textContent).toContain("forgejo · pending on main");
+
+    fireEvent.click(within(bubble).getByRole("button", { name: pulls.label }));
+
+    expect(pulls.kind).toBe("pull-requests");
+    expect(scrolled.at(-1)?.element).toBe(row("pull-requests"));
+    expect(container.querySelectorAll('[data-part="landing"]')).toHaveLength(1);
+    expect(markedRow()).toBe("pull-requests");
   });
 
   it("puts the heading and the roost in the top band and the record across the page below", () => {

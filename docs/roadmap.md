@@ -310,19 +310,6 @@ from the owners in the URL paths. The seeded card is a suggestion the
 owner confirms and gives a key and token; config keeps the assertion.
 Asked for at first setup.
 
-## Birds paint twice during the arrival
-
-A screenshot taken mid-arrival shows every fence bird twice: one row
-solid, one faded, the fade matching the arrive keyframes' opacity.
-The bird should be one `motion-safe:animate-arrive` group
-(`scene.tsx`, `--animate-arrive` in `theme.css`), so a second copy
-suggests part of the bird's drawing sits outside the animated group
-and rests while the group drops. Seen only while every bird sat on
-the fence (24 of them, nothing adopted); with one bird adopted the
-arrival is shorter and the doubling was not seen again. Cause TBD:
-reproduce with everything on the fence and the animation slowed, and
-see which elements make up each copy.
-
 ## The threshold fields
 
 A threshold row is a pair of bare number inputs labelled amber and

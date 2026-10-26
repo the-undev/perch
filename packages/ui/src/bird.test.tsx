@@ -87,6 +87,17 @@ describe("the bird", () => {
     ).toBeNull();
   });
 
+  it("idles from the start when it is drawn outside the aviary", () => {
+    const distressed = portrait(mockBird("undev/prism"));
+
+    expect(
+      distressed.getElementsByClassName("motion-safe:animate-bird-bob").length,
+    ).toBeGreaterThan(0);
+    expect(part(distressed, "tail").getAttribute("class")).toBe(
+      "motion-safe:animate-tail-flick",
+    );
+  });
+
   it("draws every bird on a wire at one size, grown only by outstanding work", () => {
     const base = mockBird("undev/spool");
     const plump = { ...base, plumpness: { outstanding: 50, fullness: 1 } };

@@ -243,6 +243,7 @@ export function Wire({ wire, y, width, night }: WireProps) {
             night={night}
             namePlace={namePlace(i, spacing, roomyName.drop)}
             speaking={false}
+            idle
           />
         );
       })}
@@ -279,6 +280,7 @@ export function Fence({ fence, y, width, height, night }: FenceProps) {
             night={night}
             namePlace={namePlace(i, spacing, roomyName.drop)}
             speaking={false}
+            idle
           />
         );
       })}

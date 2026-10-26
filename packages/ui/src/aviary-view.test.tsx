@@ -1,5 +1,6 @@
 import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -158,5 +159,73 @@ describe("the aviary view", () => {
 
     expect(arrival("undev/prism")).toBeLessThan(arrival("undev/spool"));
     expect(arrival("undev/spool")).toBeLessThan(arrival("dev/odin/hello"));
+  });
+
+  describe("its motion", () => {
+    const idleClasses = [
+      "motion-safe:animate-bird-bob",
+      "motion-safe:animate-tail-flick",
+    ];
+
+    function idleCount(container: HTMLElement): number {
+      return idleClasses.reduce(
+        (count, name) => count + container.getElementsByClassName(name).length,
+        0,
+      );
+    }
+
+    /** jsdom has no `animationend` style property, so React listens for the webkit-prefixed name. */
+    function endAnimation(element: Element, animationName: string) {
+      const event = new Event("webkitAnimationEnd", { bubbles: true });
+      Object.defineProperty(event, "animationName", { value: animationName });
+      act(() => {
+        element.dispatchEvent(event);
+      });
+    }
+
+    function arriveGroup(id: string): Element {
+      const group = birdButton(id).querySelector(
+        '[class~="motion-safe:animate-arrive"]',
+      );
+      if (group === null) throw new Error(`${id} is not arriving`);
+      return group;
+    }
+
+    it("runs no idle animation on a bird while it arrives", () => {
+      const { container } = show();
+
+      expect(arriveGroup("undev/prism")).not.toBeNull();
+      expect(idleCount(container)).toBe(0);
+    });
+
+    it("sets a bird idling once its arrive animation ends, and the others keep arriving", () => {
+      const { container } = show();
+
+      endAnimation(arriveGroup("undev/prism"), "arrive");
+
+      const arrived = birdButton("undev/prism");
+      expect(
+        arrived.getElementsByClassName("motion-safe:animate-arrive"),
+      ).toHaveLength(0);
+      expect(
+        arrived.getElementsByClassName("motion-safe:animate-tail-flick"),
+      ).toHaveLength(1);
+      expect(idleCount(container)).toBe(
+        arrived.getElementsByClassName("motion-safe:animate-tail-flick")
+          .length +
+          arrived.getElementsByClassName("motion-safe:animate-bird-bob").length,
+      );
+      expect(arriveGroup("undev/spool")).not.toBeNull();
+    });
+
+    it("ignores the beak wiggle ending, which bubbles up from inside the figure", () => {
+      const { container } = show();
+      const group = arriveGroup("undev/prism");
+
+      endAnimation(group, "beak-wiggle");
+
+      expect(arriveGroup("undev/prism")).toBe(group);
+      expect(idleCount(container)).toBe(0);
+    });
   });
 });

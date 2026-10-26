@@ -1,11 +1,57 @@
 import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type CameraPlace, CameraView } from "./camera.tsx";
 import { mockBird } from "./mock-birds.ts";
 
 afterEach(cleanup);
+
+// The setup's animations never finish. The handover tests need to land a flyer on cue, so
+// they swap in an animate that records each flyer's landing for the test to signal.
+const stillAnimate = Element.prototype.animate;
+const landings = new Map<string, () => void>();
+
+beforeEach(() => {
+  landings.clear();
+  Element.prototype.animate = function animate(this: Element) {
+    const flyerId = this.getAttribute("data-flyer");
+    const finished = new Promise<void>((resolve) => {
+      if (flyerId !== null) landings.set(flyerId, resolve);
+    });
+    return { finished, cancel: () => {} } as unknown as Animation;
+  };
+});
+
+afterEach(() => {
+  Element.prototype.animate = stillAnimate;
+});
+
+async function land(birdId: string) {
+  await act(async () => {
+    landings.get(birdId)?.();
+  });
+}
+
+/** Whether the aviary scene draws the named bird: false while it is hidden for its flyer. */
+function sceneDraws(container: HTMLElement, name: string): boolean {
+  const bird = container.querySelector(
+    `[data-part="aviary"] [role="button"][aria-label^="${name}, "]`,
+  ) as HTMLElement;
+  return bird.style.visibility !== "hidden";
+}
+
+/** Whether the strip draws the bird with this id. */
+function stripDraws(container: HTMLElement, birdId: string): boolean {
+  const bird = container.querySelector(`[data-strip-bird="${birdId}"]`);
+  return bird?.getAttribute("visibility") !== "hidden";
+}
 
 const now = new Date(mockSnapshot.scannedAt);
 const aviaryPlace: CameraPlace = { at: "aviary" };
@@ -232,6 +278,53 @@ describe("the camera", () => {
         .map((flyer) => flyer.getAttribute("data-flyer"))
         .sort(),
     ).toEqual(mockAviary.wires[0]?.birds.map((bird) => bird.id).sort());
+  });
+
+  it("hides each wire-mate at both ends while its flyer is in the air", () => {
+    const { container, moveTo } = camera(aviaryPlace);
+    const wire = mockAviary.wires[0]?.birds ?? [];
+    const outsider = mockAviary.fence.birds[0] as Bird;
+
+    moveTo(detailOf("obsidian/Hothouse"));
+
+    for (const mate of wire) {
+      expect(sceneDraws(container, mate.name)).toBe(false);
+      expect(stripDraws(container, mate.id)).toBe(false);
+    }
+    expect(sceneDraws(container, outsider.name)).toBe(true);
+  });
+
+  it("shows a bird at its perch once its own flyer lands, and no other", async () => {
+    const { container, moveTo } = camera(aviaryPlace);
+    const wire = mockAviary.wires[0]?.birds ?? [];
+    const [landing, ...flying] = wire as [Bird, ...Bird[]];
+    moveTo(detailOf("obsidian/Hothouse"));
+
+    await land(landing.id);
+
+    expect(container.querySelector(`[data-flyer="${landing.id}"]`)).toBeNull();
+    expect(stripDraws(container, landing.id)).toBe(true);
+    expect(sceneDraws(container, landing.name)).toBe(true);
+    for (const mate of flying) {
+      expect(stripDraws(container, mate.id)).toBe(false);
+      expect(sceneDraws(container, mate.name)).toBe(false);
+    }
+  });
+
+  it("hides the wire-mates on the way home too, until each lands in the aviary", async () => {
+    const { container, moveTo } = camera(detailOf("obsidian/Hothouse"));
+    const wire = mockAviary.wires[0]?.birds ?? [];
+    const [landing, ...flying] = wire as [Bird, ...Bird[]];
+
+    moveTo(aviaryPlace);
+
+    expect(sceneDraws(container, landing.name)).toBe(false);
+    expect(stripDraws(container, landing.id)).toBe(false);
+    await land(landing.id);
+    expect(sceneDraws(container, landing.name)).toBe(true);
+    for (const mate of flying) {
+      expect(sceneDraws(container, mate.name)).toBe(false);
+    }
   });
 
   it("stays home when asked for a bird the aviary no longer holds", () => {

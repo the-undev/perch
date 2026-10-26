@@ -14,6 +14,7 @@ import { CrowdedPage } from "./pages/crowded-page.tsx";
 import { DetailScenePage } from "./pages/detail-scene-page.tsx";
 import { LedgerPage } from "./pages/ledger-page.tsx";
 import { PaperPage } from "./pages/paper-page.tsx";
+import { RoostPage } from "./pages/roost-page.tsx";
 import {
   BranchesPage,
   CommitsPage,
@@ -131,6 +132,14 @@ export const pages: DesignPage[] = [
     title: "Chip",
     summary: "One number the bird carries, plain, amber or red.",
     component: ChipPage,
+  },
+  {
+    slug: "roost",
+    group: "components",
+    title: "Roost",
+    summary:
+      "The bird on its own page: a T-stand perch, facing left, idle, its bubble above without the header.",
+    component: RoostPage,
   },
   {
     slug: "detail-intro",

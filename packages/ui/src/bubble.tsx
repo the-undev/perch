@@ -1,6 +1,6 @@
 // The speech bubble: paper against the sky, the bird's name and mood word, its first-person
 // speech, the chips it carries, the launch actions and, for a fence bird, the adopt key, with a
-// tail whose tip meets the beak.
+// tail whose tip meets the beak. On the bird's own page the bubble is the speech and chips alone.
 
 import type {
   Bubble as BubbleModel,
@@ -31,6 +31,13 @@ export function spokenSpeech(bubble: BubbleModel, night: boolean): string {
 
 /** The tail's tip sits 2 units in from the edge of its 44-unit drawing. */
 const tailTipInset = 2;
+
+/** How far below the bubble's bottom edge the tail's tip hangs, in pixels. */
+export const tailDrop = 26;
+
+/** The bubble's paper, wherever it hangs. */
+const paperClass =
+  "relative rounded-bubble bg-paper px-4 pt-3.5 pb-3.25 text-[13.5px] text-paper-text leading-normal shadow-bubble";
 
 function Tail({ tail }: { tail: BubbleTail }) {
   const offset = `${tail.inset - tailTipInset}px`;
@@ -83,7 +90,7 @@ export function Bubble({
   return (
     <section
       aria-label={`${bubble.name} says`}
-      className="relative w-97.5 max-w-full rounded-bubble bg-paper px-4 pt-3.5 pb-3.25 text-[13.5px] text-paper-text leading-normal shadow-bubble motion-safe:animate-bubble-pop"
+      className={`${paperClass} w-97.5 max-w-full motion-safe:animate-bubble-pop`}
       style={{ transformOrigin: origin }}
     >
       <h3 className="mb-1 flex items-baseline gap-2.5 font-bold font-display text-[16px] text-paper-strong">
@@ -130,6 +137,30 @@ export function Bubble({
           Tell me the full story
         </button>
       </div>
+      <Tail tail={tail} />
+    </section>
+  );
+}
+
+export interface RoostBubbleProps {
+  bubble: BubbleModel;
+  /** The sky is at night: a bird that sleeps speaks with the waking prefix. */
+  night: boolean;
+  tail: BubbleTail;
+}
+
+/** The bubble on the bird's own page: speech and chips, the name and state word left to the page's heading. */
+export function RoostBubble({ bubble, night, tail }: RoostBubbleProps) {
+  return (
+    <section
+      aria-label={`${bubble.name} says`}
+      data-part="roost-bubble"
+      className={`${paperClass} w-full`}
+    >
+      <p data-part="speech" className="m-0">
+        {spokenSpeech(bubble, night)}
+      </p>
+      <Chips chips={bubble.chips} />
       <Tail tail={tail} />
     </section>
   );

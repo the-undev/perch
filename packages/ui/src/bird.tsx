@@ -162,6 +162,57 @@ export function BirdFigure({ look, id, speaking, idle }: BirdFigureProps) {
   );
 }
 
+export interface PerchedFigureProps {
+  look: BirdLook;
+  id: string;
+  /** The drawn scale: 1 is the board's unit bird. */
+  scale: number;
+  facing: Facing;
+  /** Its bubble has just opened: the beak wiggles. */
+  speaking: boolean;
+  /** The bird is at rest: bob, tail flick and song run. */
+  idle: boolean;
+}
+
+/** A bird's figure above its perch point at a scale, bobbing and singing while idle. */
+export function PerchedFigure({
+  look,
+  id,
+  scale,
+  facing,
+  speaking,
+  idle,
+}: PerchedFigureProps) {
+  const face = facing === "right" ? 1 : -1;
+  return (
+    <g
+      className={
+        idle && look.restlessness > 0
+          ? "motion-safe:animate-bird-bob"
+          : undefined
+      }
+      style={idle ? bobStyle(id, look.restlessness) : undefined}
+    >
+      <g transform={`scale(${scale * face} ${scale})`}>
+        <BirdFigure look={look} id={id} speaking={speaking} idle={idle} />
+      </g>
+      {idle && look.singing && (
+        <text
+          data-part="song"
+          x={48 * face * scale}
+          y={-60 * scale}
+          fill="var(--color-ink-accent)"
+          fontSize={Math.max(15, 13 * scale)}
+          textAnchor="middle"
+          className="motion-safe:animate-song"
+        >
+          ♪
+        </text>
+      )}
+    </g>
+  );
+}
+
 /** Where a bird's name sits: how far below the perch, and at which of two type sizes. */
 export interface NamePlace {
   drop: number;
@@ -214,7 +265,6 @@ export function Bird({
 }: BirdProps) {
   const look = birdLook(bird, night);
   const scale = birdScale(bird);
-  const face = facing === "right" ? 1 : -1;
   return (
     <g
       data-bird={bird.id}
@@ -222,36 +272,14 @@ export function Bird({
       data-asleep={look.asleep}
       transform={`translate(${x} ${y - 3 * scale})`}
     >
-      <g
-        className={
-          idle && look.restlessness > 0
-            ? "motion-safe:animate-bird-bob"
-            : undefined
-        }
-        style={idle ? bobStyle(bird.id, look.restlessness) : undefined}
-      >
-        <g transform={`scale(${scale * face} ${scale})`}>
-          <BirdFigure
-            look={look}
-            id={bird.id}
-            speaking={speaking}
-            idle={idle}
-          />
-        </g>
-        {idle && look.singing && (
-          <text
-            data-part="song"
-            x={48 * face * scale}
-            y={-60 * scale}
-            fill="var(--color-ink-accent)"
-            fontSize={Math.max(15, 13 * scale)}
-            textAnchor="middle"
-            className="motion-safe:animate-song"
-          >
-            ♪
-          </text>
-        )}
-      </g>
+      <PerchedFigure
+        look={look}
+        id={bird.id}
+        scale={scale}
+        facing={facing}
+        speaking={speaking}
+        idle={idle}
+      />
       <text
         y={namePlace.drop + 3 * scale}
         textAnchor="middle"

@@ -223,6 +223,12 @@ export function BubblePage() {
           hangs 26px below the bubble. The pages here use{" "}
           <Code>portraitFrame(bird, facing)</Code> to do that for a portrait.
         </p>
+        <p>
+          On the bird&apos;s own page the bubble is{" "}
+          <Code>{"<RoostBubble>"}</Code>: the same paper, speech and chips with
+          no header and no keys, since the page carries both. The Roost page
+          shows it.
+        </p>
       </Usage>
     </>
   );

@@ -92,8 +92,8 @@ Concrete nouns link wherever a page exists for them. Headings name the
 actual thing ("main on GitHub"), never a concept.
 
 The page centres as one block up to 1920px. From 860px wide the heading
-and the roost share the top band, the roost in a 330px column at the right
-(620px from 1240px wide) and the record spans the full width beneath;
+and the roost share the top band, the roost in a 480px column at the right
+and the record spans the full width beneath;
 narrower, the order is the heading, the roost, centred, then the record. The ledger and its sections sit beside the paper while the
 record is at least 960px wide, above it when narrower.
 

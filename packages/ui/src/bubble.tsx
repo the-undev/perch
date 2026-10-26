@@ -242,8 +242,8 @@ export function RoostBubble({
         {spokenSpeech(bubble, night)}
       </p>
       <Chips chips={bubble.chips} />
-      <Tail tail={tail} drop={drop} className="@min-[520px]:hidden" />
-      <SideTail tail={sideTail} className="hidden @min-[520px]:block" />
+      <Tail tail={tail} drop={drop} className="@min-[460px]:hidden" />
+      <SideTail tail={sideTail} className="hidden @min-[460px]:block" />
     </section>
   );
 }

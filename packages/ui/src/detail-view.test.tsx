@@ -167,13 +167,11 @@ describe("the detail view", () => {
     expect(record.className).toContain("col-span-full");
     expect(record.className).toContain("@min-[860px]:row-start-2");
     expect(record.parentElement?.className).toContain(
-      "@min-[860px]:grid-cols-[minmax(0,1fr)_330px]",
+      "@min-[860px]:grid-cols-[minmax(0,1fr)_480px]",
     );
-    expect(record.parentElement?.className).toContain(
-      "@min-[1240px]:grid-cols-[minmax(0,1fr)_620px]",
-    );
-    expect(roost.parentElement?.className).toContain("w-82.5");
-    expect(roost.parentElement?.className).toContain("@min-[1240px]:w-155");
+    expect(record.parentElement?.className).not.toContain("1240px");
+    expect(roost.parentElement?.className).toContain("w-120");
+    expect(roost.parentElement?.className).not.toContain("1240px");
   });
 
   it("keeps the launch actions and links in the heading cell, not the record", () => {

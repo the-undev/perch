@@ -9,17 +9,17 @@ import type { CSSProperties } from "react";
 import { birdLook, PerchedFigure, plumpScale } from "./bird.tsx";
 import { RoostBubble } from "./bubble.tsx";
 
-/** The roost's width in pixels when stacked: the page's right-hand column below the wide breakpoint. */
+/** The width the stacked form is laid out for, in pixels: any roost narrower than the row breakpoint. */
 export const roostWidth = 330;
 
-/** The roost's width in pixels as a row: the page's right-hand column at the wide breakpoint. */
-export const roostRowWidth = 620;
+/** The roost's width in pixels as a row: the page's right-hand column. */
+export const roostRowWidth = 480;
 
-/** The roost's own width at which it becomes a row; written out in the `@min-[520px]` classes below. */
-export const roostRowBreakpoint = 520;
+/** The roost's own width at which it becomes a row; written out in the `@min-[460px]` classes below. */
+export const roostRowBreakpoint = 460;
 
-/** The scale a roosting bird is drawn at before its plumpness: larger than on any wire. */
-export const roostScale = 1.3;
+/** The scale a roosting bird is drawn at before its plumpness: larger than the wires' 0.9. */
+export const roostScale = 1.0;
 
 /** The clear paper between the bubble's bottom and the top of the bird's head when stacked, in pixels. */
 export const roostDaylight = 14;
@@ -47,7 +47,7 @@ export interface RoostFrame {
   beakY: number;
   /** Stacked: how far the hanging tail's tip falls below the bubble's bottom edge, clearing the head. */
   drop: number;
-  /** Stacked: the beak tip's distance from the bubble's left edge in the 330px column. */
+  /** Stacked: the beak tip's distance from the bubble's left edge in a 330px column. */
   stackBeakX: number;
   /** Row: the sideways tail's reach from the bubble's right edge to the beak. */
   rowReach: number;
@@ -65,7 +65,9 @@ export const roostRowBleed = poleLength + shadowRoom;
 /** The roost's drawing for this bird, tall enough for its plumpness, the beak to the left. */
 export function roostFrame(bird: Bird): RoostFrame {
   const scale = roostScale * plumpScale(bird.plumpness);
-  const perchY = Math.ceil(80 * scale + 8);
+  // The head's top is 58.5 bird units above the crossbar (55.5 above the figure, which sits 3 up),
+  // and 6px more leaves room for the bob's lift.
+  const perchY = Math.ceil(58.5 * scale) + 6;
   // The beak tip is at (37, -42) in bird units, mirrored to face left, the bird 3 units up.
   const beakReach = 37 * scale;
   const centreX = Math.ceil(Math.max(50, beakReach)) + 6;
@@ -107,7 +109,7 @@ export function Roost({ bird, night }: RoostProps) {
     >
       <div
         data-part="roost-layout"
-        className="flex flex-col @min-[520px]:flex-row @min-[520px]:items-start @min-[520px]:gap-(--row-gap)"
+        className="flex flex-col @min-[460px]:flex-row @min-[460px]:items-start @min-[460px]:gap-(--row-gap)"
         style={
           {
             "--row-gap": `${roostRowGap}px`,
@@ -119,7 +121,7 @@ export function Roost({ bird, night }: RoostProps) {
       >
         <div
           data-part="roost-speech"
-          className="@min-[520px]:min-w-0 @min-[520px]:flex-1"
+          className="@min-[460px]:min-w-0 @min-[460px]:flex-1"
         >
           <RoostBubble
             bubble={bird.bubble}
@@ -137,7 +139,7 @@ export function Roost({ bird, night }: RoostProps) {
           viewBox={`0 0 ${frame.width} ${frame.height}`}
           width={frame.width}
           height={frame.height}
-          className="mt-(--stack-gap) ml-(--stack-left) block h-auto max-w-full shrink-0 overflow-visible @min-[520px]:-mb-(--row-bleed) @min-[520px]:mt-0 @min-[520px]:ml-0"
+          className="mt-(--stack-gap) ml-(--stack-left) block h-auto max-w-full shrink-0 overflow-visible @min-[460px]:-mb-(--row-bleed) @min-[460px]:mt-0 @min-[460px]:ml-0"
         >
           <g data-part="stand" fill="var(--color-post)">
             <rect

@@ -103,7 +103,7 @@ describe("the roost", () => {
         frame.beakX,
     ).toBeCloseTo(frame.stackBeakX);
     expect(drawing.getAttribute("class")).toContain("mt-(--stack-gap)");
-    expect(tail.getAttribute("class")).toContain("@min-[520px]:hidden");
+    expect(tail.getAttribute("class")).toContain("@min-[460px]:hidden");
   });
 
   it("drops the stacked tail far enough that the bubble's paper clears the head with daylight", () => {
@@ -119,7 +119,7 @@ describe("the roost", () => {
     expect(roostFrame(mockBird("dev/perch")).drop).toBeGreaterThan(26);
   });
 
-  it("becomes a row from 520px of its own width: bubble left, bird right, only as wide as the drawing needs", () => {
+  it("becomes a row from 460px of its own width: bubble left, bird right, only as wide as the drawing needs", () => {
     const perch = mockBird("dev/perch");
     const { section } = roost(perch);
     const frame = roostFrame(perch);
@@ -130,11 +130,11 @@ describe("the roost", () => {
     const drawing = screen.getByRole("img") as unknown as SVGElement;
 
     expect(section.className).toContain("@container");
-    expect(layout.className).toContain("@min-[520px]:flex-row");
+    expect(layout.className).toContain("@min-[460px]:flex-row");
     expect(layout.className).toContain("flex-col");
     expect(speech?.nextElementSibling).toBe(drawing);
-    expect(speech?.className).toContain("@min-[520px]:flex-1");
-    expect(drawing.getAttribute("class")).toContain("@min-[520px]:ml-0");
+    expect(speech?.className).toContain("@min-[460px]:flex-1");
+    expect(drawing.getAttribute("class")).toContain("@min-[460px]:ml-0");
     expect(drawing.getAttribute("width")).toBe(String(frame.width));
     expect(frame.width).toBeLessThan(200);
     expect(frame.width).toBeGreaterThanOrEqual(100 + 2 * 6);
@@ -155,7 +155,7 @@ describe("the roost", () => {
         "roost-bubble",
       );
       expect(tail.getAttribute("class")).toContain("hidden");
-      expect(tail.getAttribute("class")).toContain("@min-[520px]:block");
+      expect(tail.getAttribute("class")).toContain("@min-[460px]:block");
       // Anchored from the bubble's top, which is the band's top, as the bird's drawing is.
       expect(tail.style.top).toBe("0px");
       expect(tail.style.left).toBe(`calc(100% - ${sideTailOverlap}px)`);
@@ -188,7 +188,7 @@ describe("the roost", () => {
     expect(layout.style.getPropertyValue("--row-bleed")).toBe("52px");
     expect(roostRowBleed).toBe(52);
     expect(drawing.getAttribute("class")).toContain(
-      "@min-[520px]:-mb-(--row-bleed)",
+      "@min-[460px]:-mb-(--row-bleed)",
     );
     expect(drawing.getAttribute("class")).toContain("overflow-visible");
     // The band is the drawing less the bleed: the bird on its crossbar.

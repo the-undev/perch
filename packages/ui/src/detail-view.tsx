@@ -11,7 +11,14 @@ import {
   sameEntryValues,
 } from "@perch/core/entry-form.ts";
 import type { Bird, ChipKind, LaunchAction } from "@perch/core/viewmodel.ts";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type AnimationEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { actionClass, LaunchActions, LinksOut } from "./actions.tsx";
 import { AdoptionPapers } from "./adoption-papers.tsx";
 import { DetailHeading } from "./detail-heading.tsx";
@@ -154,6 +161,14 @@ function MainProblems({ problems }: { problems: string[] }) {
   );
 }
 
+/** Whether the page's arrival is still animating: false where the platform cannot say, or motion is reduced and nothing runs. */
+function swapRunning(article: HTMLElement | null): boolean {
+  if (article === null || typeof article.getAnimations !== "function") {
+    return false;
+  }
+  return article.getAnimations().length > 0;
+}
+
 /**
  * The whole project page, centred as one block: the roost beside the record when wide, above it and
  * centred when narrow, and the ledger beside the paper when the record is wide enough.
@@ -188,14 +203,27 @@ export function DetailView({
       ?.scrollIntoView({ block: "center" });
     setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
   }, []);
+  // The arrival lands once the page's own swap is over, since a scroll and a mark during it flicker.
+  const articleRef = useRef<HTMLElement>(null);
+  const [settled, setSettled] = useState(false);
+  useLayoutEffect(() => {
+    if (!swapRunning(articleRef.current)) setSettled(true);
+  }, []);
+  const settleOnSwap = (event: AnimationEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.animationName !== "swap") return;
+    setSettled(true);
+  };
   useEffect(() => {
-    if (arrivalChip === null) return;
+    if (!settled || arrivalChip === null) return;
     landOn(arrivalChip);
-  }, [arrivalChip, landOn]);
+  }, [settled, arrivalChip, landOn]);
   return (
     <article
+      ref={articleRef}
       aria-label={`${bird.name} in full`}
       className="@container mx-auto max-w-480 motion-safe:animate-swap"
+      onAnimationEnd={settleOnSwap}
     >
       <div className="grid grid-cols-1 items-start gap-x-9 gap-y-3 @min-[860px]:grid-cols-[minmax(0,1fr)_480px]">
         <div

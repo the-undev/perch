@@ -841,3 +841,8 @@ build-time calls so they can be revisited.
   validator that drops a key leaves the raw value in place. The bird
   route's validator sets `chip` to undefined for anything but a known
   kind, `chipKinds` exported from the view model for the check.
+- An arrival chip lands once the page's own swap has ended, as the mark
+  and the smooth scroll during it flickered. The page settles on the
+  article's own `swap` animationend, or at mount when the article has no
+  running animation (`getAnimations` missing or empty, as under reduced
+  motion and jsdom). A roost press lands at once.

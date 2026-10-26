@@ -94,6 +94,11 @@ export interface GitData {
   oldestUncommittedAt: string | null;
   oldestUnpushedAt: string | null;
   branches: LocalBranch[];
+  /**
+   * The newest commits on the local default branch, newest first: null without that branch,
+   * absent from a snapshot cached before the scanner read them.
+   */
+  defaultBranchCommits?: FinalisedCommit[] | null;
   remotes: Remote[];
   activity: ActivityState;
   drift: Drift;

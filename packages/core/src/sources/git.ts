@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { chooseDefaultBranch } from "../derivations.ts";
 import { runCommand } from "../exec.ts";
 import type {
   RawBranch,
@@ -17,6 +18,8 @@ export type GitRunner = (
 export interface GitReadDeps {
   runGit: GitRunner;
   mtimeOf: (path: string) => Promise<Date | null>;
+  /** How many default-branch commits to read. */
+  finalisedCommits: number;
 }
 
 /** Runs git without optional locks, so status never rewrites the index, and never prompts. */
@@ -167,23 +170,45 @@ export async function readRepository(
   ]);
   const status = parseStatus(statusOutput);
   const remotes = parseRemotes(remoteOutput);
-  const originHead = originHeadOutput.trim();
+  const branches = parseBranches(branchOutput);
+  const originHeadValue = originHeadOutput.trim();
+  const originHead: RawGit["originHead"] =
+    originHeadValue === ""
+      ? { state: "absent", reason: "no-origin-head" }
+      : { state: "observed", value: originHeadValue };
+  const branchNames = branches.map((branch) => branch.name);
+  const defaultBranch = chooseDefaultBranch(originHead, branchNames);
+  const localDefaultBranch =
+    defaultBranch !== null && branchNames.includes(defaultBranch)
+      ? defaultBranch
+      : null;
 
-  const [lastCommitOutput, dirtyFiles] = await Promise.all([
-    status.hasCommits ? git(["log", "-1", commitFormat]) : "",
-    Promise.all(
-      status.changes.map(async (change): Promise<RawDirtyFile> => {
-        const mtime = await deps.mtimeOf(join(path, change.path));
-        return {
-          ...change,
-          mtime:
-            mtime === null
-              ? { state: "absent", reason: "file-deleted" }
-              : { state: "observed", value: mtime.toISOString() },
-        };
-      }),
-    ),
-  ]);
+  const [lastCommitOutput, defaultBranchOutput, dirtyFiles] = await Promise.all(
+    [
+      status.hasCommits ? git(["log", "-1", commitFormat]) : "",
+      localDefaultBranch === null
+        ? null
+        : git([
+            "log",
+            `--max-count=${deps.finalisedCommits}`,
+            commitFormat,
+            `refs/heads/${localDefaultBranch}`,
+            "--",
+          ]),
+      Promise.all(
+        status.changes.map(async (change): Promise<RawDirtyFile> => {
+          const mtime = await deps.mtimeOf(join(path, change.path));
+          return {
+            ...change,
+            mtime:
+              mtime === null
+                ? { state: "absent", reason: "file-deleted" }
+                : { state: "observed", value: mtime.toISOString() },
+          };
+        }),
+      ),
+    ],
+  );
   const lastCommit = parseCommits(lastCommitOutput)[0];
 
   return {
@@ -193,15 +218,16 @@ export async function readRepository(
         ? { state: "absent", reason: "no-commits" }
         : { state: "observed", value: lastCommit },
     dirtyFiles,
-    branches: parseBranches(branchOutput),
+    branches,
     remotes:
       remotes.length === 0
         ? { state: "absent", reason: "no-remote" }
         : { state: "observed", value: remotes },
-    originHead:
-      originHead === ""
-        ? { state: "absent", reason: "no-origin-head" }
-        : { state: "observed", value: originHead },
+    originHead,
     unpushedCommits: parseCommits(unpushedOutput),
+    defaultBranchCommits:
+      defaultBranchOutput === null
+        ? { state: "absent", reason: "no-default-branch" }
+        : { state: "observed", value: parseCommits(defaultBranchOutput) },
   };
 }

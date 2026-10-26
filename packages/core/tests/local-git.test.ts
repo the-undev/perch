@@ -34,6 +34,7 @@ function source(include: string[], ignore: string[]) {
     ignore,
     runGit: fixtureGit,
     mtimeOf: fileMtime,
+    finalisedCommits: 10,
     concurrency: 2,
   });
 }

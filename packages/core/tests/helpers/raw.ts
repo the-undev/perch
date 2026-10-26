@@ -30,6 +30,7 @@ export function rawGit(overrides: Partial<RawGit>): RawGit {
     remotes: { state: "absent", reason: "no-remote" },
     originHead: { state: "absent", reason: "no-origin-head" },
     unpushedCommits: [],
+    defaultBranchCommits: { state: "absent", reason: "no-default-branch" },
     ...overrides,
   };
 }

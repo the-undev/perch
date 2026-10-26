@@ -79,6 +79,7 @@ export function gatherSources(config: Config, io: SourceIo): PolledSources {
       ignore: [...new Set(sources.local.flatMap((card) => card.exclude))],
       runGit: createGitRunner(io.env),
       mtimeOf: fileMtime,
+      finalisedCommits: scan.finalisedCommits,
       concurrency: 8,
     }),
     githubAccounts: createForgeAccountsSource("githubAccounts", github),

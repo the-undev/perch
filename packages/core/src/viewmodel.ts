@@ -18,7 +18,6 @@ import type {
   AgedWork,
   CiRun,
   CiState,
-  Expectation,
   FailureReason,
   ForgeData,
   ForgeName,
@@ -73,8 +72,7 @@ export type HealthCause =
       stall: Stall;
       /** Nothing uncommitted and nothing unpushed while parked. */
       everythingPushed: boolean;
-    }
-  | { kind: "expectation"; level: HealthLevel; expectation: Expectation };
+    };
 
 /** The fact behind the mood: the worst level, and the causes worst first. */
 export interface Health {
@@ -167,7 +165,6 @@ export interface Bubble {
 
 export type ChipKind =
   | "ci"
-  | "expectation"
   | "bugs"
   | "uncommitted"
   | "unpushed"
@@ -425,15 +422,6 @@ function chipsFor(item: Item, health: Health): Chip[] {
       severity: worstCi === "failure" ? "red" : null,
     });
   }
-  for (const expectation of item.expectations) {
-    if (expectation.met) continue;
-    chips.push({
-      kind: "expectation",
-      label: `${expectation.name} not set up`,
-      count: null,
-      severity: severity(expectation.level),
-    });
-  }
   const roadmap = readable<RoadmapData>(item.sources.roadmap);
   const bugs = roadmap?.counts.bug ?? 0;
   if (bugs > 0) {
@@ -540,16 +528,6 @@ function ledgerFor(item: Item): LedgerEntry[] {
         url: data.latestCi.url,
       });
     }
-  }
-  for (const expectation of item.expectations) {
-    if (expectation.met) continue;
-    ledger.push({
-      kind: "state",
-      label: expectation.name,
-      text: "not set up",
-      tone: severity(expectation.level),
-      url: null,
-    });
   }
   if (git?.lastCommitAt) {
     ledger.push({ kind: "time", label: "last commit", at: git.lastCommitAt });

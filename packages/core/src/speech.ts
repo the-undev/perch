@@ -2,7 +2,7 @@
 // sentences at most, the worst cause first and at most one secondary, calm punctuation. Times are
 // durations measured at the scan, so the words need no clock and no time zone.
 
-import type { ExpectationName, ForgeName } from "./snapshot.ts";
+import type { ForgeName } from "./snapshot.ts";
 import type { Activity, HealthCause } from "./viewmodel.ts";
 
 /** The prefix a sleeping bird's speech gains when it is clicked at night. */
@@ -89,10 +89,6 @@ function windowWords(hours: number): string {
   return hours % 24 === 0 ? daysWords(hours / 24) : hoursWords(hours);
 }
 
-const expectationThing: Record<ExpectationName, string> = {
-  ci: "CI",
-};
-
 const forgeLabel: Record<ForgeName, string> = {
   github: "GitHub",
   forgejo: "Forgejo",
@@ -155,20 +151,6 @@ function primary(cause: HealthCause): {
           ? "Everything's pushed, but the flight's gone quiet."
           : "The flight's gone quiet.",
       };
-    case "expectation": {
-      const { expectation } = cause;
-      const span = daysWords(expectation.days ?? 0);
-      // The time is the fact here, so it stays even when a secondary follows.
-      return {
-        opening: [
-          `You said I should have ${expectationThing[expectation.name]}.`,
-          cause.level === "red"
-            ? `That was ${span} ago.`
-            : `${capitalise(span)} now, still none.`,
-        ],
-        closing: null,
-      };
-    }
   }
 }
 
@@ -185,8 +167,6 @@ function secondary(cause: HealthCause): string {
       return `I'm also holding ${countWords(cause.count)} local-only ${plural(cause.count, "commit", "commits")} for ${hoursWords(cause.work.hours)}.`;
     case "stalled":
       return `I've also been parked on ${cause.stall.branch} for ${daysWords(cause.stall.days)}.`;
-    case "expectation":
-      return `You also said I should have ${expectationThing[cause.expectation.name]}.`;
   }
 }
 

@@ -372,7 +372,6 @@ describe("the window", () => {
           values: {
             wire: "Machine & Home",
             name: "Hello",
-            expect: [],
             keyFiles: null,
             roadmaps: null,
             thresholds: {},
@@ -411,7 +410,6 @@ describe("the window", () => {
       fireEvent.click(
         await screen.findByRole("button", { name: "The papers" }),
       );
-      fireEvent.click(screen.getByRole("checkbox", { name: /^ci/ }));
       fireEvent.click(
         screen.getByRole("button", { name: /^More particulars/ }),
       );
@@ -428,7 +426,6 @@ describe("the window", () => {
           birdId: "dev/perch",
           values: expect.objectContaining({
             name: "Perch",
-            expect: [],
             thresholds: { stalled_amber_days: 3 },
           }),
         },

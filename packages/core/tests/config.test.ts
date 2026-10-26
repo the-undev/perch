@@ -138,7 +138,6 @@ describe("example config", () => {
         stalled: { amberDays: 14, redDays: 60 },
         expectation: { amberDays: 3, redDays: 14 },
       },
-      expect: ["ci"],
       keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
       zellijSession: "main",
@@ -227,16 +226,6 @@ describe("item overrides", () => {
     expect(() => parseConfig(text, home)).toThrow(/wire must be one of/);
   });
 
-  it("reject an expectation perch cannot check", async () => {
-    const text = await withOverrides(
-      '[items."dev/perch"]\nexpect = ["docs"]\n',
-    );
-
-    expect(() => parseConfig(text, home)).toThrow(
-      'config: items."dev/perch".expect must be one of ci',
-    );
-  });
-
   it("reject an amber window that does not open before red, once merged with the globals", async () => {
     const text = await withOverrides(
       '[items."dev/perch"]\nunsafe_amber_hours = 72\n',
@@ -277,13 +266,13 @@ describe("removed keys", () => {
     );
   });
 
-  it("refuses the tickets expectation", async () => {
+  it("refuses an entry's expect by name", async () => {
     const text = await fixtureConfigText(
-      '[items."dev/perch"]\nexpect = ["ci", "tickets"]\n',
+      '[items."dev/perch"]\nexpect = ["ci"]\n',
     );
 
     expect(() => parseConfig(text, home)).toThrow(
-      'config: items."dev/perch".expect must be one of ci',
+      'config: items."dev/perch".expect is not a config key',
     );
   });
 

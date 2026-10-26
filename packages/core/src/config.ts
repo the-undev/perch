@@ -3,16 +3,7 @@
 
 import { parse } from "smol-toml";
 import { candidateRefs } from "./refs.ts";
-import type {
-  DayThresholds,
-  ExpectationName,
-  HourThresholds,
-} from "./snapshot.ts";
-
-export type { ExpectationName };
-
-/** Every expectation config may assert. */
-export const expectationNames: readonly ExpectationName[] = ["ci"];
+import type { DayThresholds, HourThresholds } from "./snapshot.ts";
 
 /** The three health windows: unsafe work in hours, stalled flight and unmet expectations in days. */
 export interface Thresholds {
@@ -35,8 +26,6 @@ export interface ItemEntry {
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
   thresholds: ThresholdOverrides;
-  /** Sources the owner says this item should have; an unmet one is a fact on the bird. */
-  expect: ExpectationName[];
   /** Files for the detail page, relative to the item; null keeps the README and the roadmaps. */
   keyFiles: string[] | null;
   /** Roadmap files relative to the item, replacing the standard names; null keeps them. */
@@ -299,7 +288,6 @@ function globalThresholds(source: Table): Thresholds {
 const entryKeys = [
   "wire",
   "name",
-  "expect",
   "key_files",
   "roadmaps",
   "zellij_session",
@@ -321,20 +309,12 @@ function parseEntry(
   if (wire !== null) oneOf(wire, context.wires, `${where}wire`);
   const thresholds = thresholdOverrides(value, where);
   checkOrder(applyOverrides(context.thresholds, thresholds), where);
-  const expect =
-    value.expect === undefined
-      ? []
-      : stringArray(value.expect, `${where}expect`).map(
-          (name) =>
-            oneOf(name, expectationNames, `${where}expect`) as ExpectationName,
-        );
   const list = (key: string) =>
     value[key] === undefined ? null : stringArray(value[key], `${where}${key}`);
   return {
     wire,
     name: optionalString(value, "name", where),
     thresholds,
-    expect,
     keyFiles: list("key_files"),
     roadmaps: list("roadmaps"),
     zellijSession: optionalString(value, "zellij_session", where),

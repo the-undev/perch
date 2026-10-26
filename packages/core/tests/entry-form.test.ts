@@ -44,7 +44,6 @@ describe("the entry form", () => {
     expect(form.values).toEqual({
       wire: null,
       name: "Perch",
-      expect: ["ci"],
       keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
       roadmaps: null,
       thresholds: {},
@@ -53,7 +52,6 @@ describe("the entry form", () => {
     expect(form.options).toEqual({
       wires: ["Machine & Home", "Projects"],
       defaultWire: "Projects",
-      expectations: ["ci"],
       thresholds: {
         unsafe_amber_hours: 24,
         unsafe_red_hours: 72,
@@ -120,7 +118,6 @@ describe("the entry form", () => {
       wire: "Machine & Home",
       name: "Hello",
       thresholds: { unsafe: {}, stalled: {}, expectation: {} },
-      expect: [],
       keyFiles: null,
       roadmaps: null,
       zellijSession: null,

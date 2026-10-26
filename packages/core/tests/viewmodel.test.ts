@@ -102,21 +102,9 @@ describe("mood", () => {
     ]);
   });
 
-  it("leaves green inputs out: fresh work, a young stall and a new unmet expectation are content", async () => {
-    const config = await testConfig(
-      '[items."dev/gramophone"]\nexpect = ["ci"]\n',
-    );
+  it("leaves green inputs out: fresh work and a young stall are content", async () => {
+    const config = await testConfig('[items."dev/gramophone"]\n');
     const young = item("dev/gramophone", {
-      expectations: [
-        {
-          name: "ci",
-          met: false,
-          unmetSince: hoursBefore(24),
-          days: 1,
-          level: "green",
-          thresholds: { amberDays: 7, redDays: 30 },
-        },
-      ],
       sources: {
         git: gitData({
           branch: "spec",
@@ -143,10 +131,7 @@ describe("mood", () => {
     expect([bird.mood, bird.health.causes]).toEqual(["content", []]);
     expect(
       bird.bubble.chips.map((chip) => [chip.label, chip.severity]),
-    ).toEqual([
-      ["ci not set up", null],
-      ["2 uncommitted", null],
-    ]);
+    ).toEqual([["2 uncommitted", null]]);
   });
 
   it("maps the git work-state to activity, null without a local clone", async () => {
@@ -317,20 +302,8 @@ describe("the wires", () => {
 
 describe("chips", () => {
   it("carry real numbers in order, each with the severity of its fact", async () => {
-    const config = await testConfig(
-      '[items."dev/prism"]\nexpect = ["ci"]\n',
-    );
+    const config = await testConfig('[items."dev/prism"]\n');
     const busy = item("dev/prism", {
-      expectations: [
-        {
-          name: "ci",
-          met: false,
-          unmetSince: hoursBefore(24 * 10),
-          days: 10,
-          level: "amber",
-          thresholds: { amberDays: 7, redDays: 30 },
-        },
-      ],
       sources: {
         git: gitData({
           uncommittedCount: 4,
@@ -368,7 +341,6 @@ describe("chips", () => {
       ]),
     ).toEqual([
       ["ci failure", null, "red"],
-      ["ci not set up", null, "amber"],
       ["2 bugs", 2, "red"],
       ["4 uncommitted", 4, "red"],
       ["1 unpushed", 1, null],
@@ -381,6 +353,24 @@ describe("chips", () => {
     const config = await adoptAll(["dev/spool"]);
 
     expect(birdIn([settled], config, "dev/spool").bubble.chips).toEqual([]);
+  });
+
+  it("say nothing of CI a bird does not run: no chip, no not set up, no ledger row", async () => {
+    const config = await adoptAll(["dev/oxbow"]);
+    const noCi = item("dev/oxbow", {
+      sources: { github: forgeData({}), forgejo: forgeData({}) },
+    });
+    const bird = birdIn([noCi], config, "dev/oxbow");
+
+    expect(bird.bubble.chips).toEqual([]);
+    expect(
+      bird.detail.ledger.filter(
+        (entry) =>
+          /ci/i.test(entry.label) ||
+          ("text" in entry && entry.text === "not set up"),
+      ),
+    ).toEqual([]);
+    expect(bird.mood).toBe("content");
   });
 
   it("stay off fence birds, which only say where they stand", async () => {
@@ -472,19 +462,9 @@ describe("the ledger", () => {
     ]);
   });
 
-  it("states one disk only, unmet expectations, and failing CI in red with its run", async () => {
-    const config = await testConfig('[items."dev/hello"]\nexpect = ["ci"]\n');
+  it("states one disk only, and failing CI in red with its run", async () => {
+    const config = await testConfig('[items."dev/hello"]\n');
     const hello = item("dev/hello", {
-      expectations: [
-        {
-          name: "ci",
-          met: false,
-          unmetSince: hoursBefore(24 * 40),
-          days: 40,
-          level: "red",
-          thresholds: { amberDays: 7, redDays: 30 },
-        },
-      ],
       sources: {
         git: gitData({ backup: "local-only", lastCommitAt: null }),
         github: forgeData({ latestCi: failingRun }),
@@ -505,13 +485,6 @@ describe("the ledger", () => {
       text: "failure on main",
       tone: "red",
       url: failingRun.url,
-    });
-    expect(ledger).toContainEqual({
-      kind: "state",
-      label: "ci",
-      text: "not set up",
-      tone: "red",
-      url: null,
     });
     expect(ledger.some((entry) => entry.label === "unpushed commits")).toBe(
       false,

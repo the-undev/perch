@@ -27,15 +27,12 @@ import type {
   ClaudeSessionsData,
   DayThresholds,
   Drift,
-  Expectation,
-  ExpectationName,
   ForgeData,
   GitData,
   HealthLevel,
   HourThresholds,
   Item,
   ItemError,
-  ItemSources,
   KumaData,
   MonitorStatus,
   PullRequest,
@@ -542,72 +539,14 @@ export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
   };
 }
 
-// Expectations
-
-/** How each expectation is checked against an item's sources. */
-const expectationChecks: Record<
-  ExpectationName,
-  (sources: ItemSources) => boolean
-> = {
-  ci: (sources) =>
-    [sources.github, sources.forgejo].some(
-      (forge) =>
-        forge !== undefined && !("error" in forge) && forge.latestCi !== null,
-    ),
-};
-
-/**
- * Whether an item's sources meet an expectation. CI is met when any forge presence that could be
- * read has a CI result on its default branch.
- */
-export function expectationMet(
-  name: ExpectationName,
-  sources: ItemSources,
-): boolean {
-  return expectationChecks[name](sources);
-}
-
-/**
- * An expectation as of a scan. An unmet one ages in days from when a scan first found it unmet,
- * carried forward from the previous snapshot; without a previous record the clock starts now.
- */
-export function deriveExpectation(
-  name: ExpectationName,
-  met: boolean,
-  previousUnmetSince: string | null,
-  thresholds: DayThresholds,
-  observedAt: Date,
-): Expectation {
-  if (met) {
-    return {
-      name,
-      met,
-      unmetSince: null,
-      days: null,
-      level: "green",
-      thresholds,
-    };
-  }
-  const unmetSince = previousUnmetSince ?? observedAt.toISOString();
-  const days = daysSince(unmetSince, observedAt);
-  return {
-    name,
-    met,
-    unmetSince,
-    days,
-    level: levelFor(days, thresholds.amberDays, thresholds.redDays),
-    thresholds,
-  };
-}
-
 // Health
 
 /**
  * An item's health: the worst of its inputs. Failing CI and open bugs are red. Uncommitted
- * changes, unpushed commits, stalled flight and unmet expectations take the level already judged
- * against the item's windows. Only amber and red inputs are causes; they come worst first, ties
- * in the order CI, bugs, uncommitted, unpushed, stalled, expectations. Flags are not inputs: the
- * one with a level, not set up, is the fence's own situation.
+ * changes, unpushed commits and stalled flight take the level already judged against the item's
+ * windows. Only amber and red inputs are causes; they come worst first, ties in the order CI,
+ * bugs, uncommitted, unpushed, stalled. Flags are not inputs: the one with a level, not set up,
+ * is the fence's own situation.
  */
 export function deriveHealth(item: Item): Health {
   const candidates: HealthCause[] = [];
@@ -660,14 +599,6 @@ export function deriveHealth(item: Item): Health {
         everythingPushed: git.uncommittedCount === 0 && git.unpushedCount === 0,
       });
     }
-  }
-  for (const expectation of item.expectations) {
-    if (expectation.met) continue;
-    candidates.push({
-      kind: "expectation",
-      level: expectation.level,
-      expectation,
-    });
   }
   const causes = candidates
     .filter((cause) => cause.level !== "green")

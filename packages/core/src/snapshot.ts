@@ -18,9 +18,6 @@ export type ActivityState = "settled" | "in-progress" | "editing";
 
 export type HealthLevel = "green" | "amber" | "red";
 
-/** A source the owner can assert an item should have: CI. */
-export type ExpectationName = "ci";
-
 export interface Remote {
   name: string;
   fetchUrl: string;
@@ -253,18 +250,6 @@ export interface ItemFlag {
   detail: string;
 }
 
-/** An expectation config asserts for an item, and whether the scan finds it met. */
-export interface Expectation {
-  name: ExpectationName;
-  met: boolean;
-  /** When a scan first found it unmet, carried forward between scans; null while met. */
-  unmetSince: string | null;
-  /** Whole days from unmetSince to the scan; null while met. */
-  days: number | null;
-  level: HealthLevel;
-  thresholds: DayThresholds;
-}
-
 export interface Item {
   /** A local presence's id, or the first forge presence's reference for a forge-only item. */
   id: string;
@@ -276,8 +261,6 @@ export interface Item {
   liveSources: LiveSourceName[];
   presences: Presences;
   flags: ItemFlag[];
-  /** Only the expectations config asserts for the item, in config order. */
-  expectations: Expectation[];
   sources: ItemSources;
 }
 

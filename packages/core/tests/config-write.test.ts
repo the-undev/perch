@@ -88,7 +88,6 @@ obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 [items."dev/perch"]
 wire = "Projects"
 name = "Perch"
-expect = ["ci"]
 key_files = ["README.md", "docs/spec.md"]
 roadmaps = ["docs/roadmap.md"]
 zellij_session = "perch"

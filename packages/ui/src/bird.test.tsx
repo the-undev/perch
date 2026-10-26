@@ -145,7 +145,7 @@ describe("the wire and the fence", () => {
     );
     expect(xs).toEqual([...xs].sort((a, b) => a - b));
     expect(container.textContent).toContain("Projects");
-    expect(container.textContent).toContain("4 attention");
+    expect(container.textContent).toContain("3 attention");
   });
 
   it("sets the tally apart from the wire's name on its first word", () => {
@@ -174,7 +174,7 @@ describe("the wire and the fence", () => {
 
     expect(firstWords).toEqual([
       { dx: String(tallyGap), words: "2 drifting" },
-      { dx: String(tallyGap), words: "4 attention" },
+      { dx: String(tallyGap), words: "3 attention" },
       { dx: String(tallyGap), words: "all settled" },
     ]);
   });

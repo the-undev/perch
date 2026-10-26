@@ -93,15 +93,11 @@ describe("the adoption papers", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Goes by" }), {
       target: { value: "Hello" },
     });
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: "ci · a pipeline on its forge" }),
-    );
     press("Adopt onto Machine & Home");
     expect(onSign).toHaveBeenLastCalledWith({
       ...emptyEntryValues(),
       wire: "Machine & Home",
       name: "Hello",
-      expect: ["ci"],
     });
 
     fireEvent.click(
@@ -111,17 +107,16 @@ describe("the adoption papers", () => {
       target: { value: " " },
     });
     press("Adopt onto Projects");
-    expect(onSign).toHaveBeenLastCalledWith({
-      ...emptyEntryValues(),
-      expect: ["ci"],
-    });
+    expect(onSign).toHaveBeenLastCalledWith(emptyEntryValues());
   });
 
-  it("hold no tier row: what you say is the wire, the name and the expectations", () => {
+  it("hold no tier row and no expectations row: what you say is the wire and the name", () => {
     papers("dev/odin/hello");
 
     expect(screen.queryByText("How much it matters")).toBeNull();
     expect(screen.queryByText(/tier|size/)).toBeNull();
+    expect(screen.queryByText("What it should have")).toBeNull();
+    expect(screen.queryByRole("checkbox")).toBeNull();
     expect(screen.getAllByRole("radio")).toHaveLength(2);
     expect(screen.getByRole("radio", { name: "Machine & Home" })).toBeDefined();
     expect(

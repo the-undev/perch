@@ -83,7 +83,6 @@ export function item(id: string, overrides: Partial<Item> = {}): Item {
     liveSources: [],
     presences: { local: { ref: `local:${id}`, path }, forges: [] },
     flags: [],
-    expectations: [],
     sources: {},
     ...overrides,
   };

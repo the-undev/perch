@@ -707,3 +707,11 @@ build-time calls so they can be revisited.
   write is read, and two copies at equal weight would shout. Closing the
   papers brings the strip back. The open state moved from the papers' verb
   to `DetailView` so the strip can see it.
+
+## 26 October 2026 (removing expectations)
+
+- The expectation mark round (`mockups/expectation-toggle.html`) is
+  retired. Of its three marks, C, delete as applicable, was preferred as
+  the control. The round ended by removing the control: the goal it
+  asserted, that a project should have CI, belongs on the project's
+  roadmap, so the row went with the expectation behind it.

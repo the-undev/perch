@@ -5,8 +5,6 @@
 import {
   type Config,
   collapseHome,
-  type ExpectationName,
-  expectationNames,
   type ItemEntry,
   resolveEntry,
   type ThresholdOverrides,
@@ -25,7 +23,6 @@ export interface EntryValues {
   wire: string | null;
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
-  expect: ExpectationName[];
   /** Key files relative to the item; null keeps the README and the roadmaps. */
   keyFiles: string[] | null;
   /** Roadmap files relative to the item; null keeps the standard names. */
@@ -40,7 +37,6 @@ export interface EntryValues {
 export interface EntryOptions {
   wires: string[];
   defaultWire: string;
-  expectations: ExpectationName[];
   /** The global thresholds, which an override left out takes. */
   thresholds: Record<ThresholdKey, number>;
 }
@@ -76,7 +72,7 @@ export interface EntryForm {
   options: EntryOptions;
 }
 
-/** The three health windows, each an amber key and a red key, with the unit they count in. */
+/** The two health windows, each an amber key and a red key, with the unit they count in. */
 export const thresholdWindows: readonly {
   label: string;
   unit: "hours" | "days";
@@ -95,12 +91,6 @@ export const thresholdWindows: readonly {
     amber: "stalled_amber_days",
     red: "stalled_red_days",
   },
-  {
-    label: "Unmet expectation",
-    unit: "days",
-    amber: "expectation_amber_days",
-    red: "expectation_red_days",
-  },
 ];
 
 /** The values of a new entry: everything left to the defaults. */
@@ -108,7 +98,6 @@ export function emptyEntryValues(): EntryValues {
   return {
     wire: null,
     name: null,
-    expect: [],
     keyFiles: null,
     roadmaps: null,
     thresholds: {},
@@ -134,11 +123,7 @@ export function flatThresholds(
 export function nestedThresholds(
   flat: Partial<Record<ThresholdKey, number>>,
 ): ThresholdOverrides {
-  const overrides: ThresholdOverrides = {
-    unsafe: {},
-    stalled: {},
-    expectation: {},
-  };
+  const overrides: ThresholdOverrides = { unsafe: {}, stalled: {} };
   for (const [window, field, key] of thresholdKeys) {
     const value = flat[key];
     if (value !== undefined)
@@ -152,7 +137,6 @@ export function entryValues(entry: ItemEntry): EntryValues {
   return {
     wire: entry.wire,
     name: entry.name,
-    expect: [...entry.expect],
     keyFiles: entry.keyFiles === null ? null : [...entry.keyFiles],
     roadmaps: entry.roadmaps === null ? null : [...entry.roadmaps],
     thresholds: flatThresholds(entry.thresholds),
@@ -169,7 +153,6 @@ export function entryOptions(config: Config): EntryOptions {
   return {
     wires: [...config.wires.names],
     defaultWire: config.wires.default,
-    expectations: [...expectationNames],
     thresholds,
   };
 }
@@ -245,7 +228,6 @@ export function withEntry(
     wire: values.wire,
     name: values.name,
     thresholds: nestedThresholds(values.thresholds),
-    expect: [...values.expect],
     keyFiles: values.keyFiles === null ? null : [...values.keyFiles],
     roadmaps: values.roadmaps === null ? null : [...values.roadmaps],
     zellijSession: values.zellijSession,
@@ -259,7 +241,6 @@ export function sameEntryValues(a: EntryValues, b: EntryValues): boolean {
     JSON.stringify([
       values.wire,
       values.name,
-      values.expect,
       values.keyFiles,
       values.roadmaps,
       flatThresholds(nestedThresholds(values.thresholds)),

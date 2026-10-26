@@ -9,14 +9,12 @@ import {
 } from "./config.ts";
 import {
   deriveClaudeSessions,
-  deriveExpectation,
   deriveForge,
   deriveGit,
   deriveKuma,
   deriveRoadmap,
   deriveSourceCards,
   emptyRoadmap,
-  expectationMet,
 } from "./derivations.ts";
 import { polledSourceOrder, type RawStore } from "./gather.ts";
 import {
@@ -39,8 +37,6 @@ import { forgeRef, localRef } from "./refs.ts";
 import type {
   Backup,
   ConfigConflict,
-  Expectation,
-  ExpectationName,
   ForgeListing,
   Item,
   ItemError,
@@ -73,52 +69,8 @@ export interface AggregateInput {
   /** The home directory, written as ~ in the source cards' paths. */
   home: string;
   liveSources: readonly AnyLiveSource[];
-  /** The previous snapshot, which carries each unmet expectation's first-seen time; null for none. */
+  /** The previous snapshot, which carries each source card's last read; null for none. */
   previous: Snapshot | null;
-}
-
-/** When an expectation was first found unmet, from a previous snapshot, keyed by item and name. */
-type FirstSeen = Map<string, string>;
-
-const firstSeenKey = (itemId: string, name: ExpectationName) =>
-  `${itemId}\u0000${name}`;
-
-/**
- * The unmet expectations a previous snapshot recorded. A snapshot written before expectations
- * existed has none, which restarts every clock: losing the record is harmless by design.
- */
-function firstSeenFrom(previous: Snapshot | null): FirstSeen {
-  const firstSeen: FirstSeen = new Map();
-  for (const item of previous?.items ?? []) {
-    for (const expectation of item.expectations ?? []) {
-      if (expectation.unmetSince === null) continue;
-      firstSeen.set(
-        firstSeenKey(item.id, expectation.name),
-        expectation.unmetSince,
-      );
-    }
-  }
-  return firstSeen;
-}
-
-function expectationsFor(
-  itemId: string,
-  entry: ItemEntry | null,
-  sources: ItemSources,
-  config: Config,
-  firstSeen: FirstSeen,
-  observedAt: Date,
-): Expectation[] {
-  const thresholds = thresholdsFor(config, entry).expectation;
-  return (entry?.expect ?? []).map((name) =>
-    deriveExpectation(
-      name,
-      expectationMet(name, sources),
-      firstSeen.get(firstSeenKey(itemId, name)) ?? null,
-      thresholds,
-      observedAt,
-    ),
-  );
 }
 
 /** Reads the raw directory; a source with no raw file yet is left out. */
@@ -278,7 +230,6 @@ function itemFor(
   entry: ItemEntry | null,
   files: Partial<RawFiles>,
   config: Config,
-  expectations: { firstSeen: FirstSeen; observedAt: Date },
 ): Item {
   const local = project.local;
   const first = project.forges[0];
@@ -325,14 +276,6 @@ function itemFor(
       })),
     },
     flags,
-    expectations: expectationsFor(
-      id,
-      entry,
-      sources,
-      config,
-      expectations.firstSeen,
-      expectations.observedAt,
-    ),
     sources,
   };
 }
@@ -373,15 +316,11 @@ export function aggregate(
   const files = bundle.files;
   const join = joinRawFiles(files, config);
 
-  const expectations = {
-    firstSeen: firstSeenFrom(input.previous),
-    observedAt: new Date(bundle.status.gatheredAt),
-  };
   const resolved: { item: Item; keys: string[] }[] = join.projects.map(
     (project) => {
       const { entry, keys } = entryOf(project, config);
       return {
-        item: itemFor(project, entry, files, config, expectations),
+        item: itemFor(project, entry, files, config),
         keys,
       };
     },
@@ -403,7 +342,6 @@ export function aggregate(
         liveSources: [],
         presences: { local: null, forges: [] },
         flags: [],
-        expectations: [],
         sources: kuma === undefined ? {} : { kuma },
       },
       keys,

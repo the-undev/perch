@@ -107,9 +107,9 @@ export function ChainPage() {
             </Rule>
             <Rule>
               Aggregation reads only the raw files and the config, and the
-              previous snapshot as the first-seen record for unmet expectations.
-              The same raw files always give the same snapshot: ages are
-              measured to each file&apos;s <Code>gatheredAt</Code>.
+              previous snapshot for each source card&apos;s last read. The same
+              raw files always give the same snapshot: ages are measured to each
+              file&apos;s <Code>gatheredAt</Code>.
             </Rule>
             <Rule>
               Every judgement lives in <Code>src/derivations.ts</Code>, so a

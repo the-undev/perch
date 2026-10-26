@@ -263,6 +263,21 @@ describe("the settings editor", () => {
     expect(removeProjects().disabled).toBe(false);
   });
 
+  it("holds two windows on the Judgement page: unsafe work and stalled flight", () => {
+    editor("judgement");
+
+    expect(
+      group("Judgement")
+        .getAllByRole("spinbutton")
+        .map((field) => field.getAttribute("aria-label")),
+    ).toEqual([
+      "Unsafe work, amber after hours",
+      "Unsafe work, red after hours",
+      "Stalled flight, amber after days",
+      "Stalled flight, red after days",
+    ]);
+  });
+
   it("holds the global thresholds to amber before red, in whole numbers", () => {
     editor("judgement");
     const thresholds = group("Judgement");

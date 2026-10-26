@@ -118,8 +118,8 @@ export async function runGather(run: GatherRun): Promise<StatusFile> {
 }
 
 /**
- * The snapshot at a path, or null when there is none or it cannot be parsed: it is a cache and a
- * first-seen record, and losing it only restarts the expectation clocks.
+ * The snapshot at a path, or null when there is none or it cannot be parsed: it is a cache, and
+ * losing it only forgets each source card's last read.
  */
 export async function readSnapshot(path: string): Promise<Snapshot | null> {
   const text = await readTextIfExists(path);

@@ -48,11 +48,6 @@ const restless: Entry[] = [
     label: "Stalled flight",
     rule: "HEAD on a non-default branch, no movement for 7 days (default).",
   },
-  {
-    id: "undev/harbour",
-    label: "An expectation, waiting",
-    rule: "A config expectation unmet for 7 days (default).",
-  },
 ];
 
 const distressed: Entry[] = [
@@ -70,11 +65,6 @@ const distressed: Entry[] = [
     id: "undev/gramophone",
     label: "Unsafe work gone stale",
     rule: "Oldest unsafe change past 72 hours (default).",
-  },
-  {
-    id: "undev/oxbow",
-    label: "An expectation, soured",
-    rule: "A config expectation unmet for 30 days (default).",
   },
 ];
 

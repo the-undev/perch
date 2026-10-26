@@ -43,14 +43,9 @@ const specimens: { id: string; label: string; rule: string }[] = [
     rule: "Gramophone: fourteen uncommitted changes past 72 hours.",
   },
   {
-    id: "undev/harbour",
-    label: "An expectation, waiting",
-    rule: "Harbour: config expects CI; unmet for two weeks, amber.",
-  },
-  {
     id: "undev/oxbow",
-    label: "An expectation, soured",
-    rule: "Oxbow: CI expected for a month and still missing, red. Two forges, each with its own rows.",
+    label: "Two forges, no CI",
+    rule: "Oxbow: on GitHub and Forgejo, each with its own pull request row; neither runs CI, so there is no CI row.",
   },
   {
     id: "dev/odin/hello",

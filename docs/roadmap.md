@@ -16,6 +16,25 @@ which already carry the owner's priority. Config now refuses the keys
 by name. Bringing it back needs an effect the wires do not already give,
 and names that read as degrees.
 
+## Critical roadmap items drive health
+
+An open roadmap item under a heading the owner marks critical would
+distress the bird. "Set up CI" as a critical item then carries the
+urgency the expectation thresholds carried, derived from a file the
+scanner already reads, and the rule works for any goal on any kind of
+bird. The marking convention is `TBD`, to be designed with the
+vault-tasks parse rules in mind, see
+[decisions/vault-tasks.md](decisions/vault-tasks.md).
+
+It replaces expectations, removed on 26 October 2026. An entry's
+`expect = ["ci"]` flagged a bird whose forges reported no CI, amber at 7
+days and red at 30 on a window of its own. CI as a fact is already the
+forge's chip, and the assertion overlapped the roadmap as importance
+overlapped the wires. Config now refuses `expect` and the
+`expectation_*` threshold keys by name. The direction this serves:
+perch integrates with the code, markdown and ticketing systems the work
+already lives in, and adds no assertion machinery of its own.
+
 ## Every chip spelled out on the detail page
 
 A bubble chip states a conclusion without its working: "ci pending"
@@ -170,8 +189,7 @@ a chore.
 
 Tickets from GitHub and Forgejo as a work source beside the in-repo
 roadmap, feeding the bubble's chips, the bird's plumpness and the detail
-page. The `tickets` expectation name, removed while nothing could meet
-it and refused by config, returns with this source. Forgejo's API
+page, and nothing else. Forgejo's API
 serves them and the tokens already carry read:issue. GitHub fine-grained
 tokens need the Issues read permission added, a regenerate per
 docs/tokens.md. GitHub's issues listing includes pull requests; the

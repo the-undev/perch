@@ -39,7 +39,6 @@ function entryTable(entry: ItemEntry): Table {
   const out: Table = {};
   if (entry.wire !== null) out.wire = entry.wire;
   if (entry.name !== null) out.name = entry.name;
-  if (entry.expect.length > 0) out.expect = entry.expect;
   if (entry.keyFiles !== null) out.key_files = entry.keyFiles;
   if (entry.roadmaps !== null) out.roadmaps = entry.roadmaps;
   if (entry.zellijSession !== null) out.zellij_session = entry.zellijSession;

@@ -76,18 +76,6 @@ const cause = {
     },
     everythingPushed,
   }),
-  expectation: (name: "ci", days: number): HealthCause => ({
-    kind: "expectation",
-    level: days >= 30 ? "red" : "amber",
-    expectation: {
-      name,
-      met: false,
-      unmetSince: hoursBefore(days * 24),
-      days,
-      level: days >= 30 ? "red" : "amber",
-      thresholds: dayWindows,
-    },
-  }),
 };
 
 describe("content birds are brief", () => {
@@ -152,12 +140,6 @@ describe("restless birds nudge", () => {
       "Parked on extension-popup-ia for nine days. The flight's gone quiet.",
     );
   });
-
-  it("an expectation, waiting: echoes the owner's own config back", () => {
-    expect(speak(subject({ causes: [cause.expectation("ci", 14)] }))).toBe(
-      "You said I should have CI. Two weeks now, still none.",
-    );
-  });
 });
 
 describe("distressed birds are blunt and lead with the worst", () => {
@@ -181,12 +163,6 @@ describe("distressed birds are blunt and lead with the worst", () => {
     );
   });
 
-  it("an expectation, soured", () => {
-    expect(speak(subject({ causes: [cause.expectation("ci", 31)] }))).toBe(
-      "You said I should have CI. That was a month ago.",
-    );
-  });
-
   it("several things at once: the worst first, one secondary, the rest left to the chips", () => {
     expect(
       speak(
@@ -203,18 +179,6 @@ describe("distressed birds are blunt and lead with the worst", () => {
     );
   });
 
-  it("keeps an expectation's time when a secondary follows, at three sentences", () => {
-    expect(
-      speak(
-        subject({
-          causes: [cause.expectation("ci", 40), cause.stalled(31, true)],
-        }),
-      ),
-    ).toBe(
-      "You said I should have CI. That was a month ago. I've also been parked on extension-popup-ia for a month.",
-    );
-  });
-
   it("gives every cause a secondary sentence", () => {
     const secondaries = [
       cause.ci(),
@@ -222,7 +186,6 @@ describe("distressed birds are blunt and lead with the worst", () => {
       cause.uncommitted(2, 100, "red"),
       cause.unpushed(1, 80, "red"),
       cause.stalled(40, false),
-      cause.expectation("ci", 8),
     ].map((next) => speak(subject({ causes: [cause.bugs(2), next] })));
 
     expect(secondaries.map((speech) => speech.split(". ")[1])).toEqual([
@@ -231,7 +194,6 @@ describe("distressed birds are blunt and lead with the worst", () => {
       "I'm also holding two uncommitted changes for four days.",
       "I'm also holding one local-only commit for three days.",
       "I've also been parked on extension-popup-ia for a month.",
-      "You also said I should have CI.",
     ]);
   });
 });
@@ -267,7 +229,6 @@ describe("the voice", () => {
       cause.uncommitted(30, 200, "red"),
       cause.unpushed(21, 20, "amber"),
       cause.stalled(100, true),
-      cause.expectation("ci", 7),
     ];
     const speeches = all.flatMap((first) =>
       all.map((second) =>

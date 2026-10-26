@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The expectation mark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400..700&family=JetBrains+Mono:wght@400..600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #101214;
+    --ink: #ece7db;
+    --muted: #aaa396;
+    --faint: #837d70;
+    --paper: #e9e4d8;
+    --paper-dim: #ddd7c9;
+    --paper-text: #2a2e35;
+    --paper-head: #171a1e;
+    --paper-strong: #14171b;
+    --paper-quiet: #6e695f;
+    --paper-code: #dcd6c8;
+    --paper-rule: #c9c3b3;
+    --paper-red: #b23325;
+    --display: "Bricolage Grotesque", system-ui, sans-serif;
+    --body: "Figtree", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 48px 16px 90px; }
+  h1 { font-family: var(--display); font-size: 26px; font-weight: 700; margin: 0 0 4px; }
+  .page > p { color: var(--muted); max-width: 64ch; margin: 0 0 10px; }
+  h2 { font-family: var(--display); font-size: 17px; font-weight: 700; margin: 42px 0 2px; }
+  h2 small { font-family: var(--body); font-weight: 400; font-size: 12.5px; color: var(--faint); margin-left: 10px; }
+  .rule-note { color: var(--muted); font-size: 13px; max-width: 64ch; margin: 0 0 14px; }
+
+  .sheet {
+    background: var(--paper);
+    color: var(--paper-text);
+    border-radius: 12px;
+    padding: 20px 26px 22px;
+    box-shadow: 0 24px 60px -18px rgb(0 0 0 / 0.75);
+  }
+  .row-label { font-weight: 700; color: var(--paper-head); font-size: 13.5px; }
+  .row-label span { font-weight: 400; color: var(--paper-quiet); margin-left: 8px; font-size: 12.5px; }
+  .states { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 10px; align-items: flex-start; }
+  .state { min-width: 220px; }
+  .state .cap { font-size: 11.5px; color: var(--paper-quiet); margin: 0 0 6px; }
+
+  /* A: the tick box as built */
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--paper-rule); border-radius: 8px;
+    background: var(--paper); padding: 6px 12px; font-size: 13px;
+    cursor: pointer; user-select: none;
+  }
+  .chip.on { border-color: var(--paper-strong); }
+  .box {
+    width: 15px; height: 15px; flex: none;
+    border: 1.5px solid var(--paper-quiet); border-radius: 3px;
+    display: inline-grid; place-items: center;
+    color: var(--paper-strong); font-size: 12px; line-height: 1;
+  }
+  .chip.on .box { border-color: var(--paper-strong); }
+  .why { color: var(--paper-quiet); font-size: 12px; }
+  .word { color: var(--paper-head); font-weight: 600; font-size: 12px; }
+
+  /* B: the pen tick */
+  .pen .box { border-radius: 2px; position: relative; overflow: visible; }
+  .pen svg { position: absolute; inset: -4px -5px -2px -2px; width: 22px; height: 20px; overflow: visible; }
+  .pen path {
+    fill: none; stroke: var(--paper-strong); stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 26; stroke-dashoffset: 26;
+  }
+  .pen.on path { stroke-dashoffset: 0; transition: stroke-dashoffset 160ms ease-out; }
+  @media (prefers-reduced-motion: reduce) { .pen.on path { transition: none; } }
+
+  /* C: delete as applicable */
+  .applicable {
+    display: inline-flex; align-items: baseline; gap: 10px;
+    border: 1px solid var(--paper-rule); border-radius: 8px;
+    background: var(--paper); padding: 6px 12px 7px; font-size: 13px;
+    cursor: pointer; user-select: none;
+  }
+  .applicable .name { font-weight: 600; color: var(--paper-head); }
+  .applicable .choice { position: relative; padding: 0 1px; color: var(--paper-quiet); }
+  .applicable .choice.kept { color: var(--paper-head); font-weight: 600; }
+  .applicable .choice .strike {
+    position: absolute; left: -2px; right: -2px; top: 54%;
+    height: 2px; background: var(--paper-strong); border-radius: 2px;
+    transform: rotate(-4deg) scaleX(0); transform-origin: left center;
+    transition: transform 150ms ease-out;
+  }
+  .applicable .choice.struck .strike { transform: rotate(-4deg) scaleX(1); }
+  .applicable .choice.struck { color: var(--paper-quiet); }
+  @media (prefers-reduced-motion: reduce) { .applicable .choice .strike { transition: none; } }
+  .applicable .slash { color: var(--paper-rule); }
+
+  .sheet .try { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--paper-rule); }
+  .sheet .try .cap { font-size: 11.5px; color: var(--paper-quiet); margin: 0 0 6px; }
+
+  .decisions { margin-top: 48px; border-top: 1px solid #2b3036; padding-top: 18px; }
+  .decisions h2 { margin-top: 0; }
+  .decisions ol { margin: 10px 0 0; padding-left: 20px; color: var(--muted); max-width: 68ch; }
+  .decisions li { margin-bottom: 10px; }
+  .decisions b { color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>The expectation mark</h1>
+  <p>How the papers say whether the owner expects a source. The failing version
+  carried the state in a background tint the paper swallowed. Each option below
+  is drawn off and on, in the papers' own ink, with a live one to click.</p>
+
+  <h2>A · The tick box <small>as currently built on the branch</small></h2>
+  <p class="rule-note">A square that gains a tick and the word "expected". Honest and
+  familiar; the mark is small and the glyph is type, not pen.</p>
+  <div class="sheet">
+    <div class="row-label">What it should have <span>an unmet one shows on the bird</span></div>
+    <div class="states">
+      <div class="state"><p class="cap">off</p>
+        <span class="chip"><span class="box"></span>ci <span class="why">· a pipeline on its forge</span></span>
+      </div>
+      <div class="state"><p class="cap">on</p>
+        <span class="chip on"><span class="box">✓</span>ci <span class="why">· a pipeline on its forge</span> <span class="word">expected</span></span>
+      </div>
+    </div>
+  </div>
+
+  <h2>B · The pen tick <small>the same box, marked by hand</small></h2>
+  <p class="rule-note">The tick is a drawn stroke that overshoots the box the way a pen
+  does, and it draws itself when pressed. Same anatomy as A, warmer mark.</p>
+  <div class="sheet">
+    <div class="row-label">What it should have <span>an unmet one shows on the bird</span></div>
+    <div class="states">
+      <div class="state"><p class="cap">off</p>
+        <span class="chip pen"><span class="box"></span>ci <span class="why">· a pipeline on its forge</span></span>
+      </div>
+      <div class="state"><p class="cap">on</p>
+        <span class="chip pen on"><span class="box"><svg viewBox="0 0 22 20"><path d="M 4 10 L 9 15 L 19 2"/></svg></span>ci <span class="why">· a pipeline on its forge</span> <span class="word">expected</span></span>
+      </div>
+    </div>
+    <div class="try"><p class="cap">try it</p>
+      <span class="chip pen" id="try-pen" role="checkbox" aria-checked="false" tabindex="0">
+        <span class="box"><svg viewBox="0 0 22 20"><path d="M 4 10 L 9 15 L 19 2"/></svg></span>ci <span class="why">· a pipeline on its forge</span> <span class="word" hidden>expected</span>
+      </span>
+    </div>
+  </div>
+
+  <h2>C · Delete as applicable <small>recommended</small></h2>
+  <p class="rule-note">The paper form's own idiom: both states are always printed and
+  the owner's pen strikes out the one that does not apply. Nothing is carried by a
+  lone mark's presence, so on and off cannot be confused; the strike draws itself
+  when pressed. Clicking anywhere on the chip swaps the strike.</p>
+  <div class="sheet">
+    <div class="row-label">What it should have <span>an unmet one shows on the bird</span></div>
+    <div class="states">
+      <div class="state"><p class="cap">off</p>
+        <span class="applicable"><span class="name">ci</span>
+          <span class="choice struck">expected<span class="strike"></span></span>
+          <span class="slash">/</span>
+          <span class="choice kept">not expected<span class="strike"></span></span>
+        </span>
+      </div>
+      <div class="state"><p class="cap">on</p>
+        <span class="applicable"><span class="name">ci</span>
+          <span class="choice kept">expected<span class="strike"></span></span>
+          <span class="slash">/</span>
+          <span class="choice struck">not expected<span class="strike"></span></span>
+        </span>
+      </div>
+    </div>
+    <div class="try"><p class="cap">try it · the quiet line beneath still says why: a pipeline on its forge</p>
+      <span class="applicable" id="try-app" role="checkbox" aria-checked="false" tabindex="0">
+        <span class="name">ci</span>
+        <span class="choice struck" data-when="on">expected<span class="strike"></span></span>
+        <span class="slash">/</span>
+        <span class="choice kept" data-when="off">not expected<span class="strike"></span></span>
+      </span>
+    </div>
+  </div>
+
+  <div class="decisions">
+    <h2>Decisions for this round</h2>
+    <ol>
+      <li><b>The idiom.</b> C, delete as applicable: both states printed, the pen
+      strikes the one that does not apply. It is the only option where off is a
+      visible statement rather than an absence, which is the exact failure that
+      prompted the round. Recommended. B is the runner-up if C reads as too wide
+      once a second expectation (tickets) returns.</li>
+      <li><b>The ink.</b> The strike and the tick are the owner's pen, so they use
+      the signature's ink (paper-strong), never red; red stays reserved for the
+      papers' refusals.</li>
+      <li><b>The motion.</b> The mark draws itself in about 150ms when pressed,
+      answering the press; reduced motion gets the finished mark at once.</li>
+      <li><b>The accessibility.</b> Whatever the drawing, the control stays one real
+      checkbox whose accessible name is "ci · a pipeline on its forge"; the words
+      and strokes are presentation.</li>
+    </ol>
+  </div>
+</div>
+<script>
+  function wire(el, apply) {
+    let on = false;
+    const flip = () => { on = !on; el.setAttribute("aria-checked", String(on)); apply(on); };
+    el.addEventListener("click", flip);
+    el.addEventListener("keydown", (e) => {
+      if (e.key !== " " && e.key !== "Enter") return;
+      e.preventDefault(); flip();
+    });
+  }
+  const pen = document.getElementById("try-pen");
+  wire(pen, (on) => {
+    pen.classList.toggle("on", on);
+    pen.querySelector(".word").hidden = !on;
+  });
+  const app = document.getElementById("try-app");
+  const expected = app.querySelector('[data-when="on"]');
+  const notExpected = app.querySelector('[data-when="off"]');
+  wire(app, (on) => {
+    expected.classList.toggle("kept", on);
+    expected.classList.toggle("struck", !on);
+    notExpected.classList.toggle("kept", !on);
+    notExpected.classList.toggle("struck", on);
+  });
+</script>
+</body>
+</html>

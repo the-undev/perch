@@ -4,7 +4,6 @@
 // choices above a fold that names the rare ones; then the signature line. The sheet holds only its
 // draft: what is signed leaves through the callbacks, and the caller decides when it folds away.
 
-import type { ExpectationName } from "@perch/core/config.ts";
 import {
   type EntryForm,
   type EntryValues,
@@ -28,19 +27,11 @@ import { agoWords } from "./time.ts";
 const paperInputClass =
   "w-[min(34ch,100%)] rounded-[7px] border border-paper-rule bg-paper-code px-2.5 py-1.75 font-mono text-[13px] text-paper-strong placeholder:text-paper-quiet focus-visible:outline-2 focus-visible:outline-paper-head focus-visible:outline-offset-1";
 
-const chipClass =
-  "inline-flex cursor-pointer items-center gap-1.75 rounded-lg border border-paper-rule bg-paper px-3 py-1.5 text-[13px] text-paper-text has-checked:border-paper-strong has-checked:bg-paper-strong has-checked:text-paper has-focus-visible:outline-2 has-focus-visible:outline-paper-head has-focus-visible:outline-offset-1";
-
 const linkClass =
   "cursor-pointer p-0 font-body text-[13px] text-paper-quiet underline hover:text-paper-head focus-visible:outline-2 focus-visible:outline-paper-head";
 
 const keyClass =
   "cursor-pointer rounded-[9px] bg-key px-4 py-2.5 font-body font-bold text-[13.5px] text-ink hover:bg-key-hi focus-visible:outline-2 focus-visible:outline-paper-head focus-visible:outline-offset-2 disabled:cursor-default disabled:opacity-50 disabled:hover:bg-key";
-
-/** What each expectation asks of the item, beside its name. */
-const expectationWhy: Record<ExpectationName, string> = {
-  ci: "a pipeline on its forge",
-};
 
 /** The bird as it stands, facing left as on the board, small in the papers' corner. */
 function Portrait({ bird, night }: { bird: Bird; night: boolean }) {
@@ -327,7 +318,6 @@ export function AdoptionPapers({
   const ids = {
     wire: `${id}-wire`,
     name: `${id}-name`,
-    expect: `${id}-expect`,
     more: `${id}-more`,
   };
   return (
@@ -426,40 +416,6 @@ export function AdoptionPapers({
             }
             className={paperInputClass}
           />
-        </div>
-        <div className="my-3.5">
-          <FieldHead
-            id={ids.expect}
-            label="What it should have"
-            hint="an unmet one shows on the bird"
-          />
-          <fieldset
-            aria-labelledby={ids.expect}
-            className="m-0 flex flex-wrap gap-2 border-0 p-0"
-          >
-            {options.expectations.map((name) => (
-              <label key={name} className={chipClass}>
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={values.expect.includes(name)}
-                  onChange={(event) =>
-                    update({
-                      expect: options.expectations.filter((candidate) =>
-                        candidate === name
-                          ? event.target.checked
-                          : values.expect.includes(candidate),
-                      ),
-                    })
-                  }
-                />
-                {name}{" "}
-                <span className="text-[12px] opacity-65">
-                  · {expectationWhy[name]}
-                </span>
-              </label>
-            ))}
-          </fieldset>
         </div>
       </Part>
 

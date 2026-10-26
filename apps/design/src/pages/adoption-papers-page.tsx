@@ -151,8 +151,8 @@ export function AdoptionPapersPage() {
         min={560}
       >
         <Specimen
-          label="Key files and an expectation"
-          rule="Perch: three key files from config and CI expected, on the default wire. Open the fold to see the key files."
+          label="Key files"
+          rule="Perch: three key files from config, on the default wire. Open the fold to see the key files."
         >
           {specimen("dev/perch")}
         </Specimen>

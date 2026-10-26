@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import { aggregate, type RawBundle } from "../src/aggregate.ts";
 import type { Config } from "../src/config.ts";
 import { defaultConfig } from "../src/config-default.ts";
-import { deriveExpectation, expectationMet } from "../src/derivations.ts";
 import type { RawFiles } from "../src/raw.ts";
 import type {
-  ForgeData,
   Snapshot,
   SourceCard,
   SourceCardResult,
@@ -21,7 +19,7 @@ import {
 } from "./helpers/raw.ts";
 
 const config = await testConfig(
-  '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://forge.example.lan:3001"\nstatus_page = "perch"\n\n[items."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\nexpect = ["ci"]\n',
+  '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://forge.example.lan:3001"\nstatus_page = "perch"\n\n[items."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\n',
 );
 
 const files = rawFiles({
@@ -182,100 +180,6 @@ describe("aggregate", () => {
 
     expect(server && (await dockerContainersSource.fetch(server))).toEqual({
       state: "not-implemented",
-    });
-  });
-});
-
-describe("expectations", () => {
-  const daysBeforeScan = (days: number) =>
-    new Date(Date.parse(gatheredAt) - days * 86_400_000).toISOString();
-
-  it("starts the clock on an unmet expectation at the scan that first finds it", () => {
-    const perch = aggregate(bundle, input, new Date()).items[0];
-
-    expect(perch?.expectations).toEqual([
-      {
-        name: "ci",
-        met: false,
-        unmetSince: gatheredAt,
-        days: 0,
-        level: "green",
-        thresholds: { amberDays: 7, redDays: 30 },
-      },
-    ]);
-  });
-
-  it("carries the first-seen time forward from the previous snapshot", () => {
-    const previous = aggregate(bundle, input, new Date());
-    const ci = previous.items[0]?.expectations[0];
-    if (ci) ci.unmetSince = daysBeforeScan(10);
-
-    const perch = aggregate(bundle, { ...input, previous }, new Date())
-      .items[0];
-
-    expect(perch?.expectations[0]).toMatchObject({
-      unmetSince: daysBeforeScan(10),
-      days: 10,
-      level: "amber",
-    });
-  });
-
-  it("restarts every clock from a previous snapshot that has no expectations", () => {
-    const previous = aggregate(bundle, input, new Date());
-    for (const item of previous.items) {
-      Reflect.deleteProperty(item, "expectations");
-    }
-
-    const perch = aggregate(bundle, { ...input, previous }, new Date())
-      .items[0];
-
-    expect(perch?.expectations.map((entry) => entry.unmetSince)).toEqual([
-      gatheredAt,
-    ]);
-  });
-
-  it("meets CI from any readable forge with a CI result", () => {
-    const forge = (latestCi: ForgeData["latestCi"]): ForgeData => ({
-      fullName: "finch/perch",
-      url: "https://github.com/finch/perch",
-      defaultBranch: "main",
-      openPullRequests: [],
-      latestCi,
-      finalisedCommits: [],
-    });
-    const run = {
-      name: "check",
-      state: "failure" as const,
-      forgeState: "completed/failure",
-      url: null,
-      createdAt: null,
-    };
-
-    expect(expectationMet("ci", { github: forge(run) })).toBe(true);
-    expect(
-      expectationMet("ci", {
-        github: { error: "HTTP 404" },
-        forgejo: forge(null),
-      }),
-    ).toBe(false);
-  });
-
-  it("clears the clock once met", () => {
-    expect(
-      deriveExpectation(
-        "ci",
-        true,
-        daysBeforeScan(40),
-        { amberDays: 7, redDays: 30 },
-        new Date(gatheredAt),
-      ),
-    ).toEqual({
-      name: "ci",
-      met: true,
-      unmetSince: null,
-      days: null,
-      level: "green",
-      thresholds: { amberDays: 7, redDays: 30 },
     });
   });
 });

@@ -707,3 +707,36 @@ build-time calls so they can be revisited.
   write is read, and two copies at equal weight would shout. Closing the
   papers brings the strip back. The open state moved from the papers' verb
   to `DetailView` so the strip can see it.
+
+## 26 October 2026 (removing expectations)
+
+- The expectation mark round (`mockups/expectation-toggle.html`) is
+  retired. Of its three marks, C, delete as applicable, was preferred as
+  the control. The round ended by removing the control: the goal it
+  asserted, that a project should have CI, belongs on the project's
+  roadmap, so the row went with the expectation behind it.
+- Expectations removed whole: an entry's `expect`, the snapshot item's
+  `expectations`, the unmet expectation health cause, the "ci not set
+  up" chip and ledger row, the two speech lines and the papers' "What it
+  should have" row. CI as a fact is the forge's chip; CI as a goal goes
+  on the project's roadmap. The replacement, critical roadmap items
+  driving health, is parked on the roadmap.
+- The Unmet expectation window goes with it: `expectation_amber_days`
+  and `expectation_red_days` leave the threshold keys, the defaults and
+  the writer, so the Judgement page and the papers' fold hold two
+  windows.
+- No migration: an entry's `expect` and the expectation keys, globally
+  or on an entry, are refused by name. `[thresholds]` now refuses any
+  key outside the model by name, as item entries and `[scan]` do.
+  `[wires]` and `[launch]` still ignore an unknown key.
+- Aggregation still reads the previous snapshot, now only for a failing
+  source card's last read. A snapshot cached before the removal still
+  loads; its items' `expectations` field is never read.
+- The mock's Harbour and Oxbow lose their expectations and are
+  content and settled, so the Projects wire's tally reads 3 attention
+  and 1 drifting. The mock still covers every mood, cause and chip kind
+  that remains.
+- The design site's phrasebook page drops the one exception to no
+  suggestions, a bird echoing the owner's expectations back.
+  `design/phrasebook.html` and the decision docs keep their expectation
+  passages as the record of what was approved then.

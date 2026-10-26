@@ -14,7 +14,6 @@ export function defaultConfig(): Config {
     thresholds: {
       unsafe: { amberHours: 24, redHours: 72 },
       stalled: { amberDays: 7, redDays: 30 },
-      expectation: { amberDays: 7, redDays: 30 },
     },
     items: {},
     scan: {

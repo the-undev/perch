@@ -3,29 +3,18 @@
 
 import { parse } from "smol-toml";
 import { candidateRefs } from "./refs.ts";
-import type {
-  DayThresholds,
-  ExpectationName,
-  HourThresholds,
-} from "./snapshot.ts";
+import type { DayThresholds, HourThresholds } from "./snapshot.ts";
 
-export type { ExpectationName };
-
-/** Every expectation config may assert. */
-export const expectationNames: readonly ExpectationName[] = ["ci"];
-
-/** The three health windows: unsafe work in hours, stalled flight and unmet expectations in days. */
+/** The two health windows: unsafe work in hours, stalled flight in days. */
 export interface Thresholds {
   unsafe: HourThresholds;
   stalled: DayThresholds;
-  expectation: DayThresholds;
 }
 
 /** Per-item threshold overrides; anything left out takes the global value. */
 export interface ThresholdOverrides {
   unsafe: Partial<HourThresholds>;
   stalled: Partial<DayThresholds>;
-  expectation: Partial<DayThresholds>;
 }
 
 /** An item's entry in config. Having one adopts the bird, which puts it on a wire. */
@@ -35,8 +24,6 @@ export interface ItemEntry {
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
   thresholds: ThresholdOverrides;
-  /** Sources the owner says this item should have; an unmet one is a fact on the bird. */
-  expect: ExpectationName[];
   /** Files for the detail page, relative to the item; null keeps the README and the roadmaps. */
   keyFiles: string[] | null;
   /** Roadmap files relative to the item, replacing the standard names; null keeps them. */
@@ -225,17 +212,11 @@ export const thresholdKeys = [
   ["unsafe", "redHours", "unsafe_red_hours"],
   ["stalled", "amberDays", "stalled_amber_days"],
   ["stalled", "redDays", "stalled_red_days"],
-  ["expectation", "amberDays", "expectation_amber_days"],
-  ["expectation", "redDays", "expectation_red_days"],
 ] as const;
 
 /** Reads the threshold keys present in a table. */
 function thresholdOverrides(source: Table, where: string): ThresholdOverrides {
-  const overrides: ThresholdOverrides = {
-    unsafe: {},
-    stalled: {},
-    expectation: {},
-  };
+  const overrides: ThresholdOverrides = { unsafe: {}, stalled: {} };
   for (const [window, field, key] of thresholdKeys) {
     if (source[key] === undefined) continue;
     Object.assign(overrides[window], {
@@ -252,7 +233,6 @@ function applyOverrides(
   return {
     unsafe: { ...base.unsafe, ...overrides.unsafe },
     stalled: { ...base.stalled, ...overrides.stalled },
-    expectation: { ...base.expectation, ...overrides.expectation },
   };
 }
 
@@ -261,11 +241,6 @@ function checkOrder(thresholds: Thresholds, where: string): void {
   const pairs: [string, number, number][] = [
     ["unsafe", thresholds.unsafe.amberHours, thresholds.unsafe.redHours],
     ["stalled", thresholds.stalled.amberDays, thresholds.stalled.redDays],
-    [
-      "expectation",
-      thresholds.expectation.amberDays,
-      thresholds.expectation.redDays,
-    ],
   ];
   for (const [name, amber, red] of pairs) {
     if (amber >= red) {
@@ -277,6 +252,11 @@ function checkOrder(thresholds: Thresholds, where: string): void {
 }
 
 function globalThresholds(source: Table): Thresholds {
+  onlyKeys(
+    source,
+    thresholdKeys.map(([, , key]) => key),
+    "thresholds.",
+  );
   const read = (key: string) =>
     positiveInteger(source[key], `thresholds.${key}`);
   return {
@@ -288,10 +268,6 @@ function globalThresholds(source: Table): Thresholds {
       amberDays: read("stalled_amber_days"),
       redDays: read("stalled_red_days"),
     },
-    expectation: {
-      amberDays: read("expectation_amber_days"),
-      redDays: read("expectation_red_days"),
-    },
   };
 }
 
@@ -299,7 +275,6 @@ function globalThresholds(source: Table): Thresholds {
 const entryKeys = [
   "wire",
   "name",
-  "expect",
   "key_files",
   "roadmaps",
   "zellij_session",
@@ -321,20 +296,12 @@ function parseEntry(
   if (wire !== null) oneOf(wire, context.wires, `${where}wire`);
   const thresholds = thresholdOverrides(value, where);
   checkOrder(applyOverrides(context.thresholds, thresholds), where);
-  const expect =
-    value.expect === undefined
-      ? []
-      : stringArray(value.expect, `${where}expect`).map(
-          (name) =>
-            oneOf(name, expectationNames, `${where}expect`) as ExpectationName,
-        );
   const list = (key: string) =>
     value[key] === undefined ? null : stringArray(value[key], `${where}${key}`);
   return {
     wire,
     name: optionalString(value, "name", where),
     thresholds,
-    expect,
     keyFiles: list("key_files"),
     roadmaps: list("roadmaps"),
     zellijSession: optionalString(value, "zellij_session", where),
@@ -620,11 +587,7 @@ export function thresholdsFor(
   config: Config,
   entry: ItemEntry | null,
 ): Thresholds {
-  const overrides = entry?.thresholds ?? {
-    unsafe: {},
-    stalled: {},
-    expectation: {},
-  };
+  const overrides = entry?.thresholds ?? { unsafe: {}, stalled: {} };
   return applyOverrides(config.thresholds, overrides);
 }
 

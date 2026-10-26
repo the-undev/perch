@@ -70,16 +70,12 @@ tracked_forks = []
 # Health windows: amber at the first, red at the second. Unsafe work
 # (uncommitted changes, unpushed commits) ages in hours from its oldest
 # change. Stalled flight, parked on a non-default branch with no new commit,
-# ages in days, as does an expectation below that reality does not meet,
-# from when a scan first saw it unmet. Each is overridable per item with the
-# same keys.
+# ages in days. Each is overridable per item with the same keys.
 [thresholds]
 unsafe_amber_hours = 24
 unsafe_red_hours = 72
 stalled_amber_days = 7
 stalled_red_days = 30
-expectation_amber_days = 7
-expectation_red_days = 30
 
 # Everything is scanned on the interval, counted from the end of the last
 # scan.
@@ -122,7 +118,6 @@ obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 # [items."projects/example"]
 # wire = "Projects"                  # one of wires.names
 # name = "Example"                   # the bird's name; default the folder or repository name
-# expect = ["ci"]                   # sources this item should have
 # key_files = ["README.md", "docs/spec.md", "docs/roadmap.md"]  # default the README and roadmaps
 # roadmaps = ["docs/roadmap.md"]     # replaces the standard roadmap names
 # zellij_session = "main"
@@ -130,5 +125,3 @@ obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 # unsafe_red_hours = 48
 # stalled_amber_days = 14
 # stalled_red_days = 60
-# expectation_amber_days = 3
-# expectation_red_days = 14

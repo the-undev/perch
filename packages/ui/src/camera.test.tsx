@@ -202,7 +202,7 @@ describe("the camera", () => {
       (tspan) => tspan.textContent === "Projects",
     );
 
-    expect(name?.nextElementSibling?.textContent).toBe("4 attention");
+    expect(name?.nextElementSibling?.textContent).toBe("3 attention");
     expect(name?.nextElementSibling?.getAttribute("dx")).toBe("18");
   });
 

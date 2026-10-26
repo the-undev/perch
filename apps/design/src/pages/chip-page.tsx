@@ -19,8 +19,6 @@ const ofSeverity = (severity: ChipModel["severity"]) =>
 
 const kindRule: Record<ChipModel["kind"], string> = {
   ci: "The worst CI state across forges on the default branch; red only when failing.",
-  expectation:
-    "An expectation from config not yet met, amber at 7 days and red at 30.",
   bugs: "Open bugs on the roadmap. Always red.",
   uncommitted:
     "Uncommitted changes, toned by their age: unjudged under 24 hours, amber to 72, red beyond.",
@@ -67,7 +65,7 @@ export function ChipPage() {
 
       <Section
         title="Kinds"
-        rule="Chips run in this order on a bubble: CI, unmet expectations, bugs, uncommitted, unpushed, open pull requests, open items."
+        rule="Chips run in this order on a bubble: CI, bugs, uncommitted, unpushed, open pull requests, open items."
         min={320}
       >
         {kinds.map((kind) => (

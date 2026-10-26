@@ -158,11 +158,6 @@ const book: Group[] = [
           mood: null,
         },
       ),
-      entry(
-        "An expectation, waiting",
-        "A config expectation unmet for 7 days (default).",
-        "undev/harbour",
-      ),
     ],
   },
   {
@@ -195,11 +190,6 @@ const book: Group[] = [
           changed: "the backlog past the red window",
           mood: "distressed",
         },
-      ),
-      entry(
-        "An expectation, soured",
-        "A config expectation unmet for 30 days (default).",
-        "undev/oxbow",
       ),
       entry(
         "Several things at once",
@@ -278,10 +268,7 @@ function Rules() {
           Tone follows mood: content birds are brief, restless birds nudge,
           distressed birds are blunt but never hysterical.
         </li>
-        <li>
-          No suggestions, with one exception: a bird may echo the owner&apos;s
-          own config expectations back.
-        </li>
+        <li>No suggestions.</li>
         <li>
           At night a sleeping bird, clicked, is woken and says so first; awake
           birds never gain the prefix.

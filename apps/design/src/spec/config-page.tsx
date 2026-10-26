@@ -123,7 +123,6 @@ export function ConfigPage() {
             "GithubSourceConfig",
             "ForgejoSourceConfig",
             "KumaSourceConfig",
-            "expectationNames",
           ]}
         />
         <FunctionTable file="src/config.ts" />

@@ -31,8 +31,6 @@ unsafe_amber_hours = 24
 unsafe_red_hours = 72
 stalled_amber_days = 7
 stalled_red_days = 30
-expectation_amber_days = 7
-expectation_red_days = 30
 [scan]
 interval_minutes = 15
 finalised_commits = 10

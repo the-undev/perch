@@ -2,14 +2,13 @@
 // site and the app to render every view model state without a scan. The scan is at 09:00 on
 // 22 October 2026, and every age below is measured from it. Between them the birds cover every
 // mood and activity, the fence's three situations, failing CI, an unpushed backlog, a stalled
-// branch, unmet expectations and clean zeros, and the source cards every scan state;
+// branch and clean zeros, and the source cards every scan state;
 // tests/mock.test.ts keeps it so. Roadmap files carry
 // their paths only: the counts stand for their items.
 
 import type { Config, ItemEntry } from "./config.ts";
 import type {
   CiRun,
-  Expectation,
   FinalisedCommit,
   ForgeData,
   ForgeName,
@@ -37,8 +36,7 @@ function entry(fields: Partial<ItemEntry>): ItemEntry {
   return {
     wire: null,
     name: null,
-    thresholds: { unsafe: {}, stalled: {}, expectation: {} },
-    expect: [],
+    thresholds: { unsafe: {}, stalled: {} },
     keyFiles: null,
     roadmaps: null,
     zellijSession: null,
@@ -111,7 +109,6 @@ export const mockConfig: Config = {
   thresholds: {
     unsafe: unsafeWindows,
     stalled: dayWindows,
-    expectation: dayWindows,
   },
   items: {
     ".dotfiles": entry({
@@ -130,14 +127,13 @@ export const mockConfig: Config = {
     }),
     "dev/perch": entry({
       name: "Perch",
-      expect: ["ci"],
       keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
     }),
-    "undev/harbour": entry({ name: "Harbour", expect: ["ci"] }),
+    "undev/harbour": entry({ name: "Harbour" }),
     "undev/skiff": entry({ name: "Skiff" }),
     "undev/prism": entry({ name: "Prism" }),
     "undev/Hollow-legacy": entry({ name: "Hollow (legacy)" }),
-    "undev/oxbow": entry({ name: "Oxbow", expect: ["ci"] }),
+    "undev/oxbow": entry({ name: "Oxbow" }),
     "undev/gramophone": entry({ name: "Gramophone" }),
     "undev/spool": entry({ name: "Spool" }),
     "undev/glyph-docs": entry({ name: "Glyph Docs" }),
@@ -229,7 +225,6 @@ function localItem(
     kind?: Item["kind"];
     forges: ForgePresence[];
     flags?: Item["flags"];
-    expectations?: Expectation[];
     sources: Item["sources"];
   },
 ): Item {
@@ -242,7 +237,6 @@ function localItem(
     liveSources: [],
     presences: { local: { ref: `local:${id}`, path }, forges: fields.forges },
     flags: fields.flags ?? [],
-    expectations: fields.expectations ?? [],
     sources: fields.sources,
   };
 }
@@ -444,21 +438,11 @@ const pocket = localItem("obsidian/Pocket", {
   },
 });
 
-/** Content and being edited on a fresh branch; CI passing, as its expectation asks. */
+/** Content and being edited on a fresh branch; CI passing. */
 const perch = localItem("dev/perch", {
   forges: [
     presence("github", "finch/perch"),
     presence("forgejo", "finch/perch"),
-  ],
-  expectations: [
-    {
-      name: "ci",
-      met: true,
-      unmetSince: null,
-      days: null,
-      level: "green",
-      thresholds: dayWindows,
-    },
   ],
   sources: {
     git: {
@@ -570,21 +554,11 @@ const perch = localItem("dev/perch", {
   },
 });
 
-/** Restless: told to have CI two weeks ago, and still has none. */
+/** Content and settled on two forges, neither running CI. */
 const harbour = localItem("undev/harbour", {
   forges: [
     presence("github", "the-undev/harbour"),
     presence("forgejo", "the-undev/harbour"),
-  ],
-  expectations: [
-    {
-      name: "ci",
-      met: false,
-      unmetSince: "2026-10-08T09:00:00.000Z",
-      days: 14,
-      level: "amber",
-      thresholds: dayWindows,
-    },
   ],
   sources: {
     git: {
@@ -890,21 +864,11 @@ const hollow = localItem("undev/Hollow-legacy", {
   },
 });
 
-/** Distressed: told to have CI a month ago, and still has none. */
+/** Content and settled on two forges, neither running CI, with a long backlog. */
 const oxbow = localItem("undev/oxbow", {
   forges: [
     presence("github", "the-undev/oxbow"),
     presence("forgejo", "the-undev/oxbow"),
-  ],
-  expectations: [
-    {
-      name: "ci",
-      met: false,
-      unmetSince: "2026-09-21T09:00:00.000Z",
-      days: 31,
-      level: "red",
-      thresholds: dayWindows,
-    },
   ],
   sources: {
     git: {
@@ -1236,7 +1200,6 @@ const obsidianTidy: Item = {
     forges: [presence("github", "finch/obsidian-tidy", "account-listing")],
   },
   flags: [],
-  expectations: [],
   sources: {
     github: forge("github", "finch/obsidian-tidy", {
       finalisedCommits: [
@@ -1259,7 +1222,6 @@ const server: Item = {
   liveSources: ["dockerContainers"],
   presences: { local: null, forges: [] },
   flags: [],
-  expectations: [],
   sources: {},
 };
 

@@ -4,9 +4,7 @@ import {
   configuredCards,
   deriveActivity,
   deriveDrift,
-  deriveExpectation,
   deriveStall,
-  expectationMet,
 } from "../src/derivations.ts";
 import { mockAviary, mockConfig, mockSnapshot } from "../src/mock.ts";
 import type { GitData } from "../src/snapshot.ts";
@@ -58,7 +56,7 @@ describe("the mock dataset", () => {
     );
   });
 
-  it("covers every health cause, amber and red unsafe work, and both expectations", () => {
+  it("covers every health cause, and amber and red unsafe work", () => {
     const causes = adopted.flatMap((bird) => bird.health.causes);
     const kinds = (level: string) =>
       new Set(
@@ -68,20 +66,13 @@ describe("the mock dataset", () => {
       );
 
     expect(new Set(causes.map((cause) => cause.kind))).toEqual(
-      new Set([
-        "ci-failing",
-        "bugs",
-        "uncommitted",
-        "unpushed",
-        "stalled",
-        "expectation",
-      ]),
+      new Set(["ci-failing", "bugs", "uncommitted", "unpushed", "stalled"]),
     );
     expect(kinds("amber")).toEqual(
-      new Set(["uncommitted", "unpushed", "stalled", "expectation"]),
+      new Set(["uncommitted", "unpushed", "stalled"]),
     );
     expect(kinds("red")).toEqual(
-      new Set(["ci-failing", "bugs", "uncommitted", "expectation"]),
+      new Set(["ci-failing", "bugs", "uncommitted"]),
     );
     expect(adopted.some((bird) => bird.health.causes.length > 1)).toBe(true);
   });
@@ -92,7 +83,6 @@ describe("the mock dataset", () => {
     expect(new Set(chips.map((chip) => chip.kind))).toEqual(
       new Set([
         "ci",
-        "expectation",
         "bugs",
         "uncommitted",
         "unpushed",
@@ -147,20 +137,6 @@ describe("the mock dataset", () => {
         ...item.presences.forges.map((presence) => presence.ref),
       ]).entry;
       const thresholds = thresholdsFor(mockConfig, entry);
-      expect(item.expectations).toEqual(
-        item.expectations.map((expectation) =>
-          deriveExpectation(
-            expectation.name,
-            expectationMet(expectation.name, item.sources),
-            expectation.unmetSince,
-            thresholds.expectation,
-            scannedAt,
-          ),
-        ),
-      );
-      expect(item.expectations.map((entry) => entry.name)).toEqual(
-        entry?.expect ?? [],
-      );
       const git = item.sources.git;
       if (git === undefined || "error" in git) continue;
       expect(git.drift, item.id).toEqual(

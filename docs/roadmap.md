@@ -67,6 +67,15 @@ under the pointer. Investigate a page of fixed height where the window
 never scrolls and each element scrolls its own content, the ledger and
 the papers each in their own pane. Raised at the bird's page round.
 
+## A chip's landing paints a bare frame
+
+Pressing a chip jumps its ledger row to the middle and lights it, but
+the unlit row shows for a moment before the mark and ink arrive, even
+with the instant jump and the wait for the page's swap to settle.
+Likely the scroll paints before React commits the mark; landing in one
+paint (a layout effect or flushSync around `landOn` in detail-view.tsx)
+is the next thing to try.
+
 ## A hand edit and the scan
 
 An edit to the config file by hand is read and shown at once, but scans

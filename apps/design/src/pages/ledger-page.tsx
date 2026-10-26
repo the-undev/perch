@@ -21,7 +21,9 @@ const handBuilt: LedgerEntry[] = [
   },
 ];
 
-const specimens: { id: string; label: string; rule: string }[] = [
+type LedgerSpecimen = { id: string; label: string; rule: string };
+
+const specimens: LedgerSpecimen[] = [
   {
     id: "dev/perch",
     label: "Clean zeros, an unjudged count",
@@ -51,6 +53,34 @@ const specimens: { id: string; label: string; rule: string }[] = [
     id: "github:finch/obsidian-tidy",
     label: "Forge only",
     rule: "obsidian-tidy: no clone, so no git rows; only what the forge says.",
+  },
+];
+
+const workingSpecimens: LedgerSpecimen[] = [
+  {
+    id: "dev/perch",
+    label: "Two forges disagreeing on CI",
+    rule: "Perch: the CI row says pending, the worst state, as the chip does; beneath it GitHub's newest run passed and Forgejo's waits with no runner, each named, toned and linked to the run, with its age. The pull requests row names the one forge that has one.",
+  },
+  {
+    id: "undev/prism",
+    label: "A forge not read",
+    rule: "Prism: GitHub could not be read, so the CI and pull request rows say so in amber beside what Forgejo said. The count covers only what was read.",
+  },
+  {
+    id: "obsidian/Hothouse",
+    label: "Open items over two roadmap files",
+    rule: "Hothouse Vault: the open items row counts per file; the uncommitted row names the oldest change and its age, amber past a day.",
+  },
+  {
+    id: "obsidian/Pocket",
+    label: "A roadmap file with none open",
+    rule: "Pocket Vault: a source with nothing to say is silent, so the roadmap file with no open items is left out.",
+  },
+  {
+    id: "undev/Hollow-legacy",
+    label: "Bugs",
+    rule: "Hollow: the bugs row names the roadmap file the two bugs are in.",
   },
 ];
 
@@ -86,13 +116,34 @@ export function LedgerPage() {
         </Specimen>
       </Section>
 
+      <Section
+        title="Each chip's working"
+        rule="A bubble chip states a conclusion; the row holding its number spells out the working beneath it, source by source, in mono: each forge, roadmap file or git, what it says there, toned, linked where a page exists, and its age where it has one. A source that was read with nothing to say is silent; one that was not read says so in amber. A row holding one of the bubble's chips carries the dot, and on the bird's page the chip lands on it."
+        min={360}
+      >
+        {workingSpecimens.map((specimen) => (
+          <Specimen
+            key={specimen.id}
+            label={specimen.label}
+            rule={specimen.rule}
+          >
+            <Ground>
+              <Ledger
+                entries={mockBird(specimen.id).detail.ledger}
+                now={scanMoment}
+              />
+            </Ground>
+          </Specimen>
+        ))}
+      </Section>
+
       <Usage
         component="<Ledger>"
         props={[
           {
             name: "entries",
             type: "LedgerEntry[]",
-            what: "bird.detail.ledger: count, state and time rows in the view model's order.",
+            what: "bird.detail.ledger: count, state and time rows in the view model's order; a count or state row names the chip it holds and its workings.",
           },
           {
             name: "now",

@@ -1,6 +1,7 @@
 // Tier C's ruled ledger: facts in full words, then the sections beneath it (branches, newest
 // commits, pull requests, flags, unread sources). Every row is a label on the left and a value on
-// the right; clean zeros read a quiet green "none", counts take their severity's tone.
+// the right; clean zeros read a quiet green "none", counts take their severity's tone. A row that
+// holds a bubble chip's working is marked with a dot and spells it out beneath, source by source.
 
 import type {
   BranchLine,
@@ -10,6 +11,7 @@ import type {
   PullRequestLine,
   SourceProblem,
   Tone,
+  Working,
 } from "@perch/core/viewmodel.ts";
 import type { ReactNode } from "react";
 import { agoWords } from "./time.ts";
@@ -96,23 +98,93 @@ function entryValue(entry: LedgerEntry, now: Date): ReactNode {
   }
 }
 
+/** A working's ink: its tone, else the muted ink that reads beside the faint source. */
+const workingToneClass: Record<NonNullable<Tone> | "none", string> = {
+  ...toneClass,
+  none: "text-ink-muted",
+};
+
+/** One source's part in a row, in mono: the source, what it says there, toned and linked, and its age. */
+function WorkingLine({ working, now }: { working: Working; now: Date }) {
+  return (
+    <li data-part="working" className="break-words">
+      {working.source}
+      {" · "}
+      <span
+        data-working-tone={working.tone ?? "none"}
+        className={workingToneClass[working.tone ?? "none"]}
+      >
+        {working.url === null ? (
+          working.text
+        ) : (
+          <OutLink href={working.url}>{working.text}</OutLink>
+        )}
+      </span>
+      {working.at === null ? "" : ` · ${agoWords(working.at, now)}`}
+    </li>
+  );
+}
+
+/** The mark before a label whose row holds a bubble chip's working. */
+function HandleMark() {
+  return (
+    <span
+      aria-hidden="true"
+      data-part="handle-mark"
+      className="mr-2 inline-block size-1.75 rounded-full bg-ink-accent align-[1px]"
+    />
+  );
+}
+
+/** A row of the ledger proper: the label and value, with the row's working beneath, source by source. */
+function EntryRow({ entry, now }: { entry: LedgerEntry; now: Date }) {
+  const tone = entry.kind === "time" ? null : entry.tone;
+  const chip = entry.kind === "time" ? null : entry.chip;
+  const workings = entry.kind === "time" ? [] : entry.workings;
+  return (
+    <div
+      data-part="ledger-entry"
+      data-chip={chip ?? undefined}
+      className="border-edge border-t px-0.5 first:border-t-0"
+    >
+      <div className="flex items-baseline justify-between gap-4 py-2.25">
+        <span className="min-w-0">
+          {chip !== null && <HandleMark />}
+          {entry.label}
+        </span>
+        <span
+          data-tone={tone ?? "none"}
+          className={`whitespace-nowrap text-[13px] tabular-nums ${toneClass[tone ?? "none"]}`}
+        >
+          {entryValue(entry, now)}
+        </span>
+      </div>
+      {workings.length > 0 && (
+        <ul
+          data-part="workings"
+          className="m-0 -mt-1 list-none space-y-0.5 p-0 pb-2.25 font-mono text-[12px] text-ink-faint leading-normal"
+        >
+          {workings.map((working) => (
+            <WorkingLine key={working.source} working={working} now={now} />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export interface LedgerProps {
   entries: LedgerEntry[];
   /** The moment times are measured to: the render's clock, passed in. */
   now: Date;
 }
 
-/** The facts that exist for a bird, in full words. */
+/** The facts that exist for a bird, in full words, each chip's working spelled out on its row. */
 export function Ledger({ entries, now }: LedgerProps) {
   return (
     <div data-part="ledger">
       {entries.map((entry) => (
-        <LedgerRow
-          key={entry.label}
-          label={entry.label}
-          value={entryValue(entry, now)}
-          tone={entry.kind === "time" ? null : entry.tone}
-        />
+        <EntryRow key={entry.label} entry={entry} now={now} />
       ))}
     </div>
   );

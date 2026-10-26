@@ -57,6 +57,7 @@ function Portrait({ bird, night }: { bird: Bird; night: boolean }) {
           look={birdLook(bird, night)}
           id={bird.id}
           speaking={false}
+          idle
         />
       </g>
     </svg>

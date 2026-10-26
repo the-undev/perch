@@ -621,3 +621,20 @@ build-time calls so they can be revisited.
   plumpness rule no longer names tickets, which plumpness never read.
 - `scripts/mockup-data.mjs` keeps its tiers: it feeds the retired
   mockups only.
+
+
+## 26 October 2026 (bird motion states)
+
+- A perched bird does one thing at a time: arriving, or idle. `PerchedBird`
+  starts arriving and flips to idle on `animationend` of the `arrive`
+  animation; the `beak-wiggle` ending inside the figure bubbles up and is
+  ignored by name. This is the attempted fix for the figure painting twice
+  during the arrival, which is suspected to be a finite parent transform
+  animation running over infinite child ones in one SVG.
+- `Bird` and `BirdFigure` take a required `idle` flag. Birds drawn at rest
+  (wire, fence, portrait, detail and adoption figures) pass `idle`. Hover
+  lift, beak wiggle and focus work in both states.
+- Reduced motion needs no handling: every animation involved is
+  `motion-safe:`, so nothing waits on an event that never fires, and the
+  state is invisible.
+- The roadmap entry stays until the owner confirms the doubling is gone.

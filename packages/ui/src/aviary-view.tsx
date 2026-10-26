@@ -81,7 +81,7 @@ interface PerchedBirdProps {
   onLeave: () => void;
 }
 
-/** One bird in the aviary: it lands in its turn, lifts on hover, and speaks when pressed. */
+/** One bird in the aviary: it lands in its turn (idling only once it has landed), lifts on hover, and speaks when pressed. */
 function PerchedBird({
   placed,
   night,
@@ -92,6 +92,7 @@ function PerchedBird({
   onLeave,
 }: PerchedBirdProps) {
   const { bird } = placed;
+  const [arriving, setArriving] = useState(true);
   const arrive: CustomProperties = {
     "--arrive-delay": `${arrival * arrivalStepMs}ms`,
   };
@@ -117,7 +118,14 @@ function PerchedBird({
       onPointerMove={(event) => onHover(bird, event)}
       onPointerLeave={onLeave}
     >
-      <g className="motion-safe:animate-arrive" style={arrive}>
+      <g
+        className={arriving ? "motion-safe:animate-arrive" : undefined}
+        style={arrive}
+        onAnimationEnd={(event) => {
+          if (event.animationName !== "arrive") return;
+          setArriving(false);
+        }}
+      >
         <g
           className="transition-transform duration-700 ease-in-out motion-reduce:transition-none"
           style={{ transform: `translate(${placed.x}px, ${placed.y}px)` }}
@@ -131,6 +139,7 @@ function PerchedBird({
               night={night}
               namePlace={placed.namePlace}
               speaking={speaking}
+              idle={!arriving}
             />
           </g>
         </g>

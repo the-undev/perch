@@ -265,6 +265,7 @@ function Flyer({
           look={birdLook(flight.bird, night)}
           id={flight.bird.id}
           speaking={false}
+          idle
         />
       </g>
     </svg>
@@ -348,6 +349,7 @@ function Strip({
                 look={birdLook(bird, night)}
                 id={bird.id}
                 speaking={false}
+                idle
               />
             </g>
             <text

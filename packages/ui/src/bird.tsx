@@ -88,10 +88,12 @@ export interface BirdFigureProps {
   id: string;
   /** The bird has just been asked to speak: its beak wiggles as the bubble opens. */
   speaking: boolean;
+  /** The bird is at rest: its idle animations run. False while it arrives. */
+  idle: boolean;
 }
 
 /** The bird's parts at unit scale, facing right. */
-export function BirdFigure({ look, id, speaking }: BirdFigureProps) {
+export function BirdFigure({ look, id, speaking, idle }: BirdFigureProps) {
   const body = look.dim ? "var(--color-plumage-dim)" : "var(--color-plumage)";
   return (
     <g data-part="figure">
@@ -123,9 +125,9 @@ export function BirdFigure({ look, id, speaking }: BirdFigureProps) {
         d="M -16 -22 L -42 -10 L -38 -20 L -44 -26 L -20 -32 Z"
         fill={body}
         className={
-          look.tailFlicks ? "motion-safe:animate-tail-flick" : undefined
+          idle && look.tailFlicks ? "motion-safe:animate-tail-flick" : undefined
         }
-        style={look.tailFlicks ? flickStyle(id) : undefined}
+        style={idle && look.tailFlicks ? flickStyle(id) : undefined}
       />
       <ellipse data-part="body" cx={0} cy={-26} rx={23} ry={19} fill={body} />
       <path
@@ -180,6 +182,8 @@ export interface BirdProps {
   namePlace: NamePlace;
   /** Its bubble has just opened: the beak wiggles. */
   speaking: boolean;
+  /** The bird is at rest: bob, tail flick and song run. False while it arrives. */
+  idle: boolean;
 }
 
 /** The name's ink and size: muted, brighter when an enclosing group is hovered or focused from the keyboard. */
@@ -206,6 +210,7 @@ export function Bird({
   night,
   namePlace,
   speaking,
+  idle,
 }: BirdProps) {
   const look = birdLook(bird, night);
   const scale = birdScale(bird);
@@ -219,14 +224,21 @@ export function Bird({
     >
       <g
         className={
-          look.restlessness > 0 ? "motion-safe:animate-bird-bob" : undefined
+          idle && look.restlessness > 0
+            ? "motion-safe:animate-bird-bob"
+            : undefined
         }
-        style={bobStyle(bird.id, look.restlessness)}
+        style={idle ? bobStyle(bird.id, look.restlessness) : undefined}
       >
         <g transform={`scale(${scale * face} ${scale})`}>
-          <BirdFigure look={look} id={bird.id} speaking={speaking} />
+          <BirdFigure
+            look={look}
+            id={bird.id}
+            speaking={speaking}
+            idle={idle}
+          />
         </g>
-        {look.singing && (
+        {idle && look.singing && (
           <text
             data-part="song"
             x={48 * face * scale}
@@ -312,6 +324,7 @@ export function BirdPortrait({ bird, facing, night }: BirdPortraitProps) {
         night={night}
         namePlace={roomyName}
         speaking={false}
+        idle
       />
     </svg>
   );

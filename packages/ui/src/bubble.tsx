@@ -1,13 +1,15 @@
 // The speech bubble: paper against the sky, the bird's name and mood word, its first-person
 // speech, the chips it carries, the launch actions and, for a fence bird, the adopt key, with a
 // tail whose tip meets the beak. On the bird's own page the bubble is the speech and chips alone.
+// Either way the chips are handles to the ledger rows holding their working.
 
 import type {
   Bubble as BubbleModel,
+  ChipKind,
   LaunchAction,
   StateWord,
 } from "@perch/core/viewmodel.ts";
-import { Chips } from "./chip.tsx";
+import { ChipHandles } from "./chip.tsx";
 import { actionIcon, Icon } from "./icons.tsx";
 
 /** The state word's ink on paper: the mood's colour, quiet for the fence. */
@@ -140,6 +142,8 @@ export interface BubbleProps {
   onFullStory: () => void;
   /** Rides to the page with the adoption papers unfolded; null for an adopted bird, which has no adopt key. */
   onAdopt: (() => void) | null;
+  /** A chip was pressed: rides to the page and lands on the ledger row holding its working. */
+  onChip: (chip: ChipKind) => void;
   tail: BubbleTail;
 }
 
@@ -151,6 +155,7 @@ export function Bubble({
   onLaunch,
   onFullStory,
   onAdopt,
+  onChip,
   tail,
 }: BubbleProps) {
   const origin =
@@ -175,7 +180,7 @@ export function Bubble({
       <p data-part="speech" className="m-0">
         {spokenSpeech(bubble, night)}
       </p>
-      <Chips chips={bubble.chips} />
+      <ChipHandles chips={bubble.chips} onPress={onChip} />
       <div className="mt-3 flex items-center gap-2">
         {actions.map((action) => (
           <button
@@ -222,15 +227,18 @@ export interface RoostBubbleProps {
   drop: number;
   /** The tail that leaves the right edge when the roost is a row. */
   sideTail: SideTailShape;
+  /** A chip was pressed: the page lands on the ledger row holding its working. */
+  onChip: (chip: ChipKind) => void;
 }
 
-/** The bubble on the bird's own page: speech and chips, the name and state word left to the page's heading. */
+/** The bubble on the bird's own page: speech and chips as handles, the name and state word left to the page's heading. */
 export function RoostBubble({
   bubble,
   night,
   tail,
   drop,
   sideTail,
+  onChip,
 }: RoostBubbleProps) {
   return (
     <section
@@ -241,7 +249,7 @@ export function RoostBubble({
       <p data-part="speech" className="m-0">
         {spokenSpeech(bubble, night)}
       </p>
-      <Chips chips={bubble.chips} />
+      <ChipHandles chips={bubble.chips} onPress={onChip} />
       <Tail tail={tail} drop={drop} className="@min-[460px]:hidden" />
       <SideTail tail={sideTail} className="hidden @min-[460px]:block" />
     </section>

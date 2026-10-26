@@ -11,6 +11,7 @@
 import type {
   Aviary,
   Bird,
+  ChipKind,
   LaunchAction,
   Mood,
 } from "@perch/core/viewmodel.ts";
@@ -42,10 +43,18 @@ import { isNight, type SkyPhase, skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
 import { byPosition, facingAt, namePlace, Tally, tallyGap } from "./wire.tsx";
 
-/** Where the camera points: the whole aviary, or one bird's detail page, its papers unfolded or not. */
+/**
+ * Where the camera points: the whole aviary, or one bird's detail page, its papers unfolded or
+ * not, and the chip pressed in its aviary bubble, whose ledger row the page lands on.
+ */
 export type CameraPlace =
   | { at: "aviary" }
-  | { at: "detail"; birdId: string; papers: boolean };
+  | {
+      at: "detail";
+      birdId: string;
+      papers: boolean;
+      chip: ChipKind | null;
+    };
 
 /** A header tab: the aviary, one wire, or the fence. */
 export type CameraTab =
@@ -102,7 +111,7 @@ export function tabDestination(
     tab.birds.find((candidate) => candidate.id === last) ?? tab.birds[0];
   return bird === undefined
     ? null
-    : { at: "detail", birdId: bird.id, papers: false };
+    : { at: "detail", birdId: bird.id, papers: false, chip: null };
 }
 
 function findBird(aviary: Aviary, id: string): Bird | undefined {
@@ -635,10 +644,28 @@ export function CameraView({
                 size={size}
                 onLaunch={onLaunch}
                 onFullStory={(chosen) =>
-                  onNavigate({ at: "detail", birdId: chosen.id, papers: false })
+                  onNavigate({
+                    at: "detail",
+                    birdId: chosen.id,
+                    papers: false,
+                    chip: null,
+                  })
                 }
                 onAdopt={(chosen) =>
-                  onNavigate({ at: "detail", birdId: chosen.id, papers: true })
+                  onNavigate({
+                    at: "detail",
+                    birdId: chosen.id,
+                    papers: true,
+                    chip: null,
+                  })
+                }
+                onChip={(chosen, chip) =>
+                  onNavigate({
+                    at: "detail",
+                    birdId: chosen.id,
+                    papers: false,
+                    chip,
+                  })
                 }
                 flyingIds={flyingIds}
               />
@@ -664,6 +691,7 @@ export function CameraView({
                       at: "detail",
                       birdId: chosen.id,
                       papers: false,
+                      chip: null,
                     })
                   }
                 />
@@ -688,6 +716,7 @@ export function CameraView({
                   entry={entry}
                   problems={problems}
                   openPapers={place.at === "detail" && place.papers}
+                  arrivalChip={place.at === "detail" ? place.chip : null}
                 />
               </div>
             )}

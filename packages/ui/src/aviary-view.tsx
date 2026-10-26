@@ -6,6 +6,7 @@ import type { PolledSourceName } from "@perch/core/snapshot.ts";
 import type {
   Aviary,
   Bird as BirdModel,
+  ChipKind,
   LaunchAction,
   SourceError,
 } from "@perch/core/viewmodel.ts";
@@ -160,6 +161,7 @@ interface AnchoredBubbleProps {
   onLaunch: (action: LaunchAction) => void;
   onFullStory: () => void;
   onAdopt: (() => void) | null;
+  onChip: (chip: ChipKind) => void;
 }
 
 /** The speaking bird's bubble, its tail tip on the beak tip. */
@@ -171,6 +173,7 @@ function AnchoredBubble({
   onLaunch,
   onFullStory,
   onAdopt,
+  onChip,
 }: AnchoredBubbleProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
@@ -201,6 +204,7 @@ function AnchoredBubble({
         onLaunch={onLaunch}
         onFullStory={onFullStory}
         onAdopt={onAdopt}
+        onChip={onChip}
         tail={placement.tail}
       />
     </div>
@@ -301,6 +305,8 @@ export interface AviarySceneProps {
   onFullStory: (bird: BirdModel) => void;
   /** A fence bird's bubble's Adopt was pressed. */
   onAdopt: (bird: BirdModel) => void;
+  /** A chip in a bubble was pressed. */
+  onChip: (bird: BirdModel, chip: ChipKind) => void;
   /** The ids of birds whose flyers are in the air; each is not drawn until its flyer lands. */
   flyingIds: ReadonlySet<string>;
 }
@@ -313,6 +319,7 @@ export function AviaryScene({
   onLaunch,
   onFullStory,
   onAdopt,
+  onChip,
   flyingIds,
 }: AviarySceneProps) {
   const phase = skyPhase(now);
@@ -421,6 +428,10 @@ export function AviaryScene({
                   onAdopt(speaker.bird);
                 }
           }
+          onChip={(chip) => {
+            setSpeakingId(null);
+            onChip(speaker.bird, chip);
+          }}
         />
       )}
     </div>
@@ -439,6 +450,8 @@ export interface AviaryViewProps {
   onFullStory: (bird: BirdModel) => void;
   /** A fence bird's bubble's Adopt was pressed. */
   onAdopt: (bird: BirdModel) => void;
+  /** A chip in a bubble was pressed. */
+  onChip: (bird: BirdModel, chip: ChipKind) => void;
 }
 
 const noFlyers: ReadonlySet<string> = new Set();

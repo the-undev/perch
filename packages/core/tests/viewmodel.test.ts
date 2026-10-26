@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Config } from "../src/config.ts";
 import type { Item } from "../src/snapshot.ts";
-import { type Bird, deriveAviary } from "../src/viewmodel.ts";
+import { type Bird, chipKinds, deriveAviary } from "../src/viewmodel.ts";
 import { testConfig } from "./helpers/config.ts";
 import {
   aged,
@@ -350,6 +350,11 @@ describe("chips", () => {
       ["1 open PR", 1, null],
       ["9 open items", 9, null],
     ]);
+    expect(
+      birdIn([busy], config, "dev/prism").bubble.chips.map(
+        (chip) => chip.kind,
+      ),
+    ).toEqual(chipKinds);
   });
 
   it("show only what exists: a clean, quiet bird carries none", async () => {
@@ -424,6 +429,8 @@ describe("the ledger", () => {
         count: 0,
         text: "none",
         tone: "green",
+        chip: null,
+        workings: [],
       },
       {
         kind: "count",
@@ -431,6 +438,16 @@ describe("the ledger", () => {
         count: 2,
         text: "2",
         tone: "amber",
+        chip: "unpushed",
+        workings: [
+          {
+            source: "git",
+            text: "oldest commit",
+            tone: "amber",
+            url: null,
+            at: hoursBefore(40),
+          },
+        ],
       },
       {
         kind: "count",
@@ -438,6 +455,8 @@ describe("the ledger", () => {
         count: 0,
         text: "none",
         tone: "green",
+        chip: null,
+        workings: [],
       },
       {
         kind: "count",
@@ -445,20 +464,34 @@ describe("the ledger", () => {
         count: 15,
         text: "15",
         tone: null,
+        chip: "open-items",
+        workings: [],
       },
       {
         kind: "count",
-        label: "open pull requests on GitHub",
+        label: "open pull requests",
         count: 0,
         text: "none",
         tone: "green",
+        chip: null,
+        workings: [],
       },
       {
         kind: "state",
-        label: "CI on GitHub",
-        text: "success on main",
+        label: "CI",
+        text: "success",
         tone: "green",
         url: null,
+        chip: "ci",
+        workings: [
+          {
+            source: "github",
+            text: "success on main, run “check”",
+            tone: "green",
+            url: null,
+            at: hoursBefore(2),
+          },
+        ],
       },
       { kind: "time", label: "last commit", at: hoursBefore(40) },
       { kind: "time", label: "last Claude session", at: hoursBefore(30) },
@@ -481,17 +514,255 @@ describe("the ledger", () => {
       text: "none, one disk only",
       tone: null,
       url: null,
+      chip: null,
+      workings: [],
     });
-    expect(ledger).toContainEqual({
-      kind: "state",
-      label: "CI on GitHub",
-      text: "failure on main",
-      tone: "red",
-      url: failingRun.url,
-    });
+    expect(ledger).toContainEqual(
+      expect.objectContaining({
+        label: "CI",
+        text: "failure",
+        tone: "red",
+        workings: [
+          expect.objectContaining({
+            source: "github",
+            tone: "red",
+            url: failingRun.url,
+          }),
+        ],
+      }),
+    );
     expect(ledger.some((entry) => entry.label === "unpushed commits")).toBe(
       false,
     );
+  });
+});
+
+describe("the ledger's workings", () => {
+  /** A ledger row by its label, failing when the bird has none. */
+  function row(bird: Bird, label: string) {
+    const entry = bird.detail.ledger.find(
+      (candidate) => candidate.label === label,
+    );
+    if (entry === undefined || entry.kind === "time") {
+      throw new Error(`no ${label} row`);
+    }
+    return entry;
+  }
+
+  it("names each forge's newest run on one CI row, which says the worst state as the chip does", async () => {
+    const config = await adoptAll(["dev/perch"]);
+    const perch = item("dev/perch", {
+      sources: {
+        github: forgeData({
+          latestCi: { ...failingRun, state: "success" },
+        }),
+        forgejo: forgeData({
+          url: "http://forgejo.test/finch/perch",
+          defaultBranch: "trunk",
+          latestCi: {
+            name: "check / check (push)",
+            state: "pending",
+            forgeState: "pending",
+            url: "http://forgejo.test/finch/perch/actions/runs/14",
+            createdAt: hoursBefore(5),
+          },
+        }),
+      },
+    });
+    const bird = birdIn([perch], config, "dev/perch");
+    const ci = row(bird, "CI");
+
+    expect(bird.bubble.chips[0]?.label).toBe("ci pending");
+    expect([ci.text, ci.tone, ci.chip]).toEqual(["pending", null, "ci"]);
+    expect(ci.workings).toEqual([
+      {
+        source: "github",
+        text: "success on main, run “check”",
+        tone: "green",
+        url: failingRun.url,
+        at: hoursBefore(2),
+      },
+      {
+        source: "forgejo",
+        text: "pending on trunk, run “check / check (push)”",
+        tone: null,
+        url: "http://forgejo.test/finch/perch/actions/runs/14",
+        at: hoursBefore(5),
+      },
+    ]);
+  });
+
+  it("leaves a forge with no run, or no pull requests, silent", async () => {
+    const config = await adoptAll(["dev/perch"]);
+    const perch = item("dev/perch", {
+      sources: {
+        github: forgeData({
+          latestCi: failingRun,
+          openPullRequests: [
+            {
+              number: 6,
+              title: "Typed contracts",
+              author: "finch",
+              draft: false,
+              updatedAt: hoursBefore(3),
+              url: "https://github.com/finch/perch/pull/6",
+            },
+          ],
+        }),
+        forgejo: forgeData({ url: "http://forgejo.test/finch/perch" }),
+      },
+    });
+    const bird = birdIn([perch], config, "dev/perch");
+
+    expect(row(bird, "CI").workings.map((working) => working.source)).toEqual([
+      "github",
+    ]);
+    expect(row(bird, "open pull requests")).toMatchObject({
+      text: "1",
+      chip: "pull-requests",
+      workings: [
+        {
+          source: "github",
+          text: "1 open",
+          tone: null,
+          url: "https://github.com/finch/perch/pulls",
+          at: null,
+        },
+      ],
+    });
+  });
+
+  it("says a forge was not read on the rows it would have spelled out", async () => {
+    const config = await adoptAll(["dev/prism"]);
+    const prism = item("dev/prism", {
+      sources: {
+        github: { error: "HTTP 404" },
+        forgejo: forgeData({
+          url: "http://forgejo.test/the-undev/prism",
+          latestCi: failingRun,
+        }),
+      },
+    });
+    const bird = birdIn([prism], config, "dev/prism");
+    const notRead = {
+      source: "github",
+      text: "not read",
+      tone: "amber",
+      url: null,
+      at: null,
+    };
+
+    expect(row(bird, "CI").workings).toEqual([
+      notRead,
+      expect.objectContaining({ source: "forgejo", tone: "red" }),
+    ]);
+    expect(row(bird, "open pull requests")).toMatchObject({
+      text: "none",
+      workings: [notRead],
+    });
+  });
+
+  it("counts open items and bugs per roadmap file, a file with none silent", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const open = (kind: "bug" | "feature", line: number) => ({
+      text: `${kind} ${line}`,
+      kind,
+      done: false,
+      line,
+      source: "bullet" as const,
+      body: null,
+    });
+    const hollow = item("dev/hollow", {
+      sources: {
+        roadmap: {
+          counts: { bug: 2, feature: 2 },
+          files: [
+            {
+              path: "docs/roadmap.md",
+              items: [open("feature", 1), open("bug", 2)],
+              groups: [
+                {
+                  heading: "Bugs",
+                  level: 2,
+                  line: 3,
+                  role: "group",
+                  items: [open("bug", 4), { ...open("bug", 5), done: true }],
+                  groups: [],
+                  progress: { done: 1, total: 2 },
+                },
+              ],
+            },
+            {
+              path: "docs/ideas.md",
+              items: [open("feature", 1)],
+              groups: [],
+            },
+            { path: "docs/done.md", items: [], groups: [] },
+          ],
+        },
+      },
+    });
+    const bird = birdIn([hollow], config, "dev/hollow");
+    const sourced = (label: string) =>
+      row(bird, label).workings.map((working) => [
+        working.source,
+        working.text,
+      ]);
+
+    expect(row(bird, "open bugs").chip).toBe("bugs");
+    expect(sourced("open bugs")).toEqual([["docs/roadmap.md", "2 open"]]);
+    expect(sourced("open roadmap items")).toEqual([
+      ["docs/roadmap.md", "3 open"],
+      ["docs/ideas.md", "1 open"],
+    ]);
+  });
+
+  it("ages uncommitted changes from the oldest, toned by its window", async () => {
+    const config = await adoptAll(["dev/gramophone"]);
+    const gramophone = item("dev/gramophone", {
+      sources: {
+        git: gitData({
+          uncommittedCount: 14,
+          activity: "editing",
+          drift: {
+            uncommitted: aged(123, "red"),
+            unpushed: null,
+            level: "red",
+            thresholds: { amberHours: 24, redHours: 72 },
+          },
+        }),
+      },
+    });
+    const bird = birdIn([gramophone], config, "dev/gramophone");
+
+    expect(row(bird, "uncommitted changes")).toMatchObject({
+      chip: "uncommitted",
+      workings: [
+        {
+          source: "git",
+          text: "oldest change",
+          tone: "red",
+          url: null,
+          at: hoursBefore(123),
+        },
+      ],
+    });
+  });
+
+  it("hands a fence bird's rows no chip, for its bubble carries none", async () => {
+    const config = await adoptAll([]);
+    const found = item("dev/mixed-bag", {
+      sources: {
+        git: gitData({ uncommittedCount: 2 }),
+        github: forgeData({ latestCi: failingRun }),
+      },
+    });
+    const ledger = birdIn([found], config, "dev/mixed-bag").detail.ledger;
+
+    expect(
+      ledger.map((entry) => (entry.kind === "time" ? null : entry.chip)),
+    ).toEqual(ledger.map(() => null));
+    expect(ledger.find((entry) => entry.label === "CI")).toBeDefined();
   });
 });
 

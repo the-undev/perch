@@ -1,6 +1,12 @@
 import type { Bird } from "@perch/core/viewmodel.ts";
-import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { sideTailBaseTop, sideTailOverlap } from "./bubble.tsx";
 import { mockBird } from "./mock-birds.ts";
 import {
@@ -15,11 +21,14 @@ import {
 afterEach(cleanup);
 
 function roost(bird: Bird, night = false) {
-  const { container } = render(<Roost bird={bird} night={night} />);
+  const onChip = vi.fn();
+  const { container } = render(
+    <Roost bird={bird} night={night} onChip={onChip} />,
+  );
   const section = screen.getByRole("region", {
     name: `${bird.name} on its perch`,
   });
-  return { container, section };
+  return { container, section, onChip };
 }
 
 /** The scale transform the figure is drawn under. */
@@ -54,7 +63,7 @@ describe("the roost", () => {
     expect(screen.getByRole("img", { name: "Perch, content" })).toBeDefined();
   });
 
-  it("speaks the bubble's speech and chips, with no name, state word or key", () => {
+  it("speaks the bubble's speech and chips, with no name, state word or key beside the chips", () => {
     const prism = mockBird("undev/prism");
     const { section } = roost(prism);
     const bubble = within(section).getByRole("region", {
@@ -70,10 +79,30 @@ describe("the roost", () => {
       ),
     ).toEqual(prism.bubble.chips.map((chip) => chip.label));
     expect(within(section).queryByRole("heading")).toBeNull();
-    expect(within(section).queryByRole("button")).toBeNull();
+    expect(
+      within(section)
+        .getAllByRole("button")
+        .map((button) => button.getAttribute("data-kind")),
+    ).toEqual(prism.bubble.chips.map((chip) => chip.kind));
     expect(section.querySelector('[data-part="state-word"]')).toBeNull();
     expect(section.textContent).not.toContain(prism.name);
     expect(section.textContent).not.toContain("Tell me the full story");
+  });
+
+  it("makes each chip a handle that hands back its kind when pressed", () => {
+    const prism = mockBird("undev/prism");
+    const { section, onChip } = roost(prism);
+    const [first, second] = prism.bubble.chips;
+    if (first === undefined || second === undefined) {
+      throw new Error("prism carries two chips");
+    }
+
+    fireEvent.click(within(section).getByRole("button", { name: first.label }));
+    fireEvent.click(
+      within(section).getByRole("button", { name: second.label }),
+    );
+
+    expect(onChip.mock.calls).toEqual([[first.kind], [second.kind]]);
   });
 
   it("hangs the stacked tail so its tip meets the left-facing beak", () => {

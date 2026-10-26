@@ -58,8 +58,9 @@ at risk of loss; is the rest quietly fine):
   outstanding work, song while being edited.
 - **B. The bubble**: click a bird and it speaks. The speech carries how
   it feels and why, in the first person; the chips beneath carry real
-  numbers (CI, PRs, tickets, open items). Tier B is a strict subset of
-  what tier C knows. A fence bird's bubble has one key, Adopt, beside
+  numbers (CI, PRs, tickets, open items). Each chip leads to the bird's
+  page, landing on the ledger row that holds its working. Tier B is a
+  strict subset of what tier C knows. A fence bird's bubble has one key, Adopt, beside
   "Tell me the full story": it leads to the bird's page with its
   adoption papers unfolded.
 - **C. The detail**: everything, see below.
@@ -77,7 +78,11 @@ wire for the roost, a T-stand perch in the post's colour at the page's
 top right. It is drawn larger than on any wire, idle, and always faces
 left toward its record. Its bubble hangs above it as paper, the tail on
 the beak, with the speech and chips as the aviary bubble says them but
-no name, state word or keys. The record beside it opens with the
+no name, state word or keys. Here each chip is a handle: pressing it
+scrolls the ledger row holding its working to the middle of the page
+and marks it briefly. A chip pressed in the aviary's bubble closes it
+and rides the camera to the bird's page, which lands on that row the
+same way as it opens. The record beside it opens with the
 heading, the one place on the page that carries the name and the state
 word, with what the bird is doing. A meta line in mono beneath says
 where the bird lives: the clone's path with `~`, the forges that hold
@@ -88,6 +93,14 @@ branches, the default branch's newest commits on the forge, flags, and
 a configurable list of key files rendered as paper, the bubble's
 material, with folder tabs. A long file scrolls inside its sheet, which
 stops short of the window's height, so the page keeps its rhythm.
+Each chip's number sits on one ledger row, marked with a dot, its
+working spelled out beneath in mono, source by source: each forge's
+newest CI run with its state, branch, name, link and age, under a CI
+row that says the worst state as the chip does; open pull requests per
+forge, linked to the forge's list; open items and bugs per roadmap
+file; the age of the oldest uncommitted change or unpushed commit. A
+source with nothing to say is silent, and a forge not read says so in
+amber.
 Concrete nouns link wherever a page exists for them. Headings name the
 actual thing ("main on GitHub"), never a concept.
 
@@ -349,7 +362,9 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   age, and "scanning" while a scan runs. The sky follows the clock,
   read again every minute.
 - The URL holds where the camera points: `/` for the aviary,
-  `/bird/<id>` for a bird's detail. `/settings` is the settings page in
+  `/bird/<id>` for a bird's detail, `?papers=true` to unfold its papers
+  and `?chip=<kind>` to land on a chip's ledger row, an unknown kind read
+  as none. `/settings` is the settings page in
   the camera's place; Escape goes home from it as from a bird.
 - Launch actions run their commands from config, detached, and only
   ones some bird offers. Links open in the browser; the window never

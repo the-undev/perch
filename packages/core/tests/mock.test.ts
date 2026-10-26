@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveEntry, thresholdsFor } from "../src/config.ts";
 import {
   configuredCards,
+  countOpenItems,
   deriveActivity,
   deriveDrift,
   deriveStall,
@@ -110,6 +111,49 @@ describe("the mock dataset", () => {
     expect(mockAviary.warnings).toHaveLength(1);
   });
 
+  it("hands each chip on a bubble one ledger row holding its working, and no row a chip it lacks", () => {
+    for (const bird of birds) {
+      const handled = bird.detail.ledger.flatMap((entry) =>
+        entry.kind === "time" || entry.chip === null ? [] : [entry.chip],
+      );
+
+      expect(handled.sort(), bird.id).toEqual(
+        bird.bubble.chips.map((chip) => chip.kind).sort(),
+      );
+    }
+  });
+
+  it("spells out two forges disagreeing on CI, a forge not read, and open items over two roadmap files", () => {
+    const rows = (label: string) =>
+      adopted.flatMap((bird) =>
+        bird.detail.ledger.flatMap((entry) =>
+          entry.kind !== "time" && entry.label === label ? [entry] : [],
+        ),
+      );
+    const runStates = rows("CI").map(
+      (row) =>
+        new Set(
+          row.workings
+            .filter((working) => working.url !== null)
+            .map((working) => working.text.split(" ")[0]),
+        ),
+    );
+
+    expect(runStates.some((states) => states.size > 1)).toBe(true);
+    expect(
+      adopted.some((bird) =>
+        bird.detail.ledger.some(
+          (entry) =>
+            entry.kind !== "time" &&
+            entry.workings.some((working) => working.text === "not read"),
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      rows("open roadmap items").some((row) => row.workings.length > 1),
+    ).toBe(true);
+  });
+
   it("holds a bird with a clone and forges, one with no clone, and one with no forge", () => {
     const whereabouts = birds.map(({ detail }) => ({
       cloned: detail.clonePath !== null,
@@ -160,6 +204,10 @@ describe("the mock dataset", () => {
         ...item.presences.forges.map((presence) => presence.ref),
       ]).entry;
       const thresholds = thresholdsFor(mockConfig, entry);
+      const roadmap = item.sources.roadmap;
+      if (roadmap !== undefined && !("error" in roadmap)) {
+        expect(roadmap.counts, item.id).toEqual(countOpenItems(roadmap.files));
+      }
       const git = item.sources.git;
       if (git === undefined || "error" in git) continue;
       expect(git.drift, item.id).toEqual(

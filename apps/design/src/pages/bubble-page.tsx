@@ -210,6 +210,11 @@ export function BubblePage() {
             what: "A fence bird's one key: rides to the bird's page with its adoption papers unfolded. Null for an adopted bird, whose bubble has no adopt key; the caller decides from bird.adopted.",
           },
           {
+            name: "onChip",
+            type: "(chip: ChipKind) => void",
+            what: "A chip was pressed: the camera rides to the bird's page, which lands on the ledger row holding the chip's working and marks it, as a press on the page's own bubble does.",
+          },
+          {
             name: "tail",
             type: '{ side: "left" | "right"; inset: number }',
             what: "Which edge the tail hangs from, and the distance from that edge to its tip.",
@@ -228,6 +233,12 @@ export function BubblePage() {
           <Code>{"<RoostBubble>"}</Code>: the same paper, speech and chips with
           no header and no keys, since the page carries both. The Roost page
           shows it.
+        </p>
+        <p>
+          The chips are handles in both bubbles. Pressed here, one closes the
+          bubble like the full-story key and rides the camera to the bird&apos;s
+          page with the chip in the URL, <Code>?chip=ci</Code>; the page lands
+          on its row as it opens.
         </p>
       </Usage>
     </>

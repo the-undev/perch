@@ -1,9 +1,11 @@
 import type { LedgerEntry } from "@perch/core/viewmodel.ts";
-import { Ledger } from "@perch/ui/ledger.tsx";
+import { ChipHandles } from "@perch/ui/chip.tsx";
+import { type Landing, Ledger } from "@perch/ui/ledger.tsx";
+import { useState } from "react";
 import { mockBird, scanMoment } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 
-/** States the mock lacks: a pending CI run with no tone and a link, and an old Claude session. */
+/** A state the mock lacks: a Claude session three weeks old. */
 const handBuilt: LedgerEntry[] = [
   {
     kind: "count",
@@ -11,13 +13,8 @@ const handBuilt: LedgerEntry[] = [
     count: 0,
     text: "none",
     tone: "green",
-  },
-  {
-    kind: "state",
-    label: "CI on GitHub",
-    text: "pending on main",
-    tone: null,
-    url: "https://github.com/finch/perch/actions",
+    chip: null,
+    workings: [],
   },
   {
     kind: "time",
@@ -26,11 +23,13 @@ const handBuilt: LedgerEntry[] = [
   },
 ];
 
-const specimens: { id: string; label: string; rule: string }[] = [
+type LedgerSpecimen = { id: string; label: string; rule: string };
+
+const specimens: LedgerSpecimen[] = [
   {
     id: "dev/perch",
     label: "Clean zeros, an unjudged count",
-    rule: "Perch: nothing unpushed and no bugs read a quiet green none; three uncommitted changes younger than a day take no tone. CI success is green.",
+    rule: "Perch: nothing unpushed and no bugs read a quiet green none; three uncommitted changes younger than a day take no tone. CI reads pending, the worse of GitHub's success and Forgejo's pending, and takes no tone.",
   },
   {
     id: "undev/prism",
@@ -45,7 +44,7 @@ const specimens: { id: string; label: string; rule: string }[] = [
   {
     id: "undev/oxbow",
     label: "Two forges, no CI",
-    rule: "Oxbow: on GitHub and Forgejo, each with its own pull request row; neither runs CI, so there is no CI row.",
+    rule: "Oxbow: on GitHub and Forgejo, one pull request row for both; neither runs CI, so there is no CI row.",
   },
   {
     id: "dev/odin/hello",
@@ -58,6 +57,57 @@ const specimens: { id: string; label: string; rule: string }[] = [
     rule: "obsidian-tidy: no clone, so no git rows; only what the forge says.",
   },
 ];
+
+const workingSpecimens: LedgerSpecimen[] = [
+  {
+    id: "dev/perch",
+    label: "Two forges disagreeing on CI",
+    rule: "Perch: the CI row says pending, the worst state, as the chip does; beneath it GitHub's newest run passed and Forgejo's waits with no runner, each named, toned and linked to the run, with its age. The pull requests row names the one forge that has one.",
+  },
+  {
+    id: "undev/prism",
+    label: "A forge not read",
+    rule: "Prism: GitHub could not be read, so the CI and pull request rows say so in amber beside what Forgejo said. The count covers only what was read.",
+  },
+  {
+    id: "obsidian/Hothouse",
+    label: "Open items over two roadmap files",
+    rule: "Hothouse Vault: the open items row counts per file; the uncommitted row names the oldest change and its age, amber past a day.",
+  },
+  {
+    id: "obsidian/Pocket",
+    label: "A roadmap file with none open",
+    rule: "Pocket Vault: a source with nothing to say is silent, so the roadmap file with no open items is left out.",
+  },
+  {
+    id: "undev/Hollow-legacy",
+    label: "Bugs",
+    rule: "Hollow: the bugs row names the roadmap file the two bugs are in.",
+  },
+];
+
+/** Perch's chips as handles above its ledger, each press landing on its row as the detail page does. */
+function LandingDemo() {
+  const perch = mockBird("dev/perch");
+  const [landing, setLanding] = useState<Landing | null>(null);
+  return (
+    <Ground>
+      <div className="mb-4 rounded-xl bg-paper px-4 pt-0.5 pb-3.5">
+        <ChipHandles
+          chips={perch.bubble.chips}
+          onPress={(chip) =>
+            setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }))
+          }
+        />
+      </div>
+      <Ledger
+        entries={perch.detail.ledger}
+        now={scanMoment}
+        landing={landing}
+      />
+    </Ground>
+  );
+}
 
 export function LedgerPage() {
   return (
@@ -77,17 +127,53 @@ export function LedgerPage() {
               <Ledger
                 entries={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}
+                landing={null}
               />
             </Ground>
           </Specimen>
         ))}
         <Specimen
-          label="A pending state, linked; an older time"
-          rule="Hand-built: CI pending takes no tone; a session three weeks back reads in weeks."
+          label="An older time"
+          rule="Hand-built: a session three weeks back reads in weeks."
         >
           <Ground>
-            <Ledger entries={handBuilt} now={scanMoment} />
+            <Ledger entries={handBuilt} now={scanMoment} landing={null} />
           </Ground>
+        </Specimen>
+      </Section>
+
+      <Section
+        title="Each chip's working"
+        rule="A bubble chip states a conclusion; the row holding its number spells out the working beneath it, source by source, in mono: each forge, roadmap file or git, what it says there, toned, linked where a page exists, and its age where it has one. A source that was read with nothing to say is silent; one that was not read says so in amber. A row holding one of the bubble's chips carries the dot, and on the bird's page the chip lands on it."
+        min={360}
+      >
+        {workingSpecimens.map((specimen) => (
+          <Specimen
+            key={specimen.id}
+            label={specimen.label}
+            rule={specimen.rule}
+          >
+            <Ground>
+              <Ledger
+                entries={mockBird(specimen.id).detail.ledger}
+                now={scanMoment}
+                landing={null}
+              />
+            </Ground>
+          </Specimen>
+        ))}
+      </Section>
+
+      <Section
+        title="A chip's landing"
+        rule="On the bird's page a bubble chip is a handle. Pressed, the page jumps the row holding its working to the middle of the ground at once, and the mark plays in place on a row that holds still: the row lights behind its words with a ring, its working lines brighten to full ink with it, and both hold a moment and fade back over 1.6 seconds. Neither moves anything, so both run with reduced motion too. Pressing again marks it again. A chip pressed in the aviary's bubble rides the camera to the bird's page with the chip in the URL, and the page lands the same way as it opens."
+        min={360}
+      >
+        <Specimen
+          label="Perch's chips, pressed"
+          rule="Press a chip: its row is marked. The detail page also scrolls to it."
+        >
+          <LandingDemo />
         </Specimen>
       </Section>
 
@@ -97,12 +183,17 @@ export function LedgerPage() {
           {
             name: "entries",
             type: "LedgerEntry[]",
-            what: "bird.detail.ledger: count, state and time rows in the view model's order.",
+            what: "bird.detail.ledger: count, state and time rows in the view model's order; a count or state row names the chip it holds and its workings.",
           },
           {
             name: "now",
             type: "Date",
             what: "The moment times are measured to. The app passes its clock; these pages pass the mock scan's.",
+          },
+          {
+            name: "landing",
+            type: "Landing | null",
+            what: "The chip last pressed on the roost and the press's number; its row is marked afresh for each press. Null when none has been.",
           },
         ]}
       >

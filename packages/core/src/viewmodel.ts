@@ -12,7 +12,7 @@ import {
   wireFor,
   zellijSessionFor,
 } from "./config.ts";
-import { deriveHealth, hoursSince } from "./derivations.ts";
+import { countOpenItems, deriveHealth, hoursSince } from "./derivations.ts";
 import { itemRefs } from "./refs.ts";
 import { parseRemoteUrl } from "./remote-url.ts";
 import type {
@@ -37,6 +37,7 @@ import type {
   SourceCardKind,
   SourceCardResult,
   Stall,
+  WorkItemCounts,
 } from "./snapshot.ts";
 import {
   type FenceSituation,
@@ -164,13 +165,17 @@ export interface Bubble {
   chips: Chip[];
 }
 
-export type ChipKind =
-  | "ci"
-  | "bugs"
-  | "uncommitted"
-  | "unpushed"
-  | "pull-requests"
-  | "open-items";
+/** Every kind of chip, in the order chips run on a bubble. */
+export const chipKinds = [
+  "ci",
+  "bugs",
+  "uncommitted",
+  "unpushed",
+  "pull-requests",
+  "open-items",
+] as const;
+
+export type ChipKind = (typeof chipKinds)[number];
 
 /** A number the bird carries, with the severity of the fact behind it; null when it is not judged. */
 export interface Chip {
@@ -186,15 +191,40 @@ export interface Chip {
 /** A ledger tone: green for a clean zero or a good state, amber and red by severity, else null. */
 export type Tone = HealthLevel | null;
 
-/** One fact in full words. A clean count of zero reads "none" in green. */
+/** One source's part in a ledger row: where it was read, what it says there, and its link out. */
+export interface Working {
+  /** A forge's lower-case name, a roadmap file's path, or git. */
+  source: string;
+  text: string;
+  tone: Tone;
+  url: string | null;
+  /** When the fact dates from, shown as an age; null when it has no time. */
+  at: string | null;
+}
+
+/**
+ * One fact in full words. A clean count of zero reads "none" in green. A count or state row names
+ * the bubble chip whose working it holds, null when the bubble carries no such chip, and spells
+ * that working out per source: each source with something to say, or not read.
+ */
 export type LedgerEntry =
-  | { kind: "count"; label: string; count: number; text: string; tone: Tone }
+  | {
+      kind: "count";
+      label: string;
+      count: number;
+      text: string;
+      tone: Tone;
+      chip: ChipKind | null;
+      workings: Working[];
+    }
   | {
       kind: "state";
       label: string;
       text: string;
       tone: Tone;
       url: string | null;
+      chip: ChipKind | null;
+      workings: Working[];
     }
   | { kind: "time"; label: string; at: string };
 
@@ -379,10 +409,142 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-function countEntry(label: string, count: number, tone: Tone): LedgerEntry {
+function countEntry(
+  label: string,
+  count: number,
+  tone: Tone,
+  chip: ChipKind | null,
+  workings: Working[],
+): LedgerEntry {
   return count === 0
-    ? { kind: "count", label, count, text: "none", tone: "green" }
-    : { kind: "count", label, count, text: String(count), tone };
+    ? {
+        kind: "count",
+        label,
+        count,
+        text: "none",
+        tone: "green",
+        chip,
+        workings,
+      }
+    : {
+        kind: "count",
+        label,
+        count,
+        text: String(count),
+        tone,
+        chip,
+        workings,
+      };
+}
+
+/** Each forge the item holds a source for: its data, or null when it was not read. */
+function forgeSources(
+  item: Item,
+): { forge: ForgeName; data: ForgeData | null }[] {
+  return forgeNames.flatMap((forge) => {
+    const source = item.sources[forge];
+    if (source === undefined) return [];
+    return [{ forge, data: "error" in source ? null : source }];
+  });
+}
+
+function notRead(source: string): Working {
+  return { source, text: "not read", tone: "amber", url: null, at: null };
+}
+
+/** The worst state among the forges' newest runs; undefined when no forge has a run. */
+function worstCiState(item: Item): CiState | undefined {
+  const runs = forgeData(item).flatMap(({ data }) =>
+    data.latestCi ? [data.latestCi] : [],
+  );
+  return ciSeverityOrder.find((state) =>
+    runs.some((run) => run.state === state),
+  );
+}
+
+function ciTone(state: CiState): Tone {
+  if (state === "failure") return "red";
+  return state === "success" ? "green" : null;
+}
+
+/** The CI row: the worst state, as the chip says it, then each forge's newest run, named and linked. */
+function ciEntry(item: Item, chip: ChipKind | null): LedgerEntry | null {
+  const worst = worstCiState(item);
+  if (worst === undefined) return null;
+  return {
+    kind: "state",
+    label: "CI",
+    text: worst,
+    tone: ciTone(worst),
+    url: null,
+    chip,
+    workings: forgeSources(item).flatMap(({ forge, data }): Working[] => {
+      if (data === null) return [notRead(forge)];
+      const run = data.latestCi;
+      if (run === null) return [];
+      return [
+        {
+          source: forge,
+          text: `${run.state} on ${data.defaultBranch}, run “${run.name}”`,
+          tone: ciTone(run.state),
+          url: run.url,
+          at: run.createdAt,
+        },
+      ];
+    }),
+  };
+}
+
+/** Each forge's open pull requests, linked to its list; a forge with none is silent. */
+function pullRequestWorkings(item: Item): Working[] {
+  return forgeSources(item).flatMap(({ forge, data }): Working[] => {
+    if (data === null) return [notRead(forge)];
+    const open = data.openPullRequests.length;
+    if (open === 0) return [];
+    return [
+      {
+        source: forge,
+        text: `${open} open`,
+        tone: null,
+        url: `${data.url}/pulls`,
+        at: null,
+      },
+    ];
+  });
+}
+
+/** Each roadmap file's open items of the kinds counted; a file with none is silent. */
+function roadmapWorkings(
+  roadmap: RoadmapData,
+  countOf: (counts: WorkItemCounts) => number,
+): Working[] {
+  return roadmap.files.flatMap((file): Working[] => {
+    const open = countOf(countOpenItems([file]));
+    if (open === 0) return [];
+    return [
+      {
+        source: file.path,
+        text: `${open} open`,
+        tone: null,
+        url: null,
+        at: null,
+      },
+    ];
+  });
+}
+
+/** Unsafe work's oldest change, toned by its age; nothing when there is none. */
+function agedWorkings(work: AgedWork | null, text: string): Working[] {
+  if (work === null) return [];
+  return [
+    {
+      source: "git",
+      text,
+      tone: severity(work.level),
+      url: null,
+      at: work.since,
+    },
+  ];
 }
 
 /** The forge page for an upstream branch, found through its remote's URL; null when none matches. */
@@ -413,12 +575,7 @@ function upstreamUrl(
 
 function chipsFor(item: Item, health: Health): Chip[] {
   const chips: Chip[] = [];
-  const runs = forgeData(item).flatMap(({ data }) =>
-    data.latestCi ? [data.latestCi] : [],
-  );
-  const worstCi = ciSeverityOrder.find((state) =>
-    runs.some((run) => run.state === state),
-  );
+  const worstCi = worstCiState(item);
   if (worstCi !== undefined) {
     chips.push({
       kind: "ci",
@@ -480,7 +637,10 @@ function chipsFor(item: Item, health: Health): Chip[] {
   return chips;
 }
 
-function ledgerFor(item: Item): LedgerEntry[] {
+/** The facts in full words, each chip's working on the row whose number it carries. */
+function ledgerFor(item: Item, chips: Chip[]): LedgerEntry[] {
+  const handle = (kind: ChipKind) =>
+    chips.some((chip) => chip.kind === kind) ? kind : null;
   const ledger: LedgerEntry[] = [];
   const git = readable<GitData>(item.sources.git);
   if (git) {
@@ -489,6 +649,8 @@ function ledgerFor(item: Item): LedgerEntry[] {
         "uncommitted changes",
         git.uncommittedCount,
         git.drift.uncommitted ? severity(git.drift.uncommitted.level) : null,
+        handle("uncommitted"),
+        agedWorkings(git.drift.uncommitted, "oldest change"),
       ),
     );
     if (git.backup === "local-only") {
@@ -498,6 +660,8 @@ function ledgerFor(item: Item): LedgerEntry[] {
         text: "none, one disk only",
         tone: null,
         url: null,
+        chip: null,
+        workings: [],
       });
     } else {
       ledger.push(
@@ -505,35 +669,50 @@ function ledgerFor(item: Item): LedgerEntry[] {
           "unpushed commits",
           git.unpushedCount,
           git.drift.unpushed ? severity(git.drift.unpushed.level) : null,
+          handle("unpushed"),
+          agedWorkings(git.drift.unpushed, "oldest commit"),
         ),
       );
     }
   }
   const roadmap = readable<RoadmapData>(item.sources.roadmap);
   if (roadmap) {
-    ledger.push(countEntry("open bugs", roadmap.counts.bug, "red"));
-    ledger.push(countEntry("open roadmap items", openItemsOf(roadmap), null));
-  }
-  for (const { forge, data } of forgeData(item)) {
     ledger.push(
       countEntry(
-        `open pull requests on ${forgeLabel[forge]}`,
-        data.openPullRequests.length,
-        null,
+        "open bugs",
+        roadmap.counts.bug,
+        "red",
+        handle("bugs"),
+        roadmapWorkings(roadmap, (counts) => counts.bug),
       ),
     );
-    if (data.latestCi) {
-      const { state } = data.latestCi;
-      ledger.push({
-        kind: "state",
-        label: `CI on ${forgeLabel[forge]}`,
-        text: `${state} on ${data.defaultBranch}`,
-        tone:
-          state === "failure" ? "red" : state === "success" ? "green" : null,
-        url: data.latestCi.url,
-      });
-    }
+    ledger.push(
+      countEntry(
+        "open roadmap items",
+        openItemsOf(roadmap),
+        null,
+        handle("open-items"),
+        roadmapWorkings(roadmap, (counts) => counts.bug + counts.feature),
+      ),
+    );
   }
+  const forges = forgeData(item);
+  if (forges.length > 0) {
+    ledger.push(
+      countEntry(
+        "open pull requests",
+        forges.reduce(
+          (total, { data }) => total + data.openPullRequests.length,
+          0,
+        ),
+        null,
+        handle("pull-requests"),
+        pullRequestWorkings(item),
+      ),
+    );
+  }
+  const ci = ciEntry(item, handle("ci"));
+  if (ci !== null) ledger.push(ci);
   if (git?.lastCommitAt) {
     ledger.push({ kind: "time", label: "last commit", at: git.lastCommitAt });
   }
@@ -725,6 +904,7 @@ export function deriveBird(
   const speech = speak(speechSubject(item, wire, scannedAt));
   const sleepsAtNight =
     !adopted || (mood === "content" && activity !== "editing");
+  const chips = adopted ? chipsFor(item, health) : [];
   return {
     id: item.id,
     name,
@@ -745,14 +925,14 @@ export function deriveBird(
       stateWord: adopted ? mood : "not adopted",
       speech,
       wokenSpeech: sleepsAtNight ? `${wakingPrefix} ${speech}` : null,
-      chips: adopted ? chipsFor(item, health) : [],
+      chips,
     },
     detail: {
       clonePath: item.path === null ? null : collapseHome(item.path, home),
       forges: [
         ...new Set(item.presences.forges.map((presence) => presence.forge)),
       ],
-      ledger: ledgerFor(item),
+      ledger: ledgerFor(item, chips),
       branches: branchesFor(item, config),
       newestCommits: newestCommitsFor(item),
       pullRequests: pullRequestsFor(item),

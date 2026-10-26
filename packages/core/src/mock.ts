@@ -1,11 +1,11 @@
 // A hand-curated snapshot and config pair modelled on the owner's real projects, for the design
 // site and the app to render every view model state without a scan. The scan is at 09:00 on
 // 22 October 2026, and every age below is measured from it. Between them the birds cover every
-// mood and activity, the fence's three situations, failing CI, an unpushed backlog, a stalled
+// mood and activity, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed backlog, a stalled
 // branch and clean zeros, a bird with no clone here and one on no forge, and the source cards
 // every scan state;
 // tests/mock.test.ts keeps it so. Roadmap files carry
-// their paths only: the counts stand for their items.
+// numbered placeholder items, as many as each file's open counts.
 
 import type { Config, ItemEntry } from "./config.ts";
 import type {
@@ -21,6 +21,8 @@ import type {
   RoadmapData,
   Snapshot,
   SourceCard,
+  WorkItem,
+  WorkItemKind,
 } from "./snapshot.ts";
 import { type Aviary, deriveAviary } from "./viewmodel.ts";
 
@@ -208,10 +210,35 @@ function branch(
   return { name, lastCommitAt, subject, upstream };
 }
 
-function roadmap(feature: number, bug: number, paths: string[]): RoadmapData {
+/** Open placeholder items of one kind, numbered from the first line. */
+function openItems(kind: WorkItemKind, count: number): WorkItem[] {
+  return Array.from({ length: count }, (_, index) => ({
+    text: `${kind} ${index + 1}`,
+    kind,
+    done: false,
+    line: index + 1,
+    source: "bullet",
+    body: null,
+  }));
+}
+
+/** Roadmap files holding the given open features and bugs each, counted as the scan counts them. */
+function roadmap(
+  files: { path: string; feature: number; bug: number }[],
+): RoadmapData {
   return {
-    counts: { bug, feature },
-    files: paths.map((path) => ({ path, items: [], groups: [] })),
+    counts: {
+      bug: files.reduce((total, file) => total + file.bug, 0),
+      feature: files.reduce((total, file) => total + file.feature, 0),
+    },
+    files: files.map((file) => ({
+      path: file.path,
+      items: [
+        ...openItems("feature", file.feature),
+        ...openItems("bug", file.bug),
+      ],
+      groups: [],
+    })),
   };
 }
 
@@ -305,7 +332,7 @@ const dotfiles = localItem(".dotfiles", {
       },
       stall: null,
     },
-    roadmap: roadmap(13, 0, ["docs/roadmap.md"]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 13, bug: 0 }]),
     claudeSessions: {
       lastSessionAt: "2026-10-21T22:20:00.000Z",
       basis: "last-message",
@@ -369,7 +396,10 @@ const hothouse = localItem("obsidian/Hothouse", {
       },
       stall: null,
     },
-    roadmap: roadmap(194, 0, ["Tech/Tech Plans.md", "Garden/Garden Plans.md"]),
+    roadmap: roadmap([
+      { path: "Tech/Tech Plans.md", feature: 120, bug: 0 },
+      { path: "Garden/Garden Plans.md", feature: 74, bug: 0 },
+    ]),
     claudeSessions: {
       lastSessionAt: "2026-10-20T15:29:37.919Z",
       basis: "last-message",
@@ -421,9 +451,9 @@ const pocket = localItem("obsidian/Pocket", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap(12, 0, [
-      "Code/Code Plans.md",
-      "Pocket Plans.md",
+    roadmap: roadmap([
+      { path: "Code/Code Plans.md", feature: 12, bug: 0 },
+      { path: "Pocket Plans.md", feature: 0, bug: 0 },
     ]),
     claudeSessions: {
       lastSessionAt: "2026-10-16T14:17:56.259Z",
@@ -441,7 +471,7 @@ const pocket = localItem("obsidian/Pocket", {
   },
 });
 
-/** Content and being edited on a fresh branch; CI passing. */
+/** Content and being edited on a fresh branch; CI passing on GitHub and pending on Forgejo, with no runner. */
 const perch = localItem("dev/perch", {
   forges: [
     presence("github", "finch/perch"),
@@ -501,7 +531,7 @@ const perch = localItem("dev/perch", {
         thresholds: dayWindows,
       },
     },
-    roadmap: roadmap(16, 0, ["docs/roadmap.md"]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 16, bug: 0 }]),
     claudeSessions: {
       lastSessionAt: "2026-10-22T08:40:00.000Z",
       basis: "last-message",
@@ -545,6 +575,13 @@ const perch = localItem("dev/perch", {
       ],
     }),
     forgejo: forge("forgejo", "finch/perch", {
+      latestCi: {
+        name: "check / check (push)",
+        state: "pending",
+        forgeState: "pending",
+        url: `${forgejoBase}/finch/perch/actions/runs/14`,
+        createdAt: "2026-10-21T20:01:10+01:00",
+      },
       finalisedCommits: [
         {
           sha: "af0893d5e1c2b4a6d8f0e2c4a6b8d0f2e4c6a8b0",
@@ -597,7 +634,7 @@ const harbour = localItem("undev/harbour", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap(12, 0, ["docs/roadmap.md"]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 12, bug: 0 }]),
     claudeSessions: {
       lastSessionAt: "2026-10-20T21:09:35.615Z",
       basis: "last-message",
@@ -673,7 +710,7 @@ const skiff = localItem("undev/skiff", {
         thresholds: dayWindows,
       },
     },
-    roadmap: roadmap(12, 0, ["docs/roadmap.md"]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 12, bug: 0 }]),
     claudeSessions: {
       lastSessionAt: "2026-10-01T09:12:00.000Z",
       basis: "last-message",
@@ -765,7 +802,7 @@ const prism = localItem("undev/prism", {
       },
       stall: null,
     },
-    roadmap: roadmap(78, 0, ["docs/roadmap.md"]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 78, bug: 0 }]),
     claudeSessions: {
       lastSessionAt: "2026-10-17T09:43:52.559Z",
       basis: "last-message",
@@ -846,7 +883,7 @@ const hollow = localItem("undev/Hollow-legacy", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap(7, 2, ["docs/roadmap.md"]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 7, bug: 2 }]),
     github: forge("github", "the-undev/Hollow", {
       latestCi: {
         name: "CI",
@@ -907,7 +944,7 @@ const oxbow = localItem("undev/oxbow", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap(96, 0, ["docs/roadmap.md"]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 96, bug: 0 }]),
     claudeSessions: {
       lastSessionAt: "2026-10-09T21:06:32.977Z",
       basis: "last-message",
@@ -976,7 +1013,7 @@ const gramophone = localItem("undev/gramophone", {
       },
       stall: null,
     },
-    roadmap: roadmap(3, 0, ["docs/roadmap.md"]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 3, bug: 0 }]),
     forgejo: forge("forgejo", "the-undev/gramophone", {
       finalisedCommits: [
         {
@@ -1023,7 +1060,7 @@ const spool = localItem("undev/spool", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap(0, 0, ["docs/roadmap.md"]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 0, bug: 0 }]),
     claudeSessions: {
       lastSessionAt: "2026-10-20T23:05:00.000Z",
       basis: "last-message",
@@ -1095,7 +1132,7 @@ const glyphDocs = localItem("undev/glyph-docs", {
         thresholds: dayWindows,
       },
     },
-    roadmap: roadmap(11, 0, ["Roadmap.md"]),
+    roadmap: roadmap([{ path: "Roadmap.md", feature: 11, bug: 0 }]),
     forgejo: forge("forgejo", "the-undev/glyph-docs", {
       finalisedCommits: [
         {
@@ -1152,7 +1189,7 @@ const homeItConfig = localItem("dev/hearth-config", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap(0, 0, []),
+    roadmap: roadmap([]),
     github: forge("github", "finch/hearth-config", {
       finalisedCommits: [],
     }),
@@ -1187,7 +1224,7 @@ const hello = localItem("dev/odin/hello", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap(0, 0, []),
+    roadmap: roadmap([]),
   },
 });
 

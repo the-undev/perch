@@ -21,7 +21,11 @@ function rows(container: HTMLElement): string[][] {
 describe("the ledger", () => {
   it("renders clean zeros as a green none and counts in their severity's tone", () => {
     const { container } = render(
-      <Ledger entries={mockBird("undev/prism").detail.ledger} now={now} />,
+      <Ledger
+        entries={mockBird("undev/prism").detail.ledger}
+        now={now}
+        landing={null}
+      />,
     );
 
     expect(rows(container).slice(0, 4)).toEqual([
@@ -38,36 +42,41 @@ describe("the ledger", () => {
         <Ledger
           entries={mockBird("undev/gramophone").detail.ledger}
           now={now}
+          landing={null}
         />,
       ).container,
     );
     cleanup();
     const prism = rows(
       render(
-        <Ledger entries={mockBird("undev/prism").detail.ledger} now={now} />,
+        <Ledger
+          entries={mockBird("undev/prism").detail.ledger}
+          now={now}
+          landing={null}
+        />,
       ).container,
     );
 
     expect(gramophone[0]).toEqual(["uncommitted changes", "14", "red"]);
-    expect(prism).toContainEqual([
-      "CI on Forgejo",
-      "failure on main",
-      "red",
-    ]);
+    expect(prism).toContainEqual(["CI", "failure", "red"]);
   });
 
   it("links a state to its page and gives times as durations to the moment passed", () => {
     const entries: LedgerEntry[] = [
       {
         kind: "state",
-        label: "CI on GitHub",
+        label: "CI",
         text: "success on main",
         tone: "green",
         url: "https://example.test/run",
+        chip: null,
+        workings: [],
       },
       { kind: "time", label: "last commit", at: "2026-10-21T03:00:00.000Z" },
     ];
-    const { container } = render(<Ledger entries={entries} now={now} />);
+    const { container } = render(
+      <Ledger entries={entries} now={now} landing={null} />,
+    );
 
     expect(
       screen
@@ -75,6 +84,164 @@ describe("the ledger", () => {
         .getAttribute("href"),
     ).toBe("https://example.test/run");
     expect(rows(container)[1]).toEqual(["last commit", "30 hours ago", "none"]);
+  });
+});
+
+describe("the ledger's workings", () => {
+  /** Each working line under the row holding the given chip, with its tone. */
+  function workings(container: HTMLElement, chip: string): string[][] {
+    return [
+      ...container.querySelectorAll(
+        `[data-chip="${chip}"] [data-part="working"]`,
+      ),
+    ].map((line) => [
+      line.textContent ?? "",
+      line
+        .querySelector("[data-working-tone]")
+        ?.getAttribute("data-working-tone") ?? "",
+    ]);
+  }
+
+  it("names each forge's newest run under the CI row, toned and linked to the run", () => {
+    const { container } = render(
+      <Ledger
+        entries={mockBird("dev/perch").detail.ledger}
+        now={now}
+        landing={null}
+      />,
+    );
+
+    expect(rows(container)).toContainEqual(["CI", "pending", "none"]);
+    expect(workings(container, "ci")).toEqual([
+      ["github · success on main, run “check” · thirteen hours ago", "green"],
+      [
+        "forgejo · pending on main, run “check / check (push)” · thirteen hours ago",
+        "none",
+      ],
+    ]);
+    expect(
+      screen
+        .getByRole("link", {
+          name: "pending on main, run “check / check (push)”",
+        })
+        .getAttribute("href"),
+    ).toBe("http://forge.example.lan:3000/finch/perch/actions/runs/14");
+  });
+
+  it("says in amber a forge was not read, beside the forge that was", () => {
+    const { container } = render(
+      <Ledger
+        entries={mockBird("undev/prism").detail.ledger}
+        now={now}
+        landing={null}
+      />,
+    );
+
+    expect(workings(container, "ci")).toEqual([
+      ["github · not read", "amber"],
+      [
+        "forgejo · failure on main, run “check / check (push)” · four days ago",
+        "red",
+      ],
+    ]);
+    expect(workings(container, "pull-requests")).toEqual([
+      ["github · not read", "amber"],
+      ["forgejo · 2 open", "none"],
+    ]);
+  });
+
+  it("spells out open items per roadmap file and unsafe work by its oldest", () => {
+    const { container } = render(
+      <Ledger
+        entries={mockBird("obsidian/Hothouse").detail.ledger}
+        now={now}
+        landing={null}
+      />,
+    );
+
+    expect(workings(container, "open-items")).toEqual([
+      ["Tech/Tech Plans.md · 120 open", "none"],
+      ["Garden/Garden Plans.md · 74 open", "none"],
+    ]);
+    expect(workings(container, "uncommitted")).toEqual([
+      ["git · oldest change · 30 hours ago", "amber"],
+    ]);
+  });
+
+  it("marks with a dot each row holding one of the bubble's chips, and only those", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = render(
+      <Ledger entries={perch.detail.ledger} now={now} landing={null} />,
+    );
+    const marked = [...container.querySelectorAll("[data-chip]")];
+
+    expect(marked.map((row) => row.getAttribute("data-chip")).sort()).toEqual(
+      perch.bubble.chips.map((chip) => chip.kind).sort(),
+    );
+    expect(
+      container.querySelectorAll('[data-part="handle-mark"]'),
+    ).toHaveLength(perch.bubble.chips.length);
+    expect(
+      marked.every((row) => row.querySelector('[data-part="handle-mark"]')),
+    ).toBe(true);
+  });
+});
+
+describe("a chip's landing", () => {
+  it("marks the row holding the pressed chip's working, only that row, and afresh on each press, its working lines lit with the mark", () => {
+    const entries = mockBird("dev/perch").detail.ledger;
+    const { container, rerender } = render(
+      <Ledger entries={entries} now={now} landing={{ chip: "ci", press: 1 }} />,
+    );
+    const first = container.querySelector('[data-part="landing"]');
+    /** The rows whose working lines are lit, by the chip each holds. */
+    const lit = () =>
+      [
+        ...container.querySelectorAll(
+          '[data-part="workings"].animate-land-ink',
+        ),
+      ].map((list) => list.parentElement?.getAttribute("data-chip"));
+    const firstInk = container.querySelector(
+      '[data-chip="ci"] [data-part="workings"]',
+    );
+
+    expect(container.querySelectorAll('[data-part="landing"]')).toHaveLength(1);
+    expect(first?.parentElement?.getAttribute("data-chip")).toBe("ci");
+    expect(first?.getAttribute("class")).toContain("animate-land");
+    expect(lit()).toEqual(["ci"]);
+    expect(
+      container.querySelectorAll('[data-part="workings"]').length,
+    ).toBeGreaterThan(1);
+
+    rerender(
+      <Ledger entries={entries} now={now} landing={{ chip: "ci", press: 2 }} />,
+    );
+    const again = container.querySelector('[data-part="landing"]');
+    expect(again).not.toBeNull();
+    expect(again).not.toBe(first);
+    const againInk = container.querySelector(
+      '[data-chip="ci"] [data-part="workings"]',
+    );
+    expect(againInk?.classList.contains("animate-land-ink")).toBe(true);
+    expect(againInk).not.toBe(firstInk);
+
+    rerender(
+      <Ledger
+        entries={entries}
+        now={now}
+        landing={{ chip: "open-items", press: 3 }}
+      />,
+    );
+    expect(
+      container
+        .querySelector('[data-part="landing"]')
+        ?.parentElement?.getAttribute("data-chip"),
+    ).toBe("open-items");
+    expect(lit()).toEqual(["open-items"]);
+
+    rerender(<Ledger entries={entries} now={now} landing={null} />);
+    expect(container.querySelector('[data-part="landing"]')).toBeNull();
+    expect(lit()).toEqual([]);
   });
 });
 

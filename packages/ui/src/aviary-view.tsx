@@ -75,6 +75,8 @@ interface PerchedBirdProps {
   placed: PlacedBird;
   night: boolean;
   arrival: number;
+  /** The bird's flyer is in the air: it is not drawn until the flyer lands. */
+  flying: boolean;
   speaking: boolean;
   onSpeak: (bird: BirdModel) => void;
   onHover: (bird: BirdModel, event: PointerEvent) => void;
@@ -86,6 +88,7 @@ function PerchedBird({
   placed,
   night,
   arrival,
+  flying,
   speaking,
   onSpeak,
   onHover,
@@ -105,6 +108,7 @@ function PerchedBird({
       aria-pressed={speaking}
       data-arrival={arrival}
       className="group cursor-pointer outline-none"
+      style={flying ? { visibility: "hidden" } : undefined}
       onClick={(event) => {
         event.stopPropagation();
         onSpeak(bird);
@@ -297,6 +301,8 @@ export interface AviarySceneProps {
   onFullStory: (bird: BirdModel) => void;
   /** A fence bird's bubble's Adopt was pressed. */
   onAdopt: (bird: BirdModel) => void;
+  /** The ids of birds whose flyers are in the air; each is not drawn until its flyer lands. */
+  flyingIds: ReadonlySet<string>;
 }
 
 /** The aviary drawn into a window of a known size; AviaryView measures its own. */
@@ -307,6 +313,7 @@ export function AviaryScene({
   onLaunch,
   onFullStory,
   onAdopt,
+  flyingIds,
 }: AviarySceneProps) {
   const phase = skyPhase(now);
   const night = isNight(phase);
@@ -378,6 +385,7 @@ export function AviaryScene({
               placed={entry}
               night={night}
               arrival={arrival.get(entry.bird.id) ?? 0}
+              flying={flyingIds.has(entry.bird.id)}
               speaking={entry.bird.id === speakingId}
               onSpeak={(bird) => {
                 setTip(null);
@@ -433,13 +441,15 @@ export interface AviaryViewProps {
   onAdopt: (bird: BirdModel) => void;
 }
 
+const noFlyers: ReadonlySet<string> = new Set();
+
 /** Tiers A and B: the whole home scene, filling its parent and redrawn as it resizes. */
 export function AviaryView(props: AviaryViewProps) {
   const ref = useRef<HTMLDivElement>(null);
   const size = useElementSize(ref, assumedSize);
   return (
     <div ref={ref} className="h-full w-full">
-      <AviaryScene {...props} size={size} />
+      <AviaryScene {...props} size={size} flyingIds={noFlyers} />
     </div>
   );
 }

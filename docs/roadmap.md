@@ -310,31 +310,6 @@ from the owners in the URL paths. The seeded card is a suggestion the
 owner confirms and gives a key and token; config keeps the assertion.
 Asked for at first setup.
 
-## Birds paint twice during the arrival
-
-A screenshot taken mid-arrival shows every fence bird twice: one row
-solid, one faded, the fade matching the arrive keyframes' opacity.
-The bird should be one `motion-safe:animate-arrive` group
-(`scene.tsx`, `--animate-arrive` in `theme.css`), so a second copy
-suggests part of the bird's drawing sits outside the animated group
-and rests while the group drops. Seen only while every bird sat on
-the fence (24 of them, nothing adopted); with one bird adopted the
-arrival is shorter and the doubling was not seen again. Cause TBD:
-reproduce with everything on the fence and the animation slowed, and
-see which elements make up each copy.
-
-Later evidence: it happens on wire birds too, not only the fence. The
-names never double, only the figure inside the group the infinite idle
-animations wrap, and it worsens the longer the arrival runs. The
-suspected cause is Chromium running a finite transform animation on
-the parent group and infinite transform animations on its children
-inside one inline SVG, leaving stale compositor layers beside fresh
-ones. Fix taken: a perched bird has a motion state, arriving (the drop
-runs, no idle animations) or idle (bob, tail flick and song run, no
-arrive animation), flipping on the arrive animation's `animationend`.
-This entry stays until the owner confirms on screen that the doubling
-is gone.
-
 ## The threshold fields
 
 A threshold row is a pair of bare number inputs labelled amber and

@@ -638,3 +638,21 @@ build-time calls so they can be revisited.
   `motion-safe:`, so nothing waits on an event that never fires, and the
   state is invisible.
 - The roadmap entry stays until the owner confirms the doubling is gone.
+
+## 26 October 2026 (birds painting twice)
+
+- Cause of the doubling: the camera's flyers and the destination layer's
+  fade-in overlapped. The aviary layer fades in at 500ms and the strip
+  layer at 620ms, both before the 850ms flights land, so for the overlap
+  each tab bird showed twice: the flyer just short of its perch and the
+  real bird fading in at it. Names never doubled because a flyer draws
+  only the figure.
+- The arrival animation and the arriving and idle motion states are
+  exonerated; they stay as built.
+- Fix: a bird whose flyer is in the air is not drawn at either end
+  (`visibility: hidden`, layout kept) until its own flyer lands.
+  `CameraView` derives the flying ids from its flights and passes them
+  to `AviaryScene` (a required `flyingIds`) and to the strip. The fade
+  timings are unchanged. A scene bird unhiding keeps its idle state, so
+  the arrival does not replay.
+- The roadmap entry "Birds paint twice during the arrival" is removed.

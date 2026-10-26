@@ -277,11 +277,13 @@ function Strip({
   tab,
   openId,
   night,
+  flyingIds,
   onOpen,
 }: {
   tab: BirdTab;
   openId: string;
   night: boolean;
+  flyingIds: ReadonlySet<string>;
   onOpen: (bird: Bird) => void;
 }) {
   const dim = tab.kind === "fence";
@@ -336,6 +338,7 @@ function Strip({
             aria-current={open ? "page" : undefined}
             data-strip-bird={bird.id}
             transform={`translate(${x} ${stripWireY - 3 * base})`}
+            visibility={flyingIds.has(bird.id) ? "hidden" : undefined}
             className={`group cursor-pointer outline-none transition-opacity ${open ? "" : "opacity-55 hover:opacity-100"}`}
             onClick={() => onOpen(bird)}
             onKeyDown={(event) => {
@@ -526,6 +529,8 @@ export function CameraView({
     [],
   );
 
+  const flyingIds = new Set(flights.map((flight) => flight.bird.id));
+
   useEffect(() => {
     if (zoomed) return;
     const onKey = (event: KeyboardEvent) => {
@@ -635,6 +640,7 @@ export function CameraView({
                 onAdopt={(chosen) =>
                   onNavigate({ at: "detail", birdId: chosen.id, papers: true })
                 }
+                flyingIds={flyingIds}
               />
             </div>
             <div
@@ -652,6 +658,7 @@ export function CameraView({
                   tab={shownTab}
                   openId={shown.id}
                   night={night}
+                  flyingIds={flyingIds}
                   onOpen={(chosen) =>
                     onNavigate({
                       at: "detail",

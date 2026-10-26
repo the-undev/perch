@@ -27,17 +27,16 @@ this machine alongside.
   actions that change state are parked, see the roadmap.
 - **Facts, not suggestions.** The app exposes facts and never tells the
   owner how a project ought to be run. A source that does not exist for
-  a project shows nothing. Expectations (this project should have CI)
-  are the owner's, asserted in config; an unmet one is itself a fact
-  and shows as one.
+  a project shows nothing. A goal such as setting up CI belongs on the
+  project's roadmap, not in perch's config.
 - **Gather everything, display what is earned.** The scanner collects
   all it can from day one; what surfaces, and at which level, is decided
   deliberately in [decisions/data-placement.md](decisions/data-placement.md),
   never by default.
 - **Almost no history.** Only the latest scan is kept, cached to disk so
-  the window opens with content. One exception: a small first-seen
-  record lets unmet expectations age, and losing it is harmless, the
-  clock restarts at the next scan.
+  the window opens with content. One exception: a failing source card
+  carries when it last read from the previous snapshot, and losing that
+  is harmless, the card only stops saying when it last read.
 - **One machine, config-shaped.** One Linux machine, Plasma 6, Wayland; no
   portability requirement, so platform-specific routes are taken when
   simpler. Everything machine-specific lives in config, because perch
@@ -108,8 +107,6 @@ overrides:
   unsafe change, so editing does not reset the clock on a backlog.
 - Stalled flight: parked on a non-default branch with no movement, amber
   at 7 days, red at 30, even with everything pushed.
-- Unmet expectations from config: amber at 7 days, red at 30, aged from
-  first observation.
 - The one-disk-only accelerant (shorter windows when no copy exists
   anywhere) is `TBD`.
 
@@ -131,8 +128,8 @@ directories and config path as parameters: the app scans into
 - Aggregate (`pnpm aggregate`) reads only those files and the config,
   joins presences into projects (`src/join.ts`), and writes
   `snapshot.json`. Types in `src/snapshot.ts`; every derivation rule
-  lives in `src/derivations.ts`. It reads the previous snapshot first:
-  that is the first-seen record for unmet expectations.
+  lives in `src/derivations.ts`. It reads the previous snapshot first,
+  for each source card's last read.
 
 The snapshot holds one scan record per configured source table, in
 config order, for the settings page's source cards. Each has an
@@ -184,7 +181,7 @@ repositories, vault state. Observation joins what remote URLs prove;
 config asserts what they cannot, and on conflict the observation wins,
 flagged. Everything found starts on the fence; adopting a bird means
 adding it to config, which puts it on a wire and may assert further
-ties, thresholds and expectations. Forks are ignored by
+ties and thresholds. Forks are ignored by
 default; archived repositories are gathered but never on the main view.
 Details and open questions (composite multi-repo projects among them):
 [decisions/project-model.md](decisions/project-model.md).
@@ -197,7 +194,7 @@ perch has seen" follows in mono and cannot be edited: where the clone
 is, home as `~`, the forges that also hold it, and the last commit (the
 checked-out one, else the newest on a forge's default branch). "What
 you say" holds the wire, drawn as wire strokes with the bird sitting on
-the chosen one, the name and the expectations. A fold, "More particulars", names
+the chosen one, and the name. A fold, "More particulars", names
 what it holds while closed: the key files, roadmaps, zellij session and
 the bird's own thresholds. A choice left on its default is written as
 nothing, so config holds only what differs. The signature button names
@@ -218,7 +215,7 @@ dotfiles push. It holds: the wires as an ordered named list, the
 sources, the health windows, the scan interval and the finalised commit
 count, the zellij session defaults, the launch commands (an action whose
 command is left out is not offered), per-project assertions (joins,
-wire, display names, thresholds, expectations, key file
+wire, display names, thresholds, key file
 lists, zellij session names). An entry for an item adopts it. No
 secrets, ever. Every field is shown, with placeholder values, in
 `config.example.toml`.
@@ -355,7 +352,7 @@ read at run time, its CLI prompts. Creation and replacement runbook:
 - **Electron rather than Tauri**: decided with reasons in
   [decisions/tech-stack.md](decisions/tech-stack.md); TypeScript end to
   end with the house frontend stack.
-- **No database**: see Principles; the first-seen record is a file, not
+- **No database**: see Principles; the previous snapshot is a file, not
   a store.
 - **Not hosted on the server**: the state the owner loses track of
   lives in working copies this machine holds. The phone view hybrid is

@@ -57,8 +57,6 @@ describe("the entry form", () => {
         unsafe_red_hours: 72,
         stalled_amber_days: 7,
         stalled_red_days: 30,
-        expectation_amber_days: 7,
-        expectation_red_days: 30,
       },
     });
   });
@@ -117,7 +115,7 @@ describe("the entry form", () => {
     expect(config.items["dev/odin/hello"]).toEqual({
       wire: "Machine & Home",
       name: "Hello",
-      thresholds: { unsafe: {}, stalled: {}, expectation: {} },
+      thresholds: { unsafe: {}, stalled: {} },
       keyFiles: null,
       roadmaps: null,
       zellijSession: null,
@@ -137,7 +135,7 @@ describe("the entry form", () => {
     expect(config.items["dev/perch"]).toBeUndefined();
     expect(config.items["github:finch/perch"]).toMatchObject({
       name: "Perch app",
-      thresholds: { unsafe: {}, stalled: { amberDays: 3 }, expectation: {} },
+      thresholds: { unsafe: {}, stalled: { amberDays: 3 } },
     });
     expect(entryFormFor(config, perch, home).key).toBe("github:finch/perch");
   });
@@ -210,8 +208,8 @@ describe("the entry form", () => {
     expect(entryProblems(values({ stalled_amber_days: 30 }), options)).toEqual([
       "Stalled flight: amber must come before red",
     ]);
-    expect(entryProblems(values({ expectation_red_days: 0 }), options)).toEqual(
-      ["Unmet expectation: thresholds must be whole days above zero"],
-    );
+    expect(entryProblems(values({ stalled_red_days: 0 }), options)).toEqual([
+      "Stalled flight: thresholds must be whole days above zero",
+    ]);
   });
 });

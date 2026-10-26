@@ -199,14 +199,12 @@ describe("what the settings cannot be", () => {
         thresholds: {
           ...values.thresholds,
           unsafe_amber_hours: 0,
-          stalled_amber_days: 40,
-          expectation_red_days: 1.5,
+          stalled_red_days: 1.5,
         },
       }),
     ).toEqual([
       "Unsafe work: thresholds must be whole hours above zero",
-      "Stalled flight: amber must come before red",
-      "Unmet expectation: thresholds must be whole days above zero",
+      "Stalled flight: thresholds must be whole days above zero",
     ]);
   });
 

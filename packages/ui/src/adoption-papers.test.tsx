@@ -135,7 +135,7 @@ describe("the adoption papers", () => {
     openFold();
 
     expect(fold.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getAllByRole("spinbutton")).toHaveLength(6);
+    expect(screen.getAllByRole("spinbutton")).toHaveLength(4);
     expect(screen.getByText("The README and the roadmaps")).toBeDefined();
     expect(screen.getByText("The standard roadmap names")).toBeDefined();
     const session = screen.getByRole("textbox", { name: "Zellij session" });

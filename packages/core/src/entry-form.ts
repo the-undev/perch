@@ -72,7 +72,7 @@ export interface EntryForm {
   options: EntryOptions;
 }
 
-/** The three health windows, each an amber key and a red key, with the unit they count in. */
+/** The two health windows, each an amber key and a red key, with the unit they count in. */
 export const thresholdWindows: readonly {
   label: string;
   unit: "hours" | "days";
@@ -90,12 +90,6 @@ export const thresholdWindows: readonly {
     unit: "days",
     amber: "stalled_amber_days",
     red: "stalled_red_days",
-  },
-  {
-    label: "Unmet expectation",
-    unit: "days",
-    amber: "expectation_amber_days",
-    red: "expectation_red_days",
   },
 ];
 
@@ -129,11 +123,7 @@ export function flatThresholds(
 export function nestedThresholds(
   flat: Partial<Record<ThresholdKey, number>>,
 ): ThresholdOverrides {
-  const overrides: ThresholdOverrides = {
-    unsafe: {},
-    stalled: {},
-    expectation: {},
-  };
+  const overrides: ThresholdOverrides = { unsafe: {}, stalled: {} };
   for (const [window, field, key] of thresholdKeys) {
     const value = flat[key];
     if (value !== undefined)

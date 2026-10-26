@@ -66,8 +66,6 @@ unsafe_amber_hours = 12
 unsafe_red_hours = 48
 stalled_amber_days = 5
 stalled_red_days = 20
-expectation_amber_days = 2
-expectation_red_days = 9
 
 [scan]
 interval_minutes = 5
@@ -95,8 +93,6 @@ unsafe_amber_hours = 6
 unsafe_red_hours = 30
 stalled_amber_days = 2
 stalled_red_days = 40
-expectation_amber_days = 1
-expectation_red_days = 3
 
 [items."forgejo:finch/hollow"]
 stalled_red_days = 90

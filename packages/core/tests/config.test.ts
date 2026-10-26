@@ -49,7 +49,6 @@ describe("example config", () => {
     expect(config.thresholds).toEqual({
       unsafe: { amberHours: 24, redHours: 72 },
       stalled: { amberDays: 7, redDays: 30 },
-      expectation: { amberDays: 7, redDays: 30 },
     });
     expect(config.items).toEqual({});
     expect(config.scan).toEqual({
@@ -136,7 +135,6 @@ describe("example config", () => {
       thresholds: {
         unsafe: { amberHours: 12, redHours: 48 },
         stalled: { amberDays: 14, redDays: 60 },
-        expectation: { amberDays: 3, redDays: 14 },
       },
       keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
@@ -168,7 +166,6 @@ describe("item overrides", () => {
     expect(thresholdsFor(config, entryOf(config, ".dotfiles"))).toEqual({
       unsafe: { amberHours: 3, redHours: 72 },
       stalled: { amberDays: 7, redDays: 60 },
-      expectation: { amberDays: 7, redDays: 30 },
     });
     expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toEqual(
       config.thresholds,
@@ -284,6 +281,42 @@ describe("removed keys", () => {
 
     expect(() => parseConfig(text, home)).toThrow(
       "config: scan.archived_interval_hours is not a config key",
+    );
+  });
+
+  it("refuses the expectation thresholds by name", async () => {
+    const text = await fixtureConfigText("");
+    const withKey = (key: string) =>
+      text.replace("[thresholds]\n", `[thresholds]\n${key} = 7\n`);
+
+    expect(() => parseConfig(withKey("expectation_amber_days"), home)).toThrow(
+      "config: thresholds.expectation_amber_days is not a config key",
+    );
+    expect(() => parseConfig(withKey("expectation_red_days"), home)).toThrow(
+      "config: thresholds.expectation_red_days is not a config key",
+    );
+  });
+
+  it("refuses an entry's expectation thresholds by name", async () => {
+    const text = await fixtureConfigText(
+      '[items."dev/perch"]\nexpectation_amber_days = 3\n',
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      'config: items."dev/perch".expectation_amber_days is not a config key',
+    );
+  });
+});
+
+describe("thresholds", () => {
+  it("name a key the [thresholds] table may not hold", async () => {
+    const text = (await fixtureConfigText("")).replace(
+      "[thresholds]\n",
+      "[thresholds]\nstalled_amber_hours = 12\n",
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      "config: thresholds.stalled_amber_hours is not a config key",
     );
   });
 });

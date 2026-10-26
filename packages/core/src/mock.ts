@@ -36,7 +36,7 @@ function entry(fields: Partial<ItemEntry>): ItemEntry {
   return {
     wire: null,
     name: null,
-    thresholds: { unsafe: {}, stalled: {}, expectation: {} },
+    thresholds: { unsafe: {}, stalled: {} },
     keyFiles: null,
     roadmaps: null,
     zellijSession: null,
@@ -109,7 +109,6 @@ export const mockConfig: Config = {
   thresholds: {
     unsafe: unsafeWindows,
     stalled: dayWindows,
-    expectation: dayWindows,
   },
   items: {
     ".dotfiles": entry({

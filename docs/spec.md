@@ -91,9 +91,10 @@ stops short of the window's height, so the page keeps its rhythm.
 Concrete nouns link wherever a page exists for them. Headings name the
 actual thing ("main on GitHub"), never a concept.
 
-The page centres as one block up to 1920px. From 860px wide the roost
-takes a 330px column at the right; narrower, it sits above the record,
-centred. The ledger and its sections sit beside the paper while the
+The page centres as one block up to 1920px. From 860px wide the heading
+and the roost share the top band, the roost in a 330px column at the right
+(620px from 1240px wide) and the record spans the full width beneath;
+narrower, the order is the heading, the roost, centred, then the record. The ledger and its sections sit beside the paper while the
 record is at least 960px wide, above it when narrower.
 
 The visual language is specified on the board: the field guide

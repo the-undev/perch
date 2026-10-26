@@ -142,20 +142,30 @@ describe("the detail view", () => {
     );
   });
 
-  it("puts the roost first, above the record when narrow, and beside it from the breakpoint", () => {
+  it("puts the heading and the roost in the top band and the record across the page below", () => {
     const { container } = page(mockBird("dev/perch"));
     const roost = screen.getByRole("region", { name: "Perch on its perch" });
+    const heading = container.querySelector('[data-part="heading"]');
     const record = container.querySelector('[data-part="record"]');
+    if (heading === null) throw new Error("the page has no heading");
     if (record === null) throw new Error("the page has no record");
+    const following = (from: Element, to: Element) =>
+      from.compareDocumentPosition(to) & Node.DOCUMENT_POSITION_FOLLOWING;
 
-    expect(
-      roost.compareDocumentPosition(record) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    expect(heading.querySelector("h2")?.textContent).toBe("Perch");
+    expect(following(heading, roost)).toBeTruthy();
+    expect(following(roost, record)).toBeTruthy();
     expect(roost.parentElement?.className).toContain("mx-auto");
     expect(roost.parentElement?.className).toContain(
       "@min-[860px]:col-start-2",
     );
-    expect(record.className).toContain("@min-[860px]:col-start-1");
+    expect(roost.parentElement?.className).toContain(
+      "@min-[860px]:row-start-1",
+    );
+    expect(heading.className).toContain("@min-[860px]:col-start-1");
+    expect(heading.className).toContain("@min-[860px]:row-start-1");
+    expect(record.className).toContain("col-span-full");
+    expect(record.className).toContain("@min-[860px]:row-start-2");
     expect(record.parentElement?.className).toContain(
       "@min-[860px]:grid-cols-[minmax(0,1fr)_330px]",
     );

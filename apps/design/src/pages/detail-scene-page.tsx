@@ -118,12 +118,14 @@ export function DetailScenePage() {
         <p>
           The view fetches nothing. The app reads each key file&apos;s{" "}
           <Code>absolutePath</Code> and passes the text in. From 860px wide the
-          roost takes a 330px column at the top right and the record fills the
-          rest; narrower, the roost sits above the record, centred. Inside the
-          record the ledger and its sections sit beside the paper when the
-          record is at least 960px wide, above it when narrower. The page
-          centres as one block up to 1920px. Inside the app the camera places it
-          on the ground beneath the strip.
+          heading and the roost share the top band, the roost in a 330px column
+          at the right (620px from 1240px wide, where it becomes a row), and the
+          record spans the whole width beneath; narrower, the order is the
+          heading, the roost, centred, then the record. Inside the record the
+          ledger and its sections sit beside the paper when the record is at
+          least 960px wide, above it when narrower. The page centres as one
+          block up to 1920px. Inside the app the camera places it on the ground
+          beneath the strip.
         </p>
       </Usage>
     </>

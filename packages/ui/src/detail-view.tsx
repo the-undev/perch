@@ -181,14 +181,19 @@ export function DetailView({
       className="@container mx-auto max-w-480 motion-safe:animate-swap"
     >
       <div className="grid grid-cols-1 items-start gap-x-9 gap-y-3 @min-[860px]:grid-cols-[minmax(0,1fr)_330px] @min-[1240px]:grid-cols-[minmax(0,1fr)_620px]">
+        <div
+          data-part="heading"
+          className="min-w-0 @min-[860px]:col-start-1 @min-[860px]:row-start-1"
+        >
+          <DetailHeading bird={bird} />
+        </div>
         <div className="mx-auto w-82.5 max-w-full @min-[860px]:col-start-2 @min-[860px]:row-start-1 @min-[860px]:mx-0 @min-[1240px]:w-155">
           <Roost bird={bird} night={night} />
         </div>
         <div
           data-part="record"
-          className="@container min-w-0 @min-[860px]:col-start-1 @min-[860px]:row-start-1"
+          className="@container col-span-full min-w-0 @min-[860px]:row-start-2"
         >
-          <DetailHeading bird={bird} />
           {!papersShown && <MainProblems problems={problems} />}
           <div className="mt-3.5 flex flex-wrap items-center gap-1">
             <LaunchActions actions={detail.actions} onLaunch={onLaunch} />

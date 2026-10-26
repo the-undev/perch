@@ -180,8 +180,8 @@ export function DetailView({
       aria-label={`${bird.name} in full`}
       className="@container mx-auto max-w-480 motion-safe:animate-swap"
     >
-      <div className="grid grid-cols-1 items-start gap-x-9 gap-y-3 @min-[860px]:grid-cols-[minmax(0,1fr)_330px]">
-        <div className="mx-auto @min-[860px]:col-start-2 @min-[860px]:row-start-1 @min-[860px]:mx-0">
+      <div className="grid grid-cols-1 items-start gap-x-9 gap-y-3 @min-[860px]:grid-cols-[minmax(0,1fr)_330px] @min-[1240px]:grid-cols-[minmax(0,1fr)_620px]">
+        <div className="mx-auto w-82.5 max-w-full @min-[860px]:col-start-2 @min-[860px]:row-start-1 @min-[860px]:mx-0 @min-[1240px]:w-155">
           <Roost bird={bird} night={night} />
         </div>
         <div

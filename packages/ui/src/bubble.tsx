@@ -39,22 +39,75 @@ export const tailDrop = 26;
 const paperClass =
   "relative rounded-bubble bg-paper px-4 pt-3.5 pb-3.25 text-[13.5px] text-paper-text leading-normal shadow-bubble";
 
-function Tail({ tail }: { tail: BubbleTail }) {
+/** The hanging tail, drawn to the given drop below the bubble's bottom edge. */
+function Tail({
+  tail,
+  drop,
+  className,
+}: {
+  tail: BubbleTail;
+  drop: number;
+  className: string;
+}) {
   const offset = `${tail.inset - tailTipInset}px`;
   return (
     <svg
       aria-hidden="true"
+      data-part="tail-hanging"
       viewBox="0 0 44 30"
+      preserveAspectRatio="none"
       width={44}
-      height={30}
-      className="pointer-events-none absolute -bottom-6.75"
+      height={((drop + 3) * 30) / 29}
+      className={`pointer-events-none absolute ${className}`}
       style={
         tail.side === "left"
-          ? { left: offset }
-          : { right: offset, transform: "scaleX(-1)" }
+          ? { top: "calc(100% - 3px)", left: offset }
+          : {
+              top: "calc(100% - 3px)",
+              right: offset,
+              transform: "scaleX(-1)",
+            }
       }
     >
       <path d="M 6 0 Q 14 18 2 29 Q 22 22 34 2 Z" fill="var(--color-paper)" />
+    </svg>
+  );
+}
+
+/** A tail leaving the bubble's right edge: its tip is `reach` pixels out and `anchorY` below the bubble's top. */
+export interface SideTailShape {
+  reach: number;
+  anchorY: number;
+}
+
+/** The tip sits at (29, 14) in the 29 by 32 sideways drawing, and the base 3 pixels inside the paper. */
+const sideTailTipY = 14;
+export const sideTailOverlap = 3;
+export const sideTailHeight = 32;
+
+/** The sideways tail, for a bubble whose speaker stands to its right. */
+function SideTail({
+  tail,
+  className,
+}: {
+  tail: SideTailShape;
+  className: string;
+}) {
+  return (
+    <svg
+      aria-hidden="true"
+      data-part="tail-side"
+      viewBox="0 0 29 32"
+      preserveAspectRatio="none"
+      width={tail.reach + sideTailOverlap}
+      height={sideTailHeight}
+      className={`pointer-events-none absolute ${className}`}
+      style={{
+        top: tail.anchorY - sideTailTipY,
+        left: `calc(100% - ${sideTailOverlap}px)`,
+      }}
+    >
+      <path d="M 0 2 Q 14 6 29 14 Q 14 20 0 30 Z" fill="var(--color-paper)" />
     </svg>
   );
 }
@@ -137,7 +190,7 @@ export function Bubble({
           Tell me the full story
         </button>
       </div>
-      <Tail tail={tail} />
+      <Tail tail={tail} drop={tailDrop} className="" />
     </section>
   );
 }
@@ -146,11 +199,22 @@ export interface RoostBubbleProps {
   bubble: BubbleModel;
   /** The sky is at night: a bird that sleeps speaks with the waking prefix. */
   night: boolean;
+  /** The tail that hangs from the bottom edge when the roost is stacked. */
   tail: BubbleTail;
+  /** How far the hanging tail's tip falls below the bubble's bottom edge. */
+  drop: number;
+  /** The tail that leaves the right edge when the roost is a row. */
+  sideTail: SideTailShape;
 }
 
 /** The bubble on the bird's own page: speech and chips, the name and state word left to the page's heading. */
-export function RoostBubble({ bubble, night, tail }: RoostBubbleProps) {
+export function RoostBubble({
+  bubble,
+  night,
+  tail,
+  drop,
+  sideTail,
+}: RoostBubbleProps) {
   return (
     <section
       aria-label={`${bubble.name} says`}
@@ -161,7 +225,8 @@ export function RoostBubble({ bubble, night, tail }: RoostBubbleProps) {
         {spokenSpeech(bubble, night)}
       </p>
       <Chips chips={bubble.chips} />
-      <Tail tail={tail} />
+      <Tail tail={tail} drop={drop} className="@min-[520px]:hidden" />
+      <SideTail tail={sideTail} className="hidden @min-[520px]:block" />
     </section>
   );
 }

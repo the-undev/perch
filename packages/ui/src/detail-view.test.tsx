@@ -159,6 +159,11 @@ describe("the detail view", () => {
     expect(record.parentElement?.className).toContain(
       "@min-[860px]:grid-cols-[minmax(0,1fr)_330px]",
     );
+    expect(record.parentElement?.className).toContain(
+      "@min-[1240px]:grid-cols-[minmax(0,1fr)_620px]",
+    );
+    expect(roost.parentElement?.className).toContain("w-82.5");
+    expect(roost.parentElement?.className).toContain("@min-[1240px]:w-155");
   });
 
   it("offers the launch actions as verbs, hands back the one pressed, and links out", () => {

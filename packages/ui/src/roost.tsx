@@ -1,26 +1,61 @@
 // The roost: on its own page the bird leaves the wire for a T-stand perch, drawn in the post's
-// colour, facing left toward its record, idle, its bubble above it as paper without the header the
-// page's heading already carries. The bubble's tail meets the beak.
+// colour, facing left toward its record, idle, its bubble as paper without the header the page's
+// heading already carries. The roost lays itself out by its own width: stacked, the bubble sits above
+// the bird with its tail hanging to the beak; wide enough, a row, the bubble on the left with a
+// sideways tail to the beak. The bird is hung from the beak, so the tail meets it at any bubble height.
 
 import type { Bird } from "@perch/core/viewmodel.ts";
+import type { CSSProperties } from "react";
 import { birdLook, PerchedFigure, plumpScale } from "./bird.tsx";
-import { RoostBubble, tailDrop } from "./bubble.tsx";
+import { RoostBubble } from "./bubble.tsx";
 
-/** The roost's width in pixels: the page's right-hand column. */
+/** The roost's width in pixels when stacked: the page's right-hand column below the wide breakpoint. */
 export const roostWidth = 330;
+
+/** The roost's width in pixels as a row: the page's right-hand column at the wide breakpoint. */
+export const roostRowWidth = 620;
+
+/** The roost's own width at which it becomes a row; written out in the `@min-[520px]` classes below. */
+export const roostRowBreakpoint = 520;
 
 /** The scale a roosting bird is drawn at before its plumpness: larger than on any wire. */
 export const roostScale = 1.3;
 
-/** Where the roost draws its bird, in pixels from the drawing's top left. */
+/** The clear paper between the bubble's bottom and the top of the bird's head when stacked, in pixels. */
+export const roostDaylight = 14;
+
+/** The head's top above the beak tip, in bird units. */
+const headTopAboveBeak = 13.5;
+
+/** The gap between the row's bubble and the bird's drawing, which the sideways tail crosses. */
+export const roostRowGap = 28;
+
+/** How far below the bubble's top the sideways tail's tip falls: the beak is hung from here. */
+export const roostRowAnchorY = 26;
+
+/** Where the roost draws its bird, in pixels from the drawing's top left unless noted. */
 export interface RoostFrame {
+  /** The drawing's height. */
   height: number;
+  /** The drawing's width: only as wide as the stand and the bird's tail feathers need. */
+  width: number;
   /** The scale the bird is drawn at. */
   scale: number;
   /** The top of the stand's crossbar, where the toes rest. */
   perchY: number;
+  /** The bird's centre line, and the stand's. */
+  centreX: number;
+  /** The beak tip within the drawing. */
   beakX: number;
   beakY: number;
+  /** Stacked: how far the hanging tail's tip falls below the bubble's bottom edge, clearing the head. */
+  drop: number;
+  /** Stacked: the beak tip's distance from the bubble's left edge in the 330px column. */
+  stackBeakX: number;
+  /** Row: the sideways tail's reach from the bubble's right edge to the beak. */
+  rowReach: number;
+  /** Row: how far the bubble is lowered so its tail anchor lines up with the beak. */
+  rowLift: number;
 }
 
 /** The pole's length below the crossbar, and the room left beneath it for its shadow. */
@@ -31,13 +66,24 @@ const shadowRoom = 10;
 export function roostFrame(bird: Bird): RoostFrame {
   const scale = roostScale * plumpScale(bird.plumpness);
   const perchY = Math.ceil(80 * scale + 8);
+  // The beak tip is at (37, -42) in bird units, mirrored to face left, the bird 3 units up.
+  const beakReach = 37 * scale;
+  const centreX = Math.ceil(Math.max(50, beakReach)) + 6;
+  const tailReach = Math.ceil(Math.max(50, 46 * scale)) + 6;
+  const beakX = centreX - beakReach;
+  const beakY = perchY - 45 * scale;
   return {
     height: perchY + poleLength + shadowRoom,
+    width: centreX + tailReach,
     scale,
     perchY,
-    // The beak tip is at (37, -42) in bird units, mirrored to face left, the bird 3 units up.
-    beakX: roostWidth / 2 - 37 * scale,
-    beakY: perchY - 45 * scale,
+    centreX,
+    beakX,
+    beakY,
+    drop: Math.ceil(headTopAboveBeak * scale) + roostDaylight,
+    stackBeakX: roostWidth / 2 - beakReach,
+    rowReach: roostRowGap + beakX,
+    rowLift: beakY - roostRowAnchorY,
   };
 }
 
@@ -47,68 +93,89 @@ export interface RoostProps {
   night: boolean;
 }
 
-/** The bird on its perch with its bubble above, for the top right of the bird's page. */
+/** The bird on its perch with its bubble above, or to its left when the roost is wide, for the top right of the bird's page. */
 export function Roost({ bird, night }: RoostProps) {
   const frame = roostFrame(bird);
   const look = birdLook(bird, night);
-  const centre = roostWidth / 2;
+  const centre = frame.centreX;
   return (
     <section
       aria-label={`${bird.name} on its perch`}
       data-part="roost"
       data-facing="left"
-      className="w-82.5 max-w-full"
+      className="@container w-full"
     >
-      <RoostBubble
-        bubble={bird.bubble}
-        night={night}
-        tail={{ side: "left", inset: frame.beakX }}
-      />
-      <svg
-        role="img"
-        aria-label={`${bird.name}, ${bird.adopted ? bird.mood : "not adopted"}${look.asleep ? ", asleep" : ""}`}
-        data-mood={bird.mood}
-        data-asleep={look.asleep}
-        viewBox={`0 0 ${roostWidth} ${frame.height}`}
-        width={roostWidth}
-        height={frame.height}
-        className="block h-auto max-w-full overflow-visible"
-        style={{ marginTop: tailDrop - frame.beakY }}
+      <div
+        data-part="roost-layout"
+        className="flex flex-col @min-[520px]:flex-row @min-[520px]:items-start @min-[520px]:gap-(--row-gap)"
+        style={
+          {
+            "--row-gap": `${roostRowGap}px`,
+            "--row-lift": `${frame.rowLift}px`,
+            "--stack-gap": `${frame.drop - frame.beakY}px`,
+            "--stack-left": `${frame.stackBeakX - frame.beakX}px`,
+          } as CSSProperties
+        }
       >
-        <g data-part="stand" fill="var(--color-post)">
-          <rect
-            x={centre - 50}
-            y={frame.perchY}
-            width={100}
-            height={7}
-            rx={3.5}
+        <div
+          data-part="roost-speech"
+          className="@min-[520px]:mt-(--row-lift) @min-[520px]:min-w-0 @min-[520px]:flex-1"
+        >
+          <RoostBubble
+            bubble={bird.bubble}
+            night={night}
+            tail={{ side: "left", inset: frame.stackBeakX }}
+            drop={frame.drop}
+            sideTail={{ reach: frame.rowReach, anchorY: roostRowAnchorY }}
           />
-          <rect
-            x={centre - 4}
-            y={frame.perchY + 4}
-            width={8}
-            height={poleLength}
-            rx={3}
+        </div>
+        <svg
+          role="img"
+          aria-label={`${bird.name}, ${bird.adopted ? bird.mood : "not adopted"}${look.asleep ? ", asleep" : ""}`}
+          data-mood={bird.mood}
+          data-asleep={look.asleep}
+          viewBox={`0 0 ${frame.width} ${frame.height}`}
+          width={frame.width}
+          height={frame.height}
+          className="mt-(--stack-gap) ml-(--stack-left) block h-auto max-w-full shrink-0 overflow-visible @min-[520px]:mt-0 @min-[520px]:ml-0"
+        >
+          <g data-part="stand" fill="var(--color-post)">
+            <rect
+              x={centre - 50}
+              y={frame.perchY}
+              width={100}
+              height={7}
+              rx={3.5}
+            />
+            <rect
+              x={centre - 4}
+              y={frame.perchY + 4}
+              width={8}
+              height={poleLength}
+              rx={3}
+            />
+          </g>
+          <ellipse
+            cx={centre}
+            cy={frame.perchY + poleLength + 5}
+            rx={46}
+            ry={5}
+            fill="var(--color-shade)"
           />
-        </g>
-        <ellipse
-          cx={centre}
-          cy={frame.perchY + poleLength + 5}
-          rx={46}
-          ry={5}
-          fill="var(--color-shade)"
-        />
-        <g transform={`translate(${centre} ${frame.perchY - 3 * frame.scale})`}>
-          <PerchedFigure
-            look={look}
-            id={bird.id}
-            scale={frame.scale}
-            facing="left"
-            speaking={false}
-            idle
-          />
-        </g>
-      </svg>
+          <g
+            transform={`translate(${centre} ${frame.perchY - 3 * frame.scale})`}
+          >
+            <PerchedFigure
+              look={look}
+              id={bird.id}
+              scale={frame.scale}
+              facing="left"
+              speaking={false}
+              idle
+            />
+          </g>
+        </svg>
+      </div>
     </section>
   );
 }

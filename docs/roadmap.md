@@ -16,6 +16,18 @@ which already carry the owner's priority. Config now refuses the keys
 by name. Bringing it back needs an effect the wires do not already give,
 and names that read as degrees.
 
+## Every chip spelled out on the detail page
+
+A bubble chip states a conclusion without its working: "ci pending"
+names the worst state across the forges, and finding which forge and
+which run meant reading the raw scan file. Hit when Forgejo Actions
+queued the mirrored workflows with no runner and sat pending forever
+while GitHub was green. Everything the bubble says should appear on
+the detail page with its sources spelled out: the CI line naming each
+forge's newest run, its state and its link, and the same for any chip
+that summarises more than one fact. Tooltips on the chips could carry
+the short form of the same detail.
+
 ## A hand edit and the scan
 
 An edit to the config file by hand is read and shown at once, but scans

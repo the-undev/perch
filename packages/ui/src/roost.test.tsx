@@ -136,14 +136,20 @@ describe("the roost", () => {
     expect(speech?.className).toContain("@min-[460px]:flex-1");
     expect(drawing.getAttribute("class")).toContain("@min-[460px]:ml-0");
     expect(drawing.getAttribute("width")).toBe(String(frame.width));
-    expect(frame.width).toBeLessThan(200);
-    expect(frame.width).toBeGreaterThanOrEqual(100 + 2 * 6);
+    expect(frame.width).toBe(150);
+    expect(frame.width).toBe(roostFrame(mockBird("undev/spool")).width);
   });
 
   it("leaves a sideways tail from the bubble's right edge, slanting down to the beak, whatever the bubble's height", () => {
-    for (const id of ["dev/perch", "undev/spool"]) {
+    for (const bird of [
+      mockBird("dev/perch"),
+      mockBird("undev/spool"),
+      {
+        ...mockBird("undev/spool"),
+        plumpness: { outstanding: 50, fullness: 1 },
+      },
+    ]) {
       cleanup();
-      const bird = mockBird(id);
       const { section } = roost(bird);
       const frame = roostFrame(bird);
       const tail = section.querySelector(
@@ -197,13 +203,29 @@ describe("the roost", () => {
     );
   });
 
-  it("grows the bird with its outstanding work, the stand tall enough to hold it", () => {
+  it("fixes the stand and grows only the bird on it with its outstanding work", () => {
     const lean = roostFrame(mockBird("undev/spool"));
     const plump = roostFrame(mockBird("dev/perch"));
+    const capped = roostFrame({
+      ...mockBird("undev/spool"),
+      plumpness: { outstanding: 50, fullness: 1 },
+    });
 
     expect(plump.scale).toBeGreaterThan(lean.scale);
-    expect(plump.height).toBeGreaterThan(lean.height);
-    expect(plump.beakY).toBeGreaterThan(0);
+    expect(capped.scale).toBeGreaterThan(plump.scale);
+    for (const frame of [plump, capped]) {
+      expect(frame.perchY).toBe(lean.perchY);
+      expect(frame.centreX).toBe(lean.centreX);
+      expect(frame.width).toBe(lean.width);
+      expect(frame.height).toBe(lean.height);
+    }
+    expect([lean.perchY, lean.centreX, lean.width, lean.height]).toEqual([
+      103, 68, 150, 155,
+    ]);
+    expect(lean.beakY).toBeGreaterThan(plump.beakY);
+    expect(plump.beakY).toBeGreaterThan(capped.beakY);
+    expect(lean.beakX).toBeGreaterThan(capped.beakX);
+    expect(capped.beakX).toBeGreaterThan(0);
   });
 
   it("sleeps at night when the bird sleeps, still, and speaks woken", () => {

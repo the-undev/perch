@@ -62,27 +62,35 @@ const shadowRoom = 10;
 /** In the row the drawing's bottom margin is this negative, so the pole and shadow hang below the band. */
 export const roostRowBleed = poleLength + shadowRoom;
 
-/** The roost's drawing for this bird, tall enough for its plumpness, the beak to the left. */
+/** The scale of the plumpest bird, which the stand is sized for. */
+const cappedScale = roostScale * plumpScale({ outstanding: 0, fullness: 1 });
+
+// The stand is furniture: its position and the drawing's size are fixed by the plumpest bird, so
+// only the bird varies. The head's top is 58.5 bird units above the crossbar (55.5 above the
+// figure, which sits 3 up), and 6px more leaves room for the bob's lift.
+const standPerchY = Math.ceil(58.5 * cappedScale) + 6;
+const standCentreX = Math.ceil(Math.max(50, 37 * cappedScale)) + 6;
+const standTailReach = Math.ceil(Math.max(50, 46 * cappedScale)) + 6;
+
+/** The roost's drawing for this bird: a fixed stand, the bird at its own scale on it, the beak to the left. */
 export function roostFrame(bird: Bird): RoostFrame {
   const scale = roostScale * plumpScale(bird.plumpness);
-  // The head's top is 58.5 bird units above the crossbar (55.5 above the figure, which sits 3 up),
-  // and 6px more leaves room for the bob's lift.
-  const perchY = Math.ceil(58.5 * scale) + 6;
+  const perchY = standPerchY;
   // The beak tip is at (37, -42) in bird units, mirrored to face left, the bird 3 units up.
   const beakReach = 37 * scale;
-  const centreX = Math.ceil(Math.max(50, beakReach)) + 6;
-  const tailReach = Math.ceil(Math.max(50, 46 * scale)) + 6;
+  const centreX = standCentreX;
   const beakX = centreX - beakReach;
   const beakY = perchY - 45 * scale;
   return {
     height: perchY + poleLength + shadowRoom,
-    width: centreX + tailReach,
+    width: standCentreX + standTailReach,
     scale,
     perchY,
     centreX,
     beakX,
     beakY,
     drop: Math.ceil(headTopAboveBeak * scale) + roostDaylight,
+    // The drawing sits at a constant offset, so the stand is centred in the column for every bird.
     stackBeakX: roostWidth / 2 - beakReach,
     rowReach: roostRowGap + beakX,
     rowTipY: beakY,

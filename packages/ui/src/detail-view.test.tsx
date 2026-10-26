@@ -7,7 +7,13 @@ import {
 import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
 import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
 import { deriveAviary } from "@perch/core/viewmodel.ts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DetailView } from "./detail-view.tsx";
 import { mockBird, mockEntryForm, mockHome } from "./mock-birds.ts";
@@ -95,6 +101,63 @@ describe("the detail view", () => {
         entry.label,
         entry.kind === "time" ? expect.stringMatching(/ ago$/) : entry.text,
       ]),
+    );
+  });
+
+  it("roosts the bird on its page, facing left toward the record and idle", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch);
+    const roost = screen.getByRole("region", { name: "Perch on its perch" });
+
+    expect(roost.getAttribute("data-facing")).toBe("left");
+    expect(
+      roost
+        .querySelector('[data-part="figure"]')
+        ?.parentElement?.getAttribute("transform"),
+    ).toMatch(/^scale\(-/);
+    expect(
+      roost.getElementsByClassName("motion-safe:animate-bird-bob"),
+    ).toHaveLength(1);
+    expect(container.querySelectorAll('[data-part="figure"]')).toHaveLength(1);
+  });
+
+  it("says the name and state word once, in the heading, and the speech once, in the roost's bubble", () => {
+    const prism = mockBird("undev/prism");
+    const { container } = page(prism);
+    const bubble = screen.getByRole("region", { name: "Prism says" });
+
+    expect(screen.getAllByRole("heading", { name: "Prism" })).toHaveLength(
+      1,
+    );
+    expect(
+      [...container.querySelectorAll('[data-part="state-word"]')].map(
+        (word) => word.textContent,
+      ),
+    ).toEqual(["distressed"]);
+    expect(screen.getAllByText(prism.bubble.speech)).toHaveLength(1);
+    expect(bubble.textContent).toContain(prism.bubble.speech);
+    expect(within(bubble).queryByRole("button")).toBeNull();
+    expect(container.querySelector('[data-part="meta"]')?.textContent).toMatch(
+      /^~\/undev\/prism · /,
+    );
+  });
+
+  it("puts the roost first, above the record when narrow, and beside it from the breakpoint", () => {
+    const { container } = page(mockBird("dev/perch"));
+    const roost = screen.getByRole("region", { name: "Perch on its perch" });
+    const record = container.querySelector('[data-part="record"]');
+    if (record === null) throw new Error("the page has no record");
+
+    expect(
+      roost.compareDocumentPosition(record) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(roost.parentElement?.className).toContain("mx-auto");
+    expect(roost.parentElement?.className).toContain(
+      "@min-[860px]:col-start-2",
+    );
+    expect(record.className).toContain("@min-[860px]:col-start-1");
+    expect(record.parentElement?.className).toContain(
+      "@min-[860px]:grid-cols-[minmax(0,1fr)_330px]",
     );
   });
 

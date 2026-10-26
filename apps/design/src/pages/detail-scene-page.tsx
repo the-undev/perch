@@ -43,7 +43,7 @@ export function DetailScenePage() {
     <>
       <Section
         title="Five contrasting birds"
-        rule="The page shows only what exists for a bird: an empty section is left out, a bird with no clone has nothing to launch, and a source that failed is named with its error."
+        rule="The bird sits on its perch at the top right with its bubble, and the heading beside it says its name, state and where it lives. The page shows only what exists for a bird: an empty section is left out, a bird with no clone has nothing to launch, and a source that failed is named with its error."
         min={600}
       >
         <div>
@@ -86,7 +86,7 @@ export function DetailScenePage() {
           {
             name: "now",
             type: "Date",
-            what: "The render's clock: ages are measured to it, and at night a sleeping bird's speech is woken.",
+            what: "The render's clock: ages are measured to it, and at night a sleeping bird sleeps on its perch and speaks woken.",
           },
           {
             name: "onLaunch",
@@ -117,10 +117,13 @@ export function DetailScenePage() {
       >
         <p>
           The view fetches nothing. The app reads each key file&apos;s{" "}
-          <Code>absolutePath</Code> and passes the text in. The ledger and its
-          sections sit beside the paper when the page is at least 1040px wide,
-          above it when narrower; the page centres as one block up to 1560px.
-          Inside the app the camera places it on the ground beneath the strip.
+          <Code>absolutePath</Code> and passes the text in. From 860px wide the
+          roost takes a 330px column at the top right and the record fills the
+          rest; narrower, the roost sits above the record, centred. Inside the
+          record the ledger and its sections sit beside the paper when the
+          record is at least 960px wide, above it when narrower. The page
+          centres as one block up to 1920px. Inside the app the camera places it
+          on the ground beneath the strip.
         </p>
       </Usage>
     </>

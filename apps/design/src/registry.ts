@@ -2,7 +2,7 @@
 // the navigation and the route pick it up.
 
 import type { ComponentType } from "react";
-import { ActionsPage, IntroPage, LinksPage } from "./pages/actions-pages.tsx";
+import { ActionsPage, HeadingPage, LinksPage } from "./pages/actions-pages.tsx";
 import { AdoptionPapersPage } from "./pages/adoption-papers-page.tsx";
 import { AviaryScenePage } from "./pages/aviary-scene-page.tsx";
 import { BirdPage } from "./pages/bird-page.tsx";
@@ -142,11 +142,12 @@ export const pages: DesignPage[] = [
     component: RoostPage,
   },
   {
-    slug: "detail-intro",
+    slug: "detail-heading",
     group: "components",
     title: "Detail heading",
-    summary: "The top of a bird's page: name, mood word, activity and speech.",
-    component: IntroPage,
+    summary:
+      "The top of a bird's page: name, state word and activity, and the meta line saying where it lives.",
+    component: HeadingPage,
   },
   {
     slug: "ledger",
@@ -250,7 +251,7 @@ export const pages: DesignPage[] = [
     group: "scenes",
     title: "The detail page",
     summary:
-      "Tier C for five contrasting birds: ledger, sections, actions, links and paper.",
+      "Tier C for five contrasting birds: the roost, the heading and its meta line, ledger, sections, actions, links and paper.",
     component: DetailScenePage,
   },
   {

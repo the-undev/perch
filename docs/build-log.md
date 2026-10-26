@@ -800,3 +800,35 @@ build-time calls so they can be revisited.
   the Bubble page points to the roost's bubble.
 - The roadmap's "Every chip spelled out" entry loses its sentences on
   the bubble's content not carrying on: the roost carries it.
+
+## 26 October 2026 (chips as handles)
+
+- The round's second phase. One CI row and one open pull requests row
+  replace the per-forge rows. The CI row says the worst state as the
+  chip does and carries no link; each forge's run, with its link, moved
+  into the row's workings.
+- A ledger row's `chip` names the bubble chip whose number it carries,
+  set only while the bubble carries that chip, so a fence bird's rows
+  name none. `workings` lists one line per source: a source, its words,
+  a tone, a link and a time, each nullable but the first two.
+- A source read with nothing to say is silent: a forge with no CI run, a
+  forge or roadmap file with none open. The round's "no pipeline" line
+  is not drawn, as a source that does not exist shows nothing. A forge
+  that was not read says "not read" in amber on the CI and pull request
+  rows, since their count covers only what was read.
+- A forge's pull requests link to `<repository>/pulls`, the same path on
+  GitHub and Forgejo. Per-file counts come from `countOpenItems` on the
+  one file. Unpushed commits name only the oldest: the snapshot holds no
+  per-branch count.
+- The detail view finds the row by `data-chip` inside the record and
+  scrolls it to the middle with `scrollIntoView`. The ground scrolls
+  smoothly under `motion-safe:scroll-smooth`, so reduced motion jumps.
+  The mark is a 1.6s opacity fade with a ring, run with reduced motion
+  too; a press counter keys it, so a second press marks the row again.
+- The mock held no two forges disagreeing on CI, so Perch's Forgejo
+  gains a run pending with no runner and Perch's chip reads "ci
+  pending". The design site's hand-built pending chip and ledger row go.
+- The mock's roadmap files carry numbered placeholder items matching
+  their counts, and the mock test checks the counts against
+  `countOpenItems`. Hothouse's open items split over its two files;
+  Pocket's second file holds none.

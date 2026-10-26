@@ -8,7 +8,7 @@ const birds = [
   {
     id: "dev/perch",
     label: "Perch",
-    rule: "Content and being edited: branches, newest commits on both forges, a draft pull request, and three key files from config, which this repository's own files stand in for.",
+    rule: "Content and being edited: branches, newest commits on both forges, a draft pull request, and three key files from config, which this repository's own files stand in for. Press a chip in its bubble to land on the ledger row holding its working.",
   },
   {
     id: "undev/prism",

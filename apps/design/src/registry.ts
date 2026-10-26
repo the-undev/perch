@@ -154,7 +154,7 @@ export const pages: DesignPage[] = [
     group: "components",
     title: "Ledger",
     summary:
-      'Facts in full words: clean zeros a quiet green "none", counts toned by severity.',
+      'Facts in full words: clean zeros a quiet green "none", counts toned by severity, each chip\'s working per source and its landing.',
     component: LedgerPage,
   },
   {

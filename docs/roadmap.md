@@ -35,18 +35,6 @@ overlapped the wires. Config now refuses `expect` and the
 perch integrates with the code, markdown and ticketing systems the work
 already lives in, and adds no assertion machinery of its own.
 
-## Every chip spelled out on the detail page
-
-A bubble chip states a conclusion without its working: "ci pending"
-names the worst state across the forges, and finding which forge and
-which run meant reading the raw scan file. Hit when Forgejo Actions
-queued the mirrored workflows with no runner and sat pending forever
-while GitHub was green. Everything the bubble says should appear on
-the detail page with its sources spelled out: the CI line naming each
-forge's newest run, its state and its link, and the same for any chip
-that summarises more than one fact. Tooltips on the chips could carry
-the short form of the same detail.
-
 ## The papers as a view of their own
 
 The adoption papers unfold above the project detail, pushing it down,

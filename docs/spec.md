@@ -77,7 +77,9 @@ wire for the roost, a T-stand perch in the post's colour at the page's
 top right. It is drawn larger than on any wire, idle, and always faces
 left toward its record. Its bubble hangs above it as paper, the tail on
 the beak, with the speech and chips as the aviary bubble says them but
-no name, state word or keys. The record beside it opens with the
+no name, state word or keys. Here each chip is a handle: pressing it
+scrolls the ledger row holding its working to the middle of the page
+and marks it briefly. In the aviary the chips are inert. The record beside it opens with the
 heading, the one place on the page that carries the name and the state
 word, with what the bird is doing. A meta line in mono beneath says
 where the bird lives: the clone's path with `~`, the forges that hold
@@ -88,6 +90,14 @@ branches, the default branch's newest commits on the forge, flags, and
 a configurable list of key files rendered as paper, the bubble's
 material, with folder tabs. A long file scrolls inside its sheet, which
 stops short of the window's height, so the page keeps its rhythm.
+Each chip's number sits on one ledger row, marked with a dot, its
+working spelled out beneath in mono, source by source: each forge's
+newest CI run with its state, branch, name, link and age, under a CI
+row that says the worst state as the chip does; open pull requests per
+forge, linked to the forge's list; open items and bugs per roadmap
+file; the age of the oldest uncommitted change or unpushed commit. A
+source with nothing to say is silent, and a forge not read says so in
+amber.
 Concrete nouns link wherever a page exists for them. Headings name the
 actual thing ("main on GitHub"), never a concept.
 

@@ -846,3 +846,7 @@ build-time calls so they can be revisited.
   article's own `swap` animationend, or at mount when the article has no
   running animation (`getAnimations` missing or empty, as under reduced
   motion and jsdom). A roost press lands at once.
+- The landing's scroll is instant: `scrollIntoView` is passed
+  `behavior: "instant"` and the ground no longer opts into smooth
+  scrolling. The mark played on a row still gliding across the screen
+  and flickered, so the jump comes first and the mark plays in place.

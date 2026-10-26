@@ -213,12 +213,12 @@ describe("the camera", () => {
     );
   });
 
-  it("scrolls the ground smoothly unless motion is reduced, so a chip's landing glides to its row", () => {
+  it("leaves the ground's scroll instant, so a chip's landing marks a row that holds still", () => {
     const { container } = camera(detailOf("dev/perch"));
     const ground = container.querySelector('[data-part="ground"]');
 
     expect(ground?.className).toContain("overflow-y-auto");
-    expect(ground?.className).toContain("motion-safe:scroll-smooth");
+    expect(ground?.className).not.toContain("scroll-smooth");
   });
 
   it("keeps the strip's tally clear of the wire's name", () => {

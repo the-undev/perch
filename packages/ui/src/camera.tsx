@@ -701,7 +701,7 @@ export function CameraView({
           <div
             data-part="ground"
             inert={zoomed}
-            className="min-h-0 flex-1 overflow-y-auto border-horizon border-t-2 bg-ground px-7.5 pt-5.5 pb-11 motion-safe:scroll-smooth"
+            className="min-h-0 flex-1 overflow-y-auto border-horizon border-t-2 bg-ground px-7.5 pt-5.5 pb-11"
           >
             {shown !== undefined && (
               <div

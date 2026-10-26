@@ -195,7 +195,7 @@ describe("the detail view", () => {
     fireEvent.click(within(bubble).getByRole("button", { name: ci.label }));
 
     expect(scrolled).toEqual([
-      { element: row("ci"), options: { block: "center" } },
+      { element: row("ci"), options: { block: "center", behavior: "instant" } },
     ]);
     expect(markedRow()).toBe("ci");
     expect(row("ci")?.textContent).toContain("forgejo · pending on main");
@@ -223,7 +223,10 @@ describe("the detail view", () => {
 
     push(perch, { arrivalChip: "open-items" });
     expect(scrolled).toEqual([
-      { element: row("open-items"), options: { block: "center" } },
+      {
+        element: row("open-items"),
+        options: { block: "center", behavior: "instant" },
+      },
     ]);
     expect(markedRow()).toBe("open-items");
 
@@ -240,7 +243,9 @@ describe("the detail view", () => {
       '[data-part="record"] [data-chip="pull-requests"]',
     );
 
-    expect(scrolled).toEqual([{ element: row, options: { block: "center" } }]);
+    expect(scrolled).toEqual([
+      { element: row, options: { block: "center", behavior: "instant" } },
+    ]);
     expect(row?.querySelector('[data-part="landing"]')).not.toBeNull();
   });
 
@@ -268,7 +273,7 @@ describe("the detail view", () => {
 
     endAnimation(article, "swap");
     expect(scrolled).toEqual([
-      { element: ciRow, options: { block: "center" } },
+      { element: ciRow, options: { block: "center", behavior: "instant" } },
     ]);
     expect(ciRow.querySelector('[data-part="landing"]')).not.toBeNull();
   });

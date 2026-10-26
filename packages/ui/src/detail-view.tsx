@@ -200,7 +200,7 @@ export function DetailView({
   const landOn = useCallback((chip: ChipKind) => {
     recordRef.current
       ?.querySelector(`[data-chip="${chip}"]`)
-      ?.scrollIntoView({ block: "center" });
+      ?.scrollIntoView({ block: "center", behavior: "instant" });
     setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
   }, []);
   // The arrival lands once the page's own swap is over, since a scroll and a mark during it flicker.

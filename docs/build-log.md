@@ -584,3 +584,40 @@ build-time calls so they can be revisited.
   it, at the mockup's 620px; the mockup centres them on a stage. Amend
   mode keeps Not now beside "Amend the papers", with "Return to the
   fence" first on the signature line.
+
+## 26 October 2026
+
+- Importance removed whole, with the archived scan interval, the
+  `tickets` expectation and Uptime Kuma in the sources picker. No
+  migration: a config holding a removed key is refused by name and is
+  edited by hand.
+- Item entries and `[scan]` now refuse a key outside the model by name,
+  as the top level and the source tables already did, so
+  `items."<key>".importance` and `scan.archived_interval_hours` fail
+  loudly. `[wires]`, `[thresholds]` and `[launch]` still ignore an
+  unknown key.
+- A `tickets` expectation is refused by the existing check on
+  `expect`, whose message names the key and the allowed names, not the
+  value.
+- Every bird on a wire starts from one scale, 0.9, the old default
+  tier's, so a bird that took the default draws as before. The fence
+  keeps 0.78 and plumpness still multiplies both.
+- Along a wire, birds order by the worst mood, then by name.
+- The snapshot item's `importance` field goes too: the aggregate wrote
+  it and only tests read it.
+- `settingsWarnings` goes with the tier warnings: it only wrapped the
+  wire warnings, which the Wires page calls directly.
+- `expectationMet` keeps its name parameter, checking through a record
+  of one check per expectation name, so a returning `tickets` is one
+  entry.
+- The mock's red expectation moves to Oxbow's CI, expected for a
+  month: its forges lose their CI runs and its branch its CI-fix
+  subject.
+- The picker's kinds are `pickerKinds`; `sourceKinds` adds Uptime Kuma
+  after them, so a kuma card keeps its heading. `withSourceAdded` still
+  makes a kuma card, and the design site's empty kuma card specimen
+  stays, the state a hand-written table can reach.
+- The design site's bird page loses its size section, and its
+  plumpness rule no longer names tickets, which plumpness never read.
+- `scripts/mockup-data.mjs` keeps its tiers: it feeds the retired
+  mockups only.

@@ -3,7 +3,6 @@ import {
   type Config,
   hostsOf,
   type ItemEntry,
-  importanceFor,
   type ResolvedEntry,
   resolveEntry,
   thresholdsFor,
@@ -312,7 +311,6 @@ function itemFor(
     name: local ? basename(local.presence.path) : (first?.repo.info.name ?? id),
     kind: local?.presence.obsidian.folder ? "vault" : "repo",
     path: local ? local.presence.path : null,
-    importance: importanceFor(config, entry),
     liveSources: [],
     presences: {
       local: local
@@ -390,7 +388,7 @@ export function aggregate(
   );
   for (const card of config.sources.kuma) {
     const id = serverItemId(card.name);
-    const { entry, keys } = resolveEntry(config, id, []);
+    const { keys } = resolveEntry(config, id, []);
     const kuma = fromEntry(
       files.kuma?.data[card.name],
       deriveKuma,
@@ -402,7 +400,6 @@ export function aggregate(
         name: card.name,
         kind: "server",
         path: null,
-        importance: importanceFor(config, entry),
         liveSources: [],
         presences: { local: null, forges: [] },
         flags: [],

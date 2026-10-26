@@ -37,7 +37,6 @@ function entry(fields: Partial<ItemEntry>): ItemEntry {
   return {
     wire: null,
     name: null,
-    importance: null,
     thresholds: { unsafe: {}, stalled: {}, expectation: {} },
     expect: [],
     keyFiles: null,
@@ -114,17 +113,14 @@ export const mockConfig: Config = {
     stalled: dayWindows,
     expectation: dayWindows,
   },
-  importance: { tiers: ["server", "machine", "projects"], default: "projects" },
   items: {
     ".dotfiles": entry({
       wire: "Machine & Home",
       name: "Dotfiles",
-      importance: "machine",
     }),
     "obsidian/Hothouse": entry({
       wire: "Machine & Home",
       name: "Hothouse Vault",
-      importance: "machine",
       roadmaps: ["Tech/Tech Plans.md", "Garden/Garden Plans.md"],
     }),
     "obsidian/Pocket": entry({
@@ -232,7 +228,6 @@ function localItem(
   id: string,
   fields: {
     kind?: Item["kind"];
-    importance?: string;
     forges: ForgePresence[];
     flags?: Item["flags"];
     expectations?: Expectation[];
@@ -245,7 +240,6 @@ function localItem(
     name: id.slice(id.lastIndexOf("/") + 1),
     kind: fields.kind ?? "repo",
     path,
-    importance: fields.importance ?? "projects",
     liveSources: [],
     presences: { local: { ref: `local:${id}`, path }, forges: fields.forges },
     flags: fields.flags ?? [],
@@ -268,7 +262,6 @@ function notSetUp(include: string): Item["flags"] {
 
 /** Restless: three commits local only for 50 hours, in flight on main. */
 const dotfiles = localItem(".dotfiles", {
-  importance: "machine",
   forges: [
     presence("github", "finch/dotfiles"),
     presence("forgejo", "finch/dotfiles"),
@@ -345,7 +338,6 @@ const dotfiles = localItem(".dotfiles", {
 /** Restless and being edited: six changes uncommitted for 30 hours, a full roadmap. */
 const hothouse = localItem("obsidian/Hothouse", {
   kind: "vault",
-  importance: "machine",
   forges: [presence("forgejo", "finch/Hothouse", "account-listing")],
   sources: {
     git: {
@@ -1253,7 +1245,6 @@ const obsidianTidy: Item = {
   name: "obsidian-tidy",
   kind: "repo",
   path: null,
-  importance: "projects",
   liveSources: [],
   presences: {
     local: null,
@@ -1280,7 +1271,6 @@ const server: Item = {
   name: "Silo",
   kind: "server",
   path: null,
-  importance: "projects",
   liveSources: ["dockerContainers"],
   presences: { local: null, forges: [] },
   flags: [],

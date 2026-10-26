@@ -272,7 +272,6 @@ export interface Item {
   kind: ItemKind;
   /** Absolute path of the local clone, null without one. */
   path: string | null;
-  importance: string;
   /** Live sources a detail view may fetch for this item; never part of the scan. */
   liveSources: LiveSourceName[];
   presences: Presences;

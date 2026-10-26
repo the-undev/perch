@@ -192,11 +192,14 @@ describe("mood", () => {
 });
 
 describe("the wires", () => {
-  it("lists every configured wire in order, the worst mood leftmost, then importance, then name", async () => {
-    const config = await adoptAll(
-      ["dev/spool", "dev/harbour", "dev/prism", "dev/alpha"],
-      '[items."dev/zeta"]\nimportance = "machine"\n',
-    );
+  it("lists every configured wire in order, the worst mood leftmost, then name", async () => {
+    const config = await adoptAll([
+      "dev/spool",
+      "dev/harbour",
+      "dev/prism",
+      "dev/alpha",
+      "dev/zeta",
+    ]);
     const items = [
       settled,
       restless,
@@ -216,9 +219,9 @@ describe("the wires", () => {
     ).toEqual([
       [0, "dev/prism"],
       [1, "dev/harbour"],
-      [2, "dev/zeta"],
-      [3, "dev/alpha"],
-      [4, "dev/spool"],
+      [2, "dev/alpha"],
+      [3, "dev/spool"],
+      [4, "dev/zeta"],
     ]);
   });
 
@@ -259,10 +262,8 @@ describe("the wires", () => {
     ).toEqual(["dev/spool"]);
   });
 
-  it("names the bird from config, sizes it by importance and fills it by outstanding work", async () => {
-    const config = await testConfig(
-      '[items."dev/spool"]\nname = "Spool"\nimportance = "machine"\n',
-    );
+  it("names the bird from config and fills it by outstanding work", async () => {
+    const config = await testConfig('[items."dev/spool"]\nname = "Spool"\n');
     const busy = item("dev/spool", {
       sources: {
         git: gitData({}),
@@ -272,7 +273,6 @@ describe("the wires", () => {
     const bird = birdIn([busy], config, "dev/spool");
 
     expect([bird.name, bird.bubble.name]).toEqual(["Spool", "Spool"]);
-    expect(bird.size).toEqual({ tier: "machine", rank: 1, tiers: 3 });
     expect(bird.plumpness).toEqual({ outstanding: 20, fullness: 0.4 });
   });
 

@@ -38,7 +38,6 @@ export interface SettingsValues {
     archivedIntervalHours: number;
     finalisedCommits: number;
   };
-  importance: { tiers: string[]; default: string };
   launch: {
     zellijSession: string;
     zellijSessions: SessionRoot[];
@@ -51,11 +50,11 @@ export interface SettingsValues {
   ignore: string[];
 }
 
-/** What the settings page needs: the values, and which item entries name each wire and tier. */
+/** What the settings page needs: the values, and which item entries name each wire. */
 export interface SettingsForm {
   values: SettingsValues;
-  /** The keys of the entries naming each wire and tier, which removing it moves to the default. */
-  named: { wires: Record<string, string[]>; tiers: Record<string, string[]> };
+  /** The keys of the entries naming each wire, which removing it moves to the default. */
+  named: { wires: Record<string, string[]> };
 }
 
 /**
@@ -117,10 +116,6 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
         number
       >,
       scan: { ...config.scan },
-      importance: {
-        tiers: [...config.importance.tiers],
-        default: config.importance.default,
-      },
       launch: {
         zellijSession: config.launch.zellijSession,
         zellijSessions: Object.entries(config.launch.zellijSessions).map(
@@ -133,7 +128,6 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
     },
     named: {
       wires: namedBy(config.items, (entry) => entry.wire),
-      tiers: namedBy(config.items, (entry) => entry.importance),
     },
   };
 }
@@ -223,14 +217,6 @@ export function settingsProblems(values: SettingsValues): string[] {
   if (!isWhole(values.scan.finalisedCommits)) {
     problems.push("Finalised commits: must be a whole number above zero");
   }
-  problems.push(
-    ...namesProblems(
-      "Importance",
-      "tier",
-      values.importance.tiers,
-      values.importance.default,
-    ),
-  );
   const { launch } = values;
   if (isBlank(launch.zellijSession)) {
     problems.push("Launch: the zellij session needs a name");
@@ -284,33 +270,6 @@ export function wireWarnings(
     );
 }
 
-/** What saving removes from entries naming a tier the values no longer hold, in words. */
-export function tierWarnings(
-  named: Record<string, string[]>,
-  importance: SettingsValues["importance"],
-): string[] {
-  return Object.entries(named)
-    .filter(([tier]) => !importance.tiers.includes(tier))
-    .map(
-      ([tier, keys]) =>
-        `${entryNames(keys)} ${keys.length === 1 ? "has" : "have"} importance ${tier}, which is removed: saving gives ${keys.length === 1 ? "it" : "them"} the default tier, ${importance.default}.`,
-    );
-}
-
-/**
- * What saving the values does to item entries, in words: an entry naming a wire or tier the
- * values remove falls to the default, and the form says so before it is saved.
- */
-export function settingsWarnings(
-  named: SettingsForm["named"],
-  values: SettingsValues,
-): string[] {
-  return [
-    ...wireWarnings(named.wires, values.wires),
-    ...tierWarnings(named.tiers, values.importance),
-  ];
-}
-
 /** A list line's strings; the line has passed settingsProblems. */
 function listOf(line: string): string[] {
   const parsed = parseListLine(line);
@@ -320,7 +279,7 @@ function listOf(line: string): string[] {
 
 /**
  * Config with everything but its item entries set to the values, paths expanded against the home
- * directory; an entry naming a wire or tier the values remove falls to the default. Throws when
+ * directory; an entry naming a wire the values remove falls to the default. Throws when
  * settingsProblems finds any.
  */
 export function withSettings(
@@ -337,14 +296,12 @@ export function withSettings(
     commands[name] = isBlank(line) ? null : listOf(line);
   }
   const { names: wires } = values.wires;
-  const { tiers } = values.importance;
   return {
     wires: { names: [...wires], default: values.wires.default },
     sources: mapSourcePaths(values.sources, path),
     joins: values.joins.map(listOf),
     ignore: [...values.ignore],
     thresholds: nestedThresholds(values.thresholds) as Thresholds,
-    importance: { tiers: [...tiers], default: values.importance.default },
     items: Object.fromEntries(
       Object.entries(config.items).map(([key, entry]) => [
         key,
@@ -353,10 +310,6 @@ export function withSettings(
           wire:
             entry.wire !== null && wires.includes(entry.wire)
               ? entry.wire
-              : null,
-          importance:
-            entry.importance !== null && tiers.includes(entry.importance)
-              ? entry.importance
               : null,
         },
       ]),

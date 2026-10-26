@@ -39,7 +39,6 @@ function entryTable(entry: ItemEntry): Table {
   const out: Table = {};
   if (entry.wire !== null) out.wire = entry.wire;
   if (entry.name !== null) out.name = entry.name;
-  if (entry.importance !== null) out.importance = entry.importance;
   if (entry.expect.length > 0) out.expect = entry.expect;
   if (entry.keyFiles !== null) out.key_files = entry.keyFiles;
   if (entry.roadmaps !== null) out.roadmaps = entry.roadmaps;
@@ -111,10 +110,6 @@ export function writeConfig(config: Config, home: string): string {
     wires: { names: config.wires.names, default: config.wires.default },
     sources: unlessEmpty(sourcesTable(config.sources, path)),
     thresholds: thresholdTable(config.thresholds),
-    importance: {
-      tiers: config.importance.tiers,
-      default: config.importance.default,
-    },
     scan: {
       interval_minutes: config.scan.intervalMinutes,
       archived_interval_hours: config.scan.archivedIntervalHours,

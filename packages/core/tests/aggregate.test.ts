@@ -21,7 +21,7 @@ import {
 } from "./helpers/raw.ts";
 
 const config = await testConfig(
-  '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://forge.example.lan:3001"\nstatus_page = "perch"\n\n[items."dev/perch"]\nimportance = "machine"\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\nexpect = ["ci", "tickets"]\n',
+  '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://forge.example.lan:3001"\nstatus_page = "perch"\n\n[items."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\nexpect = ["ci", "tickets"]\n',
 );
 
 const files = rawFiles({
@@ -80,15 +80,10 @@ describe("aggregate", () => {
     const snapshot = aggregate(bundle, input, new Date("2026-10-22T00:00:00Z"));
 
     expect(
-      snapshot.items.map((item) => [
-        item.id,
-        item.kind,
-        item.importance,
-        item.liveSources,
-      ]),
+      snapshot.items.map((item) => [item.id, item.kind, item.liveSources]),
     ).toEqual([
-      ["dev/perch", "repo", "machine", []],
-      ["server:Silo", "server", "projects", ["dockerContainers"]],
+      ["dev/perch", "repo", []],
+      ["server:Silo", "server", ["dockerContainers"]],
     ]);
     expect(snapshot.items[1]?.name).toBe("Silo");
     expect(snapshot.scannedAt).toBe(gatheredAt);

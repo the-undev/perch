@@ -88,16 +88,69 @@ describe("the scan scheduler", () => {
     expect(stub.scan).toHaveBeenCalledTimes(2);
   });
 
-  it("coalesces requests made while a scan runs into that scan", async () => {
+  it("runs one follow-on scan for requests made while a scan runs", async () => {
     const stub = stubScan();
     const { schedule } = scheduler(stub);
     schedule.start();
 
     const first = schedule.request();
     const second = schedule.request();
+    const third = schedule.request();
     schedule.focused();
+    expect(stub.scan).toHaveBeenCalledTimes(1);
+
     await stub.finish();
-    await Promise.all([first, second]);
+    expect(stub.scan).toHaveBeenCalledTimes(2);
+    await stub.finish();
+    await Promise.all([first, second, third]);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(stub.scan).toHaveBeenCalledTimes(2);
+  });
+
+  it("settles a request made mid-scan only when the follow-on finishes", async () => {
+    const stub = stubScan();
+    const { schedule } = scheduler(stub);
+    schedule.start();
+    let settled = false;
+    void schedule.request().then(() => {
+      settled = true;
+    });
+
+    await stub.finish();
+    expect(settled).toBe(false);
+    await stub.finish();
+    expect(settled).toBe(true);
+  });
+
+  it("starts the follow-on with the config as written by then", async () => {
+    let config = "old";
+    const configsRead: string[] = [];
+    const stub = stubScan();
+    const { schedule: readingSchedule } = scheduler(stub, {
+      scan: () => {
+        configsRead.push(config);
+        return stub.scan();
+      },
+    });
+    readingSchedule.start();
+    config = "new";
+    void readingSchedule.request();
+
+    await stub.finish();
+    await stub.finish();
+
+    expect(configsRead).toEqual(["old", "new"]);
+  });
+
+  it("scans at once for a request made while idle", async () => {
+    const stub = stubScan();
+    const { schedule } = scheduler(stub);
+
+    void schedule.request();
+    expect(stub.scan).toHaveBeenCalledTimes(1);
+    await stub.finish();
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(stub.scan).toHaveBeenCalledTimes(1);
   });

@@ -70,15 +70,6 @@ notices until the next scan, which the detail page hides. The detail has
 no place for them yet, so an adoption that wrote nothing looks like a
 press that did nothing.
 
-## A config write during a scan
-
-A config write, an entry's or the settings', asks for a scan, and a
-request while a scan runs joins it. That scan read the config before the write, so its snapshot's
-flags (not set up, config conflicts) and its roadmap reads follow the old
-entry until the next scan. The aviary itself follows the new entry at
-once. The fix is a scheduler request that queues one more scan when one
-is running.
-
 ## Claude Code integration
 
 Six routes were identified, in rising cost, and all are parked until the base

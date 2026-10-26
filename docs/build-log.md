@@ -685,3 +685,14 @@ build-time calls so they can be revisited.
 - The design site's Wires section gains a renamed specimen, and its
   invalid specimen shows a repeated name in place of a default outside
   the wires, which the editor can no longer reach.
+
+## 26 October 2026 (a config write during a scan)
+
+- A request that arrives while a scan runs queues one follow-on scan in
+  the scheduler, started when the running one finishes, so its gather reads
+  the config as written. Any number of requests during one scan share that
+  one follow-on, and a request while idle scans at once as before.
+- Such a request settles when the follow-on finishes, not the running scan,
+  so a save's `await` ends after a scan that read its config. A focus during
+  a scan still joins it: a focus carries no config change. `stop` cancels a
+  queued follow-on.

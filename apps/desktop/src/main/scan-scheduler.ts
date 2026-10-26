@@ -1,5 +1,6 @@
 // When scans run: once at start, then on the config's interval after each one finishes, on window
-// focus and on request. One scan at a time; a request while one runs joins it. Without a config
+// focus and on request. One scan at a time; a request while one runs queues one follow-on scan, so the
+// config as written is the one read. Without a config
 // file nothing scans and no timer runs; a request or a focus reads the config path again instead,
 // and scans once it finds the file.
 
@@ -23,7 +24,8 @@ export interface ScanScheduler {
   /** Scans now and starts the timer; without config it waits for a request or a focus. */
   start(): void;
   /**
-   * Scans now, or joins the scan already running; resolves when that scan finishes. Without
+   * Scans now; while a scan runs, queues one more behind it, shared by every request made
+   * meanwhile. Resolves when the scan that read the config at request time finishes. Without
    * config it reads the config path again first, and scans only if the file is there.
    */
   request(): Promise<void>;
@@ -35,6 +37,7 @@ export interface ScanScheduler {
 
 export function createScanScheduler(deps: ScanSchedulerDeps): ScanScheduler {
   let running: Promise<void> | null = null;
+  let followOn: Promise<void> | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let lastFinishedAt: number | null = null;
   let stopped = false;
@@ -67,7 +70,13 @@ export function createScanScheduler(deps: ScanSchedulerDeps): ScanScheduler {
   }
 
   async function request(): Promise<void> {
-    if (running !== null) return running;
+    if (running !== null) {
+      followOn ??= running.then(() => {
+        followOn = null;
+        return stopped ? undefined : request();
+      });
+      return followOn;
+    }
     if (deps.hasConfig()) return scanNow();
     await deps.recheck();
     if (!deps.hasConfig()) return;

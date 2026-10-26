@@ -49,21 +49,19 @@ describe("the ledger", () => {
     );
 
     expect(gramophone[0]).toEqual(["uncommitted changes", "14", "red"]);
-    expect(prism).toContainEqual([
-      "CI on Forgejo",
-      "failure on main",
-      "red",
-    ]);
+    expect(prism).toContainEqual(["CI", "failure", "red"]);
   });
 
   it("links a state to its page and gives times as durations to the moment passed", () => {
     const entries: LedgerEntry[] = [
       {
         kind: "state",
-        label: "CI on GitHub",
+        label: "CI",
         text: "success on main",
         tone: "green",
         url: "https://example.test/run",
+        chip: null,
+        workings: [],
       },
       { kind: "time", label: "last commit", at: "2026-10-21T03:00:00.000Z" },
     ];

@@ -3,14 +3,13 @@ import { Chip } from "@perch/ui/chip.tsx";
 import { mockBirds } from "../specimens.ts";
 import { Code, Section, Specimen, Usage } from "../usage.tsx";
 
-/** Every distinct chip the mock carries, plus the CI states it lacks. */
+/** Every distinct chip the mock carries, plus the CI state it lacks. */
 const chips: ChipModel[] = [
   ...new Map(
     mockBirds
       .flatMap((bird) => bird.bubble.chips)
       .map((chip) => [`${chip.label}|${chip.severity}`, chip]),
   ).values(),
-  { kind: "ci", label: "ci pending", count: null, severity: null },
   { kind: "ci", label: "ci neutral", count: null, severity: null },
 ];
 
@@ -93,8 +92,8 @@ export function ChipPage() {
         <p>
           The label already holds the number in words the view model chose (
           <Code>3 unpushed</Code>, <Code>1 open PR</Code>). The chip only picks
-          the paper tone from the severity. The CI pending and neutral chips are
-          hand-built: the mock&apos;s CI runs all succeed or fail.
+          the paper tone from the severity. The CI neutral chip is hand-built:
+          the mock&apos;s CI runs succeed, fail or wait.
         </p>
       </Usage>
     </>

@@ -3,7 +3,7 @@ import { Ledger } from "@perch/ui/ledger.tsx";
 import { mockBird, scanMoment } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 
-/** States the mock lacks: a pending CI run with no tone and a link, and an old Claude session. */
+/** A state the mock lacks: a Claude session three weeks old. */
 const handBuilt: LedgerEntry[] = [
   {
     kind: "count",
@@ -11,13 +11,8 @@ const handBuilt: LedgerEntry[] = [
     count: 0,
     text: "none",
     tone: "green",
-  },
-  {
-    kind: "state",
-    label: "CI on GitHub",
-    text: "pending on main",
-    tone: null,
-    url: "https://github.com/finch/perch/actions",
+    chip: null,
+    workings: [],
   },
   {
     kind: "time",
@@ -30,7 +25,7 @@ const specimens: { id: string; label: string; rule: string }[] = [
   {
     id: "dev/perch",
     label: "Clean zeros, an unjudged count",
-    rule: "Perch: nothing unpushed and no bugs read a quiet green none; three uncommitted changes younger than a day take no tone. CI success is green.",
+    rule: "Perch: nothing unpushed and no bugs read a quiet green none; three uncommitted changes younger than a day take no tone. CI reads pending, the worse of GitHub's success and Forgejo's pending, and takes no tone.",
   },
   {
     id: "undev/prism",
@@ -45,7 +40,7 @@ const specimens: { id: string; label: string; rule: string }[] = [
   {
     id: "undev/oxbow",
     label: "Two forges, no CI",
-    rule: "Oxbow: on GitHub and Forgejo, each with its own pull request row; neither runs CI, so there is no CI row.",
+    rule: "Oxbow: on GitHub and Forgejo, one pull request row for both; neither runs CI, so there is no CI row.",
   },
   {
     id: "dev/odin/hello",
@@ -82,8 +77,8 @@ export function LedgerPage() {
           </Specimen>
         ))}
         <Specimen
-          label="A pending state, linked; an older time"
-          rule="Hand-built: CI pending takes no tone; a session three weeks back reads in weeks."
+          label="An older time"
+          rule="Hand-built: a session three weeks back reads in weeks."
         >
           <Ground>
             <Ledger entries={handBuilt} now={scanMoment} />

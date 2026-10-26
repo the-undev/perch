@@ -696,3 +696,14 @@ build-time calls so they can be revisited.
   so a save's `await` ends after a scan that read its config. A focus during
   a scan still joins it: a focus carries no config change. `stop` cancels a
   queued follow-on.
+
+## 26 October 2026 (problems on the detail page)
+
+- The detail page shows the main process's problems as a strip under the
+  intro, in the amber of the sky's notices. A launch that fails from the
+  page now says so.
+- While the adoption papers are open the strip stands down. The papers
+  already print the same lines in red beside the signature, where a refused
+  write is read, and two copies at equal weight would shout. Closing the
+  papers brings the strip back. The open state moved from the papers' verb
+  to `DetailView` so the strip can see it.

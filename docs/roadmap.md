@@ -75,13 +75,6 @@ not one named after the project.
 no TUI action yet; it needs a config marker for which items are TUIs and the
 window raising above.
 
-## Main-process problems on the detail page
-
-A failed launch, or a config entry write that failed, shows in the sky's
-notices until the next scan, which the detail page hides. The detail has
-no place for them yet, so an adoption that wrote nothing looks like a
-press that did nothing.
-
 ## Claude Code integration
 
 Six routes were identified, in rising cost, and all are parked until the base

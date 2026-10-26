@@ -850,3 +850,37 @@ build-time calls so they can be revisited.
   `behavior: "instant"` and the ground no longer opts into smooth
   scrolling. The mark played on a row still gliding across the screen
   and flickered, so the jump comes first and the mark plays in place.
+
+## 26 October 2026 (the commit river)
+
+- The round's third phase. The scanner held no list for local main, only
+  each forge's, so the git collector now reads `git log` on the branch
+  `chooseDefaultBranch` picks, capped at `scan.finalised_commits` like
+  the forges. When that branch is not a local one the raw value is
+  absent, `no-default-branch`, and the snapshot holds null.
+- `GitData.defaultBranchCommits` is optional: a snapshot cached before
+  the change lacks it, and the river tells here as unknown, "not read
+  yet", until the next scan. The cache is read as before; nothing
+  migrates it.
+- The forges' places follow a fixed order, GitHub then Forgejo, so the
+  marks read the same way on every page. Here comes first.
+- Unknown has no form in the round's page. It is drawn as the quietest
+  mark: a 3px dot in the hollow ring's edge colour, centred where the
+  9px mark would sit. A place not read says why in amber beside its
+  name in the legend, the ledger's "not read" tone.
+- The divergence sentence keeps the round's "behind" for one forge
+  lacking, and says "have diverged" with a count each when both lack.
+  Here lacking a forge's commit earns no sentence: the ledger's unpushed
+  row and the hollow marks carry local work. The counts run over every
+  listed commit, so a cap that hides some does not shrink them.
+- A commit's subject links to the first forge holding it; the short hash
+  is no longer drawn, as the round's page has none. The heading is the
+  round's "Where each commit has reached".
+- The rows share one grid through subgrid, so the age column fits "3
+  weeks ago" and the marks stay aligned.
+- The mock's main lists follow each clone's default branch, which its
+  test checks. Dotfiles gains two invented unpushed commits on main,
+  Harbour's Forgejo misses its last push, and Hothouse's Forgejo holds
+  the commit its clone had already pushed.
+- The design site's Newest commits page is now the Commit river page,
+  slug `river`, with a specimen per state.

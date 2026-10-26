@@ -43,15 +43,6 @@ change the view, the papers taking the page with an animated
 transition, and closing them returning to the detail. Part of a
 detail page design round.
 
-## Commits once, remotes beside them
-
-The detail page lists newest commits per forge, so GitHub and Forgejo
-in sync show the same commits twice and the page grows very tall. The
-scanner holds the commit lists for local main and every remote; the
-page should show each commit once, with where it has reached (local,
-which remotes) beside it, and only diverge into separate lists when
-the remotes genuinely differ. Part of a detail page design round.
-
 ## Moving the camera between birds
 
 Switching from one bird's page to another flashes the whole page in

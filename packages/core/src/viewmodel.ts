@@ -5,6 +5,7 @@
 
 import {
   type Config,
+  collapseHome,
   hostsOf,
   type ItemEntry,
   resolveEntry,
@@ -273,6 +274,10 @@ export interface SourceProblem {
 
 /** Everything about one bird beyond its look and bubble, which the detail page also shows. */
 export interface Detail {
+  /** Where the clone is on disk, home as ~; null for a bird with no clone here. */
+  clonePath: string | null;
+  /** The forges that hold the bird, each once, in the order its presences were found. */
+  forges: ForgeName[];
   ledger: LedgerEntry[];
   branches: BranchLine[];
   newestCommits: ForgeCommits[];
@@ -701,11 +706,12 @@ function speechSubject(
   };
 }
 
-/** One bird, before it is placed: its position is set when the wire is ordered. */
+/** One bird, before it is placed: its position is set when the wire is ordered; paths show home as ~. */
 export function deriveBird(
   item: BirdItem,
   config: Config,
   scannedAt: Date,
+  home: string,
 ): Bird {
   const health = deriveHealth(item);
   const mood = moodOf[health.level];
@@ -742,6 +748,10 @@ export function deriveBird(
       chips: adopted ? chipsFor(item, health) : [],
     },
     detail: {
+      clonePath: item.path === null ? null : collapseHome(item.path, home),
+      forges: [
+        ...new Set(item.presences.forges.map((presence) => presence.forge)),
+      ],
       ledger: ledgerFor(item),
       branches: branchesFor(item, config),
       newestCommits: newestCommitsFor(item),
@@ -779,15 +789,19 @@ function placed(birds: Bird[], compare: (a: Bird, b: Bird) => number): Bird[] {
 }
 
 /**
- * The aviary from a snapshot and the config. Every configured wire appears, empty or not, in
- * config order. The server item waits for server monitoring and is not a bird. The fence is
- * ordered by name: it holds no priority.
+ * The aviary from a snapshot and the config, paths under the home directory shown with ~. Every
+ * configured wire appears, empty or not, in config order. The server item waits for server
+ * monitoring and is not a bird. The fence is ordered by name: it holds no priority.
  */
-export function deriveAviary(snapshot: Snapshot, config: Config): Aviary {
+export function deriveAviary(
+  snapshot: Snapshot,
+  config: Config,
+  home: string,
+): Aviary {
   const scannedAt = new Date(snapshot.scannedAt);
   const birds = snapshot.items
     .filter(isBirdItem)
-    .map((item) => deriveBird(item, config, scannedAt));
+    .map((item) => deriveBird(item, config, scannedAt, home));
   return {
     scannedAt: snapshot.scannedAt,
     wires: config.wires.names.map((name) => ({

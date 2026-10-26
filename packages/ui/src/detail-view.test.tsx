@@ -187,7 +187,10 @@ describe("the detail view", () => {
       ...emptyEntryValues(),
       wire: "Machine & Home",
     });
-    const adopted = findBird(deriveAviary(mockSnapshot, config), hello.id);
+    const adopted = findBird(
+      deriveAviary(mockSnapshot, config, mockHome),
+      hello.id,
+    );
     push(adopted, { form: entryFormFor(config, helloItem, mockHome) });
 
     expect(screen.queryByRole("form")).toBeNull();

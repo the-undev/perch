@@ -341,7 +341,7 @@ describe("the window", () => {
           entryFormFor(config, item(birdId), mockHome),
         save: (birdId: string, values: EntryValues) => {
           config = withEntry(config, item(birdId), values);
-          return idle(deriveAviary(mockSnapshot, config));
+          return idle(deriveAviary(mockSnapshot, config, mockHome));
         },
       };
     }

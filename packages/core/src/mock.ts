@@ -2,7 +2,8 @@
 // site and the app to render every view model state without a scan. The scan is at 09:00 on
 // 22 October 2026, and every age below is measured from it. Between them the birds cover every
 // mood and activity, the fence's three situations, failing CI, an unpushed backlog, a stalled
-// branch and clean zeros, and the source cards every scan state;
+// branch and clean zeros, a bird with no clone here and one on no forge, and the source cards
+// every scan state;
 // tests/mock.test.ts keeps it so. Roadmap files carry
 // their paths only: the counts stand for their items.
 
@@ -23,7 +24,9 @@ import type {
 } from "./snapshot.ts";
 import { type Aviary, deriveAviary } from "./viewmodel.ts";
 
-const home = "/home/owner";
+/** The home directory the mock's paths sit under. */
+export const mockHome = "/home/owner";
+const home = mockHome;
 const forgejoBase = "http://forge.example.lan:3000";
 const scannedAt = "2026-10-22T09:00:00.000Z";
 
@@ -1357,4 +1360,8 @@ export const mockSnapshot: Snapshot = {
 };
 
 /** The view model of the mock pair: every component state the design site renders. */
-export const mockAviary: Aviary = deriveAviary(mockSnapshot, mockConfig);
+export const mockAviary: Aviary = deriveAviary(
+  mockSnapshot,
+  mockConfig,
+  mockHome,
+);

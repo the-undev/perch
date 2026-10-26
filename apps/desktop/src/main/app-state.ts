@@ -120,7 +120,11 @@ export function createAppState(deps: AppStateDeps): AppState {
     const config = deps.config.current().loaded?.config ?? null;
     if (snapshot === null || config === null) return null;
     if (derived?.snapshot !== snapshot || derived.config !== config) {
-      derived = { snapshot, config, aviary: deriveAviary(snapshot, config) };
+      derived = {
+        snapshot,
+        config,
+        aviary: deriveAviary(snapshot, config, deps.home),
+      };
     }
     return derived.aviary;
   }

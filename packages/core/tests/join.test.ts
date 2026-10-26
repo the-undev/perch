@@ -502,7 +502,7 @@ describe("aggregating joined projects", () => {
       forges: { github: [forgeRepo("finch/perch", {})] },
     });
     const birdNamed = (snapshot: Snapshot, id: string) => {
-      const aviary = deriveAviary(snapshot, configured);
+      const aviary = deriveAviary(snapshot, configured, "/home/test");
       return [
         ...aviary.wires.flatMap((wire) => wire.birds),
         ...aviary.fence.birds,
@@ -539,7 +539,7 @@ describe("aggregating joined projects", () => {
 
     const snapshot = aggregated(files, configured);
     const perch = snapshot.items.find((item) => item.id === "dev/perch");
-    const bird = deriveAviary(snapshot, configured)
+    const bird = deriveAviary(snapshot, configured, "/home/test")
       .wires.flatMap((wire) => wire.birds)
       .find((candidate) => candidate.id === "dev/perch");
 

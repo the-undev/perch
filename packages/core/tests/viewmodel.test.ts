@@ -318,12 +318,12 @@ describe("the wires", () => {
 describe("chips", () => {
   it("carry real numbers in order, each with the severity of its fact", async () => {
     const config = await testConfig(
-      '[items."dev/prism"]\nexpect = ["tickets"]\n',
+      '[items."dev/prism"]\nexpect = ["ci"]\n',
     );
     const busy = item("dev/prism", {
       expectations: [
         {
-          name: "tickets",
+          name: "ci",
           met: false,
           unmetSince: hoursBefore(24 * 10),
           days: 10,
@@ -368,7 +368,7 @@ describe("chips", () => {
       ]),
     ).toEqual([
       ["ci failure", null, "red"],
-      ["tickets not set up", null, "amber"],
+      ["ci not set up", null, "amber"],
       ["2 bugs", 2, "red"],
       ["4 uncommitted", 4, "red"],
       ["1 unpushed", 1, null],

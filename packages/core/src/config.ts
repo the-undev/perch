@@ -12,7 +12,7 @@ import type {
 export type { ExpectationName };
 
 /** Every expectation config may assert. */
-export const expectationNames: readonly ExpectationName[] = ["ci", "tickets"];
+export const expectationNames: readonly ExpectationName[] = ["ci"];
 
 /** The three health windows: unsafe work in hours, stalled flight and unmet expectations in days. */
 export interface Thresholds {

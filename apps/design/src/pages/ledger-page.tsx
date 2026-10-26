@@ -50,7 +50,7 @@ const specimens: { id: string; label: string; rule: string }[] = [
   {
     id: "undev/oxbow",
     label: "An expectation, soured",
-    rule: "Oxbow: a ticket source expected for a month, red. Two forges, each with its own rows.",
+    rule: "Oxbow: CI expected for a month and still missing, red. Two forges, each with its own rows.",
   },
   {
     id: "dev/odin/hello",

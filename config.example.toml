@@ -122,7 +122,7 @@ obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
 # [items."projects/example"]
 # wire = "Projects"                  # one of wires.names
 # name = "Example"                   # the bird's name; default the folder or repository name
-# expect = ["ci", "tickets"]         # sources this item should have
+# expect = ["ci"]                   # sources this item should have
 # key_files = ["README.md", "docs/spec.md", "docs/roadmap.md"]  # default the README and roadmaps
 # roadmaps = ["docs/roadmap.md"]     # replaces the standard roadmap names
 # zellij_session = "main"

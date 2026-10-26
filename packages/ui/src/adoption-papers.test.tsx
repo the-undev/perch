@@ -94,14 +94,14 @@ describe("the adoption papers", () => {
       target: { value: "Hello" },
     });
     fireEvent.click(
-      screen.getByRole("checkbox", { name: "tickets · open issues to read" }),
+      screen.getByRole("checkbox", { name: "ci · a pipeline on its forge" }),
     );
     press("Adopt onto Machine & Home");
     expect(onSign).toHaveBeenLastCalledWith({
       ...emptyEntryValues(),
       wire: "Machine & Home",
       name: "Hello",
-      expect: ["tickets"],
+      expect: ["ci"],
     });
 
     fireEvent.click(
@@ -113,7 +113,7 @@ describe("the adoption papers", () => {
     press("Adopt onto Projects");
     expect(onSign).toHaveBeenLastCalledWith({
       ...emptyEntryValues(),
-      expect: ["tickets"],
+      expect: ["ci"],
     });
   });
 

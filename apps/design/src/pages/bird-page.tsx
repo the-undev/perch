@@ -84,7 +84,7 @@ export function BirdPage() {
 
       <Section
         title="Plumpness · outstanding work"
-        rule="More open roadmap items and tickets means a plumper bird, capped at 50 so nobody bursts: up to 65 per cent larger. Volume at a glance; exact numbers live in the bubble."
+        rule="More open roadmap items means a plumper bird, capped at 50 so nobody bursts: up to 65 per cent larger. Volume at a glance; exact numbers live in the bubble."
         min={260}
       >
         {[0, 12, 25, 50].map((outstanding) => (

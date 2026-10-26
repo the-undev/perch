@@ -21,7 +21,7 @@ import {
 } from "./helpers/raw.ts";
 
 const config = await testConfig(
-  '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://forge.example.lan:3001"\nstatus_page = "perch"\n\n[items."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\nexpect = ["ci", "tickets"]\n',
+  '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://forge.example.lan:3001"\nstatus_page = "perch"\n\n[items."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\nexpect = ["ci"]\n',
 );
 
 const files = rawFiles({
@@ -202,7 +202,6 @@ describe("expectations", () => {
         level: "green",
         thresholds: { amberDays: 7, redDays: 30 },
       },
-      expect.objectContaining({ name: "tickets", unmetSince: gatheredAt }),
     ]);
   });
 
@@ -219,7 +218,6 @@ describe("expectations", () => {
       days: 10,
       level: "amber",
     });
-    expect(perch?.expectations[1]?.unmetSince).toBe(gatheredAt);
   });
 
   it("restarts every clock from a previous snapshot that has no expectations", () => {
@@ -233,11 +231,10 @@ describe("expectations", () => {
 
     expect(perch?.expectations.map((entry) => entry.unmetSince)).toEqual([
       gatheredAt,
-      gatheredAt,
     ]);
   });
 
-  it("meets CI from any readable forge with a CI result, and never meets tickets yet", () => {
+  it("meets CI from any readable forge with a CI result", () => {
     const forge = (latestCi: ForgeData["latestCi"]): ForgeData => ({
       fullName: "finch/perch",
       url: "https://github.com/finch/perch",
@@ -261,7 +258,6 @@ describe("expectations", () => {
         forgejo: forge(null),
       }),
     ).toBe(false);
-    expect(expectationMet("tickets", { github: forge(run) })).toBe(false);
   });
 
   it("clears the clock once met", () => {

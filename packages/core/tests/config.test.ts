@@ -138,7 +138,7 @@ describe("example config", () => {
         stalled: { amberDays: 14, redDays: 60 },
         expectation: { amberDays: 3, redDays: 14 },
       },
-      expect: ["ci", "tickets"],
+      expect: ["ci"],
       keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
       zellijSession: "main",
@@ -233,7 +233,7 @@ describe("item overrides", () => {
     );
 
     expect(() => parseConfig(text, home)).toThrow(
-      /expect must be one of ci, tickets/,
+      'config: items."dev/perch".expect must be one of ci',
     );
   });
 
@@ -274,6 +274,16 @@ describe("removed keys", () => {
 
     expect(() => parseConfig(text, home)).toThrow(
       'config: items."dev/perch".importance is not a config key',
+    );
+  });
+
+  it("refuses the tickets expectation", async () => {
+    const text = await fixtureConfigText(
+      '[items."dev/perch"]\nexpect = ["ci", "tickets"]\n',
+    );
+
+    expect(() => parseConfig(text, home)).toThrow(
+      'config: items."dev/perch".expect must be one of ci',
     );
   });
 

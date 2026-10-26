@@ -137,7 +137,7 @@ export const mockConfig: Config = {
     "undev/skiff": entry({ name: "Skiff" }),
     "undev/prism": entry({ name: "Prism" }),
     "undev/Hollow-legacy": entry({ name: "Hollow (legacy)" }),
-    "undev/oxbow": entry({ name: "Oxbow", expect: ["tickets"] }),
+    "undev/oxbow": entry({ name: "Oxbow", expect: ["ci"] }),
     "undev/gramophone": entry({ name: "Gramophone" }),
     "undev/spool": entry({ name: "Spool" }),
     "undev/glyph-docs": entry({ name: "Glyph Docs" }),
@@ -890,7 +890,7 @@ const hollow = localItem("undev/Hollow-legacy", {
   },
 });
 
-/** Distressed: told to have a ticket source a month ago. */
+/** Distressed: told to have CI a month ago, and still has none. */
 const oxbow = localItem("undev/oxbow", {
   forges: [
     presence("github", "the-undev/oxbow"),
@@ -898,7 +898,7 @@ const oxbow = localItem("undev/oxbow", {
   ],
   expectations: [
     {
-      name: "tickets",
+      name: "ci",
       met: false,
       unmetSince: "2026-09-21T09:00:00.000Z",
       days: 31,
@@ -923,7 +923,7 @@ const oxbow = localItem("undev/oxbow", {
         branch(
           "main",
           "2026-10-09T21:05:29.000Z",
-          "Merge ci-fix: lint and uid-independent tests in CI",
+          "Show the tide table offline",
         ),
       ],
       remotes: [
@@ -946,13 +946,6 @@ const oxbow = localItem("undev/oxbow", {
       basis: "last-message",
     },
     github: forge("github", "the-undev/oxbow", {
-      latestCi: {
-        name: "ci",
-        state: "success",
-        forgeState: "completed/success",
-        url: "https://github.com/the-undev/oxbow/actions/runs/37991284725",
-        createdAt: "2026-10-09T21:05:33Z",
-      },
       finalisedCommits: [
         {
           sha: "5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e",
@@ -962,13 +955,6 @@ const oxbow = localItem("undev/oxbow", {
       ],
     }),
     forgejo: forge("forgejo", "the-undev/oxbow", {
-      latestCi: {
-        name: "ci / check (push)",
-        state: "success",
-        forgeState: "success",
-        url: `${forgejoBase}/the-undev/oxbow/actions/runs/2/jobs/0`,
-        createdAt: "2026-10-10T23:02:29+01:00",
-      },
       finalisedCommits: [
         {
           sha: "5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e",

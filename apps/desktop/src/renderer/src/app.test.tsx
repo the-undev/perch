@@ -411,7 +411,7 @@ describe("the window", () => {
       fireEvent.click(
         await screen.findByRole("button", { name: "The papers" }),
       );
-      fireEvent.click(screen.getByRole("checkbox", { name: /^tickets/ }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /^ci/ }));
       fireEvent.click(
         screen.getByRole("button", { name: /^More particulars/ }),
       );
@@ -428,7 +428,7 @@ describe("the window", () => {
           birdId: "dev/perch",
           values: expect.objectContaining({
             name: "Perch",
-            expect: ["ci", "tickets"],
+            expect: [],
             thresholds: { stalled_amber_days: 3 },
           }),
         },

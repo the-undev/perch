@@ -18,8 +18,8 @@ export type ActivityState = "settled" | "in-progress" | "editing";
 
 export type HealthLevel = "green" | "amber" | "red";
 
-/** A source the owner can assert an item should have: CI, or a ticket source. */
-export type ExpectationName = "ci" | "tickets";
+/** A source the owner can assert an item should have: CI. */
+export type ExpectationName = "ci";
 
 export interface Remote {
   name: string;

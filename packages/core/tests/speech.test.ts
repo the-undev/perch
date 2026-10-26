@@ -76,7 +76,7 @@ const cause = {
     },
     everythingPushed,
   }),
-  expectation: (name: "ci" | "tickets", days: number): HealthCause => ({
+  expectation: (name: "ci", days: number): HealthCause => ({
     kind: "expectation",
     level: days >= 30 ? "red" : "amber",
     expectation: {
@@ -182,8 +182,8 @@ describe("distressed birds are blunt and lead with the worst", () => {
   });
 
   it("an expectation, soured", () => {
-    expect(speak(subject({ causes: [cause.expectation("tickets", 31)] }))).toBe(
-      "You said I should have a ticket source. That was a month ago.",
+    expect(speak(subject({ causes: [cause.expectation("ci", 31)] }))).toBe(
+      "You said I should have CI. That was a month ago.",
     );
   });
 
@@ -207,11 +207,11 @@ describe("distressed birds are blunt and lead with the worst", () => {
     expect(
       speak(
         subject({
-          causes: [cause.expectation("tickets", 40), cause.stalled(31, true)],
+          causes: [cause.expectation("ci", 40), cause.stalled(31, true)],
         }),
       ),
     ).toBe(
-      "You said I should have a ticket source. That was a month ago. I've also been parked on extension-popup-ia for a month.",
+      "You said I should have CI. That was a month ago. I've also been parked on extension-popup-ia for a month.",
     );
   });
 
@@ -267,7 +267,7 @@ describe("the voice", () => {
       cause.uncommitted(30, 200, "red"),
       cause.unpushed(21, 20, "amber"),
       cause.stalled(100, true),
-      cause.expectation("tickets", 7),
+      cause.expectation("ci", 7),
     ];
     const speeches = all.flatMap((first) =>
       all.map((second) =>

@@ -40,7 +40,6 @@ const keyClass =
 /** What each expectation asks of the item, beside its name. */
 const expectationWhy: Record<ExpectationName, string> = {
   ci: "a pipeline on its forge",
-  tickets: "open issues to read",
 };
 
 /** The bird as it stands, facing left as on the board, small in the papers' corner. */

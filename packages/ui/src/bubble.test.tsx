@@ -33,6 +33,17 @@ describe("the bubble", () => {
     expect(screen.getByText(prism.bubble.speech)).toBeDefined();
   });
 
+  it("hangs the tail from the bubble's bottom edge, its tip 26px below it", () => {
+    const { container } = speak(mockBird("undev/prism"));
+    const tail = container.querySelector(
+      '[data-part="tail-hanging"]',
+    ) as unknown as SVGElement;
+
+    expect(tail.style.top).toBe("calc(100% - 3px)");
+    expect(tail.style.left).toBe("38px");
+    expect(tail.getAttribute("height")).toBe("30");
+  });
+
   it("carries every chip with its severity", () => {
     const { container } = speak(mockBird("undev/prism"));
     const chips = [...container.querySelectorAll("[data-kind]")].map((chip) => [

@@ -2,7 +2,12 @@
 // design site.
 
 import { type EntryForm, entryFormFor } from "@perch/core/entry-form.ts";
-import { mockAviary, mockConfig, mockSnapshot } from "@perch/core/mock.ts";
+import {
+  mockAviary,
+  mockConfig,
+  mockHome,
+  mockSnapshot,
+} from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   settingsFormFor,
@@ -30,8 +35,7 @@ export function mockEntryForm(id: string): EntryForm {
   return entryFormFor(mockConfig, item, mockHome);
 }
 
-/** The home directory the mock's paths sit under. */
-export const mockHome = "/home/owner";
+export { mockHome };
 
 /** The settings form for the mock config. */
 export function mockSettingsForm(): SettingsForm {

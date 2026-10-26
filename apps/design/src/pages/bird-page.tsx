@@ -278,8 +278,8 @@ export function BirdPage() {
         ]}
       >
         <p>
-          The birds come from <Code>deriveAviary(snapshot, config)</Code> in{" "}
-          <Code>@perch/core/viewmodel.ts</Code>: each wire&apos;s{" "}
+          The birds come from <Code>deriveAviary(snapshot, config, home)</Code>{" "}
+          in <Code>@perch/core/viewmodel.ts</Code>: each wire&apos;s{" "}
           <Code>birds</Code> and the fence&apos;s. <Code>Bird</Code> is an SVG
           group drawn into a <Code>Scene</Code> (usually through{" "}
           <Code>Wire</Code> or <Code>Fence</Code>); <Code>BirdPortrait</Code> is

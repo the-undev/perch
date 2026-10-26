@@ -13,11 +13,14 @@ import {
   snapshotOf,
 } from "./helpers/snapshot.ts";
 
+/** The home directory the test items' clones sit under. */
+const home = "/home/test";
+
 const adoptAll = (ids: string[], extra = "") =>
   testConfig(`${ids.map((id) => `[items."${id}"]\n`).join("\n")}\n${extra}`);
 
 function birdIn(items: Item[], config: Config, id: string): Bird {
-  const aviary = deriveAviary(snapshotOf(items), config);
+  const aviary = deriveAviary(snapshotOf(items), config, home);
   const bird = [
     ...aviary.wires.flatMap((wire) => wire.birds),
     ...aviary.fence.birds,
@@ -192,7 +195,7 @@ describe("the wires", () => {
       item("dev/alpha", { sources: { git: gitData({}) } }),
       item("dev/zeta", { sources: { git: gitData({}) } }),
     ];
-    const aviary = deriveAviary(snapshotOf(items), config);
+    const aviary = deriveAviary(snapshotOf(items), config, home);
 
     expect(aviary.wires.map((wire) => wire.name)).toEqual([
       "Machine & Home",
@@ -214,7 +217,7 @@ describe("the wires", () => {
     const config = await testConfig(
       '[items."dev/spool"]\nwire = "Machine & Home"\n',
     );
-    const aviary = deriveAviary(snapshotOf([settled]), config);
+    const aviary = deriveAviary(snapshotOf([settled]), config, home);
 
     expect(aviary.wires[0]?.birds.map((bird) => bird.wire)).toEqual([
       "Machine & Home",
@@ -229,7 +232,7 @@ describe("the wires", () => {
       item("dev/hello", { sources: { git: gitData({}) } }),
       item("server", { kind: "server", path: null }),
     ];
-    const aviary = deriveAviary(snapshotOf(items), config);
+    const aviary = deriveAviary(snapshotOf(items), config, home);
 
     expect(
       aviary.fence.birds.map((bird) => [
@@ -285,7 +288,7 @@ describe("the wires", () => {
       lastSucceededAt: hoursBefore(5),
       durationMs: 3,
     };
-    const aviary = deriveAviary(snapshot, config);
+    const aviary = deriveAviary(snapshot, config, home);
 
     expect(aviary.scannedAt).toBe(scannedAt);
     expect(aviary.warnings).toEqual(["include not found: /home/test/gone"]);
@@ -681,6 +684,64 @@ describe("the detail", () => {
         (action) => action.kind,
       ),
     ).toEqual(["vscode", "folder"]);
+  });
+
+  it("says where the bird lives: its clone with home as ~, and each forge once", async () => {
+    const presence = (forge: "github" | "forgejo", fullName: string) => ({
+      forge,
+      ref: `${forge}:${fullName}`,
+      fullName,
+      url: `https://${forge}.example/${fullName}`,
+      foundBy: "local-remote" as const,
+    });
+    const cloned = item("dev/perch", {
+      presences: {
+        local: { ref: "local:dev/perch", path: "/home/test/dev/perch" },
+        forges: [
+          presence("forgejo", "finch/perch"),
+          presence("github", "finch/perch"),
+          presence("forgejo", "the-undev/perch"),
+        ],
+      },
+    });
+    const forgeOnly = item("github:finch/obsidian-tidy", {
+      path: null,
+      presences: {
+        local: null,
+        forges: [presence("github", "finch/obsidian-tidy")],
+      },
+    });
+    const oneDisk = item("dev/odin/hello");
+    const outside = item("scratch", {
+      path: "/srv/scratch",
+      presences: {
+        local: { ref: "local:/srv/scratch", path: "/srv/scratch" },
+        forges: [],
+      },
+    });
+    const items = [cloned, forgeOnly, oneDisk, outside];
+    const config = await adoptAll(items.map((entry) => entry.id));
+    const whereabouts = (id: string) => {
+      const { clonePath, forges } = birdIn(items, config, id).detail;
+      return { clonePath, forges };
+    };
+
+    expect(whereabouts(cloned.id)).toEqual({
+      clonePath: "~/dev/perch",
+      forges: ["forgejo", "github"],
+    });
+    expect(whereabouts(forgeOnly.id)).toEqual({
+      clonePath: null,
+      forges: ["github"],
+    });
+    expect(whereabouts(oneDisk.id)).toEqual({
+      clonePath: "~/dev/odin/hello",
+      forges: [],
+    });
+    expect(whereabouts(outside.id)).toEqual({
+      clonePath: "/srv/scratch",
+      forges: [],
+    });
   });
 
   it("offers no launch actions and no key files without a local clone", async () => {

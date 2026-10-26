@@ -2,7 +2,7 @@ import { mockSnapshot } from "@perch/core/mock.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LaunchActions, LinksOut } from "./actions.tsx";
-import { DetailIntro } from "./detail-intro.tsx";
+import { DetailHeading } from "./detail-heading.tsx";
 import { PullRequestLines, SourceProblems } from "./ledger.tsx";
 import { mockBird } from "./mock-birds.ts";
 
@@ -41,14 +41,31 @@ describe("the detail page's pieces", () => {
     ]);
   });
 
-  it("heads the page with the name, mood word, activity and the speech", () => {
+  it("heads the page with the name, the state word and the activity, and no speech", () => {
     const perch = mockBird("dev/perch");
-    const { container } = render(<DetailIntro bird={perch} night={false} />);
+    const { container } = render(<DetailHeading bird={perch} />);
 
     expect(screen.getByRole("heading").textContent).toBe("Perch");
-    expect(container.textContent).toContain("content");
+    expect(
+      container.querySelector('[data-part="state-word"]')?.textContent,
+    ).toBe("content");
     expect(container.textContent).toContain("editing ♪");
-    expect(container.textContent).toContain(perch.bubble.speech);
+    expect(container.textContent).not.toContain(perch.bubble.speech);
+  });
+
+  it("says in the meta line where the bird lives: clone, forges and wire", () => {
+    const meta = (id: string) => {
+      const { container } = render(<DetailHeading bird={mockBird(id)} />);
+      const text = container.querySelector('[data-part="meta"]')?.textContent;
+      cleanup();
+      return text;
+    };
+
+    expect(meta("dev/perch")).toBe(
+      `~/dev/perch · github, forgejo · on ${mockBird("dev/perch").wire}`,
+    );
+    expect(meta("github:finch/obsidian-tidy")).toBe("github · on the fence");
+    expect(meta("dev/odin/hello")).toBe("~/dev/odin/hello · on the fence");
   });
 
   it("lists pull requests with their forge, author and draft state", () => {

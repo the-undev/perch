@@ -102,7 +102,7 @@ export function AviaryScenePage() {
           {
             name: "aviary",
             type: "Aviary",
-            what: "deriveAviary(snapshot, config): the wires top to bottom, the fence, failing sources and warnings.",
+            what: "deriveAviary(snapshot, config, home): the wires top to bottom, the fence, failing sources and warnings.",
           },
           {
             name: "now",

@@ -2,7 +2,7 @@
 // the navigation and the route pick it up.
 
 import type { ComponentType } from "react";
-import { ActionsPage, IntroPage, LinksPage } from "./pages/actions-pages.tsx";
+import { ActionsPage, HeadingPage, LinksPage } from "./pages/actions-pages.tsx";
 import { AdoptionPapersPage } from "./pages/adoption-papers-page.tsx";
 import { AviaryScenePage } from "./pages/aviary-scene-page.tsx";
 import { BirdPage } from "./pages/bird-page.tsx";
@@ -14,6 +14,7 @@ import { CrowdedPage } from "./pages/crowded-page.tsx";
 import { DetailScenePage } from "./pages/detail-scene-page.tsx";
 import { LedgerPage } from "./pages/ledger-page.tsx";
 import { PaperPage } from "./pages/paper-page.tsx";
+import { RoostPage } from "./pages/roost-page.tsx";
 import {
   BranchesPage,
   CommitsPage,
@@ -133,11 +134,20 @@ export const pages: DesignPage[] = [
     component: ChipPage,
   },
   {
-    slug: "detail-intro",
+    slug: "roost",
+    group: "components",
+    title: "Roost",
+    summary:
+      "The bird on its own page: a T-stand perch, facing left, idle, its bubble above without the header.",
+    component: RoostPage,
+  },
+  {
+    slug: "detail-heading",
     group: "components",
     title: "Detail heading",
-    summary: "The top of a bird's page: name, mood word, activity and speech.",
-    component: IntroPage,
+    summary:
+      "The top of a bird's page: name, state word and activity, and the meta line saying where it lives.",
+    component: HeadingPage,
   },
   {
     slug: "ledger",
@@ -241,7 +251,7 @@ export const pages: DesignPage[] = [
     group: "scenes",
     title: "The detail page",
     summary:
-      "Tier C for five contrasting birds: ledger, sections, actions, links and paper.",
+      "Tier C for five contrasting birds: the roost, the heading and its meta line, ledger, sections, actions, links and paper.",
     component: DetailScenePage,
   },
   {

@@ -45,11 +45,7 @@ while GitHub was green. Everything the bubble says should appear on
 the detail page with its sources spelled out: the CI line naming each
 forge's newest run, its state and its link, and the same for any chip
 that summarises more than one fact. Tooltips on the chips could carry
-the short form of the same detail. The disconnect is wider than the
-chips: the bubble's speech and state word set an expectation the page
-does not visibly answer, so arriving from the bubble means losing the
-facts that prompted the visit. The detail should carry the bubble's
-content on, recognisably, not restate it differently.
+the short form of the same detail.
 
 ## The papers as a view of their own
 
@@ -58,15 +54,6 @@ which reads as clutter rather than a place. Opening the papers should
 change the view, the papers taking the page with an animated
 transition, and closing them returning to the detail. Part of a
 detail page design round.
-
-## The bird on its own page
-
-The detail page never shows the bird itself; it stays on the wire
-behind the camera. Bringing the bird into the detail and adoption
-views, off the wire, would tie the page to the creature it is about.
-Needs design thought: where it perches, its size, and what of its
-state (mood, plumpness, song) it shows there. Part of a detail page
-design round.
 
 ## Commits once, remotes beside them
 
@@ -77,19 +64,20 @@ page should show each commit once, with where it has reached (local,
 which remotes) beside it, and only diverge into separate lists when
 the remotes genuinely differ. Part of a detail page design round.
 
-## The detail page's empty top right
-
-The page's content hugs the left column and leaves a large gap top
-right. Room to bring something in: candidates include the bird
-itself, the meta line, or the bubble's facts carried over. Part of a
-detail page design round.
-
 ## Moving the camera between birds
 
 Switching from one bird's page to another flashes the whole page in
 an unpleasant way (the swap animation remounts everything at once). A
 transition that reads as the camera moving, not the page being
 replaced, would suit the scene. Part of a detail page design round.
+
+## Elements scroll, not the page
+
+The key-file paper scrolls inside a page that also scrolls, so a long
+README gives nested scrollbars and the wheel moves whichever one is
+under the pointer. Investigate a page of fixed height where the window
+never scrolls and each element scrolls its own content, the ledger and
+the papers each in their own pane. Raised at the bird's page round.
 
 ## A hand edit and the scan
 
@@ -287,13 +275,6 @@ What `design/perch.html` draws that the composed views do not yet:
 - Names in the scene scale with it, as on the board: a bird's name is
   about 9.5px in a 1400px window. Whether they keep a minimum size is
   undecided.
-
-## Detail page meta line
-
-The board's detail heading says where a bird lives: its path, its
-forges, its wire. The view model carries the wire and the forge links
-but not the path outside the launch actions; the line waits on a
-`Detail` field for it.
 
 ## Ledger summary line
 

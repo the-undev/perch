@@ -2,10 +2,7 @@
 
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { BirdPortrait, portraitFrame } from "@perch/ui/bird.tsx";
-import { Bubble } from "@perch/ui/bubble.tsx";
-
-/** How far below the bubble's bottom edge the tail's tip hangs. */
-const tailDrop = 26;
+import { Bubble, tailDrop } from "@perch/ui/bubble.tsx";
 
 export interface SpeakingBirdProps {
   bird: Bird;

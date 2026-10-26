@@ -2,7 +2,7 @@
 
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import { LaunchActions, LinksOut } from "@perch/ui/actions.tsx";
-import { DetailIntro } from "@perch/ui/detail-intro.tsx";
+import { DetailHeading } from "@perch/ui/detail-heading.tsx";
 import { useState } from "react";
 import { mockBird } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
@@ -120,20 +120,20 @@ export function LinksPage() {
   );
 }
 
-export function IntroPage() {
+export function HeadingPage() {
   return (
     <>
       <Section
         title="The heading of the detail page"
-        rule="The detail is a strict superset of tiers A and B: the bird's mood and speech continue onto the page. The name large, the mood word in its colour, what the bird is doing, and the speech in full."
-        min={620}
+        rule="The one place on the page that carries the bird's name and state word: the roost's bubble beside it drops its header, so neither is said twice. The name large, the state word in the mood's colour, what the bird is doing, and beneath them a meta line in mono saying where the bird lives: its clone with home as ~, the forges that hold it, and its wire."
+        min={480}
       >
         <Specimen
-          label="content, editing"
-          rule="Perch: the song becomes the words editing ♪."
+          label="content, editing, two forges"
+          rule="Perch: the song becomes the words editing ♪; cloned here and held on GitHub and Forgejo."
         >
           <Ground>
-            <DetailIntro bird={mockBird("dev/perch")} night={false} />
+            <DetailHeading bird={mockBird("dev/perch")} />
           </Ground>
         </Specimen>
         <Specimen
@@ -141,45 +141,42 @@ export function IntroPage() {
           rule="Skiff: in flight on a branch; settled says nothing."
         >
           <Ground>
-            <DetailIntro bird={mockBird("undev/skiff")} night={false} />
+            <DetailHeading bird={mockBird("undev/skiff")} />
+          </Ground>
+        </Specimen>
+        <Specimen label="distressed" rule="Prism: the red state word.">
+          <Ground>
+            <DetailHeading bird={mockBird("undev/prism")} />
           </Ground>
         </Specimen>
         <Specimen
-          label="distressed"
-          rule="Prism: the worst cause speaks first."
+          label="on the fence, no forge"
+          rule="hello: the fence's word, quiet; one disk only, so the meta line names no forge."
         >
           <Ground>
-            <DetailIntro bird={mockBird("undev/prism")} night={false} />
-          </Ground>
-        </Specimen>
-        <Specimen label="not adopted" rule="hello: the fence's word, quiet.">
-          <Ground>
-            <DetailIntro bird={mockBird("dev/odin/hello")} night={false} />
+            <DetailHeading bird={mockBird("dev/odin/hello")} />
           </Ground>
         </Specimen>
         <Specimen
-          label="woken at night"
-          rule="Spool: opening a sleeping bird wakes it."
+          label="on the fence, no clone"
+          rule="obsidian-tidy: on a forge, never cloned here, so the meta line starts with the forge and the heading has no activity."
         >
           <Ground>
-            <DetailIntro bird={mockBird("undev/spool")} night={true} />
+            <DetailHeading bird={mockBird("github:finch/obsidian-tidy")} />
           </Ground>
         </Specimen>
       </Section>
       <Usage
-        component="<DetailIntro>"
+        component="<DetailHeading>"
         props={[
           { name: "bird", type: "Bird", what: "The bird whose page this is." },
-          {
-            name: "night",
-            type: "boolean",
-            what: "At night a bird that sleeps speaks its woken speech.",
-          },
         ]}
       >
         <p>
-          Where the bird lives (its path, forges and wire) is not in the view
-          model yet; the page&apos;s meta line waits on it, see the roadmap.
+          The meta line is <Code>whereabouts(bird)</Code>: the view model&apos;s{" "}
+          <Code>detail.clonePath</Code> and <Code>detail.forges</Code>, then{" "}
+          <Code>bird.wire</Code> as &quot;on Projects&quot; or &quot;on the
+          fence&quot;. The speech is the roost&apos;s, on the Roost page.
         </p>
       </Usage>
     </>

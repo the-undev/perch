@@ -6,7 +6,7 @@ import {
   deriveDrift,
   deriveStall,
 } from "../src/derivations.ts";
-import { mockAviary, mockConfig, mockSnapshot } from "../src/mock.ts";
+import { mockAviary, mockConfig, mockHome, mockSnapshot } from "../src/mock.ts";
 import type { GitData } from "../src/snapshot.ts";
 import { speak } from "../src/speech.ts";
 import { deriveAviary, speechSubjectFor } from "../src/viewmodel.ts";
@@ -20,7 +20,9 @@ const adopted = birds.filter((bird) => bird.adopted);
 
 describe("the mock dataset", () => {
   it("derives the exported aviary", () => {
-    expect(deriveAviary(mockSnapshot, mockConfig)).toEqual(mockAviary);
+    expect(deriveAviary(mockSnapshot, mockConfig, mockHome)).toEqual(
+      mockAviary,
+    );
   });
 
   it("gives each bird the speech its own speech subject speaks", () => {
@@ -106,6 +108,27 @@ describe("the mock dataset", () => {
     expect(birds.some((bird) => bird.kind === "vault")).toBe(true);
     expect(mockAviary.sourceErrors).toHaveLength(1);
     expect(mockAviary.warnings).toHaveLength(1);
+  });
+
+  it("holds a bird with a clone and forges, one with no clone, and one with no forge", () => {
+    const whereabouts = birds.map(({ detail }) => ({
+      cloned: detail.clonePath !== null,
+      forged: detail.forges.length > 0,
+    }));
+
+    expect(whereabouts).toEqual(
+      expect.arrayContaining([
+        { cloned: true, forged: true },
+        { cloned: false, forged: true },
+        { cloned: true, forged: false },
+      ]),
+    );
+    expect(
+      birds.every(
+        ({ detail }) =>
+          detail.clonePath === null || detail.clonePath.startsWith("~/"),
+      ),
+    ).toBe(true);
   });
 
   it("has a source card per configured table, covering every scan state", () => {

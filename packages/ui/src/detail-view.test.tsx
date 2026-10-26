@@ -7,7 +7,13 @@ import {
 import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
 import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
 import { deriveAviary } from "@perch/core/viewmodel.ts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DetailView } from "./detail-view.tsx";
 import { mockBird, mockEntryForm, mockHome } from "./mock-birds.ts";
@@ -96,6 +102,88 @@ describe("the detail view", () => {
         entry.kind === "time" ? expect.stringMatching(/ ago$/) : entry.text,
       ]),
     );
+  });
+
+  it("roosts the bird on its page, facing left toward the record and idle", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch);
+    const roost = screen.getByRole("region", { name: "Perch on its perch" });
+
+    expect(roost.getAttribute("data-facing")).toBe("left");
+    expect(
+      roost
+        .querySelector('[data-part="figure"]')
+        ?.parentElement?.getAttribute("transform"),
+    ).toMatch(/^scale\(-/);
+    expect(
+      roost.getElementsByClassName("motion-safe:animate-bird-bob"),
+    ).toHaveLength(1);
+    expect(container.querySelectorAll('[data-part="figure"]')).toHaveLength(1);
+  });
+
+  it("says the name and state word once, in the heading, and the speech once, in the roost's bubble", () => {
+    const prism = mockBird("undev/prism");
+    const { container } = page(prism);
+    const bubble = screen.getByRole("region", { name: "Prism says" });
+
+    expect(screen.getAllByRole("heading", { name: "Prism" })).toHaveLength(
+      1,
+    );
+    expect(
+      [...container.querySelectorAll('[data-part="state-word"]')].map(
+        (word) => word.textContent,
+      ),
+    ).toEqual(["distressed"]);
+    expect(screen.getAllByText(prism.bubble.speech)).toHaveLength(1);
+    expect(bubble.textContent).toContain(prism.bubble.speech);
+    expect(within(bubble).queryByRole("button")).toBeNull();
+    expect(container.querySelector('[data-part="meta"]')?.textContent).toMatch(
+      /^~\/undev\/prism · /,
+    );
+  });
+
+  it("puts the heading and the roost in the top band and the record across the page below", () => {
+    const { container } = page(mockBird("dev/perch"));
+    const roost = screen.getByRole("region", { name: "Perch on its perch" });
+    const heading = container.querySelector('[data-part="heading"]');
+    const record = container.querySelector('[data-part="record"]');
+    if (heading === null) throw new Error("the page has no heading");
+    if (record === null) throw new Error("the page has no record");
+    const following = (from: Element, to: Element) =>
+      from.compareDocumentPosition(to) & Node.DOCUMENT_POSITION_FOLLOWING;
+
+    expect(heading.querySelector("h2")?.textContent).toBe("Perch");
+    expect(following(heading, roost)).toBeTruthy();
+    expect(following(roost, record)).toBeTruthy();
+    expect(roost.parentElement?.className).toContain("mx-auto");
+    expect(roost.parentElement?.className).toContain(
+      "@min-[860px]:col-start-2",
+    );
+    expect(roost.parentElement?.className).toContain(
+      "@min-[860px]:row-start-1",
+    );
+    expect(heading.className).toContain("@min-[860px]:col-start-1");
+    expect(heading.className).toContain("@min-[860px]:row-start-1");
+    expect(record.className).toContain("col-span-full");
+    expect(record.className).toContain("@min-[860px]:row-start-2");
+    expect(record.parentElement?.className).toContain(
+      "@min-[860px]:grid-cols-[minmax(0,1fr)_480px]",
+    );
+    expect(record.parentElement?.className).not.toContain("1240px");
+    expect(roost.parentElement?.className).toContain("w-120");
+    expect(roost.parentElement?.className).not.toContain("1240px");
+  });
+
+  it("keeps the launch actions and links in the heading cell, not the record", () => {
+    const { container } = page(mockBird("dev/perch"));
+    const heading = container.querySelector('[data-part="heading"]');
+    const record = container.querySelector('[data-part="record"]');
+    const open = screen.getByRole("button", { name: /Open the folder/ });
+
+    expect(heading?.contains(open)).toBe(true);
+    expect(record?.contains(open)).toBe(false);
+    expect(heading?.querySelector("a")).not.toBeNull();
+    expect(record?.querySelector("button")).toBeNull();
   });
 
   it("offers the launch actions as verbs, hands back the one pressed, and links out", () => {
@@ -187,7 +275,10 @@ describe("the detail view", () => {
       ...emptyEntryValues(),
       wire: "Machine & Home",
     });
-    const adopted = findBird(deriveAviary(mockSnapshot, config), hello.id);
+    const adopted = findBird(
+      deriveAviary(mockSnapshot, config, mockHome),
+      hello.id,
+    );
     push(adopted, { form: entryFormFor(config, helloItem, mockHome) });
 
     expect(screen.queryByRole("form")).toBeNull();

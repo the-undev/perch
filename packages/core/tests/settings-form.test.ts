@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "smol-toml";
 import { describe, expect, it } from "vitest";
-import { parseConfig } from "../src/config.ts";
+import { type Config, parseConfig } from "../src/config.ts";
 import { defaultConfig } from "../src/config-default.ts";
 import { writeConfig } from "../src/config-write.ts";
 import { mockConfig } from "../src/mock.ts";
@@ -210,24 +210,63 @@ describe("what the settings cannot be", () => {
     ]);
   });
 
-  it("wants wires named, each once, the default among them", () => {
+  it("wants wires named, each name once, the default among them", () => {
     expect(
       settingsProblems(
         changed({
-          wires: { names: ["Projects", " ", "Projects"], default: "Someday" },
+          wires: {
+            rows: [
+              { from: "Projects", name: "Projects" },
+              { from: null, name: " " },
+              { from: null, name: "Projects" },
+            ],
+            defaultRow: 3,
+          },
         }),
       ),
     ).toEqual([
       "Wires: every wire needs a name",
-      "Wires: each wire once",
+      "Wires: two wires are named Projects; each name may appear once",
       "Wires: the default wire must be one of the wires",
     ]);
     expect(
-      settingsProblems(changed({ wires: { names: [], default: "Projects" } })),
+      settingsProblems(changed({ wires: { rows: [], defaultRow: 0 } })),
     ).toEqual([
       "Wires: name at least one wire",
       "Wires: the default wire must be one of the wires",
     ]);
+  });
+
+  it("refuses an empty name, even on a renamed wire", () => {
+    expect(
+      settingsProblems(
+        changed({
+          wires: {
+            rows: [
+              { from: "Machine & Home", name: "" },
+              { from: "Projects", name: "Projects" },
+            ],
+            defaultRow: 1,
+          },
+        }),
+      ),
+    ).toEqual(["Wires: every wire needs a name"]);
+  });
+
+  it("refuses two rows starting as one wire", () => {
+    expect(
+      settingsProblems(
+        changed({
+          wires: {
+            rows: [
+              { from: "Projects", name: "Projects" },
+              { from: "Projects", name: "Work" },
+            ],
+            defaultRow: 1,
+          },
+        }),
+      ),
+    ).toEqual(["Wires: two wires both start as Projects"]);
   });
 
   it("wants whole intervals and counts above zero", () => {
@@ -291,43 +330,238 @@ describe("what the settings cannot be", () => {
   });
 });
 
-describe("removing a wire entries name", () => {
+/** The mock config with Perch's entry naming Projects, so both wires have an entry naming them. */
+const bothNamed: Config = {
+  ...mockConfig,
+  items: Object.fromEntries(
+    Object.entries(mockConfig.items).map(([key, entry]) => [
+      key,
+      key === "dev/perch" ? { ...entry, wire: "Projects" } : entry,
+    ]),
+  ),
+};
+
+/** The values for a config with its wires set to rows and a default. */
+const wiresOf = (
+  config: Config,
+  rows: SettingsValues["wires"]["rows"],
+  defaultRow: number,
+): SettingsValues => ({
+  ...settingsFormFor(config, home).values,
+  wires: { rows, defaultRow },
+});
+
+/** Each entry key and the wire it names, null for the default. */
+const wiresByEntry = (config: Config) =>
+  Object.fromEntries(
+    Object.entries(config.items).map(([key, entry]) => [key, entry.wire]),
+  );
+
+const homeEntries = [".dotfiles", "obsidian/Hothouse", "obsidian/Pocket"];
+
+/** The saved config, read back from the bytes written, so the writer agrees. */
+function saved(config: Config, values: SettingsValues): Config {
+  expect(settingsProblems(values)).toEqual([]);
+  const next = withSettings(config, values, home);
+  expect(parseConfig(writeConfig(next, home), home)).toEqual(next);
+  return next;
+}
+
+describe("renaming, removing and adding wires", () => {
   it("names the entries on each wire", () => {
     const { named } = settingsFormFor(mockConfig, home);
 
-    expect(named).toEqual({
-      wires: {
-        "Machine & Home": [
-          ".dotfiles",
-          "obsidian/Hothouse",
-          "obsidian/Pocket",
-        ],
-      },
+    expect(named).toEqual({ wires: { "Machine & Home": homeEntries } });
+  });
+
+  it("starts each row as the config wire it is", () => {
+    expect(settingsFormFor(mockConfig, home).values.wires).toEqual({
+      rows: [
+        { from: "Machine & Home", name: "Machine & Home" },
+        { from: "Projects", name: "Projects" },
+      ],
+      defaultRow: 1,
     });
   });
 
-  it("warns before saving, then moves those entries to the default wire", () => {
-    const form = settingsFormFor(mockConfig, home);
-    const values: SettingsValues = {
-      ...form.values,
-      wires: { names: ["Projects"], default: "Projects" },
-    };
+  it("carries a renamed wire's entries to the new name and keeps the order", () => {
+    const values = wiresOf(
+      mockConfig,
+      [
+        { from: "Machine & Home", name: "Home" },
+        { from: "Projects", name: "Projects" },
+      ],
+      1,
+    );
 
-    expect(settingsProblems(values)).toEqual([]);
+    expect(
+      wireWarnings(settingsFormFor(mockConfig, home).named.wires, values.wires),
+    ).toEqual([]);
+    const next = saved(mockConfig, values);
+
+    expect(next.wires).toEqual({
+      names: ["Home", "Projects"],
+      default: "Projects",
+    });
+    for (const key of homeEntries) expect(next.items[key]?.wire).toBe("Home");
+    expect(next.items["undev/spool"]?.wire).toBeNull();
+    expect(next.items[".dotfiles"]?.name).toBe("Dotfiles");
+  });
+
+  it("keeps a renamed default the default, its entries following", () => {
+    const next = saved(
+      bothNamed,
+      wiresOf(
+        bothNamed,
+        [
+          { from: "Machine & Home", name: "Machine & Home" },
+          { from: "Projects", name: "Work" },
+        ],
+        1,
+      ),
+    );
+
+    expect(next.wires).toEqual({
+      names: ["Machine & Home", "Work"],
+      default: "Work",
+    });
+    expect(next.items["dev/perch"]?.wire).toBe("Work");
+    expect(next.items["undev/spool"]?.wire).toBeNull();
+  });
+
+  it("swaps two wires' entries when their names are swapped, the default staying with its row", () => {
+    const next = saved(
+      bothNamed,
+      wiresOf(
+        bothNamed,
+        [
+          { from: "Machine & Home", name: "Projects" },
+          { from: "Projects", name: "Machine & Home" },
+        ],
+        1,
+      ),
+    );
+
+    expect(next.wires).toEqual({
+      names: ["Projects", "Machine & Home"],
+      default: "Machine & Home",
+    });
+    for (const key of homeEntries)
+      expect(next.items[key]?.wire).toBe("Projects");
+    expect(next.items["dev/perch"]?.wire).toBe("Machine & Home");
+    expect(next.items["undev/spool"]?.wire).toBeNull();
+  });
+
+  it("moves a removed wire's entries to the default, warning first", () => {
+    const form = settingsFormFor(mockConfig, home);
+    const values = wiresOf(
+      mockConfig,
+      [{ from: "Projects", name: "Projects" }],
+      0,
+    );
+
     expect(wireWarnings(form.named.wires, values.wires)).toEqual([
       ".dotfiles, obsidian/Hothouse and obsidian/Pocket sit on Machine & Home, which is removed: saving moves them to the default wire, Projects.",
     ]);
     expect(wireWarnings(form.named.wires, form.values.wires)).toEqual([]);
+    const next = saved(mockConfig, values);
 
-    const next = withSettings(mockConfig, values, home);
-
-    expect(next.items[".dotfiles"]).toMatchObject({
-      wire: null,
-      name: "Dotfiles",
-    });
+    expect(next.wires.names).toEqual(["Projects"]);
+    for (const key of homeEntries) expect(next.items[key]?.wire).toBeNull();
     expect(next.items["obsidian/Pocket"]?.roadmaps).toEqual(
       mockConfig.items["obsidian/Pocket"]?.roadmaps,
     );
-    expect(parseConfig(writeConfig(next, home), home)).toEqual(next);
+  });
+
+  it("removes a wire no entry names without touching any entry", () => {
+    const values = wiresOf(
+      mockConfig,
+      [
+        { from: "Machine & Home", name: "Machine & Home" },
+        { from: "Projects", name: "Projects" },
+        { from: null, name: "Someday" },
+      ],
+      1,
+    );
+    const withSomeday = saved(mockConfig, values);
+    const form = settingsFormFor(withSomeday, home);
+    const removed = {
+      ...form.values,
+      wires: { ...form.values.wires, rows: form.values.wires.rows.slice(0, 2) },
+    };
+
+    expect(wireWarnings(form.named.wires, removed.wires)).toEqual([]);
+    expect(saved(withSomeday, removed)).toEqual(mockConfig);
+  });
+
+  it("adds a wire, which may be the default, its entries unmoved", () => {
+    const next = saved(
+      mockConfig,
+      wiresOf(
+        mockConfig,
+        [
+          { from: "Machine & Home", name: "Machine & Home" },
+          { from: null, name: "Someday" },
+          { from: "Projects", name: "Projects" },
+        ],
+        1,
+      ),
+    );
+
+    expect(next.wires).toEqual({
+      names: ["Machine & Home", "Someday", "Projects"],
+      default: "Someday",
+    });
+    expect(wiresByEntry(next)).toEqual(wiresByEntry(mockConfig));
+  });
+
+  it("reorders wires, every entry staying on its wire", () => {
+    const next = saved(
+      bothNamed,
+      wiresOf(
+        bothNamed,
+        [
+          { from: "Projects", name: "Projects" },
+          { from: "Machine & Home", name: "Machine & Home" },
+        ],
+        0,
+      ),
+    );
+
+    expect(next.wires.names).toEqual(["Projects", "Machine & Home"]);
+    expect(wiresByEntry(next)).toEqual(wiresByEntry(bothNamed));
+  });
+
+  it("treats a row whose wire the config no longer holds as one added", () => {
+    const values = wiresOf(
+      mockConfig,
+      [
+        { from: "Machine & Home", name: "Machine & Home" },
+        { from: "Projects", name: "Projects" },
+        { from: "Someday", name: "Later" },
+      ],
+      1,
+    );
+
+    const next = saved(mockConfig, values);
+
+    expect(next.wires.names).toEqual(["Machine & Home", "Projects", "Later"]);
+    expect(wiresByEntry(next)).toEqual(wiresByEntry(mockConfig));
+  });
+
+  it("leaves an added row named as a removed wire an add: the removed wire's entries still move", () => {
+    const next = saved(
+      mockConfig,
+      wiresOf(
+        mockConfig,
+        [
+          { from: null, name: "Machine & Home" },
+          { from: "Projects", name: "Projects" },
+        ],
+        1,
+      ),
+    );
+
+    for (const key of homeEntries) expect(next.items[key]?.wire).toBeNull();
   });
 });

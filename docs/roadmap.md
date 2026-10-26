@@ -3,14 +3,6 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
-## Renaming a wire
-
-The settings page treats a wire edited in place as one removed and one
-added: entries naming the old name move to the default wire when saved,
-and the form says so first. A rename would carry those entries
-to the new name. It needs the form to know which old name each new one
-replaces, which a list of text fields does not say.
-
 ## Reintroducing importance
 
 Config held an importance tier per item: an `[importance]` table of

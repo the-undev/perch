@@ -210,7 +210,6 @@ function PathList({
         noun={noun}
         placeholder="relative/path.md"
         values={value ?? []}
-        ordered={false}
         onChange={onChange}
       />
       {value !== null && (

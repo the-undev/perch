@@ -117,7 +117,7 @@ export function SettingsGroupsPage() {
     <>
       <Section
         title="Wires"
-        rule="Ordered names, moved up and down, and the default picked from them. Removing a wire that item entries name is allowed: the form names the entries, and saving moves them to the default."
+        rule="Ordered rows, each edited in place and moved up and down, and the default picked from them. A row keeps the wire it started as, so a rename carries that wire's entries to the new name, and the default stays on its row. Removing a wire that item entries name is allowed: the form names the entries, and saving moves them to the default. The default itself cannot be removed."
         min={560}
       >
         <GroupSpecimen
@@ -127,18 +127,42 @@ export function SettingsGroupsPage() {
           group={wires}
         />
         <GroupSpecimen
-          label="A wire removed that entries name"
-          rule="Three entries sit on Machine & Home: the warning says they move to Projects. It is not a problem; Save stays on."
+          label="A wire renamed"
+          rule="Machine & Home is now Home: the row says what it was, and saving moves its three entries to Home. Nothing warns."
           start={withMock({
-            wires: { names: ["Projects"], default: "Projects" },
+            wires: {
+              rows: [
+                { from: "Machine & Home", name: "Home" },
+                { from: "Projects", name: "Projects" },
+              ],
+              defaultRow: 1,
+            },
           })}
           group={wires}
         />
         <GroupSpecimen
-          label="A blank name and a default not among them"
-          rule="Every wire needs a name, and the default must be one of them."
+          label="A wire removed that entries name"
+          rule="Three entries sit on Machine & Home: the warning says they move to Projects. It is not a problem; Save stays on."
           start={withMock({
-            wires: { names: ["Machine & Home", " "], default: "Someday" },
+            wires: {
+              rows: [{ from: "Projects", name: "Projects" }],
+              defaultRow: 0,
+            },
+          })}
+          group={wires}
+        />
+        <GroupSpecimen
+          label="A blank name and a repeat"
+          rule="Every wire needs a name, and each name appears once."
+          start={withMock({
+            wires: {
+              rows: [
+                { from: "Machine & Home", name: "Machine & Home" },
+                { from: "Projects", name: " " },
+                { from: null, name: "Machine & Home" },
+              ],
+              defaultRow: 1,
+            },
           })}
           group={wires}
         />

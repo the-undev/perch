@@ -552,7 +552,7 @@ describe("the settings", () => {
 
     await app.saveSettings({
       ...values,
-      wires: { names: ["Projects"], default: "Someday" },
+      wires: { rows: [{ from: "Projects", name: "Projects" }], defaultRow: 1 },
     });
 
     expect(await written()).toBe(before);

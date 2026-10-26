@@ -9,6 +9,7 @@ import {
 } from "@perch/core/config.ts";
 import { thresholdWindows } from "@perch/core/entry-form.ts";
 import {
+  defaultName,
   type SettingsForm,
   type SettingsValues,
   settingsProblems,
@@ -21,6 +22,7 @@ import {
   FormNotes,
   FormRow,
   monoInputClass,
+  moved,
   NumberInput,
   PillChoice,
   panelClass,
@@ -77,88 +79,176 @@ function SettingsGroup({
   );
 }
 
-/**
- * The default kept with its name: when the one entry edited in place was the default, the
- * default follows the new text.
- */
-function followDefault(
-  before: string[],
-  after: string[],
-  current: string,
-): string {
-  if (before.length !== after.length) return current;
-  const index = before.findIndex((name, at) => name !== after[at]);
-  if (index < 0 || before[index] !== current) return current;
-  return after[index] ?? current;
-}
-
-/** An ordered list of names and the default picked from them. */
-function NamesWithDefault({
-  noun,
-  placeholder,
-  value,
-  onChange,
-}: {
-  noun: string;
-  placeholder: string;
-  value: { names: string[]; default: string };
-  onChange: (value: { names: string[]; default: string }) => void;
-}) {
-  const label = `${noun[0]?.toUpperCase()}${noun.slice(1)}s`;
-  return (
-    <>
-      <FormRow label={label} sub="In order, first at the top">
-        <StringList
-          noun={noun}
-          placeholder={placeholder}
-          values={value.names}
-          ordered={true}
-          onChange={(names) =>
-            onChange({
-              names,
-              default: followDefault(value.names, names, value.default),
-            })
-          }
-        />
-      </FormRow>
-      <FormRow label="Default" sub={`The ${noun} an entry naming none takes`}>
-        <PillChoice
-          label={`Default ${noun}`}
-          options={value.names.filter((name) => name.trim() !== "")}
-          value={value.default}
-          onChange={(chosen) => onChange({ ...value, default: chosen })}
-        />
-      </FormRow>
-    </>
-  );
-}
-
 export interface GroupProps<T> {
   value: T;
   onChange: (value: T) => void;
 }
 
-/** The wires top to bottom and the default; removing a wire entries name says what moves. */
+type Wires = SettingsValues["wires"];
+
+/** The wires with the row at the index moved one place, the default kept on its row. */
+function wiresMoved(wires: Wires, index: number, by: -1 | 1): Wires {
+  const other = index + by;
+  const { defaultRow } = wires;
+  return {
+    rows: moved(wires.rows, index, by),
+    defaultRow:
+      defaultRow === index ? other : defaultRow === other ? index : defaultRow,
+  };
+}
+
+/** The wires without the row at the index, which is not the default's. */
+function wiresWithout(wires: Wires, index: number): Wires {
+  return {
+    rows: wires.rows.filter((_, at) => at !== index),
+    defaultRow:
+      wires.defaultRow > index ? wires.defaultRow - 1 : wires.defaultRow,
+  };
+}
+
+/**
+ * The wires as rows edited in place, each keeping the config wire it started as through a rename
+ * and a move, one more added at the end, each name once.
+ */
+function WireRows({
+  value,
+  onChange,
+}: {
+  value: Wires;
+  onChange: (value: Wires) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const { rows } = value;
+  const add = () => {
+    const name = draft.trim();
+    if (name === "") return;
+    if (!rows.some((row) => row.name === name)) {
+      onChange({ ...value, rows: [...rows, { from: null, name }] });
+    }
+    setDraft("");
+  };
+  return (
+    <>
+      {rows.length > 0 && (
+        <ul className="m-0 flex w-full list-none flex-col gap-1 p-0">
+          {rows.map((row, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: rows are edited in place and carry their own from, so the position is the field's identity.
+            <li key={index} className="flex items-center gap-1">
+              <input
+                type="text"
+                aria-label={`wire ${index + 1}`}
+                value={row.name}
+                onChange={(event) => {
+                  const name = event.target.value;
+                  onChange({
+                    ...value,
+                    rows: rows.map((candidate, at) =>
+                      at === index ? { ...candidate, name } : candidate,
+                    ),
+                  });
+                }}
+                className={monoInputClass}
+              />
+              {row.from !== null && row.from !== row.name && (
+                <span className="flex-none whitespace-nowrap px-1 text-[12px] text-ink-faint">
+                  was {row.from}
+                </span>
+              )}
+              <button
+                type="button"
+                aria-label={`Move wire ${row.name} up`}
+                disabled={index === 0}
+                onClick={() => onChange(wiresMoved(value, index, -1))}
+                className={quietClass}
+              >
+                up
+              </button>
+              <button
+                type="button"
+                aria-label={`Move wire ${row.name} down`}
+                disabled={index === rows.length - 1}
+                onClick={() => onChange(wiresMoved(value, index, 1))}
+                className={quietClass}
+              >
+                down
+              </button>
+              <button
+                type="button"
+                aria-label={`Remove wire ${row.name}`}
+                disabled={index === value.defaultRow}
+                onClick={() => onChange(wiresWithout(value, index))}
+                className={quietClass}
+              >
+                remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex w-full max-w-110 items-center gap-1.5">
+        <input
+          type="text"
+          aria-label="Add a wire"
+          placeholder="Someday"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            add();
+          }}
+          className={monoInputClass}
+        />
+        <button
+          type="button"
+          aria-label="Add the wire"
+          onClick={add}
+          disabled={draft.trim() === ""}
+          className={`${secondaryClass} px-2.75 py-1.5`}
+        >
+          Add
+        </button>
+      </div>
+    </>
+  );
+}
+
+/** The wires top to bottom and the default; a renamed wire carries its entries with it. */
 export function WiresGroup({
   value,
   named,
   onChange,
-}: GroupProps<SettingsValues["wires"]> & {
-  /** The entry keys naming each wire. */
+}: GroupProps<Wires> & {
+  /** The entry keys naming each config wire. */
   named: Record<string, string[]>;
 }) {
   return (
     <SettingsGroup
       title="Wires"
       table="[wires]"
-      lead="The owner's priority bands, top to bottom. An adopted bird sits on the wire its entry names, else on the default."
+      lead="The owner's priority bands, top to bottom. An adopted bird sits on the wire its entry names, else on the default. Renaming a wire takes its birds with it."
     >
-      <NamesWithDefault
-        noun="wire"
-        placeholder="Someday"
-        value={value}
-        onChange={onChange}
-      />
+      <FormRow label="Wires" sub="In order, first at the top">
+        <WireRows value={value} onChange={onChange} />
+      </FormRow>
+      <FormRow
+        label="Default"
+        sub="The wire an entry naming none takes; pick another to remove it"
+      >
+        <PillChoice
+          label="Default wire"
+          options={value.rows
+            .map((row) => row.name)
+            .filter((name) => name.trim() !== "")}
+          value={defaultName(value) ?? ""}
+          onChange={(chosen) =>
+            onChange({
+              ...value,
+              defaultRow: value.rows.findIndex((row) => row.name === chosen),
+            })
+          }
+        />
+      </FormRow>
       <FormNotes notes={wireWarnings(named, value)} />
     </SettingsGroup>
   );
@@ -398,7 +488,6 @@ export function PresencesGroup({
           noun="join"
           placeholder='["github:owner/notes", "forgejo:owner/notes"]'
           values={value.joins}
-          ordered={false}
           onChange={(joins) => onChange({ ...value, joins })}
         />
       </FormRow>
@@ -407,7 +496,6 @@ export function PresencesGroup({
           noun="ignored presence"
           placeholder="github:owner/name"
           values={value.ignore}
-          ordered={false}
           onChange={(ignore) => onChange({ ...value, ignore })}
         />
       </FormRow>

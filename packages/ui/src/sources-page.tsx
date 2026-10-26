@@ -173,7 +173,6 @@ function ListField({
           noun={noun}
           placeholder={placeholder}
           values={values}
-          ordered={false}
           onChange={onChange}
         />
       )}

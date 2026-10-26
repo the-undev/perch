@@ -76,13 +76,15 @@ export function AppView({ api }: { api: PerchApi }) {
   const now = useNow(clockTickMs);
   const navigate = useNavigate();
   const birdId = useParams({ strict: false })._splat || null;
-  const papers = useSearch({ strict: false }).papers === true;
+  const search = useSearch({ strict: false });
+  const papers = search.papers === true;
+  const chip = search.chip ?? null;
   const atSettings = useLocation({
     select: (location) => location.pathname === "/settings",
   });
   const settings = useSettingsForm(api, atSettings);
   const place: CameraPlace =
-    birdId === null ? { at: "aviary" } : { at: "detail", birdId, papers };
+    birdId === null ? { at: "aviary" } : { at: "detail", birdId, papers, chip };
   const sheets = useKeyFiles(api, birdId, state?.aviary?.scannedAt ?? null);
   const queryClient = useQueryClient();
   const entryForm = useEntryForm(
@@ -115,7 +117,10 @@ export function AppView({ api }: { api: PerchApi }) {
       void navigate({
         to: "/bird/$",
         params: { _splat: next.birdId },
-        search: next.papers ? { papers: true } : {},
+        search: {
+          ...(next.papers ? { papers: true } : {}),
+          ...(next.chip === null ? {} : { chip: next.chip }),
+        },
       });
     },
     [navigate],

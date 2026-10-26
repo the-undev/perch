@@ -166,7 +166,7 @@ export function LedgerPage() {
 
       <Section
         title="A chip's landing"
-        rule="On the bird's page a bubble chip is a handle. Pressed, the page scrolls the row holding its working to the middle of the ground, smoothly unless motion is reduced, and marks it: the row lights behind its words with a ring, holds a moment and fades over 1.6 seconds. The fade is opacity only, so it runs with reduced motion too. Pressing again marks it again. In the aviary's bubble the chips stay inert."
+        rule="On the bird's page a bubble chip is a handle. Pressed, the page scrolls the row holding its working to the middle of the ground, smoothly unless motion is reduced, and marks it: the row lights behind its words with a ring, holds a moment and fades over 1.6 seconds. The fade is opacity only, so it runs with reduced motion too. Pressing again marks it again. A chip pressed in the aviary's bubble rides the camera to the bird's page with the chip in the URL, and the page lands the same way as it opens."
         min={360}
       >
         <Specimen

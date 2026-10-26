@@ -75,7 +75,7 @@ export function ChipPage() {
       </Section>
 
       <Usage
-        component="<Chip>, <Chips> and <ChipHandles>"
+        component="<Chip> and <ChipHandles>"
         props={[
           {
             name: "chip",
@@ -85,12 +85,12 @@ export function ChipPage() {
           {
             name: "chips",
             type: "Chip[]",
-            what: "Chips and ChipHandles: the whole row; draws nothing when empty.",
+            what: "ChipHandles: the whole row; draws nothing when empty.",
           },
           {
             name: "onPress",
             type: "(chip: ChipKind) => void",
-            what: "ChipHandles: a chip was pressed; the bird's page lands on the ledger row holding its working.",
+            what: "ChipHandles: a chip was pressed; the bird's page lands on the ledger row holding its working, riding there first from the aviary.",
           },
         ]}
       >
@@ -101,10 +101,9 @@ export function ChipPage() {
           the mock&apos;s CI runs succeed, fail or wait.
         </p>
         <p>
-          The aviary&apos;s bubble draws <Code>{"<Chips>"}</Code>, which are
-          inert. The roost&apos;s bubble on the bird&apos;s page draws{" "}
-          <Code>{"<ChipHandles>"}</Code>: the same paper as buttons, each
-          landing on the ledger row holding its working.
+          Both bubbles draw <Code>{"<ChipHandles>"}</Code>: the same paper as
+          buttons, each landing on the ledger row holding its working. From the
+          aviary the camera first rides to the bird&apos;s page.
         </p>
       </Usage>
     </>

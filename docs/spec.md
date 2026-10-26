@@ -58,8 +58,9 @@ at risk of loss; is the rest quietly fine):
   outstanding work, song while being edited.
 - **B. The bubble**: click a bird and it speaks. The speech carries how
   it feels and why, in the first person; the chips beneath carry real
-  numbers (CI, PRs, tickets, open items). Tier B is a strict subset of
-  what tier C knows. A fence bird's bubble has one key, Adopt, beside
+  numbers (CI, PRs, tickets, open items). Each chip leads to the bird's
+  page, landing on the ledger row that holds its working. Tier B is a
+  strict subset of what tier C knows. A fence bird's bubble has one key, Adopt, beside
   "Tell me the full story": it leads to the bird's page with its
   adoption papers unfolded.
 - **C. The detail**: everything, see below.
@@ -79,7 +80,9 @@ left toward its record. Its bubble hangs above it as paper, the tail on
 the beak, with the speech and chips as the aviary bubble says them but
 no name, state word or keys. Here each chip is a handle: pressing it
 scrolls the ledger row holding its working to the middle of the page
-and marks it briefly. In the aviary the chips are inert. The record beside it opens with the
+and marks it briefly. A chip pressed in the aviary's bubble closes it
+and rides the camera to the bird's page, which lands on that row the
+same way as it opens. The record beside it opens with the
 heading, the one place on the page that carries the name and the state
 word, with what the bird is doing. A meta line in mono beneath says
 where the bird lives: the clone's path with `~`, the forges that hold
@@ -359,7 +362,9 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   age, and "scanning" while a scan runs. The sky follows the clock,
   read again every minute.
 - The URL holds where the camera points: `/` for the aviary,
-  `/bird/<id>` for a bird's detail. `/settings` is the settings page in
+  `/bird/<id>` for a bird's detail, `?papers=true` to unfold its papers
+  and `?chip=<kind>` to land on a chip's ledger row, an unknown kind read
+  as none. `/settings` is the settings page in
   the camera's place; Escape goes home from it as from a bird.
 - Launch actions run their commands from config, detached, and only
   ones some bird offers. Links open in the browser; the window never

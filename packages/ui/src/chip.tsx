@@ -1,6 +1,5 @@
 // A number the bird carries, on the bubble's paper, toned by the severity of the fact behind it.
-// In the aviary a chip is inert; on the bird's own page it is a handle that lands on the ledger
-// row holding its working.
+// In a bubble a chip is a handle that lands on the ledger row holding its working.
 
 import type { ChipKind, Chip as ChipModel } from "@perch/core/viewmodel.ts";
 
@@ -28,19 +27,7 @@ export function Chip({ chip }: { chip: ChipModel }) {
   );
 }
 
-/** The chips row beneath the speech; nothing at all when the bird carries no numbers. */
-export function Chips({ chips }: { chips: ChipModel[] }) {
-  if (chips.length === 0) return null;
-  return (
-    <div className="mt-2.75 flex flex-wrap gap-1.5">
-      {chips.map((chip) => (
-        <Chip key={chip.kind + chip.label} chip={chip} />
-      ))}
-    </div>
-  );
-}
-
-/** The chips row as handles: pressing a chip hands back its kind, for the page to land on its row. */
+/** The chips row beneath the speech, as handles: pressing a chip hands back its kind; nothing at all when the bird carries no numbers. */
 export function ChipHandles({
   chips,
   onPress,

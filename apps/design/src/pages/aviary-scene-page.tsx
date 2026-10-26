@@ -92,6 +92,7 @@ export function AviaryScenePage() {
             setPressed(`${bird.name}: Tell me the full story`)
           }
           onAdopt={(bird) => setPressed(`${bird.name}: Adopt`)}
+          onChip={(bird, chip) => setPressed(`${bird.name}: ${chip}`)}
         />
       </SceneFrame>
       <Pressed text={pressed} />

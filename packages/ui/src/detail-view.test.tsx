@@ -5,7 +5,7 @@ import {
   withEntry,
 } from "@perch/core/entry-form.ts";
 import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
-import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
+import type { Aviary, Bird, ChipKind } from "@perch/core/viewmodel.ts";
 import { deriveAviary } from "@perch/core/viewmodel.ts";
 import {
   cleanup,
@@ -57,6 +57,7 @@ interface PageOptions {
   form?: EntryForm | null;
   problems?: string[];
   openPapers?: boolean;
+  arrivalChip?: ChipKind | null;
 }
 
 function page(bird: Bird, options: PageOptions = {}) {
@@ -72,6 +73,7 @@ function page(bird: Bird, options: PageOptions = {}) {
       entry={{ form: given.form ?? null, onSave, onRemove }}
       problems={given.problems ?? []}
       openPapers={given.openPapers ?? false}
+      arrivalChip={given.arrivalChip ?? null}
     />
   );
   const { container, rerender } = render(view(bird, options));
@@ -188,6 +190,42 @@ describe("the detail view", () => {
     expect(scrolled.at(-1)?.element).toBe(row("pull-requests"));
     expect(container.querySelectorAll('[data-part="landing"]')).toHaveLength(1);
     expect(markedRow()).toBe("pull-requests");
+  });
+
+  it("lands on the arrival chip's row as the page opens, again when another arrives, and not at all without one", () => {
+    const perch = mockBird("dev/perch");
+    const { container, push } = page(perch);
+    const row = (chip: string) =>
+      container.querySelector(`[data-part="record"] [data-chip="${chip}"]`);
+    const markedRow = () =>
+      container
+        .querySelector('[data-part="landing"]')
+        ?.parentElement?.getAttribute("data-chip");
+
+    expect(scrolled).toEqual([]);
+    expect(markedRow()).toBeUndefined();
+
+    push(perch, { arrivalChip: "open-items" });
+    expect(scrolled).toEqual([
+      { element: row("open-items"), options: { block: "center" } },
+    ]);
+    expect(markedRow()).toBe("open-items");
+
+    push(perch, { arrivalChip: "ci" });
+    expect(scrolled.at(-1)?.element).toBe(row("ci"));
+    expect(scrolled).toHaveLength(2);
+    expect(markedRow()).toBe("ci");
+  });
+
+  it("lands on the arrival chip's row as soon as the page mounts", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch, { arrivalChip: "pull-requests" });
+    const row = container.querySelector(
+      '[data-part="record"] [data-chip="pull-requests"]',
+    );
+
+    expect(scrolled).toEqual([{ element: row, options: { block: "center" } }]);
+    expect(row?.querySelector('[data-part="landing"]')).not.toBeNull();
   });
 
   it("puts the heading and the roost in the top band and the record across the page below", () => {

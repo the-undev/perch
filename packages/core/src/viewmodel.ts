@@ -165,13 +165,17 @@ export interface Bubble {
   chips: Chip[];
 }
 
-export type ChipKind =
-  | "ci"
-  | "bugs"
-  | "uncommitted"
-  | "unpushed"
-  | "pull-requests"
-  | "open-items";
+/** Every kind of chip, in the order chips run on a bubble. */
+export const chipKinds = [
+  "ci",
+  "bugs",
+  "uncommitted",
+  "unpushed",
+  "pull-requests",
+  "open-items",
+] as const;
+
+export type ChipKind = (typeof chipKinds)[number];
 
 /** A number the bird carries, with the severity of the fact behind it; null when it is not judged. */
 export interface Chip {

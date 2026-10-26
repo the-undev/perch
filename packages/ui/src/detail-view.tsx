@@ -1,9 +1,9 @@
 // Tier C: a bird's full page. The roost at the top right holds the bird on its perch and its
 // bubble; the record beside it opens with the heading, then the launch actions, links out and the
 // papers' verb, then the ledger and its sections beside the key files on paper. A chip pressed in
-// the roost's bubble lands on the ledger row holding its working. Only what exists is shown. The
-// view fetches nothing: key-file contents, launching and the entry's form and writes are the
-// caller's.
+// the roost's bubble lands on the ledger row holding its working, as does the chip pressed in the
+// aviary's bubble that brought the camera here. Only what exists is shown. The view fetches
+// nothing: key-file contents, launching and the entry's form and writes are the caller's.
 
 import {
   type EntryForm,
@@ -11,7 +11,7 @@ import {
   sameEntryValues,
 } from "@perch/core/entry-form.ts";
 import type { Bird, ChipKind, LaunchAction } from "@perch/core/viewmodel.ts";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { actionClass, LaunchActions, LinksOut } from "./actions.tsx";
 import { AdoptionPapers } from "./adoption-papers.tsx";
 import { DetailHeading } from "./detail-heading.tsx";
@@ -52,6 +52,8 @@ export interface DetailViewProps {
   problems: string[];
   /** The papers unfold as the page opens, and again whenever this turns true. */
   openPapers: boolean;
+  /** The chip pressed in the aviary's bubble that brought the camera here: landed on as the page opens and whenever it changes; null for none. */
+  arrivalChip: ChipKind | null;
 }
 
 /** What was signed and is not yet in the entry read back: the values written, or the return. */
@@ -164,6 +166,7 @@ export function DetailView({
   entry,
   problems,
   openPapers,
+  arrivalChip,
 }: DetailViewProps) {
   const { detail } = bird;
   const [open, setOpen] = useState(openPapers);
@@ -179,12 +182,16 @@ export function DetailView({
   const night = isNight(skyPhase(now));
   const recordRef = useRef<HTMLDivElement>(null);
   const [landing, setLanding] = useState<Landing | null>(null);
-  const landOn = (chip: ChipKind) => {
+  const landOn = useCallback((chip: ChipKind) => {
     recordRef.current
       ?.querySelector(`[data-chip="${chip}"]`)
       ?.scrollIntoView({ block: "center" });
     setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
-  };
+  }, []);
+  useEffect(() => {
+    if (arrivalChip === null) return;
+    landOn(arrivalChip);
+  }, [arrivalChip, landOn]);
   return (
     <article
       aria-label={`${bird.name} in full`}

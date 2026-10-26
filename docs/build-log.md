@@ -832,3 +832,12 @@ build-time calls so they can be revisited.
   their counts, and the mock test checks the counts against
   `countOpenItems`. Hothouse's open items split over its two files;
   Pocket's second file holds none.
+- The aviary bubble's chips became handles too, after the round's
+  verdict named only the bird's page. A press closes the bubble and
+  rides to `/bird/<id>?chip=<kind>`; `DetailView` takes `arrivalChip`
+  and lands on it from one effect, so a new chip on the same page lands
+  again. `Chips`, the inert row, went with its last caller.
+- The router keeps the raw search beneath the validated one, so a
+  validator that drops a key leaves the raw value in place. The bird
+  route's validator sets `chip` to undefined for anything but a known
+  kind, `chipKinds` exported from the view model for the check.

@@ -59,6 +59,7 @@ const detailOf = (birdId: string): CameraPlace => ({
   at: "detail",
   birdId,
   papers: false,
+  chip: null,
 });
 
 function camera(
@@ -176,6 +177,22 @@ describe("the camera", () => {
     );
 
     expect(onNavigate).toHaveBeenCalledWith(detailOf("undev/skiff"));
+  });
+
+  it("rides to a bird's page from a chip in its bubble, carrying the chip", () => {
+    const { onNavigate } = camera(aviaryPlace);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Prism, distressed/ }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "ci failure" }));
+
+    expect(onNavigate).toHaveBeenCalledWith({
+      at: "detail",
+      birdId: "undev/prism",
+      papers: false,
+      chip: "ci",
+    });
   });
 
   it("shows the open bird's detail beneath its wire's strip, its tab current", () => {

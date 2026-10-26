@@ -20,6 +20,7 @@ function show(now = morning) {
   const onLaunch = vi.fn();
   const onFullStory = vi.fn();
   const onAdopt = vi.fn();
+  const onChip = vi.fn();
   const { container } = render(
     <AviaryView
       aviary={mockAviary}
@@ -27,9 +28,10 @@ function show(now = morning) {
       onLaunch={onLaunch}
       onFullStory={onFullStory}
       onAdopt={onAdopt}
+      onChip={onChip}
     />,
   );
-  return { container, onLaunch, onFullStory, onAdopt };
+  return { container, onLaunch, onFullStory, onAdopt, onChip };
 }
 
 function birdButton(id: string): HTMLElement {
@@ -114,6 +116,24 @@ describe("the aviary view", () => {
 
     expect(onAdopt).toHaveBeenCalledWith(hello);
     expect(screen.queryByRole("region", { name: "hello says" })).toBeNull();
+  });
+
+  it("hands back the bird and the kind of a chip pressed in its bubble, closing the bubble", () => {
+    const { onChip } = show();
+    const prism = mockBird("undev/prism");
+    const [ci] = prism.bubble.chips;
+    if (ci === undefined) throw new Error("prism carries a CI chip");
+
+    fireEvent.click(birdButton("undev/prism"));
+    fireEvent.click(
+      within(screen.getByRole("region", { name: "Prism says" })).getByRole(
+        "button",
+        { name: ci.label },
+      ),
+    );
+
+    expect(onChip).toHaveBeenCalledWith(prism, "ci");
+    expect(screen.queryByRole("region", { name: "Prism says" })).toBeNull();
   });
 
   it("wakes a sleeping bird clicked at night", () => {

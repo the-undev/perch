@@ -29,8 +29,17 @@ import type { KeyFileSheet, PerchState } from "../../shared/ipc.ts";
 import { fakeApi } from "./fake-api.ts";
 import { createAppRouter } from "./router.tsx";
 
-// jsdom has no scrolling; the router restores scroll position on every navigation.
+// jsdom has no scrolling; the router restores scroll position on every navigation, and a chip's
+// landing scrolls its ledger row into view.
 window.scrollTo = () => {};
+Element.prototype.scrollIntoView = () => {};
+
+/** The chip whose ledger row is marked by a landing; undefined when none is. */
+function markedRow(container: HTMLElement): string | null | undefined {
+  return container
+    .querySelector('[data-part="landing"]')
+    ?.parentElement?.getAttribute("data-chip");
+}
 
 afterEach(() => {
   cleanup();
@@ -253,6 +262,45 @@ describe("the window", () => {
     expect(
       await screen.findByRole("form", { name: "Adoption papers for Perch" }),
     ).toBeDefined();
+  });
+
+  it("rides to a bird's page from a chip in its bubble, landing on the chip's row", async () => {
+    const { router, container } = renderApp(idle(mockAviary));
+
+    fireEvent.click(await birdButton("undev/prism"));
+    fireEvent.click(screen.getByRole("button", { name: "ci failure" }));
+
+    await waitFor(() => expect(pathOf(router)).toBe("/bird/undev/prism"));
+    expect(router.state.location.search).toEqual({ chip: "ci" });
+    expect(
+      await screen.findByRole("article", { name: "Prism in full" }),
+    ).toBeDefined();
+    expect(markedRow(container)).toBe("ci");
+  });
+
+  it("lands on the row the URL's chip names", async () => {
+    const { container } = renderApp(
+      idle(mockAviary),
+      "/bird/dev/perch?chip=pull-requests",
+    );
+
+    expect(
+      await screen.findByRole("article", { name: "Perch in full" }),
+    ).toBeDefined();
+    expect(markedRow(container)).toBe("pull-requests");
+  });
+
+  it("reads a chip the URL names that is no chip as none, keeping the papers", async () => {
+    const { router, container } = renderApp(
+      idle(mockAviary),
+      "/bird/dev/perch?chip=wings&papers=true",
+    );
+
+    expect(
+      await screen.findByRole("article", { name: "Perch in full" }),
+    ).toBeDefined();
+    expect(router.state.matches.at(-1)?.search).toEqual({ papers: true });
+    expect(markedRow(container)).toBeUndefined();
   });
 
   it("points the camera where the URL says, and rides home on Escape", async () => {

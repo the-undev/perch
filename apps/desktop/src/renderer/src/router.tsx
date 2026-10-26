@@ -1,3 +1,4 @@
+import { type ChipKind, chipKinds } from "@perch/core/viewmodel.ts";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -30,20 +31,32 @@ const aviaryRoute = createRoute({
   path: "/",
 });
 
-/** What a bird's URL can carry beyond its id: papers=true unfolds its adoption papers. */
+/**
+ * What a bird's URL can carry beyond its id: papers=true unfolds its adoption papers, and
+ * chip=<kind> lands on the ledger row holding that chip's working.
+ */
 export interface BirdSearch {
   papers?: true;
+  /** Undefined for a chip the URL names that is no chip kind, overriding the raw value the router keeps beneath. */
+  chip?: ChipKind | undefined;
+}
+
+/** A bird's search as read from its URL: papers only when true, and chip only when a known kind. */
+export function birdSearch(search: Record<string, unknown>): BirdSearch {
+  return {
+    ...(search.papers === true ? { papers: true } : {}),
+    chip: chipKinds.find((kind) => kind === search.chip),
+  };
 }
 
 /**
  * One bird's detail; the rest of the path is its id, which holds slashes ("dev/perch"). The
- * search says whether its papers unfold as the page opens.
+ * search says whether its papers unfold as the page opens, and which chip's row it lands on.
  */
 const birdRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "bird/$",
-  validateSearch: (search: Record<string, unknown>): BirdSearch =>
-    search.papers === true ? { papers: true } : {},
+  validateSearch: birdSearch,
 });
 
 /** The settings page, in the camera's place. */

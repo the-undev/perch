@@ -10,6 +10,7 @@ function speak(bird: Bird, night = false) {
   const onLaunch = vi.fn();
   const onFullStory = vi.fn();
   const onAdopt = vi.fn();
+  const onChip = vi.fn();
   const { container } = render(
     <Bubble
       bubble={bird.bubble}
@@ -18,10 +19,11 @@ function speak(bird: Bird, night = false) {
       onLaunch={onLaunch}
       onFullStory={onFullStory}
       onAdopt={bird.adopted ? null : onAdopt}
+      onChip={onChip}
       tail={{ side: "left", inset: 40 }}
     />,
   );
-  return { container, onLaunch, onFullStory, onAdopt };
+  return { container, onLaunch, onFullStory, onAdopt, onChip };
 }
 
 describe("the bubble", () => {
@@ -59,15 +61,14 @@ describe("the bubble", () => {
     ]);
   });
 
-  it("keeps its chips inert in the aviary: only the bird's page makes them handles", () => {
-    const { container } = speak(mockBird("undev/prism"));
+  it("makes each chip a handle that hands back its kind when pressed", () => {
+    const { onChip, onFullStory } = speak(mockBird("undev/prism"));
 
-    expect(
-      [...container.querySelectorAll("[data-kind]")].map(
-        (chip) => chip.tagName,
-      ),
-    ).toEqual(["SPAN", "SPAN", "SPAN", "SPAN"]);
-    expect(screen.queryByRole("button", { name: "ci failure" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "ci failure" }));
+    fireEvent.click(screen.getByRole("button", { name: "2 open PRs" }));
+
+    expect(onChip.mock.calls).toEqual([["ci"], ["pull-requests"]]);
+    expect(onFullStory).not.toHaveBeenCalled();
   });
 
   it("shows no chips row for a bird that carries none", () => {

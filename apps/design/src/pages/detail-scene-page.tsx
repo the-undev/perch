@@ -75,6 +75,7 @@ export function DetailScenePage() {
           }}
           problems={[]}
           openPapers={false}
+          arrivalChip={null}
         />
       </div>
       <Pressed text={pressed} />

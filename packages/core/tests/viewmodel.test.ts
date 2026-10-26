@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Config } from "../src/config.ts";
 import type { Item } from "../src/snapshot.ts";
-import { type Bird, deriveAviary } from "../src/viewmodel.ts";
+import { type Bird, chipKinds, deriveAviary } from "../src/viewmodel.ts";
 import { testConfig } from "./helpers/config.ts";
 import {
   aged,
@@ -350,6 +350,11 @@ describe("chips", () => {
       ["1 open PR", 1, null],
       ["9 open items", 9, null],
     ]);
+    expect(
+      birdIn([busy], config, "dev/prism").bubble.chips.map(
+        (chip) => chip.kind,
+      ),
+    ).toEqual(chipKinds);
   });
 
   it("show only what exists: a clean, quiet bird carries none", async () => {

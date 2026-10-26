@@ -183,8 +183,7 @@ export function RoostPage() {
           bubble&apos;s tail is hung there. The bubble is{" "}
           <Code>{"<RoostBubble>"}</Code> from <Code>bubble.tsx</Code>: the
           aviary bubble&apos;s paper, speech and chips without the header and
-          keys, the chips drawn by <Code>{"<ChipHandles>"}</Code> as buttons
-          where the aviary&apos;s <Code>{"<Chips>"}</Code> are inert.
+          keys, its chips drawn as handles by <Code>{"<ChipHandles>"}</Code>.
         </p>
       </Usage>
     </>

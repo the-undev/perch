@@ -161,19 +161,30 @@ describe("the sources page", () => {
     ).toBeDefined();
   });
 
-  it("opens the picker with every kind on a page with no sources", () => {
+  it("opens the picker with every offered kind on a page with no sources", () => {
     sourcesPage(noSources(), []);
 
     expect(screen.getByText("Nowhere to look yet")).toBeDefined();
     const kinds = within(screen.getByRole("list", { name: "Kinds of source" }));
-    for (const name of ["Local folders", "GitHub", "Forgejo", "Uptime Kuma"]) {
-      expect(kinds.getByRole("button", { name: `Add ${name}` })).toBeDefined();
-    }
+    expect(
+      kinds.getAllByRole("button").map((button) => button.ariaLabel),
+    ).toEqual(["Add Local folders", "Add GitHub", "Add Forgejo"]);
     expect(
       screen.getByText(
         "Every kind can be added again · more kinds appear as perch learns to read them.",
       ),
     ).toBeDefined();
+  });
+
+  it("keeps an existing Uptime Kuma card while the picker no longer offers the kind", () => {
+    sourcesPage();
+
+    expect(card("Uptime Kuma · Silo")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Add a source" }));
+    expect(screen.getByRole("list", { name: "Kinds of source" })).toBeDefined();
+    expect(
+      screen.queryByRole("button", { name: "Add Uptime Kuma" }),
+    ).toBeNull();
   });
 
   it("appends a card of the kind picked, open with its empty fields named, the key following the account", () => {

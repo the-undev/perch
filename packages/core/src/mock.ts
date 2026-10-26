@@ -283,7 +283,7 @@ function notSetUp(include: string): Item["flags"] {
 
 // The birds
 
-/** Restless: three commits local only for 50 hours, in flight on main. */
+/** Restless: three commits on main local only for 50 hours, both forges in step. */
 const dotfiles = localItem(".dotfiles", {
   forges: [
     presence("github", "finch/dotfiles"),
@@ -308,6 +308,28 @@ const dotfiles = localItem(".dotfiles", {
           "2026-10-21T22:15:00.000Z",
           "Open Alacritty at 140 by 40",
         ),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "e2a4c6e8a0c2e4a6c8e0a2c4e6a8c0e2a4c6e8a0",
+          committedAt: "2026-10-21T22:15:00.000Z",
+          subject: "Open Alacritty at 140 by 40",
+        },
+        {
+          sha: "b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1",
+          committedAt: "2026-10-20T19:30:00.000Z",
+          subject: "Bind the zellij session picker to Alt-s",
+        },
+        {
+          sha: "c4e6a8c0e2a4c6e8a0c2e4a6c8e0a2c4e6a8c0e2",
+          committedAt: "2026-10-20T07:00:00.000Z",
+          subject: "Keep the Starship prompt on one line",
+        },
+        {
+          sha: "54df24558617c0e9a2b4d6f8a0c2e4b6d8f0a2c4",
+          committedAt: "2026-10-02T22:43:35.000Z",
+          subject: "Split the projects session into home and undev",
+        },
       ],
       remotes: [
         {
@@ -376,6 +398,18 @@ const hothouse = localItem("obsidian/Hothouse", {
       oldestUncommittedAt: "2026-10-21T03:00:00.000Z",
       oldestUnpushedAt: null,
       branches: [branch("main", "2026-10-20T21:47:44.000Z", "office lighting")],
+      defaultBranchCommits: [
+        {
+          sha: "a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f5a7c9",
+          committedAt: "2026-10-20T21:47:44.000Z",
+          subject: "office lighting",
+        },
+        {
+          sha: "15e71be9637c4a2e8b0d6f1c3a5e7b9d0f2a4c6e",
+          committedAt: "2026-10-20T14:47:25.000Z",
+          subject: "Record that the perch repository on Forgejo is public",
+        },
+      ],
       remotes: [
         {
           name: "origin",
@@ -406,6 +440,11 @@ const hothouse = localItem("obsidian/Hothouse", {
     },
     forgejo: forge("forgejo", "finch/Hothouse", {
       finalisedCommits: [
+        {
+          sha: "a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f5a7c9",
+          committedAt: "2026-10-20T21:47:44.000Z",
+          subject: "office lighting",
+        },
         {
           sha: "15e71be9637c4a2e8b0d6f1c3a5e7b9d0f2a4c6e",
           committedAt: "2026-10-20T14:47:25.000Z",
@@ -439,6 +478,13 @@ const pocket = localItem("obsidian/Pocket", {
           "2026-10-16T14:20:00.000Z",
           "Describe the vault's LiveSync setup in CLAUDE.md",
         ),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "77045f066b56d1e3a5c7e9b1d3f5a7c9e1b3d5f7",
+          committedAt: "2026-10-16T14:20:00.000Z",
+          subject: "Describe the vault's LiveSync setup in CLAUDE.md",
+        },
       ],
       remotes: [
         {
@@ -501,6 +547,25 @@ const perch = localItem("dev/perch", {
           "2026-10-21T19:00:00.000Z",
           "Merge foundations: workspace, desktop shell, packaging and CI",
         ),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "af0893d5e1c2b4a6d8f0e2c4a6b8d0f2e4c6a8b0",
+          committedAt: "2026-10-21T19:00:00.000Z",
+          subject:
+            "Merge foundations: workspace, desktop shell, packaging and CI",
+        },
+        {
+          sha: "5b7aa89c3e5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e",
+          committedAt: "2026-10-21T18:40:00.000Z",
+          subject: "Start the build log; drop the data placement audit",
+        },
+        {
+          sha: "a05a387e9c1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f",
+          committedAt: "2026-10-21T13:20:00.000Z",
+          subject:
+            "Merge scanner-poc: scanner proof of concept and design phase",
+        },
       ],
       remotes: [
         {
@@ -594,7 +659,7 @@ const perch = localItem("dev/perch", {
   },
 });
 
-/** Content and settled on two forges, neither running CI. */
+/** Content and settled on two forges, neither running CI, Forgejo a commit behind GitHub. */
 const harbour = localItem("undev/harbour", {
   forges: [
     presence("github", "the-undev/harbour"),
@@ -619,6 +684,18 @@ const harbour = localItem("undev/harbour", {
           "2026-10-20T21:00:02.000Z",
           "Merge branch 'plan-move-on'",
         ),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "f1cf131eda8f4a6e4beda1f0a80dd3564680de86",
+          committedAt: "2026-10-20T21:00:02Z",
+          subject: "Merge branch 'plan-move-on'",
+        },
+        {
+          sha: "997987503439da4601118eb9d1d042e4dd788c2f",
+          committedAt: "2026-10-20T20:59:57Z",
+          subject: "Show a banner when the plan is ending or has ended",
+        },
       ],
       remotes: [
         {
@@ -656,9 +733,9 @@ const harbour = localItem("undev/harbour", {
     forgejo: forge("forgejo", "the-undev/harbour", {
       finalisedCommits: [
         {
-          sha: "f1cf131eda8f4a6e4beda1f0a80dd3564680de86",
-          committedAt: "2026-10-20T21:00:02Z",
-          subject: "Merge branch 'plan-move-on'",
+          sha: "997987503439da4601118eb9d1d042e4dd788c2f",
+          committedAt: "2026-10-20T20:59:57Z",
+          subject: "Show a banner when the plan is ending or has ended",
         },
       ],
     }),
@@ -692,6 +769,14 @@ const skiff = localItem("undev/skiff", {
           "2026-08-31T08:10:02.000Z",
           "Merge 'Extension site patterns' from extension-site-patterns into main",
         ),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "a5aa76eb61a2c4e6a8c0e2a4c6e8a0c2e4a6c8e0",
+          committedAt: "2026-08-31T08:10:02Z",
+          subject:
+            "Merge 'Extension site patterns' from extension-site-patterns into main",
+        },
       ],
       remotes: [
         {
@@ -778,6 +863,14 @@ const prism = localItem("undev/prism", {
           "2026-10-16T21:16:34.000Z",
           "Merge composition-and-dispatch: prism becomes the user's side of ComfyUI",
         ),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "76cb6256a466e8a0c2e4a6c8e0a2c4e6a8c0e2a4",
+          committedAt: "2026-10-16T21:16:34.000Z",
+          subject:
+            "Merge composition-and-dispatch: prism becomes the user's side of ComfyUI",
+        },
       ],
       remotes: [
         {
@@ -872,6 +965,14 @@ const hollow = localItem("undev/Hollow-legacy", {
           "Per-kind site policies, error observability, and grab-UX polish (#17)",
         ),
       ],
+      defaultBranchCommits: [
+        {
+          sha: "958b0709e120a2c4e6a8c0e2a4c6e8a0c2e4a6c8",
+          committedAt: "2026-05-06T10:33:04Z",
+          subject:
+            "Per-kind site policies, error observability, and grab-UX polish (#17)",
+        },
+      ],
       remotes: [
         {
           name: "origin",
@@ -929,6 +1030,13 @@ const oxbow = localItem("undev/oxbow", {
           "2026-10-09T21:05:29.000Z",
           "Show the tide table offline",
         ),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e",
+          committedAt: "2026-10-09T21:05:29.000Z",
+          subject: "Show the tide table offline",
+        },
       ],
       remotes: [
         {
@@ -993,6 +1101,13 @@ const gramophone = localItem("undev/gramophone", {
           "Write down what the tool has to do",
         ),
       ],
+      defaultBranchCommits: [
+        {
+          sha: "c91ce3efa2a3b5d7f9a1c3e5b7d9f1a3c5e7b9d1",
+          committedAt: "2026-09-24T21:43:23.000Z",
+          subject: "Write down what the tool has to do",
+        },
+      ],
       remotes: [
         {
           name: "origin",
@@ -1048,6 +1163,13 @@ const spool = localItem("undev/spool", {
           "2026-10-20T23:00:00.000Z",
           "Merge the dashboard overhaul and its fixes",
         ),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "0c7c143772e4a6c8e0a2c4e6a8c0e2a4c6e8a0c2",
+          committedAt: "2026-10-20T23:00:00.000Z",
+          subject: "Merge the dashboard overhaul and its fixes",
+        },
       ],
       remotes: [
         {
@@ -1105,6 +1227,14 @@ const glyphDocs = localItem("undev/glyph-docs", {
           "2026-10-15T09:19:42.000Z",
           "Merge qwen-image-setup: the Qwen Image global pool setup guide",
         ),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "ce0bebb282e8a0c2e4a6c8e0a2c4e6a8c0e2a4c6",
+          committedAt: "2026-10-15T09:19:42.000Z",
+          subject:
+            "Merge qwen-image-setup: the Qwen Image global pool setup guide",
+        },
       ],
       remotes: [
         {
@@ -1175,6 +1305,14 @@ const homeItConfig = localItem("dev/hearth-config", {
           "Add a User Script that updates harbour-edge when a newer edge image is published",
         ),
       ],
+      defaultBranchCommits: [
+        {
+          sha: "d7f9a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f5",
+          committedAt: "2026-10-11T09:35:24.000Z",
+          subject:
+            "Add a User Script that updates harbour-edge when a newer edge image is published",
+        },
+      ],
       remotes: [
         {
           name: "origin",
@@ -1218,6 +1356,13 @@ const hello = localItem("dev/odin/hello", {
       oldestUnpushedAt: null,
       branches: [
         branch("main", "2025-10-14T15:45:44.000Z", "mli for shape", null),
+      ],
+      defaultBranchCommits: [
+        {
+          sha: "9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b",
+          committedAt: "2025-10-14T15:45:44.000Z",
+          subject: "mli for shape",
+        },
       ],
       remotes: [],
       activity: "settled",

@@ -10,7 +10,11 @@ import {
 import { mockAviary, mockConfig, mockHome, mockSnapshot } from "../src/mock.ts";
 import type { GitData } from "../src/snapshot.ts";
 import { speak } from "../src/speech.ts";
-import { deriveAviary, speechSubjectFor } from "../src/viewmodel.ts";
+import {
+  deriveAviary,
+  type River,
+  speechSubjectFor,
+} from "../src/viewmodel.ts";
 
 const scannedAt = new Date(mockSnapshot.scannedAt);
 const birds = [
@@ -175,6 +179,48 @@ describe("the mock dataset", () => {
     ).toBe(true);
   });
 
+  it("draws rivers in step, diverged, with only here, and with one forge", () => {
+    const rivers = birds.map(({ detail }) => detail.river);
+    const placesOf = (river: River) =>
+      river.places.map((place) => place.name).join(" ");
+    const hollowForges = (river: River) =>
+      river.commits.some((commit) =>
+        commit.reach.some(
+          ({ place, reach }) => reach === "lacking" && place !== "here",
+        ),
+      );
+
+    expect(
+      rivers.some(
+        (river) =>
+          placesOf(river) === "here github forgejo" &&
+          river.divergence === null &&
+          river.commits.length > 0,
+      ),
+    ).toBe(true);
+    expect(
+      rivers.some((river) => river.divergence !== null && hollowForges(river)),
+    ).toBe(true);
+    expect(
+      rivers.some(
+        (river) => placesOf(river) === "here" && river.commits.length > 0,
+      ),
+    ).toBe(true);
+    expect(
+      rivers.some(
+        (river) =>
+          placesOf(river) === "here forgejo" && river.commits.length > 0,
+      ),
+    ).toBe(true);
+    expect(
+      rivers.some((river) =>
+        river.commits.some((commit) =>
+          commit.reach.some(({ reach }) => reach === "unknown"),
+        ),
+      ),
+    ).toBe(true);
+  });
+
   it("has a source card per configured table, covering every scan state", () => {
     const cards = mockSnapshot.sourceCards;
     const states = cards.map((card) =>
@@ -230,6 +276,19 @@ describe("the mock dataset", () => {
           thresholds.stalled,
           scannedAt,
         ),
+      );
+      const mainBranch = git.branches.find(
+        (branch) => branch.name === git.defaultBranch,
+      );
+      const [newestOnMain] = git.defaultBranchCommits ?? [];
+      expect(
+        newestOnMain && [
+          Date.parse(newestOnMain.committedAt),
+          newestOnMain.subject,
+        ],
+        item.id,
+      ).toEqual(
+        mainBranch && [Date.parse(mainBranch.lastCommitAt), mainBranch.subject],
       );
       expect(git.activity, item.id).toBe(
         deriveActivity({

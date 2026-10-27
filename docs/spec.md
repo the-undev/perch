@@ -388,7 +388,7 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   previous snapshot; either says so in the sky's notices, as does a
   failed launch until the next scan.
 - The header's scan line says the sky's phase, the scan's time and its
-  age, and "scanning" while a scan runs. The sky follows the clock,
+  age ("just now", then by the minute, then by the hour), and "scanning" while a scan runs. The sky follows the clock,
   read again every minute.
 - The URL holds where the camera points: `/` for the aviary,
   `/bird/<id>` for a bird's detail, `?papers=true` to unfold its papers

@@ -967,3 +967,7 @@ build-time calls so they can be revisited.
 - The window's `img-src` gains `https:` so a README's badges render. The
   key-file paper shows an image with no scheme as its alt text. The
   roadmap keeps the relative-image read behind a custom protocol.
+- The camera header's scan line uses the card times ("just now",
+  "4 min ago", then hours), so a scan seconds old no longer reads
+  "under an hour ago". The sources page inherits "just now" for its
+  floor.

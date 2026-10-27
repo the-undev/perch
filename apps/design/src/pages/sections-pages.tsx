@@ -28,6 +28,8 @@ export function BranchesPage() {
             <BranchLines
               branches={mockBird("dev/perch").detail.branches}
               now={scanMoment}
+              chip={null}
+              landing={null}
             />
           </Ground>
         </Specimen>
@@ -39,6 +41,8 @@ export function BranchesPage() {
             <BranchLines
               branches={mockBird("undev/skiff").detail.branches}
               now={scanMoment}
+              chip={"stalled"}
+              landing={null}
             />
           </Ground>
         </Specimen>
@@ -50,6 +54,8 @@ export function BranchesPage() {
             <BranchLines
               branches={mockBird("undev/spool").detail.branches}
               now={scanMoment}
+              chip={null}
+              landing={null}
             />
           </Ground>
         </Specimen>
@@ -61,6 +67,16 @@ export function BranchesPage() {
             name: "branches",
             type: "BranchLine[]",
             what: "bird.detail.branches.",
+          },
+          {
+            name: "chip",
+            type: "ChipKind | null",
+            what: "The bubble chip whose working the section holds (stalled), else null; the section is marked and the chip lands on it.",
+          },
+          {
+            name: "landing",
+            type: "Landing | null",
+            what: "The chip last pressed; the section is marked while it names this section's chip.",
           },
           {
             name: "now",

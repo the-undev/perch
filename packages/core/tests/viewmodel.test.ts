@@ -431,7 +431,42 @@ describe("chips", () => {
       birdIn([busy], config, "dev/prism").bubble.chips.map(
         (chip) => chip.kind,
       ),
-    ).toEqual(chipKinds.slice(1));
+    ).toEqual(
+      chipKinds.filter((kind) => kind !== "unreadable" && kind !== "stalled"),
+    );
+  });
+
+  it("wear a parked chip at the stall's level, after unpushed, and none for a stall still green", async () => {
+    const config = await testConfig('[items."dev/prism"]\n');
+    const parked = (days: number, level: "green" | "amber" | "red") =>
+      item("dev/prism", {
+        sources: {
+          git: gitData({
+            stall: {
+              branch: "wip",
+              since: hoursBefore(days * 24),
+              days,
+              level,
+              thresholds: { amberDays: 14, redDays: 45 },
+            },
+          }),
+        },
+      });
+    const chipsOf = (days: number, level: "green" | "amber" | "red") =>
+      birdIn([parked(days, level)], config, "dev/prism").bubble.chips.map(
+        (chip) => [chip.kind, chip.label, chip.count, chip.severity],
+      );
+
+    expect(chipsOf(21, "amber")).toEqual([
+      ["stalled", "parked 21 days", 21, "amber"],
+    ]);
+    expect(chipsOf(56, "red")).toEqual([
+      ["stalled", "parked 56 days", 56, "red"],
+    ]);
+    expect(chipsOf(2, "green")).toEqual([]);
+    expect(chipKinds.indexOf("stalled")).toBe(
+      chipKinds.indexOf("unpushed") + 1,
+    );
   });
 
   it("lead with a can't-read chip in amber naming each forge no card can read", async () => {

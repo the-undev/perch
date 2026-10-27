@@ -265,6 +265,8 @@ describe("the ledger's sections", () => {
       <BranchLines
         branches={mockBird("dev/perch").detail.branches}
         now={now}
+        chip={null}
+        landing={null}
       />,
     );
 

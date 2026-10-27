@@ -97,9 +97,13 @@ describe("the mock dataset", () => {
         "bugs",
         "uncommitted",
         "unpushed",
+        "stalled",
         "pull-requests",
         "open-items",
       ]),
+    );
+    expect(chips).toContainEqual(
+      expect.objectContaining({ label: "parked 21 days", severity: "amber" }),
     );
     expect(chips).toContainEqual(
       expect.objectContaining({ label: "ci failure", severity: "red" }),
@@ -131,6 +135,10 @@ describe("the mock dataset", () => {
         ...bird.detail.ledger.flatMap((entry) =>
           entry.kind === "time" || entry.chip === null ? [] : [entry.chip],
         ),
+        ...(bird.detail.branches.length > 0 &&
+        bird.bubble.chips.some((chip) => chip.kind === "stalled")
+          ? ["stalled" as const]
+          : []),
         ...(bird.detail.notices.length > 0 && bird.adopted
           ? ["unreadable" as const]
           : []),

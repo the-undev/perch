@@ -186,6 +186,7 @@ export const chipKinds = [
   "bugs",
   "uncommitted",
   "unpushed",
+  "stalled",
   "pull-requests",
   "open-items",
 ] as const;
@@ -736,6 +737,18 @@ function chipsFor(item: Item, health: Health): Chip[] {
       label: `${git.unpushedCount} unpushed`,
       count: git.unpushedCount,
       severity: severity(levelOf("unpushed")),
+    });
+  }
+  const stall = health.causes.find(
+    (cause): cause is Extract<HealthCause, { kind: "stalled" }> =>
+      cause.kind === "stalled",
+  );
+  if (stall !== undefined) {
+    chips.push({
+      kind: "stalled",
+      label: `parked ${plural(stall.stall.days, "day", "days")}`,
+      count: stall.stall.days,
+      severity: severity(stall.level),
     });
   }
   const pulls = forgePullRequests(item).reduce(

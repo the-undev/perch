@@ -24,6 +24,8 @@ const kindRule: Record<ChipModel["kind"], string> = {
   uncommitted:
     "Uncommitted changes, toned by their age: unjudged under 24 hours, amber to 72, red beyond.",
   unpushed: "Commits on no remote, toned by their age like uncommitted work.",
+  stalled:
+    "The days the checkout has been parked on a branch other than the default, past the stall window: amber, then red. It lands on the branches section.",
   "pull-requests": "Open pull requests across forges. Not judged.",
   "open-items": "Open roadmap items. Not judged: plumpness carries the volume.",
 };
@@ -69,7 +71,7 @@ export function ChipPage() {
 
       <Section
         title="Kinds"
-        rule="Chips run in this order on a bubble: can't read, CI, bugs, uncommitted, unpushed, open pull requests, open items."
+        rule="Chips run in this order on a bubble: can't read, CI, bugs, uncommitted, unpushed, parked, open pull requests, open items."
         min={320}
       >
         {kinds.map((kind) => (

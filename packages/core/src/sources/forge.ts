@@ -88,8 +88,9 @@ function cachedTokens(
 
 /**
  * Root collector: lists each configured account's own repositories, read with that account's
- * token and kept when the account owns them. Untracked forks are left out by name; archived
- * repositories are kept with their flag. A missing token is that account's error.
+ * token and kept when the account owns them, keyed by the table's keyring key. Untracked forks are
+ * left out by name; archived repositories are kept with their flag. A missing token is that
+ * account's error.
  */
 export function createForgeAccountsSource<
   N extends "githubAccounts" | "forgejoAccounts",
@@ -109,7 +110,7 @@ export function createForgeAccountsSource<
           const kept = owned.filter(
             (info) => !info.fork || isTracked(info, trackedForks),
           );
-          entries[account.account] = {
+          entries[account.key] = {
             state: "observed",
             value: {
               repos: kept.sort((a, b) => a.fullName.localeCompare(b.fullName)),
@@ -120,7 +121,7 @@ export function createForgeAccountsSource<
             },
           };
         } catch (error) {
-          entries[account.account] = {
+          entries[account.key] = {
             state: "error",
             error: errorMessage(error),
           };
@@ -139,10 +140,10 @@ interface Candidate {
 }
 
 /**
- * Enricher: every listed repository, plus any repository a local clone's remote names on one of
- * this forge's hosts that the listings missed, looked up through the account that owns it on that
- * host. Pull requests, CI and finalised commits are read for those not archived, each failing on
- * its own; a missing token fails the whole detail.
+ * Enricher: every listed repository, read through the table that listed it, plus any repository a
+ * local clone's remote names on one of this forge's hosts that the listings missed, looked up
+ * through the account that owns it on that host. Pull requests, CI and finalised commits are read
+ * for those not archived, each failing on its own; a missing token fails the whole detail.
  */
 export function createForgeSource<N extends ForgeName>(
   name: N,
@@ -163,11 +164,11 @@ export function createForgeSource<N extends ForgeName>(
       const hosts = hostsOf(deps.cards);
       const trackedForks = trackedForksOf(deps.cards);
       const candidates = new Map<string, Candidate>();
-      for (const [owner, entry] of Object.entries(
+      for (const [key, entry] of Object.entries(
         earlier[accountsName]?.data ?? {},
       )) {
-        const account = accountForOwner(deps.cards, owner);
-        if (entry.state !== "observed" || account === null) continue;
+        const account = deps.cards.find((card) => card.key === key);
+        if (entry.state !== "observed" || account === undefined) continue;
         for (const info of entry.value.repos) {
           candidates.set(repoKey(info.owner, info.name), {
             info,

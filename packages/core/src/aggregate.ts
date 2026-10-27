@@ -110,13 +110,13 @@ function forgePresences(
   const accounts =
     files[forge === "github" ? "githubAccounts" : "forgejoAccounts"];
   const repos = new Map<string, RawForgeRepo>();
-  for (const [account, entry] of Object.entries(accounts?.data ?? {})) {
+  for (const entry of Object.values(accounts?.data ?? {})) {
     if (entry.state !== "observed") continue;
     for (const info of entry.value.repos) {
       repos.set(`${info.owner}/${info.name}`.toLowerCase(), {
         info,
         foundBy: "account-listing",
-        account,
+        account: info.owner,
         aliases: [],
         details: { state: "error", error: "details not gathered" },
       });

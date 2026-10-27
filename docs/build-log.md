@@ -933,3 +933,16 @@ build-time calls so they can be revisited.
   and its CI and commits read. hearth-config keeps both forges unread
   as a whole, now for a missing token, since a 404 on one request no
   longer fails a forge.
+
+## 27 October 2026 (one listing per table)
+
+- The account listings are keyed by the table's keyring key, the one
+  field every forge table has that names it alone, and the enricher
+  reads each listed repository through that table's client. The config
+  parser and the Sources page refuse one keyring key on two tables of
+  one kind, since the raw file needs it distinct. A raw file from before
+  the change matches no table: its cards read as never scanned until
+  the next gather rewrites it.
+- Repositories stay keyed by owner/name. Putting the instance in the
+  key changes the presence reference config names, so it waits on the
+  roadmap.

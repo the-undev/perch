@@ -272,6 +272,7 @@ export interface RawLocal {
 /** Each polled source's data, as written to its raw file. */
 export interface RawData {
   local: RawLocal;
+  /** Account listings keyed by their table's keyring key. */
   githubAccounts: Record<string, Entry<RawForgeAccount, never>>;
   forgejoAccounts: Record<string, Entry<RawForgeAccount, never>>;
   /** Status pages keyed by their source's name. */

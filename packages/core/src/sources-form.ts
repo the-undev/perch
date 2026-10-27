@@ -330,6 +330,16 @@ export function sourceProblems(sources: SourcesConfig): SourceProblem[] {
       "another Forgejo source reads this account at this address",
     );
   }
+  for (const kind of ["github", "forgejo"] as const) {
+    for (const index of repeats(sources[kind], (source) =>
+      isBlank(source.key) ? null : source.key,
+    )) {
+      at(kind, index)(
+        "key",
+        `another ${kindName(kind)} source uses this keyring key`,
+      );
+    }
+  }
   sources.kuma.forEach((source, index) => {
     const add = at("kuma", index);
     add("name", isBlank(source.name) ? "needs a name" : null);

@@ -165,7 +165,7 @@ describe("forge accounts source", () => {
       "github-skiff-app",
     ]);
     expect(calls).toEqual(["list with finch-token", "list with org-token"]);
-    expect(data.finch).toEqual({
+    expect(data["github-finch"]).toEqual({
       state: "observed",
       value: {
         repos: [
@@ -176,7 +176,7 @@ describe("forge accounts source", () => {
         skippedForks: ["finch/someone-elses"],
       },
     });
-    expect(data["skiff-app"]).toEqual({
+    expect(data["github-skiff-app"]).toEqual({
       state: "observed",
       value: { repos: [info("skiff-app/skiff", {})], skippedForks: [] },
     });
@@ -194,7 +194,7 @@ describe("forge accounts source", () => {
       tokenFor,
     }).gather({});
 
-    expect(data["the-undev"]).toEqual({
+    expect(data["github-the-undev"]).toEqual({
       state: "error",
       error: tokenMissing("github-the-undev"),
     });
@@ -229,8 +229,8 @@ describe("forge source", () => {
       source: "githubAccounts",
       gatheredAt: "2026-10-21T09:00:00.000Z",
       data: Object.fromEntries(
-        Object.entries(listed).map(([account, repos]) => [
-          account,
+        Object.entries(listed).map(([key, repos]) => [
+          key,
           { state: "observed", value: { repos, skippedForks: [] } },
         ]),
       ),
@@ -249,11 +249,11 @@ describe("forge source", () => {
       tokenFor,
     }).gather(
       earlier([], {
-        finch: [
+        "github-finch": [
           info("finch/perch", {}),
           info("finch/old", { archived: true }),
         ],
-        "skiff-app": [info("skiff-app/skiff", {})],
+        "github-skiff-app": [info("skiff-app/skiff", {})],
       }),
     );
 
@@ -350,6 +350,68 @@ describe("forge source", () => {
       "details someone/two with b-token",
     ]);
     expect(data["someone/two"]).toMatchObject({ state: "observed" });
+  });
+
+  it("keeps one Forgejo account's listings at two instances apart, reading each repository through its own instance", async () => {
+    const first = fakeClient({ "a-token": [info("someone/one", {})] });
+    const second = fakeClient({ "b-token": [info("someone/two", {})] });
+    const deps = {
+      cards: [
+        {
+          account: "someone",
+          key: "forgejo-a",
+          hosts: ["a.lan"],
+          trackedForks: [],
+          client: first.client,
+        },
+        {
+          account: "someone",
+          key: "forgejo-b",
+          hosts: ["b.lan"],
+          trackedForks: [],
+          client: second.client,
+        },
+      ],
+      tokenFor: fakeKeyring({ "forgejo-a": "a-token", "forgejo-b": "b-token" })
+        .tokenFor,
+    };
+
+    const listings = await createForgeAccountsSource(
+      "forgejoAccounts",
+      deps,
+    ).gather({});
+    const data = await createForgeSource(
+      "forgejo",
+      "forgejoAccounts",
+      deps,
+    ).gather({
+      ...earlier([], {}),
+      forgejoAccounts: {
+        source: "forgejoAccounts",
+        gatheredAt: "2026-10-21T09:00:00.000Z",
+        data: listings,
+      },
+    });
+
+    expect(listings).toEqual({
+      "forgejo-a": {
+        state: "observed",
+        value: { repos: [info("someone/one", {})], skippedForks: [] },
+      },
+      "forgejo-b": {
+        state: "observed",
+        value: { repos: [info("someone/two", {})], skippedForks: [] },
+      },
+    });
+    expect(first.calls).toEqual([
+      "list with a-token",
+      "details someone/one with a-token",
+    ]);
+    expect(second.calls).toEqual([
+      "list with b-token",
+      "details someone/two with b-token",
+    ]);
+    expect(Object.keys(data)).toEqual(["someone/one", "someone/two"]);
   });
 
   it("records the alias a renamed repository was reached by", async () => {

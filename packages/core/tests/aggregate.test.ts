@@ -219,17 +219,21 @@ describe("source cards", () => {
       source: "githubAccounts",
       gatheredAt,
       data: {
-        finch: listing("finch/perch", "finch/harbour", "finch/toy"),
-        "the-undev": listing(),
-        "skiff-app": { state: "error", error: "HTTP 401" },
+        "github-finch": listing(
+          "finch/perch",
+          "finch/harbour",
+          "finch/toy",
+        ),
+        "github-the-undev": listing(),
+        "github-skiff-app": { state: "error", error: "HTTP 401" },
       },
     },
     forgejoAccounts: {
       source: "forgejoAccounts",
       gatheredAt,
       data: {
-        finch: listing("finch/perch"),
-        "the-undev": listing("the-undev/notes", "the-undev/box"),
+        "forgejo-finch": listing("finch/perch"),
+        "forgejo-the-undev": listing("the-undev/notes", "the-undev/box"),
       },
     },
     kuma: {

@@ -364,15 +364,17 @@ machine-specific lives in config, no personal names or paths in the
 repository, and the aviary works with any project set. See
 `docs/decisions/bird-language.md`.
 
-## One Forgejo account name at two instances
+## One repository name at two Forgejo instances
 
-The account listings are keyed by account name, so two Forgejo tables
-for one account at two instances share one listing entry: the later
-table's listing replaces the earlier's, and both source cards show it.
-The enricher also finds a repository's account by owner alone, so the
-second instance's repositories would be read through the first's
-client. Keying the listings by table and the repositories by instance
-would fix both.
+Each table has its own listing, and each listed repository is read
+through the table that listed it. Forge repositories are keyed by
+owner/name alone, in the raw file and in the presence reference
+`forgejo:owner/name`, so one repository name at two instances is one
+presence, and a clone's remote at one instance joins the other's
+repository of that name. Keying them by instance puts the instance in
+the presence reference, which config's items, joins and ignore name, so
+it waits on how a reference names its instance and what becomes of
+entries written without one.
 
 ## Other sources
 

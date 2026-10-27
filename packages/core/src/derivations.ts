@@ -771,7 +771,7 @@ export function configuredCards(
         polled: "githubAccounts",
         grain: (files) =>
           entryGrain(
-            files.githubAccounts?.data[card.account],
+            files.githubAccounts?.data[card.key],
             (value) => value.repos.length,
           ),
       }),
@@ -784,7 +784,7 @@ export function configuredCards(
         polled: "forgejoAccounts",
         grain: (files) =>
           entryGrain(
-            files.forgejoAccounts?.data[card.account],
+            files.forgejoAccounts?.data[card.key],
             (value) => value.repos.length,
           ),
       };

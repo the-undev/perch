@@ -280,8 +280,9 @@ connection. `local` holds include and exclude paths; `github` an
 account, its keyring key, its hosts and its tracked forks; `forgejo`
 the same and the instance's base URL; `kuma` a server's name and its
 Uptime Kuma status page. Each GitHub account appears once, each Forgejo
-account once per instance, each kuma name once. A config with no
-sources is valid and scans nothing.
+account once per instance, each keyring key once among one kind's
+tables, each kuma name once. A config with no sources is valid and
+scans nothing.
 
 The settings page, reached from the camera header, edits everything but
 the item entries, which each bird's adoption papers edit. A rail names its
@@ -319,7 +320,7 @@ Save is held while any field has a problem, named beside the field: an
 empty required field, a folder not starting with `/` or `~`, an address
 without `http://` or `https://`, or a repeat the config parser refuses
 (a GitHub account in any case, a Forgejo account at one base URL, a
-kuma name).
+keyring key within one kind, a kuma name).
 
 The Wires page lists the wires top to bottom, each a text field edited
 in place and moved up and down, and the default picked from them. A row

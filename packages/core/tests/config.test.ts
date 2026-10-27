@@ -423,7 +423,7 @@ hosts = ["github-alias"]
 
   it("refuses two forgejo tables for one account at one address, and allows it at two", async () => {
     const card = (url: string) =>
-      `[[sources.forgejo]]\nbase_url = "${url}"\naccount = "someone"\nkey = "k"\nhosts = []\n`;
+      `[[sources.forgejo]]\nbase_url = "${url}"\naccount = "someone"\nkey = "${url}"\nhosts = []\n`;
 
     const twice = await withSources(
       card("https://a.lan") + card("https://a.lan"),
@@ -438,6 +438,27 @@ hosts = ["github-alias"]
         home,
       ).sources.forgejo,
     ).toHaveLength(2);
+  });
+
+  it("refuses one keyring key on two tables of one kind", async () => {
+    const card = (kind: string, account: string, extra: string) =>
+      `[[sources.${kind}]]\naccount = "${account}"\nkey = "shared"\nhosts = []\n${extra}`;
+
+    const forgejo = await withSources(
+      card("forgejo", "one", 'base_url = "https://a.lan"\n') +
+        card("forgejo", "two", 'base_url = "https://a.lan"\n'),
+    );
+
+    const github = await withSources(
+      card("github", "one", "") + card("github", "two", ""),
+    );
+
+    expect(() => parseConfig(forgejo, home)).toThrow(
+      "config: two sources.forgejo tables name keyring key shared; each may appear once",
+    );
+    expect(() => parseConfig(github, home)).toThrow(
+      "config: two sources.github tables name keyring key shared; each may appear once",
+    );
   });
 
   it("refuses two kuma tables with one name", async () => {

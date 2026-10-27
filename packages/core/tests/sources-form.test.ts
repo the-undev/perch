@@ -304,8 +304,14 @@ describe("what the sources cannot be", () => {
       ...none,
       forgejo: [
         forgejo("someone", "https://forge.example.lan"),
-        forgejo("someone", "https://forge.example.lan"),
-        forgejo("someone", "https://other.example.lan"),
+        {
+          ...forgejo("someone", "https://forge.example.lan"),
+          key: "forgejo-again",
+        },
+        {
+          ...forgejo("someone", "https://other.example.lan"),
+          key: "forgejo-other",
+        },
       ],
     };
 
@@ -322,6 +328,35 @@ describe("what the sources cannot be", () => {
     ).toThrow("each may appear once");
     const apart = { ...twice, forgejo: [twice.forgejo[0], twice.forgejo[2]] };
     expect(sourceProblems(apart as SourcesConfig)).toEqual([]);
+  });
+
+  it("refuses one keyring key on two cards of one kind, as the config file does", () => {
+    const sources = {
+      ...none,
+      github: [github("one"), { ...github("two"), key: "github-one" }],
+      forgejo: [
+        forgejo("one", "https://a.lan"),
+        forgejo("one", "https://b.lan"),
+      ],
+    };
+
+    expect(sourceProblems(sources)).toEqual([
+      {
+        kind: "github",
+        index: 1,
+        field: "key",
+        problem: "another GitHub source uses this keyring key",
+      },
+      {
+        kind: "forgejo",
+        index: 1,
+        field: "key",
+        problem: "another Forgejo source uses this keyring key",
+      },
+    ]);
+    expect(() =>
+      reread({ ...mockConfig, sources: { ...mockConfig.sources, ...sources } }),
+    ).toThrow("each may appear once");
   });
 
   it("refuses an Uptime Kuma name twice, as the config file does", () => {

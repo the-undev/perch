@@ -67,12 +67,6 @@ Likely the scroll paints before React commits the mark; landing in one
 paint (a layout effect or flushSync around `landOn` in detail-view.tsx)
 is the next thing to try.
 
-## A hand edit and the scan
-
-An edit to the config file by hand is read and shown at once, but scans
-only on the next interval or focus, so a new include path finds its
-birds then. A save from the settings page scans at once.
-
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the

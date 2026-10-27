@@ -334,7 +334,7 @@ name or two wires share one.
 
 The app writes the file without comments, paths under the home
 directory with `~`. An edit to the file by hand is read as soon as it is
-saved, and the open page or papers show it; the last write wins.
+saved, and the open page or papers show it, and a scan follows; the last write wins.
 
 ## Secrets
 

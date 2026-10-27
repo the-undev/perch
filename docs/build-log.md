@@ -946,3 +946,9 @@ build-time calls so they can be revisited.
 - Repositories stay keyed by owner/name. Putting the instance in the
   key changes the presence reference config names, so it waits on the
   roadmap.
+
+## 27 October 2026 (bug round polish)
+
+- A hand edit to the config file rereads it and then requests a scan
+  through the scheduler, as a save from the settings page does, so a new
+  include path shows its birds at once.

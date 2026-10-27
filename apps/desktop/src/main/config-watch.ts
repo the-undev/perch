@@ -68,3 +68,11 @@ export function createConfigWatch(deps: ConfigWatchDeps): ConfigWatch {
     },
   };
 }
+
+/** The reaction to a hand edit: reread the config and show it, then scan, as a save from the settings page does. */
+export function rescanOnConfigChange(deps: {
+  recheck: () => Promise<void>;
+  requestScan: () => Promise<void>;
+}): () => void {
+  return () => void deps.recheck().then(deps.requestScan);
+}

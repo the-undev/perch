@@ -173,7 +173,9 @@ export function CameraScenePage() {
           prints it above. What the camera keeps for itself is the bird last
           open under each tab, and the bird left on the ground while it rides
           home. Tabs follow <Code>cameraTabs(aviary)</Code>; a wire with no
-          birds keeps its tab, which says empty and cannot be pressed.
+          birds keeps its tab, which says empty and cannot be pressed. The
+          ground beneath the strip never scrolls: the bird&apos;s page fills it,
+          and only its record and paper panes move their contents.
         </p>
       </Usage>
     </>

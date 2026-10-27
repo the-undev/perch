@@ -701,11 +701,11 @@ export function CameraView({
           <div
             data-part="ground"
             inert={zoomed}
-            className="min-h-0 flex-1 overflow-y-auto border-horizon border-t-2 bg-ground px-7.5 pt-5.5 pb-11"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden border-horizon border-t-2 bg-ground px-7.5 pt-5.5"
           >
             {shown !== undefined && (
               <div
-                className={`transition-[translate,opacity] duration-550 ease-[cubic-bezier(0.25,0.9,0.3,1)] motion-reduce:transition-none ${zoomed ? "translate-y-14 opacity-0 delay-0" : "delay-350"}`}
+                className={`flex min-h-0 flex-1 flex-col transition-[translate,opacity] duration-550 ease-[cubic-bezier(0.25,0.9,0.3,1)] motion-reduce:transition-none ${zoomed ? "translate-y-14 opacity-0 delay-0" : "delay-350"}`}
               >
                 <DetailView
                   key={shown.id}

@@ -1,10 +1,14 @@
-// Tier C: a bird's full page. The roost at the top right holds the bird on its perch and its
-// bubble; the record beside it opens with the heading, a notice for each remote no card can read,
-// then the launch actions, links out and the papers' verb, then the ledger and its sections beside
-// the key files on paper. A chip pressed in the roost's bubble lands on the ledger row holding its
-// working, or the can't-read chip on the notice, as does the chip pressed in the aviary's bubble
-// that brought the camera here. Only what exists is shown. The view fetches
-// nothing: key-file contents, launching and the entry's form and writes are the caller's.
+// Tier C: a bird's full page, a fixed stage. The band at the top holds the heading, a notice for
+// each remote no card can read, the main process's problems, then the launch actions, links out and
+// the papers' verb, with the roost at the right holding the bird on its perch and its bubble. It
+// never scrolls. Beneath it the ground holds two panes that each scroll their own contents: the
+// record (the ledger and its sections) and the key files on paper; in a narrow page they join into
+// one pane, the key files at the end. The adoption papers rise as a sheet over both panes, which
+// dim and go inert while the band stays live. A chip pressed in the roost's
+// bubble lands on the ledger row holding its working, or the can't-read chip on the notice, as does
+// the chip pressed in the aviary's bubble that brought the camera here. Only what exists is shown.
+// The view fetches nothing: key-file contents, launching and the entry's form and writes are the
+// caller's.
 
 import {
   type EntryForm,
@@ -41,6 +45,7 @@ import {
   SourceProblems,
 } from "./ledger.tsx";
 import { KeyFilePaper, type KeyFileSheet } from "./paper.tsx";
+import { RisingSheet } from "./rising-sheet.tsx";
 import { Roost } from "./roost.tsx";
 import { isNight, skyPhase } from "./sky.ts";
 
@@ -82,70 +87,26 @@ function landed(signed: Signed, form: EntryForm): boolean {
   return form.values !== null && sameEntryValues(form.values, signed.values);
 }
 
-/**
- * The papers' verb and, once pressed, the papers: Adopt for a fence bird, The papers for an
- * adopted one. Signed papers stay open until the entry read back shows the write, so a refused
- * one keeps them open with the reason. Nothing shows until the form is read and agrees with the
- * bird.
- */
-function EntryPart({
-  bird,
-  entry,
-  now,
-  problems,
+/** The papers' verb: Adopt for a fence bird, The papers for an adopted one. */
+function PapersVerb({
+  adopt,
   open,
-  setOpen,
+  onPress,
 }: {
-  bird: Bird;
-  entry: EntryControls;
-  now: Date;
-  problems: string[];
+  adopt: boolean;
   open: boolean;
-  setOpen: (open: boolean) => void;
+  onPress: () => void;
 }) {
-  const [signed, setSigned] = useState<Signed | null>(null);
-  const { form } = entry;
-  if (signed !== null && form !== null && landed(signed, form)) {
-    setSigned(null);
-    setOpen(false);
-  }
-  if (form === null || (form.values !== null) !== bird.adopted) return null;
-  const close = () => {
-    setSigned(null);
-    setOpen(false);
-  };
   return (
-    <>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => (open ? close() : setOpen(true))}
-        className={`${actionClass} ${open ? "border-edge bg-panel text-ink" : ""}`}
-      >
-        <Icon name={form.values === null ? "adopt" : "edit"} size={15} />
-        {form.values === null ? "Adopt" : "The papers"}
-      </button>
-      {open && (
-        <div className="mt-3.5 basis-full">
-          <AdoptionPapers
-            bird={bird}
-            form={form}
-            night={isNight(skyPhase(now))}
-            now={now}
-            problems={problems}
-            onSign={(values) => {
-              setSigned({ kind: "values", values });
-              entry.onSave(bird.id, values);
-            }}
-            onReturn={() => {
-              setSigned({ kind: "return" });
-              entry.onRemove(bird.id);
-            }}
-            onClose={close}
-          />
-        </div>
-      )}
-    </>
+    <button
+      type="button"
+      aria-expanded={open}
+      onClick={onPress}
+      className={`${actionClass} ${open ? "border-edge bg-panel text-ink" : ""}`}
+    >
+      <Icon name={adopt ? "adopt" : "edit"} size={15} />
+      {adopt ? "Adopt" : "The papers"}
+    </button>
   );
 }
 
@@ -218,9 +179,15 @@ function swapRunning(article: HTMLElement | null): boolean {
   return article.getAnimations().length > 0;
 }
 
+/** The panes' shared grain: each scrolls its own contents, keeping room at its sides for a landing mark. */
+const paneClass =
+  "pane-scroll min-h-0 min-w-0 px-2.5 @min-[960px]:overflow-x-hidden @min-[960px]:overflow-y-auto @min-[960px]:pb-11";
+
 /**
- * The whole project page, centred as one block: the roost beside the record when wide, above it and
- * centred when narrow, and the ledger beside the paper when the record is wide enough.
+ * The whole project page as a fixed stage, centred as one block. The band at the top holds still:
+ * the roost beside the heading when wide, beneath it and centred when narrow. Beneath it the record
+ * pane and the paper pane each scroll their own contents when the page is wide enough; narrower,
+ * they join into one pane, the key files at the record's end. It fills a flex column.
  */
 export function DetailView({
   bird,
@@ -240,15 +207,27 @@ export function DetailView({
     setAsked(openPapers);
     if (openPapers) setOpen(true);
   }
-  const papersShown =
-    open &&
-    entry.form !== null &&
-    (entry.form.values !== null) === bird.adopted;
+  // Signed papers stay open until the entry read back shows the write, so a refused one keeps them
+  // open with the reason.
+  const [signed, setSigned] = useState<Signed | null>(null);
+  const { form } = entry;
+  if (signed !== null && form !== null && landed(signed, form)) {
+    setSigned(null);
+    setOpen(false);
+  }
+  // Neither the verb nor the papers show until the form is read and agrees with the bird.
+  const agreed =
+    form !== null && (form.values !== null) === bird.adopted ? form : null;
+  const papersShown = open && agreed !== null;
+  const close = () => {
+    setSigned(null);
+    setOpen(false);
+  };
   const night = isNight(skyPhase(now));
   const [landing, setLanding] = useState<Landing | null>(null);
   const articleRef = useRef<HTMLElement>(null);
   // The mark is committed before the scroll, so the row never paints unlit; both callers, a press
-  // and the arrival effect, run outside render, where flushSync is allowed.
+  // and the arrival effect, run outside render, where flushSync is allowed. The row's pane scrolls.
   const landOn = useCallback((chip: ChipKind) => {
     flushSync(() => {
       setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
@@ -275,10 +254,13 @@ export function DetailView({
     <article
       ref={articleRef}
       aria-label={`${bird.name} in full`}
-      className="@container mx-auto max-w-480 motion-safe:animate-swap"
+      className="@container mx-auto grid min-h-0 w-full max-w-480 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-y-4 overflow-y-clip motion-safe:animate-swap"
       onAnimationEnd={settleOnSwap}
     >
-      <div className="grid grid-cols-1 items-start gap-x-9 gap-y-3 @min-[860px]:grid-cols-[minmax(0,1fr)_480px]">
+      <div
+        data-part="band"
+        className="col-start-1 row-start-1 grid grid-cols-1 items-start gap-x-9 gap-y-3 @min-[860px]:grid-cols-[minmax(0,1fr)_480px]"
+      >
         <div
           data-part="heading"
           className="min-w-0 @min-[860px]:col-start-1 @min-[860px]:row-start-1"
@@ -292,55 +274,76 @@ export function DetailView({
           <div className="mt-3.5 flex flex-wrap items-center gap-1">
             <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
             <LinksOut links={detail.links} />
-            <EntryPart
-              bird={bird}
-              entry={entry}
-              now={now}
-              problems={problems}
-              open={open}
-              setOpen={setOpen}
-            />
+            {agreed !== null && (
+              <PapersVerb
+                adopt={agreed.values === null}
+                open={papersShown}
+                onPress={papersShown ? close : () => setOpen(true)}
+              />
+            )}
           </div>
+          {!papersShown && <MainProblems problems={problems} />}
         </div>
         <div className="mx-auto w-120 max-w-full @min-[860px]:col-start-2 @min-[860px]:row-start-1 @min-[860px]:mx-0">
           <Roost bird={bird} night={night} onChip={landOn} />
         </div>
-        <div
-          data-part="record"
-          className="@container col-span-full min-w-0 @min-[860px]:row-start-2"
-        >
-          {!papersShown && <MainProblems problems={problems} />}
-          <div className="mt-4 grid items-start gap-10 @min-[960px]:grid-cols-[minmax(330px,430px)_minmax(0,1fr)]">
-            <div className="min-w-0">
-              <Ledger entries={detail.ledger} now={now} landing={landing} />
-              {detail.branches.length > 0 && (
-                <BranchLines
-                  branches={detail.branches}
-                  now={now}
-                  chip={
-                    bird.bubble.chips.some((chip) => chip.kind === "stalled")
-                      ? "stalled"
-                      : null
-                  }
-                  landing={landing}
-                />
-              )}
-              {detail.river.commits.length > 0 && (
-                <CommitRiver river={detail.river} now={now} />
-              )}
-              {detail.pullRequests.length > 0 && (
-                <PullRequestLines
-                  pullRequests={detail.pullRequests}
-                  now={now}
-                />
-              )}
-              {detail.flags.length > 0 && <FlagLines flags={detail.flags} />}
-              {detail.problems.length > 0 && (
-                <SourceProblems problems={detail.problems} />
-              )}
-            </div>
-            <KeyFilePaper sheets={sheets} />
-          </div>
+      </div>
+      {/* The sheet spans both rows: a press anywhere off the papers, the band included, folds them,
+          and the papers rise over the panes in the ground row. The article clips vertically, so the
+          card rises from its foot without making anything scrollable, its shadow falling on the
+          band. */}
+      <RisingSheet shown={papersShown} onDismiss={close}>
+        {agreed !== null && (
+          <AdoptionPapers
+            bird={bird}
+            form={agreed}
+            night={night}
+            now={now}
+            problems={problems}
+            onSign={(values) => {
+              setSigned({ kind: "values", values });
+              entry.onSave(bird.id, values);
+            }}
+            onReturn={() => {
+              setSigned({ kind: "return" });
+              entry.onRemove(bird.id);
+            }}
+            onClose={close}
+          />
+        )}
+      </RisingSheet>
+      <div
+        data-part="panes"
+        inert={papersShown}
+        className={`pane-scroll col-start-1 row-start-2 -mx-2.5 grid min-h-0 content-start gap-x-5 gap-y-10 overflow-x-hidden overflow-y-auto pb-11 @min-[960px]:grid-cols-[minmax(350px,450px)_minmax(0,1fr)] @min-[960px]:grid-rows-[minmax(0,1fr)] @min-[960px]:overflow-hidden @min-[960px]:pb-0 motion-safe:transition-opacity motion-safe:duration-420 motion-safe:ease-[ease] ${papersShown ? "opacity-25" : ""}`}
+      >
+        <div data-part="record" className={paneClass}>
+          <Ledger entries={detail.ledger} now={now} landing={landing} />
+          {detail.branches.length > 0 && (
+            <BranchLines
+              branches={detail.branches}
+              now={now}
+              chip={
+                bird.bubble.chips.some((chip) => chip.kind === "stalled")
+                  ? "stalled"
+                  : null
+              }
+              landing={landing}
+            />
+          )}
+          {detail.river.commits.length > 0 && (
+            <CommitRiver river={detail.river} now={now} />
+          )}
+          {detail.pullRequests.length > 0 && (
+            <PullRequestLines pullRequests={detail.pullRequests} now={now} />
+          )}
+          {detail.flags.length > 0 && <FlagLines flags={detail.flags} />}
+          {detail.problems.length > 0 && (
+            <SourceProblems problems={detail.problems} />
+          )}
+        </div>
+        <div data-part="paper" className={paneClass}>
+          <KeyFilePaper sheets={sheets} />
         </div>
       </div>
     </article>

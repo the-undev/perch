@@ -50,14 +50,6 @@ an unpleasant way (the swap animation remounts everything at once). A
 transition that reads as the camera moving, not the page being
 replaced, would suit the scene. Part of a detail page design round.
 
-## Elements scroll, not the page
-
-The key-file paper scrolls inside a page that also scrolls, so a long
-README gives nested scrollbars and the wheel moves whichever one is
-under the pointer. Investigate a page of fixed height where the window
-never scrolls and each element scrolls its own content, the ledger and
-the papers each in their own pane. Raised at the bird's page round.
-
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the

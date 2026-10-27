@@ -264,6 +264,41 @@ describe("the window", () => {
     ).toBeDefined();
   });
 
+  it("folds open papers on Escape from the verb's focus without leaving the page, and rides home on the next", async () => {
+    const { router } = renderApp(
+      idle(mockAviary),
+      "/bird/dev/perch",
+      undefined,
+      (birdId) => {
+        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
+        return item === undefined
+          ? null
+          : entryFormFor(mockConfig, item, mockHome);
+      },
+    );
+    const verb = await screen.findByRole("button", { name: "The papers" });
+    verb.focus();
+    fireEvent.click(verb);
+    await screen.findByRole("form", { name: "Adoption papers for Perch" });
+
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("form", { name: "Adoption papers for Perch" }),
+      ).toBeNull(),
+    );
+    expect(pathOf(router)).toBe("/bird/dev/perch");
+    expect(document.activeElement).toBe(verb);
+
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    });
+    await waitFor(() => expect(pathOf(router)).toBe("/"));
+  });
+
   it("rides to a bird's page from a chip in its bubble, landing on the chip's row", async () => {
     const { router, container } = renderApp(idle(mockAviary));
 

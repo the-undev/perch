@@ -105,6 +105,7 @@
   --radius-paper: 12px;
 
   --shadow-bubble: 0 18px 50px -12px rgb(0 0 0 / 0.8);
+  --shadow-papers-rise: 0 -10px 60px -10px rgb(0 0 0 / 0.8);
   --shadow-paper: 0 24px 60px -18px rgb(0 0 0 / 0.75);
 
   /* Motion. Per-bird timings arrive as custom properties set by the component. */
@@ -313,6 +314,14 @@
   body {
     @apply bg-bg text-ink text-sm;
   }
+}
+
+/* A pane on the fixed stage, which scrolls its own contents and hands no
+   wheel on: a thin, quiet scrollbar in the edge tokens. */
+@utility pane-scroll {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edge-hi) transparent;
 }
 
 /* Markdown on paper: the key-file sheets. The sheet fills its column; the

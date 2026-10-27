@@ -1023,3 +1023,87 @@ build-time calls so they can be revisited.
   speaks as the secondary. The mock config loses the skiff-app card
   and its source card. hearth-config keeps both forges failed for
   missing tokens, untroubled, and now draws the amber dots.
+
+## 27 October 2026 (the fixed stage)
+
+- The fixed-stage round (`mockups/fixed-stage.html`) had five verdicts.
+  The window never scrolls on the bird's page: the strip, the heading
+  with its actions and the roost are fixed, and the record pane and the
+  paper pane each scroll their own contents with a thin quiet
+  scrollbar. A narrow page goes to one pane, the key files at the
+  record's end, over the folder-tab alternative. The papers rising over
+  the still stage belongs to the sheet rework on its own branch; here
+  the inline papers move into the record pane. The aviary and the
+  settings page are out of the round.
+- The thresholds stay: the band stacks the roost under the heading
+  below 860px, and the panes join below 960px, both measured on the
+  page. The stacked band stays fixed, so a window both narrow and short
+  leaves the panes little height.
+- In a narrow page the panes' grid is the one scroller and the panes
+  inside it do not scroll, so one tree serves both widths and the key
+  files render once.
+- Each pane carries 10px of side padding inside a grid pulled out by
+  10px, so a landing mark, 10px wider than its row each side, is not
+  clipped. The record column becomes 350 to 450px and the gap 20px,
+  which keeps the content widths and the 40px between them. Sideways
+  overflow is hidden, so a wide row clips rather than raising a
+  horizontal scrollbar.
+- `pane-scroll` in the theme is the panes' one styling: overscroll
+  contained and a thin scrollbar in edge-hi on transparent. It has no
+  webkit scrollbar rules: Chromium 121 and later ignore them once
+  `scrollbar-color` is set.
+- The papers' verb stays in the band's action row and the papers unfold
+  at the top of the record pane. A press scrolls them into view, since
+  the pane may be scrolled away; papers open on arrival need no scroll.
+- The main process's problems move into the band under the action row,
+  so a failed launch stays in view whatever the record's scroll.
+- The key-file sheet loses its cap of the window's height less 18rem
+  and its own scroll. It keeps its focus stop rather than the pane
+  taking one: the keys scroll the nearest scrolling ancestor, the paper
+  pane when wide and the joined pane when narrow. The folder tabs stick
+  to the pane's top on the ground's colour.
+- A chip's landing is unchanged: `scrollIntoView` moves the row's pane.
+  The camera's ground is overflow hidden and fits its contents, so it
+  holds still.
+- The design site frames the bird's page in a `Stage` of fixed height
+  on the detail scene and adoption papers pages, and the paper page
+  shows a long document scrolling its pane.
+
+## 27 October 2026 (the papers rise, on the stage)
+
+- The rising sheet from the papers-rise branch landed on the fixed
+  stage, refitted rather than merged. `RisingSheet` keeps its contract:
+  inert and hidden while leaving, Escape contained, the background
+  press, and focus moved in on the rise and handed back on dismissal,
+  both without scrolling. The papers no longer unfold in the record
+  pane.
+- The papers rise over the whole ground: both panes dim to a quarter
+  over 420ms and the panes grid is inert. The problems strip still
+  stands down while the sheet is up.
+- The dismissal catcher covers the band too, so a press anywhere off
+  the papers folds them, modal in feel. A catcher over the panes alone
+  left a press on the band doing nothing. The article is a two-row
+  grid, band auto and ground `minmax(0,1fr)`, and the sheet's layer
+  spans both rows with subgrid rows: its catcher spans both, its
+  surface rises in the last. The band stays visible and undimmed, but
+  its controls rest under the catcher while the papers are up; pressing
+  the verb then folds them through the catcher, which keeps
+  `aria-expanded` honest, and the roost's chips rest too.
+- Leaving falls faster than rising: 260ms on an accelerating curve,
+  `cubic-bezier(0.55, 0, 0.8, 0.4)`, with the unmount at 300ms; the
+  rise keeps 420ms on its decelerating curve. The rise's curve run
+  backwards crawled its last pixels while the card was already a
+  clipped sliver at the stage's foot, then the 450ms unmount snapped it
+  away.
+- The rise no longer scrolls the layer into view. On the stage nothing
+  beneath the sheet scrolls and the cell is always in view, so the call
+  and its scroll margin are gone.
+- The ground row is fixed, so a sheet taller than the ground cannot
+  grow it. The surface stops at the row's foot (`max-h-full`) and
+  scrolls its own contents with `pane-scroll`. The article clips
+  vertically (`overflow-y-clip`), so the card rises from the ground's
+  foot without making anything scrollable, and its rising shadow falls
+  on the band above, inside the clip.
+- The design site's rising sheet page frames its specimens as a clipped
+  two-row grid, a band over a pane, and adds a card taller than its
+  row.

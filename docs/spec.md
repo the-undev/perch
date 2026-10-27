@@ -79,10 +79,10 @@ top right. It is drawn larger than on any wire, idle, and always faces
 left toward its record. Its bubble hangs above it as paper, the tail on
 the beak, with the speech and chips as the aviary bubble says them but
 no name, state word or keys. Here each chip is a handle: pressing it
-scrolls the ledger row holding its working to the middle of the page
-and marks it briefly. A chip pressed in the aviary's bubble closes it
+scrolls the ledger row holding its working to the middle of the record
+pane and marks it briefly. A chip pressed in the aviary's bubble closes it
 and rides the camera to the bird's page, which lands on that row the
-same way as it opens. The record beside it opens with the
+same way as it opens. The band beside it opens with the
 heading, the one place on the page that carries the name and the state
 word, with what the bird is doing. A meta line in mono beneath says
 where the bird lives: the clone's path with `~`, the forges that hold
@@ -92,12 +92,13 @@ in the sky's notice voice says what perch knows and the fix: "The clone
 pushes to skiff-app/skiff on github, which no GitHub card reads.
 Add a card for skiff-app under Sources.", Sources opening the
 settings page. The bubble's "can't read github" chip lands on it. Then
-come the launch actions as verbs, links out, a ledger of facts in full words
+come the launch actions as verbs and links out. Beneath them the record pane
+holds a ledger of facts in full words
 (clean zeros as a quiet green "none", counts toned by severity),
-branches, the commit river, flags, and
+branches, the commit river, flags, and beside it the paper pane holds
 a configurable list of key files rendered as paper, the bubble's
-material, with folder tabs. A long file scrolls inside its sheet, which
-stops short of the window's height, so the page keeps its rhythm.
+material, with folder tabs. A long file keeps its full height; its pane
+scrolls, the folder tabs held at the pane's top.
 Each chip's number sits on one ledger row, marked with a dot, its
 working spelled out beneath in mono, source by source: each forge's
 newest CI run with its state, branch, name, link and age, under a CI
@@ -143,11 +144,16 @@ diverged: github lacks 1 commit, forgejo lacks 2 commits." when both
 do, counted over every listed commit. Forges in agreement earn no
 sentence. A commit links to the first forge holding it.
 
-The page centres as one block up to 1920px. From 860px wide the heading
-and the roost share the top band, the roost in a 480px column at the right
-and the record spans the full width beneath;
-narrower, the order is the heading, the roost, centred, then the record. The ledger and its sections sit beside the paper while the
-record is at least 960px wide, above it when narrower.
+The bird's page is a fixed stage: the window never scrolls. The strip,
+the heading with its notices, problems and actions, and the roost hold
+still; beneath them the record pane and the paper pane each scroll
+their own contents, and the wheel moves the pane under the pointer.
+Scrollbars are thin and quiet, in the edge colours. The page centres
+as one block up to 1920px. From 860px wide the heading and the roost
+share the top band, the roost in a 480px column at the right; narrower,
+the roost follows the heading, centred. The record and paper panes sit
+side by side while the page is at least 960px wide; narrower, they join
+into one pane, the key files at the record's end.
 
 The visual language is specified on the board: the field guide
 (`design/anatomy.html`) annotates every trait with its rule, and the
@@ -263,9 +269,12 @@ default; archived repositories are gathered but never on the main view.
 Details and open questions (composite multi-repo projects among them):
 [decisions/project-model.md](decisions/project-model.md).
 
-Adopting and amending are one sheet of adoption papers, unfolding on
-the ground of the bird's page beneath its action row: Adopt on a fence
-bird, The papers on an adopted one. The head carries the bird's name,
+Adopting and amending are one sheet of adoption papers, rising from
+the foot of the bird's page over its record and paper panes, which dim
+and go inert. The band above stays in view, the bird and heading
+undimmed, but its controls rest while the papers are up: Adopt on a fence bird,
+The papers on an adopted one, in the action row. Papers taller than the
+ground stop at its foot and scroll themselves. The head carries the bird's name,
 its portrait and its ring, the config key the entry sits under. "What
 perch has seen" follows in mono and cannot be edited: where the clone
 is, home as `~`, the forges that also hold it, and the last commit (the
@@ -276,7 +285,8 @@ what it holds while closed: the key files, roadmaps, zellij session and
 the bird's own thresholds. A choice left on its default is written as
 nothing, so config holds only what differs. The signature button names
 the destination ("Adopt onto Projects", or "Amend the papers"); Not now,
-or Escape pressed inside them, folds the papers away without writing. A threshold that
+Escape pressed inside them, or a press anywhere off the papers, the
+band included, folds them away without writing. A threshold that
 cannot be written holds the signature and says why. "Return to the
 fence" sits on an adopted bird's signature line and asks twice, the
 second press saying "Every line of these papers is struck out." The app

@@ -190,7 +190,7 @@ export const pages: DesignPage[] = [
   {
     slug: "problems",
     group: "components",
-    title: "Sources not read",
+    title: "What couldn't be read",
     summary: "Sources that failed for this bird, with their errors.",
     component: ProblemsPage,
   },

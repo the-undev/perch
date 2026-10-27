@@ -13,12 +13,12 @@ const birds = [
   {
     id: "undev/prism",
     label: "Prism",
-    rule: "Distressed: CI failing on Forgejo in red, four uncommitted changes in amber, and GitHub's pull requests not read while its CI and commits were.",
+    rule: "Distressed: CI failing on Forgejo in red, four uncommitted changes in amber, and GitHub's pull requests couldn't be read while its CI and commits were.",
   },
   {
     id: "undev/skiff",
     label: "Skiff",
-    rule: "Restless: parked on a feature branch for three weeks with everything pushed.",
+    rule: "Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, so the notice under the heading names the fix and links to Sources, where the can't-read chip lands. The ledger and river say couldn't read github; Forgejo was read. Also parked on a feature branch for three weeks.",
   },
   {
     id: "dev/odin/hello",

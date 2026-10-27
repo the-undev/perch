@@ -66,7 +66,7 @@ const workingSpecimens: LedgerSpecimen[] = [
   },
   {
     id: "undev/prism",
-    label: "A forge's part not read",
+    label: "A forge's part that couldn't be read",
     rule: "Prism: GitHub answered 404 for its pull requests alone, so the pull request row says so in amber beside what Forgejo said, and the count covers only what was read. GitHub's CI was read, so the CI row names its run.",
   },
   {
@@ -83,6 +83,16 @@ const workingSpecimens: LedgerSpecimen[] = [
     id: "undev/Hollow-legacy",
     label: "Bugs",
     rule: "Hollow: the bugs row names the roadmap file the two bugs are in.",
+  },
+  {
+    id: "undev/skiff",
+    label: "A remote no card can read",
+    rule: "Skiff: no card covers skiff-app on GitHub, so the CI and pull request rows each say couldn't read for github beside what Forgejo said.",
+  },
+  {
+    id: "dev/hearth-config",
+    label: "No forge could be read",
+    rule: "hearth-config: neither forge's token was found, so the CI and pull request rows themselves say couldn't read, in amber, each forge beneath them saying so.",
   },
 ];
 
@@ -144,7 +154,7 @@ export function LedgerPage() {
 
       <Section
         title="Each chip's working"
-        rule="A bubble chip states a conclusion; the row holding its number spells out the working beneath it, source by source, in mono: each forge, roadmap file or git, what it says there, toned, linked where a page exists, and its age where it has one. A source that was read with nothing to say is silent; one that was not read, or a forge whose part for that row was not read, says so in amber, naming the part. A row holding one of the bubble's chips carries the dot, and on the bird's page the chip lands on it."
+        rule="A bubble chip states a conclusion; the row holding its number spells out the working beneath it, source by source, in mono: each forge, roadmap file or git, what it says there, toned, linked where a page exists, and its age where it has one. A source that was read with nothing to say is silent; one that couldn't be read, or a forge whose part for that row couldn't be read, says so in amber: couldn't read, naming the part. A CI or pull request row that no forge could fill says couldn't read itself. A row holding one of the bubble's chips carries the dot, and on the bird's page the chip lands on it."
         min={360}
       >
         {workingSpecimens.map((specimen) => (

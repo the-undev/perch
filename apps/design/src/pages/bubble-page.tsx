@@ -45,8 +45,8 @@ const restless: Entry[] = [
   },
   {
     id: "undev/skiff",
-    label: "Stalled flight",
-    rule: "HEAD on a non-default branch, no movement for 7 days (default).",
+    label: "A remote no card can read",
+    rule: "The clone pushes to a repository whose owner no card covers: amber, with the can't-read chip, which lands on the record's notice. Its stall follows as the secondary.",
   },
 ];
 

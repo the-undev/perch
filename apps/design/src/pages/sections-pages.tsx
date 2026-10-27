@@ -1,5 +1,5 @@
 // The ledger's sections, one usage page each: branches, the commit river, pull requests, flags
-// and sources not read.
+// and what couldn't be read.
 
 import type { FlagLine } from "@perch/core/viewmodel.ts";
 import {
@@ -110,9 +110,14 @@ const riverSpecimens: { id: string; label: string; rule: string }[] = [
     rule: "Prism: GitHub answered 404 for its pull requests but its commits were read, so the dot is judged over both forges and no line appears.",
   },
   {
+    id: "undev/skiff",
+    label: "A remote no card can read",
+    rule: "Skiff: no card covers skiff-app, so GitHub's line says couldn't read github with the short why. Forgejo was read, so the dot is judged over it alone.",
+  },
+  {
     id: "dev/hearth-config",
-    label: "No forge read",
-    rule: "hearth-config: neither forge's detail was read, so each gets an amber line and spread cannot be judged: the quiet dot.",
+    label: "No remote could be read",
+    rule: "hearth-config: neither forge's detail could be read, so each gets an amber line, and every commit's dot is amber: no remote could be read.",
   },
   {
     id: "dev/odin/hello",
@@ -126,7 +131,7 @@ export function RiverPage() {
     <>
       <Section
         title="The commit river"
-        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits. One dot before each says how far it has spread over the forges read: green when every one holds it, amber when one lacks it or none does, the quiet dot when no forge was read. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The clone only adds commits. A forge whose commits were not read gets an amber line, and one amber sentence appears only when a forge lacks a commit another forge holds."
+        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits; the heading names the branch. One dot before each says how far it has spread over the forges read: green when every one holds it, amber when one lacks it or none does, amber too when the bird has forges and none could be read, and the quiet dot only for a bird with no forge. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The clone only adds commits. A forge whose commits couldn't be read gets an amber line, with the short why when no card covers it, and one amber sentence appears only when a forge lacks a commit another forge holds."
         min={420}
       >
         {riverSpecimens.map((specimen) => (
@@ -150,7 +155,7 @@ export function RiverPage() {
           {
             name: "river",
             type: "River",
-            what: "bird.detail.river: the commits with their tone and spoken spread, a note per forge not read, and the divergence sentence or null.",
+            what: "bird.detail.river: the branch it judges, the commits with their tone and spoken spread, a note per forge that couldn't be read, and the divergence sentence or null.",
           },
           {
             name: "now",
@@ -184,7 +189,7 @@ export function PullRequestsPage() {
             />
           </Ground>
         </Specimen>
-        <Specimen label="Several" rule="Skiff: two open on GitHub.">
+        <Specimen label="Several" rule="Skiff: two open on Forgejo.">
           <Ground>
             <PullRequestLines
               pullRequests={mockBird("undev/skiff").detail.pullRequests}
@@ -278,8 +283,8 @@ export function ProblemsPage() {
   return (
     <>
       <Section
-        title="Sources not read"
-        rule="A failing source keeps its previous result and shows the error. The row names the source and its error; the value is amber."
+        title="What couldn't be read"
+        rule="A failing source keeps its previous result and shows the error. The row names the source and its error; the value, couldn't read, is amber."
         min={420}
       >
         <Specimen
@@ -289,6 +294,16 @@ export function ProblemsPage() {
           <Ground>
             <SourceProblems
               problems={mockBird("undev/prism").detail.problems}
+            />
+          </Ground>
+        </Specimen>
+        <Specimen
+          label="No card covers the owner"
+          rule="Skiff: the scanner's full sentence for the config gap the notice under the heading also names."
+        >
+          <Ground>
+            <SourceProblems
+              problems={mockBird("undev/skiff").detail.problems}
             />
           </Ground>
         </Specimen>

@@ -64,6 +64,11 @@ const glyphDocs = subjectOf("undev/glyph-docs");
 const spool = subjectOf("undev/spool");
 const dotfiles = subjectOf(".dotfiles");
 const skiff = subjectOf("undev/skiff");
+/** Skiff's subject with its unreadable remote left out, so its stall speaks alone. */
+const skiffStalled: SpeechSubject = {
+  ...skiff,
+  causes: skiff.causes.filter((cause) => cause.kind === "stalled"),
+};
 const prism = subjectOf("undev/prism");
 
 interface Group {
@@ -137,9 +142,19 @@ const book: Group[] = [
         ".dotfiles",
       ),
       entry(
+        "A remote no card can read",
+        "The clone pushes to a forge repository whose owner no card covers. A read that failed this scan is not a cause.",
+        "undev/skiff",
+      ),
+      variant(
         "Stalled flight",
         "HEAD on a non-default branch, no movement for 7 days (default).",
         "undev/skiff",
+        {
+          subject: skiffStalled,
+          changed: "its unreadable remote left out",
+          mood: null,
+        },
       ),
       variant(
         "Stalled with work unsafe",
@@ -147,14 +162,14 @@ const book: Group[] = [
         "undev/skiff",
         {
           subject: {
-            ...skiff,
-            causes: skiff.causes.map((cause) =>
+            ...skiffStalled,
+            causes: skiffStalled.causes.map((cause) =>
               cause.kind === "stalled"
                 ? { ...cause, everythingPushed: false }
                 : cause,
             ),
           },
-          changed: "not everything pushed",
+          changed: "its unreadable remote left out, and not everything pushed",
           mood: null,
         },
       ),

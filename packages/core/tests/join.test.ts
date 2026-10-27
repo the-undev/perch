@@ -42,7 +42,11 @@ function local(id: string, remotes: string[]): LocalInput {
 }
 
 function forge(name: ForgeName, repo: RawForgeRepo): ForgeInput {
-  return { forge: name, key: repo.info.fullName.toLowerCase(), repo };
+  return {
+    forge: name,
+    key: repo.info.fullName.toLowerCase(),
+    repo: { state: "observed", value: repo },
+  };
 }
 
 function joined(input: {

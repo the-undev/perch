@@ -16,6 +16,7 @@ import {
   localPresence,
   okStatus,
   rawFiles,
+  withRemotes,
 } from "./helpers/raw.ts";
 
 const config = await testConfig(
@@ -181,6 +182,78 @@ describe("aggregate", () => {
     expect(server && (await dockerContainersSource.fetch(server))).toEqual({
       state: "not-implemented",
     });
+  });
+
+  it("keeps a forge the enricher could not read as a presence carrying its error", () => {
+    const clone = (path: string, url: string) =>
+      localPresence(path, {
+        include: "/home/test/undev",
+        git: withRemotes([{ name: "origin", url }]),
+      });
+    const unread = rawFiles({
+      includes: { "/home/test/undev": "directory" },
+      locals: {
+        "undev/skiff": clone(
+          "/home/test/undev/skiff",
+          "git@github-work:skiff-app/skiff.git",
+        ),
+        "undev/gone": clone(
+          "/home/test/undev/gone",
+          "git@github.com:the-undev/gone.git",
+        ),
+        "undev/fork": clone(
+          "/home/test/undev/fork",
+          "git@github.com:the-undev/fork.git",
+        ),
+      },
+      forges: {},
+    });
+    unread.github = {
+      source: "github",
+      gatheredAt,
+      data: {
+        "skiff-app/skiff": {
+          state: "error",
+          reason: "no-card",
+          error: "no GitHub card is configured for owner skiff-app",
+        },
+        "the-undev/gone": {
+          state: "error",
+          reason: "lookup-failed",
+          error: "HTTP 404 for the-undev/gone",
+        },
+        "the-undev/fork": { state: "absent", reason: "fork-not-tracked" },
+      },
+    };
+
+    const snapshot = aggregate(
+      { status: okStatus({}), files: unread },
+      input,
+      new Date(),
+    );
+    const item = (id: string) =>
+      snapshot.items.find((candidate) => candidate.id === id);
+
+    expect(item("undev/skiff")?.sources.github).toEqual({
+      error: "no GitHub card is configured for owner skiff-app",
+      cause: "no-card",
+    });
+    expect(item("undev/skiff")?.presences.forges).toEqual([
+      {
+        forge: "github",
+        ref: "github:skiff-app/skiff",
+        fullName: "skiff-app/skiff",
+        url: null,
+        foundBy: "local-remote",
+      },
+    ]);
+    expect(item("undev/gone")?.sources.github).toEqual({
+      error: "HTTP 404 for the-undev/gone",
+      cause: "read-failed",
+    });
+    expect(item("undev/fork")?.presences.forges).toEqual([]);
+    expect(item("undev/fork")?.sources.github).toBeUndefined();
+    expect(snapshot.forges.github.active).toEqual([]);
   });
 });
 

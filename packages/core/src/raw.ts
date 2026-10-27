@@ -208,6 +208,21 @@ export interface RawForgeDetails {
   finalisedCommits: Entry<RawCommit[], never>;
 }
 
+/**
+ * A repository a local remote names that could not be read: no configured card covers its owner on
+ * the remote's host, a standing config gap, or the lookup itself failed.
+ */
+export interface RawForgeLookupError {
+  state: "error";
+  reason: "no-card" | "lookup-failed";
+  error: string;
+}
+
+/** The forge enricher's entry for one repository. */
+export type RawForgeEntry =
+  | Observed<RawForgeRepo, "fork-not-tracked">
+  | RawForgeLookupError;
+
 export interface RawForgeRepo {
   info: RawForgeRepoInfo;
   /** Listed under a configured account, or looked up because a local clone's remote names it. */
@@ -280,8 +295,8 @@ export interface RawData {
   roadmap: Record<string, Entry<RawRoadmap, "no-roadmap-file">>;
   claudeSessions: Record<string, Entry<RawClaudeSessions, never>>;
   /** Forge repositories keyed by lower-case owner/name. */
-  github: Record<string, Entry<RawForgeRepo, "fork-not-tracked">>;
-  forgejo: Record<string, Entry<RawForgeRepo, "fork-not-tracked">>;
+  github: Record<string, RawForgeEntry>;
+  forgejo: Record<string, RawForgeEntry>;
 }
 
 export type PolledSourceName = keyof RawData;

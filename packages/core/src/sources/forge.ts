@@ -13,6 +13,7 @@ import type {
   RawFiles,
   RawForgeAccount,
   RawForgeDetails,
+  RawForgeEntry,
   RawForgeRepo,
   RawForgeRepoInfo,
 } from "../raw.ts";
@@ -45,6 +46,12 @@ export async function readFacet<T>(
     return { state: "error", error: errorMessage(error) };
   }
 }
+
+/** Each forge's name as its cards are headed. */
+const forgeLabel: Record<ForgeName, string> = {
+  github: "GitHub",
+  forgejo: "Forgejo",
+};
 
 /** One configured account of a forge with the client that reads it. */
 export type ForgeCard = GithubSourceConfig & { client: ForgeClient };
@@ -142,8 +149,9 @@ interface Candidate {
 /**
  * Enricher: every listed repository, read through the table that listed it, plus any repository a
  * local clone's remote names on one of this forge's hosts that the listings missed, looked up
- * through the account that owns it on that host. Pull requests, CI and finalised commits are read
- * for those not archived, each failing on its own; a missing token fails the whole detail.
+ * through the account that owns it on that host. A remote whose owner no card covers is recorded as
+ * that config gap, a failed lookup as its own error. Pull requests, CI and finalised commits are
+ * read for those not archived, each failing on its own; a missing token fails the whole detail.
  */
 export function createForgeSource<N extends ForgeName>(
   name: N,
@@ -179,10 +187,7 @@ export function createForgeSource<N extends ForgeName>(
         }
       }
 
-      const entries: Record<
-        string,
-        Entry<RawForgeRepo, "fork-not-tracked">
-      > = {};
+      const entries: Record<string, RawForgeEntry> = {};
       const lookedUp = new Set<string>();
       for (const presence of Object.values(local.data.presences)) {
         if (presence.git.state !== "observed") continue;
@@ -201,7 +206,8 @@ export function createForgeSource<N extends ForgeName>(
           if (account === null) {
             entries[key] = {
               state: "error",
-              error: `no ${name} account is configured for owner ${location.owner}`,
+              reason: "no-card",
+              error: `no ${forgeLabel[name]} card is configured for owner ${location.owner}`,
             };
             continue;
           }
@@ -229,7 +235,11 @@ export function createForgeSource<N extends ForgeName>(
               aliases: canonical === key ? [] : [key],
             });
           } catch (error) {
-            entries[key] = { state: "error", error: errorMessage(error) };
+            entries[key] = {
+              state: "error",
+              reason: "lookup-failed",
+              error: errorMessage(error),
+            };
           }
         }
       }

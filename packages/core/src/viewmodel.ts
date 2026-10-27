@@ -622,7 +622,7 @@ function upstreamUrl(
     (entry) =>
       entry.forge === forge && entry.fullName.toLowerCase() === fullName,
   );
-  return presence
+  return presence?.url
     ? branchUrl(presence.forge, presence.url, upstream.slice(slash + 1))
     : null;
 }
@@ -1153,10 +1153,16 @@ export function deriveBird(
         level: flag.level,
       })),
       actions: actionsFor(item, entry, config),
-      links: item.presences.forges.map((presence) => ({
-        label: `${presence.fullName} on ${forgeLabel[presence.forge]}`,
-        url: presence.url,
-      })),
+      links: item.presences.forges.flatMap((presence) =>
+        presence.url === null
+          ? []
+          : [
+              {
+                label: `${presence.fullName} on ${forgeLabel[presence.forge]}`,
+                url: presence.url,
+              },
+            ],
+      ),
       keyFiles: keyFilesFor(item, entry),
       problems: problemsFor(item),
     },

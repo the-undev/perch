@@ -646,7 +646,7 @@ describe("the ledger's workings", () => {
     const config = await adoptAll(["dev/prism"]);
     const prism = item("dev/prism", {
       sources: {
-        github: { error: "HTTP 404" },
+        github: { error: "HTTP 404", cause: "read-failed" },
         forgejo: forgeData({
           url: "http://forgejo.test/the-undev/prism",
           latestCi: failingRun,
@@ -912,7 +912,7 @@ describe("the detail", () => {
           },
         ],
       }),
-      forgejo: { error: "HTTP 500" },
+      forgejo: { error: "HTTP 500", cause: "read-failed" },
     },
   });
 
@@ -1064,6 +1064,41 @@ describe("the detail", () => {
       clonePath: "/srv/scratch",
       forges: [],
     });
+  });
+
+  it("names a forge it could not read where the bird lives, with no link out to it", async () => {
+    const config = await adoptAll(["undev/skiff"]);
+    const skiff = item("undev/skiff", {
+      presences: {
+        local: { ref: "local:undev/skiff", path: "/home/test/undev/skiff" },
+        forges: [
+          {
+            forge: "github",
+            ref: "github:skiff-app/skiff",
+            fullName: "skiff-app/skiff",
+            url: null,
+            foundBy: "local-remote",
+          },
+        ],
+      },
+      sources: {
+        git: gitData({}),
+        github: {
+          error: "no GitHub card is configured for owner skiff-app",
+          cause: "no-card",
+        },
+      },
+    });
+    const detail = birdIn([skiff], config, "undev/skiff").detail;
+
+    expect(detail.forges).toEqual(["github"]);
+    expect(detail.links).toEqual([]);
+    expect(detail.problems).toEqual([
+      {
+        source: "GitHub",
+        error: "no GitHub card is configured for owner skiff-app",
+      },
+    ]);
   });
 
   it("offers no launch actions and no key files without a local clone", async () => {
@@ -1268,7 +1303,7 @@ describe("the commit river", () => {
           url: "https://github.com/finch/river",
           finalisedCommits: [at("c1", 1)],
         }),
-        forgejo: { error: "HTTP 500" },
+        forgejo: { error: "HTTP 500", cause: "read-failed" },
       },
     });
     const config = await adoptAll(["dev/river"]);
@@ -1333,7 +1368,7 @@ describe("the commit river", () => {
           url: "https://github.com/finch/river",
           finalisedCommits: [at("c1", 5)],
         }),
-        forgejo: { error: "HTTP 500" },
+        forgejo: { error: "HTTP 500", cause: "read-failed" },
       },
     });
     const config = await adoptAll(["dev/river"]);
@@ -1352,7 +1387,7 @@ describe("the commit river", () => {
       },
       sources: {
         git: gitData({ defaultBranchCommits: [at("c1", 1)] }),
-        github: { error: "HTTP 404" },
+        github: { error: "HTTP 404", cause: "read-failed" },
       },
     });
     const config = await adoptAll(["dev/river"]);

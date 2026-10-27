@@ -28,6 +28,7 @@ import type {
   DayThresholds,
   Drift,
   ForgeData,
+  ForgeError,
   GitData,
   HealthLevel,
   HourThresholds,
@@ -542,10 +543,11 @@ function deriveFacet<T, U>(
  * Forge data for a presence; details that could not be read at all are the item's error, and a
  * part that could not be read is that part's error.
  */
-export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
-  if (repo.details.state === "error") return { error: repo.details.error };
+export function deriveForge(repo: RawForgeRepo): ForgeData | ForgeError {
+  if (repo.details.state === "error")
+    return { error: repo.details.error, cause: "read-failed" };
   if (repo.details.state === "absent")
-    return { error: "details not read: archived" };
+    return { error: "details not read: archived", cause: "read-failed" };
   const { openPullRequests, ci, finalisedCommits } = repo.details.value;
   return {
     fullName: repo.info.fullName,

@@ -195,6 +195,14 @@ export interface ForgeData {
   finalisedCommits: FinalisedCommit[] | ItemError;
 }
 
+/**
+ * A forge repository perch could not read at all: no card covers its owner, a standing config gap,
+ * or the read failed this scan.
+ */
+export interface ForgeError extends ItemError {
+  cause: "no-card" | "read-failed";
+}
+
 export interface FinalisedCommit {
   sha: string;
   committedAt: string;
@@ -225,8 +233,8 @@ export interface ItemSourceData {
   git: GitData | ItemError;
   roadmap: RoadmapData | ItemError;
   claudeSessions: ClaudeSessionsData | ItemError;
-  github: ForgeData | ItemError;
-  forgejo: ForgeData | ItemError;
+  github: ForgeData | ForgeError;
+  forgejo: ForgeData | ForgeError;
   kuma: KumaData | ItemError;
 }
 
@@ -236,8 +244,10 @@ export interface ForgePresence {
   forge: ForgeName;
   /** The presence reference, such as github:finch/perch. */
   ref: string;
+  /** As the forge spells it, or lower case as the remote named it when it could not be read. */
   fullName: string;
-  url: string;
+  /** The repository's page; null when it could not be read. */
+  url: string | null;
   foundBy: "account-listing" | "local-remote";
 }
 

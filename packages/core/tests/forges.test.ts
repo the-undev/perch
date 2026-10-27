@@ -307,11 +307,13 @@ describe("forge source", () => {
     });
     expect(data["finch/deleted"]).toEqual({
       state: "error",
+      reason: "lookup-failed",
       error: "HTTP 404 for finch/deleted",
     });
     expect(data["someone/elsewhere"]).toEqual({
       state: "error",
-      error: "no github account is configured for owner someone",
+      reason: "no-card",
+      error: "no GitHub card is configured for owner someone",
     });
     expect(Object.keys(data)).not.toContain("someone/other-forge");
   });
@@ -445,6 +447,7 @@ describe("forge source", () => {
 
     expect(data["skiff-app/skiff"]).toEqual({
       state: "error",
+      reason: "lookup-failed",
       error: tokenMissing("github-skiff-app"),
     });
   });
@@ -841,6 +844,7 @@ describe("deriving forge data", () => {
     });
     expect(deriveForge(forgeRepo("finch/old", { archived: true }))).toEqual({
       error: "details not read: archived",
+      cause: "read-failed",
     });
   });
 

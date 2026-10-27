@@ -1353,10 +1353,12 @@ const homeItConfig = localItem("dev/hearth-config", {
     github: {
       error:
         'no token in the keyring under service perch key github-finch; store it with: secret-tool store --label "perch github-finch" service perch key github-finch',
+      cause: "read-failed",
     },
     forgejo: {
       error:
         'no token in the keyring under service perch key forgejo-finch; store it with: secret-tool store --label "perch forgejo-finch" service perch key forgejo-finch',
+      cause: "read-failed",
     },
   },
 });
@@ -1456,15 +1458,19 @@ const items: Item[] = [
 function listing(forgeName: ForgeName): Snapshot["forges"][ForgeName] {
   return {
     active: items.flatMap((item) =>
-      item.presences.forges
-        .filter((entry) => entry.forge === forgeName)
-        .map((entry) => ({
-          ref: entry.ref,
-          fullName: entry.fullName,
-          url: entry.url,
-          itemId: item.id,
-          ignored: false,
-        })),
+      item.presences.forges.flatMap((entry) =>
+        entry.forge !== forgeName || entry.url === null
+          ? []
+          : [
+              {
+                ref: entry.ref,
+                fullName: entry.fullName,
+                url: entry.url,
+                itemId: item.id,
+                ignored: false,
+              },
+            ],
+      ),
     ),
     archived:
       forgeName === "github"

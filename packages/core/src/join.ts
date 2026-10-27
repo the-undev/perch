@@ -2,7 +2,12 @@
 // rules here decide which presences are one project. Observation beats assertion; every
 // disagreement is recorded.
 
-import type { ForgeName, RawForgeRepo, RawLocalPresence } from "./raw.ts";
+import type {
+  ForgeName,
+  RawForgeLookupError,
+  RawForgeRepo,
+  RawLocalPresence,
+} from "./raw.ts";
 import { candidateRefs, forgeRef, localRef } from "./refs.ts";
 import { parseRemoteUrl, remoteUrls } from "./remote-url.ts";
 import type { ConfigConflict, ItemFlag } from "./snapshot.ts";
@@ -17,7 +22,27 @@ export interface ForgeInput {
   forge: ForgeName;
   /** Lower-case owner/name. */
   key: string;
-  repo: RawForgeRepo;
+  /** The repository as read, or the error that kept a remote's repository from being read. */
+  repo: { state: "observed"; value: RawForgeRepo } | RawForgeLookupError;
+}
+
+/** Whether a forge presence was read and is archived; one that could not be read is not. */
+export function isArchived(presence: ForgeInput): boolean {
+  return (
+    presence.repo.state === "observed" && presence.repo.value.info.archived
+  );
+}
+
+/** A forge presence's owner/name as the forge spells it, else its lower-case key. */
+export function fullNameOf(presence: ForgeInput): string {
+  return presence.repo.state === "observed"
+    ? presence.repo.value.info.fullName
+    : presence.key;
+}
+
+/** The other keys local remotes used for a presence; none for one that could not be read. */
+function aliasesOf(presence: ForgeInput): string[] {
+  return presence.repo.state === "observed" ? presence.repo.value.aliases : [];
 }
 
 export interface Project {
@@ -84,9 +109,9 @@ export function joinPresences(input: JoinInput): JoinResult {
   const byRef = new Map<string, ForgeInput>();
   const archived = new Map<string, ForgeInput>();
   for (const presence of input.forges) {
-    const target = presence.repo.info.archived ? archived : byRef;
+    const target = isArchived(presence) ? archived : byRef;
     target.set(forgeRef(presence.forge, presence.key), presence);
-    for (const alias of presence.repo.aliases) {
+    for (const alias of aliasesOf(presence)) {
       target.set(forgeRef(presence.forge, alias), presence);
     }
   }
@@ -124,7 +149,7 @@ export function joinPresences(input: JoinInput): JoinResult {
         project.flags.push({
           flag: "remote-archived",
           level: null,
-          detail: `${remote.name} is ${archivedPresence.repo.info.fullName}, archived on ${forge}`,
+          detail: `${remote.name} is ${fullNameOf(archivedPresence)}, archived on ${forge}`,
         });
         continue;
       }
@@ -137,7 +162,7 @@ export function joinPresences(input: JoinInput): JoinResult {
         project.flags.push({
           flag: "remote-joined-elsewhere",
           level: null,
-          detail: `${remote.name} is ${presence.repo.info.fullName}, already joined to ${owner.refs[0]}`,
+          detail: `${remote.name} is ${fullNameOf(presence)}, already joined to ${owner.refs[0]}`,
         });
         continue;
       }
@@ -149,7 +174,7 @@ export function joinPresences(input: JoinInput): JoinResult {
 
   for (const presence of input.forges) {
     const ref = forgeRef(presence.forge, presence.key);
-    if (presence.repo.info.archived || projectOf.has(ref)) continue;
+    if (isArchived(presence) || projectOf.has(ref)) continue;
     const project: Project = {
       refs: [ref],
       local: null,

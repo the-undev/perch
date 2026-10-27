@@ -1189,6 +1189,22 @@ describe("the detail", () => {
     ]);
   });
 
+  it("gives the record a notice naming a remote no card can read and the card that would", async () => {
+    const config = await adoptAll(["undev/skiff", "undev/tokenless"]);
+    const items = [
+      unreadableItem("undev/skiff", ["github"], {}, "no-card"),
+      unreadableItem("undev/tokenless", ["github"], {}, "read-failed"),
+    ];
+
+    expect(birdIn(items, config, "undev/skiff").detail.notices).toEqual([
+      {
+        text: "The clone pushes to skiff-app/skiff on github, which no GitHub card reads.",
+        fix: "Add a card for skiff-app under",
+      },
+    ]);
+    expect(birdIn(items, config, "undev/tokenless").detail.notices).toEqual([]);
+  });
+
   it("offers no launch actions and no key files without a local clone", async () => {
     const config = await adoptAll(["github:finch/obsidian-tidy"]);
     const forgeOnly = item("github:finch/obsidian-tidy", {

@@ -97,6 +97,7 @@ export function AdoptionPapersPage() {
               problems={[]}
               openPapers={false}
               arrivalChip={null}
+              onSettings={() => {}}
             />
           </div>
         </Specimen>
@@ -119,6 +120,7 @@ export function AdoptionPapersPage() {
               problems={[]}
               openPapers={true}
               arrivalChip={null}
+              onSettings={() => {}}
             />
           </div>
         </Specimen>

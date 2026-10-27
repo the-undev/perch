@@ -146,7 +146,7 @@ export interface Landing {
 }
 
 /** The brief mark on the row a chip landed on, behind its words; drawn afresh for each press. */
-function LandingMark() {
+export function LandingMark() {
   return (
     <span
       aria-hidden="true"

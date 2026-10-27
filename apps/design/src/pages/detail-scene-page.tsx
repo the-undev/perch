@@ -76,6 +76,7 @@ export function DetailScenePage() {
           problems={[]}
           openPapers={false}
           arrivalChip={null}
+          onSettings={() => setPressed("onSettings()")}
         />
       </div>
       <Pressed text={pressed} />
@@ -113,6 +114,16 @@ export function DetailScenePage() {
             name: "openPapers",
             type: "boolean",
             what: "The papers unfold as the page opens, and again whenever it turns true: the bubble's adopt key leads here with it set.",
+          },
+          {
+            name: "arrivalChip",
+            type: "ChipKind | null",
+            what: "The chip pressed in the aviary's bubble that brought the camera here, landed on as the page opens.",
+          },
+          {
+            name: "onSettings",
+            type: "() => void",
+            what: "A notice's Sources was pressed; the app opens the settings page.",
           },
         ]}
       >

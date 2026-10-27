@@ -717,6 +717,7 @@ export function CameraView({
                   problems={problems}
                   openPapers={place.at === "detail" && place.papers}
                   arrivalChip={place.at === "detail" ? place.chip : null}
+                  onSettings={onSettings}
                 />
               </div>
             )}

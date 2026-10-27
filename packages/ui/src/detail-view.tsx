@@ -1,8 +1,9 @@
 // Tier C: a bird's full page. The roost at the top right holds the bird on its perch and its
-// bubble; the record beside it opens with the heading, then the launch actions, links out and the
-// papers' verb, then the ledger and its sections beside the key files on paper. A chip pressed in
-// the roost's bubble lands on the ledger row holding its working, as does the chip pressed in the
-// aviary's bubble that brought the camera here. Only what exists is shown. The view fetches
+// bubble; the record beside it opens with the heading, a notice for each remote no card can read,
+// then the launch actions, links out and the papers' verb, then the ledger and its sections beside
+// the key files on paper. A chip pressed in the roost's bubble lands on the ledger row holding its
+// working, or the can't-read chip on the notice, as does the chip pressed in the aviary's bubble
+// that brought the camera here. Only what exists is shown. The view fetches
 // nothing: key-file contents, launching and the entry's form and writes are the caller's.
 
 import {
@@ -10,7 +11,12 @@ import {
   type EntryValues,
   sameEntryValues,
 } from "@perch/core/entry-form.ts";
-import type { Bird, ChipKind, LaunchAction } from "@perch/core/viewmodel.ts";
+import type {
+  Bird,
+  ChipKind,
+  LaunchAction,
+  RemoteNotice,
+} from "@perch/core/viewmodel.ts";
 import {
   type AnimationEvent,
   useCallback,
@@ -29,6 +35,7 @@ import {
   CommitRiver,
   FlagLines,
   type Landing,
+  LandingMark,
   Ledger,
   PullRequestLines,
   SourceProblems,
@@ -62,6 +69,8 @@ export interface DetailViewProps {
   openPapers: boolean;
   /** The chip pressed in the aviary's bubble that brought the camera here: landed on as the page opens and whenever it changes; null for none. */
   arrivalChip: ChipKind | null;
+  /** A notice's Sources was pressed: open the settings page. */
+  onSettings: () => void;
 }
 
 /** What was signed and is not yet in the entry read back: the values written, or the return. */
@@ -162,6 +171,45 @@ function MainProblems({ problems }: { problems: string[] }) {
   );
 }
 
+/**
+ * Each remote no card can read, one amber sentence under the heading in the same voice, its fix
+ * ending on Sources, which opens the settings page. The can't-read chip lands here.
+ */
+function RemoteNotices({
+  notices,
+  landing,
+  onSettings,
+}: {
+  notices: RemoteNotice[];
+  landing: Landing | null;
+  onSettings: () => void;
+}) {
+  if (notices.length === 0) return null;
+  const landed = landing !== null && landing.chip === "unreadable";
+  return (
+    <div
+      data-part="notices"
+      data-chip="unreadable"
+      className="relative isolate mt-3 max-w-[90ch] text-[12.5px] leading-normal"
+    >
+      {landed && <LandingMark key={`mark-${landing.press}`} />}
+      {notices.map((notice) => (
+        <p key={notice.text} className="m-0 text-amber">
+          {notice.text} {notice.fix}{" "}
+          <button
+            type="button"
+            onClick={onSettings}
+            className="cursor-pointer text-amber underline decoration-dotted underline-offset-3 hover:text-ink focus-visible:outline-2 focus-visible:outline-ink-accent"
+          >
+            Sources
+          </button>
+          .
+        </p>
+      ))}
+    </div>
+  );
+}
+
 /** Whether the page's arrival is still animating: false where the platform cannot say, or motion is reduced and nothing runs. */
 function swapRunning(article: HTMLElement | null): boolean {
   if (article === null || typeof article.getAnimations !== "function") {
@@ -183,6 +231,7 @@ export function DetailView({
   problems,
   openPapers,
   arrivalChip,
+  onSettings,
 }: DetailViewProps) {
   const { detail } = bird;
   const [open, setOpen] = useState(openPapers);
@@ -196,20 +245,19 @@ export function DetailView({
     entry.form !== null &&
     (entry.form.values !== null) === bird.adopted;
   const night = isNight(skyPhase(now));
-  const recordRef = useRef<HTMLDivElement>(null);
   const [landing, setLanding] = useState<Landing | null>(null);
+  const articleRef = useRef<HTMLElement>(null);
   // The mark is committed before the scroll, so the row never paints unlit; both callers, a press
   // and the arrival effect, run outside render, where flushSync is allowed.
   const landOn = useCallback((chip: ChipKind) => {
     flushSync(() => {
       setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
     });
-    recordRef.current
+    articleRef.current
       ?.querySelector(`[data-chip="${chip}"]`)
       ?.scrollIntoView({ block: "center", behavior: "instant" });
   }, []);
   // The arrival lands once the page's own swap is over, since a scroll and a mark during it flicker.
-  const articleRef = useRef<HTMLElement>(null);
   const [settled, setSettled] = useState(false);
   useLayoutEffect(() => {
     if (!swapRunning(articleRef.current)) setSettled(true);
@@ -236,6 +284,11 @@ export function DetailView({
           className="min-w-0 @min-[860px]:col-start-1 @min-[860px]:row-start-1"
         >
           <DetailHeading bird={bird} />
+          <RemoteNotices
+            notices={detail.notices}
+            landing={landing}
+            onSettings={onSettings}
+          />
           <div className="mt-3.5 flex flex-wrap items-center gap-1">
             <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
             <LinksOut links={detail.links} />
@@ -253,7 +306,6 @@ export function DetailView({
           <Roost bird={bird} night={night} onChip={landOn} />
         </div>
         <div
-          ref={recordRef}
           data-part="record"
           className="@container col-span-full min-w-0 @min-[860px]:row-start-2"
         >

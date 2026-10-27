@@ -327,12 +327,25 @@ export interface SourceProblem {
   error: string;
 }
 
+/**
+ * A remote the clone pushes to that no card can read, said under the page's heading: what perch
+ * knows and could not do, then the fix, which ends on the link to the settings page's Sources.
+ */
+export interface RemoteNotice {
+  /** Such as "The clone pushes to skiff-app/skiff on github, which no GitHub card reads." */
+  text: string;
+  /** Such as "Add a card for skiff-app under", before the link. */
+  fix: string;
+}
+
 /** Everything about one bird beyond its look and bubble, which the detail page also shows. */
 export interface Detail {
   /** Where the clone is on disk, home as ~; null for a bird with no clone here. */
   clonePath: string | null;
   /** The forges that hold the bird, each once, in the order its presences were found. */
   forges: ForgeName[];
+  /** One per remote no card can read; where the can't-read chip lands. */
+  notices: RemoteNotice[];
   ledger: LedgerEntry[];
   branches: BranchLine[];
   river: River;
@@ -1061,6 +1074,20 @@ function problemsFor(item: Item): SourceProblem[] {
   return [...sources, ...parts];
 }
 
+/** A notice per remote no card can read, from the health causes that name them. */
+function noticesFor(health: Health): RemoteNotice[] {
+  return health.causes.flatMap((cause) =>
+    cause.kind === "unreadable-remote"
+      ? [
+          {
+            text: `The clone pushes to ${cause.fullName} on ${cause.forge}, which no ${forgeLabel[cause.forge]} card reads.`,
+            fix: `Add a card for ${cause.fullName.slice(0, cause.fullName.indexOf("/"))} under`,
+          },
+        ]
+      : [],
+  );
+}
+
 function fenceSituation(item: Item): FenceSituation {
   const first = item.presences.forges[0];
   if (item.presences.local === null && first) {
@@ -1165,6 +1192,7 @@ export function deriveBird(
       forges: [
         ...new Set(item.presences.forges.map((presence) => presence.forge)),
       ],
+      notices: noticesFor(health),
       ledger: ledgerFor(item, chips),
       branches: branchesFor(item, config),
       river: riverFor(item, config.scan.finalisedCommits),

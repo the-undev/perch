@@ -72,6 +72,36 @@ function findBird(aviary: Aviary, id: string): Bird {
   return bird;
 }
 
+/** Skiff with its GitHub remote unread for want of a card that covers its owner. */
+function unreadableSkiff(): Bird {
+  const items = mockSnapshot.items.map((item) =>
+    item.id === "undev/skiff"
+      ? {
+          ...item,
+          presences: {
+            ...item.presences,
+            forges: item.presences.forges.map((presence) =>
+              presence.forge === "github"
+                ? { ...presence, fullName: "skiff-app/skiff", url: null }
+                : presence,
+            ),
+          },
+          sources: {
+            ...item.sources,
+            github: {
+              error: "no GitHub card is configured for owner skiff-app",
+              cause: "no-card" as const,
+            },
+          },
+        }
+      : item,
+  );
+  return findBird(
+    deriveAviary({ ...mockSnapshot, items }, mockConfig, mockHome),
+    "undev/skiff",
+  );
+}
+
 interface PageOptions {
   sheets?: KeyFileSheet[];
   form?: EntryForm | null;
@@ -84,6 +114,7 @@ function page(bird: Bird, options: PageOptions = {}) {
   const onLaunch = vi.fn();
   const onSave = vi.fn();
   const onRemove = vi.fn();
+  const onSettings = vi.fn();
   const view = (next: Bird, given: PageOptions) => (
     <DetailView
       bird={next}
@@ -94,6 +125,7 @@ function page(bird: Bird, options: PageOptions = {}) {
       problems={given.problems ?? []}
       openPapers={given.openPapers ?? false}
       arrivalChip={given.arrivalChip ?? null}
+      onSettings={onSettings}
     />
   );
   const { container, rerender } = render(view(bird, options));
@@ -102,6 +134,7 @@ function page(bird: Bird, options: PageOptions = {}) {
     onLaunch,
     onSave,
     onRemove,
+    onSettings,
     /** The same page given a new bird and new options, as a push would. */
     push: (next: Bird, given: PageOptions) => rerender(view(next, given)),
   };
@@ -210,6 +243,36 @@ describe("the detail view", () => {
     expect(scrolled.at(-1)?.element).toBe(row("pull-requests"));
     expect(container.querySelectorAll('[data-part="landing"]')).toHaveLength(1);
     expect(markedRow()).toBe("pull-requests");
+  });
+
+  it("lands the can't-read chip on the record's notice, whose Sources opens the settings page", () => {
+    const skiff = unreadableSkiff();
+    const { container, onSettings } = page(skiff);
+    const bubble = screen.getByRole("region", { name: "Skiff says" });
+    const notice = container.querySelector('[data-part="notices"]');
+
+    expect(notice?.textContent).toBe(
+      "The clone pushes to skiff-app/skiff on github, which no GitHub card reads. Add a card for skiff-app under Sources.",
+    );
+    expect(
+      container.querySelector('[data-part="heading"] [data-part="notices"]'),
+    ).toBe(notice);
+    fireEvent.click(
+      within(bubble).getByRole("button", { name: "can't read github" }),
+    );
+
+    expect(scrolled.map(({ element }) => element)).toEqual([notice]);
+    expect(notice?.querySelector('[data-part="landing"]')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sources" }));
+
+    expect(onSettings).toHaveBeenCalledOnce();
+  });
+
+  it("gives a bird whose remotes all read no notice", () => {
+    const { container } = page(mockBird("dev/perch"));
+
+    expect(container.querySelector('[data-part="notices"]')).toBeNull();
   });
 
   it("lands the chip's row in the same paint as the press", () => {

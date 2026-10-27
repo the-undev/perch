@@ -1023,3 +1023,48 @@ build-time calls so they can be revisited.
   speaks as the secondary. The mock config loses the skiff-app card
   and its source card. hearth-config keeps both forges failed for
   missing tokens, untroubled, and now draws the amber dots.
+
+## 27 October 2026 (the fixed stage)
+
+- The fixed-stage round (`mockups/fixed-stage.html`) had five verdicts.
+  The window never scrolls on the bird's page: the strip, the heading
+  with its actions and the roost are fixed, and the record pane and the
+  paper pane each scroll their own contents with a thin quiet
+  scrollbar. A narrow page goes to one pane, the key files at the
+  record's end, over the folder-tab alternative. The papers rising over
+  the still stage belongs to the sheet rework on its own branch; here
+  the inline papers move into the record pane. The aviary and the
+  settings page are out of the round.
+- The thresholds stay: the band stacks the roost under the heading
+  below 860px, and the panes join below 960px, both measured on the
+  page. The stacked band stays fixed, so a window both narrow and short
+  leaves the panes little height.
+- In a narrow page the panes' grid is the one scroller and the panes
+  inside it do not scroll, so one tree serves both widths and the key
+  files render once.
+- Each pane carries 10px of side padding inside a grid pulled out by
+  10px, so a landing mark, 10px wider than its row each side, is not
+  clipped. The record column becomes 350 to 450px and the gap 20px,
+  which keeps the content widths and the 40px between them. Sideways
+  overflow is hidden, so a wide row clips rather than raising a
+  horizontal scrollbar.
+- `pane-scroll` in the theme is the panes' one styling: overscroll
+  contained and a thin scrollbar in edge-hi on transparent. It has no
+  webkit scrollbar rules: Chromium 121 and later ignore them once
+  `scrollbar-color` is set.
+- The papers' verb stays in the band's action row and the papers unfold
+  at the top of the record pane. A press scrolls them into view, since
+  the pane may be scrolled away; papers open on arrival need no scroll.
+- The main process's problems move into the band under the action row,
+  so a failed launch stays in view whatever the record's scroll.
+- The key-file sheet loses its cap of the window's height less 18rem
+  and its own scroll. It keeps its focus stop rather than the pane
+  taking one: the keys scroll the nearest scrolling ancestor, the paper
+  pane when wide and the joined pane when narrow. The folder tabs stick
+  to the pane's top on the ground's colour.
+- A chip's landing is unchanged: `scrollIntoView` moves the row's pane.
+  The camera's ground is overflow hidden and fits its contents, so it
+  holds still.
+- The design site frames the bird's page in a `Stage` of fixed height
+  on the detail scene and adoption papers pages, and the paper page
+  shows a long document scrolling its pane.

@@ -43,7 +43,7 @@ export function PaperPage() {
     <>
       <Section
         title="Key files as paper"
-        rule="A configurable list of key files rendered as paper, the bubble's material, with folder tabs. The sheet fills its column; the writing on it keeps a reading width. A sheet stops short of the window's height and scrolls inside itself; a short one keeps its natural height."
+        rule="A configurable list of key files rendered as paper, the bubble's material, with folder tabs. The sheet fills its column; the writing on it keeps a reading width. A sheet keeps its full height: the pane holding it scrolls, the folder tabs held at the pane's top."
         min={760}
       >
         <Specimen
@@ -57,17 +57,20 @@ export function PaperPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="A long document scrolls in place"
-          rule="Perch's spec, many screens long: the sheet is capped at the window's height less 18rem, at least 20rem, and scrolls inside itself while the page around it holds still."
+          label="A long document scrolls its pane"
+          rule="Perch's spec, many screens long, in a pane of fixed height as the bird's page gives it: the pane scrolls with a thin quiet scrollbar, and the folder tabs stay at its top."
         >
-          <Ground>
+          <div className="pane-scroll h-[28rem] overflow-y-auto rounded-xl border border-edge bg-ground px-5 pb-4">
             <KeyFilePaper
               sheets={sheetsFor(
-                [{ path: "docs/spec.md", absolutePath: "/spec.md" }],
+                [
+                  { path: "docs/spec.md", absolutePath: "/spec.md" },
+                  { path: "README.md", absolutePath: "/readme.md" },
+                ],
                 perchFiles,
               )}
             />
-          </Ground>
+          </div>
         </Specimen>
         <Specimen
           label="Every markdown element"
@@ -107,9 +110,12 @@ export function PaperPage() {
           The view model holds paths only. The app reads{" "}
           <Code>absolutePath</Code> at render time and passes the text in. The
           first tab opens; the tab state is the component&apos;s own. The open
-          sheet&apos;s height is capped by <Code>paperScroll</Code>; past it the
-          sheet scrolls inside itself and takes focus, so the keys scroll it.{" "}
-          <Code>MarkdownPaper</Code> renders one sheet&apos;s markdown alone.
+          sheet keeps its full height and has no scroll of its own: place it in
+          a pane that scrolls, <Code>overflow-y-auto</Code> with{" "}
+          <Code>pane-scroll</Code>, as the bird&apos;s page does. The tabs stick
+          to the pane&apos;s top, and the sheet takes focus so the keys scroll
+          the pane. <Code>MarkdownPaper</Code> renders one sheet&apos;s markdown
+          alone.
         </p>
       </Usage>
     </>

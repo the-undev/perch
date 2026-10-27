@@ -2,7 +2,7 @@ import { DetailView } from "@perch/ui/detail-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
 import { mockBird, mockEntryForm, scanMoment } from "../specimens.ts";
-import { Choice, Code, Pressed, Section, Usage } from "../usage.tsx";
+import { Choice, Code, Pressed, Section, Stage, Usage } from "../usage.tsx";
 
 const birds = [
   {
@@ -43,7 +43,7 @@ export function DetailScenePage() {
     <>
       <Section
         title="Five contrasting birds"
-        rule="The bird sits on its perch at the top right with its bubble, and the heading beside it says its name, state and where it lives. The page shows only what exists for a bird: an empty section is left out, a bird with no clone has nothing to launch, and a source that failed is named with its error."
+        rule="The bird sits on its perch at the top right with its bubble, and the heading beside it says its name, state and where it lives. The page is a fixed stage: the heading, its actions and the roost hold still, and beneath them the record and the key files each scroll their own pane under the pointer. The page shows only what exists for a bird: an empty section is left out, a bird with no clone has nothing to launch, and a source that failed is named with its error."
         min={600}
       >
         <div>
@@ -61,23 +61,25 @@ export function DetailScenePage() {
           </p>
         </div>
       </Section>
-      <div className="mt-4 rounded-xl border border-edge bg-ground px-7.5 pt-5.5 pb-11">
-        <DetailView
-          key={id}
-          bird={bird}
-          now={scanMoment}
-          onLaunch={(action) => setPressed(`${bird.name}: ${action.verb}`)}
-          sheets={birdSheets(bird)}
-          entry={{
-            form: mockEntryForm(id),
-            onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
-            onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
-          }}
-          problems={[]}
-          openPapers={false}
-          arrivalChip={null}
-          onSettings={() => setPressed("onSettings()")}
-        />
+      <div className="mt-4">
+        <Stage height="max(560px, calc(100vh - 320px))">
+          <DetailView
+            key={id}
+            bird={bird}
+            now={scanMoment}
+            onLaunch={(action) => setPressed(`${bird.name}: ${action.verb}`)}
+            sheets={birdSheets(bird)}
+            entry={{
+              form: mockEntryForm(id),
+              onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
+              onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
+            }}
+            problems={[]}
+            openPapers={false}
+            arrivalChip={null}
+            onSettings={() => setPressed("onSettings()")}
+          />
+        </Stage>
       </div>
       <Pressed text={pressed} />
 
@@ -129,14 +131,18 @@ export function DetailScenePage() {
       >
         <p>
           The view fetches nothing. The app reads each key file&apos;s{" "}
-          <Code>absolutePath</Code> and passes the text in. From 860px wide the
-          heading and the roost share the top band, the roost in a 480px column
-          at the right, and the record spans the whole width beneath; narrower,
-          the order is the heading, the roost, centred, then the record. Inside
-          the record the ledger and its sections sit beside the paper when the
-          record is at least 960px wide, above it when narrower. The page
-          centres as one block up to 1920px. Inside the app the camera places it
-          on the ground beneath the strip.
+          <Code>absolutePath</Code> and passes the text in. The page fills a
+          flex column of fixed height and never scrolls. The band at the top
+          holds the heading, its notices, problems and actions, and the roost:
+          from 860px wide the roost sits in a 480px column at the right,
+          narrower it follows the heading, centred. Beneath the band, from 960px
+          wide, the record pane (the papers when unfolded, the ledger and its
+          sections) and the paper pane (the key files) each scroll their own
+          contents with a thin quiet scrollbar, <Code>pane-scroll</Code>.
+          Narrower, they join into one pane, the key files at the end. A chip
+          scrolls its row&apos;s pane. The page centres as one block up to
+          1920px. Inside the app the camera places it on the ground beneath the
+          strip.
         </p>
       </Usage>
     </>

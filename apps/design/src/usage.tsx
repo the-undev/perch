@@ -87,6 +87,25 @@ export function Ground({ children }: { children: ReactNode }) {
   );
 }
 
+/** The bird page's ground at a fixed height, as the camera gives it: a still column the page fills, its panes scrolling. */
+export function Stage({
+  height,
+  children,
+}: {
+  /** The stage's height as a CSS length. */
+  height: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="flex flex-col overflow-hidden rounded-xl border border-edge bg-ground px-7.5 pt-5.5"
+      style={{ height }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export interface PropRow {
   name: string;
   type: string;

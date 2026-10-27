@@ -7,7 +7,15 @@ import { DetailView } from "@perch/ui/detail-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
 import { mockBird, mockEntryForm, scanMoment } from "../specimens.ts";
-import { Code, Ground, Pressed, Section, Specimen, Usage } from "../usage.tsx";
+import {
+  Code,
+  Ground,
+  Pressed,
+  Section,
+  Specimen,
+  Stage,
+  Usage,
+} from "../usage.tsx";
 
 /** What a signature would write, in short, so the page shows the callback working. */
 function signedWords(values: EntryValues): string {
@@ -75,14 +83,14 @@ export function AdoptionPapersPage() {
       <Pressed text={pressed} />
       <Section
         title="On the bird's page"
-        rule="The papers unfold on the ground of the bird's page, beneath its action row. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt key leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
+        rule="The papers unfold at the top of the record pane, beneath the fixed band whose action row holds their verb; a press brings them into view. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt key leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
         min={620}
       >
         <Specimen
           label="A fence bird"
           rule="hello: press Adopt to unfold the papers; Adopt onto Projects signs them."
         >
-          <div className="rounded-xl border border-edge bg-ground px-5 py-4">
+          <Stage height="640px">
             <DetailView
               bird={hello}
               now={scanMoment}
@@ -99,13 +107,13 @@ export function AdoptionPapersPage() {
               arrivalChip={null}
               onSettings={() => {}}
             />
-          </div>
+          </Stage>
         </Specimen>
         <Specimen
           label="Led here by the bubble's Adopt"
           rule="Perch with openPapers set: the papers are unfolded as the page opens, filled with the entry as written."
         >
-          <div className="rounded-xl border border-edge bg-ground px-5 py-4">
+          <Stage height="640px">
             <DetailView
               bird={perch}
               now={scanMoment}
@@ -122,7 +130,7 @@ export function AdoptionPapersPage() {
               arrivalChip={null}
               onSettings={() => {}}
             />
-          </div>
+          </Stage>
         </Specimen>
       </Section>
       <Section

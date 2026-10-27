@@ -1068,3 +1068,42 @@ build-time calls so they can be revisited.
 - The design site frames the bird's page in a `Stage` of fixed height
   on the detail scene and adoption papers pages, and the paper page
   shows a long document scrolling its pane.
+
+## 27 October 2026 (the papers rise, on the stage)
+
+- The rising sheet from the papers-rise branch landed on the fixed
+  stage, refitted rather than merged. `RisingSheet` keeps its contract:
+  inert and hidden while leaving, Escape contained, the background
+  press, and focus moved in on the rise and handed back on dismissal,
+  both without scrolling. The papers no longer unfold in the record
+  pane.
+- The papers rise over the whole ground: both panes dim to a quarter
+  over 420ms and the panes grid is inert. The problems strip still
+  stands down while the sheet is up.
+- The dismissal catcher covers the band too, so a press anywhere off
+  the papers folds them, modal in feel. A catcher over the panes alone
+  left a press on the band doing nothing. The article is a two-row
+  grid, band auto and ground `minmax(0,1fr)`, and the sheet's layer
+  spans both rows with subgrid rows: its catcher spans both, its
+  surface rises in the last. The band stays visible and undimmed, but
+  its controls rest under the catcher while the papers are up; pressing
+  the verb then folds them through the catcher, which keeps
+  `aria-expanded` honest, and the roost's chips rest too.
+- Leaving falls faster than rising: 260ms on an accelerating curve,
+  `cubic-bezier(0.55, 0, 0.8, 0.4)`, with the unmount at 300ms; the
+  rise keeps 420ms on its decelerating curve. The rise's curve run
+  backwards crawled its last pixels while the card was already a
+  clipped sliver at the stage's foot, then the 450ms unmount snapped it
+  away.
+- The rise no longer scrolls the layer into view. On the stage nothing
+  beneath the sheet scrolls and the cell is always in view, so the call
+  and its scroll margin are gone.
+- The ground row is fixed, so a sheet taller than the ground cannot
+  grow it. The surface stops at the row's foot (`max-h-full`) and
+  scrolls its own contents with `pane-scroll`. The article clips
+  vertically (`overflow-y-clip`), so the card rises from the ground's
+  foot without making anything scrollable, and its rising shadow falls
+  on the band above, inside the clip.
+- The design site's rising sheet page frames its specimens as a clipped
+  two-row grid, a band over a pane, and adds a card taller than its
+  row.

@@ -426,7 +426,8 @@ describe("the detail view", () => {
     expect(heading.querySelector("h2")?.textContent).toBe("Perch");
     expect(band.contains(heading)).toBe(true);
     expect(band.contains(roost)).toBe(true);
-    expect(band.className.split(" ")).toContain("flex-none");
+    expect(band.className.split(" ")).toContain("row-start-1");
+    expect(panes.className.split(" ")).toContain("row-start-2");
     expect(band.className).toContain(
       "@min-[860px]:grid-cols-[minmax(0,1fr)_480px]",
     );
@@ -435,8 +436,13 @@ describe("the detail view", () => {
     expect(band.contains(panes)).toBe(false);
     expect(panes.contains(part("record"))).toBe(true);
     expect(panes.contains(part("paper"))).toBe(true);
-    expect(panes.className.split(" ")).toEqual(
-      expect.arrayContaining(["min-h-0", "flex-1"]),
+    expect(panes.className.split(" ")).toContain("min-h-0");
+    expect(panes.parentElement?.className.split(" ")).toEqual(
+      expect.arrayContaining([
+        "min-h-0",
+        "flex-1",
+        "grid-rows-[auto_minmax(0,1fr)]",
+      ]),
     );
     expect(roost.parentElement?.className).toContain("mx-auto");
     expect(roost.parentElement?.className).toContain(
@@ -619,29 +625,6 @@ describe("the detail view", () => {
     });
   });
 
-  it("unfolds the papers at the record pane's top and brings them into view, the verb staying in the band", () => {
-    const hello = mockBird("dev/odin/hello");
-    const { container } = page(hello, { form: mockEntryForm(hello.id) });
-    const record = container.querySelector('[data-part="record"]');
-    const adopt = screen.getByRole("button", { name: "Adopt" });
-
-    fireEvent.click(adopt);
-    const papers = screen.getByRole("form", {
-      name: "Adoption papers for hello",
-    });
-
-    expect(record?.firstElementChild?.contains(papers)).toBe(true);
-    expect(container.querySelector('[data-part="band"]')?.contains(adopt)).toBe(
-      true,
-    );
-    expect(scrolled).toEqual([
-      {
-        element: record?.firstElementChild,
-        options: { block: "start", behavior: "instant" },
-      },
-    ]);
-  });
-
   it("folds signed papers once the entry read back shows the write", () => {
     const hello = mockBird("dev/odin/hello");
     const { push } = page(hello, { form: mockEntryForm(hello.id) });
@@ -761,6 +744,134 @@ describe("the detail view", () => {
     expect(
       screen.getByRole("form", { name: "Adoption papers for hello" }),
     ).toBeDefined();
+  });
+
+  it("raises the papers as a sheet over both panes, which are dimmed and inert, scrolling nothing", () => {
+    const hello = mockBird("dev/odin/hello");
+    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const panes = container.querySelector('[data-part="panes"]');
+    expect(container.querySelector('[data-part="rising-sheet"]')).toBeNull();
+    expect(panes?.hasAttribute("inert")).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+    const sheet = container.querySelector('[data-part="rising-sheet"]');
+    expect(sheet).not.toBeNull();
+    expect(sheet?.parentElement).toBe(panes?.parentElement);
+    expect(
+      within(sheet as HTMLElement).getByRole("form", {
+        name: "Adoption papers for hello",
+      }),
+    ).toBeDefined();
+    expect(panes?.hasAttribute("inert")).toBe(true);
+    expect(panes?.classList.contains("opacity-25")).toBe(true);
+    expect(panes?.contains(sheet)).toBe(false);
+    for (const pane of ["record", "paper"]) {
+      expect(
+        container.querySelector(`[data-part="${pane}"]`)?.closest("[inert]"),
+      ).toBe(panes);
+    }
+    expect(scrolled).toEqual([]);
+  });
+
+  it("restores the panes as the papers close, leaving the sheet inert while it slides away", () => {
+    const hello = mockBird("dev/odin/hello");
+    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const panes = container.querySelector('[data-part="panes"]');
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+    fireEvent.click(screen.getByRole("button", { name: "Not now" }));
+
+    expect(panes?.hasAttribute("inert")).toBe(false);
+    expect(panes?.classList.contains("opacity-25")).toBe(false);
+    const leaving = container.querySelector('[data-part="rising-sheet"]');
+    expect(leaving?.hasAttribute("inert")).toBe(true);
+    expect(leaving?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("folds the papers on a press on the dimmed background without writing, and not on a press inside the card", () => {
+    const hello = mockBird("dev/odin/hello");
+    const { container, onSave, onRemove } = page(hello, {
+      form: mockEntryForm(hello.id),
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+
+    fireEvent.click(
+      screen.getByRole("form", { name: "Adoption papers for hello" }),
+    );
+    expect(
+      screen.getByRole("form", { name: "Adoption papers for hello" }),
+    ).toBeDefined();
+
+    const background = container.querySelector(
+      '[data-part="rising-sheet-background"]',
+    );
+    expect(background).not.toBeNull();
+    if (background !== null) fireEvent.click(background);
+    expect(screen.queryByRole("form")).toBeNull();
+    expect(
+      container.querySelector('[data-part="panes"]')?.hasAttribute("inert"),
+    ).toBe(false);
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onRemove).not.toHaveBeenCalled();
+  });
+
+  it("folds the papers on a press over the band's region, the catcher spanning both of the page's rows", () => {
+    const hello = mockBird("dev/odin/hello");
+    const { container, onSave, onRemove } = page(hello, {
+      form: mockEntryForm(hello.id),
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+    const article = screen.getByRole("article", { name: "hello in full" });
+    const band = container.querySelector('[data-part="band"]');
+    const layer = container.querySelector('[data-part="rising-sheet"]');
+    const catcher = container.querySelector(
+      '[data-part="rising-sheet-background"]',
+    );
+    const classes = (element: Element | null) =>
+      element?.className.split(" ") ?? [];
+
+    expect(classes(article)).toContain("grid-rows-[auto_minmax(0,1fr)]");
+    expect(band?.parentElement).toBe(article);
+    expect(classes(band)).toContain("row-start-1");
+    expect(layer?.parentElement).toBe(article);
+    expect(classes(layer)).toEqual(
+      expect.arrayContaining(["row-span-full", "grid-rows-subgrid"]),
+    );
+    expect(classes(catcher)).toContain("row-span-full");
+    expect(
+      classes(container.querySelector('[data-part="rising-sheet-surface"]')),
+    ).toContain("row-[-2/-1]");
+
+    if (catcher !== null) fireEvent.click(catcher);
+    expect(screen.queryByRole("form")).toBeNull();
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onRemove).not.toHaveBeenCalled();
+  });
+
+  it("keeps the band, the heading, the verb and the roost undimmed outside the panes, resting under the catcher", () => {
+    const hello = mockBird("dev/odin/hello");
+    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
+
+    const panes = container.querySelector('[data-part="panes"]');
+    const band = container.querySelector('[data-part="band"]');
+    const heading = container.querySelector('[data-part="heading"]');
+    const roost = container.querySelector('[data-part="roost"]');
+    const layer = container.querySelector('[data-part="rising-sheet"]');
+    const verb = screen.getByRole("button", { name: "Adopt" });
+    if (band === null || heading === null || roost === null || layer === null) {
+      throw new Error("the page has a band, heading, roost and sheet");
+    }
+    for (const element of [band, heading, verb, roost]) {
+      expect(element.closest("[inert]")).toBeNull();
+      expect(element.closest(".opacity-25")).toBeNull();
+      expect(panes?.contains(element)).toBe(false);
+      expect(layer.contains(element)).toBe(false);
+    }
+    expect(heading.contains(verb)).toBe(true);
+    expect(band.parentElement).toBe(layer.parentElement);
+    expect(layer.className.split(" ")).toEqual(
+      expect.arrayContaining(["z-10", "row-span-full"]),
+    );
   });
 
   it("offers neither until the entry is read, or while it disagrees with the bird", () => {

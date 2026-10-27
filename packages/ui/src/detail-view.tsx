@@ -2,8 +2,9 @@
 // each remote no card can read, the main process's problems, then the launch actions, links out and
 // the papers' verb, with the roost at the right holding the bird on its perch and its bubble. It
 // never scrolls. Beneath it the ground holds two panes that each scroll their own contents: the
-// record (the papers when unfolded, the ledger and its sections) and the key files on paper; in a
-// narrow page they join into one pane, the key files at the end. A chip pressed in the roost's
+// record (the ledger and its sections) and the key files on paper; in a narrow page they join into
+// one pane, the key files at the end. The adoption papers rise as a sheet over both panes, which
+// dim and go inert while the band stays live. A chip pressed in the roost's
 // bubble lands on the ledger row holding its working, or the can't-read chip on the notice, as does
 // the chip pressed in the aviary's bubble that brought the camera here. Only what exists is shown.
 // The view fetches nothing: key-file contents, launching and the entry's form and writes are the
@@ -44,6 +45,7 @@ import {
   SourceProblems,
 } from "./ledger.tsx";
 import { KeyFilePaper, type KeyFileSheet } from "./paper.tsx";
+import { RisingSheet } from "./rising-sheet.tsx";
 import { Roost } from "./roost.tsx";
 import { isNight, skyPhase } from "./sky.ts";
 
@@ -221,13 +223,6 @@ export function DetailView({
     setSigned(null);
     setOpen(false);
   };
-  const papersRef = useRef<HTMLDivElement>(null);
-  // The papers unfold at the record pane's top, which may be scrolled away from, so a press brings
-  // them into view; flushSync commits them first, as a landing does.
-  const unfold = () => {
-    flushSync(() => setOpen(true));
-    papersRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
-  };
   const night = isNight(skyPhase(now));
   const [landing, setLanding] = useState<Landing | null>(null);
   const articleRef = useRef<HTMLElement>(null);
@@ -259,12 +254,12 @@ export function DetailView({
     <article
       ref={articleRef}
       aria-label={`${bird.name} in full`}
-      className="@container mx-auto flex min-h-0 w-full max-w-480 flex-1 flex-col motion-safe:animate-swap"
+      className="@container mx-auto grid min-h-0 w-full max-w-480 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-y-4 overflow-y-clip motion-safe:animate-swap"
       onAnimationEnd={settleOnSwap}
     >
       <div
         data-part="band"
-        className="grid flex-none grid-cols-1 items-start gap-x-9 gap-y-3 @min-[860px]:grid-cols-[minmax(0,1fr)_480px]"
+        className="col-start-1 row-start-1 grid grid-cols-1 items-start gap-x-9 gap-y-3 @min-[860px]:grid-cols-[minmax(0,1fr)_480px]"
       >
         <div
           data-part="heading"
@@ -283,7 +278,7 @@ export function DetailView({
               <PapersVerb
                 adopt={agreed.values === null}
                 open={papersShown}
-                onPress={papersShown ? close : unfold}
+                onPress={papersShown ? close : () => setOpen(true)}
               />
             )}
           </div>
@@ -293,31 +288,36 @@ export function DetailView({
           <Roost bird={bird} night={night} onChip={landOn} />
         </div>
       </div>
+      {/* The sheet spans both rows: a press anywhere off the papers, the band included, folds them,
+          and the papers rise over the panes in the ground row. The article clips vertically, so the
+          card rises from its foot without making anything scrollable, its shadow falling on the
+          band. */}
+      <RisingSheet shown={papersShown} onDismiss={close}>
+        {agreed !== null && (
+          <AdoptionPapers
+            bird={bird}
+            form={agreed}
+            night={night}
+            now={now}
+            problems={problems}
+            onSign={(values) => {
+              setSigned({ kind: "values", values });
+              entry.onSave(bird.id, values);
+            }}
+            onReturn={() => {
+              setSigned({ kind: "return" });
+              entry.onRemove(bird.id);
+            }}
+            onClose={close}
+          />
+        )}
+      </RisingSheet>
       <div
         data-part="panes"
-        className="pane-scroll -mx-2.5 mt-4 grid min-h-0 flex-1 content-start gap-x-5 gap-y-10 overflow-x-hidden overflow-y-auto pb-11 @min-[960px]:grid-cols-[minmax(350px,450px)_minmax(0,1fr)] @min-[960px]:grid-rows-[minmax(0,1fr)] @min-[960px]:overflow-hidden @min-[960px]:pb-0"
+        inert={papersShown}
+        className={`pane-scroll col-start-1 row-start-2 -mx-2.5 grid min-h-0 content-start gap-x-5 gap-y-10 overflow-x-hidden overflow-y-auto pb-11 @min-[960px]:grid-cols-[minmax(350px,450px)_minmax(0,1fr)] @min-[960px]:grid-rows-[minmax(0,1fr)] @min-[960px]:overflow-hidden @min-[960px]:pb-0 motion-safe:transition-opacity motion-safe:duration-420 motion-safe:ease-[ease] ${papersShown ? "opacity-25" : ""}`}
       >
         <div data-part="record" className={paneClass}>
-          {papersShown && (
-            <div ref={papersRef} className="mb-6">
-              <AdoptionPapers
-                bird={bird}
-                form={agreed}
-                night={night}
-                now={now}
-                problems={problems}
-                onSign={(values) => {
-                  setSigned({ kind: "values", values });
-                  entry.onSave(bird.id, values);
-                }}
-                onReturn={() => {
-                  setSigned({ kind: "return" });
-                  entry.onRemove(bird.id);
-                }}
-                onClose={close}
-              />
-            </div>
-          )}
           <Ledger entries={detail.ledger} now={now} landing={landing} />
           {detail.branches.length > 0 && (
             <BranchLines

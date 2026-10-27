@@ -269,9 +269,12 @@ default; archived repositories are gathered but never on the main view.
 Details and open questions (composite multi-repo projects among them):
 [decisions/project-model.md](decisions/project-model.md).
 
-Adopting and amending are one sheet of adoption papers, unfolding at
-the top of the bird's record pane, which a press scrolls back to: Adopt
-on a fence bird, The papers on an adopted one, in the action row. The head carries the bird's name,
+Adopting and amending are one sheet of adoption papers, rising from
+the foot of the bird's page over its record and paper panes, which dim
+and go inert. The band above stays in view, the bird and heading
+undimmed, but its controls rest while the papers are up: Adopt on a fence bird,
+The papers on an adopted one, in the action row. Papers taller than the
+ground stop at its foot and scroll themselves. The head carries the bird's name,
 its portrait and its ring, the config key the entry sits under. "What
 perch has seen" follows in mono and cannot be edited: where the clone
 is, home as `~`, the forges that also hold it, and the last commit (the
@@ -282,7 +285,8 @@ what it holds while closed: the key files, roadmaps, zellij session and
 the bird's own thresholds. A choice left on its default is written as
 nothing, so config holds only what differs. The signature button names
 the destination ("Adopt onto Projects", or "Amend the papers"); Not now,
-or Escape pressed inside them, folds the papers away without writing. A threshold that
+Escape pressed inside them, or a press anywhere off the papers, the
+band included, folds them away without writing. A threshold that
 cannot be written holds the signature and says why. "Return to the
 fence" sits on an adopted bird's signature line and asks twice, the
 second press saying "Every line of these papers is struck out." The app

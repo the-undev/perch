@@ -83,12 +83,12 @@ export function AdoptionPapersPage() {
       <Pressed text={pressed} />
       <Section
         title="On the bird's page"
-        rule="The papers unfold at the top of the record pane, beneath the fixed band whose action row holds their verb; a press brings them into view. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt key leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
+        rule="The papers rise as a sheet over the bird's record and paper panes, which dim to a quarter and go inert. The band above, with the heading, the verb and the roost, stays lit, but its controls rest: a press anywhere off the papers, the band included, folds them. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt key leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
         min={620}
       >
         <Specimen
           label="A fence bird"
-          rule="hello: press Adopt to unfold the papers; Adopt onto Projects signs them."
+          rule="hello: press Adopt to raise the sheet; Adopt onto Projects signs them."
         >
           <Stage height="640px">
             <DetailView
@@ -111,7 +111,7 @@ export function AdoptionPapersPage() {
         </Specimen>
         <Specimen
           label="Led here by the bubble's Adopt"
-          rule="Perch with openPapers set: the papers are unfolded as the page opens, filled with the entry as written."
+          rule="Perch with openPapers set: the sheet is risen as the page opens, filled with the entry as written, and the panes beneath it are dimmed and inert. Not now lowers the sheet and brings the panes back."
         >
           <Stage height="640px">
             <DetailView

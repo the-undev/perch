@@ -14,6 +14,7 @@ import { CrowdedPage } from "./pages/crowded-page.tsx";
 import { DetailScenePage } from "./pages/detail-scene-page.tsx";
 import { LedgerPage } from "./pages/ledger-page.tsx";
 import { PaperPage } from "./pages/paper-page.tsx";
+import { RisingSheetPage } from "./pages/rising-sheet-page.tsx";
 import { RoostPage } from "./pages/roost-page.tsx";
 import {
   BranchesPage,
@@ -222,6 +223,14 @@ export const pages: DesignPage[] = [
     summary:
       "The sheet that adopts a fence bird and amends an adopted one: what perch has seen, what you say, a named fold and the signature.",
     component: AdoptionPapersPage,
+  },
+  {
+    slug: "rising-sheet",
+    group: "components",
+    title: "Rising sheet",
+    summary:
+      "The transparent layer a card rises on over a page: the slide, the leave, and the ways to dismiss it.",
+    component: RisingSheetPage,
   },
   {
     slug: "settings-groups",

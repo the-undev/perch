@@ -136,13 +136,15 @@ export function DetailScenePage() {
           holds the heading, its notices, problems and actions, and the roost:
           from 860px wide the roost sits in a 480px column at the right,
           narrower it follows the heading, centred. Beneath the band, from 960px
-          wide, the record pane (the papers when unfolded, the ledger and its
-          sections) and the paper pane (the key files) each scroll their own
-          contents with a thin quiet scrollbar, <Code>pane-scroll</Code>.
-          Narrower, they join into one pane, the key files at the end. A chip
-          scrolls its row&apos;s pane. The page centres as one block up to
-          1920px. Inside the app the camera places it on the ground beneath the
-          strip.
+          wide, the record pane (the ledger and its sections) and the paper pane
+          (the key files) each scroll their own contents with a thin quiet
+          scrollbar, <Code>pane-scroll</Code>. Narrower, they join into one
+          pane, the key files at the end. A chip scrolls its row&apos;s pane.
+          The adoption papers rise as a <Code>RisingSheet</Code> over both
+          panes, which dim and go inert; the band stays in view and its controls
+          rest, a press anywhere off the papers folding them. The page centres
+          as one block up to 1920px. Inside the app the camera places it on the
+          ground beneath the strip.
         </p>
       </Usage>
     </>

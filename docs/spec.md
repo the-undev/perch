@@ -86,8 +86,13 @@ same way as it opens. The record beside it opens with the
 heading, the one place on the page that carries the name and the state
 word, with what the bird is doing. A meta line in mono beneath says
 where the bird lives: the clone's path with `~`, the forges that hold
-it, and its wire, "on the fence" for a fence bird. Then come the
-launch actions as verbs, links out, a ledger of facts in full words
+it, and its wire, "on the fence" for a fence bird. Beneath it, for each
+remote the clone pushes to that no card can read, one amber sentence
+in the sky's notice voice says what perch knows and the fix: "The clone
+pushes to skiff-app/skiff on github, which no GitHub card reads.
+Add a card for skiff-app under Sources.", Sources opening the
+settings page. The bubble's "can't read github" chip lands on it. Then
+come the launch actions as verbs, links out, a ledger of facts in full words
 (clean zeros as a quiet green "none", counts toned by severity),
 branches, the commit river, flags, and
 a configurable list of key files rendered as paper, the bubble's
@@ -99,13 +104,19 @@ newest CI run with its state, branch, name, link and age, under a CI
 row that says the worst state as the chip does; open pull requests per
 forge, linked to the forge's list; open items and bugs per roadmap
 file; the age of the oldest uncommitted change or unpushed commit. A
-source with nothing to say is silent. A forge not read, or the part of
-it a row spells out, says so in amber, naming the part: "pull requests
-not read" or "CI not read".
+source with nothing to say is silent. A forge that couldn't be read,
+or the part of it a row spells out, says so in amber, naming the part:
+"couldn't read pull requests" or "couldn't read CI"; a CI or pull
+request row that no forge could fill says "couldn't read" itself. The
+problems at the foot, "What couldn't be read", give the scanner's full
+sentence per source. A failure always says "couldn't read", never "not
+read", which would mean perch had not yet looked.
 Concrete nouns link wherever a page exists for them. Headings name the
 actual thing, never a concept.
 
-The commit river answers what is on main and whether it has spread. It
+The commit river answers what is on main and whether it has spread. Its
+heading names the branch it judges, "Where each commit on main has
+reached": the clone's default branch, else the first read forge's. It
 tells the default branch's newest commits once each, joined by hash
 across local main and each forge's list, newest first and capped at
 `scan.finalised_commits`. One dot before each commit judges its spread
@@ -113,15 +124,19 @@ over the bird's forges whose commits were read, whatever their pull
 requests and CI did; the clone only adds commits,
 such as unpushed ones on main. Green: every forge read holds it, "on
 github and forgejo". Amber: a forge read lacks it, "only on github", or
-none holds it, "not pushed to a remote" ("on no remote read" while
-another forge is not read). The quiet dot, a faint speck, when no forge
-was read ("no remote read") or the bird has none ("no remote"). The dot
+none holds it, "not pushed to a remote" ("on no remote that could be
+read" while another forge couldn't be read). Amber too when the bird
+has forges and none of their commits could be read: "no remote could
+be read". The quiet dot, a faint speck, only when the bird has no
+forge ("no remote"). The dot
 speaks its words to a screen reader and on hover. A forge's list holds
 only its newest commits, so a forge lacks a commit only when the commit
 is no older than the list's oldest; an older one is beyond the list and
 counts as held, so old history never turns amber. Local main being
-behind a forge is not flagged. A forge whose commits were not read gets
-an amber line, "github not read". When a forge lacks a commit another forge holds
+behind a forge is not flagged. A forge whose commits couldn't be read
+gets an amber line, "couldn't read github", with the short why when no
+card covers it: "couldn't read github · no card covers skiff-app".
+When a forge lacks a commit another forge holds
 within its list, one amber sentence says so: "forgejo is 2 commits
 behind github." when one forge lacks, "github and forgejo have
 diverged: github lacks 1 commit, forgejo lacks 2 commits." when both
@@ -154,6 +169,11 @@ Inputs, worst wins, every threshold a config default with per-bird
 overrides:
 
 - Failing CI, open bugs: red.
+- A remote the clone pushes to that no card can read, because no card
+  on its host covers the owner: amber, the bird saying "I push to
+  skiff-app/skiff on github, but no card of yours can read it." A
+  forge whose read failed this scan (a missing token, an HTTP error) is
+  not an input; its ledger rows say "couldn't read".
 - Unsafe work, uncommitted changes and unpushed commits alike: green
   under 24 hours, amber to 72, red beyond. The age anchor is the oldest
   unsafe change, so editing does not reset the clock on a backlog.
@@ -223,7 +243,9 @@ default branch's newest commits, Obsidian markers), the GitHub and
 Forgejo account listings and per-repository detail (PRs, CI, newest
 default-branch commits, each its own request, so a failed request fails
 only its part; a missing token fails the whole detail), roadmap files,
-Claude Code session times. Uptime Kuma exists and runs only for a
+Claude Code session times. A repository a clone's remote names that
+could not be looked up is still a presence, carrying its error and
+whether no card covers its owner. Uptime Kuma exists and runs only for a
 `[[sources.kuma]]` table, which config leaves out until server
 monitoring is picked up. Forge tickets are a wanted
 source, see the roadmap. The field inventory, with declared types
@@ -388,7 +410,9 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   previous snapshot; either says so in the sky's notices, as does a
   failed launch until the next scan.
 - The header's scan line says the sky's phase, the scan's time and its
-  age ("just now", then by the minute, then by the hour), and "scanning" while a scan runs. The sky follows the clock,
+  age ("just now", then by the minute, then by the hour), and "scanning" while a scan runs.
+  Beside it, in amber, "couldn't read 1 source" when sources failed,
+  each named on hover. The sky follows the clock,
   read again every minute.
 - The URL holds where the camera points: `/` for the aviary,
   `/bird/<id>` for a bird's detail, `?papers=true` to unfold its papers

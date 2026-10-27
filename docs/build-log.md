@@ -971,3 +971,55 @@ build-time calls so they can be revisited.
   "4 min ago", then hours), so a scan seconds old no longer reads
   "under an hour ago". The sources page inherits "just now" for its
   floor.
+
+## 27 October 2026 (the unread remote)
+
+- The unread-remote round (`mockups/unread-remote.html`, now retired)
+  had four verdicts, all as drawn. A remote perch knows but cannot read
+  is never silent, and a failure says "couldn't read", never "not
+  read", which implied perch had not got round to it.
+- The forge enricher records a remote it could not look up with a
+  reason: `no-card` when no card on the remote's host covers the owner,
+  `lookup-failed` for anything else. Aggregation keeps either as a
+  forge presence carrying the error, joined by its owner/name like any
+  other; its full name is the lower-case key and its URL null, since
+  the repository was never read. An untracked fork stays dropped. The
+  snapshot's forge error carries `cause`, `no-card` or `read-failed`,
+  so nothing downstream matches on the message. A raw file or snapshot
+  from before the change has no cause and reads as a failed read.
+- The config gap distresses, the transient failure does not: a remote
+  no card can read is an amber health cause, sorted after CI and
+  before bugs. The bird is restless, says "I push to skiff-app/skiff
+  on github, but no card of yours can read it.", and carries the amber
+  "can't read github" chip first, naming every such forge in one chip.
+  A missing token or an HTTP error keeps its "couldn't read" ledger
+  rows and problem line only.
+- The chip lands on the record's notice under the heading, one amber
+  sentence per unreadable remote with Sources linking to the settings
+  page through `DetailView`'s `onSettings`. The notice derives from the
+  health cause, so it sits on a fence bird's page too, without a chip.
+  The landing now searches the whole page, since the notice sits in the
+  heading cell.
+- Vocabulary: "couldn't read CI" and "couldn't read pull requests" in
+  the workings; a CI or pull request row no forge could fill says
+  "couldn't read" itself in amber; "What couldn't be read" heads the
+  problems, whose value is "couldn't read"; the river's note is
+  "couldn't read github", adding "· no card covers skiff-app" for the
+  gap; the camera header says "couldn't read 1 source" and the sky
+  "Couldn't read Forgejo accounts". The enricher's sentence names the
+  card: "no GitHub card is configured for owner skiff-app". The
+  spread word for a commit no read forge holds while another couldn't
+  be read is "on no remote that could be read".
+- Amber dots: when a bird has forge presences and none of their commit
+  lists could be read, every commit's dot is amber, "no remote could be
+  read". The quiet speck is kept for a bird with no forge, "no remote".
+- The branch in the heading: "Where each commit on main has reached",
+  the river carrying the clone's default branch, else the first read
+  forge's.
+- A clone whose only remote is unreadable now counts as joined for
+  backup, so its unpushed commits are aged as anyone's are.
+- The mock's Skiff mirrors the live case: no GitHub card covers
+  skiff-app, Forgejo reads it fine, and it is still stalled, which
+  speaks as the secondary. The mock config loses the skiff-app card
+  and its source card. hearth-config keeps both forges failed for
+  missing tokens, untroubled, and now draws the amber dots.

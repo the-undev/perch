@@ -955,3 +955,7 @@ build-time calls so they can be revisited.
 - A chip's landing commits its mark with `flushSync` before the row is
   scrolled into view, so the row is never painted unlit. Both callers,
   the press and the arrival effect, run outside render.
+- The list editor's remove and Add buttons share one gutter width and
+  the add line has no width cap, so the add input ends where the value
+  inputs end. The wires list in `settings-forms.tsx` keeps its own add
+  line, which the roadmap entry did not name.

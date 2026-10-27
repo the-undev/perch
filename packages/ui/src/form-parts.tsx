@@ -23,6 +23,9 @@ export const secondaryClass = `${buttonClass} border border-edge text-ink-muted 
 export const quietClass =
   "cursor-pointer rounded px-1.5 py-0.5 font-body text-[12px] text-ink-faint hover:text-ink focus-visible:outline-2 focus-visible:outline-ink-accent disabled:cursor-default disabled:opacity-40 disabled:hover:text-ink-faint";
 
+/** The width of the gutter beside a list's inputs, shared by each row's remove and the add line's Add. */
+const listGutterClass = "w-16 shrink-0 justify-center";
+
 export const pillGroupClass =
   "m-0 flex min-w-0 flex-wrap gap-1 rounded-full border border-edge bg-panel p-0.75";
 
@@ -181,7 +184,7 @@ export function StringList({
                 type="button"
                 aria-label={`Remove ${noun} ${entry}`}
                 onClick={() => onChange(values.filter((_, at) => at !== index))}
-                className={quietClass}
+                className={`${quietClass} ${listGutterClass}`}
               >
                 remove
               </button>
@@ -189,7 +192,7 @@ export function StringList({
           ))}
         </ul>
       )}
-      <div className="flex w-full max-w-110 items-center gap-1.5">
+      <div className="flex w-full items-center gap-1">
         <input
           type="text"
           aria-label={`Add ${one}`}
@@ -208,7 +211,7 @@ export function StringList({
           aria-label={`Add the ${noun}`}
           onClick={add}
           disabled={draft.trim() === ""}
-          className={`${secondaryClass} px-2.75 py-1.5`}
+          className={`${secondaryClass} py-1.5 ${listGutterClass}`}
         >
           Add
         </button>

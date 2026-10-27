@@ -277,15 +277,6 @@ address is typed; only a custom SSH setup adds aliases such as
 `github-work`. The page should say what hosts are for: the remote
 hosts and SSH aliases that reach the account.
 
-## The add line in list editors
-
-In the forms' shared list editor (`ListField` in `form-parts.tsx`) a
-value row's input fills the row with "remove" hanging beside it, but
-the add line fits its Add button inside the same `max-w-110` cap, so
-its input ends a button's width short of the rows above. Seen on the
-hosts and local folder lists. The add input should end flush with the
-value inputs, its button in the gutter the remove labels use.
-
 ## Opening the config file from its path
 
 The settings header names the config file but the path is plain text.

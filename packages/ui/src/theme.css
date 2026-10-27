@@ -315,6 +315,14 @@
   }
 }
 
+/* A pane on the fixed stage, which scrolls its own contents and hands no
+   wheel on: a thin, quiet scrollbar in the edge tokens. */
+@utility pane-scroll {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edge-hi) transparent;
+}
+
 /* Markdown on paper: the key-file sheets. The sheet fills its column; the
    writing on it keeps a reading width. */
 @layer components {

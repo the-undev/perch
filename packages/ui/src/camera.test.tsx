@@ -213,12 +213,40 @@ describe("the camera", () => {
     );
   });
 
-  it("leaves the ground's scroll instant, so a chip's landing marks a row that holds still", () => {
+  it("holds the bird page's ground still while the record and paper panes scroll, instantly, beneath the fixed band", () => {
     const { container } = camera(detailOf("dev/perch"));
-    const ground = container.querySelector('[data-part="ground"]');
+    const part = (name: string) => {
+      const element = container.querySelector(`[data-part="${name}"]`);
+      if (element === null) throw new Error(`the page has no ${name}`);
+      return element;
+    };
+    const classes = (element: Element) => element.className.split(" ");
+    const ground = part("ground");
+    const band = part("band");
+    const panes = [part("record"), part("paper")];
 
-    expect(ground?.className).toContain("overflow-y-auto");
-    expect(ground?.className).not.toContain("scroll-smooth");
+    expect(classes(ground)).toContain("overflow-hidden");
+    expect(classes(ground)).not.toContain("overflow-y-auto");
+    expect(ground.contains(band)).toBe(true);
+    for (const pane of panes) {
+      expect(classes(pane)).toEqual(
+        expect.arrayContaining([
+          "@min-[960px]:overflow-y-auto",
+          "pane-scroll",
+          "min-h-0",
+        ]),
+      );
+      expect(pane.className).not.toContain("scroll-smooth");
+      expect(pane.contains(band)).toBe(false);
+      expect(band.contains(pane)).toBe(false);
+      for (
+        let link = pane.parentElement;
+        link !== ground && link !== null;
+        link = link.parentElement
+      ) {
+        expect(classes(link)).toContain("min-h-0");
+      }
+    }
   });
 
   it("keeps the strip's tally clear of the wire's name", () => {

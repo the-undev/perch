@@ -12,13 +12,6 @@ export interface KeyFileSheet {
   markdown: string | null;
 }
 
-/**
- * The open sheet stops short of the window's height and scrolls inside itself, so long or many
- * documents keep the page's rhythm; a short one keeps its natural height.
- */
-export const paperScroll =
-  "max-h-[max(20rem,calc(100vh-18rem))] overflow-y-auto overscroll-contain [scrollbar-color:var(--color-paper-quiet)_transparent]";
-
 /** Whether an image address names a scheme, so the window can fetch it; a path inside the repository does not. */
 const isAbsoluteAddress = (src: string) => /^[a-z][a-z0-9+.-]*:/i.test(src);
 
@@ -47,7 +40,10 @@ export function MarkdownPaper({ markdown }: { markdown: string }) {
   );
 }
 
-/** The key files behind folder tabs, the first open; nothing when the bird has none. */
+/**
+ * The key files behind folder tabs, the first open; nothing when the bird has none. The sheet
+ * keeps its full height and the pane around it scrolls, the tabs held at the pane's top.
+ */
 export function KeyFilePaper({ sheets }: { sheets: KeyFileSheet[] }) {
   const [openPath, setOpenPath] = useState(sheets[0]?.file.path);
   const panelId = useId();
@@ -59,7 +55,7 @@ export function KeyFilePaper({ sheets }: { sheets: KeyFileSheet[] }) {
       <div
         role="tablist"
         aria-label="Key files"
-        className="flex items-end gap-1.5 pl-4.5"
+        className="sticky top-0 z-10 flex items-end gap-1.5 bg-ground pl-4.5"
       >
         {sheets.map((sheet) => {
           const selected = sheet === open;
@@ -86,9 +82,9 @@ export function KeyFilePaper({ sheets }: { sheets: KeyFileSheet[] }) {
         id={panelId}
         role="tabpanel"
         aria-label={open.file.path}
-        // biome-ignore lint/a11y/noNoninteractiveTabindex: a sheet that scrolls takes focus so the keys scroll it.
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: the sheet takes focus so the keys scroll the pane holding it.
         tabIndex={0}
-        className={`${paperScroll} rounded-paper bg-paper px-9.5 pt-7 pb-8.5 text-paper-ink shadow-paper focus-visible:outline-2 focus-visible:outline-ink-accent`}
+        className="rounded-paper bg-paper px-9.5 pt-7 pb-8.5 text-paper-ink shadow-paper focus-visible:outline-2 focus-visible:outline-ink-accent"
       >
         {open.markdown === null ? (
           <p className="m-0 text-[14px] text-paper-quiet">

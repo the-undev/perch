@@ -409,19 +409,35 @@ describe("the detail view", () => {
     ).toBe("ci");
   });
 
-  it("puts the heading and the roost in the top band and the record across the page below", () => {
+  it("fixes the heading and the roost in the band above the panes, the roost in its 480px column", () => {
     const { container } = page(mockBird("dev/perch"));
     const roost = screen.getByRole("region", { name: "Perch on its perch" });
-    const heading = container.querySelector('[data-part="heading"]');
-    const record = container.querySelector('[data-part="record"]');
-    if (heading === null) throw new Error("the page has no heading");
-    if (record === null) throw new Error("the page has no record");
+    const part = (name: string) => {
+      const element = container.querySelector(`[data-part="${name}"]`);
+      if (element === null) throw new Error(`the page has no ${name}`);
+      return element;
+    };
+    const band = part("band");
+    const heading = part("heading");
+    const panes = part("panes");
     const following = (from: Element, to: Element) =>
       from.compareDocumentPosition(to) & Node.DOCUMENT_POSITION_FOLLOWING;
 
     expect(heading.querySelector("h2")?.textContent).toBe("Perch");
+    expect(band.contains(heading)).toBe(true);
+    expect(band.contains(roost)).toBe(true);
+    expect(band.className.split(" ")).toContain("flex-none");
+    expect(band.className).toContain(
+      "@min-[860px]:grid-cols-[minmax(0,1fr)_480px]",
+    );
     expect(following(heading, roost)).toBeTruthy();
-    expect(following(roost, record)).toBeTruthy();
+    expect(following(band, panes)).toBeTruthy();
+    expect(band.contains(panes)).toBe(false);
+    expect(panes.contains(part("record"))).toBe(true);
+    expect(panes.contains(part("paper"))).toBe(true);
+    expect(panes.className.split(" ")).toEqual(
+      expect.arrayContaining(["min-h-0", "flex-1"]),
+    );
     expect(roost.parentElement?.className).toContain("mx-auto");
     expect(roost.parentElement?.className).toContain(
       "@min-[860px]:col-start-2",
@@ -431,14 +447,75 @@ describe("the detail view", () => {
     );
     expect(heading.className).toContain("@min-[860px]:col-start-1");
     expect(heading.className).toContain("@min-[860px]:row-start-1");
-    expect(record.className).toContain("col-span-full");
-    expect(record.className).toContain("@min-[860px]:row-start-2");
-    expect(record.parentElement?.className).toContain(
-      "@min-[860px]:grid-cols-[minmax(0,1fr)_480px]",
-    );
-    expect(record.parentElement?.className).not.toContain("1240px");
     expect(roost.parentElement?.className).toContain("w-120");
-    expect(roost.parentElement?.className).not.toContain("1240px");
+  });
+
+  it("holds the key files in the paper pane beside the record, with no height cap of their own", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch, {
+      sheets: perch.detail.keyFiles.map((file) => ({
+        file,
+        markdown: `# ${file.path}\n`,
+      })),
+    });
+    const paper = container.querySelector('[data-part="paper"]');
+    const record = container.querySelector('[data-part="record"]');
+    const sheet = screen.getByRole("tabpanel");
+
+    expect(paper?.contains(screen.getByRole("tablist"))).toBe(true);
+    expect(paper?.contains(sheet)).toBe(true);
+    expect(record?.querySelector('[role="tablist"]')).toBeNull();
+    expect(paper?.className.split(" ")).toContain(
+      "@min-[960px]:overflow-y-auto",
+    );
+    for (
+      let link: Element | null = sheet;
+      link !== paper && link !== null;
+      link = link.parentElement
+    ) {
+      expect(link.className).not.toMatch(/max-h|overflow/);
+    }
+  });
+
+  it("keeps one pane in a narrow page, the key files at the record's end", () => {
+    const { container } = page(mockBird("dev/perch"));
+    const panes = container.querySelector('[data-part="panes"]');
+    const record = container.querySelector('[data-part="record"]');
+    const paper = container.querySelector('[data-part="paper"]');
+    const classes = (element: Element | null) =>
+      element?.className.split(" ") ?? [];
+
+    expect(classes(panes)).toEqual(
+      expect.arrayContaining([
+        "overflow-y-auto",
+        "pane-scroll",
+        "@min-[960px]:overflow-hidden",
+        "@min-[960px]:grid-cols-[minmax(350px,450px)_minmax(0,1fr)]",
+      ]),
+    );
+    for (const pane of [record, paper]) {
+      expect(classes(pane)).not.toContain("overflow-y-auto");
+      expect(classes(pane)).toContain("@min-[960px]:overflow-y-auto");
+    }
+    expect(
+      [...(panes?.children ?? [])].map((child) =>
+        child.getAttribute("data-part"),
+      ),
+    ).toEqual(["record", "paper"]);
+  });
+
+  it("keeps a main-process problem in the fixed band, whatever the record's scroll", () => {
+    const { container } = page(mockBird("dev/odin/hello"), {
+      problems: ["Could not open zellij: no such session"],
+    });
+    const problems = container.querySelector('[data-part="problems"]');
+
+    expect(
+      container.querySelector('[data-part="band"]')?.contains(problems),
+    ).toBe(true);
+    expect(
+      container.querySelector('[data-part="record"]')?.contains(problems),
+    ).toBe(false);
   });
 
   it("keeps the launch actions and links in the heading cell, not the record", () => {
@@ -540,6 +617,29 @@ describe("the detail view", () => {
       ...emptyEntryValues(),
       wire: "Machine & Home",
     });
+  });
+
+  it("unfolds the papers at the record pane's top and brings them into view, the verb staying in the band", () => {
+    const hello = mockBird("dev/odin/hello");
+    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const record = container.querySelector('[data-part="record"]');
+    const adopt = screen.getByRole("button", { name: "Adopt" });
+
+    fireEvent.click(adopt);
+    const papers = screen.getByRole("form", {
+      name: "Adoption papers for hello",
+    });
+
+    expect(record?.firstElementChild?.contains(papers)).toBe(true);
+    expect(container.querySelector('[data-part="band"]')?.contains(adopt)).toBe(
+      true,
+    );
+    expect(scrolled).toEqual([
+      {
+        element: record?.firstElementChild,
+        options: { block: "start", behavior: "instant" },
+      },
+    ]);
   });
 
   it("folds signed papers once the entry read back shows the write", () => {

@@ -314,7 +314,16 @@ export function DetailView({
             <div className="min-w-0">
               <Ledger entries={detail.ledger} now={now} landing={landing} />
               {detail.branches.length > 0 && (
-                <BranchLines branches={detail.branches} now={now} />
+                <BranchLines
+                  branches={detail.branches}
+                  now={now}
+                  chip={
+                    bird.bubble.chips.some((chip) => chip.kind === "stalled")
+                      ? "stalled"
+                      : null
+                  }
+                  landing={landing}
+                />
               )}
               {detail.river.commits.length > 0 && (
                 <CommitRiver river={detail.river} now={now} />

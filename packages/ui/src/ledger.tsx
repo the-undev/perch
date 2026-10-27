@@ -227,13 +227,27 @@ export function Ledger({ entries, now, landing }: LedgerProps) {
 export function BranchLines({
   branches,
   now,
+  chip,
+  landing,
 }: {
   branches: BranchLine[];
   now: Date;
+  /** The bubble chip whose working the section holds, null when the bubble carries none. */
+  chip: ChipKind | null;
+  landing: Landing | null;
 }) {
+  const landed = chip !== null && landing !== null && landing.chip === chip;
   return (
-    <section>
-      <LedgerHeading>Branches</LedgerHeading>
+    <section
+      data-part="branches"
+      data-chip={chip ?? undefined}
+      className="relative isolate"
+    >
+      {landed && <LandingMark key={`mark-${landing.press}`} />}
+      <LedgerHeading>
+        {chip !== null && <HandleMark />}
+        Branches
+      </LedgerHeading>
       {branches.map((branch) => (
         <LedgerRow
           key={branch.name}

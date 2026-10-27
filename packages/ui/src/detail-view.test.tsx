@@ -245,6 +245,33 @@ describe("the detail view", () => {
     expect(markedRow()).toBe("pull-requests");
   });
 
+  it("lands the parked chip on the branches section, marked with a dot, and gives a bird without it no handle", () => {
+    const skiff = mockBird("undev/skiff");
+    const { container } = page(skiff);
+    const bubble = screen.getByRole("region", { name: "Skiff says" });
+    const section = container.querySelector(
+      '[data-part="record"] [data-part="branches"]',
+    );
+
+    expect(section?.getAttribute("data-chip")).toBe("stalled");
+    expect(section?.querySelector('[data-part="handle-mark"]')).not.toBeNull();
+    fireEvent.click(
+      within(bubble).getByRole("button", { name: "parked 21 days" }),
+    );
+
+    expect(scrolled.map(({ element }) => element)).toEqual([section]);
+    expect(section?.querySelector('[data-part="landing"]')).not.toBeNull();
+
+    cleanup();
+    const perch = page(mockBird("dev/perch"));
+
+    expect(
+      perch.container
+        .querySelector('[data-part="branches"]')
+        ?.hasAttribute("data-chip"),
+    ).toBe(false);
+  });
+
   it("lands the can't-read chip on the record's notice, whose Sources opens the settings page", () => {
     const skiff = unreadableSkiff();
     const { container, onSettings } = page(skiff);

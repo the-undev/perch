@@ -964,3 +964,6 @@ build-time calls so they can be revisited.
   remote carries none) while they are empty or exactly the previous
   derivation, and an address that does not parse yet gives no host. The
   hosts field's description says what hosts are for.
+- The window's `img-src` gains `https:` so a README's badges render. The
+  key-file paper shows an image with no scheme as its alt text. The
+  roadmap keeps the relative-image read behind a custom protocol.

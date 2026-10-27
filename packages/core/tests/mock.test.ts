@@ -123,7 +123,7 @@ describe("the mock dataset", () => {
     }
   });
 
-  it("spells out two forges disagreeing on CI, a forge's part not read, and open items over two roadmap files", () => {
+  it("spells out two forges disagreeing on CI, a forge's part that couldn't be read, and open items over two roadmap files", () => {
     const rows = (label: string) =>
       adopted.flatMap((bird) =>
         bird.detail.ledger.flatMap((entry) =>
@@ -146,7 +146,7 @@ describe("the mock dataset", () => {
           (entry) =>
             entry.kind !== "time" &&
             entry.workings.some((working) =>
-              working.text.endsWith(" not read"),
+              working.text.startsWith("couldn't read "),
             ),
         ),
       ),
@@ -156,7 +156,7 @@ describe("the mock dataset", () => {
     ).toBe(true);
   });
 
-  it("holds a forge whose pull requests alone were not read, its CI and commits shown", () => {
+  it("holds a forge whose pull requests alone couldn't be read, its CI and commits shown", () => {
     const pullsUnread = adopted.flatMap((bird) => {
       const unread = bird.detail.problems.filter(
         (problem) => problem.source === "GitHub pull requests",
@@ -204,7 +204,7 @@ describe("the mock dataset", () => {
     ).toBe(true);
   });
 
-  it("tones river commits for every spread, with a divergence and a forge not read", () => {
+  it("tones river commits for every spread, with a divergence and a forge that couldn't be read", () => {
     const rivers = birds.map(({ detail }) => detail.river);
     const spreads = new Set(
       rivers.flatMap((river) =>
@@ -218,7 +218,7 @@ describe("the mock dataset", () => {
         "green on forgejo",
         "amber only on github",
         "amber not pushed to a remote",
-        "null no remote read",
+        "amber no remote could be read",
         "null no remote",
       ]),
     );

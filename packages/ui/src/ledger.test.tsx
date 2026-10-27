@@ -142,7 +142,7 @@ describe("the ledger's workings", () => {
     ).toBe("http://forge.example.lan:3000/finch/perch/actions/runs/14");
   });
 
-  it("says in amber which part of a forge was not read, beside the forge that was", () => {
+  it("says in amber which part of a forge couldn't be read, beside the forge that was", () => {
     const { container } = render(
       <Ledger
         entries={mockBird("undev/prism").detail.ledger}
@@ -159,7 +159,7 @@ describe("the ledger's workings", () => {
       ],
     ]);
     expect(workings(container, "pull-requests")).toEqual([
-      ["github · pull requests not read", "amber"],
+      ["github · couldn't read pull requests", "amber"],
       ["forgejo · 2 open", "none"],
     ]);
   });
@@ -282,7 +282,7 @@ describe("the ledger's sections", () => {
     );
 
     expect(screen.getByRole("heading").textContent).toBe(
-      "Where each commit has reached",
+      "Where each commit on main has reached",
     );
     expect(dots(container)).toEqual([
       ["amber", "only on github", "only on github"],
@@ -313,7 +313,7 @@ describe("the ledger's sections", () => {
     ).toBeNull();
   });
 
-  it("notes each forge not read in amber", () => {
+  it("notes each forge that couldn't be read in amber", () => {
     const { container } = render(
       <CommitRiver
         river={mockBird("dev/hearth-config").detail.river}
@@ -325,12 +325,12 @@ describe("the ledger's sections", () => {
       ...container.querySelectorAll('[data-part="river-note"]'),
     ].map((note) => [note.textContent, note.className.includes("text-amber")]);
     expect(notes).toEqual([
-      ["github not read", true],
-      ["forgejo not read", true],
+      ["couldn't read github", true],
+      ["couldn't read forgejo", true],
     ]);
   });
 
-  it("links each commit to the first forge holding it, judging a forge whose pull requests were not read by its commits", () => {
+  it("links each commit to the first forge holding it, judging a forge whose pull requests couldn't be read by its commits", () => {
     const { container } = render(
       <CommitRiver river={mockBird("undev/prism").detail.river} now={now} />,
     );
@@ -348,7 +348,7 @@ describe("the ledger's sections", () => {
     );
   });
 
-  it("draws the quiet dot when no forge was read or there is none", () => {
+  it("dots every commit amber when no remote could be read, keeping the quiet dot for a bird with none", () => {
     const { container } = render(
       <CommitRiver
         river={mockBird("dev/hearth-config").detail.river}
@@ -363,7 +363,7 @@ describe("the ledger's sections", () => {
     );
 
     expect(dots(container)).toEqual([
-      ["none", "no remote read", "no remote read"],
+      ["amber", "no remote could be read", "no remote could be read"],
     ]);
     expect(dots(hello)).toEqual([["none", "no remote", "no remote"]]);
   });

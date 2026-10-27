@@ -446,7 +446,7 @@ describe("the detail view", () => {
     );
     expect(
       headings().filter(
-        (heading) => heading === "Where each commit has reached",
+        (heading) => heading === "Where each commit on main has reached",
       ),
     ).toHaveLength(1);
     cleanup();
@@ -458,16 +458,16 @@ describe("the detail view", () => {
         river: { ...perch.detail.river, commits: [] },
       },
     });
-    expect(headings()).not.toContain("Where each commit has reached");
+    expect(headings()).not.toContain("Where each commit on main has reached");
     cleanup();
 
     page(mockBird("undev/prism"));
-    expect(headings()).toContain("Sources not read");
+    expect(headings()).toContain("What couldn't be read");
     cleanup();
 
     page(mockBird("undev/spool"));
     expect(headings()).not.toContain("Open pull requests");
-    expect(headings()).not.toContain("Sources not read");
+    expect(headings()).not.toContain("What couldn't be read");
   });
 
   it("offers nothing to launch for a bird with no clone here", () => {

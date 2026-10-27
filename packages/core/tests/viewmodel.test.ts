@@ -730,7 +730,7 @@ describe("the ledger's workings", () => {
     });
   });
 
-  it("says a forge was not read on the rows it would have spelled out", async () => {
+  it("says a forge couldn't be read on the rows it would have spelled out", async () => {
     const config = await adoptAll(["dev/prism"]);
     const prism = item("dev/prism", {
       sources: {
@@ -742,7 +742,7 @@ describe("the ledger's workings", () => {
       },
     });
     const bird = birdIn([prism], config, "dev/prism");
-    const notRead = (text: string) => ({
+    const couldNotRead = (text: string) => ({
       source: "github",
       text,
       tone: "amber",
@@ -751,16 +751,48 @@ describe("the ledger's workings", () => {
     });
 
     expect(row(bird, "CI").workings).toEqual([
-      notRead("CI not read"),
+      couldNotRead("couldn't read CI"),
       expect.objectContaining({ source: "forgejo", tone: "red" }),
     ]);
     expect(row(bird, "open pull requests")).toMatchObject({
       text: "none",
-      workings: [notRead("pull requests not read")],
+      workings: [couldNotRead("couldn't read pull requests")],
     });
   });
 
-  it("names only the part of a forge not read, counting and judging the parts that were", async () => {
+  it("says couldn't read, never not read, for a failed source, on the rows no forge could fill", async () => {
+    const config = await adoptAll(["dev/hearth-config"]);
+    const unread = item("dev/hearth-config", {
+      sources: {
+        github: { error: "no token in the keyring", cause: "read-failed" },
+        forgejo: { error: "HTTP 500", cause: "read-failed" },
+      },
+    });
+    const bird = birdIn([unread], config, "dev/hearth-config");
+    const unreadRow = (label: string, part: string) => ({
+      kind: "state",
+      label,
+      text: "couldn't read",
+      tone: "amber",
+      url: null,
+      chip: null,
+      workings: ["github", "forgejo"].map((source) => ({
+        source,
+        text: `couldn't read ${part}`,
+        tone: "amber",
+        url: null,
+        at: null,
+      })),
+    });
+
+    expect(row(bird, "CI")).toEqual(unreadRow("CI", "CI"));
+    expect(row(bird, "open pull requests")).toEqual(
+      unreadRow("open pull requests", "pull requests"),
+    );
+    expect(JSON.stringify(bird)).not.toMatch(/not read/);
+  });
+
+  it("names only the part of a forge that couldn't be read, counting and judging the parts that were", async () => {
     const config = await adoptAll(["dev/prism"]);
     const pullsError =
       "HTTP 404 from https://api.github.com/repos/the-undev/prism/pulls?state=open&per_page=100";
@@ -796,7 +828,7 @@ describe("the ledger's workings", () => {
       workings: [
         {
           source: "github",
-          text: "pull requests not read",
+          text: "couldn't read pull requests",
           tone: "amber",
         },
         { source: "forgejo", text: "1 open" },
@@ -1395,7 +1427,7 @@ describe("the commit river", () => {
     expect(river.divergence).toBe("forgejo is 3 commits behind github.");
   });
 
-  it("judges over the forges read, noting one not read, whatever the clone's list", async () => {
+  it("judges over the forges read, noting one that couldn't be read, whatever the clone's list", async () => {
     const partly = item("dev/river", {
       presences: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
@@ -1414,7 +1446,7 @@ describe("the commit river", () => {
     const river = birdIn([partly], config, "dev/river").detail.river;
 
     expect(rows(river)).toEqual([["c1", "green", "on github"]]);
-    expect(river.notes).toEqual(["forgejo not read"]);
+    expect(river.notes).toEqual(["couldn't read forgejo"]);
     expect(river.divergence).toBeNull();
   });
 
@@ -1457,10 +1489,10 @@ describe("the commit river", () => {
     ]);
     expect(pullsRiver.notes).toEqual([]);
     expect(rows(commitsRiver)).toEqual([["c1", "green", "on forgejo"]]);
-    expect(commitsRiver.notes).toEqual(["github not read"]);
+    expect(commitsRiver.notes).toEqual(["couldn't read github"]);
   });
 
-  it("tones unpushed commits amber, on no remote read, while a forge is not read", async () => {
+  it("tones unpushed commits amber, on no remote that could be read, while a forge couldn't be read", async () => {
     const partly = item("dev/river", {
       presences: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
@@ -1478,28 +1510,45 @@ describe("the commit river", () => {
     const config = await adoptAll(["dev/river"]);
 
     expect(rows(birdIn([partly], config, "dev/river").detail.river)).toEqual([
-      ["u1", "amber", "on no remote read"],
+      ["u1", "amber", "on no remote that could be read"],
       ["c1", "green", "on github"],
     ]);
   });
 
-  it("gives no tone when no forge was read, or the clone has no forge", async () => {
-    const unread = item("dev/river", {
-      presences: {
-        local: { ref: "local:dev/river", path: "/home/test/dev/river" },
-        forges: [presenceOn("github")],
-      },
-      sources: {
-        git: gitData({ defaultBranchCommits: [at("c1", 1)] }),
-        github: { error: "HTTP 404", cause: "read-failed" },
-      },
-    });
+  it("names the branch in the river's heading and marks every commit amber when no remote could be read", async () => {
+    const unread = (cause: "no-card" | "read-failed") =>
+      item("dev/river", {
+        presences: {
+          local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+          forges: [presenceOn("github")],
+        },
+        sources: {
+          git: gitData({
+            defaultBranch: "trunk",
+            defaultBranchCommits: [at("c2", 1), at("c1", 3)],
+          }),
+          github: { error: "unreadable", cause },
+        },
+      });
     const config = await adoptAll(["dev/river"]);
-    const notRead = birdIn([unread], config, "dev/river").detail.river;
+    const transient = birdIn([unread("read-failed")], config, "dev/river")
+      .detail.river;
+    const gap = birdIn([unread("no-card")], config, "dev/river").detail.river;
+
+    expect(transient.branch).toBe("trunk");
+    expect(rows(transient)).toEqual([
+      ["c2", "amber", "no remote could be read"],
+      ["c1", "amber", "no remote could be read"],
+    ]);
+    expect(transient.notes).toEqual(["couldn't read github"]);
+    expect(gap.notes).toEqual([
+      "couldn't read github · no card covers finch",
+    ]);
+  });
+
+  it("keeps the quiet speck for a clone with no forge at all", async () => {
     const localOnly = await riverOf({ here: [at("c1", 1)] });
 
-    expect(rows(notRead)).toEqual([["c1", null, "no remote read"]]);
-    expect(notRead.notes).toEqual(["github not read"]);
     expect(rows(localOnly)).toEqual([["c1", null, "no remote"]]);
     expect(localOnly.notes).toEqual([]);
   });
@@ -1517,8 +1566,10 @@ describe("the commit river", () => {
     });
     const config = await adoptAll(["github:finch/river"]);
 
-    expect(
-      rows(birdIn([forgeOnly], config, "github:finch/river").detail.river),
-    ).toEqual([["c1", "green", "on github"]]);
+    const river = birdIn([forgeOnly], config, "github:finch/river").detail
+      .river;
+
+    expect(rows(river)).toEqual([["c1", "green", "on github"]]);
+    expect(river.branch).toBe("main");
   });
 });

@@ -385,6 +385,15 @@ describe("the camera", () => {
     );
   });
 
+  it("says in the header how many sources it couldn't read, naming each on hover", () => {
+    camera(aviaryPlace, false, now);
+
+    const failing = screen.getByText("couldn't read 1 source");
+    expect(failing.getAttribute("title")).toBe(
+      "Couldn't read Forgejo accounts, last read under an hour ago",
+    );
+  });
+
   it("leaves for the settings from the header's last word", () => {
     const { onSettings, onNavigate } = camera(detailOf("dev/perch"));
 

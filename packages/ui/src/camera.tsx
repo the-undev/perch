@@ -446,7 +446,7 @@ function ScanLine({
             .map((error) => sourceErrorWords(error, now))
             .join("\n")}
         >
-          {failing} {failing === 1 ? "source" : "sources"} not read
+          couldn't read {failing} {failing === 1 ? "source" : "sources"}
         </span>
       )}
     </div>

@@ -220,7 +220,7 @@ export interface Working {
 /**
  * One fact in full words. A clean count of zero reads "none" in green. A count or state row names
  * the bubble chip whose working it holds, null when the bubble carries no such chip, and spells
- * that working out per source: each source with something to say, or not read.
+ * that working out per source: each source with something to say, or that it couldn't be read.
  */
 export type LedgerEntry =
   | {
@@ -254,7 +254,7 @@ export interface BranchLine {
   url: string | null;
 }
 
-/** A commit's spread: green on every forge read, amber short of one, null when no forge was read. */
+/** A commit's spread: green on every forge read, amber short of one or when none could be read, null without a forge. */
 export type SpreadTone = Exclude<HealthLevel, "red"> | null;
 
 /** One commit on the default branch, told once however many places hold it. */
@@ -266,15 +266,17 @@ export interface RiverCommit {
   /** The commit on the first forge holding it; null when no forge does. */
   url: string | null;
   tone: SpreadTone;
-  /** The spread in words, such as "on github and forgejo" or "not pushed to a remote". */
+  /** The spread in words, such as "on github and forgejo" or "no remote could be read". */
   spread: string;
 }
 
 /** The newest commits on the default branch, each once, with how far each has spread. */
 export interface River {
+  /** The default branch the river judges, the clone's else a forge's; null when none names it. */
+  branch: string | null;
   /** Newest first, at most the configured number of finalised commits. */
   commits: RiverCommit[];
-  /** A line per forge whose list was not read, such as "github not read". */
+  /** A line per forge whose list couldn't be read, such as "couldn't read github", with why when no card covers it. */
   notes: string[];
   /** One sentence when the forges hold different commits; null when they agree. */
   divergence: string | null;
@@ -475,7 +477,7 @@ function countEntry(
       };
 }
 
-/** Each forge the item holds a source for: its data, or null when it was not read. */
+/** Each forge the item holds a source for: its data, or null when it couldn't be read. */
 function forgeSources(
   item: Item,
 ): { forge: ForgeName; data: ForgeData | null }[] {
@@ -486,7 +488,7 @@ function forgeSources(
   });
 }
 
-/** Each part of a forge's data, named in full for a working that says it was not read. */
+/** Each part of a forge's data, named in full for a working that says it couldn't be read. */
 const forgePartLabel = {
   openPullRequests: "pull requests",
   latestCi: "CI",
@@ -502,10 +504,10 @@ function failed(part: object | null): part is ItemError {
   return part !== null && "error" in part;
 }
 
-function notRead(source: string, part: ForgePart): Working {
+function couldNotRead(source: string, part: ForgePart): Working {
   return {
     source,
-    text: `${forgePartLabel[part]} not read`,
+    text: `couldn't read ${forgePartLabel[part]}`,
     tone: "amber",
     url: null,
     at: null,
@@ -538,10 +540,38 @@ function ciTone(state: CiState): Tone {
   return state === "success" ? "green" : null;
 }
 
-/** The CI row: the worst state, as the chip says it, then each forge's newest run, named and linked. */
+/** Whether the item has a forge and none of them had this part read. */
+function noneRead(item: Item, part: ForgePart): boolean {
+  const sources = forgeSources(item);
+  return (
+    sources.length > 0 &&
+    sources.every(({ data }) => data === null || failed(data[part]))
+  );
+}
+
+/** A row no forge could be read for: "couldn't read" in amber, each forge's working saying so. */
+function unreadRow(label: string, workings: Working[]): LedgerEntry {
+  return {
+    kind: "state",
+    label,
+    text: "couldn't read",
+    tone: "amber",
+    url: null,
+    chip: null,
+    workings,
+  };
+}
+
+/**
+ * The CI row: the worst state, as the chip says it, then each forge's newest run, named and linked.
+ * With no run anywhere it says "couldn't read" when no forge's CI could be read, else nothing.
+ */
 function ciEntry(item: Item, chip: ChipKind | null): LedgerEntry | null {
   const worst = worstCiState(item);
-  if (worst === undefined) return null;
+  const workings = ciWorkings(item);
+  if (worst === undefined) {
+    return noneRead(item, "latestCi") ? unreadRow("CI", workings) : null;
+  }
   return {
     kind: "state",
     label: "CI",
@@ -549,30 +579,35 @@ function ciEntry(item: Item, chip: ChipKind | null): LedgerEntry | null {
     tone: ciTone(worst),
     url: null,
     chip,
-    workings: forgeSources(item).flatMap(({ forge, data }): Working[] => {
-      if (data === null || failed(data.latestCi)) {
-        return [notRead(forge, "latestCi")];
-      }
-      const run = latestRunOf(data);
-      if (run === null) return [];
-      return [
-        {
-          source: forge,
-          text: `${run.state} on ${data.defaultBranch}, run “${run.name}”`,
-          tone: ciTone(run.state),
-          url: run.url,
-          at: run.createdAt,
-        },
-      ];
-    }),
+    workings,
   };
+}
+
+/** Each forge's newest run on the default branch, named and linked, or that its CI couldn't be read. */
+function ciWorkings(item: Item): Working[] {
+  return forgeSources(item).flatMap(({ forge, data }): Working[] => {
+    if (data === null || failed(data.latestCi)) {
+      return [couldNotRead(forge, "latestCi")];
+    }
+    const run = latestRunOf(data);
+    if (run === null) return [];
+    return [
+      {
+        source: forge,
+        text: `${run.state} on ${data.defaultBranch}, run “${run.name}”`,
+        tone: ciTone(run.state),
+        url: run.url,
+        at: run.createdAt,
+      },
+    ];
+  });
 }
 
 /** Each forge's open pull requests, linked to its list; a forge with none is silent. */
 function pullRequestWorkings(item: Item): Working[] {
   return forgeSources(item).flatMap(({ forge, data }): Working[] => {
     if (data === null || failed(data.openPullRequests)) {
-      return [notRead(forge, "openPullRequests")];
+      return [couldNotRead(forge, "openPullRequests")];
     }
     const open = data.openPullRequests.length;
     if (open === 0) return [];
@@ -787,6 +822,9 @@ function ledgerFor(item: Item, chips: Chip[]): LedgerEntry[] {
     );
   }
   const pullForges = forgePullRequests(item);
+  if (noneRead(item, "openPullRequests")) {
+    ledger.push(unreadRow("open pull requests", pullRequestWorkings(item)));
+  }
   if (pullForges.length > 0) {
     ledger.push(
       countEntry(
@@ -846,7 +884,7 @@ interface PlaceList {
   repoUrl: string | null;
 }
 
-/** Local main's list: null when git was not read, before a scan read it, or without main. */
+/** Local main's list: null when git couldn't be read, before a scan read it, or without main. */
 function herePlace(item: Item): PlaceList {
   const git = readable<GitData>(item.sources.git);
   return {
@@ -856,7 +894,7 @@ function herePlace(item: Item): PlaceList {
   };
 }
 
-/** A forge's list: null when the forge or its commits were not read, whatever its other parts did. */
+/** A forge's list: null when the forge or its commits couldn't be read, whatever its other parts did. */
 function forgePlace(item: Item, forge: ForgeName): PlaceList {
   const data = readable<ForgeData>(item.sources[forge]);
   return {
@@ -931,7 +969,8 @@ function divergenceOf(
 
 /**
  * A commit's spread over the forges read. A forge holds it unless the commit is lacking there, so
- * one older than a forge's list counts as held. The clone only contributes commits.
+ * one older than a forge's list counts as held. The clone only contributes commits. With forges
+ * but none read the spread is unknown, in amber; only a bird with no forge is quiet.
  */
 function spreadOf(
   forgeCount: number,
@@ -939,7 +978,8 @@ function spreadOf(
   commit: FinalisedCommit,
 ): { tone: SpreadTone; spread: string } {
   if (forgeCount === 0) return { tone: null, spread: "no remote" };
-  if (forgeLists.length === 0) return { tone: null, spread: "no remote read" };
+  if (forgeLists.length === 0)
+    return { tone: "amber", spread: "no remote could be read" };
   const holders = forgeLists
     .filter((list) => reachIn(list.commits, commit) !== "lacking")
     .map((list) => list.name);
@@ -948,8 +988,33 @@ function spreadOf(
   if (holders.length > 0)
     return { tone: "amber", spread: `only on ${holders.join(" and ")}` };
   if (forgeLists.length < forgeCount)
-    return { tone: "amber", spread: "on no remote read" };
+    return { tone: "amber", spread: "on no remote that could be read" };
   return { tone: "amber", spread: "not pushed to a remote" };
+}
+
+/**
+ * A forge whose list couldn't be read, in a line: with the short why when no card covers its
+ * owner, which only the standing gap has.
+ */
+function riverNote(item: Item, forge: ForgeName): string {
+  const source = item.sources[forge];
+  const presence = item.presences.forges.find((entry) => entry.forge === forge);
+  if (
+    source === undefined ||
+    !("cause" in source) ||
+    source.cause !== "no-card" ||
+    presence === undefined
+  ) {
+    return `couldn't read ${forge}`;
+  }
+  const owner = presence.fullName.slice(0, presence.fullName.indexOf("/"));
+  return `couldn't read ${forge} · no card covers ${owner}`;
+}
+
+/** The default branch the river judges: the clone's, else the first forge's read. */
+function riverBranch(item: Item): string | null {
+  const git = readable<GitData>(item.sources.git);
+  return git?.defaultBranch ?? forgeData(item)[0]?.data.defaultBranch ?? null;
 }
 
 /**
@@ -977,6 +1042,7 @@ function riverFor(item: Item, cap: number): River {
   );
   const forgeLists = forgePlaces.filter((list) => list.commits !== null);
   return {
+    branch: riverBranch(item),
     commits: commits.slice(0, cap).map((commit) => {
       const holderUrl =
         forgeLists.find((list) => reachIn(list.commits, commit) === "held")
@@ -990,9 +1056,13 @@ function riverFor(item: Item, cap: number): River {
         ...spreadOf(forgePlaces.length, forgeLists, commit),
       };
     }),
-    notes: forgePlaces
-      .filter((list) => list.commits === null)
-      .map((list) => `${list.name} not read`),
+    notes: forgeNames
+      .filter((forge) =>
+        forgePlaces.some(
+          (list) => list.name === forge && list.commits === null,
+        ),
+      )
+      .map((forge) => riverNote(item, forge)),
     divergence: divergenceOf(forgeLists, commits),
   };
 }
@@ -1046,7 +1116,7 @@ function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {
   return files.map((file) => ({ path: file, absolutePath: `${path}/${file}` }));
 }
 
-/** Each source not read for the bird, then each part of a forge read without it. */
+/** Each source that couldn't be read for the bird, then each part of a forge read without it. */
 function problemsFor(item: Item): SourceProblem[] {
   const sources = Object.entries(item.sources).flatMap(([source, data]) =>
     data && "error" in data

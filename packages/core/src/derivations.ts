@@ -536,7 +536,7 @@ function deriveFacet<T, U>(
 ): U | ItemError {
   return facet.state === "observed"
     ? derive(facet.value)
-    : { error: facet.state === "error" ? facet.error : "not read" };
+    : { error: facet.state === "error" ? facet.error : "couldn't read" };
 }
 
 /**

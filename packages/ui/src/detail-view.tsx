@@ -19,6 +19,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { actionClass, LaunchActions, LinksOut } from "./actions.tsx";
 import { AdoptionPapers } from "./adoption-papers.tsx";
 import { DetailHeading } from "./detail-heading.tsx";
@@ -197,11 +198,15 @@ export function DetailView({
   const night = isNight(skyPhase(now));
   const recordRef = useRef<HTMLDivElement>(null);
   const [landing, setLanding] = useState<Landing | null>(null);
+  // The mark is committed before the scroll, so the row never paints unlit; both callers, a press
+  // and the arrival effect, run outside render, where flushSync is allowed.
   const landOn = useCallback((chip: ChipKind) => {
+    flushSync(() => {
+      setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
+    });
     recordRef.current
       ?.querySelector(`[data-chip="${chip}"]`)
       ?.scrollIntoView({ block: "center", behavior: "instant" });
-    setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
   }, []);
   // The arrival lands once the page's own swap is over, since a scroll and a mark during it flicker.
   const articleRef = useRef<HTMLElement>(null);

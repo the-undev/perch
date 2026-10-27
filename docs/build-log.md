@@ -952,3 +952,6 @@ build-time calls so they can be revisited.
 - A hand edit to the config file rereads it and then requests a scan
   through the scheduler, as a save from the settings page does, so a new
   include path shows its birds at once.
+- A chip's landing commits its mark with `flushSync` before the row is
+  scrolled into view, so the row is never painted unlit. Both callers,
+  the press and the arrival effect, run outside render.

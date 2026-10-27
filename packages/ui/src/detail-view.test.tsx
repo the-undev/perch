@@ -24,14 +24,18 @@ afterEach(cleanup);
 
 /** The elements scrolled into view and how, since jsdom does no scrolling. */
 const scrolled: { element: Element; options: unknown }[] = [];
+/** Whether the scrolled row already held its landing mark when the scroll ran. */
+const markedAtScroll: boolean[] = [];
 Element.prototype.scrollIntoView = function (
   this: Element,
   options?: boolean | ScrollIntoViewOptions,
 ) {
   scrolled.push({ element: this, options });
+  markedAtScroll.push(this.querySelector('[data-part="landing"]') !== null);
 };
 afterEach(() => {
   scrolled.length = 0;
+  markedAtScroll.length = 0;
   Reflect.deleteProperty(Element.prototype, "getAnimations");
 });
 
@@ -206,6 +210,21 @@ describe("the detail view", () => {
     expect(scrolled.at(-1)?.element).toBe(row("pull-requests"));
     expect(container.querySelectorAll('[data-part="landing"]')).toHaveLength(1);
     expect(markedRow()).toBe("pull-requests");
+  });
+
+  it("lands the chip's row in the same paint as the press", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch);
+    const bubble = screen.getByRole("region", { name: "Perch says" });
+    const [ci] = perch.bubble.chips;
+    if (ci === undefined) throw new Error("perch carries a CI chip");
+
+    fireEvent.click(within(bubble).getByRole("button", { name: ci.label }));
+
+    expect(markedAtScroll).toEqual([true]);
+    expect(
+      container.querySelector('[data-part="record"] [data-part="landing"]'),
+    ).not.toBeNull();
   });
 
   it("lands on the arrival chip's row as the page opens, again when another arrives, and not at all without one", () => {

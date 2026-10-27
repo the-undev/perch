@@ -69,6 +69,43 @@ const distressed = item("dev/prism", {
   },
 });
 
+/** A clone pushing to the named forges' skiff-app/skiff, each unread: no card, or a failed read. */
+function unreadableItem(
+  id: string,
+  forges: ForgeName[],
+  sources: Item["sources"],
+  cause: "no-card" | "read-failed",
+): Item {
+  return item(id, {
+    presences: {
+      local: { ref: `local:${id}`, path: `/home/test/${id}` },
+      forges: forges.map((forge) => ({
+        forge,
+        ref: `${forge}:skiff-app/skiff`,
+        fullName: "skiff-app/skiff",
+        url: null,
+        foundBy: "local-remote",
+      })),
+    },
+    sources: {
+      git: gitData({}),
+      ...Object.fromEntries(
+        forges.map((forge) => [
+          forge,
+          {
+            error:
+              cause === "no-card"
+                ? "no card is configured for owner skiff-app"
+                : "no token in the keyring",
+            cause,
+          },
+        ]),
+      ),
+      ...sources,
+    },
+  });
+}
+
 describe("mood", () => {
   it("wears health as mood: green content, amber restless, red distressed", async () => {
     const config = await adoptAll(["dev/spool", "dev/harbour", "dev/prism"]);
@@ -113,6 +150,35 @@ describe("mood", () => {
       ["ci-failing", "red"],
       ["uncommitted", "amber"],
     ]);
+  });
+
+  it("makes a bird whose remote no card can read restless, and not one whose token failed", async () => {
+    const config = await adoptAll(["undev/skiff", "undev/tokenless"]);
+    const items = [
+      unreadableItem("undev/skiff", ["github"], {}, "no-card"),
+      unreadableItem("undev/tokenless", ["github"], {}, "read-failed"),
+    ];
+
+    expect(birdIn(items, config, "undev/skiff").health).toEqual({
+      level: "amber",
+      causes: [
+        {
+          kind: "unreadable-remote",
+          level: "amber",
+          forge: "github",
+          fullName: "skiff-app/skiff",
+        },
+      ],
+    });
+    expect(birdIn(items, config, "undev/skiff").mood).toBe("restless");
+    expect(birdIn(items, config, "undev/skiff").bubble.speech).toBe(
+      "I push to skiff-app/skiff on github, but no card of yours can read it.",
+    );
+    expect(birdIn(items, config, "undev/tokenless").health).toEqual({
+      level: "green",
+      causes: [],
+    });
+    expect(birdIn(items, config, "undev/tokenless").bubble.chips).toEqual([]);
   });
 
   it("leaves green inputs out: fresh work and a young stall are content", async () => {
@@ -360,11 +426,33 @@ describe("chips", () => {
       ["1 open PR", 1, null],
       ["9 open items", 9, null],
     ]);
+    // Every kind but the unreadable remote's, which needs a forge no card reads.
     expect(
       birdIn([busy], config, "dev/prism").bubble.chips.map(
         (chip) => chip.kind,
       ),
-    ).toEqual(chipKinds);
+    ).toEqual(chipKinds.slice(1));
+  });
+
+  it("lead with a can't-read chip in amber naming each forge no card can read", async () => {
+    const config = await adoptAll(["undev/skiff"]);
+    const skiff = unreadableItem(
+      "undev/skiff",
+      ["github", "forgejo"],
+      { roadmap: { counts: { bug: 0, feature: 3 }, files: [] } },
+      "no-card",
+    );
+
+    expect(
+      birdIn([skiff], config, "undev/skiff").bubble.chips.map((chip) => [
+        chip.kind,
+        chip.label,
+        chip.severity,
+      ]),
+    ).toEqual([
+      ["unreadable", "can't read github and forgejo", "amber"],
+      ["open-items", "3 open items", null],
+    ]);
   });
 
   it("show only what exists: a clean, quiet bird carries none", async () => {

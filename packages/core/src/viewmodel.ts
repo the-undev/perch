@@ -67,6 +67,13 @@ export type HealthCause =
       branch: string;
       run: CiRun;
     }
+  | {
+      kind: "unreadable-remote";
+      level: HealthLevel;
+      forge: ForgeName;
+      /** The repository the clone pushes to, as its remote names it. */
+      fullName: string;
+    }
   | { kind: "bugs"; level: HealthLevel; count: number }
   | {
       kind: "uncommitted" | "unpushed";
@@ -174,6 +181,7 @@ export interface Bubble {
 
 /** Every kind of chip, in the order chips run on a bubble. */
 export const chipKinds = [
+  "unreadable",
   "ci",
   "bugs",
   "uncommitted",
@@ -629,6 +637,21 @@ function upstreamUrl(
 
 function chipsFor(item: Item, health: Health): Chip[] {
   const chips: Chip[] = [];
+  const unreadable = [
+    ...new Set(
+      health.causes.flatMap((cause) =>
+        cause.kind === "unreadable-remote" ? [cause.forge] : [],
+      ),
+    ),
+  ];
+  if (unreadable.length > 0) {
+    chips.push({
+      kind: "unreadable",
+      label: `can't read ${unreadable.join(" and ")}`,
+      count: null,
+      severity: "amber",
+    });
+  }
   const worstCi = worstCiState(item);
   if (worstCi !== undefined) {
     chips.push({

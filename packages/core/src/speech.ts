@@ -105,6 +105,13 @@ function primary(cause: HealthCause): {
         opening: [`My CI is failing on ${cause.branch}.`],
         closing: "Start there.",
       };
+    case "unreadable-remote":
+      return {
+        opening: [
+          `I push to ${cause.fullName} on ${cause.forge}, but no card of yours can read it.`,
+        ],
+        closing: null,
+      };
     case "bugs":
       return {
         opening: [
@@ -159,6 +166,8 @@ function secondary(cause: HealthCause): string {
   switch (cause.kind) {
     case "ci-failing":
       return `My CI is also failing on ${cause.branch}.`;
+    case "unreadable-remote":
+      return `I also push to ${cause.fullName} on ${cause.forge}, and no card of yours can read it.`;
     case "bugs":
       return `I've also got ${countWords(cause.count)} ${plural(cause.count, "bug", "bugs")} open.`;
     case "uncommitted":

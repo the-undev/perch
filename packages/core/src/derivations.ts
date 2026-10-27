@@ -570,11 +570,12 @@ export function latestRunOf(data: ForgeData): CiRun | null {
 // Health
 
 /**
- * An item's health: the worst of its inputs. Failing CI and open bugs are red. Uncommitted
- * changes, unpushed commits and stalled flight take the level already judged against the item's
- * windows. Only amber and red inputs are causes; they come worst first, ties in the order CI,
- * bugs, uncommitted, unpushed, stalled. Flags are not inputs: the one with a level, not set up,
- * is the fence's own situation.
+ * An item's health: the worst of its inputs. Failing CI and open bugs are red. A remote the clone
+ * pushes to that no card can read is amber; a forge whose read failed this scan is not an input.
+ * Uncommitted changes, unpushed commits and stalled flight take the level already judged against
+ * the item's windows. Only amber and red inputs are causes; they come worst first, ties in the
+ * order CI, unreadable remotes, bugs, uncommitted, unpushed, stalled. Flags are not inputs: the
+ * one with a level, not set up, is the fence's own situation.
  */
 export function deriveHealth(item: Item): Health {
   const candidates: HealthCause[] = [];
@@ -589,6 +590,22 @@ export function deriveHealth(item: Item): Health {
       forge,
       branch: data.defaultBranch,
       run,
+    });
+  }
+  for (const forge of ["github", "forgejo"] as const) {
+    const data = item.sources[forge];
+    if (data === undefined || !("cause" in data) || data.cause !== "no-card")
+      continue;
+    // The source is the first presence's of its forge, as aggregation assigns it.
+    const presence = item.presences.forges.find(
+      (entry) => entry.forge === forge,
+    );
+    if (presence === undefined) continue;
+    candidates.push({
+      kind: "unreadable-remote",
+      level: "amber",
+      forge,
+      fullName: presence.fullName,
     });
   }
   const roadmap = item.sources.roadmap;

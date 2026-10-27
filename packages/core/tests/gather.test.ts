@@ -94,7 +94,11 @@ describe("gather", () => {
       },
     };
     const forgejo = returning("forgejo", {
-      "finch/a": { state: "error", error: "details not gathered" },
+      "finch/a": {
+        state: "error",
+        reason: "lookup-failed",
+        error: "details not gathered",
+      },
     });
 
     await gather({

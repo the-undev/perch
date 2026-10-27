@@ -154,7 +154,7 @@ hosts = ["github.com"]
       io(fetchJson),
     ).githubAccounts.gather({});
 
-    expect(Object.keys(data)).toEqual(["one", "two"]);
+    expect(Object.keys(data)).toEqual(["github-one", "github-two"]);
     expect(requests.map((request) => request.split(" ").at(-1))).toEqual([
       "token-of-github-one",
       "token-of-github-two",

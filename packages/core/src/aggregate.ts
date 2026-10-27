@@ -19,6 +19,8 @@ import {
 import { polledSourceOrder, type RawStore } from "./gather.ts";
 import {
   type ForgeInput,
+  fullNameOf,
+  isArchived,
   type JoinResult,
   joinPresences,
   type LocalInput,
@@ -29,7 +31,6 @@ import type {
   ForgeName,
   PolledSourceName,
   RawFiles,
-  RawForgeRepo,
   SourceStatus as RawSourceStatus,
   StatusFile,
 } from "./raw.ts";
@@ -37,6 +38,8 @@ import { forgeRef, localRef } from "./refs.ts";
 import type {
   Backup,
   ConfigConflict,
+  ForgeData,
+  ForgeError,
   ForgeListing,
   Item,
   ItemError,
@@ -101,7 +104,8 @@ function fromEntry<T, R extends string, D>(
 
 /**
  * Forge presences from the account listings, overlaid with the forge enricher's file, which adds
- * repositories found through local remotes and the details of each.
+ * repositories found through local remotes and the details of each. A remote's repository the
+ * enricher could not read is a presence carrying its error; an untracked fork is left out.
  */
 function forgePresences(
   forge: ForgeName,
@@ -109,25 +113,38 @@ function forgePresences(
 ): ForgeInput[] {
   const accounts =
     files[forge === "github" ? "githubAccounts" : "forgejoAccounts"];
-  const repos = new Map<string, RawForgeRepo>();
-  for (const [account, entry] of Object.entries(accounts?.data ?? {})) {
+  const repos = new Map<string, ForgeInput["repo"]>();
+  for (const entry of Object.values(accounts?.data ?? {})) {
     if (entry.state !== "observed") continue;
     for (const info of entry.value.repos) {
       repos.set(`${info.owner}/${info.name}`.toLowerCase(), {
-        info,
-        foundBy: "account-listing",
-        account,
-        aliases: [],
-        details: { state: "error", error: "details not gathered" },
+        state: "observed",
+        value: {
+          info,
+          foundBy: "account-listing",
+          account: info.owner,
+          aliases: [],
+          details: { state: "error", error: "details not gathered" },
+        },
       });
     }
   }
   for (const [key, entry] of Object.entries(files[forge]?.data ?? {})) {
-    if (entry.state === "observed") repos.set(key, entry.value);
+    if (entry.state !== "absent") repos.set(key, entry);
   }
   return [...repos]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, repo]) => ({ forge, key, repo }));
+}
+
+/** A forge presence's data: derived when it was read, else its error and whether no card covers it. */
+function forgeSource(presence: ForgeInput): ForgeData | ForgeError {
+  if (presence.repo.state === "observed")
+    return deriveForge(presence.repo.value);
+  return {
+    error: presence.repo.error,
+    cause: presence.repo.reason === "no-card" ? "no-card" : "read-failed",
+  };
 }
 
 function backupOf(project: Project & { local: LocalInput }): Backup {
@@ -239,7 +256,7 @@ function itemFor(
     : {};
   for (const forge of forgeNames) {
     const presence = project.forges.find((entry) => entry.forge === forge);
-    if (presence) sources[forge] = deriveForge(presence.repo);
+    if (presence) sources[forge] = forgeSource(presence);
   }
   const flags = [...project.flags];
   const include = local
@@ -259,7 +276,11 @@ function itemFor(
   }
   return {
     id,
-    name: local ? basename(local.presence.path) : (first?.repo.info.name ?? id),
+    name: local
+      ? basename(local.presence.path)
+      : first?.repo.state === "observed"
+        ? first.repo.value.info.name
+        : id,
     kind: local?.presence.obsidian.folder ? "vault" : "repo",
     path: local ? local.presence.path : null,
     liveSources: [],
@@ -270,9 +291,15 @@ function itemFor(
       forges: project.forges.map((presence) => ({
         forge: presence.forge,
         ref: forgeRef(presence.forge, presence.key),
-        fullName: presence.repo.info.fullName,
-        url: presence.repo.info.url,
-        foundBy: presence.repo.foundBy,
+        fullName: fullNameOf(presence),
+        url:
+          presence.repo.state === "observed"
+            ? presence.repo.value.info.url
+            : null,
+        foundBy:
+          presence.repo.state === "observed"
+            ? presence.repo.value.foundBy
+            : "local-remote",
       })),
     },
     flags,
@@ -381,12 +408,13 @@ export function aggregate(
   for (const forge of forgeNames) {
     const listing: ForgeListing = { active: [], archived: [] };
     for (const presence of forgePresences(forge, files)) {
+      if (presence.repo.state !== "observed") continue;
       const ref = forgeRef(forge, presence.key);
       const project = join.projectOf.get(ref);
-      (presence.repo.info.archived ? listing.archived : listing.active).push({
+      (isArchived(presence) ? listing.archived : listing.active).push({
         ref,
-        fullName: presence.repo.info.fullName,
-        url: presence.repo.info.url,
+        fullName: presence.repo.value.info.fullName,
+        url: presence.repo.value.info.url,
         itemId: project ? projectId(project) : null,
         ignored: join.ignored.has(ref),
       });

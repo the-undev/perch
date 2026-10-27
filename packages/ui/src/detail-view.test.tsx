@@ -24,14 +24,18 @@ afterEach(cleanup);
 
 /** The elements scrolled into view and how, since jsdom does no scrolling. */
 const scrolled: { element: Element; options: unknown }[] = [];
+/** Whether the scrolled row already held its landing mark when the scroll ran. */
+const markedAtScroll: boolean[] = [];
 Element.prototype.scrollIntoView = function (
   this: Element,
   options?: boolean | ScrollIntoViewOptions,
 ) {
   scrolled.push({ element: this, options });
+  markedAtScroll.push(this.querySelector('[data-part="landing"]') !== null);
 };
 afterEach(() => {
   scrolled.length = 0;
+  markedAtScroll.length = 0;
   Reflect.deleteProperty(Element.prototype, "getAnimations");
 });
 
@@ -68,6 +72,36 @@ function findBird(aviary: Aviary, id: string): Bird {
   return bird;
 }
 
+/** Skiff with its GitHub remote unread for want of a card that covers its owner. */
+function unreadableSkiff(): Bird {
+  const items = mockSnapshot.items.map((item) =>
+    item.id === "undev/skiff"
+      ? {
+          ...item,
+          presences: {
+            ...item.presences,
+            forges: item.presences.forges.map((presence) =>
+              presence.forge === "github"
+                ? { ...presence, fullName: "skiff-app/skiff", url: null }
+                : presence,
+            ),
+          },
+          sources: {
+            ...item.sources,
+            github: {
+              error: "no GitHub card is configured for owner skiff-app",
+              cause: "no-card" as const,
+            },
+          },
+        }
+      : item,
+  );
+  return findBird(
+    deriveAviary({ ...mockSnapshot, items }, mockConfig, mockHome),
+    "undev/skiff",
+  );
+}
+
 interface PageOptions {
   sheets?: KeyFileSheet[];
   form?: EntryForm | null;
@@ -80,6 +114,7 @@ function page(bird: Bird, options: PageOptions = {}) {
   const onLaunch = vi.fn();
   const onSave = vi.fn();
   const onRemove = vi.fn();
+  const onSettings = vi.fn();
   const view = (next: Bird, given: PageOptions) => (
     <DetailView
       bird={next}
@@ -90,6 +125,7 @@ function page(bird: Bird, options: PageOptions = {}) {
       problems={given.problems ?? []}
       openPapers={given.openPapers ?? false}
       arrivalChip={given.arrivalChip ?? null}
+      onSettings={onSettings}
     />
   );
   const { container, rerender } = render(view(bird, options));
@@ -98,6 +134,7 @@ function page(bird: Bird, options: PageOptions = {}) {
     onLaunch,
     onSave,
     onRemove,
+    onSettings,
     /** The same page given a new bird and new options, as a push would. */
     push: (next: Bird, given: PageOptions) => rerender(view(next, given)),
   };
@@ -206,6 +243,51 @@ describe("the detail view", () => {
     expect(scrolled.at(-1)?.element).toBe(row("pull-requests"));
     expect(container.querySelectorAll('[data-part="landing"]')).toHaveLength(1);
     expect(markedRow()).toBe("pull-requests");
+  });
+
+  it("lands the can't-read chip on the record's notice, whose Sources opens the settings page", () => {
+    const skiff = unreadableSkiff();
+    const { container, onSettings } = page(skiff);
+    const bubble = screen.getByRole("region", { name: "Skiff says" });
+    const notice = container.querySelector('[data-part="notices"]');
+
+    expect(notice?.textContent).toBe(
+      "The clone pushes to skiff-app/skiff on github, which no GitHub card reads. Add a card for skiff-app under Sources.",
+    );
+    expect(
+      container.querySelector('[data-part="heading"] [data-part="notices"]'),
+    ).toBe(notice);
+    fireEvent.click(
+      within(bubble).getByRole("button", { name: "can't read github" }),
+    );
+
+    expect(scrolled.map(({ element }) => element)).toEqual([notice]);
+    expect(notice?.querySelector('[data-part="landing"]')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sources" }));
+
+    expect(onSettings).toHaveBeenCalledOnce();
+  });
+
+  it("gives a bird whose remotes all read no notice", () => {
+    const { container } = page(mockBird("dev/perch"));
+
+    expect(container.querySelector('[data-part="notices"]')).toBeNull();
+  });
+
+  it("lands the chip's row in the same paint as the press", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch);
+    const bubble = screen.getByRole("region", { name: "Perch says" });
+    const [ci] = perch.bubble.chips;
+    if (ci === undefined) throw new Error("perch carries a CI chip");
+
+    fireEvent.click(within(bubble).getByRole("button", { name: ci.label }));
+
+    expect(markedAtScroll).toEqual([true]);
+    expect(
+      container.querySelector('[data-part="record"] [data-part="landing"]'),
+    ).not.toBeNull();
   });
 
   it("lands on the arrival chip's row as the page opens, again when another arrives, and not at all without one", () => {
@@ -364,7 +446,7 @@ describe("the detail view", () => {
     );
     expect(
       headings().filter(
-        (heading) => heading === "Where each commit has reached",
+        (heading) => heading === "Where each commit on main has reached",
       ),
     ).toHaveLength(1);
     cleanup();
@@ -376,16 +458,16 @@ describe("the detail view", () => {
         river: { ...perch.detail.river, commits: [] },
       },
     });
-    expect(headings()).not.toContain("Where each commit has reached");
+    expect(headings()).not.toContain("Where each commit on main has reached");
     cleanup();
 
     page(mockBird("undev/prism"));
-    expect(headings()).toContain("Sources not read");
+    expect(headings()).toContain("What couldn't be read");
     cleanup();
 
     page(mockBird("undev/spool"));
     expect(headings()).not.toContain("Open pull requests");
-    expect(headings()).not.toContain("Sources not read");
+    expect(headings()).not.toContain("What couldn't be read");
   });
 
   it("offers nothing to launch for a bird with no clone here", () => {

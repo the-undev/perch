@@ -14,7 +14,7 @@ export function BirdPage() {
     <>
       <Section
         title="Breast colour · health, worn as mood"
-        rule="Green content, amber restless, red distressed. From CI failures, open bugs, unsafe work (24h amber, 72h red), and stalled flight (7d amber, 30d red). Worst input wins; per-bird thresholds in config."
+        rule="Green content, amber restless, red distressed. From CI failures, open bugs, a remote no card can read (amber), unsafe work (24h amber, 72h red), and stalled flight (7d amber, 30d red). Worst input wins; per-bird thresholds in config."
         min={260}
       >
         <Specimen
@@ -27,7 +27,7 @@ export function BirdPage() {
         </Specimen>
         <Specimen
           label="restless"
-          rule="Skiff: parked on a branch for three weeks, stalled flight past 7 days."
+          rule="Skiff: a remote no card can read, and parked on a branch for three weeks."
         >
           <Plate phase="day">
             <BirdPortrait bird={skiff} facing="right" night={false} />

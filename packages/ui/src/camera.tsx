@@ -40,7 +40,7 @@ import {
 import type { KeyFileSheet } from "./paper.tsx";
 import { sceneWidth, skyBackground } from "./scene.tsx";
 import { isNight, type SkyPhase, skyPhase } from "./sky.ts";
-import { agoWords } from "./time.ts";
+import { recentWords } from "./time.ts";
 import { byPosition, facingAt, namePlace, Tally, tallyGap } from "./wire.tsx";
 
 /**
@@ -437,7 +437,7 @@ function ScanLine({
         onClick={onRescan}
         className="cursor-pointer hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-ink-accent disabled:cursor-default disabled:hover:text-ink-faint"
       >
-        {phase}, scanned {time}, {agoWords(aviary.scannedAt, now)}
+        {phase}, scanned {time}, {recentWords(aviary.scannedAt, now)}
       </button>
       {failing > 0 && (
         <span
@@ -446,7 +446,7 @@ function ScanLine({
             .map((error) => sourceErrorWords(error, now))
             .join("\n")}
         >
-          {failing} {failing === 1 ? "source" : "sources"} not read
+          couldn't read {failing} {failing === 1 ? "source" : "sources"}
         </span>
       )}
     </div>
@@ -717,6 +717,7 @@ export function CameraView({
                   problems={problems}
                   openPapers={place.at === "detail" && place.papers}
                   arrivalChip={place.at === "detail" ? place.chip : null}
+                  onSettings={onSettings}
                 />
               </div>
             )}

@@ -88,7 +88,6 @@ describe("the sources page", () => {
       "Local folders",
       "GitHub · finch",
       "GitHub · the-undev",
-      "GitHub · skiff-app",
       "Forgejo · forge.example.lan:3000",
       "Forgejo · forge.example.lan:3000",
       "Uptime Kuma · Silo",
@@ -215,7 +214,7 @@ describe("the sources page", () => {
           {
             account: "someone",
             key: "github-someone",
-            hosts: [],
+            hosts: ["github.com"],
             trackedForks: [],
           },
         ],
@@ -223,28 +222,52 @@ describe("the sources page", () => {
     });
   });
 
+  it("starts a GitHub card with github.com in its hosts and fills a Forgejo card's from its typed base URL", () => {
+    sourcesPage();
+    fireEvent.click(screen.getByRole("button", { name: "Add a source" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add GitHub" }));
+    expect(
+      within(card("GitHub")).getByRole("textbox", { name: "host 1" }),
+    ).toHaveProperty("value", "github.com");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add a source" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Forgejo" }));
+    const added = within(card("Forgejo"));
+    expect(added.queryByRole("textbox", { name: "host 1" })).toBeNull();
+    type(
+      added.getByRole("textbox", { name: "Base URL" }),
+      "https://forge.example.lan",
+    );
+
+    expect(
+      within(card("Forgejo · forge.example.lan")).getByRole("textbox", {
+        name: "host 1",
+      }),
+    ).toHaveProperty("value", "forge.example.lan");
+  });
+
   it("removes a card only on the second press", () => {
     const { onSave, form } = sourcesPage();
-    open("GitHub · the-undev");
+    open("GitHub · finch");
 
     fireEvent.click(
-      within(card("GitHub · the-undev")).getByRole("button", {
+      within(card("GitHub · finch")).getByRole("button", {
         name: "Remove this source",
       }),
     );
-    expect(card("GitHub · the-undev")).toBeDefined();
+    expect(card("GitHub · finch")).toBeDefined();
     expect(saveButton().disabled).toBe(true);
     fireEvent.click(
-      within(card("GitHub · the-undev")).getByRole("button", {
+      within(card("GitHub · finch")).getByRole("button", {
         name: "Stop looking here",
       }),
     );
 
     expect(
-      screen.queryByRole("region", { name: "GitHub · the-undev" }),
+      screen.queryByRole("region", { name: "GitHub · finch" }),
     ).toBeNull();
     expect(
-      within(card("GitHub · skiff-app")).queryByRole("button", {
+      within(card("GitHub · the-undev")).queryByRole("button", {
         name: "Stop looking here",
       }),
     ).toBeNull();
@@ -253,7 +276,7 @@ describe("the sources page", () => {
       ...form.values,
       sources: {
         ...form.values.sources,
-        github: [form.values.sources.github[0], form.values.sources.github[2]],
+        github: [form.values.sources.github[1]],
       },
     });
   });

@@ -69,6 +69,43 @@ const distressed = item("dev/prism", {
   },
 });
 
+/** A clone pushing to the named forges' skiff-app/skiff, each unread: no card, or a failed read. */
+function unreadableItem(
+  id: string,
+  forges: ForgeName[],
+  sources: Item["sources"],
+  cause: "no-card" | "read-failed",
+): Item {
+  return item(id, {
+    presences: {
+      local: { ref: `local:${id}`, path: `/home/test/${id}` },
+      forges: forges.map((forge) => ({
+        forge,
+        ref: `${forge}:skiff-app/skiff`,
+        fullName: "skiff-app/skiff",
+        url: null,
+        foundBy: "local-remote",
+      })),
+    },
+    sources: {
+      git: gitData({}),
+      ...Object.fromEntries(
+        forges.map((forge) => [
+          forge,
+          {
+            error:
+              cause === "no-card"
+                ? "no card is configured for owner skiff-app"
+                : "no token in the keyring",
+            cause,
+          },
+        ]),
+      ),
+      ...sources,
+    },
+  });
+}
+
 describe("mood", () => {
   it("wears health as mood: green content, amber restless, red distressed", async () => {
     const config = await adoptAll(["dev/spool", "dev/harbour", "dev/prism"]);
@@ -113,6 +150,35 @@ describe("mood", () => {
       ["ci-failing", "red"],
       ["uncommitted", "amber"],
     ]);
+  });
+
+  it("makes a bird whose remote no card can read restless, and not one whose token failed", async () => {
+    const config = await adoptAll(["undev/skiff", "undev/tokenless"]);
+    const items = [
+      unreadableItem("undev/skiff", ["github"], {}, "no-card"),
+      unreadableItem("undev/tokenless", ["github"], {}, "read-failed"),
+    ];
+
+    expect(birdIn(items, config, "undev/skiff").health).toEqual({
+      level: "amber",
+      causes: [
+        {
+          kind: "unreadable-remote",
+          level: "amber",
+          forge: "github",
+          fullName: "skiff-app/skiff",
+        },
+      ],
+    });
+    expect(birdIn(items, config, "undev/skiff").mood).toBe("restless");
+    expect(birdIn(items, config, "undev/skiff").bubble.speech).toBe(
+      "I push to skiff-app/skiff on github, but no card of yours can read it.",
+    );
+    expect(birdIn(items, config, "undev/tokenless").health).toEqual({
+      level: "green",
+      causes: [],
+    });
+    expect(birdIn(items, config, "undev/tokenless").bubble.chips).toEqual([]);
   });
 
   it("leaves green inputs out: fresh work and a young stall are content", async () => {
@@ -360,11 +426,33 @@ describe("chips", () => {
       ["1 open PR", 1, null],
       ["9 open items", 9, null],
     ]);
+    // Every kind but the unreadable remote's, which needs a forge no card reads.
     expect(
       birdIn([busy], config, "dev/prism").bubble.chips.map(
         (chip) => chip.kind,
       ),
-    ).toEqual(chipKinds);
+    ).toEqual(chipKinds.slice(1));
+  });
+
+  it("lead with a can't-read chip in amber naming each forge no card can read", async () => {
+    const config = await adoptAll(["undev/skiff"]);
+    const skiff = unreadableItem(
+      "undev/skiff",
+      ["github", "forgejo"],
+      { roadmap: { counts: { bug: 0, feature: 3 }, files: [] } },
+      "no-card",
+    );
+
+    expect(
+      birdIn([skiff], config, "undev/skiff").bubble.chips.map((chip) => [
+        chip.kind,
+        chip.label,
+        chip.severity,
+      ]),
+    ).toEqual([
+      ["unreadable", "can't read github and forgejo", "amber"],
+      ["open-items", "3 open items", null],
+    ]);
   });
 
   it("show only what exists: a clean, quiet bird carries none", async () => {
@@ -642,11 +730,11 @@ describe("the ledger's workings", () => {
     });
   });
 
-  it("says a forge was not read on the rows it would have spelled out", async () => {
+  it("says a forge couldn't be read on the rows it would have spelled out", async () => {
     const config = await adoptAll(["dev/prism"]);
     const prism = item("dev/prism", {
       sources: {
-        github: { error: "HTTP 404" },
+        github: { error: "HTTP 404", cause: "read-failed" },
         forgejo: forgeData({
           url: "http://forgejo.test/the-undev/prism",
           latestCi: failingRun,
@@ -654,22 +742,111 @@ describe("the ledger's workings", () => {
       },
     });
     const bird = birdIn([prism], config, "dev/prism");
-    const notRead = {
+    const couldNotRead = (text: string) => ({
       source: "github",
-      text: "not read",
+      text,
       tone: "amber",
       url: null,
       at: null,
-    };
+    });
 
     expect(row(bird, "CI").workings).toEqual([
-      notRead,
+      couldNotRead("couldn't read CI"),
       expect.objectContaining({ source: "forgejo", tone: "red" }),
     ]);
     expect(row(bird, "open pull requests")).toMatchObject({
       text: "none",
-      workings: [notRead],
+      workings: [couldNotRead("couldn't read pull requests")],
     });
+  });
+
+  it("says couldn't read, never not read, for a failed source, on the rows no forge could fill", async () => {
+    const config = await adoptAll(["dev/hearth-config"]);
+    const unread = item("dev/hearth-config", {
+      sources: {
+        github: { error: "no token in the keyring", cause: "read-failed" },
+        forgejo: { error: "HTTP 500", cause: "read-failed" },
+      },
+    });
+    const bird = birdIn([unread], config, "dev/hearth-config");
+    const unreadRow = (label: string, part: string) => ({
+      kind: "state",
+      label,
+      text: "couldn't read",
+      tone: "amber",
+      url: null,
+      chip: null,
+      workings: ["github", "forgejo"].map((source) => ({
+        source,
+        text: `couldn't read ${part}`,
+        tone: "amber",
+        url: null,
+        at: null,
+      })),
+    });
+
+    expect(row(bird, "CI")).toEqual(unreadRow("CI", "CI"));
+    expect(row(bird, "open pull requests")).toEqual(
+      unreadRow("open pull requests", "pull requests"),
+    );
+    expect(JSON.stringify(bird)).not.toMatch(/not read/);
+  });
+
+  it("names only the part of a forge that couldn't be read, counting and judging the parts that were", async () => {
+    const config = await adoptAll(["dev/prism"]);
+    const pullsError =
+      "HTTP 404 from https://api.github.com/repos/the-undev/prism/pulls?state=open&per_page=100";
+    const prism = item("dev/prism", {
+      sources: {
+        github: forgeData({
+          latestCi: failingRun,
+          openPullRequests: { error: pullsError },
+        }),
+        forgejo: forgeData({
+          url: "http://forgejo.test/the-undev/prism",
+          openPullRequests: [
+            {
+              number: 3,
+              title: "LoRA quirk resilience",
+              author: "finch",
+              draft: false,
+              updatedAt: hoursBefore(3),
+              url: "http://forgejo.test/the-undev/prism/pulls/3",
+            },
+          ],
+        }),
+      },
+    });
+    const bird = birdIn([prism], config, "dev/prism");
+
+    expect(row(bird, "CI")).toMatchObject({
+      text: "failure",
+      workings: [{ source: "github", text: "failure on main, run “check”" }],
+    });
+    expect(row(bird, "open pull requests")).toMatchObject({
+      text: "1",
+      workings: [
+        {
+          source: "github",
+          text: "couldn't read pull requests",
+          tone: "amber",
+        },
+        { source: "forgejo", text: "1 open" },
+      ],
+    });
+    expect(bird.bubble.chips.map((chip) => chip.label)).toEqual([
+      "ci failure",
+      "1 open PR",
+    ]);
+    expect(bird.health.causes.map((cause) => cause.kind)).toEqual([
+      "ci-failing",
+    ]);
+    expect(bird.detail.pullRequests.map((pull) => pull.forge)).toEqual([
+      "forgejo",
+    ]);
+    expect(bird.detail.problems).toEqual([
+      { source: "GitHub pull requests", error: pullsError },
+    ]);
   });
 
   it("counts open items and bugs per roadmap file, a file with none silent", async () => {
@@ -855,7 +1032,7 @@ describe("the detail", () => {
           },
         ],
       }),
-      forgejo: { error: "HTTP 500" },
+      forgejo: { error: "HTTP 500", cause: "read-failed" },
     },
   });
 
@@ -1007,6 +1184,57 @@ describe("the detail", () => {
       clonePath: "/srv/scratch",
       forges: [],
     });
+  });
+
+  it("names a forge it could not read where the bird lives, with no link out to it", async () => {
+    const config = await adoptAll(["undev/skiff"]);
+    const skiff = item("undev/skiff", {
+      presences: {
+        local: { ref: "local:undev/skiff", path: "/home/test/undev/skiff" },
+        forges: [
+          {
+            forge: "github",
+            ref: "github:skiff-app/skiff",
+            fullName: "skiff-app/skiff",
+            url: null,
+            foundBy: "local-remote",
+          },
+        ],
+      },
+      sources: {
+        git: gitData({}),
+        github: {
+          error: "no GitHub card is configured for owner skiff-app",
+          cause: "no-card",
+        },
+      },
+    });
+    const detail = birdIn([skiff], config, "undev/skiff").detail;
+
+    expect(detail.forges).toEqual(["github"]);
+    expect(detail.links).toEqual([]);
+    expect(detail.problems).toEqual([
+      {
+        source: "GitHub",
+        error: "no GitHub card is configured for owner skiff-app",
+      },
+    ]);
+  });
+
+  it("gives the record a notice naming a remote no card can read and the card that would", async () => {
+    const config = await adoptAll(["undev/skiff", "undev/tokenless"]);
+    const items = [
+      unreadableItem("undev/skiff", ["github"], {}, "no-card"),
+      unreadableItem("undev/tokenless", ["github"], {}, "read-failed"),
+    ];
+
+    expect(birdIn(items, config, "undev/skiff").detail.notices).toEqual([
+      {
+        text: "The clone pushes to skiff-app/skiff on github, which no GitHub card reads.",
+        fix: "Add a card for skiff-app under",
+      },
+    ]);
+    expect(birdIn(items, config, "undev/tokenless").detail.notices).toEqual([]);
   });
 
   it("offers no launch actions and no key files without a local clone", async () => {
@@ -1199,7 +1427,7 @@ describe("the commit river", () => {
     expect(river.divergence).toBe("forgejo is 3 commits behind github.");
   });
 
-  it("judges over the forges read, noting one not read, whatever the clone's list", async () => {
+  it("judges over the forges read, noting one that couldn't be read, whatever the clone's list", async () => {
     const partly = item("dev/river", {
       presences: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
@@ -1211,18 +1439,60 @@ describe("the commit river", () => {
           url: "https://github.com/finch/river",
           finalisedCommits: [at("c1", 1)],
         }),
-        forgejo: { error: "HTTP 500" },
+        forgejo: { error: "HTTP 500", cause: "read-failed" },
       },
     });
     const config = await adoptAll(["dev/river"]);
     const river = birdIn([partly], config, "dev/river").detail.river;
 
     expect(rows(river)).toEqual([["c1", "green", "on github"]]);
-    expect(river.notes).toEqual(["forgejo not read"]);
+    expect(river.notes).toEqual(["couldn't read forgejo"]);
     expect(river.divergence).toBeNull();
   });
 
-  it("tones unpushed commits amber, on no remote read, while a forge is not read", async () => {
+  it("judges a forge by its commits, whatever its pull requests did", async () => {
+    const twoForges = {
+      local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+      forges: [presenceOn("github"), presenceOn("forgejo")],
+    };
+    const commits = [at("c1", 1)];
+    const pullsUnread = item("dev/river", {
+      presences: twoForges,
+      sources: {
+        git: gitData({ defaultBranchCommits: commits }),
+        github: forgeData({
+          url: "https://github.com/finch/river",
+          openPullRequests: { error: "HTTP 404" },
+          finalisedCommits: commits,
+        }),
+        forgejo: forgeData({ url: forgejoUrl, finalisedCommits: commits }),
+      },
+    });
+    const commitsUnread = item("dev/river", {
+      presences: twoForges,
+      sources: {
+        git: gitData({ defaultBranchCommits: commits }),
+        github: forgeData({
+          url: "https://github.com/finch/river",
+          finalisedCommits: { error: "HTTP 500" },
+        }),
+        forgejo: forgeData({ url: forgejoUrl, finalisedCommits: commits }),
+      },
+    });
+    const config = await adoptAll(["dev/river"]);
+    const pullsRiver = birdIn([pullsUnread], config, "dev/river").detail.river;
+    const commitsRiver = birdIn([commitsUnread], config, "dev/river").detail
+      .river;
+
+    expect(rows(pullsRiver)).toEqual([
+      ["c1", "green", "on github and forgejo"],
+    ]);
+    expect(pullsRiver.notes).toEqual([]);
+    expect(rows(commitsRiver)).toEqual([["c1", "green", "on forgejo"]]);
+    expect(commitsRiver.notes).toEqual(["couldn't read github"]);
+  });
+
+  it("tones unpushed commits amber, on no remote that could be read, while a forge couldn't be read", async () => {
     const partly = item("dev/river", {
       presences: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
@@ -1234,34 +1504,51 @@ describe("the commit river", () => {
           url: "https://github.com/finch/river",
           finalisedCommits: [at("c1", 5)],
         }),
-        forgejo: { error: "HTTP 500" },
+        forgejo: { error: "HTTP 500", cause: "read-failed" },
       },
     });
     const config = await adoptAll(["dev/river"]);
 
     expect(rows(birdIn([partly], config, "dev/river").detail.river)).toEqual([
-      ["u1", "amber", "on no remote read"],
+      ["u1", "amber", "on no remote that could be read"],
       ["c1", "green", "on github"],
     ]);
   });
 
-  it("gives no tone when no forge was read, or the clone has no forge", async () => {
-    const unread = item("dev/river", {
-      presences: {
-        local: { ref: "local:dev/river", path: "/home/test/dev/river" },
-        forges: [presenceOn("github")],
-      },
-      sources: {
-        git: gitData({ defaultBranchCommits: [at("c1", 1)] }),
-        github: { error: "HTTP 404" },
-      },
-    });
+  it("names the branch in the river's heading and marks every commit amber when no remote could be read", async () => {
+    const unread = (cause: "no-card" | "read-failed") =>
+      item("dev/river", {
+        presences: {
+          local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+          forges: [presenceOn("github")],
+        },
+        sources: {
+          git: gitData({
+            defaultBranch: "trunk",
+            defaultBranchCommits: [at("c2", 1), at("c1", 3)],
+          }),
+          github: { error: "unreadable", cause },
+        },
+      });
     const config = await adoptAll(["dev/river"]);
-    const notRead = birdIn([unread], config, "dev/river").detail.river;
+    const transient = birdIn([unread("read-failed")], config, "dev/river")
+      .detail.river;
+    const gap = birdIn([unread("no-card")], config, "dev/river").detail.river;
+
+    expect(transient.branch).toBe("trunk");
+    expect(rows(transient)).toEqual([
+      ["c2", "amber", "no remote could be read"],
+      ["c1", "amber", "no remote could be read"],
+    ]);
+    expect(transient.notes).toEqual(["couldn't read github"]);
+    expect(gap.notes).toEqual([
+      "couldn't read github · no card covers finch",
+    ]);
+  });
+
+  it("keeps the quiet speck for a clone with no forge at all", async () => {
     const localOnly = await riverOf({ here: [at("c1", 1)] });
 
-    expect(rows(notRead)).toEqual([["c1", null, "no remote read"]]);
-    expect(notRead.notes).toEqual(["github not read"]);
     expect(rows(localOnly)).toEqual([["c1", null, "no remote"]]);
     expect(localOnly.notes).toEqual([]);
   });
@@ -1279,8 +1566,10 @@ describe("the commit river", () => {
     });
     const config = await adoptAll(["github:finch/river"]);
 
-    expect(
-      rows(birdIn([forgeOnly], config, "github:finch/river").detail.river),
-    ).toEqual([["c1", "green", "on github"]]);
+    const river = birdIn([forgeOnly], config, "github:finch/river").detail
+      .river;
+
+    expect(rows(river)).toEqual([["c1", "green", "on github"]]);
+    expect(river.branch).toBe("main");
   });
 });

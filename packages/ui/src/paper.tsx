@@ -19,11 +19,30 @@ export interface KeyFileSheet {
 export const paperScroll =
   "max-h-[max(20rem,calc(100vh-18rem))] overflow-y-auto overscroll-contain [scrollbar-color:var(--color-paper-quiet)_transparent]";
 
+/** Whether an image address names a scheme, so the window can fetch it; a path inside the repository does not. */
+const isAbsoluteAddress = (src: string) => /^[a-z][a-z0-9+.-]*:/i.test(src);
+
+/** A remote image as an image, and a repository-relative one as its alt text, since nothing serves it. */
+function PaperImage({
+  src,
+  alt,
+}: {
+  src?: string | Blob | undefined;
+  alt?: string | undefined;
+}) {
+  if (typeof src === "string" && isAbsoluteAddress(src)) {
+    return <img src={src} alt={alt ?? ""} />;
+  }
+  return <>{alt ?? ""}</>;
+}
+
 /** A sheet of paper holding one rendered markdown file. */
 export function MarkdownPaper({ markdown }: { markdown: string }) {
   return (
     <div className="perch-prose">
-      <Markdown remarkPlugins={[remarkGfm]}>{markdown}</Markdown>
+      <Markdown remarkPlugins={[remarkGfm]} components={{ img: PaperImage }}>
+        {markdown}
+      </Markdown>
     </div>
   );
 }

@@ -200,12 +200,28 @@ export type RawCi =
       combinedStatus: { state: string; statuses: RawCommitStatus[] };
     };
 
+/** A repository's detail, each part read by its own request, so one failing leaves the others. */
 export interface RawForgeDetails {
-  openPullRequests: RawPullRequest[];
-  ci: RawCi;
+  openPullRequests: Entry<RawPullRequest[], never>;
+  ci: Entry<RawCi, never>;
   /** The newest commits on the forge's default branch, newest first, as the forge reports them. */
-  finalisedCommits: RawCommit[];
+  finalisedCommits: Entry<RawCommit[], never>;
 }
+
+/**
+ * A repository a local remote names that could not be read: no configured card covers its owner on
+ * the remote's host, a standing config gap, or the lookup itself failed.
+ */
+export interface RawForgeLookupError {
+  state: "error";
+  reason: "no-card" | "lookup-failed";
+  error: string;
+}
+
+/** The forge enricher's entry for one repository. */
+export type RawForgeEntry =
+  | Observed<RawForgeRepo, "fork-not-tracked">
+  | RawForgeLookupError;
 
 export interface RawForgeRepo {
   info: RawForgeRepoInfo;
@@ -271,6 +287,7 @@ export interface RawLocal {
 /** Each polled source's data, as written to its raw file. */
 export interface RawData {
   local: RawLocal;
+  /** Account listings keyed by their table's keyring key. */
   githubAccounts: Record<string, Entry<RawForgeAccount, never>>;
   forgejoAccounts: Record<string, Entry<RawForgeAccount, never>>;
   /** Status pages keyed by their source's name. */
@@ -278,8 +295,8 @@ export interface RawData {
   roadmap: Record<string, Entry<RawRoadmap, "no-roadmap-file">>;
   claudeSessions: Record<string, Entry<RawClaudeSessions, never>>;
   /** Forge repositories keyed by lower-case owner/name. */
-  github: Record<string, Entry<RawForgeRepo, "fork-not-tracked">>;
-  forgejo: Record<string, Entry<RawForgeRepo, "fork-not-tracked">>;
+  github: Record<string, RawForgeEntry>;
+  forgejo: Record<string, RawForgeEntry>;
 }
 
 export type PolledSourceName = keyof RawData;

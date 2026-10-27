@@ -417,6 +417,14 @@ function parseSources(document: Table, home: string): SourcesConfig {
     (source) => `${source.account.toLowerCase()} ${source.baseUrl}`,
     (source) => `account ${source.account} at ${source.baseUrl}`,
   );
+  for (const kind of ["github", "forgejo"] as const) {
+    checkDistinct(
+      kind,
+      parsed[kind],
+      (source) => source.key,
+      (source) => `keyring key ${source.key}`,
+    );
+  }
   checkDistinct(
     "kuma",
     parsed.kuma,

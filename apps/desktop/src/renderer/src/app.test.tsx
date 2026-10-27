@@ -520,6 +520,20 @@ describe("the window", () => {
       expect(await birdButton("undev/skiff")).toBeDefined();
     });
 
+    it("opens from the Sources in a bird's notice about a remote no card can read", async () => {
+      const { router } = renderApp(
+        idle(mockAviary),
+        "/bird/undev/skiff",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+
+      fireEvent.click(await screen.findByRole("button", { name: "Sources" }));
+
+      await waitFor(() => expect(pathOf(router)).toBe("/settings"));
+    });
+
     it("saves an edit through the main process, and shows a refusal among the problems", async () => {
       const form = mockSettingsForm();
       const { fake } = renderApp(
@@ -595,7 +609,7 @@ describe("the window", () => {
               {
                 account: "someone",
                 key: "github-someone",
-                hosts: [],
+                hosts: ["github.com"],
                 trackedForks: [],
               },
             ],

@@ -1,5 +1,5 @@
 // Tier C's ruled ledger: facts in full words, then the sections beneath it (branches, the commit
-// river, pull requests, flags, unread sources). Every row is a label on the left and a value on
+// river, pull requests, flags, the sources that couldn't be read). Every row is a label on the left and a value on
 // the right; clean zeros read a quiet green "none", counts take their severity's tone. A row that
 // holds a bubble chip's working is marked with a dot and spells it out beneath, source by source.
 
@@ -146,7 +146,7 @@ export interface Landing {
 }
 
 /** The brief mark on the row a chip landed on, behind its words; drawn afresh for each press. */
-function LandingMark() {
+export function LandingMark() {
   return (
     <span
       aria-hidden="true"
@@ -265,7 +265,7 @@ export function BranchLines({
   );
 }
 
-/** Green or amber by the commit's spread, and the quietest faint dot when no forge was read. */
+/** Green or amber by the commit's spread, and the quietest faint dot for a bird with no forge. */
 const spreadDotClass: Record<NonNullable<SpreadTone> | "none", string> = {
   green: "size-1.75 bg-green",
   amber: "size-1.75 bg-amber",
@@ -288,7 +288,7 @@ function SpreadDot({ commit }: { commit: RiverCommit }) {
   );
 }
 
-/** A line in amber above the commits: a forge not read, or the divergence. */
+/** A line in amber above the commits: a forge that couldn't be read, or the divergence. */
 function RiverLine({ part, text }: { part: string; text: string }) {
   return (
     <p data-part={part} className="m-0 mt-1.5 text-[12.5px] text-amber">
@@ -297,11 +297,18 @@ function RiverLine({ part, text }: { part: string; text: string }) {
   );
 }
 
+/** The heading names the branch the river judges, when one does. */
+function riverHeading(branch: string | null): string {
+  return branch === null
+    ? "Where each commit has reached"
+    : `Where each commit on ${branch} has reached`;
+}
+
 /** The newest commits on the default branch, each once, a dot before each saying how far it has spread. */
 export function CommitRiver({ river, now }: { river: River; now: Date }) {
   return (
     <section data-part="river">
-      <LedgerHeading>Where each commit has reached</LedgerHeading>
+      <LedgerHeading>{riverHeading(river.branch)}</LedgerHeading>
       {river.notes.map((note) => (
         <RiverLine key={note} part="river-note" text={note} />
       ))}
@@ -386,7 +393,7 @@ export function FlagLines({ flags }: { flags: FlagLine[] }) {
 export function SourceProblems({ problems }: { problems: SourceProblem[] }) {
   return (
     <section>
-      <LedgerHeading>Sources not read</LedgerHeading>
+      <LedgerHeading>What couldn't be read</LedgerHeading>
       {problems.map((problem) => (
         <LedgerRow
           key={problem.source}
@@ -396,7 +403,7 @@ export function SourceProblems({ problems }: { problems: SourceProblem[] }) {
               <Sub>{problem.error}</Sub>
             </>
           }
-          value="not read"
+          value="couldn't read"
           tone="amber"
         />
       ))}

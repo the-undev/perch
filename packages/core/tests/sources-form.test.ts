@@ -16,6 +16,7 @@ import {
   sourceCardsOf,
   sourceHeading,
   sourceProblems,
+  withForgejoBaseUrl,
   withSourceAdded,
   withSourceCard,
   withSourceRemoved,
@@ -73,7 +74,6 @@ describe("the sources in the settings form", () => {
     expect(sources.github.map((source) => source.account)).toEqual([
       "finch",
       "the-undev",
-      "skiff-app",
     ]);
     expect(withSettings(mockConfig, mockValues(), home).sources).toEqual(
       mockConfig.sources,
@@ -105,6 +105,40 @@ describe("the sources in the settings form", () => {
     expect(reread(config).sources).toEqual(none);
   });
 
+  it("starts a GitHub card with github.com in its hosts and a Forgejo card with none", () => {
+    const sources = withSourceAdded(withSourceAdded(none, "github"), "forgejo");
+
+    expect(sources.github.at(-1)?.hosts).toEqual(["github.com"]);
+    expect(sources.forgejo.at(-1)?.hosts).toEqual([]);
+  });
+
+  it("fills a Forgejo card's hosts from its typed base URL without overwriting a hand-edited list", () => {
+    const card = { baseUrl: "", hosts: [] as string[] };
+
+    const typing = withForgejoBaseUrl(card, "forge");
+    expect(typing.hosts).toEqual([]);
+    const typed = withForgejoBaseUrl(typing, "https://forge.example.lan:3000");
+    expect(typed.hosts).toEqual(["forge.example.lan"]);
+    const retyped = withForgejoBaseUrl(typed, "https://git.example.lan");
+    expect(retyped.hosts).toEqual(["git.example.lan"]);
+    expect(withForgejoBaseUrl(retyped, "").hosts).toEqual([]);
+
+    const edited = {
+      baseUrl: "https://forge.example.lan",
+      hosts: ["forge-alias"],
+    };
+    expect(withForgejoBaseUrl(edited, "https://git.example.lan").hosts).toEqual(
+      ["forge-alias"],
+    );
+    const extended = {
+      baseUrl: "https://forge.example.lan",
+      hosts: ["forge.example.lan", "forge-alias"],
+    };
+    expect(
+      withForgejoBaseUrl(extended, "https://git.example.lan").hosts,
+    ).toEqual(["forge.example.lan", "forge-alias"]);
+  });
+
   it("adds a card of each kind with its fields empty after its kind's last, and removes one", () => {
     let sources = withSourceAdded(mockValues().sources, "github");
     sources = withSourceAdded(sources, "forgejo");
@@ -114,7 +148,7 @@ describe("the sources in the settings form", () => {
     expect(sources.github.at(-1)).toEqual({
       account: "",
       key: "",
-      hosts: [],
+      hosts: ["github.com"],
       trackedForks: [],
     });
     expect(sources.forgejo.at(-1)).toEqual({
@@ -130,12 +164,11 @@ describe("the sources in the settings form", () => {
       statusPage: "",
     });
     expect(sources.local.at(-1)).toEqual({ include: [], exclude: [] });
-    expect(sources.github).toHaveLength(4);
+    expect(sources.github).toHaveLength(3);
 
     const removed = withSourceRemoved(sources, "github", 1);
     expect(removed.github.map((source) => source.account)).toEqual([
       "finch",
-      "skiff-app",
       "",
     ]);
     expect(removed.forgejo).toEqual(sources.forgejo);
@@ -149,7 +182,6 @@ describe("the sources in the settings form", () => {
       "local0",
       "github0",
       "github1",
-      "github2",
       "forgejo0",
       "forgejo1",
       "kuma0",
@@ -304,8 +336,14 @@ describe("what the sources cannot be", () => {
       ...none,
       forgejo: [
         forgejo("someone", "https://forge.example.lan"),
-        forgejo("someone", "https://forge.example.lan"),
-        forgejo("someone", "https://other.example.lan"),
+        {
+          ...forgejo("someone", "https://forge.example.lan"),
+          key: "forgejo-again",
+        },
+        {
+          ...forgejo("someone", "https://other.example.lan"),
+          key: "forgejo-other",
+        },
       ],
     };
 
@@ -322,6 +360,35 @@ describe("what the sources cannot be", () => {
     ).toThrow("each may appear once");
     const apart = { ...twice, forgejo: [twice.forgejo[0], twice.forgejo[2]] };
     expect(sourceProblems(apart as SourcesConfig)).toEqual([]);
+  });
+
+  it("refuses one keyring key on two cards of one kind, as the config file does", () => {
+    const sources = {
+      ...none,
+      github: [github("one"), { ...github("two"), key: "github-one" }],
+      forgejo: [
+        forgejo("one", "https://a.lan"),
+        forgejo("one", "https://b.lan"),
+      ],
+    };
+
+    expect(sourceProblems(sources)).toEqual([
+      {
+        kind: "github",
+        index: 1,
+        field: "key",
+        problem: "another GitHub source uses this keyring key",
+      },
+      {
+        kind: "forgejo",
+        index: 1,
+        field: "key",
+        problem: "another Forgejo source uses this keyring key",
+      },
+    ]);
+    expect(() =>
+      reread({ ...mockConfig, sources: { ...mockConfig.sources, ...sources } }),
+    ).toThrow("each may appear once");
   });
 
   it("refuses an Uptime Kuma name twice, as the config file does", () => {

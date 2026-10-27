@@ -13,12 +13,12 @@ const birds = [
   {
     id: "undev/prism",
     label: "Prism",
-    rule: "Distressed: CI failing on Forgejo in red, four uncommitted changes in amber, and GitHub not read for this bird.",
+    rule: "Distressed: CI failing on Forgejo in red, four uncommitted changes in amber, and GitHub's pull requests couldn't be read while its CI and commits were.",
   },
   {
     id: "undev/skiff",
     label: "Skiff",
-    rule: "Restless: parked on a feature branch for three weeks with everything pushed.",
+    rule: "Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, so the notice under the heading names the fix and links to Sources, where the can't-read chip lands. The ledger and river say couldn't read github; Forgejo was read. Also parked on a feature branch for three weeks.",
   },
   {
     id: "dev/odin/hello",
@@ -76,6 +76,7 @@ export function DetailScenePage() {
           problems={[]}
           openPapers={false}
           arrivalChip={null}
+          onSettings={() => setPressed("onSettings()")}
         />
       </div>
       <Pressed text={pressed} />
@@ -113,6 +114,16 @@ export function DetailScenePage() {
             name: "openPapers",
             type: "boolean",
             what: "The papers unfold as the page opens, and again whenever it turns true: the bubble's adopt key leads here with it set.",
+          },
+          {
+            name: "arrivalChip",
+            type: "ChipKind | null",
+            what: "The chip pressed in the aviary's bubble that brought the camera here, landed on as the page opens.",
+          },
+          {
+            name: "onSettings",
+            type: "() => void",
+            what: "A notice's Sources was pressed; the app opens the settings page.",
           },
         ]}
       >

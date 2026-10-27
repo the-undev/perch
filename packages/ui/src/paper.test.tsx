@@ -34,6 +34,23 @@ describe("the key-file paper", () => {
     ).toEqual(["pnpm dev", "pnpm check", "first", "second"]);
   });
 
+  it("renders a relative image as its alt text and leaves remote images as images", () => {
+    const markdown =
+      "![build status](https://ci.example.com/badge.svg) ![diagram](docs/flow.png) ![](./bare.png)\n";
+    const { container } = render(
+      <KeyFilePaper sheets={[{ file: file("README.md"), markdown }]} />,
+    );
+
+    const images = container.querySelectorAll("img");
+    expect(images).toHaveLength(1);
+    expect(images[0]?.getAttribute("src")).toBe(
+      "https://ci.example.com/badge.svg",
+    );
+    expect(images[0]?.getAttribute("alt")).toBe("build status");
+    expect(container.querySelector("p")?.textContent).toContain("diagram");
+    expect(container.querySelector('img[src*="flow.png"]')).toBeNull();
+  });
+
   it("puts each file behind a folder tab and opens the one pressed", () => {
     render(<KeyFilePaper sheets={sheets} />);
 

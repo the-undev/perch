@@ -13,7 +13,12 @@ import {
 } from "../src/sources/forge.ts";
 import { createForgejoClient } from "../src/sources/forgejo.ts";
 import { createGithubClient } from "../src/sources/github.ts";
-import { forgeRepo, localPresence, withRemotes } from "./helpers/raw.ts";
+import {
+  forgeDetails,
+  forgeRepo,
+  localPresence,
+  withRemotes,
+} from "./helpers/raw.ts";
 
 function info(
   fullName: string,
@@ -46,14 +51,7 @@ function fakeClient(readable: Record<string, RawForgeRepoInfo[]>): {
     },
     readDetails: async (repo, token) => {
       calls.push(`details ${repo.fullName} with ${token}`);
-      return {
-        openPullRequests: [],
-        ci: {
-          forge: "github",
-          latestRun: { state: "absent", reason: "no-runs-on-default-branch" },
-        },
-        finalisedCommits: [],
-      };
+      return forgeDetails({});
     },
   };
   return { client, calls };
@@ -167,7 +165,7 @@ describe("forge accounts source", () => {
       "github-skiff-app",
     ]);
     expect(calls).toEqual(["list with finch-token", "list with org-token"]);
-    expect(data.finch).toEqual({
+    expect(data["github-finch"]).toEqual({
       state: "observed",
       value: {
         repos: [
@@ -178,7 +176,7 @@ describe("forge accounts source", () => {
         skippedForks: ["finch/someone-elses"],
       },
     });
-    expect(data["skiff-app"]).toEqual({
+    expect(data["github-skiff-app"]).toEqual({
       state: "observed",
       value: { repos: [info("skiff-app/skiff", {})], skippedForks: [] },
     });
@@ -196,7 +194,7 @@ describe("forge accounts source", () => {
       tokenFor,
     }).gather({});
 
-    expect(data["the-undev"]).toEqual({
+    expect(data["github-the-undev"]).toEqual({
       state: "error",
       error: tokenMissing("github-the-undev"),
     });
@@ -231,8 +229,8 @@ describe("forge source", () => {
       source: "githubAccounts",
       gatheredAt: "2026-10-21T09:00:00.000Z",
       data: Object.fromEntries(
-        Object.entries(listed).map(([account, repos]) => [
-          account,
+        Object.entries(listed).map(([key, repos]) => [
+          key,
           { state: "observed", value: { repos, skippedForks: [] } },
         ]),
       ),
@@ -251,11 +249,11 @@ describe("forge source", () => {
       tokenFor,
     }).gather(
       earlier([], {
-        finch: [
+        "github-finch": [
           info("finch/perch", {}),
           info("finch/old", { archived: true }),
         ],
-        "skiff-app": [info("skiff-app/skiff", {})],
+        "github-skiff-app": [info("skiff-app/skiff", {})],
       }),
     );
 
@@ -309,11 +307,13 @@ describe("forge source", () => {
     });
     expect(data["finch/deleted"]).toEqual({
       state: "error",
+      reason: "lookup-failed",
       error: "HTTP 404 for finch/deleted",
     });
     expect(data["someone/elsewhere"]).toEqual({
       state: "error",
-      error: "no github account is configured for owner someone",
+      reason: "no-card",
+      error: "no GitHub card is configured for owner someone",
     });
     expect(Object.keys(data)).not.toContain("someone/other-forge");
   });
@@ -354,6 +354,68 @@ describe("forge source", () => {
     expect(data["someone/two"]).toMatchObject({ state: "observed" });
   });
 
+  it("keeps one Forgejo account's listings at two instances apart, reading each repository through its own instance", async () => {
+    const first = fakeClient({ "a-token": [info("someone/one", {})] });
+    const second = fakeClient({ "b-token": [info("someone/two", {})] });
+    const deps = {
+      cards: [
+        {
+          account: "someone",
+          key: "forgejo-a",
+          hosts: ["a.lan"],
+          trackedForks: [],
+          client: first.client,
+        },
+        {
+          account: "someone",
+          key: "forgejo-b",
+          hosts: ["b.lan"],
+          trackedForks: [],
+          client: second.client,
+        },
+      ],
+      tokenFor: fakeKeyring({ "forgejo-a": "a-token", "forgejo-b": "b-token" })
+        .tokenFor,
+    };
+
+    const listings = await createForgeAccountsSource(
+      "forgejoAccounts",
+      deps,
+    ).gather({});
+    const data = await createForgeSource(
+      "forgejo",
+      "forgejoAccounts",
+      deps,
+    ).gather({
+      ...earlier([], {}),
+      forgejoAccounts: {
+        source: "forgejoAccounts",
+        gatheredAt: "2026-10-21T09:00:00.000Z",
+        data: listings,
+      },
+    });
+
+    expect(listings).toEqual({
+      "forgejo-a": {
+        state: "observed",
+        value: { repos: [info("someone/one", {})], skippedForks: [] },
+      },
+      "forgejo-b": {
+        state: "observed",
+        value: { repos: [info("someone/two", {})], skippedForks: [] },
+      },
+    });
+    expect(first.calls).toEqual([
+      "list with a-token",
+      "details someone/one with a-token",
+    ]);
+    expect(second.calls).toEqual([
+      "list with b-token",
+      "details someone/two with b-token",
+    ]);
+    expect(Object.keys(data)).toEqual(["someone/one", "someone/two"]);
+  });
+
   it("records the alias a renamed repository was reached by", async () => {
     const renamed = info("finch/PhotoMover", {});
     const client: ForgeClient = {
@@ -385,6 +447,7 @@ describe("forge source", () => {
 
     expect(data["skiff-app/skiff"]).toEqual({
       state: "error",
+      reason: "lookup-failed",
       error: tokenMissing("github-skiff-app"),
     });
   });
@@ -490,24 +553,80 @@ describe("github client", () => {
 
     const details = await client.readDetails(info("the-undev/harbour", {}), "t");
 
-    expect(details.finalisedCommits).toEqual([
-      { sha: "abc", committedAt: "2026-10-20T08:00:00Z", subject: "Add tiles" },
-    ]);
-    expect(details.openPullRequests[0]?.author).toEqual({
-      state: "absent",
-      reason: "no-user",
+    expect(details.finalisedCommits).toEqual({
+      state: "observed",
+      value: [
+        {
+          sha: "abc",
+          committedAt: "2026-10-20T08:00:00Z",
+          subject: "Add tiles",
+        },
+      ],
+    });
+    expect(details.openPullRequests).toMatchObject({
+      state: "observed",
+      value: [{ author: { state: "absent", reason: "no-user" } }],
     });
     expect(details.ci).toEqual({
-      forge: "github",
-      latestRun: {
+      state: "observed",
+      value: {
+        forge: "github",
+        latestRun: {
+          state: "observed",
+          value: {
+            name: "ci",
+            status: "in_progress",
+            conclusion: { state: "absent", reason: "run-not-completed" },
+            url: "https://github.com/the-undev/harbour/actions/runs/1",
+            createdAt: "2026-10-20T09:00:00Z",
+          },
+        },
+      },
+    });
+  });
+
+  it("keeps commits and CI when the pulls request answers 404, failing only the pull requests", async () => {
+    const base = `${api}/repos/the-undev/prism`;
+    const { fetchJson } = fakeFetch({
+      [`${base}/actions/runs?branch=main&per_page=1`]: { workflow_runs: [] },
+      [`${base}/commits?sha=main&per_page=2`]: [
+        {
+          sha: "76c",
+          commit: {
+            committer: { date: "2026-10-16T21:16:34Z" },
+            message: "Merge composition-and-dispatch",
+          },
+        },
+      ],
+    });
+    const client = createGithubClient({ fetchJson, finalisedCommits: 2 });
+
+    const details = await client.readDetails(
+      info("the-undev/prism", {}),
+      "t",
+    );
+
+    expect(details).toEqual({
+      openPullRequests: {
+        state: "error",
+        error: `HTTP 404 from ${base}/pulls?state=open&per_page=100`,
+      },
+      ci: {
         state: "observed",
         value: {
-          name: "ci",
-          status: "in_progress",
-          conclusion: { state: "absent", reason: "run-not-completed" },
-          url: "https://github.com/the-undev/harbour/actions/runs/1",
-          createdAt: "2026-10-20T09:00:00Z",
+          forge: "github",
+          latestRun: { state: "absent", reason: "no-runs-on-default-branch" },
         },
+      },
+      finalisedCommits: {
+        state: "observed",
+        value: [
+          {
+            sha: "76c",
+            committedAt: "2026-10-16T21:16:34Z",
+            subject: "Merge composition-and-dispatch",
+          },
+        ],
       },
     });
   });
@@ -558,22 +677,56 @@ describe("forgejo client", () => {
     );
 
     expect(calls[0]?.headers.Authorization).toBe("token t");
-    expect(details.finalisedCommits).toEqual([
-      {
-        sha: "def",
-        committedAt: "2026-10-19T08:00:00Z",
-        subject: "Office lighting",
-      },
-    ]);
+    expect(details.finalisedCommits).toEqual({
+      state: "observed",
+      value: [
+        {
+          sha: "def",
+          committedAt: "2026-10-19T08:00:00Z",
+          subject: "Office lighting",
+        },
+      ],
+    });
     expect(details.ci).toMatchObject({
-      forge: "forgejo",
-      combinedStatus: {
-        state: "pending",
-        statuses: [
-          { context: "build" },
-          { targetUrl: { state: "absent", reason: "no-target-url" } },
-        ],
+      state: "observed",
+      value: {
+        forge: "forgejo",
+        combinedStatus: {
+          state: "pending",
+          statuses: [
+            { context: "build" },
+            { targetUrl: { state: "absent", reason: "no-target-url" } },
+          ],
+        },
       },
+    });
+  });
+
+  it("keeps pull requests and commits when the status request fails, failing only CI", async () => {
+    const base = "http://forgejo.test/api/v1/repos/finch/Hothouse";
+    const { fetchJson } = fakeFetch({
+      [`${base}/pulls?state=open&limit=50`]: [],
+      [`${base}/commits?sha=main&limit=2&stat=false&verification=false&files=false`]:
+        [],
+    });
+    const client = createForgejoClient({
+      fetchJson,
+      baseUrl: "http://forgejo.test",
+      finalisedCommits: 2,
+    });
+
+    const details = await client.readDetails(
+      info("finch/Hothouse", {}),
+      "t",
+    );
+
+    expect(details).toEqual({
+      openPullRequests: { state: "observed", value: [] },
+      ci: {
+        state: "error",
+        error: `HTTP 404 from ${base}/commits/main/status`,
+      },
+      finalisedCommits: { state: "observed", value: [] },
     });
   });
 
@@ -601,8 +754,11 @@ describe("forgejo client", () => {
     );
 
     expect(details.ci).toEqual({
-      forge: "forgejo",
-      combinedStatus: { state: "", statuses: [] },
+      state: "observed",
+      value: {
+        forge: "forgejo",
+        combinedStatus: { state: "", statuses: [] },
+      },
     });
   });
 });
@@ -612,8 +768,7 @@ describe("deriving forge data", () => {
     const githubRepo = forgeRepo("finch/perch", {});
     githubRepo.details = {
       state: "observed",
-      value: {
-        openPullRequests: [],
+      value: forgeDetails({
         ci: {
           forge: "github",
           latestRun: {
@@ -634,13 +789,12 @@ describe("deriving forge data", () => {
             subject: "Add tiles",
           },
         ],
-      },
+      }),
     };
     const forgejoRepo = forgeRepo("finch/Hothouse", {});
     forgejoRepo.details = {
       state: "observed",
-      value: {
-        openPullRequests: [],
+      value: forgeDetails({
         ci: {
           forge: "forgejo",
           combinedStatus: {
@@ -662,7 +816,7 @@ describe("deriving forge data", () => {
           },
         },
         finalisedCommits: [],
-      },
+      }),
     };
 
     expect(deriveForge(githubRepo)).toMatchObject({
@@ -690,6 +844,32 @@ describe("deriving forge data", () => {
     });
     expect(deriveForge(forgeRepo("finch/old", { archived: true }))).toEqual({
       error: "details not read: archived",
+      cause: "read-failed",
+    });
+  });
+
+  it("keeps the parts that were read when one part failed, that part alone an error", () => {
+    const repo = forgeRepo("the-undev/prism", {});
+    const commit = {
+      sha: "76c",
+      committedAt: "2026-10-16T21:16:34Z",
+      subject: "Merge composition-and-dispatch",
+    };
+    repo.details = {
+      state: "observed",
+      value: {
+        ...forgeDetails({ finalisedCommits: [commit] }),
+        openPullRequests: { state: "error", error: "HTTP 404" },
+      },
+    };
+
+    expect(deriveForge(repo)).toEqual({
+      fullName: "the-undev/prism",
+      url: "https://example.invalid/the-undev/prism",
+      defaultBranch: "main",
+      openPullRequests: { error: "HTTP 404" },
+      latestCi: null,
+      finalisedCommits: [commit],
     });
   });
 
@@ -698,8 +878,7 @@ describe("deriving forge data", () => {
     repo.info.url = "http://forge.example.lan:3000/the-undev/prism";
     repo.details = {
       state: "observed",
-      value: {
-        openPullRequests: [],
+      value: forgeDetails({
         ci: {
           forge: "forgejo",
           combinedStatus: {
@@ -718,7 +897,7 @@ describe("deriving forge data", () => {
           },
         },
         finalisedCommits: [],
-      },
+      }),
     };
 
     expect(deriveForge(repo)).toMatchObject({

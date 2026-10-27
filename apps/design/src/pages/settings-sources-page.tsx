@@ -125,7 +125,7 @@ export function SettingsSourcesPage() {
       </Section>
       <Section
         title="Adding a source"
-        rule="The picker offers every kind but Uptime Kuma, which waits for server monitoring: each a sentence and what it needs, and it opens in place. Picking one appends a card of that kind after its kind's last, open, its empty fields named. A kuma table already in the config keeps its card."
+        rule="The picker offers every kind but Uptime Kuma, which waits for server monitoring: each a sentence and what it needs, and it opens in place. Picking one appends a card of that kind after its kind's last, open, its empty fields named. A new GitHub card starts with github.com in its hosts; a Forgejo card's hosts take the host of its base URL once the address is typed, until the list is edited by hand. A kuma table already in the config keeps its card."
         min={640}
       >
         <PageSpecimen

@@ -371,6 +371,29 @@ describe("the camera", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
+  it("says just now for a scan seconds old and minutes for one a few minutes old", () => {
+    const scannedAt = Date.parse(mockSnapshot.scannedAt);
+    camera(aviaryPlace, false, new Date(scannedAt + 20_000));
+    expect(screen.getByTitle("Scan now").textContent).toMatch(
+      /, scanned \d\d:\d\d, just now$/,
+    );
+    cleanup();
+
+    camera(aviaryPlace, false, new Date(scannedAt + 4 * 60_000));
+    expect(screen.getByTitle("Scan now").textContent).toMatch(
+      /, scanned \d\d:\d\d, 4 min ago$/,
+    );
+  });
+
+  it("says in the header how many sources it couldn't read, naming each on hover", () => {
+    camera(aviaryPlace, false, now);
+
+    const failing = screen.getByText("couldn't read 1 source");
+    expect(failing.getAttribute("title")).toBe(
+      "Couldn't read Forgejo accounts, last read under an hour ago",
+    );
+  });
+
   it("leaves for the settings from the header's last word", () => {
     const { onSettings, onNavigate } = camera(detailOf("dev/perch"));
 

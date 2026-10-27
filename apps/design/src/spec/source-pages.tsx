@@ -149,6 +149,8 @@ const localGit: SourceSpec = {
 const forgeRawTypes = [
   "RawForgeAccount",
   "RawForgeRepoInfo",
+  "RawForgeEntry",
+  "RawForgeLookupError",
   "RawForgeRepo",
   "RawForgeDetails",
   "RawPullRequest",
@@ -157,6 +159,7 @@ const forgeRawTypes = [
 
 const forgeSnapshotTypes = [
   "ForgeData",
+  "ForgeError",
   "CiRun",
   "CiState",
   "PullRequest",
@@ -170,8 +173,13 @@ const forgeDerives = (
     Each forge repository is a presence, joined to clones by their remote URLs
     and to other presences by config&apos;s <Code>joins</Code>. Its details
     become the item&apos;s forge data: open pull requests, the latest CI in
-    perch&apos;s own four states, and the finalised commits. Archived
-    repositories go to the forge&apos;s listing only, never the main view.
+    perch&apos;s own four states, and the finalised commits. Each is read by its
+    own request, so one that fails is that part&apos;s error and the others
+    stand. Archived repositories go to the forge&apos;s listing only, never the
+    main view. A repository a local remote names that could not be looked up is
+    still a presence, carrying its error: a standing config gap when no card
+    covers its owner on the remote&apos;s host, which makes the bird restless,
+    or a failed read, which does not.
   </p>
 );
 

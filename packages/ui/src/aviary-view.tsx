@@ -56,7 +56,7 @@ export function sourceErrorWords(error: SourceError, now: Date): string {
     error.lastSucceededAt === null
       ? "never read"
       : `last read ${agoWords(error.lastSucceededAt, now)}`;
-  return `${sourceLabel[error.source]} not read, ${age}`;
+  return `Couldn't read ${sourceLabel[error.source]}, ${age}`;
 }
 
 /** The hover tip's second line: the numbers the bird carries, else when it last moved. */

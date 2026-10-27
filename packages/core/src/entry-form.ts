@@ -166,7 +166,11 @@ function lastCommitOf(item: Item): SeenCommit | null {
   }
   const finalised = [item.sources.github, item.sources.forgejo].flatMap(
     (forge) =>
-      forge === undefined || "error" in forge ? [] : forge.finalisedCommits,
+      forge === undefined ||
+      "error" in forge ||
+      "error" in forge.finalisedCommits
+        ? []
+        : forge.finalisedCommits,
   );
   const newest = finalised.reduce<(typeof finalised)[number] | null>(
     (best, commit) =>
@@ -181,12 +185,15 @@ function lastCommitOf(item: Item): SeenCommit | null {
     : { at: newest.committedAt, subject: newest.subject };
 }
 
-/** What the scan found for an item: its clone, its forges and its newest commit. */
+/**
+ * What the scan found for an item: its clone, its forges, by address or by reference for one that
+ * could not be read, and its newest commit.
+ */
 export function entrySeen(item: Item, home: string): EntrySeen {
   return {
     foundAt: item.path === null ? null : collapseHome(item.path, home),
-    forges: item.presences.forges.map((presence) =>
-      presence.url.replace(/^[a-z]+:\/\//, ""),
+    forges: item.presences.forges.map(
+      (presence) => presence.url?.replace(/^[a-z]+:\/\//, "") ?? presence.ref,
     ),
     lastCommit: lastCommitOf(item),
   };

@@ -13,6 +13,7 @@ import type {
   RawFiles,
   RawForgeAccount,
   RawForgeDetails,
+  RawForgeEntry,
   RawForgeRepo,
   RawForgeRepoInfo,
 } from "../raw.ts";
@@ -31,8 +32,26 @@ export interface ForgeClient {
     name: string,
     token: string,
   ): Promise<RawForgeRepoInfo>;
+  /** Pull requests, CI and finalised commits, each its own request that fails alone. */
   readDetails(info: RawForgeRepoInfo, token: string): Promise<RawForgeDetails>;
 }
+
+/** One part of a repository's detail, read by its own request; its failure is that part's error. */
+export async function readFacet<T>(
+  read: () => Promise<T>,
+): Promise<Entry<T, never>> {
+  try {
+    return { state: "observed", value: await read() };
+  } catch (error) {
+    return { state: "error", error: errorMessage(error) };
+  }
+}
+
+/** Each forge's name as its cards are headed. */
+const forgeLabel: Record<ForgeName, string> = {
+  github: "GitHub",
+  forgejo: "Forgejo",
+};
 
 /** One configured account of a forge with the client that reads it. */
 export type ForgeCard = GithubSourceConfig & { client: ForgeClient };
@@ -76,8 +95,9 @@ function cachedTokens(
 
 /**
  * Root collector: lists each configured account's own repositories, read with that account's
- * token and kept when the account owns them. Untracked forks are left out by name; archived
- * repositories are kept with their flag. A missing token is that account's error.
+ * token and kept when the account owns them, keyed by the table's keyring key. Untracked forks are
+ * left out by name; archived repositories are kept with their flag. A missing token is that
+ * account's error.
  */
 export function createForgeAccountsSource<
   N extends "githubAccounts" | "forgejoAccounts",
@@ -97,7 +117,7 @@ export function createForgeAccountsSource<
           const kept = owned.filter(
             (info) => !info.fork || isTracked(info, trackedForks),
           );
-          entries[account.account] = {
+          entries[account.key] = {
             state: "observed",
             value: {
               repos: kept.sort((a, b) => a.fullName.localeCompare(b.fullName)),
@@ -108,7 +128,7 @@ export function createForgeAccountsSource<
             },
           };
         } catch (error) {
-          entries[account.account] = {
+          entries[account.key] = {
             state: "error",
             error: errorMessage(error),
           };
@@ -127,9 +147,11 @@ interface Candidate {
 }
 
 /**
- * Enricher: every listed repository, plus any repository a local clone's remote names on one of
- * this forge's hosts that the listings missed, looked up through the account that owns it on that
- * host. Pull requests, CI and finalised commits are read for those not archived.
+ * Enricher: every listed repository, read through the table that listed it, plus any repository a
+ * local clone's remote names on one of this forge's hosts that the listings missed, looked up
+ * through the account that owns it on that host. A remote whose owner no card covers is recorded as
+ * that config gap, a failed lookup as its own error. Pull requests, CI and finalised commits are
+ * read for those not archived, each failing on its own; a missing token fails the whole detail.
  */
 export function createForgeSource<N extends ForgeName>(
   name: N,
@@ -150,11 +172,11 @@ export function createForgeSource<N extends ForgeName>(
       const hosts = hostsOf(deps.cards);
       const trackedForks = trackedForksOf(deps.cards);
       const candidates = new Map<string, Candidate>();
-      for (const [owner, entry] of Object.entries(
+      for (const [key, entry] of Object.entries(
         earlier[accountsName]?.data ?? {},
       )) {
-        const account = accountForOwner(deps.cards, owner);
-        if (entry.state !== "observed" || account === null) continue;
+        const account = deps.cards.find((card) => card.key === key);
+        if (entry.state !== "observed" || account === undefined) continue;
         for (const info of entry.value.repos) {
           candidates.set(repoKey(info.owner, info.name), {
             info,
@@ -165,10 +187,7 @@ export function createForgeSource<N extends ForgeName>(
         }
       }
 
-      const entries: Record<
-        string,
-        Entry<RawForgeRepo, "fork-not-tracked">
-      > = {};
+      const entries: Record<string, RawForgeEntry> = {};
       const lookedUp = new Set<string>();
       for (const presence of Object.values(local.data.presences)) {
         if (presence.git.state !== "observed") continue;
@@ -187,7 +206,8 @@ export function createForgeSource<N extends ForgeName>(
           if (account === null) {
             entries[key] = {
               state: "error",
-              error: `no ${name} account is configured for owner ${location.owner}`,
+              reason: "no-card",
+              error: `no ${forgeLabel[name]} card is configured for owner ${location.owner}`,
             };
             continue;
           }
@@ -215,7 +235,11 @@ export function createForgeSource<N extends ForgeName>(
               aliases: canonical === key ? [] : [key],
             });
           } catch (error) {
-            entries[key] = { state: "error", error: errorMessage(error) };
+            entries[key] = {
+              state: "error",
+              reason: "lookup-failed",
+              error: errorMessage(error),
+            };
           }
         }
       }

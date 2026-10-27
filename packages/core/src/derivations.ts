@@ -28,6 +28,7 @@ import type {
   DayThresholds,
   Drift,
   ForgeData,
+  ForgeError,
   GitData,
   HealthLevel,
   HourThresholds,
@@ -528,42 +529,83 @@ function deriveCi(ci: RawCi, repoUrl: string): CiRun | null {
   };
 }
 
-/** Forge data for a presence; details that could not be read are the item's error. */
-export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
-  if (repo.details.state === "error") return { error: repo.details.error };
+/** One part of a forge repository's detail, derived when it was read, else its error. */
+function deriveFacet<T, U>(
+  facet: Entry<T, never>,
+  derive: (value: T) => U,
+): U | ItemError {
+  return facet.state === "observed"
+    ? derive(facet.value)
+    : { error: facet.state === "error" ? facet.error : "couldn't read" };
+}
+
+/**
+ * Forge data for a presence; details that could not be read at all are the item's error, and a
+ * part that could not be read is that part's error.
+ */
+export function deriveForge(repo: RawForgeRepo): ForgeData | ForgeError {
+  if (repo.details.state === "error")
+    return { error: repo.details.error, cause: "read-failed" };
   if (repo.details.state === "absent")
-    return { error: "details not read: archived" };
+    return { error: "details not read: archived", cause: "read-failed" };
+  const { openPullRequests, ci, finalisedCommits } = repo.details.value;
   return {
     fullName: repo.info.fullName,
     url: repo.info.url,
     defaultBranch: repo.info.defaultBranch,
-    openPullRequests: repo.details.value.openPullRequests.map(pullRequest),
-    latestCi: deriveCi(repo.details.value.ci, repo.info.url),
-    finalisedCommits: repo.details.value.finalisedCommits,
+    openPullRequests: deriveFacet(openPullRequests, (pulls) =>
+      pulls.map(pullRequest),
+    ),
+    latestCi: deriveFacet(ci, (value) => deriveCi(value, repo.info.url)),
+    finalisedCommits: deriveFacet(finalisedCommits, (commits) => commits),
   };
+}
+
+/** A forge's newest CI run when its CI was read and it has one; null otherwise. */
+export function latestRunOf(data: ForgeData): CiRun | null {
+  const ci = data.latestCi;
+  return ci === null || "error" in ci ? null : ci;
 }
 
 // Health
 
 /**
- * An item's health: the worst of its inputs. Failing CI and open bugs are red. Uncommitted
- * changes, unpushed commits and stalled flight take the level already judged against the item's
- * windows. Only amber and red inputs are causes; they come worst first, ties in the order CI,
- * bugs, uncommitted, unpushed, stalled. Flags are not inputs: the one with a level, not set up,
- * is the fence's own situation.
+ * An item's health: the worst of its inputs. Failing CI and open bugs are red. A remote the clone
+ * pushes to that no card can read is amber; a forge whose read failed this scan is not an input.
+ * Uncommitted changes, unpushed commits and stalled flight take the level already judged against
+ * the item's windows. Only amber and red inputs are causes; they come worst first, ties in the
+ * order CI, unreadable remotes, bugs, uncommitted, unpushed, stalled. Flags are not inputs: the
+ * one with a level, not set up, is the fence's own situation.
  */
 export function deriveHealth(item: Item): Health {
   const candidates: HealthCause[] = [];
   for (const forge of ["github", "forgejo"] as const) {
     const data = item.sources[forge];
     if (data === undefined || "error" in data) continue;
-    if (data.latestCi?.state !== "failure") continue;
+    const run = latestRunOf(data);
+    if (run?.state !== "failure") continue;
     candidates.push({
       kind: "ci-failing",
       level: "red",
       forge,
       branch: data.defaultBranch,
-      run: data.latestCi,
+      run,
+    });
+  }
+  for (const forge of ["github", "forgejo"] as const) {
+    const data = item.sources[forge];
+    if (data === undefined || !("cause" in data) || data.cause !== "no-card")
+      continue;
+    // The source is the first presence's of its forge, as aggregation assigns it.
+    const presence = item.presences.forges.find(
+      (entry) => entry.forge === forge,
+    );
+    if (presence === undefined) continue;
+    candidates.push({
+      kind: "unreadable-remote",
+      level: "amber",
+      forge,
+      fullName: presence.fullName,
     });
   }
   const roadmap = item.sources.roadmap;
@@ -748,7 +790,7 @@ export function configuredCards(
         polled: "githubAccounts",
         grain: (files) =>
           entryGrain(
-            files.githubAccounts?.data[card.account],
+            files.githubAccounts?.data[card.key],
             (value) => value.repos.length,
           ),
       }),
@@ -761,7 +803,7 @@ export function configuredCards(
         polled: "forgejoAccounts",
         grain: (files) =>
           entryGrain(
-            files.forgejoAccounts?.data[card.account],
+            files.forgejoAccounts?.data[card.key],
             (value) => value.repos.length,
           ),
       };

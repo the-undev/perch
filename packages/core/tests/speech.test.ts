@@ -41,6 +41,12 @@ const cause = {
       createdAt: null,
     },
   }),
+  unreadable: (): HealthCause => ({
+    kind: "unreadable-remote",
+    level: "amber",
+    forge: "github",
+    fullName: "skiff-app/skiff",
+  }),
   bugs: (count: number): HealthCause => ({ kind: "bugs", level: "red", count }),
   uncommitted: (
     count: number,
@@ -132,6 +138,17 @@ describe("restless birds nudge", () => {
     );
   });
 
+  it("a remote no card of yours can read, naming it", () => {
+    expect(speak(subject({ causes: [cause.unreadable()] }))).toBe(
+      "I push to skiff-app/skiff on github, but no card of yours can read it.",
+    );
+    expect(
+      speak(subject({ causes: [cause.unreadable(), cause.stalled(21, true)] })),
+    ).toBe(
+      "I push to skiff-app/skiff on github, but no card of yours can read it. I've also been parked on extension-popup-ia for three weeks.",
+    );
+  });
+
   it("stalled flight, saying everything is pushed only when it is", () => {
     expect(speak(subject({ causes: [cause.stalled(21, true)] }))).toBe(
       "Parked on extension-popup-ia for three weeks. Everything's pushed, but the flight's gone quiet.",
@@ -182,6 +199,7 @@ describe("distressed birds are blunt and lead with the worst", () => {
   it("gives every cause a secondary sentence", () => {
     const secondaries = [
       cause.ci(),
+      cause.unreadable(),
       cause.bugs(1),
       cause.uncommitted(2, 100, "red"),
       cause.unpushed(1, 80, "red"),
@@ -190,6 +208,7 @@ describe("distressed birds are blunt and lead with the worst", () => {
 
     expect(secondaries.map((speech) => speech.split(". ")[1])).toEqual([
       "My CI is also failing on main.",
+      "I also push to skiff-app/skiff on github, and no card of yours can read it.",
       "I've also got one bug open.",
       "I'm also holding two uncommitted changes for four days.",
       "I'm also holding one local-only commit for three days.",
@@ -225,6 +244,7 @@ describe("the voice", () => {
   it("never exclaims and never runs past three sentences", () => {
     const all = [
       cause.ci(),
+      cause.unreadable(),
       cause.bugs(9),
       cause.uncommitted(30, 200, "red"),
       cause.unpushed(21, 20, "amber"),

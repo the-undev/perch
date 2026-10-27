@@ -161,7 +161,7 @@ describe("the aviary view", () => {
     const notices = container.querySelector('[data-part="notices"]');
 
     expect(notices?.textContent).toContain(
-      "Forgejo accounts not read, last read under an hour ago: fetch failed",
+      "Couldn't read Forgejo accounts, last read under an hour ago: fetch failed",
     );
     expect(notices?.textContent).toContain(
       "include not found: /home/owner/work",

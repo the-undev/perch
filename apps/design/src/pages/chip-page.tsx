@@ -17,6 +17,8 @@ const ofSeverity = (severity: ChipModel["severity"]) =>
   chips.filter((chip) => chip.severity === severity);
 
 const kindRule: Record<ChipModel["kind"], string> = {
+  unreadable:
+    "A forge the clone pushes to that no card can read, named by forge. Always amber; it lands on the record's notice.",
   ci: "The worst CI state across forges on the default branch; red only when failing.",
   bugs: "Open bugs on the roadmap. Always red.",
   uncommitted:
@@ -51,7 +53,10 @@ export function ChipPage() {
         >
           <ChipRow list={ofSeverity(null)} />
         </Specimen>
-        <Specimen label="amber" rule="A fact past its amber window.">
+        <Specimen
+          label="amber"
+          rule="A fact past its amber window, or a remote no card can read."
+        >
           <ChipRow list={ofSeverity("amber")} />
         </Specimen>
         <Specimen
@@ -64,7 +69,7 @@ export function ChipPage() {
 
       <Section
         title="Kinds"
-        rule="Chips run in this order on a bubble: CI, bugs, uncommitted, unpushed, open pull requests, open items."
+        rule="Chips run in this order on a bubble: can't read, CI, bugs, uncommitted, unpushed, open pull requests, open items."
         min={320}
       >
         {kinds.map((kind) => (
@@ -90,7 +95,7 @@ export function ChipPage() {
           {
             name: "onPress",
             type: "(chip: ChipKind) => void",
-            what: "ChipHandles: a chip was pressed; the bird's page lands on the ledger row holding its working, riding there first from the aviary.",
+            what: "ChipHandles: a chip was pressed; the bird's page lands on the ledger row holding its working, or the record's notice for can't read, riding there first from the aviary.",
           },
         ]}
       >

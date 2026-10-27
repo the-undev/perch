@@ -12,13 +12,13 @@ export function agoWords(at: string, now: Date): string {
   return `${hoursWords(hours)} ago`;
 }
 
-/** How long before `now` a recent ISO time was, by the minute within the hour: "4 min ago". */
+/** How long before `now` a recent ISO time was, by the minute within the hour: "just now", "4 min ago". */
 export function recentWords(at: string, now: Date): string {
   const minutes = Math.max(
     0,
     Math.floor((now.getTime() - Date.parse(at)) / 60_000),
   );
-  if (minutes < 1) return "under a minute ago";
+  if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes} min ago`;
   return agoWords(at, now);
 }

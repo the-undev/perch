@@ -11,7 +11,11 @@ import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { writeTextAtomic } from "./config-edit.ts";
-import { type ConfigWatch, createConfigWatch } from "./config-watch.ts";
+import {
+  type ConfigWatch,
+  createConfigWatch,
+  rescanOnConfigChange,
+} from "./config-watch.ts";
 
 let dir: string;
 let configPath: string;
@@ -102,5 +106,22 @@ describe("watching the config file", () => {
     await writeFile(join(missing, "config.toml"), "a = 1\n");
 
     await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe("reacting to a hand edit", () => {
+  it("scans when the config file changes on disk, after the reread", async () => {
+    const calls: string[] = [];
+    const onChange = rescanOnConfigChange({
+      recheck: async () => {
+        calls.push("recheck");
+      },
+      requestScan: async () => {
+        calls.push("scan");
+      },
+    });
+
+    onChange();
+    await vi.waitFor(() => expect(calls).toEqual(["recheck", "scan"]));
   });
 });

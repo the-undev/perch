@@ -58,21 +58,6 @@ under the pointer. Investigate a page of fixed height where the window
 never scrolls and each element scrolls its own content, the ledger and
 the papers each in their own pane. Raised at the bird's page round.
 
-## A chip's landing paints a bare frame
-
-Pressing a chip jumps its ledger row to the middle and lights it, but
-the unlit row shows for a moment before the mark and ink arrive, even
-with the instant jump and the wait for the page's swap to settle.
-Likely the scroll paints before React commits the mark; landing in one
-paint (a layout effect or flushSync around `landOn` in detail-view.tsx)
-is the next thing to try.
-
-## A hand edit and the scan
-
-An edit to the config file by hand is read and shown at once, but scans
-only on the next interval or focus, so a new include path finds its
-birds then. A save from the settings page scans at once.
-
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the
@@ -271,35 +256,13 @@ working tree is clean and everything is pushed"). Deriving it in the
 renderer would mean matching ledger labels; it needs a view model field
 first.
 
-## Images on the key-file paper
+## Relative images on the key-file paper
 
-A README's images arrive broken: the window's content security policy
-is `img-src 'self' data:`, so a remote badge image is blocked, and a
-repository-relative image has nothing serving it. Seen on Skiff's
-status badges at first setup. Either render an image as its alt text
-on the paper, or let the paper show real images: `https:` in the
-policy for remote ones, and a main-process read behind a custom
-protocol for relative ones.
-
-## Empty hosts on a forge card
-
-A forge card saved with no hosts gathers its listings but never joins
-them to a clone, so every repository shows twice: the join only
-recognises a remote whose host a card lists. Hit at first setup.
-Decided 25 October 2026: a new GitHub card starts with `github.com` in
-its hosts, a new Forgejo card with its base URL's host once the
-address is typed; only a custom SSH setup adds aliases such as
-`github-work`. The page should say what hosts are for: the remote
-hosts and SSH aliases that reach the account.
-
-## The add line in list editors
-
-In the forms' shared list editor (`ListField` in `form-parts.tsx`) a
-value row's input fills the row with "remove" hanging beside it, but
-the add line fits its Add button inside the same `max-w-110` cap, so
-its input ends a button's width short of the rows above. Seen on the
-hosts and local folder lists. The add input should end flush with the
-value inputs, its button in the gutter the remove labels use.
+A README's remote images render, since the window's policy allows
+`https:`. A repository-relative image has nothing serving it, so the
+paper shows its alt text instead. To show the image, the main process
+would read the file from the clone behind a custom protocol, with the
+paper resolving the path against the key file's folder.
 
 ## Opening the config file from its path
 
@@ -364,15 +327,17 @@ machine-specific lives in config, no personal names or paths in the
 repository, and the aviary works with any project set. See
 `docs/decisions/bird-language.md`.
 
-## One Forgejo account name at two instances
+## One repository name at two Forgejo instances
 
-The account listings are keyed by account name, so two Forgejo tables
-for one account at two instances share one listing entry: the later
-table's listing replaces the earlier's, and both source cards show it.
-The enricher also finds a repository's account by owner alone, so the
-second instance's repositories would be read through the first's
-client. Keying the listings by table and the repositories by instance
-would fix both.
+Each table has its own listing, and each listed repository is read
+through the table that listed it. Forge repositories are keyed by
+owner/name alone, in the raw file and in the presence reference
+`forgejo:owner/name`, so one repository name at two instances is one
+presence, and a clone's remote at one instance joins the other's
+repository of that name. Keying them by instance puts the instance in
+the presence reference, which config's items, joins and ignore name, so
+it waits on how a reference names its instance and what becomes of
+entries written without one.
 
 ## Other sources
 
@@ -393,14 +358,3 @@ The phrasebook's examples say "since Monday" and "yesterday". The model
 speaks in durations measured at the scan, which needs no clock or time
 zone. Calendar words would need the render time and the local zone, so
 they belong in the renderer if they come back.
-
-## A forge read fails as a whole
-
-One failed request voids a forge's whole detail read. A 404 on the pull
-requests request for a repository outside a fine-grained token's grant
-threw away the commits and CI, which would have read fine. The bird then
-shows that forge as not read everywhere, though most of what it holds
-was there to be had. The fix is per-facet observations in the raw forge
-detail: commits, pull requests and CI each readable or failed on their
-own. The snapshot, the ledger's per-source "not read" lines and the
-commit river's judgement would then follow each facet.

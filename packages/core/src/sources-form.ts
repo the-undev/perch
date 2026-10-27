@@ -121,12 +121,45 @@ export function withSourceCard(
   }
 }
 
-/** The sources with a card of the kind, its fields empty, after the kind's last. */
+/** The host a Forgejo base URL names, without its port as a remote carries none; empty until it parses. */
+function baseUrlHost(baseUrl: string): string {
+  try {
+    return new URL(baseUrl.trim()).hostname;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * A Forgejo card with a new base URL, its hosts following the address while they are empty or still
+ * what the previous address gave, so a hand-edited list is left alone.
+ */
+export function withForgejoBaseUrl<
+  Card extends { baseUrl: string; hosts: string[] },
+>(card: Card, baseUrl: string): Card {
+  const previous = baseUrlHost(card.baseUrl);
+  const following =
+    card.hosts.length === 0 ||
+    (card.hosts.length === 1 && card.hosts[0] === previous);
+  const host = baseUrlHost(baseUrl);
+  return {
+    ...card,
+    baseUrl,
+    hosts: following ? (host === "" ? [] : [host]) : card.hosts,
+  };
+}
+
+/** The sources with a card of the kind, its fields empty, after the kind's last, bar a GitHub card's host. */
 export function withSourceAdded(
   sources: SourcesConfig,
   kind: SourceCardKind,
 ): SourcesConfig {
-  const account = { account: "", key: "", hosts: [], trackedForks: [] };
+  const account = {
+    account: "",
+    key: "",
+    hosts: [] as string[],
+    trackedForks: [] as string[],
+  };
   switch (kind) {
     case "local":
       return {
@@ -134,7 +167,10 @@ export function withSourceAdded(
         local: [...sources.local, { include: [], exclude: [] }],
       };
     case "github":
-      return { ...sources, github: [...sources.github, account] };
+      return {
+        ...sources,
+        github: [...sources.github, { ...account, hosts: ["github.com"] }],
+      };
     case "forgejo":
       return {
         ...sources,
@@ -329,6 +365,16 @@ export function sourceProblems(sources: SourcesConfig): SourceProblem[] {
       "account",
       "another Forgejo source reads this account at this address",
     );
+  }
+  for (const kind of ["github", "forgejo"] as const) {
+    for (const index of repeats(sources[kind], (source) =>
+      isBlank(source.key) ? null : source.key,
+    )) {
+      at(kind, index)(
+        "key",
+        `another ${kindName(kind)} source uses this keyring key`,
+      );
+    }
   }
   sources.kuma.forEach((source, index) => {
     const add = at("kuma", index);

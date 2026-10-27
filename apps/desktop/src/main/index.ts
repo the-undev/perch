@@ -14,7 +14,7 @@ import { createAppState } from "./app-state.ts";
 import { handOver, parseArguments } from "./command-line.ts";
 import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
 import { createConfigStore } from "./config-store.ts";
-import { createConfigWatch } from "./config-watch.ts";
+import { createConfigWatch, rescanOnConfigChange } from "./config-watch.ts";
 import { isWebUrl } from "./external-links.ts";
 import { iconPaths, resourceDirFor } from "./icons.ts";
 import { registerIpc } from "./ipc.ts";
@@ -172,7 +172,10 @@ function start(): void {
   const configWatch = createConfigWatch({
     path: paths.userConfigPath,
     quietMs: configQuietMs,
-    onChange: () => void state.recheck(),
+    onChange: rescanOnConfigChange({
+      recheck: () => state.recheck(),
+      requestScan: () => scheduler.request(),
+    }),
     onError: (message) => console.warn(message),
   });
   const ready = state.start();

@@ -44,7 +44,8 @@ exclude = ["~/projects/archive"]
 # here; see docs/tokens.md). A remote that no listing holds is looked up with
 # the token of the account that owns it on that host. Hosts are the remote
 # hosts and SSH aliases that reach the account. Forks to track are written
-# owner/name; every other fork is skipped. Each account appears once.
+# owner/name; every other fork is skipped. Each account and each key appears
+# once.
 [[sources.github]]
 account = "someone"
 key = "github-someone"
@@ -52,7 +53,7 @@ hosts = ["github.com"]
 tracked_forks = []
 
 # A Forgejo account adds the instance's base URL. Each account appears once
-# per instance.
+# per instance, and each key once.
 [[sources.forgejo]]
 base_url = "https://forge.example.lan"
 account = "someone"

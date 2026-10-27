@@ -595,7 +595,7 @@ describe("the window", () => {
               {
                 account: "someone",
                 key: "github-someone",
-                hosts: [],
+                hosts: ["github.com"],
                 trackedForks: [],
               },
             ],

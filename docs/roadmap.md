@@ -266,17 +266,6 @@ on the paper, or let the paper show real images: `https:` in the
 policy for remote ones, and a main-process read behind a custom
 protocol for relative ones.
 
-## Empty hosts on a forge card
-
-A forge card saved with no hosts gathers its listings but never joins
-them to a clone, so every repository shows twice: the join only
-recognises a remote whose host a card lists. Hit at first setup.
-Decided 25 October 2026: a new GitHub card starts with `github.com` in
-its hosts, a new Forgejo card with its base URL's host once the
-address is typed; only a custom SSH setup adds aliases such as
-`github-work`. The page should say what hosts are for: the remote
-hosts and SSH aliases that reach the account.
-
 ## Opening the config file from its path
 
 The settings header names the config file but the path is plain text.

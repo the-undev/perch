@@ -215,12 +215,36 @@ describe("the sources page", () => {
           {
             account: "someone",
             key: "github-someone",
-            hosts: [],
+            hosts: ["github.com"],
             trackedForks: [],
           },
         ],
       },
     });
+  });
+
+  it("starts a GitHub card with github.com in its hosts and fills a Forgejo card's from its typed base URL", () => {
+    sourcesPage();
+    fireEvent.click(screen.getByRole("button", { name: "Add a source" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add GitHub" }));
+    expect(
+      within(card("GitHub")).getByRole("textbox", { name: "host 1" }),
+    ).toHaveProperty("value", "github.com");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add a source" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Forgejo" }));
+    const added = within(card("Forgejo"));
+    expect(added.queryByRole("textbox", { name: "host 1" })).toBeNull();
+    type(
+      added.getByRole("textbox", { name: "Base URL" }),
+      "https://forge.example.lan",
+    );
+
+    expect(
+      within(card("Forgejo · forge.example.lan")).getByRole("textbox", {
+        name: "host 1",
+      }),
+    ).toHaveProperty("value", "forge.example.lan");
   });
 
   it("removes a card only on the second press", () => {

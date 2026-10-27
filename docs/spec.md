@@ -301,7 +301,9 @@ names its include paths that do not exist. Opened, a card shows its
 fields: a local card's folders searched and excluded, paths kept with
 `~`; a forge card's account, keyring key with the `secret-tool store`
 command beside it, hosts and tracked forks, and a Forgejo card's base
-URL; a kuma card's name, base URL and status page. A GitHub or Forgejo
+URL (a new GitHub card starts with `github.com` in its hosts, and a
+Forgejo card's hosts follow its base URL's host while they are empty or
+still what the previous address gave); a kuma card's name, base URL and status page. A GitHub or Forgejo
 card also has a token field and two buttons. Store in the keyring writes
 the pasted token under the card's keyring key, and the field empties
 once it is stored. Test lists the account's repositories with the

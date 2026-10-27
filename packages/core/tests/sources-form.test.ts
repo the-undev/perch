@@ -16,6 +16,7 @@ import {
   sourceCardsOf,
   sourceHeading,
   sourceProblems,
+  withForgejoBaseUrl,
   withSourceAdded,
   withSourceCard,
   withSourceRemoved,
@@ -105,6 +106,40 @@ describe("the sources in the settings form", () => {
     expect(reread(config).sources).toEqual(none);
   });
 
+  it("starts a GitHub card with github.com in its hosts and a Forgejo card with none", () => {
+    const sources = withSourceAdded(withSourceAdded(none, "github"), "forgejo");
+
+    expect(sources.github.at(-1)?.hosts).toEqual(["github.com"]);
+    expect(sources.forgejo.at(-1)?.hosts).toEqual([]);
+  });
+
+  it("fills a Forgejo card's hosts from its typed base URL without overwriting a hand-edited list", () => {
+    const card = { baseUrl: "", hosts: [] as string[] };
+
+    const typing = withForgejoBaseUrl(card, "forge");
+    expect(typing.hosts).toEqual([]);
+    const typed = withForgejoBaseUrl(typing, "https://forge.example.lan:3000");
+    expect(typed.hosts).toEqual(["forge.example.lan"]);
+    const retyped = withForgejoBaseUrl(typed, "https://git.example.lan");
+    expect(retyped.hosts).toEqual(["git.example.lan"]);
+    expect(withForgejoBaseUrl(retyped, "").hosts).toEqual([]);
+
+    const edited = {
+      baseUrl: "https://forge.example.lan",
+      hosts: ["forge-alias"],
+    };
+    expect(withForgejoBaseUrl(edited, "https://git.example.lan").hosts).toEqual(
+      ["forge-alias"],
+    );
+    const extended = {
+      baseUrl: "https://forge.example.lan",
+      hosts: ["forge.example.lan", "forge-alias"],
+    };
+    expect(
+      withForgejoBaseUrl(extended, "https://git.example.lan").hosts,
+    ).toEqual(["forge.example.lan", "forge-alias"]);
+  });
+
   it("adds a card of each kind with its fields empty after its kind's last, and removes one", () => {
     let sources = withSourceAdded(mockValues().sources, "github");
     sources = withSourceAdded(sources, "forgejo");
@@ -114,7 +149,7 @@ describe("the sources in the settings form", () => {
     expect(sources.github.at(-1)).toEqual({
       account: "",
       key: "",
-      hosts: [],
+      hosts: ["github.com"],
       trackedForks: [],
     });
     expect(sources.forgejo.at(-1)).toEqual({

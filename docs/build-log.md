@@ -959,3 +959,8 @@ build-time calls so they can be revisited.
   the add line has no width cap, so the add input ends where the value
   inputs end. The wires list in `settings-forms.tsx` keeps its own add
   line, which the roadmap entry did not name.
+- A new GitHub card starts with `github.com` in its hosts. A Forgejo
+  card's hosts follow its base URL's hostname (no port, as a parsed
+  remote carries none) while they are empty or exactly the previous
+  derivation, and an address that does not parse yet gives no host. The
+  hosts field's description says what hosts are for.

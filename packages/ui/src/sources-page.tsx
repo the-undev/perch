@@ -15,6 +15,7 @@ import {
   sourceFieldLabels,
   sourceHeading,
   sourceProblems,
+  withForgejoBaseUrl,
   withSourceAdded,
   withSourceCard,
   withSourceRemoved,
@@ -364,7 +365,7 @@ function AccountFields<Source extends GithubSourceConfig>({
       </p>
       <ListField
         field="hosts"
-        sub="remote hosts or SSH aliases that reach these repositories"
+        sub="the remote hostnames and SSH aliases that reach the account; a clone joins its listing by them"
         noun="host"
         placeholder={kind === "github" ? "github.com" : "forge.example.lan"}
         values={source.hosts}
@@ -459,7 +460,10 @@ function CardBody({
             placeholder="https://forge.example.lan"
             problems={problems("baseUrl")}
             onChange={(baseUrl) =>
-              onChange({ ...card, source: { ...card.source, baseUrl } })
+              onChange({
+                ...card,
+                source: withForgejoBaseUrl(card.source, baseUrl),
+              })
             }
           />
           <AccountFields

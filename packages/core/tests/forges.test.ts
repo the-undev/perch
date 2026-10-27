@@ -782,6 +782,31 @@ describe("deriving forge data", () => {
     });
   });
 
+  it("keeps the parts that were read when one part failed, that part alone an error", () => {
+    const repo = forgeRepo("the-undev/prism", {});
+    const commit = {
+      sha: "76c",
+      committedAt: "2026-10-16T21:16:34Z",
+      subject: "Merge composition-and-dispatch",
+    };
+    repo.details = {
+      state: "observed",
+      value: {
+        ...forgeDetails({ finalisedCommits: [commit] }),
+        openPullRequests: { state: "error", error: "HTTP 404" },
+      },
+    };
+
+    expect(deriveForge(repo)).toEqual({
+      fullName: "the-undev/prism",
+      url: "https://example.invalid/the-undev/prism",
+      defaultBranch: "main",
+      openPullRequests: { error: "HTTP 404" },
+      latestCi: null,
+      finalisedCommits: [commit],
+    });
+  });
+
   it("resolves a Forgejo CI link given relative to the instance", () => {
     const repo = forgeRepo("the-undev/prism", {});
     repo.info.url = "http://forge.example.lan:3000/the-undev/prism";

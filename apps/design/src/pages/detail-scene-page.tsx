@@ -13,7 +13,7 @@ const birds = [
   {
     id: "undev/prism",
     label: "Prism",
-    rule: "Distressed: CI failing on Forgejo in red, four uncommitted changes in amber, and GitHub not read for this bird.",
+    rule: "Distressed: CI failing on Forgejo in red, four uncommitted changes in amber, and GitHub's pull requests not read while its CI and commits were.",
   },
   {
     id: "undev/skiff",

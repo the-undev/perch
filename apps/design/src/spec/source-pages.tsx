@@ -170,8 +170,10 @@ const forgeDerives = (
     Each forge repository is a presence, joined to clones by their remote URLs
     and to other presences by config&apos;s <Code>joins</Code>. Its details
     become the item&apos;s forge data: open pull requests, the latest CI in
-    perch&apos;s own four states, and the finalised commits. Archived
-    repositories go to the forge&apos;s listing only, never the main view.
+    perch&apos;s own four states, and the finalised commits. Each is read by its
+    own request, so one that fails is that part&apos;s error and the others
+    stand. Archived repositories go to the forge&apos;s listing only, never the
+    main view.
   </p>
 );
 

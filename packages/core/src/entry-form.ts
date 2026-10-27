@@ -166,7 +166,11 @@ function lastCommitOf(item: Item): SeenCommit | null {
   }
   const finalised = [item.sources.github, item.sources.forgejo].flatMap(
     (forge) =>
-      forge === undefined || "error" in forge ? [] : forge.finalisedCommits,
+      forge === undefined ||
+      "error" in forge ||
+      "error" in forge.finalisedCommits
+        ? []
+        : forge.finalisedCommits,
   );
   const newest = finalised.reduce<(typeof finalised)[number] | null>(
     (best, commit) =>

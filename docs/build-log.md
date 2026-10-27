@@ -914,3 +914,22 @@ build-time calls so they can be revisited.
   requests, for the no-remote-read dot. Its empty forge lists went with
   them.
 
+
+## 27 October 2026 (forge reads by part)
+
+- A forge repository's detail is read in three parts, pull requests, CI
+  and finalised commits, each its own request and its own observation
+  in the raw file. A failed request fails its part; only a missing
+  token, before any request, still fails the whole detail. The snapshot
+  holds a failed part as an `ItemError` in that field's place. A
+  snapshot cached before the change holds every part as read, so it
+  needs no optional field.
+- The ledger names the part not read, "pull requests not read" or "CI
+  not read", on the row it would have spelled out, and "Sources not
+  read" lists it as the forge and the part, "GitHub pull requests". The
+  river's line stays "github not read" and now means the forge's
+  commits.
+- The mock's Prism has GitHub's pull requests failed with the 404
+  and its CI and commits read. hearth-config keeps both forges unread
+  as a whole, now for a missing token, since a 404 on one request no
+  longer fails a forge.

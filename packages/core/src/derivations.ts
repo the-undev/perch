@@ -528,30 +528,41 @@ function deriveCi(ci: RawCi, repoUrl: string): CiRun | null {
   };
 }
 
-/** Forge data for a presence; details that could not be read are the item's error. */
+/** One part of a forge repository's detail, derived when it was read, else its error. */
+function deriveFacet<T, U>(
+  facet: Entry<T, never>,
+  derive: (value: T) => U,
+): U | ItemError {
+  return facet.state === "observed"
+    ? derive(facet.value)
+    : { error: facet.state === "error" ? facet.error : "not read" };
+}
+
+/**
+ * Forge data for a presence; details that could not be read at all are the item's error, and a
+ * part that could not be read is that part's error.
+ */
 export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
   if (repo.details.state === "error") return { error: repo.details.error };
   if (repo.details.state === "absent")
     return { error: "details not read: archived" };
   const { openPullRequests, ci, finalisedCommits } = repo.details.value;
-  for (const facet of [openPullRequests, ci, finalisedCommits]) {
-    if (facet.state === "error") return { error: facet.error };
-  }
-  if (
-    openPullRequests.state !== "observed" ||
-    ci.state !== "observed" ||
-    finalisedCommits.state !== "observed"
-  ) {
-    return { error: "details not read" };
-  }
   return {
     fullName: repo.info.fullName,
     url: repo.info.url,
     defaultBranch: repo.info.defaultBranch,
-    openPullRequests: openPullRequests.value.map(pullRequest),
-    latestCi: deriveCi(ci.value, repo.info.url),
-    finalisedCommits: finalisedCommits.value,
+    openPullRequests: deriveFacet(openPullRequests, (pulls) =>
+      pulls.map(pullRequest),
+    ),
+    latestCi: deriveFacet(ci, (value) => deriveCi(value, repo.info.url)),
+    finalisedCommits: deriveFacet(finalisedCommits, (commits) => commits),
   };
+}
+
+/** A forge's newest CI run when its CI was read and it has one; null otherwise. */
+export function latestRunOf(data: ForgeData): CiRun | null {
+  const ci = data.latestCi;
+  return ci === null || "error" in ci ? null : ci;
 }
 
 // Health
@@ -568,13 +579,14 @@ export function deriveHealth(item: Item): Health {
   for (const forge of ["github", "forgejo"] as const) {
     const data = item.sources[forge];
     if (data === undefined || "error" in data) continue;
-    if (data.latestCi?.state !== "failure") continue;
+    const run = latestRunOf(data);
+    if (run?.state !== "failure") continue;
     candidates.push({
       kind: "ci-failing",
       level: "red",
       forge,
       branch: data.defaultBranch,
-      run: data.latestCi,
+      run,
     });
   }
   const roadmap = item.sources.roadmap;

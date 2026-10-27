@@ -34,7 +34,7 @@ const specimens: LedgerSpecimen[] = [
   {
     id: "undev/prism",
     label: "An amber count, a failing state",
-    rule: "Prism: four uncommitted changes past a day; CI failing on Forgejo, linked to the run.",
+    rule: "Prism: four uncommitted changes past a day; CI failing on Forgejo and passing on GitHub, each linked to its run.",
   },
   {
     id: "undev/gramophone",
@@ -66,8 +66,8 @@ const workingSpecimens: LedgerSpecimen[] = [
   },
   {
     id: "undev/prism",
-    label: "A forge not read",
-    rule: "Prism: GitHub could not be read, so the CI and pull request rows say so in amber beside what Forgejo said. The count covers only what was read.",
+    label: "A forge's part not read",
+    rule: "Prism: GitHub answered 404 for its pull requests alone, so the pull request row says so in amber beside what Forgejo said, and the count covers only what was read. GitHub's CI was read, so the CI row names its run.",
   },
   {
     id: "obsidian/Hothouse",
@@ -144,7 +144,7 @@ export function LedgerPage() {
 
       <Section
         title="Each chip's working"
-        rule="A bubble chip states a conclusion; the row holding its number spells out the working beneath it, source by source, in mono: each forge, roadmap file or git, what it says there, toned, linked where a page exists, and its age where it has one. A source that was read with nothing to say is silent; one that was not read says so in amber. A row holding one of the bubble's chips carries the dot, and on the bird's page the chip lands on it."
+        rule="A bubble chip states a conclusion; the row holding its number spells out the working beneath it, source by source, in mono: each forge, roadmap file or git, what it says there, toned, linked where a page exists, and its age where it has one. A source that was read with nothing to say is silent; one that was not read, or a forge whose part for that row was not read, says so in amber, naming the part. A row holding one of the bubble's chips carries the dot, and on the bird's page the chip lands on it."
         min={360}
       >
         {workingSpecimens.map((specimen) => (

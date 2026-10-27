@@ -12,7 +12,12 @@ import {
   wireFor,
   zellijSessionFor,
 } from "./config.ts";
-import { countOpenItems, deriveHealth, hoursSince } from "./derivations.ts";
+import {
+  countOpenItems,
+  deriveHealth,
+  hoursSince,
+  latestRunOf,
+} from "./derivations.ts";
 import { itemRefs } from "./refs.ts";
 import { parseRemoteUrl } from "./remote-url.ts";
 import type {
@@ -32,6 +37,7 @@ import type {
   ItemKind,
   ItemSourceData,
   PolledSourceName,
+  PullRequest,
   RoadmapData,
   Snapshot,
   SourceCard,
@@ -459,15 +465,48 @@ function forgeSources(
   });
 }
 
-function notRead(source: string): Working {
-  return { source, text: "not read", tone: "amber", url: null, at: null };
+/** Each part of a forge's data, named in full for a working that says it was not read. */
+const forgePartLabel = {
+  openPullRequests: "pull requests",
+  latestCi: "CI",
+  finalisedCommits: "commits",
+} as const;
+
+type ForgePart = keyof typeof forgePartLabel;
+
+const forgeParts = Object.keys(forgePartLabel) as ForgePart[];
+
+/** Whether a part of a forge's data failed to read. */
+function failed(part: object | null): part is ItemError {
+  return part !== null && "error" in part;
+}
+
+function notRead(source: string, part: ForgePart): Working {
+  return {
+    source,
+    text: `${forgePartLabel[part]} not read`,
+    tone: "amber",
+    url: null,
+    at: null,
+  };
+}
+
+/** Each forge whose open pull requests were read, with them. */
+function forgePullRequests(
+  item: Item,
+): { forge: ForgeName; pulls: PullRequest[] }[] {
+  return forgeData(item).flatMap(({ forge, data }) => {
+    const pulls = readable<PullRequest[]>(data.openPullRequests);
+    return pulls ? [{ forge, pulls }] : [];
+  });
 }
 
 /** The worst state among the forges' newest runs; undefined when no forge has a run. */
 function worstCiState(item: Item): CiState | undefined {
-  const runs = forgeData(item).flatMap(({ data }) =>
-    data.latestCi ? [data.latestCi] : [],
-  );
+  const runs = forgeData(item).flatMap(({ data }) => {
+    const run = latestRunOf(data);
+    return run ? [run] : [];
+  });
   return ciSeverityOrder.find((state) =>
     runs.some((run) => run.state === state),
   );
@@ -490,8 +529,10 @@ function ciEntry(item: Item, chip: ChipKind | null): LedgerEntry | null {
     url: null,
     chip,
     workings: forgeSources(item).flatMap(({ forge, data }): Working[] => {
-      if (data === null) return [notRead(forge)];
-      const run = data.latestCi;
+      if (data === null || failed(data.latestCi)) {
+        return [notRead(forge, "latestCi")];
+      }
+      const run = latestRunOf(data);
       if (run === null) return [];
       return [
         {
@@ -509,7 +550,9 @@ function ciEntry(item: Item, chip: ChipKind | null): LedgerEntry | null {
 /** Each forge's open pull requests, linked to its list; a forge with none is silent. */
 function pullRequestWorkings(item: Item): Working[] {
   return forgeSources(item).flatMap(({ forge, data }): Working[] => {
-    if (data === null) return [notRead(forge)];
+    if (data === null || failed(data.openPullRequests)) {
+      return [notRead(forge, "openPullRequests")];
+    }
     const open = data.openPullRequests.length;
     if (open === 0) return [];
     return [
@@ -624,8 +667,8 @@ function chipsFor(item: Item, health: Health): Chip[] {
       severity: severity(levelOf("unpushed")),
     });
   }
-  const pulls = forgeData(item).reduce(
-    (total, { data }) => total + data.openPullRequests.length,
+  const pulls = forgePullRequests(item).reduce(
+    (total, { pulls }) => total + pulls.length,
     0,
   );
   if (pulls > 0) {
@@ -707,15 +750,12 @@ function ledgerFor(item: Item, chips: Chip[]): LedgerEntry[] {
       ),
     );
   }
-  const forges = forgeData(item);
-  if (forges.length > 0) {
+  const pullForges = forgePullRequests(item);
+  if (pullForges.length > 0) {
     ledger.push(
       countEntry(
         "open pull requests",
-        forges.reduce(
-          (total, { data }) => total + data.openPullRequests.length,
-          0,
-        ),
+        pullForges.reduce((total, { pulls }) => total + pulls.length, 0),
         null,
         handle("pull-requests"),
         pullRequestWorkings(item),
@@ -780,11 +820,12 @@ function herePlace(item: Item): PlaceList {
   };
 }
 
+/** A forge's list: null when the forge or its commits were not read, whatever its other parts did. */
 function forgePlace(item: Item, forge: ForgeName): PlaceList {
   const data = readable<ForgeData>(item.sources[forge]);
   return {
     name: forge,
-    commits: data?.finalisedCommits ?? null,
+    commits: data ? readable<FinalisedCommit[]>(data.finalisedCommits) : null,
     repoUrl: data?.url ?? null,
   };
 }
@@ -921,10 +962,8 @@ function riverFor(item: Item, cap: number): River {
 }
 
 function pullRequestsFor(item: Item): PullRequestLine[] {
-  return forgeData(item)
-    .flatMap(({ forge, data }) =>
-      data.openPullRequests.map((pull) => ({ forge, ...pull })),
-    )
+  return forgePullRequests(item)
+    .flatMap(({ forge, pulls }) => pulls.map((pull) => ({ forge, ...pull })))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
@@ -971,8 +1010,9 @@ function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {
   return files.map((file) => ({ path: file, absolutePath: `${path}/${file}` }));
 }
 
+/** Each source not read for the bird, then each part of a forge read without it. */
 function problemsFor(item: Item): SourceProblem[] {
-  return Object.entries(item.sources).flatMap(([source, data]) =>
+  const sources = Object.entries(item.sources).flatMap(([source, data]) =>
     data && "error" in data
       ? [
           {
@@ -982,6 +1022,20 @@ function problemsFor(item: Item): SourceProblem[] {
         ]
       : [],
   );
+  const parts = forgeData(item).flatMap(({ forge, data }) =>
+    forgeParts.flatMap((part) => {
+      const value = data[part];
+      return failed(value)
+        ? [
+            {
+              source: `${forgeLabel[forge]} ${forgePartLabel[part]}`,
+              error: value.error,
+            },
+          ]
+        : [];
+    }),
+  );
+  return [...sources, ...parts];
 }
 
 function fenceSituation(item: Item): FenceSituation {
@@ -1001,7 +1055,9 @@ function lastTouchedHours(item: Item, scannedAt: Date): number | null {
   const times = [
     git?.lastCommitAt ?? null,
     ...forgeData(item).flatMap(({ data }) =>
-      data.finalisedCommits.map((commit) => commit.committedAt),
+      (readable<FinalisedCommit[]>(data.finalisedCommits) ?? []).map(
+        (commit) => commit.committedAt,
+      ),
     ),
   ].filter((time): time is string => time !== null);
   const newest = times.sort().at(-1);

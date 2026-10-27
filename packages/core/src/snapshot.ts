@@ -180,15 +180,19 @@ export interface CiRun {
   createdAt: string | null;
 }
 
+/**
+ * A forge repository's data. Each part was read by its own request and is an error alone when
+ * that request failed; a snapshot cached before the parts were read holds every part as read.
+ */
 export interface ForgeData {
   fullName: string;
   url: string;
   defaultBranch: string;
-  openPullRequests: PullRequest[];
+  openPullRequests: PullRequest[] | ItemError;
   /** Latest CI result on the default branch, null when there is none. */
-  latestCi: CiRun | null;
+  latestCi: CiRun | null | ItemError;
   /** The newest commits on the forge's default branch: finalised work, against local work. */
-  finalisedCommits: FinalisedCommit[];
+  finalisedCommits: FinalisedCommit[] | ItemError;
 }
 
 export interface FinalisedCommit {

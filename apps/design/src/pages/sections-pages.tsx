@@ -106,13 +106,13 @@ const riverSpecimens: { id: string; label: string; rule: string }[] = [
   },
   {
     id: "undev/prism",
-    label: "A forge not read",
-    rule: "Prism: GitHub answered 404. An amber line says so and the dot is judged over Forgejo alone.",
+    label: "A forge's commits read, its pull requests not",
+    rule: "Prism: GitHub answered 404 for its pull requests but its commits were read, so the dot is judged over both forges and no line appears.",
   },
   {
     id: "dev/hearth-config",
     label: "No forge read",
-    rule: "hearth-config: neither forge's detail was read, so spread cannot be judged: the quiet dot.",
+    rule: "hearth-config: neither forge's detail was read, so each gets an amber line and spread cannot be judged: the quiet dot.",
   },
   {
     id: "dev/odin/hello",
@@ -126,7 +126,7 @@ export function RiverPage() {
     <>
       <Section
         title="The commit river"
-        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits. One dot before each says how far it has spread over the forges read: green when every one holds it, amber when one lacks it or none does, the quiet dot when no forge was read. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The clone only adds commits. A forge not read gets an amber line, and one amber sentence appears only when a forge lacks a commit another forge holds."
+        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits. One dot before each says how far it has spread over the forges read: green when every one holds it, amber when one lacks it or none does, the quiet dot when no forge was read. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The clone only adds commits. A forge whose commits were not read gets an amber line, and one amber sentence appears only when a forge lacks a commit another forge holds."
         min={420}
       >
         {riverSpecimens.map((specimen) => (
@@ -284,7 +284,7 @@ export function ProblemsPage() {
       >
         <Specimen
           label="A forge call failed"
-          rule="Prism: GitHub answered 404 for its pull requests."
+          rule="Prism: GitHub answered 404 for its pull requests, so the row names that part alone."
         >
           <Ground>
             <SourceProblems

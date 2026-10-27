@@ -123,7 +123,7 @@ describe("the mock dataset", () => {
     }
   });
 
-  it("spells out two forges disagreeing on CI, a forge not read, and open items over two roadmap files", () => {
+  it("spells out two forges disagreeing on CI, a forge's part not read, and open items over two roadmap files", () => {
     const rows = (label: string) =>
       adopted.flatMap((bird) =>
         bird.detail.ledger.flatMap((entry) =>
@@ -145,13 +145,42 @@ describe("the mock dataset", () => {
         bird.detail.ledger.some(
           (entry) =>
             entry.kind !== "time" &&
-            entry.workings.some((working) => working.text === "not read"),
+            entry.workings.some((working) =>
+              working.text.endsWith(" not read"),
+            ),
         ),
       ),
     ).toBe(true);
     expect(
       rows("open roadmap items").some((row) => row.workings.length > 1),
     ).toBe(true);
+  });
+
+  it("holds a forge whose pull requests alone were not read, its CI and commits shown", () => {
+    const pullsUnread = adopted.flatMap((bird) => {
+      const unread = bird.detail.problems.filter(
+        (problem) => problem.source === "GitHub pull requests",
+      );
+      if (unread.length === 0) return [];
+      const ci = bird.detail.ledger.find((entry) => entry.label === "CI");
+      return [
+        {
+          ciFromGithub:
+            ci?.kind === "state" &&
+            ci.workings.some(
+              (working) => working.source === "github" && working.url !== null,
+            ),
+          spreadOnGithub: bird.detail.river.commits.some((commit) =>
+            commit.spread.includes("github"),
+          ),
+          notes: bird.detail.river.notes,
+        },
+      ];
+    });
+
+    expect(pullsUnread).toEqual([
+      { ciFromGithub: true, spreadOnGithub: true, notes: [] },
+    ]);
   });
 
   it("holds a bird with a clone and forges, one with no clone, and one with no forge", () => {

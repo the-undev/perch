@@ -654,22 +654,79 @@ describe("the ledger's workings", () => {
       },
     });
     const bird = birdIn([prism], config, "dev/prism");
-    const notRead = {
+    const notRead = (text: string) => ({
       source: "github",
-      text: "not read",
+      text,
       tone: "amber",
       url: null,
       at: null,
-    };
+    });
 
     expect(row(bird, "CI").workings).toEqual([
-      notRead,
+      notRead("CI not read"),
       expect.objectContaining({ source: "forgejo", tone: "red" }),
     ]);
     expect(row(bird, "open pull requests")).toMatchObject({
       text: "none",
-      workings: [notRead],
+      workings: [notRead("pull requests not read")],
     });
+  });
+
+  it("names only the part of a forge not read, counting and judging the parts that were", async () => {
+    const config = await adoptAll(["dev/prism"]);
+    const pullsError =
+      "HTTP 404 from https://api.github.com/repos/the-undev/prism/pulls?state=open&per_page=100";
+    const prism = item("dev/prism", {
+      sources: {
+        github: forgeData({
+          latestCi: failingRun,
+          openPullRequests: { error: pullsError },
+        }),
+        forgejo: forgeData({
+          url: "http://forgejo.test/the-undev/prism",
+          openPullRequests: [
+            {
+              number: 3,
+              title: "LoRA quirk resilience",
+              author: "finch",
+              draft: false,
+              updatedAt: hoursBefore(3),
+              url: "http://forgejo.test/the-undev/prism/pulls/3",
+            },
+          ],
+        }),
+      },
+    });
+    const bird = birdIn([prism], config, "dev/prism");
+
+    expect(row(bird, "CI")).toMatchObject({
+      text: "failure",
+      workings: [{ source: "github", text: "failure on main, run “check”" }],
+    });
+    expect(row(bird, "open pull requests")).toMatchObject({
+      text: "1",
+      workings: [
+        {
+          source: "github",
+          text: "pull requests not read",
+          tone: "amber",
+        },
+        { source: "forgejo", text: "1 open" },
+      ],
+    });
+    expect(bird.bubble.chips.map((chip) => chip.label)).toEqual([
+      "ci failure",
+      "1 open PR",
+    ]);
+    expect(bird.health.causes.map((cause) => cause.kind)).toEqual([
+      "ci-failing",
+    ]);
+    expect(bird.detail.pullRequests.map((pull) => pull.forge)).toEqual([
+      "forgejo",
+    ]);
+    expect(bird.detail.problems).toEqual([
+      { source: "GitHub pull requests", error: pullsError },
+    ]);
   });
 
   it("counts open items and bugs per roadmap file, a file with none silent", async () => {
@@ -1220,6 +1277,48 @@ describe("the commit river", () => {
     expect(rows(river)).toEqual([["c1", "green", "on github"]]);
     expect(river.notes).toEqual(["forgejo not read"]);
     expect(river.divergence).toBeNull();
+  });
+
+  it("judges a forge by its commits, whatever its pull requests did", async () => {
+    const twoForges = {
+      local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+      forges: [presenceOn("github"), presenceOn("forgejo")],
+    };
+    const commits = [at("c1", 1)];
+    const pullsUnread = item("dev/river", {
+      presences: twoForges,
+      sources: {
+        git: gitData({ defaultBranchCommits: commits }),
+        github: forgeData({
+          url: "https://github.com/finch/river",
+          openPullRequests: { error: "HTTP 404" },
+          finalisedCommits: commits,
+        }),
+        forgejo: forgeData({ url: forgejoUrl, finalisedCommits: commits }),
+      },
+    });
+    const commitsUnread = item("dev/river", {
+      presences: twoForges,
+      sources: {
+        git: gitData({ defaultBranchCommits: commits }),
+        github: forgeData({
+          url: "https://github.com/finch/river",
+          finalisedCommits: { error: "HTTP 500" },
+        }),
+        forgejo: forgeData({ url: forgejoUrl, finalisedCommits: commits }),
+      },
+    });
+    const config = await adoptAll(["dev/river"]);
+    const pullsRiver = birdIn([pullsUnread], config, "dev/river").detail.river;
+    const commitsRiver = birdIn([commitsUnread], config, "dev/river").detail
+      .river;
+
+    expect(rows(pullsRiver)).toEqual([
+      ["c1", "green", "on github and forgejo"],
+    ]);
+    expect(pullsRiver.notes).toEqual([]);
+    expect(rows(commitsRiver)).toEqual([["c1", "green", "on forgejo"]]);
+    expect(commitsRiver.notes).toEqual(["github not read"]);
   });
 
   it("tones unpushed commits amber, on no remote read, while a forge is not read", async () => {

@@ -99,8 +99,9 @@ newest CI run with its state, branch, name, link and age, under a CI
 row that says the worst state as the chip does; open pull requests per
 forge, linked to the forge's list; open items and bugs per roadmap
 file; the age of the oldest uncommitted change or unpushed commit. A
-source with nothing to say is silent, and a forge not read says so in
-amber.
+source with nothing to say is silent. A forge not read, or the part of
+it a row spells out, says so in amber, naming the part: "pull requests
+not read" or "CI not read".
 Concrete nouns link wherever a page exists for them. Headings name the
 actual thing, never a concept.
 
@@ -108,7 +109,8 @@ The commit river answers what is on main and whether it has spread. It
 tells the default branch's newest commits once each, joined by hash
 across local main and each forge's list, newest first and capped at
 `scan.finalised_commits`. One dot before each commit judges its spread
-over the bird's forges that were read; the clone only adds commits,
+over the bird's forges whose commits were read, whatever their pull
+requests and CI did; the clone only adds commits,
 such as unpushed ones on main. Green: every forge read holds it, "on
 github and forgejo". Amber: a forge read lacks it, "only on github", or
 none holds it, "not pushed to a remote" ("on no remote read" while
@@ -118,8 +120,8 @@ speaks its words to a screen reader and on hover. A forge's list holds
 only its newest commits, so a forge lacks a commit only when the commit
 is no older than the list's oldest; an older one is beyond the list and
 counts as held, so old history never turns amber. Local main being
-behind a forge is not flagged. A forge not read gets an amber line,
-"github not read". When a forge lacks a commit another forge holds
+behind a forge is not flagged. A forge whose commits were not read gets
+an amber line, "github not read". When a forge lacks a commit another forge holds
 within its list, one amber sentence says so: "forgejo is 2 commits
 behind github." when one forge lacks, "github and forgejo have
 diverged: github lacks 1 commit, forgejo lacks 2 commits." when both
@@ -219,8 +221,9 @@ blocks on aggregation and renders from the cached snapshot.
 Sources today: local repositories and vaults (git state with the
 default branch's newest commits, Obsidian markers), the GitHub and
 Forgejo account listings and per-repository detail (PRs, CI, newest
-default-branch commits), roadmap files, Claude
-Code session times. Uptime Kuma exists and runs only for a
+default-branch commits, each its own request, so a failed request fails
+only its part; a missing token fails the whole detail), roadmap files,
+Claude Code session times. Uptime Kuma exists and runs only for a
 `[[sources.kuma]]` table, which config leaves out until server
 monitoring is picked up. Forge tickets are a wanted
 source, see the roadmap. The field inventory, with declared types

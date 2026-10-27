@@ -74,7 +74,6 @@ describe("the sources in the settings form", () => {
     expect(sources.github.map((source) => source.account)).toEqual([
       "finch",
       "the-undev",
-      "skiff-app",
     ]);
     expect(withSettings(mockConfig, mockValues(), home).sources).toEqual(
       mockConfig.sources,
@@ -165,12 +164,11 @@ describe("the sources in the settings form", () => {
       statusPage: "",
     });
     expect(sources.local.at(-1)).toEqual({ include: [], exclude: [] });
-    expect(sources.github).toHaveLength(4);
+    expect(sources.github).toHaveLength(3);
 
     const removed = withSourceRemoved(sources, "github", 1);
     expect(removed.github.map((source) => source.account)).toEqual([
       "finch",
-      "skiff-app",
       "",
     ]);
     expect(removed.forgejo).toEqual(sources.forgejo);
@@ -184,7 +182,6 @@ describe("the sources in the settings form", () => {
       "local0",
       "github0",
       "github1",
-      "github2",
       "forgejo0",
       "forgejo1",
       "kuma0",

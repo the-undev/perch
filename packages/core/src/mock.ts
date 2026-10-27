@@ -2,9 +2,9 @@
 // site and the app to render every view model state without a scan. The scan is at 09:00 on
 // 22 October 2026, and every age below is measured from it. Between them the birds cover every
 // mood and activity, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed backlog, a stalled
-// branch and clean zeros, a bird with no clone here and one on no forge, a forge not read at all
-// and one whose pull requests alone were not read, and the source cards
-// every scan state;
+// branch and clean zeros, a bird with no clone here and one on no forge, a remote no card can
+// read, forges that couldn't be read at all and one whose pull requests alone couldn't be read,
+// and the source cards every scan state;
 // tests/mock.test.ts keeps it so. Roadmap files carry
 // numbered placeholder items, as many as each file's open counts.
 
@@ -77,12 +77,6 @@ export const mockConfig: Config = {
       {
         account: "the-undev",
         key: "github-the-undev",
-        hosts: ["github.com", "github-work"],
-        trackedForks: [],
-      },
-      {
-        account: "skiff-app",
-        key: "github-skiff-app",
         hosts: ["github.com", "github-work"],
         trackedForks: [],
       },
@@ -744,9 +738,21 @@ const harbour = localItem("undev/harbour", {
   },
 });
 
-/** Restless: parked on a feature branch for three weeks with everything pushed. */
+/**
+ * Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, and to Forgejo, read
+ * fine; and parked on a feature branch for three weeks with everything pushed.
+ */
 const skiff = localItem("undev/skiff", {
-  forges: [presence("github", "skiff-app/skiff")],
+  forges: [
+    {
+      forge: "github",
+      ref: "github:skiff-app/skiff",
+      fullName: "skiff-app/skiff",
+      url: null,
+      foundBy: "local-remote",
+    },
+    presence("forgejo", "the-undev/skiff"),
+  ],
   sources: {
     git: {
       backup: "joined",
@@ -784,7 +790,10 @@ const skiff = localItem("undev/skiff", {
         {
           name: "origin",
           fetchUrl: "git@github-work:skiff-app/skiff.git",
-          pushUrls: ["git@github-work:skiff-app/skiff.git"],
+          pushUrls: [
+            "git@github-work:skiff-app/skiff.git",
+            "forge-work:the-undev/skiff.git",
+          ],
         },
       ],
       activity: "in-progress",
@@ -802,12 +811,16 @@ const skiff = localItem("undev/skiff", {
       lastSessionAt: "2026-10-01T09:12:00.000Z",
       basis: "last-message",
     },
-    github: forge("github", "skiff-app/skiff", {
+    github: {
+      error: "no GitHub card is configured for owner skiff-app",
+      cause: "no-card",
+    },
+    forgejo: forge("forgejo", "the-undev/skiff", {
       latestCi: {
-        name: "CI",
+        name: "check / check (push)",
         state: "success",
-        forgeState: "completed/success",
-        url: "https://github.com/skiff-app/skiff/actions/runs/33371828042",
+        forgeState: "success",
+        url: `${forgejoBase}/the-undev/skiff/actions/runs/31/jobs/0`,
         createdAt: "2026-08-31T08:12:44Z",
       },
       openPullRequests: [
@@ -817,7 +830,7 @@ const skiff = localItem("undev/skiff", {
           author: "finch",
           draft: true,
           updatedAt: "2026-10-01T09:05:00Z",
-          url: "https://github.com/skiff-app/skiff/pull/41",
+          url: `${forgejoBase}/the-undev/skiff/pulls/41`,
         },
         {
           number: 40,
@@ -825,7 +838,7 @@ const skiff = localItem("undev/skiff", {
           author: "finch",
           draft: false,
           updatedAt: "2026-08-31T10:25:00Z",
-          url: "https://github.com/skiff-app/skiff/pull/40",
+          url: `${forgejoBase}/the-undev/skiff/pulls/40`,
         },
       ],
       finalisedCommits: [
@@ -1557,7 +1570,6 @@ export const mockSnapshot: Snapshot = {
     },
     githubCard("finch", 5),
     githubCard("the-undev", 4),
-    githubCard("skiff-app", 1),
     forgejoCard("finch"),
     forgejoCard("the-undev"),
     // The raw kuma file holds nothing for Silo yet, which is why its item has no kuma data.

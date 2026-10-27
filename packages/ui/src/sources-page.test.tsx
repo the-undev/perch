@@ -88,7 +88,6 @@ describe("the sources page", () => {
       "Local folders",
       "GitHub · finch",
       "GitHub · the-undev",
-      "GitHub · skiff-app",
       "Forgejo · forge.example.lan:3000",
       "Forgejo · forge.example.lan:3000",
       "Uptime Kuma · Silo",
@@ -249,26 +248,26 @@ describe("the sources page", () => {
 
   it("removes a card only on the second press", () => {
     const { onSave, form } = sourcesPage();
-    open("GitHub · the-undev");
+    open("GitHub · finch");
 
     fireEvent.click(
-      within(card("GitHub · the-undev")).getByRole("button", {
+      within(card("GitHub · finch")).getByRole("button", {
         name: "Remove this source",
       }),
     );
-    expect(card("GitHub · the-undev")).toBeDefined();
+    expect(card("GitHub · finch")).toBeDefined();
     expect(saveButton().disabled).toBe(true);
     fireEvent.click(
-      within(card("GitHub · the-undev")).getByRole("button", {
+      within(card("GitHub · finch")).getByRole("button", {
         name: "Stop looking here",
       }),
     );
 
     expect(
-      screen.queryByRole("region", { name: "GitHub · the-undev" }),
+      screen.queryByRole("region", { name: "GitHub · finch" }),
     ).toBeNull();
     expect(
-      within(card("GitHub · skiff-app")).queryByRole("button", {
+      within(card("GitHub · the-undev")).queryByRole("button", {
         name: "Stop looking here",
       }),
     ).toBeNull();
@@ -277,7 +276,7 @@ describe("the sources page", () => {
       ...form.values,
       sources: {
         ...form.values.sources,
-        github: [form.values.sources.github[0], form.values.sources.github[2]],
+        github: [form.values.sources.github[1]],
       },
     });
   });

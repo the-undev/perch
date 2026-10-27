@@ -69,10 +69,17 @@ describe("the mock dataset", () => {
       );
 
     expect(new Set(causes.map((cause) => cause.kind))).toEqual(
-      new Set(["ci-failing", "bugs", "uncommitted", "unpushed", "stalled"]),
+      new Set([
+        "ci-failing",
+        "unreadable-remote",
+        "bugs",
+        "uncommitted",
+        "unpushed",
+        "stalled",
+      ]),
     );
     expect(kinds("amber")).toEqual(
-      new Set(["uncommitted", "unpushed", "stalled"]),
+      new Set(["unreadable-remote", "uncommitted", "unpushed", "stalled"]),
     );
     expect(kinds("red")).toEqual(
       new Set(["ci-failing", "bugs", "uncommitted"]),
@@ -85,6 +92,7 @@ describe("the mock dataset", () => {
 
     expect(new Set(chips.map((chip) => chip.kind))).toEqual(
       new Set([
+        "unreadable",
         "ci",
         "bugs",
         "uncommitted",
@@ -95,6 +103,12 @@ describe("the mock dataset", () => {
     );
     expect(chips).toContainEqual(
       expect.objectContaining({ label: "ci failure", severity: "red" }),
+    );
+    expect(chips).toContainEqual(
+      expect.objectContaining({
+        label: "can't read github",
+        severity: "amber",
+      }),
     );
     expect(
       adopted.some(
@@ -111,11 +125,16 @@ describe("the mock dataset", () => {
     expect(mockAviary.warnings).toHaveLength(1);
   });
 
-  it("hands each chip on a bubble one ledger row holding its working, and no row a chip it lacks", () => {
+  it("hands each chip on a bubble one ledger row or the notice holding its working, and nothing a chip it lacks", () => {
     for (const bird of birds) {
-      const handled = bird.detail.ledger.flatMap((entry) =>
-        entry.kind === "time" || entry.chip === null ? [] : [entry.chip],
-      );
+      const handled = [
+        ...bird.detail.ledger.flatMap((entry) =>
+          entry.kind === "time" || entry.chip === null ? [] : [entry.chip],
+        ),
+        ...(bird.detail.notices.length > 0 && bird.adopted
+          ? ["unreadable" as const]
+          : []),
+      ];
 
       expect(handled.sort(), bird.id).toEqual(
         bird.bubble.chips.map((chip) => chip.kind).sort(),
@@ -181,6 +200,24 @@ describe("the mock dataset", () => {
     expect(pullsUnread).toEqual([
       { ciFromGithub: true, spreadOnGithub: true, notes: [] },
     ]);
+  });
+
+  it("holds a restless bird whose remote no card can read, and a fence bird whose tokens failed untroubled", () => {
+    const skiff = birds.find((bird) => bird.id === "undev/skiff");
+    const homeIt = birds.find((bird) => bird.id === "dev/hearth-config");
+
+    expect(skiff?.mood).toBe("restless");
+    expect(skiff?.health.causes[0]?.kind).toBe("unreadable-remote");
+    expect(skiff?.detail.notices).toHaveLength(1);
+    expect(skiff?.detail.river.notes).toEqual([
+      "couldn't read github · no card covers skiff-app",
+    ]);
+    expect(homeIt?.health.causes).toEqual([]);
+    expect(homeIt?.detail.notices).toEqual([]);
+    expect(homeIt?.detail.problems).toHaveLength(2);
+    expect(
+      homeIt?.detail.river.commits.every((commit) => commit.tone === "amber"),
+    ).toBe(true);
   });
 
   it("holds a bird with a clone and forges, one with no clone, and one with no forge", () => {

@@ -200,11 +200,12 @@ export type RawCi =
       combinedStatus: { state: string; statuses: RawCommitStatus[] };
     };
 
+/** A repository's detail, each part read by its own request, so one failing leaves the others. */
 export interface RawForgeDetails {
-  openPullRequests: RawPullRequest[];
-  ci: RawCi;
+  openPullRequests: Entry<RawPullRequest[], never>;
+  ci: Entry<RawCi, never>;
   /** The newest commits on the forge's default branch, newest first, as the forge reports them. */
-  finalisedCommits: RawCommit[];
+  finalisedCommits: Entry<RawCommit[], never>;
 }
 
 export interface RawForgeRepo {

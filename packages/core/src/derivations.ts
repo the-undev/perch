@@ -533,13 +533,24 @@ export function deriveForge(repo: RawForgeRepo): ForgeData | ItemError {
   if (repo.details.state === "error") return { error: repo.details.error };
   if (repo.details.state === "absent")
     return { error: "details not read: archived" };
+  const { openPullRequests, ci, finalisedCommits } = repo.details.value;
+  for (const facet of [openPullRequests, ci, finalisedCommits]) {
+    if (facet.state === "error") return { error: facet.error };
+  }
+  if (
+    openPullRequests.state !== "observed" ||
+    ci.state !== "observed" ||
+    finalisedCommits.state !== "observed"
+  ) {
+    return { error: "details not read" };
+  }
   return {
     fullName: repo.info.fullName,
     url: repo.info.url,
     defaultBranch: repo.info.defaultBranch,
-    openPullRequests: repo.details.value.openPullRequests.map(pullRequest),
-    latestCi: deriveCi(repo.details.value.ci, repo.info.url),
-    finalisedCommits: repo.details.value.finalisedCommits,
+    openPullRequests: openPullRequests.value.map(pullRequest),
+    latestCi: deriveCi(ci.value, repo.info.url),
+    finalisedCommits: finalisedCommits.value,
   };
 }
 

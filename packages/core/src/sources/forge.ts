@@ -31,7 +31,19 @@ export interface ForgeClient {
     name: string,
     token: string,
   ): Promise<RawForgeRepoInfo>;
+  /** Pull requests, CI and finalised commits, each its own request that fails alone. */
   readDetails(info: RawForgeRepoInfo, token: string): Promise<RawForgeDetails>;
+}
+
+/** One part of a repository's detail, read by its own request; its failure is that part's error. */
+export async function readFacet<T>(
+  read: () => Promise<T>,
+): Promise<Entry<T, never>> {
+  try {
+    return { state: "observed", value: await read() };
+  } catch (error) {
+    return { state: "error", error: errorMessage(error) };
+  }
 }
 
 /** One configured account of a forge with the client that reads it. */
@@ -129,7 +141,8 @@ interface Candidate {
 /**
  * Enricher: every listed repository, plus any repository a local clone's remote names on one of
  * this forge's hosts that the listings missed, looked up through the account that owns it on that
- * host. Pull requests, CI and finalised commits are read for those not archived.
+ * host. Pull requests, CI and finalised commits are read for those not archived, each failing on
+ * its own; a missing token fails the whole detail.
  */
 export function createForgeSource<N extends ForgeName>(
   name: N,

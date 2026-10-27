@@ -6,8 +6,13 @@ import {
   optionalString,
   stringField,
 } from "../json.ts";
-import type { Observed, RawForgeRepoInfo, RawGithubRun } from "../raw.ts";
-import type { ForgeClient } from "./forge.ts";
+import type {
+  Observed,
+  RawCi,
+  RawForgeRepoInfo,
+  RawGithubRun,
+} from "../raw.ts";
+import { type ForgeClient, readFacet } from "./forge.ts";
 import { readCommit, readPullRequest } from "./pull-request.ts";
 
 const apiBase = "https://api.github.com";
@@ -104,22 +109,38 @@ export function createGithubClient(deps: GithubClientDeps): ForgeClient {
       const headers = headersFor(token);
       const base = `${apiBase}/repos/${info.fullName}`;
       const branch = encodeURIComponent(info.defaultBranch);
-      const [pulls, runs, commits] = await Promise.all([
-        deps.fetchJson(`${base}/pulls?state=open&per_page=100`, headers),
-        deps.fetchJson(
-          `${base}/actions/runs?branch=${branch}&per_page=1`,
-          headers,
+      const [openPullRequests, ci, finalisedCommits] = await Promise.all([
+        readFacet(async () =>
+          asArray(
+            await deps.fetchJson(
+              `${base}/pulls?state=open&per_page=100`,
+              headers,
+            ),
+            "pulls",
+          ).map(readPullRequest),
         ),
-        deps.fetchJson(
-          `${base}/commits?sha=${branch}&per_page=${deps.finalisedCommits}`,
-          headers,
+        readFacet(
+          async (): Promise<RawCi> => ({
+            forge: "github",
+            latestRun: latestRun(
+              await deps.fetchJson(
+                `${base}/actions/runs?branch=${branch}&per_page=1`,
+                headers,
+              ),
+            ),
+          }),
+        ),
+        readFacet(async () =>
+          asArray(
+            await deps.fetchJson(
+              `${base}/commits?sha=${branch}&per_page=${deps.finalisedCommits}`,
+              headers,
+            ),
+            "commits",
+          ).map(readCommit),
         ),
       ]);
-      return {
-        openPullRequests: asArray(pulls, "pulls").map(readPullRequest),
-        ci: { forge: "github", latestRun: latestRun(runs) },
-        finalisedCommits: asArray(commits, "commits").map(readCommit),
-      };
+      return { openPullRequests, ci, finalisedCommits };
     },
   };
 }

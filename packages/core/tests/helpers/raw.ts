@@ -3,10 +3,14 @@
 import { polledSourceOrder } from "../../src/gather.ts";
 import type {
   ForgeName,
+  RawCi,
+  RawCommit,
   RawFiles,
+  RawForgeDetails,
   RawForgeRepo,
   RawGit,
   RawLocalPresence,
+  RawPullRequest,
   RawRemote,
   SourceStatus,
   StatusFile,
@@ -91,20 +95,32 @@ export function forgeRepo(
     aliases: options.aliases ?? [],
     details: options.archived
       ? { state: "absent", reason: "archived-slow-lane" }
-      : {
-          state: "observed",
-          value: {
-            openPullRequests: [],
-            ci: {
-              forge: "github",
-              latestRun: {
-                state: "absent",
-                reason: "no-runs-on-default-branch",
-              },
-            },
-            finalisedCommits: [],
-          },
-        },
+      : { state: "observed", value: forgeDetails({}) },
+  };
+}
+
+/** A repository's detail with every part observed: no pull requests, no runs, no commits unless given. */
+export function forgeDetails(values: {
+  openPullRequests?: RawPullRequest[];
+  ci?: RawCi;
+  finalisedCommits?: RawCommit[];
+}): RawForgeDetails {
+  return {
+    openPullRequests: {
+      state: "observed",
+      value: values.openPullRequests ?? [],
+    },
+    ci: {
+      state: "observed",
+      value: values.ci ?? {
+        forge: "github",
+        latestRun: { state: "absent", reason: "no-runs-on-default-branch" },
+      },
+    },
+    finalisedCommits: {
+      state: "observed",
+      value: values.finalisedCommits ?? [],
+    },
   };
 }
 

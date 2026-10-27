@@ -13,7 +13,12 @@ import {
 } from "../src/sources/forge.ts";
 import { createForgejoClient } from "../src/sources/forgejo.ts";
 import { createGithubClient } from "../src/sources/github.ts";
-import { forgeRepo, localPresence, withRemotes } from "./helpers/raw.ts";
+import {
+  forgeDetails,
+  forgeRepo,
+  localPresence,
+  withRemotes,
+} from "./helpers/raw.ts";
 
 function info(
   fullName: string,
@@ -46,14 +51,7 @@ function fakeClient(readable: Record<string, RawForgeRepoInfo[]>): {
     },
     readDetails: async (repo, token) => {
       calls.push(`details ${repo.fullName} with ${token}`);
-      return {
-        openPullRequests: [],
-        ci: {
-          forge: "github",
-          latestRun: { state: "absent", reason: "no-runs-on-default-branch" },
-        },
-        finalisedCommits: [],
-      };
+      return forgeDetails({});
     },
   };
   return { client, calls };
@@ -490,24 +488,80 @@ describe("github client", () => {
 
     const details = await client.readDetails(info("the-undev/harbour", {}), "t");
 
-    expect(details.finalisedCommits).toEqual([
-      { sha: "abc", committedAt: "2026-10-20T08:00:00Z", subject: "Add tiles" },
-    ]);
-    expect(details.openPullRequests[0]?.author).toEqual({
-      state: "absent",
-      reason: "no-user",
+    expect(details.finalisedCommits).toEqual({
+      state: "observed",
+      value: [
+        {
+          sha: "abc",
+          committedAt: "2026-10-20T08:00:00Z",
+          subject: "Add tiles",
+        },
+      ],
+    });
+    expect(details.openPullRequests).toMatchObject({
+      state: "observed",
+      value: [{ author: { state: "absent", reason: "no-user" } }],
     });
     expect(details.ci).toEqual({
-      forge: "github",
-      latestRun: {
+      state: "observed",
+      value: {
+        forge: "github",
+        latestRun: {
+          state: "observed",
+          value: {
+            name: "ci",
+            status: "in_progress",
+            conclusion: { state: "absent", reason: "run-not-completed" },
+            url: "https://github.com/the-undev/harbour/actions/runs/1",
+            createdAt: "2026-10-20T09:00:00Z",
+          },
+        },
+      },
+    });
+  });
+
+  it("keeps commits and CI when the pulls request answers 404, failing only the pull requests", async () => {
+    const base = `${api}/repos/the-undev/prism`;
+    const { fetchJson } = fakeFetch({
+      [`${base}/actions/runs?branch=main&per_page=1`]: { workflow_runs: [] },
+      [`${base}/commits?sha=main&per_page=2`]: [
+        {
+          sha: "76c",
+          commit: {
+            committer: { date: "2026-10-16T21:16:34Z" },
+            message: "Merge composition-and-dispatch",
+          },
+        },
+      ],
+    });
+    const client = createGithubClient({ fetchJson, finalisedCommits: 2 });
+
+    const details = await client.readDetails(
+      info("the-undev/prism", {}),
+      "t",
+    );
+
+    expect(details).toEqual({
+      openPullRequests: {
+        state: "error",
+        error: `HTTP 404 from ${base}/pulls?state=open&per_page=100`,
+      },
+      ci: {
         state: "observed",
         value: {
-          name: "ci",
-          status: "in_progress",
-          conclusion: { state: "absent", reason: "run-not-completed" },
-          url: "https://github.com/the-undev/harbour/actions/runs/1",
-          createdAt: "2026-10-20T09:00:00Z",
+          forge: "github",
+          latestRun: { state: "absent", reason: "no-runs-on-default-branch" },
         },
+      },
+      finalisedCommits: {
+        state: "observed",
+        value: [
+          {
+            sha: "76c",
+            committedAt: "2026-10-16T21:16:34Z",
+            subject: "Merge composition-and-dispatch",
+          },
+        ],
       },
     });
   });
@@ -558,22 +612,56 @@ describe("forgejo client", () => {
     );
 
     expect(calls[0]?.headers.Authorization).toBe("token t");
-    expect(details.finalisedCommits).toEqual([
-      {
-        sha: "def",
-        committedAt: "2026-10-19T08:00:00Z",
-        subject: "Office lighting",
-      },
-    ]);
+    expect(details.finalisedCommits).toEqual({
+      state: "observed",
+      value: [
+        {
+          sha: "def",
+          committedAt: "2026-10-19T08:00:00Z",
+          subject: "Office lighting",
+        },
+      ],
+    });
     expect(details.ci).toMatchObject({
-      forge: "forgejo",
-      combinedStatus: {
-        state: "pending",
-        statuses: [
-          { context: "build" },
-          { targetUrl: { state: "absent", reason: "no-target-url" } },
-        ],
+      state: "observed",
+      value: {
+        forge: "forgejo",
+        combinedStatus: {
+          state: "pending",
+          statuses: [
+            { context: "build" },
+            { targetUrl: { state: "absent", reason: "no-target-url" } },
+          ],
+        },
       },
+    });
+  });
+
+  it("keeps pull requests and commits when the status request fails, failing only CI", async () => {
+    const base = "http://forgejo.test/api/v1/repos/finch/Hothouse";
+    const { fetchJson } = fakeFetch({
+      [`${base}/pulls?state=open&limit=50`]: [],
+      [`${base}/commits?sha=main&limit=2&stat=false&verification=false&files=false`]:
+        [],
+    });
+    const client = createForgejoClient({
+      fetchJson,
+      baseUrl: "http://forgejo.test",
+      finalisedCommits: 2,
+    });
+
+    const details = await client.readDetails(
+      info("finch/Hothouse", {}),
+      "t",
+    );
+
+    expect(details).toEqual({
+      openPullRequests: { state: "observed", value: [] },
+      ci: {
+        state: "error",
+        error: `HTTP 404 from ${base}/commits/main/status`,
+      },
+      finalisedCommits: { state: "observed", value: [] },
     });
   });
 
@@ -601,8 +689,11 @@ describe("forgejo client", () => {
     );
 
     expect(details.ci).toEqual({
-      forge: "forgejo",
-      combinedStatus: { state: "", statuses: [] },
+      state: "observed",
+      value: {
+        forge: "forgejo",
+        combinedStatus: { state: "", statuses: [] },
+      },
     });
   });
 });
@@ -612,8 +703,7 @@ describe("deriving forge data", () => {
     const githubRepo = forgeRepo("finch/perch", {});
     githubRepo.details = {
       state: "observed",
-      value: {
-        openPullRequests: [],
+      value: forgeDetails({
         ci: {
           forge: "github",
           latestRun: {
@@ -634,13 +724,12 @@ describe("deriving forge data", () => {
             subject: "Add tiles",
           },
         ],
-      },
+      }),
     };
     const forgejoRepo = forgeRepo("finch/Hothouse", {});
     forgejoRepo.details = {
       state: "observed",
-      value: {
-        openPullRequests: [],
+      value: forgeDetails({
         ci: {
           forge: "forgejo",
           combinedStatus: {
@@ -662,7 +751,7 @@ describe("deriving forge data", () => {
           },
         },
         finalisedCommits: [],
-      },
+      }),
     };
 
     expect(deriveForge(githubRepo)).toMatchObject({
@@ -698,8 +787,7 @@ describe("deriving forge data", () => {
     repo.info.url = "http://forge.example.lan:3000/the-undev/prism";
     repo.details = {
       state: "observed",
-      value: {
-        openPullRequests: [],
+      value: forgeDetails({
         ci: {
           forge: "forgejo",
           combinedStatus: {
@@ -718,7 +806,7 @@ describe("deriving forge data", () => {
           },
         },
         finalisedCommits: [],
-      },
+      }),
     };
 
     expect(deriveForge(repo)).toMatchObject({

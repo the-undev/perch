@@ -1,7 +1,7 @@
 import type { FetchJson } from "../http.ts";
 import { asArray, asRecord, optionalString, stringField } from "../json.ts";
-import type { RawCommitStatus } from "../raw.ts";
-import type { ForgeClient } from "./forge.ts";
+import type { RawCi, RawCommitStatus } from "../raw.ts";
+import { type ForgeClient, readFacet } from "./forge.ts";
 import { readAllPages, readRepoInfo } from "./github.ts";
 import { readCommit, readPullRequest } from "./pull-request.ts";
 
@@ -58,29 +58,40 @@ export function createForgejoClient(deps: ForgejoClientDeps): ForgeClient {
       const auth = headers(token);
       const base = `${api}/repos/${info.fullName}`;
       const branch = encodeURIComponent(info.defaultBranch);
-      const [pulls, status, commits] = await Promise.all([
-        deps.fetchJson(`${base}/pulls?state=open&limit=50`, auth),
-        deps.fetchJson(`${base}/commits/${branch}/status`, auth),
-        deps.fetchJson(
-          `${base}/commits?sha=${branch}&limit=${deps.finalisedCommits}&stat=false&verification=false&files=false`,
-          auth,
+      const [openPullRequests, ci, finalisedCommits] = await Promise.all([
+        readFacet(async () =>
+          asArray(
+            await deps.fetchJson(`${base}/pulls?state=open&limit=50`, auth),
+            "pulls",
+          ).map(readPullRequest),
+        ),
+        readFacet(async (): Promise<RawCi> => {
+          const combined = asRecord(
+            await deps.fetchJson(`${base}/commits/${branch}/status`, auth),
+            "combined status",
+          );
+          return {
+            forge: "forgejo",
+            combinedStatus: {
+              state: typeof combined.state === "string" ? combined.state : "",
+              // Forgejo sends null, not an empty list, for a commit with no statuses.
+              statuses: asArray(combined.statuses ?? [], "statuses").map(
+                readCommitStatus,
+              ),
+            },
+          };
+        }),
+        readFacet(async () =>
+          asArray(
+            await deps.fetchJson(
+              `${base}/commits?sha=${branch}&limit=${deps.finalisedCommits}&stat=false&verification=false&files=false`,
+              auth,
+            ),
+            "commits",
+          ).map(readCommit),
         ),
       ]);
-      const combined = asRecord(status, "combined status");
-      return {
-        openPullRequests: asArray(pulls, "pulls").map(readPullRequest),
-        ci: {
-          forge: "forgejo",
-          combinedStatus: {
-            state: typeof combined.state === "string" ? combined.state : "",
-            // Forgejo sends null, not an empty list, for a commit with no statuses.
-            statuses: asArray(combined.statuses ?? [], "statuses").map(
-              readCommitStatus,
-            ),
-          },
-        },
-        finalisedCommits: asArray(commits, "commits").map(readCommit),
-      };
+      return { openPullRequests, ci, finalisedCommits };
     },
   };
 }

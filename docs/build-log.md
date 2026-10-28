@@ -1216,3 +1216,49 @@ build-time calls so they can be revisited.
   roadmap.
 - The design site's camera scene page carries the rule, and the detail
   scene page lists `panning`.
+
+## 28 October 2026 (small windows)
+
+- The verdict is the owner's, with no board: in a window smaller than
+  full screen the birds may shrink a little, the text stays readable,
+  and the birds bunch instead. The design site's aviary page shows the
+  mock at 2000, 1400 and 760px. The roadmap entry on names scaling with
+  the scene is removed.
+- The floor is `minPixelsPerUnit`, 0.9px a scene unit, in `scene.tsx`.
+  The scene's smallest type is 11 units: the wires' names and tallies,
+  the fence's label and a crowded fence's names. At 0.9 it is 9.9px,
+  about the bubble's 10px state word; 0.85 would have let it fall to
+  9.35px. The floor's width is 1800px, so half the ultrawide, about
+  1720px, bunches slightly.
+- `sceneWidthFor(pixels)`, `min(2000, pixels / 0.9)`, is the one rule.
+  The aviary's layout carries its `width`, and `sceneHeightFor`,
+  `pixelsPerUnit`, `toPixels`, the row capacity, facing, the sag, the
+  fence's posts and the sky's sun and stars read it. `rowCapacity` and
+  `rowsFor` take the width. `Scene` and `SkyDrawing` take a required
+  `width`; the design pages pass `sceneWidth`.
+- The strip is as many units wide as the aviary in the same window and
+  draws at `min(pixels / width, 1)`: full size from 2000px, shrinking
+  with the window to 1800px, at the floor below. Its label keeps its
+  place and size; `stripLayout(tab, width)` shares out the room right of
+  it, so the birds bunch there. The flights read both ends from the same
+  rules.
+- The height still rounds to whole units, as before, so where the height
+  binds a unit can sit up to 1/1200 under 0.9px. The test states the
+  bound rather than the pinned full-width layout changing.
+- The floor holds by width only. The scene keeps its 600-unit minimum
+  height, the room the layout needs for a bubble above the top wire and
+  the fence's distance from the bottom, so an aviary under 540px tall
+  still shrinks below the floor. Parked on the roadmap.
+- A wire's later rows each sat 150 units further right, every bird
+  capped at the right margin on its own, so a fourth row's last birds
+  stacked there: a wire of 24 did so at full width, and narrow windows
+  reach four rows often. A row now moves right as one, only as far as
+  the room past its last bird. At full width this changes only rows
+  that reached the margin; the mock's layout is unchanged.
+- The song note's `Math.max(15, 13 * scale)` is the board's size for
+  the note in scene units, not a readability minimum. It stays, and the
+  floor applies to it like any other type.
+- The strip's room right of its label closes at its label's width plus
+  both margins: 494 units, a 445px window, for Machine & Home's. Below
+  that its birds spread back over the label. No minimum window size is
+  set.

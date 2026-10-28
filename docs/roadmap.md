@@ -239,9 +239,6 @@ What `design/perch.html` draws that the composed views do not yet:
 - A bubble with no room above its bird keeps to the scene's top edge and
   its tail no longer meets the beak, as on the board. Opening it beside
   or below the bird is undesigned.
-- Names in the scene scale with it, as on the board: a bird's name is
-  about 9.5px in a 1400px window. Whether they keep a minimum size is
-  undecided.
 
 ## Ledger summary line
 

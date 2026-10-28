@@ -1,5 +1,6 @@
-// The home scene: the sky by the clock, the wires in config order with crowded ones over two rows,
-// the fence beneath, and the birds on them. Hovering a bird shows its tip; clicking it opens its
+// The home scene: the sky by the clock, the wires in config order with crowded ones over more rows,
+// the fence beneath, and the birds on them, never drawn smaller than the floor: a narrow window
+// bunches them instead. Hovering a bird shows its tip; clicking it opens its
 // bubble against its beak. The flock flies in on mount and again on a large change.
 
 import type { PolledSourceName } from "@perch/core/snapshot.ts";
@@ -33,7 +34,7 @@ import { Bird } from "./bird.tsx";
 import { Bubble } from "./bubble.tsx";
 import { type PixelSize, useElementSize } from "./hooks.ts";
 import type { CustomProperties } from "./motion.ts";
-import { SkyDrawing, sceneWidth, skyBackground } from "./scene.tsx";
+import { SkyDrawing, skyBackground } from "./scene.tsx";
 import { isNight, skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
 import { FenceRail, WireLine } from "./wire.tsx";
@@ -361,17 +362,17 @@ export function AviaryScene({
       onClick={() => setSpeakingId(null)}
     >
       <svg
-        viewBox={`0 0 ${sceneWidth} ${layout.height}`}
+        viewBox={`0 0 ${layout.width} ${layout.height}`}
         preserveAspectRatio="xMidYMid meet"
         className="absolute inset-0 block h-full w-full"
       >
         <title>Projects as birds on wires</title>
-        <SkyDrawing phase={phase} height={layout.height} />
+        <SkyDrawing phase={phase} width={layout.width} height={layout.height} />
         {layout.rows.map((row) => (
           <WireLine
             key={`${row.wire.name} ${row.index}`}
             y={row.y}
-            width={sceneWidth}
+            width={layout.width}
             label={
               row.index === 0
                 ? { name: row.wire.name, birds: row.wire.birds }
@@ -381,7 +382,7 @@ export function AviaryScene({
         ))}
         <FenceRail
           y={layout.fence.y}
-          width={sceneWidth}
+          width={layout.width}
           height={layout.height}
           count={aviary.fence.birds.length}
         />

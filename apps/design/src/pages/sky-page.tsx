@@ -25,7 +25,12 @@ export function SkyPage() {
       >
         {phases.map(({ phase, rule }) => (
           <Specimen key={phase} label={phase} rule={rule}>
-            <Scene phase={phase} height={420} label={`The sky at ${phase}`}>
+            <Scene
+              phase={phase}
+              width={sceneWidth}
+              height={420}
+              label={`The sky at ${phase}`}
+            >
               <Wire
                 wire={wire}
                 y={320}

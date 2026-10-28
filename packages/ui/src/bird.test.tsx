@@ -129,7 +129,7 @@ describe("the wire and the fence", () => {
     const wire = mockAviary.wires[1];
     if (wire === undefined) throw new Error("the mock has a second wire");
     const { container } = render(
-      <Scene phase="day" height={400} label="test">
+      <Scene phase="day" width={2000} height={400} label="test">
         <Wire wire={wire} y={200} width={2000} night={false} />
       </Scene>,
     );
@@ -156,7 +156,7 @@ describe("the wire and the fence", () => {
     };
     const firstWords = [machine, projects, settled].map((wire) => {
       const { container } = render(
-        <Scene phase="day" height={400} label="test">
+        <Scene phase="day" width={2000} height={400} label="test">
           <WireLine
             y={200}
             width={2000}
@@ -181,7 +181,7 @@ describe("the wire and the fence", () => {
 
   it("dims every fence bird and counts them", () => {
     const { container } = render(
-      <Scene phase="night" height={400} label="test">
+      <Scene phase="night" width={2000} height={400} label="test">
         <Fence
           fence={mockAviary.fence}
           y={300}
@@ -209,7 +209,7 @@ describe("the wire and the fence", () => {
       position,
     }));
     const { container } = render(
-      <Scene phase="day" height={400} label="test">
+      <Scene phase="day" width={2000} height={400} label="test">
         <Fence
           fence={{ birds }}
           y={300}

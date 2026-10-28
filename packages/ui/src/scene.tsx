@@ -1,12 +1,21 @@
 // The sky a scene is drawn on: the phase's gradient, the sun or moon, and the stars. Scene units are
-// the board's: 2000 wide, any height; the drawing scales to the element's width.
+// the board's: 2000 wide at full size, any height; the drawing scales to the element's width, but
+// never below a floor: a narrower window draws fewer units instead.
 
 import type { ReactNode } from "react";
 import { type CustomProperties, scatter } from "./motion.ts";
 import type { SkyPhase } from "./sky.ts";
 
-/** The scene's width in its own units; wires and the fence are laid out across it. */
+/** The scene's width in its own units at full size; wires and the fence are laid out across it. */
 export const sceneWidth = 2000;
+
+/** The fewest CSS pixels a scene unit spans across a window's width: the scene's smallest type, 11 units, stays near 10px. */
+export const minPixelsPerUnit = 0.9;
+
+/** The scene's width in units for a window this many pixels wide: the full width, or fewer once a unit would span less than the floor. */
+export function sceneWidthFor(pixels: number): number {
+  return Math.min(sceneWidth, pixels / minPixelsPerUnit);
+}
 
 const starCount: Record<SkyPhase, number> = {
   dawn: 60,
@@ -36,7 +45,15 @@ function Moon({ x, y }: { x: number; y: number }) {
   );
 }
 
-function Stars({ count, height }: { count: number; height: number }) {
+function Stars({
+  count,
+  width,
+  height,
+}: {
+  count: number;
+  width: number;
+  height: number;
+}) {
   return (
     <g data-part="stars">
       {Array.from({ length: count }, (_, i) => {
@@ -46,7 +63,7 @@ function Stars({ count, height }: { count: number; height: number }) {
               "--twinkle-duration": `${3000 + Math.round(scatter(i * 4 + 5) * 4000)}ms`,
             }
           : undefined;
-        const cx = scatter(i * 4) * sceneWidth;
+        const cx = scatter(i * 4) * width;
         const cy = scatter(i * 4 + 1) * height * 0.5;
         return (
           <circle
@@ -68,12 +85,14 @@ function Stars({ count, height }: { count: number; height: number }) {
 /** The sky's own drawing for a phase: the sun or the moon, and the stars, in scene units. */
 export function SkyDrawing({
   phase,
+  width,
   height,
 }: {
   phase: SkyPhase;
+  width: number;
   height: number;
 }) {
-  const lightX = sceneWidth - 300;
+  const lightX = width - 300;
   const lightY = height * 0.11;
   return (
     <>
@@ -82,7 +101,7 @@ export function SkyDrawing({
       ) : (
         <Moon x={lightX} y={lightY} />
       )}
-      <Stars count={starCount[phase]} height={height} />
+      <Stars count={starCount[phase]} width={width} height={height} />
     </>
   );
 }
@@ -93,7 +112,9 @@ export const skyBackground =
 
 export interface SceneProps {
   phase: SkyPhase;
-  /** The scene's height in scene units; the width is always 2000. */
+  /** The scene's width in scene units: sceneWidth, or what sceneWidthFor gives a window. */
+  width: number;
+  /** The scene's height in scene units. */
   height: number;
   /** What the scene shows, for assistive technology. */
   label: string;
@@ -102,7 +123,7 @@ export interface SceneProps {
 }
 
 /** A piece of sky at one phase, holding wires and birds drawn in scene units. */
-export function Scene({ phase, height, label, children }: SceneProps) {
+export function Scene({ phase, width, height, label, children }: SceneProps) {
   return (
     <div
       data-phase={phase}
@@ -112,11 +133,11 @@ export function Scene({ phase, height, label, children }: SceneProps) {
       <svg
         role="img"
         aria-label={label}
-        viewBox={`0 0 ${sceneWidth} ${height}`}
+        viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="xMidYMid meet"
         className="block h-auto w-full"
       >
-        <SkyDrawing phase={phase} height={height} />
+        <SkyDrawing phase={phase} width={width} height={height} />
         {children}
       </svg>
     </div>

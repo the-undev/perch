@@ -6,6 +6,7 @@ import {
   arrivalOrder,
   bubbleTailDrop,
   layoutAviary,
+  pixelsPerUnit,
   placeBubble,
   placedBirds,
   rowCapacity,
@@ -14,13 +15,16 @@ import {
   toPixels,
 } from "./aviary-layout.ts";
 import { mockBird, mockBirds } from "./mock-birds.ts";
+import { minPixelsPerUnit, sceneWidth, sceneWidthFor } from "./scene.tsx";
 import {
   alternateBelow,
+  edgeMargin,
   fenceGap,
   lowerRowDrop,
   namePlace,
   placeSpacing,
   smallerBelow,
+  wireGap,
 } from "./wire.tsx";
 
 const window = { width: 1400, height: 800 };
@@ -54,11 +58,113 @@ function fenceOf(count: number): Aviary {
   return { ...mockAviary, fence: { birds } };
 }
 
+/** Each row's height, then each bird's perch, then the fence's height and its birds' x, to two places. */
+function pinned(aviary: Aviary, size: { width: number; height: number }) {
+  const layout = layoutAviary(aviary, size);
+  const round = (value: number) => Math.round(value * 100) / 100;
+  return {
+    width: layout.width,
+    height: layout.height,
+    rows: layout.rows.map((row) => [
+      round(row.y),
+      ...row.birds.map((entry) => [round(entry.x), round(entry.y)]),
+    ]),
+    fence: [
+      round(layout.fence.y),
+      ...layout.fence.birds.map((entry) => round(entry.x)),
+    ],
+  };
+}
+
 describe("the aviary's layout", () => {
-  it("keeps the window's aspect within bounds", () => {
-    expect(sceneHeightFor({ width: 1400, height: 800 })).toBe(1143);
+  it("keeps the window's aspect at the scene's width within bounds", () => {
+    expect(sceneHeightFor({ width: 1920, height: 1000 })).toBe(1042);
+    expect(sceneHeightFor({ width: 1400, height: 800 })).toBe(889);
     expect(sceneHeightFor({ width: 3440, height: 500 })).toBe(600);
-    expect(sceneHeightFor({ width: 400, height: 1000 })).toBe(3000);
+    expect(sceneHeightFor({ width: 400, height: 3000 })).toBe(3000);
+  });
+
+  it("lays a full-width window out as it did before the floor", () => {
+    expect(pinned(mockAviary, { width: 1920, height: 1000 })).toEqual({
+      width: 2000,
+      height: 1042,
+      rows: [
+        [270.92, [660, 274.03], [1000, 275.92], [1340, 274.03]],
+        [
+          510.58,
+          [320, 508.02],
+          [660, 513.69],
+          [1000, 515.58],
+          [1340, 513.69],
+          [1680, 508.02],
+        ],
+        [654.38, [640, 657.26], [980, 659.37], [1320, 657.7], [1660, 652.26]],
+      ],
+      fence: [885.7, 795, 1000, 1205],
+    });
+    expect(pinned(mockAviary, { width: 3440, height: 1380 })).toEqual({
+      width: 2000,
+      height: 802,
+      rows: [
+        [208.52, [660, 211.63], [1000, 213.52], [1340, 211.63]],
+        [
+          392.98,
+          [320, 390.42],
+          [660, 396.09],
+          [1000, 397.98],
+          [1340, 396.09],
+          [1680, 390.42],
+        ],
+        [503.66, [640, 506.54], [980, 508.65], [1320, 506.98], [1660, 501.54]],
+      ],
+      fence: [714.83, 795, 1000, 1205],
+    });
+  });
+
+  it("grows a unit past one pixel in a window wider than the scene, and shrinks it down to the floor", () => {
+    for (const width of [3440, 2000, 1900, 1800]) {
+      const size = { width, height: 1400 };
+      const layout = layoutAviary(mockAviary, size);
+
+      expect(layout.width).toBe(sceneWidth);
+      expect(pixelsPerUnit(layout, size)).toBeCloseTo(width / sceneWidth);
+    }
+    expect(sceneWidth * minPixelsPerUnit).toBe(1800);
+  });
+
+  it("holds a unit at the floor below the floor's width while the scene's units narrow", () => {
+    for (const width of [1799, 1400, 900, 600, 320]) {
+      const size = { width, height: 1000 };
+      const layout = layoutAviary(mockAviary, size);
+
+      expect(layout.width).toBeCloseTo(width / minPixelsPerUnit);
+      expect(layout.width).toBe(sceneWidthFor(width));
+      expect(pixelsPerUnit(layout, size)).toBeCloseTo(minPixelsPerUnit);
+    }
+  });
+
+  it("bunches a narrow window's wire, closing its gaps and wrapping it to more rows", () => {
+    const perRow = (birds: number, width: number) =>
+      layoutAviary(aviaryOf([wireOf(birds)]), { width, height: 1000 }).rows.map(
+        (row) => row.birds.length,
+      );
+    const gap = (width: number) => {
+      const [first, second] =
+        layoutAviary(aviaryOf([wireOf(5)]), {
+          width,
+          height: 1000,
+        }).rows[0]?.birds ?? [];
+      return (second?.x ?? 0) - (first?.x ?? 0);
+    };
+
+    expect(perRow(6, 1920)).toEqual([6]);
+    expect(perRow(6, 1400)).toEqual([3, 3]);
+    expect(perRow(6, 700)).toEqual([2, 2, 2]);
+    expect(perRow(9, 1920)).toEqual([5, 4]);
+    expect(perRow(9, 900)).toEqual([3, 3, 3]);
+    expect(gap(1920)).toBe(wireGap);
+    expect(gap(1400)).toBeLessThan(wireGap);
+    expect(gap(1400)).toBeCloseTo((sceneWidthFor(1400) - 2 * edgeMargin) / 4);
   });
 
   it("places every bird once, the wires top to bottom and the fence beneath", () => {
@@ -90,8 +196,10 @@ describe("the aviary's layout", () => {
   });
 
   it("takes another row for each row's worth of birds", () => {
-    expect(rowCapacity).toBe(6);
-    expect([0, 1, 6, 7, 12, 13].map(rowsFor)).toEqual([1, 1, 1, 2, 2, 3]);
+    expect(rowCapacity(sceneWidth)).toBe(6);
+    expect(
+      [0, 1, 6, 7, 12, 13].map((count) => rowsFor(count, sceneWidth)),
+    ).toEqual([1, 1, 1, 2, 2, 3]);
     const layout = layoutAviary(aviaryOf([wireOf(13)]), window);
 
     expect(layout.rows.map((row) => row.birds.length)).toEqual([5, 4, 4]);
@@ -111,7 +219,7 @@ describe("the aviary's layout", () => {
     const birds = placedBirds(layout);
 
     for (const entry of birds) {
-      expect(entry.facing).toBe(entry.x < 1000 ? "right" : "left");
+      expect(entry.facing).toBe(entry.x < layout.width / 2 ? "right" : "left");
       expect(entry.y - entry.beak.y).toBeCloseTo(45 * entry.scale);
     }
   });
@@ -125,6 +233,21 @@ describe("the aviary's layout", () => {
       x: (3440 - 2000 * k) / 2,
       y: 0,
     });
+  });
+
+  it("maps a narrowed scene edge to edge across its window", () => {
+    const narrow = { width: 900, height: 900 };
+    const layout = layoutAviary(mockAviary, narrow);
+    const corner = toPixels(
+      { x: layout.width, y: layout.height },
+      layout,
+      narrow,
+    );
+
+    expect(layout.width).toBeCloseTo(1000);
+    expect(toPixels({ x: 0, y: 0 }, layout, narrow)).toEqual({ x: 0, y: 0 });
+    expect(corner.x).toBeCloseTo(900);
+    expect(corner.y).toBeCloseTo(900);
   });
 });
 

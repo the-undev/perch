@@ -23,6 +23,7 @@ function WireScene({ wire, night }: { wire: WireModel; night: boolean }) {
   return (
     <Scene
       phase={night ? "night" : "day"}
+      width={sceneWidth}
       height={340}
       label={`The ${wire.name} wire`}
     >
@@ -68,7 +69,7 @@ export function WirePage() {
           label="By day"
           rule="Three situations: one disk only, found and undecided, forge only."
         >
-          <Scene phase="day" height={260} label="The fence">
+          <Scene phase="day" width={sceneWidth} height={260} label="The fence">
             <Fence
               fence={mockAviary.fence}
               y={150}
@@ -79,7 +80,12 @@ export function WirePage() {
           </Scene>
         </Specimen>
         <Specimen label="At night" rule="The fence sleeps.">
-          <Scene phase="night" height={260} label="The fence at night">
+          <Scene
+            phase="night"
+            width={sceneWidth}
+            height={260}
+            label="The fence at night"
+          >
             <Fence
               fence={mockAviary.fence}
               y={150}
@@ -100,7 +106,12 @@ export function WirePage() {
           label="The whole mock aviary"
           rule="Both wires and the fence in one scene."
         >
-          <Scene phase="night" height={980} label="The mock aviary at night">
+          <Scene
+            phase="night"
+            width={sceneWidth}
+            height={980}
+            label="The mock aviary at night"
+          >
             <Wire wire={machineHome} y={300} width={sceneWidth} night={true} />
             <Wire wire={projects} y={590} width={sceneWidth} night={true} />
             <Fence

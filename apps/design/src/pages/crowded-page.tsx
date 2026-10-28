@@ -27,25 +27,23 @@ function fenceCountBelow(limit: number): number {
 /** The live machine's fence on first look: 21 birds. */
 const liveFence = 21;
 
-const counts = [
-  rowCapacity,
-  rowCapacity + 1,
-  2 * rowCapacity,
-  2 * rowCapacity + 2,
-];
+/** How many birds a row holds at full width. */
+const fullRow = rowCapacity(sceneWidth);
+
+const counts = [fullRow, fullRow + 1, 2 * fullRow, 2 * fullRow + 2];
 
 export function CrowdedPage() {
   return (
     <>
       <Section
         title="A wire over more than one row"
-        rule={`A row holds as many birds as fit ${crowdedGap} units apart between the margins: ${rowCapacity}. A wire with more takes another row for each row's worth, dealing its birds over the rows in turn, so the leftmost of every row still needs you first. Each further row sits a little to the right, between the birds above; only the first row carries the wire's name and tally.`}
+        rule={`A row holds as many birds as fit ${crowdedGap} units apart between the margins: ${fullRow} at full width, fewer in a window too narrow for the full width at the floor. A wire with more takes another row for each row's worth, dealing its birds over the rows in turn, so the leftmost of every row still needs you first. Each further row sits a little to the right, between the birds above; only the first row carries the wire's name and tally.`}
         min={900}
       >
         {counts.map((count) => (
           <Specimen
             key={count}
-            label={`${count} birds, ${rowsFor(count)} ${rowsFor(count) === 1 ? "row" : "rows"}`}
+            label={`${count} birds, ${rowsFor(count, sceneWidth)} ${rowsFor(count, sceneWidth) === 1 ? "row" : "rows"} at full width`}
             rule="Copies of the mock's adopted birds, numbered, ordered as the view model orders a wire."
           >
             <SceneFrame height="560px">
@@ -65,7 +63,7 @@ export function CrowdedPage() {
         ))}
         <Specimen
           label="The mock's Projects wire"
-          rule={`Nine birds, more than ${rowCapacity}: two rows, as the board drew it.`}
+          rule={`Nine birds, more than ${fullRow}: two rows at full width, as the board drew it.`}
         >
           <SceneFrame height="560px">
             <AviaryView
@@ -143,12 +141,17 @@ export function CrowdedPage() {
       </Section>
 
       <Usage
-        component="rowsFor(count)"
+        component="rowsFor(count, width)"
         props={[
           {
             name: "count",
             type: "number",
             what: "How many birds the wire holds; the result is the rows it takes, at least one.",
+          },
+          {
+            name: "width",
+            type: "number",
+            what: "The scene's width in units: sceneWidth at full size, sceneWidthFor(pixels) in a window.",
           },
         ]}
       >

@@ -53,7 +53,7 @@ export function CameraScenePage() {
     <>
       <Section
         title="The camera, end to end"
-        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The header's tabs switch wires; each remembers the bird last open on it, and an empty wire's tab says so. The brand, The Aviary and Escape ride home. The scan line at the right says how old the scan is and scans again when pressed; settings, beside it, leaves for the settings page."
+        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The strip is 124px: the wire's name rests on the line at its left end with the tally beneath, and the birds, standing at their wire size, centre in the width right of it, the open one bright. The header's tabs switch wires; each remembers the bird last open on it, and an empty wire's tab says so. The brand, The Aviary and Escape ride home. The scan line at the right says how old the scan is and scans again when pressed; settings, beside it, leaves for the settings page."
         min={600}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -175,7 +175,9 @@ export function CameraScenePage() {
           home. Tabs follow <Code>cameraTabs(aviary)</Code>; a wire with no
           birds keeps its tab, which says empty and cannot be pressed. The
           ground beneath the strip never scrolls: the bird&apos;s page fills it,
-          and only its record and paper panes move their contents.
+          and only its record and paper panes move their contents.{" "}
+          <Code>stripLayout(tab)</Code> places the strip&apos;s birds, and the
+          flights land on the same places.
         </p>
       </Usage>
     </>

@@ -1107,3 +1107,61 @@ build-time calls so they can be revisited.
 - The design site's rising sheet page frames its specimens as a clipped
   two-row grid, a band over a pane, and adds a card taller than its
   row.
+
+## 28 October 2026 (the vertical budget)
+
+- The board is `mockups/vertical-budget.html`. Its verdicts: the wire's
+  name steps onto the wire, the strip dropping from 198 to about 124;
+  the bubble takes the band's middle, the roost's 480px column gone;
+  the heading keeps its content in two or three tight rows; the band's
+  height is the bird's; the roosting bird sits; the strip's birds keep
+  their size; narrow windows stack as before.
+- The strip is 2000 by 124, the wire at 76. The name drops from 30 to
+  26 units, as the board draws it, its baseline 8 above the line; the
+  tally sits 16 below the line in 13. `Tally` takes its gap as a
+  parameter: 18 after a wire's name in the aviary, none on its own line
+  in the strip.
+- The label's width is reserved from its characters, the longer of the
+  name and the tally at 0.6 of the type size. SVG text cannot be
+  measured in a pure layout, and the flights need the strip's positions
+  at render time. Too generous an estimate only moves the birds right.
+- The birds' room runs from the label's right edge plus the scene's
+  edge margin, 120, to the strip's end less the same margin. The spacing
+  cap of 175 stays; the old 200 margin at each end goes. The birds face
+  the middle of their room, not the strip's.
+- `BirdFigure` and `PerchedFigure` take a required `pose`. Sitting hides
+  the legs and lowers the figure by `sitDrop`, 10 units, so the body's
+  foot rests on the line the toes stood on; the song note follows. The
+  wires, the strip, the flyers and the papers' portrait stand.
+- The roost's frame keeps its size: the stand is still sized as for the
+  plumpest bird's standing head, so the crossbar stays 103px down and the
+  sitting head has 16px more room above it. A frame cut to the sitting
+  head would have left a two-line bubble with its chip row taller than
+  the bird. The beak drops by the sit, so the side tail slants further.
+- The roost is no longer its own container. An inline-size container
+  has no intrinsic width, so the band could not size the roost to its
+  bubble. The row and stacked forms read the nearest container instead,
+  the page's article, at the same 460px.
+- From 860px the band is a flex row. The heading is `flex: 1 1 22rem`
+  and the roost's cell `flex: 0 1 auto` with no minimum width. The
+  bubble is `max-content` wide, capped at 56ch in its own 13.5px type,
+  and is the first thing in the roost to shrink; the bird never does.
+  Spare width falls inside the heading, between its words and the
+  bubble. When the page is tight both cells shrink in proportion to
+  their bases. The 860px breakpoint stays.
+- Narrow is as before: under 860px the roost sits beneath the heading in
+  a centred 480px column, bubble beside bird from 460px of the page's
+  width and stacked under it.
+- `DetailHeading` takes the actions as a required parameter and sets
+  them as one group after the meta line in a wrapping row, so the group
+  sits beside the meta when it fits and drops beneath it whole when not.
+  The remote notices and the main process's problems follow that row,
+  only when present.
+- The band-height test checks declared heights. A long speech in a
+  narrow bubble or wrapped actions can still make the band taller than
+  the bird; nothing in it asks to be.
+- `RisingSheet` is unchanged; its suite and the band-catcher test pass
+  as they were.
+- Three tests were replaced, their surviving assertions kept: the
+  strip's tally beside the name, the roost in its 480px column, and the
+  roost as a row from 460px of its own width.

@@ -67,7 +67,11 @@ at risk of loss; is the rest quietly fine):
 
 Navigation is the camera. The aviary is the zoomed-in view; opening a
 project pulls the camera back, the bird's wire-mates flying into a slim
-tab row at the top while the detail rises beneath. The header tabs are
+tab row at the top while the detail rises beneath. In the tab row the
+wire's name rests on the line at its left end, the tally beneath it, at
+every width. The birds keep their size and centre in the width right of
+the label, the open one bright and the rest dimmed; a crowded wire's
+birds bunch closer and never cross the label. The header tabs are
 the whole navigation, in the scene's own order: The Aviary, one tab per
 wire, On the fence. Each wire tab remembers its last-open bird. The
 Aviary tab, the brand and Escape ride the camera home. Large state
@@ -75,25 +79,28 @@ changes between scans re-run the arrival: birds fly in, never crossfade.
 
 The detail is a strict superset of tiers A and B. The bird leaves the
 wire for the roost, a T-stand perch in the post's colour at the page's
-top right. It is drawn larger than on any wire, idle, and always faces
-left toward its record. Its bubble hangs above it as paper, the tail on
-the beak, with the speech and chips as the aviary bubble says them but
-no name, state word or keys. Here each chip is a handle: pressing it
+top right. It sits on the crossbar, breast settled and no legs showing;
+on the wires and in the tab row birds stand. It is drawn larger than on
+any wire, idle, and always faces left toward its record. Its bubble sits
+beside it as paper, the tail on the beak, with the speech and chips as
+the aviary bubble says them but no name, state word or keys. Here each chip is a handle: pressing it
 scrolls the ledger row holding its working to the middle of the record
 pane and marks it briefly. A chip pressed in the aviary's bubble closes it
 and rides the camera to the bird's page, which lands on that row the
-same way as it opens. The band beside it opens with the
+same way as it opens. The band opens with the
 heading, the one place on the page that carries the name and the state
 word, with what the bird is doing. A meta line in mono beneath says
 where the bird lives: the clone's path with `~`, the forges that hold
-it, and its wire, "on the fence" for a fence bird. Beneath it, for each
+it, and its wire, "on the fence" for a fence bird. The launch actions as
+verbs, the links out and the papers' verb share the meta line's row
+where they fit and drop beneath it where not. Beneath them, for each
 remote the clone pushes to that no card can read, one amber sentence
 in the sky's notice voice says what perch knows and the fix: "The clone
 pushes to skiff-app/skiff on github, which no GitHub card reads.
 Add a card for skiff-app under Sources.", Sources opening the
-settings page. The bubble's "can't read github" chip lands on it. Then
-come the launch actions as verbs and links out. Beneath them the record pane
-holds a ledger of facts in full words
+settings page. The bubble's "can't read github" chip lands on it. The
+main process's problems follow, only when there are any. Beneath the
+band the record pane holds a ledger of facts in full words
 (clean zeros as a quiet green "none", counts toned by severity),
 branches, the commit river, flags, and beside it the paper pane holds
 a configurable list of key files rendered as paper, the bubble's
@@ -149,9 +156,13 @@ the heading with its notices, problems and actions, and the roost hold
 still; beneath them the record pane and the paper pane each scroll
 their own contents, and the wheel moves the pane under the pointer.
 Scrollbars are thin and quiet, in the edge colours. The page centres
-as one block up to 1920px. From 860px wide the heading and the roost
-share the top band, the roost in a 480px column at the right; narrower,
-the roost follows the heading, centred. The record and paper panes sit
+as one block up to 1920px. From 860px wide the band is one row: the
+heading at the left, the bubble in the middle at its words' width up to
+about 56 characters, and the bird at the right. The band is as tall as
+the sitting bird on its stand, whose pole and shadow hang below it.
+Narrower, the roost follows the heading in a centred 480px column,
+bubble beside bird, and under 460px the bubble stacks above the bird.
+The record and paper panes sit
 side by side while the page is at least 960px wide; narrower, they join
 into one pane, the key files at the record's end.
 
@@ -273,7 +284,7 @@ Adopting and amending are one sheet of adoption papers, rising from
 the foot of the bird's page over its record and paper panes, which dim
 and go inert. The band above stays in view, the bird and heading
 undimmed, but its controls rest while the papers are up: Adopt on a fence bird,
-The papers on an adopted one, in the action row. Papers taller than the
+The papers on an adopted one, beside the meta line. Papers taller than the
 ground stop at its foot and scroll themselves. The head carries the bird's name,
 its portrait and its ring, the config key the entry sits under. "What
 perch has seen" follows in mono and cannot be edited: where the clone

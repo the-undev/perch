@@ -43,7 +43,7 @@ export function DetailScenePage() {
     <>
       <Section
         title="Five contrasting birds"
-        rule="The bird sits on its perch at the top right with its bubble, and the heading beside it says its name, state and where it lives. The page is a fixed stage: the heading, its actions and the roost hold still, and beneath them the record and the key files each scroll their own pane under the pointer. The page shows only what exists for a bird: an empty section is left out, a bird with no clone has nothing to launch, and a source that failed is named with its error."
+        rule="The band is one row: the heading at the left says the bird's name, state and where it lives with the actions beside the meta, the bubble takes the middle at a reading width, and the bird sits on its perch at the right, the band sized to the bird on its stand. The page is a fixed stage: the heading, its actions and the roost hold still, and beneath them the record and the key files each scroll their own pane under the pointer. The page shows only what exists for a bird: an empty section is left out, a bird with no clone has nothing to launch, and a source that failed is named with its error."
         min={600}
       >
         <div>
@@ -133,18 +133,20 @@ export function DetailScenePage() {
           The view fetches nothing. The app reads each key file&apos;s{" "}
           <Code>absolutePath</Code> and passes the text in. The page fills a
           flex column of fixed height and never scrolls. The band at the top
-          holds the heading, its notices, problems and actions, and the roost:
-          from 860px wide the roost sits in a 480px column at the right,
-          narrower it follows the heading, centred. Beneath the band, from 960px
-          wide, the record pane (the ledger and its sections) and the paper pane
-          (the key files) each scroll their own contents with a thin quiet
-          scrollbar, <Code>pane-scroll</Code>. Narrower, they join into one
-          pane, the key files at the end. A chip scrolls its row&apos;s pane.
-          The adoption papers rise as a <Code>RisingSheet</Code> over both
-          panes, which dim and go inert; the band stays in view and its controls
-          rest, a press anywhere off the papers folding them. The page centres
-          as one block up to 1920px. Inside the app the camera places it on the
-          ground beneath the strip.
+          holds the heading, its actions, notices and problems, and the roost:
+          from 860px wide it is one row, the heading taking what the roost
+          leaves and the roost only as wide as its bubble, capped at 56
+          characters, and its bird need. Narrower, the roost follows the heading
+          in a centred 480px column. Beneath the band, from 960px wide, the
+          record pane (the ledger and its sections) and the paper pane (the key
+          files) each scroll their own contents with a thin quiet scrollbar,{" "}
+          <Code>pane-scroll</Code>. Narrower, they join into one pane, the key
+          files at the end. A chip scrolls its row&apos;s pane. The adoption
+          papers rise as a <Code>RisingSheet</Code> over both panes, which dim
+          and go inert; the band stays in view and its controls rest, a press
+          anywhere off the papers folding them. The page centres as one block up
+          to 1920px. Inside the app the camera places it on the ground beneath
+          the strip.
         </p>
       </Usage>
     </>

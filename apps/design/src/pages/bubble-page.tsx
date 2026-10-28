@@ -231,8 +231,9 @@ export function BubblePage() {
         <p>
           On the bird&apos;s own page the bubble is{" "}
           <Code>{"<RoostBubble>"}</Code>: the same paper, speech and chips with
-          no header and no keys, since the page carries both. The Roost page
-          shows it.
+          no header and no keys, since the page carries both. Beside the bird it
+          is as wide as its words up to about 56 characters, so its chips keep
+          to one row where they fit. The Roost page shows it.
         </p>
         <p>
           The chips are handles in both bubbles. Pressed here, one closes the

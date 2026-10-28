@@ -362,6 +362,19 @@ describe("the camera", () => {
     expect(Math.max(...xs)).toBeCloseTo(2000 - edgeMargin);
   });
 
+  it("sits the bird on its page's perch while its wire-mates stand in the strip", () => {
+    const { container } = camera(detailOf("undev/skiff"));
+    const poses = (selector: string) =>
+      [...container.querySelectorAll(`${selector} [data-part="figure"]`)].map(
+        (figure) => figure.getAttribute("data-pose"),
+      );
+
+    expect(poses('[data-part="roost"]')).toEqual(["sitting"]);
+    expect(poses("[data-strip-bird]")).toEqual(
+      mockAviary.wires[1]?.birds.map(() => "standing"),
+    );
+  });
+
   it("presses and keys the strip's birds as tabs", () => {
     const { onNavigate } = camera(detailOf("undev/skiff"));
     const spool = screen.getByRole("button", { name: "Open Spool" });

@@ -322,6 +322,7 @@ function Flyer({
         <BirdFigure
           look={birdLook(flight.bird, night)}
           id={flight.bird.id}
+          pose="standing"
           speaking={false}
           idle
         />
@@ -414,6 +415,7 @@ function Strip({
               <BirdFigure
                 look={birdLook(bird, night)}
                 id={bird.id}
+                pose="standing"
                 speaking={false}
                 idle
               />

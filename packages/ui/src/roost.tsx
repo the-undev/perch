@@ -1,12 +1,13 @@
 // The roost: on its own page the bird leaves the wire for a T-stand perch, drawn in the post's
-// colour, facing left toward its record, idle, its bubble as paper without the header the page's
+// colour, sitting on its crossbar with no legs showing, facing left toward its record, idle, its
+// bubble as paper without the header the page's
 // heading already carries. The roost lays itself out by its own width: stacked, the bubble sits above
 // the bird with its tail hanging to the beak; wide enough, a row, the bubble on the left with a
 // sideways tail to the beak. The bird is hung from the beak, so the tail meets it at any bubble height.
 
 import type { Bird, ChipKind } from "@perch/core/viewmodel.ts";
 import type { CSSProperties } from "react";
-import { birdLook, PerchedFigure, plumpScale } from "./bird.tsx";
+import { birdLook, PerchedFigure, plumpScale, sitDrop } from "./bird.tsx";
 import { RoostBubble } from "./bubble.tsx";
 
 /** The width the stacked form is laid out for, in pixels: any roost narrower than the row breakpoint. */
@@ -66,21 +67,25 @@ export const roostRowBleed = poleLength + shadowRoom;
 const cappedScale = roostScale * plumpScale({ outstanding: 0, fullness: 1 });
 
 // The stand is furniture: its position and the drawing's size are fixed by the plumpest bird, so
-// only the bird varies. The head's top is 58.5 bird units above the crossbar (55.5 above the
-// figure, which sits 3 up), and 6px more leaves room for the bob's lift.
+// only the bird varies. The frame keeps the room a standing head needs, 58.5 bird units above the
+// crossbar (55.5 above the figure, which sits 3 up), and 6px more for the bob's lift; the bird
+// sits `sitDrop` lower inside it, so the band keeps its height and the bubble its room.
 const standPerchY = Math.ceil(58.5 * cappedScale) + 6;
 const standCentreX = Math.ceil(Math.max(50, 37 * cappedScale)) + 6;
 const standTailReach = Math.ceil(Math.max(50, 46 * cappedScale)) + 6;
 
-/** The roost's drawing for this bird: a fixed stand, the bird at its own scale on it, the beak to the left. */
+/** The beak tip's height above the crossbar in bird units: 42 above the figure's origin, 3 up, settled by the sit. */
+const beakAboveBar = 45 - sitDrop;
+
+/** The roost's drawing for this bird: a fixed stand, the bird at its own scale sitting on it, the beak to the left. */
 export function roostFrame(bird: Bird): RoostFrame {
   const scale = roostScale * plumpScale(bird.plumpness);
   const perchY = standPerchY;
-  // The beak tip is at (37, -42) in bird units, mirrored to face left, the bird 3 units up.
+  // The beak tip is at (37, -42) in bird units, mirrored to face left.
   const beakReach = 37 * scale;
   const centreX = standCentreX;
   const beakX = centreX - beakReach;
-  const beakY = perchY - 45 * scale;
+  const beakY = perchY - beakAboveBar * scale;
   return {
     height: perchY + poleLength + shadowRoom,
     width: standCentreX + standTailReach,
@@ -183,6 +188,7 @@ export function Roost({ bird, night, onChip }: RoostProps) {
               id={bird.id}
               scale={frame.scale}
               facing="left"
+              pose="sitting"
               speaking={false}
               idle
             />

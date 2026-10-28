@@ -22,6 +22,7 @@ import {
   fenceGap,
   lowerRowDrop,
   namePlace,
+  placeAt,
   placeSpacing,
   smallerBelow,
   wireGap,
@@ -165,6 +166,30 @@ describe("the aviary's layout", () => {
     expect(gap(1920)).toBe(wireGap);
     expect(gap(1400)).toBeLessThan(wireGap);
     expect(gap(1400)).toBeCloseTo((sceneWidthFor(1400) - 2 * edgeMargin) / 4);
+  });
+
+  it("moves each later row right as one, as far as its room allows, never stacking birds at the margin", () => {
+    for (const [birds, size] of [
+      [24, { width: 1920, height: 1000 }],
+      [13, { width: 640, height: 900 }],
+    ] as const) {
+      const layout = layoutAviary(aviaryOf([wireOf(birds)]), size);
+
+      expect(layout.rows.length).toBeGreaterThanOrEqual(4);
+      for (const row of layout.rows) {
+        const xs = row.birds.map((entry) => entry.x);
+        const gaps = xs.slice(1).map((x, i) => x - (xs[i] ?? 0));
+        const unshifted = placeAt(0, xs.length, wireGap, layout.width);
+
+        expect(Math.min(...xs)).toBeGreaterThanOrEqual(edgeMargin);
+        expect(Math.max(...xs)).toBeLessThanOrEqual(
+          layout.width - edgeMargin + 1e-9,
+        );
+        for (const gap of gaps) expect(gap).toBeCloseTo(gaps[0] ?? 0);
+        expect((xs[0] ?? 0) - unshifted).toBeLessThanOrEqual(row.index * 150);
+        expect(gaps.every((gap) => gap > 0)).toBe(true);
+      }
+    }
   });
 
   it("places every bird once, the wires top to bottom and the fence beneath", () => {

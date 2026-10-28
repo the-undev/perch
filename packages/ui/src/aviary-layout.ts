@@ -80,7 +80,7 @@ export function rowsFor(count: number, width: number): number {
   return Math.max(1, Math.ceil(count / rowCapacity(width)));
 }
 
-/** Each row after a wire's first sits this far right, so its birds perch between the row above's. */
+/** Each row after a wire's first sits this much further right, as far as the room past its last bird allows, so its birds perch between the row above's. */
 const rowStagger = 150;
 
 /** The vertical spacing, in steps: a whole step between wires, less between rows of one wire. */
@@ -115,16 +115,16 @@ function wireRows(wire: Wire, ys: number[], width: number): WireRow[] {
   const rows = ys.length;
   return ys.map((y, index) => {
     const inRow = birds.filter((_, i) => i % rows === index);
-    const spacing = placeSpacing(inRow.length, wireGap, width);
+    const count = inRow.length;
+    const spacing = placeSpacing(count, wireGap, width);
+    const last = placeAt(count - 1, count, wireGap, width);
+    const shift = Math.min(index * rowStagger, width - edgeMargin - last);
     return {
       wire,
       index,
       y,
       birds: inRow.map((bird, slot) => {
-        const x = Math.min(
-          width - edgeMargin,
-          placeAt(slot, inRow.length, wireGap, width) + index * rowStagger,
-        );
+        const x = placeAt(slot, count, wireGap, width) + shift;
         return perched(
           bird,
           x,

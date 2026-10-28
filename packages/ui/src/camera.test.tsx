@@ -6,6 +6,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -13,6 +14,7 @@ import {
   type CameraPlace,
   CameraView,
   cameraTabs,
+  panDirection,
   stripHeight,
   stripLayout,
   stripWireY,
@@ -22,16 +24,25 @@ import { edgeMargin } from "./wire.tsx";
 
 afterEach(cleanup);
 
-// The setup's animations never finish. The handover tests need to land a flyer on cue, so
-// they swap in an animate that records each flyer's landing for the test to signal.
+// The setup's animations never finish. The handover tests need to land a flyer or settle a pan
+// on cue, so they swap in an animate that records each one's ending for the test to signal.
 const stillAnimate = Element.prototype.animate;
 const landings = new Map<string, () => void>();
 /** Each flyer's keyframes, by bird id: the last is where it lands. */
 const flightPaths = new Map<string, Keyframe[]>();
+/** Each pan of the ground's track in the order started: its keyframes and its ending. */
+const pans: { keyframes: Keyframe[]; settle: () => void }[] = [];
+/** The elements scrolled into view, since jsdom does no scrolling. */
+const scrolled: Element[] = [];
 
 beforeEach(() => {
   landings.clear();
   flightPaths.clear();
+  pans.length = 0;
+  scrolled.length = 0;
+  Element.prototype.scrollIntoView = function scrollIntoView(this: Element) {
+    scrolled.push(this);
+  };
   Element.prototype.animate = function animate(
     this: Element,
     keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
@@ -42,6 +53,12 @@ beforeEach(() => {
     }
     const finished = new Promise<void>((resolve) => {
       if (flyerId !== null) landings.set(flyerId, resolve);
+      if (
+        this.getAttribute("data-part") === "pan-track" &&
+        Array.isArray(keyframes)
+      ) {
+        pans.push({ keyframes, settle: resolve });
+      }
     });
     return { finished, cancel: () => {} } as unknown as Animation;
   };
@@ -49,12 +66,34 @@ beforeEach(() => {
 
 afterEach(() => {
   Element.prototype.animate = stillAnimate;
+  Reflect.deleteProperty(Element.prototype, "scrollIntoView");
 });
 
 async function land(birdId: string) {
   await act(async () => {
     landings.get(birdId)?.();
   });
+}
+
+/** Ends the latest pan of the ground. */
+async function settlePan() {
+  await act(async () => {
+    pans.at(-1)?.settle();
+  });
+}
+
+/** The pages on the ground's track, left to right, by bird id. */
+function groundPages(container: HTMLElement): (string | null)[] {
+  return [...container.querySelectorAll("[data-page]")].map((page) =>
+    page.getAttribute("data-page"),
+  );
+}
+
+/** The ground's page for a bird. */
+function groundPage(container: HTMLElement, birdId: string): HTMLElement {
+  const page = container.querySelector(`[data-page="${birdId}"]`);
+  if (page === null) throw new Error(`the ground holds no page for ${birdId}`);
+  return page as HTMLElement;
 }
 
 /** Whether the aviary scene draws the named bird: false while it is hidden for its flyer. */
@@ -570,5 +609,201 @@ describe("the camera", () => {
     fireEvent.click(screen.getByTitle("Scan now"));
 
     expect(onRescan).not.toHaveBeenCalled();
+  });
+});
+
+describe("the pan between birds", () => {
+  it("pans the ground between two birds towards the chosen one and settles with one article", async () => {
+    const { container, moveTo } = camera(detailOf("undev/skiff"));
+    const strip = container.querySelector('[data-part="strip"] svg');
+    const track = container.querySelector('[data-part="pan-track"]');
+
+    moveTo(detailOf("undev/spool"));
+
+    // Spool sits right of Skiff, so its page comes in from the right and the ground slides left.
+    expect(track?.getAttribute("data-pan")).toBe("right");
+    expect(pans.map((pan) => pan.keyframes)).toEqual([
+      [{ transform: "translateX(0%)" }, { transform: "translateX(-100%)" }],
+    ]);
+    expect(groundPages(container)).toEqual(["undev/skiff", "undev/spool"]);
+    expect(container.querySelectorAll("article")).toHaveLength(2);
+    // The strip holds still, its brightness already on the chosen bird.
+    expect(container.querySelector('[data-part="strip"] svg')).toBe(strip);
+    expect(
+      container
+        .querySelector('[data-strip-bird="undev/spool"]')
+        ?.getAttribute("aria-current"),
+    ).toBe("page");
+    expect(
+      container
+        .querySelector('[data-strip-bird="undev/skiff"]')
+        ?.getAttribute("aria-current"),
+    ).toBeNull();
+
+    await settlePan();
+
+    expect(groundPages(container)).toEqual(["undev/spool"]);
+    expect(container.querySelectorAll("article")).toHaveLength(1);
+    expect(
+      screen.getAllByRole("article").map((article) => article.ariaLabel),
+    ).toEqual(["Spool in full"]);
+    expect(track?.hasAttribute("data-pan")).toBe(false);
+    expect((track as HTMLElement).style.transform).toBe("");
+  });
+
+  it("pans the other way towards a bird earlier along the strip", async () => {
+    const { container, moveTo } = camera(detailOf("undev/spool"));
+
+    moveTo(detailOf("undev/prism"));
+
+    expect(
+      container
+        .querySelector('[data-part="pan-track"]')
+        ?.getAttribute("data-pan"),
+    ).toBe("left");
+    expect(pans.map((pan) => pan.keyframes)).toEqual([
+      [{ transform: "translateX(-100%)" }, { transform: "translateX(0%)" }],
+    ]);
+    expect(groundPages(container)).toEqual(["undev/prism", "undev/spool"]);
+
+    await settlePan();
+
+    expect(groundPages(container)).toEqual(["undev/prism"]);
+  });
+
+  it("lays the strips end to end in the tabs' order, so a later wire or the fence lies to the right", () => {
+    const tabs = cameraTabs(mockAviary);
+    const fenceBird = mockAviary.fence.birds[0]?.id ?? "";
+
+    expect(panDirection(tabs, ".dotfiles", "undev/gramophone")).toBe("right");
+    expect(panDirection(tabs, "undev/spool", fenceBird)).toBe("right");
+    expect(panDirection(tabs, fenceBird, "undev/spool")).toBe("left");
+    expect(panDirection(tabs, "undev/gramophone", "obsidian/Pocket")).toBe(
+      "left",
+    );
+  });
+
+  it("replaces the page instantly with reduced motion, with no pan", () => {
+    const stillMatch = window.matchMedia;
+    window.matchMedia = (query: string) =>
+      ({
+        ...stillMatch(query),
+        matches: query === "(prefers-reduced-motion: reduce)",
+      }) as MediaQueryList;
+    try {
+      const { container, moveTo } = camera(detailOf("undev/skiff"));
+
+      moveTo(detailOf("undev/spool"));
+
+      expect(pans).toEqual([]);
+      expect(groundPages(container)).toEqual(["undev/spool"]);
+      expect(container.querySelectorAll("article")).toHaveLength(1);
+      expect(
+        container
+          .querySelector('[data-part="pan-track"]')
+          ?.hasAttribute("data-pan"),
+      ).toBe(false);
+    } finally {
+      window.matchMedia = stillMatch;
+    }
+  });
+
+  it("lands an arrival chip only after the pan settles", async () => {
+    const { container, moveTo } = camera(detailOf("undev/skiff"));
+
+    moveTo({
+      at: "detail",
+      birdId: "undev/prism",
+      papers: false,
+      chip: "ci",
+    });
+    const arriving = groundPage(container, "undev/prism");
+
+    expect(scrolled).toEqual([]);
+    expect(container.querySelector('[data-part="landing"]')).toBeNull();
+
+    await settlePan();
+
+    const ciRow = arriving.querySelector(
+      '[data-part="record"] [data-chip="ci"]',
+    );
+    expect(scrolled).toEqual([ciRow]);
+    expect(ciRow?.querySelector('[data-part="landing"]')).not.toBeNull();
+  });
+
+  it("keeps the leaving page inert and out of the tree during the pan, the arriving page owning it", async () => {
+    const { container, moveTo } = camera(detailOf("undev/skiff"));
+
+    moveTo(detailOf("undev/spool"));
+    const leaving = groundPage(container, "undev/skiff");
+    const arriving = groundPage(container, "undev/spool");
+
+    expect(leaving.hasAttribute("inert")).toBe(true);
+    expect(leaving.getAttribute("aria-hidden")).toBe("true");
+    expect(arriving.hasAttribute("inert")).toBe(false);
+    expect(arriving.hasAttribute("aria-hidden")).toBe(false);
+    expect(screen.getByRole("article").ariaLabel).toBe("Spool in full");
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent),
+    ).toEqual(["Spool"]);
+    expect(screen.queryByRole("region", { name: "Skiff says" })).toBeNull();
+
+    await settlePan();
+
+    expect(screen.getByRole("article").ariaLabel).toBe("Spool in full");
+    expect(screen.getByRole("region", { name: "Spool on its perch" })).toBe(
+      within(arriving).getByRole("region", { name: "Spool on its perch" }),
+    );
+    expect(container.contains(leaving)).toBe(false);
+  });
+
+  it("starts the arriving page fresh at the top of its panes, playing no swap of its own", async () => {
+    const { container, moveTo } = camera(detailOf("undev/skiff"));
+    const leavingRecord = container.querySelector(
+      '[data-part="record"]',
+    ) as HTMLElement;
+    leavingRecord.scrollTop = 300;
+
+    moveTo(detailOf("undev/spool"));
+    await settlePan();
+    const record = container.querySelector(
+      '[data-part="record"]',
+    ) as HTMLElement;
+
+    expect(record).not.toBe(leavingRecord);
+    expect(record.scrollTop).toBe(0);
+    expect(screen.getByRole("article").className).not.toContain("animate-swap");
+  });
+
+  it("keeps the swap for the first arrival from the aviary, with no pan", () => {
+    const { container, moveTo } = camera(aviaryPlace);
+
+    moveTo(detailOf("undev/skiff"));
+
+    expect(pans).toEqual([]);
+    expect(groundPages(container)).toEqual(["undev/skiff"]);
+    expect(screen.getByRole("article").className).toContain(
+      "motion-safe:animate-swap",
+    );
+  });
+
+  it("pans on from the arriving page when the camera moves again mid-pan, dropping the page left", async () => {
+    const { container, moveTo } = camera(detailOf("undev/skiff"));
+
+    moveTo(detailOf("undev/spool"));
+    const spool = groundPage(container, "undev/spool");
+    moveTo(detailOf("undev/prism"));
+
+    expect(groundPages(container)).toEqual(["undev/prism", "undev/spool"]);
+    expect(groundPage(container, "undev/spool")).toBe(spool);
+    expect(spool.hasAttribute("inert")).toBe(true);
+
+    await act(async () => {
+      pans[0]?.settle();
+    });
+    expect(groundPages(container)).toEqual(["undev/prism", "undev/spool"]);
+
+    await settlePan();
+    expect(groundPages(container)).toEqual(["undev/prism"]);
   });
 });

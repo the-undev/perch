@@ -43,12 +43,14 @@ change the view, the papers taking the page with an animated
 transition, and closing them returning to the detail. Part of a
 detail page design round.
 
-## Moving the camera between birds
+## A flyer across the strip during the pan
 
-Switching from one bird's page to another flashes the whole page in
-an unpleasant way (the swap animation remounts everything at once). A
-transition that reads as the camera moving, not the page being
-replaced, would suit the scene. Part of a detail page design round.
+The bird's page round drew the chosen bird's flyer crossing the strip
+overhead while the ground pans. The pan moves the strip's brightness at
+once and flies nothing. A flyer would cross from the open bird's place
+to the chosen one's, which the strip's layout already gives, and would
+need its own answer for a bird on another tab, whose strip replaces the
+one drawn.
 
 ## Session restore beside autostart
 

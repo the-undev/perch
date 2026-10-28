@@ -2,8 +2,9 @@
 // camera back, the sky collapsing into a strip that shows the bird's own wire while its wire-mates
 // fly there, and the detail rises beneath. The header's tabs, in the scene's own order, are the
 // only switcher: The Aviary, one tab per wire, On the fence. Each wire tab remembers the bird last
-// open on it. The brand, The Aviary and Escape ride the camera home. The header's last word leaves
-// for the settings page.
+// open on it. Moving from one bird's page to another pans the ground under the still strip, the
+// page left sliding out as the chosen bird's slides in. The brand, The Aviary and Escape ride the
+// camera home. The header's last word leaves for the settings page.
 //
 // Where the camera points is the caller's: it arrives as `place` and every move leaves through
 // `onNavigate`, so an app can bind it to its router.
@@ -16,6 +17,7 @@ import type {
   Mood,
 } from "@perch/core/viewmodel.ts";
 import {
+  type ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -125,6 +127,24 @@ function findBird(aviary: Aviary, id: string): Bird | undefined {
     ...aviary.wires.flatMap((wire) => wire.birds),
     ...aviary.fence.birds,
   ].find((bird) => bird.id === id);
+}
+
+/** Which way the camera travels between two birds' pages. */
+export type PanDirection = "left" | "right";
+
+/**
+ * The way from one bird to another along the strips laid end to end in the tabs' order: right
+ * towards a bird later along its wire, on a later wire or on the fence, left otherwise.
+ */
+export function panDirection(
+  tabs: CameraTab[],
+  fromId: string,
+  toId: string,
+): PanDirection {
+  const order = tabs.flatMap((tab) =>
+    tab.kind === "aviary" ? [] : tab.birds.map((bird) => bird.id),
+  );
+  return order.indexOf(toId) > order.indexOf(fromId) ? "right" : "left";
 }
 
 // The strip: the open bird's wire as a tab row, in its own units, 2000 by 124. The wire's name
@@ -328,6 +348,77 @@ function Flyer({
         />
       </g>
     </svg>
+  );
+}
+
+/** What a bird's page is drawn from beyond the clock and the calls; the page panned away from keeps its last. */
+interface PageProps {
+  bird: Bird;
+  sheets: KeyFileSheet[];
+  entry: EntryControls;
+  problems: string[];
+  openPapers: boolean;
+  arrivalChip: ChipKind | null;
+}
+
+/** A page on the ground: its props, and which arrival on a bird it is, so each arrival mounts afresh. */
+interface GroundPage {
+  visit: number;
+  props: PageProps;
+}
+
+/** A pan between birds' pages: the page left, as last drawn, and the way to the chosen bird. */
+interface Pan {
+  leaving: GroundPage;
+  direction: PanDirection;
+}
+
+const panMs = 600;
+
+/** The track's offset at each end of a pan: the pages sit left to right, the leaving one first when travelling right. */
+function panOffsets(direction: PanDirection): { from: string; to: string } {
+  return direction === "right"
+    ? { from: "translateX(0%)", to: "translateX(-100%)" }
+    : { from: "translateX(-100%)", to: "translateX(0%)" };
+}
+
+/** The ground's pages side by side, slid across one page's width while a pan runs and still otherwise. */
+function PanTrack({
+  pan,
+  onSettled,
+  children,
+}: {
+  pan: Pan | null;
+  onSettled: (pan: Pan) => void;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (element === null || pan === null) return;
+    const { from, to } = panOffsets(pan.direction);
+    const animation = element.animate(
+      [{ transform: from }, { transform: to }],
+      { duration: panMs, easing: flightEasing, fill: "forwards" },
+    );
+    animation.finished.then(
+      () => onSettled(pan),
+      () => {},
+    );
+    return () => animation.cancel();
+  }, [pan, onSettled]);
+  return (
+    <div
+      ref={ref}
+      data-part="pan-track"
+      data-pan={pan?.direction}
+      className="flex min-h-0 w-full flex-1"
+      style={
+        pan === null ? undefined : { transform: panOffsets(pan.direction).from }
+      }
+    >
+      {children}
+    </div>
   );
 }
 
@@ -565,11 +656,33 @@ export function CameraView({
   const [remembered, setRemembered] = useState<Record<string, string>>({});
   const [wasZoomed, setWasZoomed] = useState(zoomed);
   const [flights, setFlights] = useState<Flight[]>([]);
+  const [visit, setVisit] = useState(0);
+  const [pan, setPan] = useState<Pan | null>(null);
+  // The page as last committed, which a pan keeps drawing as it slides away: by then the caller's
+  // sheets and entry are the chosen bird's.
+  const lastPage = useRef<GroundPage | null>(null);
   const shown =
     bird ?? (shownId === null ? undefined : findBird(aviary, shownId));
   const shownTab = shown === undefined ? undefined : tabOf(tabs, shown);
 
-  if (bird !== undefined && bird.id !== shownId) setShownId(bird.id);
+  if (bird !== undefined && bird.id !== shownId) {
+    setShownId(bird.id);
+    setVisit(visit + 1);
+    // Only a move from one bird's page to another pans; the zoom from the aviary keeps its swap.
+    const leaving = lastPage.current;
+    setPan(
+      !reduce &&
+        !zoomed &&
+        !wasZoomed &&
+        leaving !== null &&
+        leaving.props.bird.id === shownId
+        ? {
+            leaving,
+            direction: panDirection(tabs, leaving.props.bird.id, bird.id),
+          }
+        : null,
+    );
+  }
   const birdTab = bird === undefined ? undefined : tabOf(tabs, bird);
   if (
     bird !== undefined &&
@@ -593,6 +706,29 @@ export function CameraView({
       setFlights((current) => current.filter((entry) => entry !== flight)),
     [],
   );
+  const panSettled = useCallback(
+    (settled: Pan) =>
+      setPan((current) => (current === settled ? null : current)),
+    [],
+  );
+
+  const page: GroundPage | null =
+    shown === undefined
+      ? null
+      : {
+          visit,
+          props: {
+            bird: shown,
+            sheets,
+            entry,
+            problems,
+            openPapers: place.at === "detail" && place.papers,
+            arrivalChip: place.at === "detail" ? place.chip : null,
+          },
+        };
+  useLayoutEffect(() => {
+    lastPage.current = page;
+  });
 
   const flyingIds = new Set(flights.map((flight) => flight.bird.id));
 
@@ -757,24 +893,40 @@ export function CameraView({
           <div
             data-part="ground"
             inert={zoomed}
-            className="flex min-h-0 flex-1 flex-col overflow-hidden border-horizon border-t-2 bg-ground px-7.5 pt-5.5"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden border-horizon border-t-2 bg-ground"
           >
-            {shown !== undefined && (
+            {page !== null && (
               <div
                 className={`flex min-h-0 flex-1 flex-col transition-[translate,opacity] duration-550 ease-[cubic-bezier(0.25,0.9,0.3,1)] motion-reduce:transition-none ${zoomed ? "translate-y-14 opacity-0 delay-0" : "delay-350"}`}
               >
-                <DetailView
-                  key={shown.id}
-                  bird={shown}
-                  now={now}
-                  onLaunch={onLaunch}
-                  sheets={sheets}
-                  entry={entry}
-                  problems={problems}
-                  openPapers={place.at === "detail" && place.papers}
-                  arrivalChip={place.at === "detail" ? place.chip : null}
-                  onSettings={onSettings}
-                />
+                <PanTrack pan={pan} onSettled={panSettled}>
+                  {(pan === null
+                    ? [page]
+                    : pan.direction === "right"
+                      ? [pan.leaving, page]
+                      : [page, pan.leaving]
+                  ).map((groundPage) => {
+                    const leaving = groundPage === pan?.leaving;
+                    return (
+                      // The page left is inert and hidden from the tree while it slides away.
+                      <div
+                        key={groundPage.visit}
+                        data-page={groundPage.props.bird.id}
+                        inert={leaving}
+                        aria-hidden={leaving ? "true" : undefined}
+                        className="flex min-h-0 w-full flex-none flex-col px-7.5 pt-5.5"
+                      >
+                        <DetailView
+                          {...groundPage.props}
+                          now={now}
+                          onLaunch={onLaunch}
+                          onSettings={onSettings}
+                          panning={pan !== null}
+                        />
+                      </div>
+                    );
+                  })}
+                </PanTrack>
               </div>
             )}
           </div>

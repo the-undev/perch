@@ -24,7 +24,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { KeyFileSheet, PerchState } from "../../shared/ipc.ts";
 import { fakeApi } from "./fake-api.ts";
 import { createAppRouter } from "./router.tsx";
@@ -408,6 +408,127 @@ describe("the window", () => {
     expect(
       container.querySelector("[data-phase]")?.getAttribute("data-phase"),
     ).toBe("night");
+  });
+
+  describe("the pan between birds", () => {
+    // The setup's animations never finish; these tests end the ground's pan on cue.
+    const stillAnimate = Element.prototype.animate;
+    const panEnds: (() => void)[] = [];
+    beforeEach(() => {
+      panEnds.length = 0;
+      Element.prototype.animate = function animate(this: Element) {
+        const finished = new Promise<void>((resolve) => {
+          if (this.getAttribute("data-part") === "pan-track") {
+            panEnds.push(resolve);
+          }
+        });
+        return { finished, cancel: () => {} } as unknown as Animation;
+      };
+    });
+    afterEach(() => {
+      Element.prototype.animate = stillAnimate;
+    });
+
+    async function settlePan() {
+      await act(async () => {
+        panEnds.at(-1)?.();
+      });
+    }
+
+    const pages = (container: HTMLElement) =>
+      [...container.querySelectorAll("[data-page]")].map((page) =>
+        page.getAttribute("data-page"),
+      );
+
+    function entryForms(birdId: string): EntryForm | null {
+      const item = mockSnapshot.items.find((entry) => entry.id === birdId);
+      return item === undefined
+        ? null
+        : entryFormFor(mockConfig, item, mockHome);
+    }
+
+    it("pans the ground to a wire-mate pressed in the strip, the page left keeping its key files, leaving one page once it settles", async () => {
+      const { router, container } = renderApp(
+        idle(mockAviary),
+        "/bird/undev/skiff",
+        (birdId) =>
+          mockBird(birdId).detail.keyFiles.map((file) => ({
+            file,
+            markdown: `# Read from ${birdId}`,
+          })),
+      );
+      await screen.findByRole("heading", { name: "Read from undev/skiff" });
+
+      fireEvent.click(screen.getByRole("button", { name: "Open Spool" }));
+
+      await waitFor(() => expect(pathOf(router)).toBe("/bird/undev/spool"));
+      expect(pages(container)).toEqual(["undev/skiff", "undev/spool"]);
+      expect(screen.getByRole("article").ariaLabel).toBe("Spool in full");
+      expect(panEnds).toHaveLength(1);
+      expect(
+        container.querySelector('[data-page="undev/skiff"] h1')?.textContent,
+      ).toBe("Read from undev/skiff");
+
+      await settlePan();
+
+      expect(pages(container)).toEqual(["undev/spool"]);
+      expect(container.querySelectorAll("article")).toHaveLength(1);
+    });
+
+    it("lands the chip a navigation between birds carries only after the pan settles", async () => {
+      const { router, container } = renderApp(
+        idle(mockAviary),
+        "/bird/undev/skiff",
+      );
+      await screen.findByRole("article", { name: "Skiff in full" });
+
+      await act(() =>
+        router.navigate({
+          to: "/bird/$",
+          params: { _splat: "undev/prism" },
+          search: { chip: "ci" },
+        }),
+      );
+
+      expect(
+        await screen.findByRole("article", { name: "Prism in full" }),
+      ).toBeDefined();
+      expect(pages(container)).toEqual(["undev/prism", "undev/skiff"]);
+      expect(markedRow(container)).toBeUndefined();
+
+      await settlePan();
+
+      expect(markedRow(container)).toBe("ci");
+    });
+
+    it("closes papers open on the old bird on the new: they slide away with the page left", async () => {
+      const { router, container } = renderApp(
+        idle(mockAviary),
+        "/bird/dev/perch?papers=true",
+        undefined,
+        entryForms,
+      );
+      await screen.findByRole("form", { name: "Adoption papers for Perch" });
+
+      fireEvent.click(screen.getByRole("button", { name: "Open Spool" }));
+
+      await waitFor(() => expect(pathOf(router)).toBe("/bird/undev/spool"));
+      expect(router.state.location.search).toEqual({});
+      expect(screen.queryByRole("form")).toBeNull();
+      expect(
+        container.querySelector('[data-page="dev/perch"] form'),
+      ).not.toBeNull();
+
+      await settlePan();
+
+      expect(container.querySelector("form")).toBeNull();
+      expect(
+        await screen.findByRole("button", { name: "The papers" }),
+      ).toBeDefined();
+      expect(
+        screen.getByRole("button", { name: "The papers" }).ariaExpanded,
+      ).toBe("false");
+    });
   });
 
   describe("config entries", () => {

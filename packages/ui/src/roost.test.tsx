@@ -197,7 +197,7 @@ describe("the roost", () => {
     expect(roostFrame(mockBird("dev/perch")).drop).toBeGreaterThan(26);
   });
 
-  it("becomes a row from 460px of its own width: bubble left, bird right, only as wide as the drawing needs", () => {
+  it("becomes a row from 460px of its container's width: bubble left at its reading cap, bird right, only as wide as the drawing needs", () => {
     const perch = mockBird("dev/perch");
     const { section } = roost(perch);
     const frame = roostFrame(perch);
@@ -207,11 +207,22 @@ describe("the roost", () => {
     const speech = section.querySelector('[data-part="roost-speech"]');
     const drawing = screen.getByRole("img") as unknown as SVGElement;
 
-    expect(section.className).toContain("@container");
+    // The roost is no container itself, so it has an intrinsic width a band can size to.
+    expect(section.className.split(" ")).not.toContain("@container");
     expect(layout.className).toContain("@min-[460px]:flex-row");
+    expect(layout.className).toContain("@min-[460px]:justify-end");
     expect(layout.className).toContain("flex-col");
     expect(speech?.nextElementSibling).toBe(drawing);
-    expect(speech?.className).toContain("@min-[460px]:flex-1");
+    expect(speech?.className.split(" ")).toEqual(
+      expect.arrayContaining([
+        "text-[13.5px]",
+        "@min-[460px]:w-max",
+        "@min-[460px]:max-w-[56ch]",
+        "@min-[460px]:min-w-0",
+        "@min-[460px]:flex-[0_1_auto]",
+      ]),
+    );
+    expect(drawing.getAttribute("class")).toContain("shrink-0");
     expect(drawing.getAttribute("class")).toContain("@min-[460px]:ml-0");
     expect(drawing.getAttribute("width")).toBe(String(frame.width));
     expect(frame.width).toBe(150);

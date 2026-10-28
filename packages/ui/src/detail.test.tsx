@@ -43,7 +43,7 @@ describe("the detail page's pieces", () => {
 
   it("heads the page with the name, the state word and the activity, and no speech", () => {
     const perch = mockBird("dev/perch");
-    const { container } = render(<DetailHeading bird={perch} />);
+    const { container } = render(<DetailHeading bird={perch} actions={null} />);
 
     expect(screen.getByRole("heading").textContent).toBe("Perch");
     expect(
@@ -55,7 +55,9 @@ describe("the detail page's pieces", () => {
 
   it("says in the meta line where the bird lives: clone, forges and wire", () => {
     const meta = (id: string) => {
-      const { container } = render(<DetailHeading bird={mockBird(id)} />);
+      const { container } = render(
+        <DetailHeading bird={mockBird(id)} actions={null} />,
+      );
       const text = container.querySelector('[data-part="meta"]')?.textContent;
       cleanup();
       return text;
@@ -66,6 +68,23 @@ describe("the detail page's pieces", () => {
     );
     expect(meta("github:finch/obsidian-tidy")).toBe("github · on the fence");
     expect(meta("dev/odin/hello")).toBe("~/dev/odin/hello · on the fence");
+  });
+
+  it("sets the actions it is given on the meta line's row, after the meta", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = render(
+      <DetailHeading
+        bird={perch}
+        actions={<LinksOut links={perch.detail.links} />}
+      />,
+    );
+    const row = container.querySelector('[data-part="meta-row"]');
+
+    expect(row?.firstElementChild?.getAttribute("data-part")).toBe("meta");
+    expect(row?.lastElementChild?.querySelectorAll("a")).toHaveLength(2);
+    expect(row?.className.split(" ")).toEqual(
+      expect.arrayContaining(["flex", "flex-wrap", "items-center"]),
+    );
   });
 
   it("lists pull requests with their forge, author and draft state", () => {

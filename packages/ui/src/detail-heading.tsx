@@ -1,7 +1,9 @@
 // The top of a bird's page: the name large, the state word in the mood's colour, what the bird is
-// doing, and a meta line saying where it lives. The speech belongs to the roost's bubble.
+// doing, and a meta line saying where it lives, the page's actions beside it where they fit. The
+// speech belongs to the roost's bubble.
 
 import type { Activity, Bird, StateWord } from "@perch/core/viewmodel.ts";
+import type { ReactNode } from "react";
 
 const stateTone: Record<StateWord, string> = {
   content: "text-green",
@@ -29,10 +31,12 @@ export function whereabouts(bird: Bird): string {
 
 export interface DetailHeadingProps {
   bird: Bird;
+  /** The page's verbs and links, one group on the meta line's row where it fits and beneath the meta where not; null for none. */
+  actions: ReactNode;
 }
 
-/** The page's heading: the one place on the page that carries the name and the state word. */
-export function DetailHeading({ bird }: DetailHeadingProps) {
+/** The page's heading in two tight rows: the one place on the page that carries the name and the state word, then the meta with the actions. */
+export function DetailHeading({ bird, actions }: DetailHeadingProps) {
   const activity = bird.activity === null ? null : activityWords[bird.activity];
   return (
     <header>
@@ -50,12 +54,18 @@ export function DetailHeading({ bird }: DetailHeadingProps) {
           <span className="text-[12.5px] text-ink-accent">{activity}</span>
         )}
       </div>
-      <p
-        data-part="meta"
-        className="mt-0.5 mb-0 break-words font-mono text-[12.5px] text-ink-faint"
+      <div
+        data-part="meta-row"
+        className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1"
       >
-        {whereabouts(bird)}
-      </p>
+        <p
+          data-part="meta"
+          className="m-0 min-w-0 break-words font-mono text-[12.5px] text-ink-faint"
+        >
+          {whereabouts(bird)}
+        </p>
+        {actions}
+      </div>
     </header>
   );
 }

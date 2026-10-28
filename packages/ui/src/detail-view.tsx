@@ -1,7 +1,7 @@
-// Tier C: a bird's full page, a fixed stage. The band at the top holds the heading, a notice for
-// each remote no card can read, the main process's problems, then the launch actions, links out and
-// the papers' verb, with the roost at the right holding the bird on its perch and its bubble. It
-// never scrolls. Beneath it the ground holds two panes that each scroll their own contents: the
+// Tier C: a bird's full page, a fixed stage. The band at the top is one row: the heading (the name,
+// the meta line with the launch actions, links out and papers' verb beside it, then a notice for
+// each remote no card can read and the main process's problems), the roost's bubble at its reading
+// width, and the bird sitting on its perch at the right. It never scrolls. Beneath it the ground holds two panes that each scroll their own contents: the
 // record (the ledger and its sections) and the key files on paper; in a narrow page they join into
 // one pane, the key files at the end. The adoption papers rise as a sheet over both panes, which
 // dim and go inert while the band stays live. A chip pressed in the roost's
@@ -185,7 +185,8 @@ const paneClass =
 
 /**
  * The whole project page as a fixed stage, centred as one block. The band at the top holds still:
- * the roost beside the heading when wide, beneath it and centred when narrow. Beneath it the record
+ * from 860px one row, the heading taking what the roost leaves and the roost only as wide as its
+ * bubble and bird need; narrower, the roost beneath the heading in a centred column. Beneath it the record
  * pane and the paper pane each scroll their own contents when the page is wide enough; narrower,
  * they join into one pane, the key files at the record's end. It fills a flex column.
  */
@@ -259,32 +260,42 @@ export function DetailView({
     >
       <div
         data-part="band"
-        className="col-start-1 row-start-1 grid grid-cols-1 items-start gap-x-9 gap-y-3 @min-[860px]:grid-cols-[minmax(0,1fr)_480px]"
+        className="col-start-1 row-start-1 flex flex-col gap-y-3 @min-[860px]:flex-row @min-[860px]:items-start @min-[860px]:gap-x-9"
       >
         <div
           data-part="heading"
-          className="min-w-0 @min-[860px]:col-start-1 @min-[860px]:row-start-1"
+          className="min-w-0 @min-[860px]:flex-[1_1_22rem]"
         >
-          <DetailHeading bird={bird} />
+          <DetailHeading
+            bird={bird}
+            actions={
+              <div
+                data-part="actions"
+                className="flex flex-wrap items-center gap-1"
+              >
+                <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
+                <LinksOut links={detail.links} />
+                {agreed !== null && (
+                  <PapersVerb
+                    adopt={agreed.values === null}
+                    open={papersShown}
+                    onPress={papersShown ? close : () => setOpen(true)}
+                  />
+                )}
+              </div>
+            }
+          />
           <RemoteNotices
             notices={detail.notices}
             landing={landing}
             onSettings={onSettings}
           />
-          <div className="mt-3.5 flex flex-wrap items-center gap-1">
-            <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
-            <LinksOut links={detail.links} />
-            {agreed !== null && (
-              <PapersVerb
-                adopt={agreed.values === null}
-                open={papersShown}
-                onPress={papersShown ? close : () => setOpen(true)}
-              />
-            )}
-          </div>
           {!papersShown && <MainProblems problems={problems} />}
         </div>
-        <div className="mx-auto w-120 max-w-full @min-[860px]:col-start-2 @min-[860px]:row-start-1 @min-[860px]:mx-0">
+        <div
+          data-part="roost-cell"
+          className="mx-auto w-120 max-w-full @min-[860px]:mx-0 @min-[860px]:w-auto @min-[860px]:min-w-0 @min-[860px]:flex-[0_1_auto]"
+        >
           <Roost bird={bird} night={night} onChip={landOn} />
         </div>
       </div>

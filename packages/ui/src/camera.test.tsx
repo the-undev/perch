@@ -10,6 +10,13 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  layoutAviary,
+  type PlacedBird,
+  pixelsPerUnit,
+  placedBirds,
+  toPixels,
+} from "./aviary-layout.ts";
+import {
   type BirdTab,
   type CameraPlace,
   CameraView,
@@ -20,7 +27,13 @@ import {
   stripWireY,
 } from "./camera.tsx";
 import { mockBird } from "./mock-birds.ts";
+import { minPixelsPerUnit, sceneWidth, sceneWidthFor } from "./scene.tsx";
 import { edgeMargin } from "./wire.tsx";
+
+// jsdom measures nothing, so the camera keeps its assumed 1400px window, narrower than the floor's
+// width: its strip is fewer units wide than the full 2000, drawn at the floor.
+const assumedWidth = 1400;
+const stripUnits = sceneWidthFor(assumedWidth);
 
 afterEach(cleanup);
 
@@ -323,11 +336,13 @@ describe("the camera", () => {
     const name = strip.querySelector('[data-part="strip-name"]');
     const tally = strip.querySelector('[data-part="strip-tally"]');
     const projects = cameraTabs(mockAviary)[2] as BirdTab;
-    const layout = stripLayout(projects);
+    const layout = stripLayout(projects, stripUnits);
     const xs = stripXs(container);
 
     expect(stripHeight).toBe(124);
-    expect(drawing?.getAttribute("viewBox")).toBe(`0 0 2000 ${stripHeight}`);
+    expect(drawing?.getAttribute("viewBox")).toBe(
+      `0 0 ${stripUnits} ${stripHeight}`,
+    );
     expect(strip.style.height).toBe(`${stripHeight}px`);
     expect(sky.style.height).toBe(`${stripHeight}px`);
     expect(strip.querySelector("path")?.getAttribute("d")).toMatch(
@@ -350,7 +365,7 @@ describe("the camera", () => {
     expect(Math.min(...xs)).toBeGreaterThanOrEqual(
       layout.labelRight + edgeMargin,
     );
-    expect(Math.max(...xs)).toBeLessThanOrEqual(2000 - edgeMargin);
+    expect(Math.max(...xs)).toBeLessThanOrEqual(stripUnits - edgeMargin);
     expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(layout.middle);
     expect(
       container
@@ -386,7 +401,10 @@ describe("the camera", () => {
     const crowded = { ...mockAviary, fence: { birds } };
     const { container } = camera(detailOf("fence-0"), false, now, crowded);
     const names = [...container.querySelectorAll("[data-strip-bird] > text")];
-    const layout = stripLayout(cameraTabs(crowded).at(-1) as BirdTab);
+    const layout = stripLayout(
+      cameraTabs(crowded).at(-1) as BirdTab,
+      stripUnits,
+    );
     const xs = stripXs(container);
 
     expect(names).toHaveLength(21);
@@ -398,7 +416,44 @@ describe("the camera", () => {
     ).toBe("21 not adopted");
     expect(layout.spacing).toBeLessThan(175);
     expect(Math.min(...xs)).toBeCloseTo(layout.labelRight + edgeMargin);
-    expect(Math.max(...xs)).toBeCloseTo(2000 - edgeMargin);
+    expect(Math.max(...xs)).toBeCloseTo(stripUnits - edgeMargin);
+  });
+
+  it("holds the strip at the floor in a window narrower than the floor's width, its birds bunching right of the label", () => {
+    const { container } = camera(detailOf("undev/skiff"));
+    const drawing = container.querySelector('[data-part="strip"] svg');
+    const unitsWide = Number(drawing?.getAttribute("viewBox")?.split(" ")[2]);
+    const projects = cameraTabs(mockAviary)[2] as BirdTab;
+    const full = stripLayout(projects, sceneWidth);
+    const narrow = stripLayout(projects, unitsWide);
+    const xs = narrow.places.map((place) => place.x);
+
+    expect(unitsWide).toBeLessThan(sceneWidth);
+    expect(Math.min(assumedWidth / unitsWide, 1)).toBeCloseTo(minPixelsPerUnit);
+    expect(narrow.labelRight).toBe(full.labelRight);
+    expect(full.spacing).toBe(175);
+    expect(narrow.spacing).toBeLessThan(full.spacing);
+    expect(narrow.spacing).toBeCloseTo(
+      (unitsWide - edgeMargin - (narrow.labelRight + edgeMargin)) /
+        (projects.birds.length - 1),
+    );
+    expect(Math.min(...xs)).toBeCloseTo(narrow.labelRight + edgeMargin);
+    expect(Math.max(...xs)).toBeCloseTo(unitsWide - edgeMargin);
+  });
+
+  it("draws the strip at full size in a wide window, shrinking with the window only down to the floor", () => {
+    const projects = cameraTabs(mockAviary)[2] as BirdTab;
+    const scale = (pixels: number) =>
+      Math.min(pixels / sceneWidthFor(pixels), 1);
+
+    expect(scale(3440)).toBe(1);
+    expect(scale(2000)).toBe(1);
+    expect(scale(1900)).toBeCloseTo(1900 / sceneWidth);
+    expect(scale(1800)).toBeCloseTo(minPixelsPerUnit);
+    expect(scale(1000)).toBeCloseTo(minPixelsPerUnit);
+    expect(stripLayout(projects, sceneWidthFor(3440))).toEqual(
+      stripLayout(projects, sceneWidth),
+    );
   });
 
   it("sits the bird on its page's perch while its wire-mates stand in the strip", () => {
@@ -485,20 +540,36 @@ describe("the camera", () => {
     ).toEqual(mockAviary.wires[0]?.birds.map((bird) => bird.id).sort());
   });
 
-  it("lands each wire-mate's flight where the strip draws it", () => {
+  it("lifts each wire-mate's flight from its perch in the narrowed aviary and lands it where the strip draws it", () => {
     const { container, moveTo } = camera(aviaryPlace);
     const tab = cameraTabs(mockAviary)[1] as BirdTab;
-    // jsdom measures nothing, so the camera keeps its assumed 1400px window: the strip at 0.7.
-    const k = 1400 / 2000;
+    // The assumed 1400px window is narrower than the floor's width: the strip at the floor.
+    const k = assumedWidth / stripUnits;
+    const size = { width: assumedWidth, height: 800 };
+    const layout = layoutAviary(mockAviary, size);
 
     moveTo(detailOf("obsidian/Hothouse"));
 
+    expect(k).toBeCloseTo(minPixelsPerUnit);
+    expect(layout.width).toBe(stripUnits);
     expect(flightPaths.size).toBe(tab.birds.length);
-    for (const { bird, x } of stripLayout(tab).places) {
+    for (const { bird, x } of stripLayout(tab, stripUnits).places) {
+      const perch = placedBirds(layout).find(
+        (entry) => entry.bird.id === bird.id,
+      ) as PlacedBird;
+      const lift = toPixels(
+        { x: perch.x, y: perch.y - 3 * perch.scale },
+        layout,
+        size,
+      );
+      expect(flightPaths.get(bird.id)?.[0]?.transform).toBe(
+        `translate(${lift.x - 50}px, ${lift.y - 62}px) scale(${perch.scale * pixelsPerUnit(layout, size)})`,
+      );
       const landing = flightPaths.get(bird.id)?.at(-1)?.transform;
+      const left = (assumedWidth - stripUnits * k) / 2;
       const y = (stripHeight - stripHeight * k) / 2 + (stripWireY - 3) * k;
       expect(landing).toBe(
-        `translate(${x * k - 50}px, ${y - 62}px) scale(${k})`,
+        `translate(${left + x * k - 50}px, ${y - 62}px) scale(${k})`,
       );
       expect(stripXs(container)).toContain(x);
     }

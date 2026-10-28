@@ -176,8 +176,9 @@ export function CameraScenePage() {
           birds keeps its tab, which says empty and cannot be pressed. The
           ground beneath the strip never scrolls: the bird&apos;s page fills it,
           and only its record and paper panes move their contents.{" "}
-          <Code>stripLayout(tab)</Code> places the strip&apos;s birds, and the
-          flights land on the same places.
+          <Code>stripLayout(tab, width)</Code> places the strip&apos;s birds in
+          a strip as many units wide as the aviary&apos;s scene in the same
+          window, and the flights land on the same places.
         </p>
       </Usage>
     </>

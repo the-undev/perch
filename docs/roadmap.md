@@ -52,6 +52,26 @@ to the chosen one's, which the strip's layout already gives, and would
 need its own answer for a bird on another tab, whose strip replaces the
 one drawn.
 
+## Short windows
+
+The aviary holds its 0.9px floor by the window's width only. Its scene
+keeps at least 600 units of height, the room the layout needs for a
+bubble above the top wire, the wires and the fence's distance from the
+bottom, so an aviary under 540px tall still shrinks below the floor.
+Holding the floor there needs a layout with a smaller vertical budget
+first: less room above the top wire, rows closer, or the fence nearer
+the wires.
+
+## Crowding at the edges
+
+The diagonal and the 240-unit column leave two edges. From 9 birds on a
+wire in an 1100px window, consecutive birds sit under 120 units apart
+and only 0.6 of a step lower, so they crowd again. Below about 500px
+everything bunches hard: nine birds share about 200 units, on a wire and
+in the detail strip alike. Birds crossing a painted name is by design.
+The fix is a vertical-budget round for the aviary, giving crowded rows
+more height, or a minimum window size.
+
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the
@@ -239,9 +259,6 @@ What `design/perch.html` draws that the composed views do not yet:
 - A bubble with no room above its bird keeps to the scene's top edge and
   its tail no longer meets the beak, as on the board. Opening it beside
   or below the bird is undesigned.
-- Names in the scene scale with it, as on the board: a bird's name is
-  about 9.5px in a 1400px window. Whether they keep a minimum size is
-  undecided.
 
 ## Ledger summary line
 

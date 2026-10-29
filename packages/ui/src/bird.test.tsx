@@ -12,7 +12,33 @@ import {
 } from "./bird.tsx";
 import { mockBird } from "./mock-birds.ts";
 import { Scene } from "./scene.tsx";
-import { Fence, tallyGap, Wire, WireLine } from "./wire.tsx";
+import {
+  columnEdge,
+  Fence,
+  fenceName,
+  labelX,
+  paintedInk,
+  paintedSize,
+  tallySize,
+  Wire,
+} from "./wire.tsx";
+
+/** Whether `later` comes after `earlier` in the document, so it is drawn in front of it. */
+function drawnAfter(earlier: Element, later: Element): boolean {
+  return (
+    (earlier.compareDocumentPosition(later) &
+      Node.DOCUMENT_POSITION_FOLLOWING) !==
+    0
+  );
+}
+
+function wireScene(wire: WireModel) {
+  return render(
+    <Scene phase="day" width={2000} height={400} label="test">
+      <Wire wire={wire} y={200} width={2000} night={false} />
+    </Scene>,
+  ).container;
+}
 
 afterEach(cleanup);
 
@@ -129,7 +155,7 @@ describe("the wire and the fence", () => {
     const wire = mockAviary.wires[1];
     if (wire === undefined) throw new Error("the mock has a second wire");
     const { container } = render(
-      <Scene phase="day" height={400} label="test">
+      <Scene phase="day" width={2000} height={400} label="test">
         <Wire wire={wire} y={200} width={2000} night={false} />
       </Scene>,
     );
@@ -148,40 +174,89 @@ describe("the wire and the fence", () => {
     expect(container.textContent).toContain("3 attention");
   });
 
-  it("sets the tally apart from the wire's name on its first word", () => {
+  it("paints the wire's name on the sky behind its line and birds, cut round each bird", () => {
+    const projects = mockAviary.wires[1] as WireModel;
+    const container = wireScene(projects);
+    const painted = container.querySelector('[data-part="painted-name"] text');
+    const mask = container.querySelector('[data-part="painted-name"] mask');
+    const line = container.querySelector("[data-wire] > path");
+    const birds = [...container.querySelectorAll("[data-bird]")];
+    if (painted === null || mask === null || line === null) {
+      throw new Error("no painted name, mask or wire drawn");
+    }
+
+    expect(painted.textContent).toBe(projects.name);
+    expect(painted.getAttribute("x")).toBe(String(labelX));
+    expect(painted.getAttribute("font-size")).toBe(String(paintedSize));
+    expect(painted.getAttribute("opacity")).toBe(String(paintedInk));
+    expect(painted.getAttribute("class")).toContain("font-display");
+    expect(painted.getAttribute("mask")).toBe(`url(#${mask.id})`);
+    expect(drawnAfter(painted, line)).toBe(true);
+    expect(birds.every((bird) => drawnAfter(painted, bird))).toBe(true);
+    expect(mask.querySelector("rect")?.getAttribute("fill")).toBe("#fff");
+    expect(
+      [...mask.querySelectorAll("[data-cut]")].map((cut) =>
+        cut.getAttribute("data-cut"),
+      ),
+    ).toEqual(birds.map((bird) => bird.getAttribute("data-bird")));
+    expect(
+      mask
+        .querySelector('[data-cut] [stroke="#000"]')
+        ?.getAttribute("stroke-width"),
+    ).toBe("9");
+  });
+
+  it("hangs the tally under the wire's left end in front, a line per word group in its colour", () => {
     const [machine, projects] = mockAviary.wires as [WireModel, WireModel];
     const settled = {
       name: "Quiet",
       birds: projects.birds.filter((bird) => bird.mood === "content"),
     };
-    const firstWords = [machine, projects, settled].map((wire) => {
-      const { container } = render(
-        <Scene phase="day" height={400} label="test">
-          <WireLine
-            y={200}
-            width={2000}
-            label={{ name: wire.name, birds: wire.birds }}
-          />
-        </Scene>,
-      );
-      const name = [...container.querySelectorAll("tspan")].find(
-        (tspan) => tspan.textContent === wire.name,
-      );
-      const first = name?.nextElementSibling;
+    const lines = [machine, projects, settled].map((wire) => {
+      const container = wireScene(wire);
+      const tally = [...container.querySelectorAll('[data-part="tally"] text')];
+      const birds = [...container.querySelectorAll("[data-bird]")];
+      expect(
+        tally.every((line) => birds.every((bird) => drawnAfter(bird, line))),
+      ).toBe(true);
       cleanup();
-      return { dx: first?.getAttribute("dx"), words: first?.textContent };
+      return tally.map((line) => ({
+        words: line.textContent,
+        x: line.getAttribute("x"),
+        y: line.getAttribute("y"),
+        size: line.getAttribute("font-size"),
+        ink: /fill-[\w-]+/.exec(line.getAttribute("class") ?? "")?.[0],
+      }));
+    });
+    const at = (words: string, y: number, ink: string) => ({
+      words,
+      x: String(labelX),
+      y: String(y),
+      size: String(tallySize),
+      ink,
     });
 
-    expect(firstWords).toEqual([
-      { dx: String(tallyGap), words: "2 drifting" },
-      { dx: String(tallyGap), words: "3 attention" },
-      { dx: String(tallyGap), words: "all settled" },
+    expect(lines).toEqual([
+      [at("2 drifting", 218, "fill-amber")],
+      [at("3 attention", 218, "fill-red"), at("1 drifting", 238, "fill-amber")],
+      [at("all settled", 218, "fill-ink-faint")],
     ]);
   });
 
-  it("dims every fence bird and counts them", () => {
+  it("starts the wire's birds at the column edge", () => {
+    const container = wireScene(mockAviary.wires[1] as WireModel);
+    const xs = [...container.querySelectorAll("[data-bird]")].map((g) =>
+      Number(
+        /translate\(([-\d.]+)/.exec(g.getAttribute("transform") ?? "")?.[1],
+      ),
+    );
+
+    expect(Math.min(...xs)).toBe(columnEdge);
+  });
+
+  it("dims every fence bird, paints its name behind them and counts them beneath the rail", () => {
     const { container } = render(
-      <Scene phase="night" height={400} label="test">
+      <Scene phase="night" width={2000} height={400} label="test">
         <Fence
           fence={mockAviary.fence}
           y={300}
@@ -192,6 +267,17 @@ describe("the wire and the fence", () => {
       </Scene>,
     );
     const breasts = [...container.querySelectorAll('[data-part="breast"]')];
+    const birds = [...container.querySelectorAll("[data-bird]")];
+    const painted = container.querySelector('[data-part="painted-name"] text');
+    const count = container.querySelector('[data-part="fence-count"]');
+    const xs = birds.map((g) =>
+      Number(
+        /translate\(([-\d.]+)/.exec(g.getAttribute("transform") ?? "")?.[1],
+      ),
+    );
+    if (painted === null || count === null) {
+      throw new Error("no painted name or count drawn");
+    }
 
     expect(breasts).toHaveLength(mockAviary.fence.birds.length);
     expect(
@@ -199,7 +285,21 @@ describe("the wire and the fence", () => {
         (b) => b.getAttribute("fill") === "var(--color-breast-dim)",
       ),
     ).toBe(true);
-    expect(container.textContent).toContain("On the fence · 3 not adopted");
+    expect(painted.textContent).toBe(fenceName);
+    expect(Number(painted.getAttribute("y"))).toBeLessThan(300);
+    expect(birds.every((bird) => drawnAfter(painted, bird))).toBe(true);
+    expect(
+      [...container.querySelectorAll("[data-cut]")].map((cut) =>
+        cut.getAttribute("data-cut"),
+      ),
+    ).toEqual(birds.map((bird) => bird.getAttribute("data-bird")));
+    expect(count.textContent).toBe("3 not adopted");
+    expect(count.getAttribute("x")).toBe(String(labelX));
+    expect(Number(count.getAttribute("y"))).toBeGreaterThan(300);
+    expect(count.getAttribute("class")).toContain("fill-ink-faint");
+    expect(birds.every((bird) => drawnAfter(bird, count))).toBe(true);
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(columnEdge);
+    expect(container.textContent).not.toContain("·");
   });
 
   it("drops every other name to a lower baseline on a crowded fence", () => {
@@ -209,7 +309,7 @@ describe("the wire and the fence", () => {
       position,
     }));
     const { container } = render(
-      <Scene phase="day" height={400} label="test">
+      <Scene phase="day" width={2000} height={400} label="test">
         <Fence
           fence={{ birds }}
           y={300}

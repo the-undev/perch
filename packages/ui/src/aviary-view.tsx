@@ -1,5 +1,6 @@
-// The home scene: the sky by the clock, the wires in config order with crowded ones over two rows,
-// the fence beneath, and the birds on them. Hovering a bird shows its tip; clicking it opens its
+// The home scene: the sky by the clock, the wires in config order with crowded ones over more rows,
+// the fence beneath, and the birds on them, never drawn smaller than the floor: a narrow window
+// bunches them instead. Hovering a bird shows its tip; clicking it opens its
 // bubble against its beak. The flock flies in on mount and again on a large change.
 
 import type { PolledSourceName } from "@perch/core/snapshot.ts";
@@ -33,10 +34,34 @@ import { Bird } from "./bird.tsx";
 import { Bubble } from "./bubble.tsx";
 import { type PixelSize, useElementSize } from "./hooks.ts";
 import type { CustomProperties } from "./motion.ts";
-import { SkyDrawing, sceneWidth, skyBackground } from "./scene.tsx";
+import { SkyDrawing, skyBackground } from "./scene.tsx";
 import { isNight, skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
-import { FenceRail, WireLine } from "./wire.tsx";
+import {
+  FenceCount,
+  FenceRail,
+  fenceName,
+  type PaintCut,
+  PaintedName,
+  WireLine,
+  WireTally,
+} from "./wire.tsx";
+
+/** The birds the paint is cut back round: every one placed, save those whose flyers are still in the air. */
+function paintCuts(
+  birds: PlacedBird[],
+  flyingIds: ReadonlySet<string>,
+): PaintCut[] {
+  return birds
+    .filter((entry) => !flyingIds.has(entry.bird.id))
+    .map((entry) => ({
+      id: entry.bird.id,
+      x: entry.x,
+      y: entry.y,
+      scale: entry.scale,
+      facing: entry.facing,
+    }));
+}
 
 /** Each polled source by name, as the scene's notices say it. */
 export const sourceLabel: Record<PolledSourceName, string> = {
@@ -361,29 +386,42 @@ export function AviaryScene({
       onClick={() => setSpeakingId(null)}
     >
       <svg
-        viewBox={`0 0 ${sceneWidth} ${layout.height}`}
+        viewBox={`0 0 ${layout.width} ${layout.height}`}
         preserveAspectRatio="xMidYMid meet"
         className="absolute inset-0 block h-full w-full"
       >
         <title>Projects as birds on wires</title>
-        <SkyDrawing phase={phase} height={layout.height} />
+        <SkyDrawing phase={phase} width={layout.width} height={layout.height} />
+        {layout.rows
+          .filter((row) => row.index === 0)
+          .map((row) => (
+            <PaintedName
+              key={row.wire.name}
+              name={row.wire.name}
+              end={row.y - 12}
+              width={layout.width}
+              cuts={layout.rows
+                .filter((other) => other.wire === row.wire)
+                .flatMap((other) => paintCuts(other.birds, flyingIds))}
+            />
+          ))}
+        <PaintedName
+          name={fenceName}
+          end={layout.fence.y}
+          width={layout.width}
+          cuts={paintCuts(layout.fence.birds, flyingIds)}
+        />
         {layout.rows.map((row) => (
           <WireLine
             key={`${row.wire.name} ${row.index}`}
             y={row.y}
-            width={sceneWidth}
-            label={
-              row.index === 0
-                ? { name: row.wire.name, birds: row.wire.birds }
-                : null
-            }
+            width={layout.width}
           />
         ))}
         <FenceRail
           y={layout.fence.y}
-          width={sceneWidth}
+          width={layout.width}
           height={layout.height}
-          count={aviary.fence.birds.length}
         />
         <g key={arrangementKey(aviary)}>
           {placed.map((entry) => (
@@ -403,6 +441,12 @@ export function AviaryScene({
             />
           ))}
         </g>
+        {layout.rows
+          .filter((row) => row.index === 0)
+          .map((row) => (
+            <WireTally key={row.wire.name} y={row.y} birds={row.wire.birds} />
+          ))}
+        <FenceCount y={layout.fence.y} count={aviary.fence.birds.length} />
       </svg>
       <SkyNotices aviary={aviary} now={now} />
       <SkyLegend />

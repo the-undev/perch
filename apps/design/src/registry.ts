@@ -253,7 +253,7 @@ export const pages: DesignPage[] = [
     group: "scenes",
     title: "The aviary",
     summary:
-      "The whole home scene on the mock: sky by the clock, wires, fence, tips, bubbles and the arrival.",
+      "The whole home scene on the mock: sky by the clock, wires, fence, tips, bubbles, the arrival, and small windows bunching the birds.",
     component: AviaryScenePage,
   },
   {

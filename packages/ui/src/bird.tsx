@@ -99,6 +99,27 @@ export interface BirdFigureProps {
   idle: boolean;
 }
 
+/** The tail's outline at unit scale, facing right. */
+const tailPath = "M -16 -22 L -42 -10 L -38 -20 L -44 -26 L -20 -32 Z";
+
+/** The beak's outline at unit scale, facing right. */
+const beakPath = "M 26 -45 L 37 -42 L 26 -39 Z";
+
+/** How wide the rim of sky round a bird's cut is, in bird units: the stroke that fattens its silhouette. */
+export const cutRim = 9;
+
+/** A standing bird's silhouette fattened by a rim, at unit scale facing right; black in a mask, it cuts that shape out. The legs need no cut. */
+export function BirdCut() {
+  return (
+    <g fill="#000" stroke="#000" strokeWidth={cutRim} strokeLinejoin="round">
+      <path d={tailPath} />
+      <ellipse cx={0} cy={-26} rx={23} ry={19} />
+      <circle cx={16} cy={-44} r={11.5} />
+      <path d={beakPath} />
+    </g>
+  );
+}
+
 /** The bird's parts at unit scale, facing right; sitting, it shows no legs and rests its body where its toes were. */
 export function BirdFigure({
   look,
@@ -144,7 +165,7 @@ export function BirdFigure({
       )}
       <path
         data-part="tail"
-        d="M -16 -22 L -42 -10 L -38 -20 L -44 -26 L -20 -32 Z"
+        d={tailPath}
         fill={body}
         className={
           idle && look.tailFlicks ? "motion-safe:animate-tail-flick" : undefined
@@ -161,7 +182,7 @@ export function BirdFigure({
       <circle cx={16} cy={-44} r={11.5} fill={body} />
       <path
         data-part="beak"
-        d="M 26 -45 L 37 -42 L 26 -39 Z"
+        d={beakPath}
         fill="var(--color-ink-accent)"
         className={
           speaking

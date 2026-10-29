@@ -40,13 +40,18 @@ import {
   usePrefersReducedMotion,
 } from "./hooks.ts";
 import type { KeyFileSheet } from "./paper.tsx";
-import { sceneWidth, skyBackground } from "./scene.tsx";
+import { sceneWidthFor, skyBackground } from "./scene.tsx";
 import { isNight, type SkyPhase, skyPhase } from "./sky.ts";
 import { recentWords } from "./time.ts";
 import {
   byPosition,
+  columnEdge,
   edgeMargin,
+  labelX,
   namePlace,
+  PaintedName,
+  placeAt,
+  placeSpacing,
   Tally,
   tallyText,
 } from "./wire.tsx";
@@ -147,26 +152,19 @@ export function panDirection(
   return order.indexOf(toId) > order.indexOf(fromId) ? "right" : "left";
 }
 
-// The strip: the open bird's wire as a tab row, in its own units, 2000 by 124. The wire's name
-// rests on the line at its left end, the tally beneath it, and the birds perch to the right.
+// The strip: the open bird's wire as a tab row, in its own units, 124 tall and as wide as the
+// aviary's scene in the same window: 2000, or fewer below the floor. The wire's name is painted on
+// the sky behind its left end, the tally beneath it in front, and the birds perch from the column.
 
-/** The strip's height in pixels and in its own units: it is drawn at most at full size. */
+/** The strip's height in pixels and in its own units: it is drawn at most at full size, and never below the floor. */
 export const stripHeight = 124;
 
 /** The wire's line in the strip, and the size its birds are drawn at, smaller on the fence. */
 export const stripWireY = 76;
 const stripScale = { wire: 1, fence: 0.8 };
 
-/** Where the label starts, and its two lines: the name's baseline just above the wire, the tally's beneath it. */
-const stripLabelX = 36;
-const stripNameY = stripWireY - 8;
+/** The tally's baseline, beneath the wire's left end. */
 const stripTallyY = stripWireY + 16;
-
-/** The label's type sizes, in strip units. */
-const stripLabelSize = { name: 26, tally: 13 };
-
-/** The width the layout reserves for a character, as a fraction of its type size: generous, so no bird touches a word. */
-const labelAdvance = 0.6;
 
 /** The most birds in the strip sit apart; a crowded tab squeezes them closer. */
 const stripGap = 175;
@@ -178,9 +176,8 @@ function stripTally(tab: BirdTab): string {
     : tallyText(tab.birds);
 }
 
-/** Where the strip draws a tab: the label's reserved right edge, and each bird's x and facing in the width right of it. */
+/** Where the strip draws a tab: each bird's x and facing in the room right of the column. */
 export interface StripLayout {
-  labelRight: number;
   /** The middle of the birds' room, which they are centred on and face. */
   middle: number;
   spacing: number;
@@ -188,30 +185,17 @@ export interface StripLayout {
 }
 
 /**
- * The tab's layout: the label's width is reserved from its characters, and the birds are spread
- * at most `stripGap` apart, centred in the room between the label and the strip's right end, each
- * end kept the scene's edge margin clear.
+ * The tab's layout in a strip `width` units wide: the birds are spread at most `stripGap` apart,
+ * centred in the room from the column edge to the scene's edge margin, whatever the name or tally.
  */
-export function stripLayout(tab: BirdTab): StripLayout {
-  const labelRight =
-    stripLabelX +
-    labelAdvance *
-      Math.max(
-        tab.label.length * stripLabelSize.name,
-        stripTally(tab).length * stripLabelSize.tally,
-      );
-  const left = labelRight + edgeMargin;
-  const right = sceneWidth - edgeMargin;
+export function stripLayout(tab: BirdTab, width: number): StripLayout {
   const count = tab.birds.length;
-  const spacing = Math.min(stripGap, (right - left) / Math.max(count - 1, 1));
-  const middle = (left + right) / 2;
-  const first = middle - (spacing * (count - 1)) / 2;
+  const middle = columnEdge + Math.max(0, width - edgeMargin - columnEdge) / 2;
   return {
-    labelRight,
     middle,
-    spacing,
+    spacing: placeSpacing(count, stripGap, width),
     places: tab.birds.map((bird, index) => {
-      const x = first + spacing * index;
+      const x = placeAt(index, count, stripGap, width);
       return { bird, x, facing: x < middle ? "right" : "left" };
     }),
   };
@@ -253,11 +237,12 @@ function aviaryEnd(
 }
 
 /** A bird's perch in the strip at x in its units, in pixels, the strip centred across the window's width. */
-function stripEnd(x: number, dim: boolean, width: number): FlightEnd {
-  const k = Math.min(width / sceneWidth, 1);
+function stripEnd(x: number, dim: boolean, pixels: number): FlightEnd {
+  const width = sceneWidthFor(pixels);
+  const k = Math.min(pixels / width, 1);
   const base = dim ? stripScale.fence : stripScale.wire;
   return {
-    x: (width - sceneWidth * k) / 2 + x * k,
+    x: (pixels - width * k) / 2 + x * k,
     y: (stripHeight - stripHeight * k) / 2 + (stripWireY - 3 * base) * k,
     scale: base * k,
   };
@@ -273,7 +258,8 @@ function flightsFor(
   const layout = layoutAviary(aviary, size);
   const placed = placedBirds(layout);
   const dim = tab.kind === "fence";
-  return stripLayout(tab).places.flatMap(({ bird, x, facing }) => {
+  const strip = stripLayout(tab, sceneWidthFor(size.width));
+  return strip.places.flatMap(({ bird, x, facing }) => {
     const perch = placed.find((entry) => entry.bird.id === bird.id);
     if (perch === undefined) return [];
     const inAviary = aviaryEnd(perch, layout, size);
@@ -422,15 +408,18 @@ function PanTrack({
   );
 }
 
-/** The open bird's wire as the tab row: its name resting on the wire, its birds beside it, the open one bright. */
+/** The open bird's wire as the tab row: its name painted behind, its birds from the column, the open one bright, and its tally in front. */
 function Strip({
   tab,
+  width,
   openId,
   night,
   flyingIds,
   onOpen,
 }: {
   tab: BirdTab;
+  /** The strip's width in its units: the aviary scene's in the same window. */
+  width: number;
   openId: string;
   night: boolean;
   flyingIds: ReadonlySet<string>;
@@ -438,47 +427,45 @@ function Strip({
 }) {
   const dim = tab.kind === "fence";
   const base = dim ? stripScale.fence : stripScale.wire;
-  const layout = stripLayout(tab);
+  const layout = stripLayout(tab, width);
   return (
     <svg
-      viewBox={`0 0 ${sceneWidth} ${stripHeight}`}
+      viewBox={`0 0 ${width} ${stripHeight}`}
       preserveAspectRatio="xMidYMid meet"
       className="absolute inset-0 block h-full w-full"
     >
       <title>{`${tab.label}, as a tab row`}</title>
+      <PaintedName
+        name={tab.label}
+        end={stripWireY}
+        width={width}
+        cuts={layout.places
+          .filter(({ bird }) => !flyingIds.has(bird.id))
+          .map(({ bird, x, facing }) => ({
+            id: bird.id,
+            x,
+            y: stripWireY,
+            scale: base,
+            facing,
+          }))}
+      />
       {dim ? (
         <line
           x1={0}
           y1={stripWireY}
-          x2={sceneWidth}
+          x2={width}
           y2={stripWireY}
           stroke="var(--color-post)"
           strokeWidth={5}
         />
       ) : (
         <path
-          d={`M -20 ${stripWireY} Q ${sceneWidth / 2} ${stripWireY + 8} ${sceneWidth + 20} ${stripWireY}`}
+          d={`M -20 ${stripWireY} Q ${width / 2} ${stripWireY + 8} ${width + 20} ${stripWireY}`}
           stroke="var(--color-wire)"
           strokeWidth={3}
           fill="none"
         />
       )}
-      <text
-        data-part="strip-name"
-        x={stripLabelX}
-        y={stripNameY}
-        className="fill-ink font-bold font-display text-[26px] tracking-[-0.01em]"
-      >
-        {tab.label}
-      </text>
-      <text
-        data-part="strip-tally"
-        x={stripLabelX}
-        y={stripTallyY}
-        className="fill-ink-faint font-body text-[13px]"
-      >
-        {dim ? stripTally(tab) : <Tally birds={tab.birds} gap={0} />}
-      </text>
       {layout.places.map(({ bird, x, facing }, index) => {
         const face = facing === "right" ? 1 : -1;
         const open = bird.id === openId;
@@ -522,6 +509,14 @@ function Strip({
           </g>
         );
       })}
+      <text
+        data-part="strip-tally"
+        x={labelX}
+        y={stripTallyY}
+        className="fill-ink-faint font-body text-[13px]"
+      >
+        {dim ? stripTally(tab) : <Tally birds={tab.birds} />}
+      </text>
     </svg>
   );
 }
@@ -875,6 +870,7 @@ export function CameraView({
               {shown !== undefined && shownTab !== undefined && (
                 <Strip
                   tab={shownTab}
+                  width={sceneWidthFor(size.width)}
                   openId={shown.id}
                   night={night}
                   flyingIds={flyingIds}

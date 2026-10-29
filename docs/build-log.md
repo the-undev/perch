@@ -1216,3 +1216,114 @@ build-time calls so they can be revisited.
   roadmap.
 - The design site's camera scene page carries the rule, and the detail
   scene page lists `panning`.
+
+## 28 October 2026 (small windows)
+
+- The verdict is the owner's, with no board: in a window smaller than
+  full screen the birds may shrink a little, the text stays readable,
+  and the birds bunch instead. The design site's aviary page shows the
+  mock at 2000, 1400 and 760px. The roadmap entry on names scaling with
+  the scene is removed.
+- The floor is `minPixelsPerUnit`, 0.9px a scene unit, in `scene.tsx`.
+  The scene's smallest type is 11 units: the wires' names and tallies,
+  the fence's label and a crowded fence's names. At 0.9 it is 9.9px,
+  about the bubble's 10px state word; 0.85 would have let it fall to
+  9.35px. The floor's width is 1800px, so half the ultrawide, about
+  1720px, bunches slightly.
+- `sceneWidthFor(pixels)`, `min(2000, pixels / 0.9)`, is the one rule.
+  The aviary's layout carries its `width`, and `sceneHeightFor`,
+  `pixelsPerUnit`, `toPixels`, the row capacity, facing, the sag, the
+  fence's posts and the sky's sun and stars read it. `rowCapacity` and
+  `rowsFor` take the width. `Scene` and `SkyDrawing` take a required
+  `width`; the design pages pass `sceneWidth`.
+- The strip is as many units wide as the aviary in the same window and
+  draws at `min(pixels / width, 1)`: full size from 2000px, shrinking
+  with the window to 1800px, at the floor below. Its label keeps its
+  place and size; `stripLayout(tab, width)` shares out the room right of
+  it, so the birds bunch there. The flights read both ends from the same
+  rules.
+- The height still rounds to whole units, as before, so where the height
+  binds a unit can sit up to 1/1200 under 0.9px. The test states the
+  bound rather than the pinned full-width layout changing.
+- The floor holds by width only. The scene keeps its 600-unit minimum
+  height, the room the layout needs for a bubble above the top wire and
+  the fence's distance from the bottom, so an aviary under 540px tall
+  still shrinks below the floor. Parked on the roadmap.
+- A wire's later rows each sat 150 units further right, every bird
+  capped at the right margin on its own, so a fourth row's last birds
+  stacked there: a wire of 24 did so at full width, and narrow windows
+  reach four rows often. A row now moves right as one, only as far as
+  the room past its last bird. At full width this changes only rows
+  that reached the margin; the mock's layout is unchanged. Replaced on
+  29 October by the diagonal.
+- The song note's `Math.max(15, 13 * scale)` is the board's size for
+  the note in scene units, not a readability minimum. It stays, and the
+  floor applies to it like any other type.
+- The strip's room right of its label closes at its label's width plus
+  both margins: 494 units, a 445px window, for Machine & Home's. Below
+  that its birds spread back over the label. No minimum window size is
+  set.
+
+## 29 October 2026 (small windows fixes)
+
+- A crowded wire's birds spread left to right across the whole wire and
+  are dealt over its rows in turn, a diagonal, replacing the row stagger
+  that collapsed on full rows; the fence keeps 100 window pixels below
+  it, down from 150; the band above the top wire is 20 per cent of the
+  scene, down from 26, and the sun or moon hangs at 0.09 of its height,
+  up from 0.11.
+- A wire's birds keep clear of its name and tally. The label's end is
+  estimated as the strip's is, 0.6 of the type size a character, with
+  the name's 0.18em tracking and the tally's 18-unit gap; `labelAdvance`
+  now lives in `wire.tsx` and both share it. The clearance past it is
+  66 units, the plumpest wire bird's tail reach. A wire whose centred
+  spread already starts past that keeps its old places; any other
+  spreads between the inset and the right margin, bunching at the inset
+  when there is no room. The mock's nine Projects birds at 1100px now
+  sit 94 units apart, under the 120 the diagonal's test asks for, so
+  that test runs at 1290 and 1400px. Replaced the same day by the wire
+  labels round, below.
+- The fence takes no inset. Its label sits 70 units above the rail and
+  a fence bird's head reaches 41 at base size and 69 at the plumpness
+  cap, so no fence bird stands on it; only a capped bird's bob peak, up
+  to 4.4 more, or its song note can graze the capitals. An inset of the
+  label's 285 units and the clearance would cut a 21-bird fence's
+  spacing at 1100px from 49 to 38. Replaced the same day by the wire
+  labels round, below.
+- The wire labels round's board is `mockups/wire-labels.html`; its
+  verdicts are option 1 with the cut. A wire's name is painted on the
+  sky behind every wire and bird, cut round that wire's birds, its tally
+  stacked in front under the left end, and every wire's and the fence's
+  birds start at a fixed 240-unit column, `columnEdge`. `wireSpanLeft`,
+  `wireLabelRight`, `labelClearance` and `tallyGap` are gone;
+  `labelAdvance` is back in `camera.tsx` for the strip alone.
+- Sizes are the board's. The painted name is the display face, bold,
+  52 units at 12 per cent ink, its baseline 12 above the wire's left
+  end or the rail. The tally's first line is 30 below the wire's left
+  end, 20 between lines, 13 units: attention and drifting semibold in
+  red and amber, "all settled" regular and faint. The fence's count is
+  26 below the rail, 13 units, regular and faint, as the board draws it.
+- The cut is the board's silhouette (tail, body, head and beak, no
+  legs) stroked 9 bird units in a `userSpaceOnUse` mask, drawn at each
+  bird's place, scale and facing. Each cut slides with its bird on a
+  reorder, over the birds' own 700ms transition. A bird whose flyer is
+  still in the air has no cut; a bird landing in the arrival is cut
+  from the start, and the hover lift is not followed.
+- Only a wire's first row carries the painted name and the tally; the
+  cuts cover the wire's birds on every row. Another wire's birds that
+  cross the paint are not cut, as the verdicts cut round that wire's
+  own birds.
+- `rowCapacity` still counts both 120-unit margins, so the column narrows
+  the room a row's birds share without adding rows. The mock's nine
+  Projects birds at 1100px sit 108 units apart. The crowding edges are
+  parked on the roadmap.
+- The strip label round's board is `mockups/strip-label.html`. The strip
+  takes the aviary's `PaintedName` unchanged, its baseline 12 above the
+  wire at 76, cut round each tab bird at its strip scale, 1 or 0.8 on
+  the fence, and facing; a tab bird whose flyer is in the air has no
+  cut. The tally keeps its one line at (36, 92), now drawn after the
+  birds, with its weight and colours as before. `stripLayout` places the
+  tabs with the aviary's `placeAt` and `placeSpacing` at the strip's gap
+  of 175, from `columnEdge` to the edge margin; `labelRight`,
+  `labelAdvance`, the 26-unit name and its sizes are gone. The 445px
+  limit where the strip's birds crossed its label is gone with them.

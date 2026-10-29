@@ -6,7 +6,7 @@ import type { Aviary, Bird, Mood, Wire } from "@perch/core/viewmodel.ts";
 import { birdScale, type Facing, type NamePlace, roomyName } from "./bird.tsx";
 import type { BubbleTail } from "./bubble.tsx";
 import type { PixelSize } from "./hooks.ts";
-import { sceneWidth } from "./scene.tsx";
+import { sceneWidthFor } from "./scene.tsx";
 import {
   byPosition,
   edgeMargin,
@@ -19,7 +19,7 @@ import {
   wireHeight,
 } from "./wire.tsx";
 
-/** A point in scene units: 2000 wide, the layout's height tall. */
+/** A point in scene units: the layout's width wide, its height tall. */
 export interface ScenePoint {
   x: number;
   y: number;
@@ -50,47 +50,51 @@ export interface WireRow {
 }
 
 export interface AviaryLayout {
-  /** The scene's height in scene units; its width is always sceneWidth. */
+  /** The scene's width in scene units: the full 2000, or fewer in a window too narrow for them at the floor. */
+  width: number;
+  /** The scene's height in scene units. */
   height: number;
   rows: WireRow[];
   fence: { y: number; birds: PlacedBird[] };
 }
 
-/** The scene's height keeps the window's aspect, within bounds that stop it squashing or towering. */
+/** The scene's height keeps the window's aspect at the scene's width, within bounds that stop it squashing or towering. */
 export function sceneHeightFor(size: PixelSize): number {
+  const width = sceneWidthFor(size.width);
   return Math.max(
     600,
-    Math.min(3000, Math.round((sceneWidth * size.height) / size.width)),
+    Math.min(3000, Math.round((width * size.height) / size.width)),
   );
 }
 
 /** The closest birds sit on one row; a wire holding more than fit at this gap takes another row. */
 export const crowdedGap = 300;
 
-/** How many birds one row holds: as many as fit at the crowded gap between the margins. */
-export const rowCapacity =
-  Math.floor((sceneWidth - 2 * edgeMargin) / crowdedGap) + 1;
-
-/** The rows a wire needs for its birds; an empty wire still has its one. */
-export function rowsFor(count: number): number {
-  return Math.max(1, Math.ceil(count / rowCapacity));
+/** How many birds one row of a scene this wide holds: as many as fit at the crowded gap between the margins, at least one. */
+export function rowCapacity(width: number): number {
+  return Math.max(1, Math.floor((width - 2 * edgeMargin) / crowdedGap) + 1);
 }
 
-/** Each row after a wire's first sits this far right, so its birds perch between the row above's. */
-const rowStagger = 150;
+/** The rows a wire needs for its birds in a scene this wide; an empty wire still has its one. */
+export function rowsFor(count: number, width: number): number {
+  return Math.max(1, Math.ceil(count / rowCapacity(width)));
+}
 
-/** The vertical spacing, in steps: a whole step between wires, less between rows of one wire. */
-const wireStep = 1;
-const rowStep = 0.6;
+/** The vertical spacing between wires, in steps. */
+export const wireStep = 1;
+
+/** The vertical spacing between rows of one wire, in steps. */
+export const rowStep = 0.6;
 
 function perched(
   bird: Bird,
   x: number,
   y: number,
   name: NamePlace,
+  width: number,
 ): PlacedBird {
   const scale = birdScale(bird);
-  const facing = facingAt(x, sceneWidth);
+  const facing = facingAt(x, width);
   const face = facing === "right" ? 1 : -1;
   // The beak tip is at (37, -42) in bird units, the bird 3 units above the wire.
   return {
@@ -104,45 +108,56 @@ function perched(
   };
 }
 
-/** The birds of one wire, dealt over its rows in turn so the leftmost of each row needs you first. */
-function wireRows(wire: Wire, ys: number[]): WireRow[] {
+/**
+ * The birds of one wire spread left to right in order as one sequence across the birds' room,
+ * each dealt to the next row in turn, so they step down the rows on a diagonal and the leftmost
+ * needs you first.
+ */
+function wireRows(wire: Wire, ys: number[], width: number): WireRow[] {
   const birds = byPosition(wire.birds);
   const rows = ys.length;
-  return ys.map((y, index) => {
-    const inRow = birds.filter((_, i) => i % rows === index);
-    const spacing = placeSpacing(inRow.length, wireGap, sceneWidth);
-    return {
-      wire,
-      index,
-      y,
-      birds: inRow.map((bird, slot) => {
-        const x = Math.min(
-          sceneWidth - edgeMargin,
-          placeAt(slot, inRow.length, wireGap, sceneWidth) + index * rowStagger,
-        );
-        return perched(
+  const count = birds.length;
+  const rowSpacing = rows * placeSpacing(count, wireGap, width);
+  return ys.map((y, index) => ({
+    wire,
+    index,
+    y,
+    birds: birds.flatMap((bird, i) => {
+      if (i % rows !== index) return [];
+      const x = placeAt(i, count, wireGap, width);
+      return [
+        perched(
           bird,
           x,
-          wireHeight(y, x, sceneWidth),
-          namePlace(slot, spacing, roomyName.drop),
-        );
-      }),
-    };
-  });
+          wireHeight(y, x, width),
+          namePlace(Math.floor(i / rows), rowSpacing, roomyName.drop),
+          width,
+        ),
+      ];
+    }),
+  }));
 }
 
+/** The share of the scene's height kept above the top wire for a bubble, unless the bubble needs more. */
+const skyBand = 0.2;
+
 /**
- * The aviary laid out for a window of the given size in pixels. The top wire leaves room above
- * it for a bubble, the fence sits a fixed distance from the bottom, and the wires and their
- * rows share the space between, a whole step apart at most a quarter of the scene.
+ * The aviary laid out for a window of the given size in pixels. A window too narrow for the full
+ * width at the floor gets a narrower scene, its birds bunching and its wires taking more rows. The
+ * top wire leaves room above it for a bubble, the fence sits a fixed distance from the bottom, and
+ * the wires and their rows share the space between, a whole step apart at most a quarter of the
+ * scene.
  */
 export function layoutAviary(aviary: Aviary, size: PixelSize): AviaryLayout {
+  const width = sceneWidthFor(size.width);
   const height = sceneHeightFor(size);
   const units = (pixels: number) => (pixels * height) / size.height;
-  const top = Math.max(height * 0.26, units(26) + 165);
-  const fenceY = height - units(150);
+  const top = Math.max(height * skyBand, units(26) + 165);
+  const fenceY = height - units(100);
   const bottom = Math.max(top, Math.min(height * 0.63, fenceY - 120));
-  const rowCounts = aviary.wires.map((wire) => rowsFor(wire.birds.length));
+  const rowCounts = aviary.wires.map((wire) =>
+    rowsFor(wire.birds.length, width),
+  );
   const steps = rowCounts.reduce(
     (total, rows) => total + wireStep + (rows - 1) * rowStep,
     -wireStep,
@@ -154,11 +169,12 @@ export function layoutAviary(aviary: Aviary, size: PixelSize): AviaryLayout {
       y += (row === 0 ? wireStep : rowStep) * step;
       return y;
     });
-    return wireRows(wire, ys);
+    return wireRows(wire, ys, width);
   });
   const fenceBirds = byPosition(aviary.fence.birds);
-  const fenceSpacing = placeSpacing(fenceBirds.length, fenceGap, sceneWidth);
+  const fenceSpacing = placeSpacing(fenceBirds.length, fenceGap, width);
   return {
+    width,
     height,
     rows,
     fence: {
@@ -166,9 +182,10 @@ export function layoutAviary(aviary: Aviary, size: PixelSize): AviaryLayout {
       birds: fenceBirds.map((bird, i) =>
         perched(
           bird,
-          placeAt(i, fenceBirds.length, fenceGap, sceneWidth),
+          placeAt(i, fenceBirds.length, fenceGap, width),
           fenceY + 2,
           namePlace(i, fenceSpacing, roomyName.drop),
+          width,
         ),
       ),
     },
@@ -182,7 +199,7 @@ export function placedBirds(layout: AviaryLayout): PlacedBird[] {
 
 /** How many CSS pixels one scene unit spans in a window of this size. */
 export function pixelsPerUnit(layout: AviaryLayout, size: PixelSize): number {
-  return Math.min(size.width / sceneWidth, size.height / layout.height);
+  return Math.min(size.width / layout.width, size.height / layout.height);
 }
 
 /** A scene point in pixels from the window's top left, the scene centred as the svg draws it. */
@@ -193,7 +210,7 @@ export function toPixels(
 ): ScenePoint {
   const k = pixelsPerUnit(layout, size);
   return {
-    x: (size.width - sceneWidth * k) / 2 + point.x * k,
+    x: (size.width - layout.width * k) / 2 + point.x * k,
     y: (size.height - layout.height * k) / 2 + point.y * k,
   };
 }

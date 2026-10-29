@@ -50,6 +50,23 @@ a fence beneath. A wire is the owner's priority band, an ordered named
 list in config; a bird never changes wire by itself, only its position
 along the wire, leftmost needing attention first.
 
+A wire's name is painted large and quiet on the sky above its left end,
+behind the wire and every bird, and cut back round each of its birds by
+a thin rim of sky. Its tally hangs in front under the wire's left end, a
+line per word group in its colour, or "all settled" faintly. The fence
+is drawn the same way: "On the fence" painted behind the rail, the count
+of its birds beneath it. Every wire's birds and the fence's start at the
+same column, 240 units in, whatever the name or tally says.
+
+The aviary is never drawn under 0.9 of its full size. From 1800px wide
+its scene, 2000 units across, scales with the window, past a pixel a
+unit on the ultrawide. Below 1800px a unit keeps 0.9px and the scene
+narrows instead: the names, the wires' names and the tallies hold their
+size, and the birds bunch by the crowding rules, closer together and a
+crowded wire over more rows. The tab row holds the same floor. The floor
+holds by width only: the scene keeps at least 600 units of height, so
+an aviary under 540px tall still shrinks.
+
 Perch deals in three tiers above the project itself, each answering a
 share of the glance questions (which thing needs me first; is anything
 at risk of loss; is the rest quietly fine):
@@ -68,10 +85,11 @@ at risk of loss; is the rest quietly fine):
 Navigation is the camera. The aviary is the zoomed-in view; opening a
 project pulls the camera back, the bird's wire-mates flying into a slim
 tab row at the top while the detail rises beneath. In the tab row the
-wire's name rests on the line at its left end, the tally beneath it, at
-every width. The birds keep their size and centre in the width right of
-the label, the open one bright and the rest dimmed; a crowded wire's
-birds bunch closer and never cross the label. The header tabs are
+wire's name is painted behind the line's left end as in the aviary, cut
+round the birds that cross it, and the tally keeps one line beneath it
+in front, at every width. The birds keep their size and centre in the
+room right of the same 240-unit column, the open one bright and the rest
+dimmed; a crowded wire's birds bunch closer. The header tabs are
 the whole navigation, in the scene's own order: The Aviary, one tab per
 wire, On the fence. Each wire tab remembers its last-open bird. Moving
 from one bird's page to another, from the tab row, a header tab or the

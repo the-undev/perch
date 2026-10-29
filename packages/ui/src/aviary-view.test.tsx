@@ -8,13 +8,38 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AviaryView } from "./aviary-view.tsx";
+import {
+  layoutAviary,
+  type PlacedBird,
+  placeBubble,
+  placedBirds,
+  toPixels,
+} from "./aviary-layout.ts";
+import { AviaryScene, AviaryView } from "./aviary-view.tsx";
+import type { PixelSize } from "./hooks.ts";
 import { mockBird, mockBirds } from "./mock-birds.ts";
+import { minPixelsPerUnit, sceneWidth } from "./scene.tsx";
 
 afterEach(cleanup);
 
 const morning = new Date(mockSnapshot.scannedAt);
 const night = new Date(2026, 9, 22, 23, 30);
+
+/** The mock aviary's scene drawn into a window of a given size. */
+function scene(size: PixelSize) {
+  return render(
+    <AviaryScene
+      aviary={mockAviary}
+      now={morning}
+      size={size}
+      onLaunch={() => {}}
+      onFullStory={() => {}}
+      onAdopt={() => {}}
+      onChip={() => {}}
+      flyingIds={new Set()}
+    />,
+  );
+}
 
 function show(now = morning) {
   const onLaunch = vi.fn();
@@ -52,7 +77,63 @@ describe("the aviary view", () => {
     for (const wire of mockAviary.wires) {
       expect(container.textContent).toContain(wire.name);
     }
-    expect(container.textContent).toContain("On the fence · 3 not adopted");
+    expect(container.textContent).toContain("On the fence");
+    expect(
+      container.querySelector('[data-part="fence-count"]')?.textContent,
+    ).toBe("3 not adopted");
+    expect(container.querySelector('[class*="tracking-"]')).toBeNull();
+  });
+
+  it("paints each wire's name and the fence's behind every wire and bird, cut round its own landed birds", () => {
+    const flying = mockAviary.wires[1]?.birds[0]?.id ?? "";
+    const { container } = render(
+      <AviaryScene
+        aviary={mockAviary}
+        now={morning}
+        size={{ width: 1400, height: 800 }}
+        onLaunch={() => {}}
+        onFullStory={() => {}}
+        onAdopt={() => {}}
+        onChip={() => {}}
+        flyingIds={new Set([flying])}
+      />,
+    );
+    const painted = [
+      ...container.querySelectorAll('[data-part="painted-name"]'),
+    ];
+    const firstLine = container.querySelector(
+      'path[stroke="var(--color-wire)"]',
+    );
+    const firstBird = container.querySelector("[data-bird]");
+    const cutsOf = (name: Element) =>
+      [...name.querySelectorAll("[data-cut]")]
+        .map((cut) => cut.getAttribute("data-cut"))
+        .sort();
+    const precedes = (earlier: Element, later: Element | null) =>
+      later !== null &&
+      (earlier.compareDocumentPosition(later) &
+        Node.DOCUMENT_POSITION_FOLLOWING) !==
+        0;
+
+    const groups = [
+      ...mockAviary.wires,
+      { name: "On the fence", birds: mockAviary.fence.birds },
+    ];
+
+    expect(
+      painted.map((name) => name.querySelector("text")?.textContent),
+    ).toEqual(groups.map((group) => group.name));
+    for (const [i, name] of painted.entries()) {
+      const group = groups[i];
+      expect(precedes(name, firstLine)).toBe(true);
+      expect(precedes(name, firstBird)).toBe(true);
+      expect(cutsOf(name)).toEqual(
+        (group?.birds ?? [])
+          .map((bird) => bird.id)
+          .filter((id) => id !== flying)
+          .sort(),
+      );
+    }
   });
 
   it("opens a bird's bubble when it is clicked, and its beak wiggles", () => {
@@ -166,6 +247,66 @@ describe("the aviary view", () => {
     expect(notices?.textContent).toContain(
       "include not found: /home/owner/work",
     );
+  });
+
+  it("never draws a bird's name, a wire's words or the fence's below the floor fraction of their full pixel size", () => {
+    for (const size of [
+      { width: 3440, height: 1380 },
+      { width: 1920, height: 1000 },
+      { width: 1400, height: 800 },
+      { width: 900, height: 900 },
+      { width: 480, height: 900 },
+    ]) {
+      const { container } = scene(size);
+      const drawing = container.querySelector("svg") as SVGSVGElement;
+      const [, , unitsWide, unitsTall] = (drawing.getAttribute("viewBox") ?? "")
+        .split(" ")
+        .map(Number) as [number, number, number, number];
+      const pixelsPerUnit = Math.min(
+        size.width / unitsWide,
+        size.height / unitsTall,
+      );
+      const texts = [...drawing.querySelectorAll("text")];
+
+      expect(texts.length).toBeGreaterThan(mockBirds.length);
+      for (const text of texts) {
+        const full = Number(
+          /text-\[([\d.]+)px\]/.exec(text.getAttribute("class") ?? "")?.[1] ??
+            text.getAttribute("font-size"),
+        );
+        expect(full).toBeGreaterThan(0);
+        // The height rounds to whole units: at most half a unit in 600 over the floor's due.
+        expect(full * pixelsPerUnit).toBeGreaterThanOrEqual(
+          full * minPixelsPerUnit * (1 - 1 / 1200),
+        );
+      }
+      cleanup();
+    }
+  });
+
+  it("opens a bubble on the beak of a bird in a narrowed scene", () => {
+    const size = { width: 900, height: 900 };
+    scene(size);
+    const layout = layoutAviary(mockAviary, size);
+    const placed = placedBirds(layout).find(
+      (entry) => entry.bird.id === "undev/prism",
+    ) as PlacedBird;
+    // jsdom measures every element as 0 tall, the bubble included.
+    const expected = placeBubble(
+      toPixels(placed.beak, layout, size),
+      placed.facing,
+      size,
+      0,
+    );
+
+    fireEvent.click(birdButton("undev/prism"));
+
+    const holder = screen.getByRole("region", { name: "Prism says" })
+      .parentElement as HTMLElement;
+    expect(layout.width).toBeLessThan(sceneWidth);
+    expect(holder.style.left).toBe(`${expected.left}px`);
+    expect(holder.style.top).toBe(`${expected.top}px`);
+    expect(holder.style.width).toBe(`${expected.width}px`);
   });
 
   it("staggers the arrival, the worst first", () => {

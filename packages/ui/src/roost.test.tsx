@@ -98,7 +98,7 @@ describe("the roost", () => {
 
     const wire = mockAviary.wires[1] as Wire;
     const onWire = render(
-      <Scene phase="day" height={400} label="test">
+      <Scene phase="day" width={2000} height={400} label="test">
         <WireDrawing wire={wire} y={200} width={2000} night={false} />
       </Scene>,
     ).container;

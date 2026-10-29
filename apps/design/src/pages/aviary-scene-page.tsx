@@ -1,15 +1,22 @@
 import { mockAviary } from "@perch/core/mock.ts";
 import type { Aviary } from "@perch/core/viewmodel.ts";
+import { rowCapacity, rowsFor } from "@perch/ui/aviary-layout.ts";
 import { AviaryView } from "@perch/ui/aviary-view.tsx";
+import {
+  minPixelsPerUnit,
+  sceneWidth,
+  sceneWidthFor,
+} from "@perch/ui/scene.tsx";
 import type { SkyPhase } from "@perch/ui/sky.ts";
 import { useState } from "react";
-import { withHelloAdopted } from "../specimens.ts";
+import { mockWire, scanMoment, withHelloAdopted } from "../specimens.ts";
 import {
   Choice,
   Code,
   Pressed,
   SceneFrame,
   Section,
+  Specimen,
   Usage,
 } from "../usage.tsx";
 
@@ -44,6 +51,41 @@ const scans: Record<Scan, Aviary> = {
   mock: mockAviary,
   adopted: withHelloAdopted(),
 };
+
+/** The window width below which the scene stops shrinking its units. */
+const floorWidth = sceneWidth * minPixelsPerUnit;
+
+const projects = mockWire("Projects");
+
+/** The mock aviary in a window of a fixed pixel width, scrolling sideways when the page is narrower. */
+function SmallWindow({
+  pixels,
+  label,
+  rule,
+}: {
+  pixels: number;
+  label: string;
+  rule: string;
+}) {
+  return (
+    <Specimen label={label} rule={rule}>
+      <div className="overflow-x-auto">
+        <div style={{ width: pixels }}>
+          <SceneFrame height="640px">
+            <AviaryView
+              aviary={mockAviary}
+              now={scanMoment}
+              onLaunch={() => {}}
+              onFullStory={() => {}}
+              onAdopt={() => {}}
+              onChip={() => {}}
+            />
+          </SceneFrame>
+        </div>
+      </div>
+    </Specimen>
+  );
+}
 
 export function AviaryScenePage() {
   const [clock, setClock] = useState<Clock>("clock");
@@ -97,6 +139,28 @@ export function AviaryScenePage() {
       </SceneFrame>
       <Pressed text={pressed} />
 
+      <Section
+        title="Small windows"
+        rule={`A scene unit spans at least ${minPixelsPerUnit}px. From ${floorWidth}px up the scene is ${sceneWidth} units wide and scales with the window, past one pixel a unit on the ultrawide. Below ${floorWidth}px a unit keeps ${minPixelsPerUnit}px and the scene narrows instead: the type and the birds hold their size, and the birds bunch by the crowding rules, closer together and over more rows. The strip of a bird's page holds the same floor. Each window below is drawn at its true pixel width; a wide one scrolls sideways in a narrow page.`}
+        min={sceneWidth}
+      >
+        <SmallWindow
+          pixels={sceneWidth}
+          label={`${sceneWidth}px: full size`}
+          rule={`${sceneWidth} units at one pixel each, the board's own size.`}
+        />
+        <SmallWindow
+          pixels={1400}
+          label="1400px: the floor holds"
+          rule={`${Math.round(sceneWidthFor(1400))} units at ${minPixelsPerUnit}px each, so every name keeps ${minPixelsPerUnit * 100} per cent of its size. A row holds ${rowCapacity(sceneWidthFor(1400))} birds and the wires sit closer.`}
+        />
+        <SmallWindow
+          pixels={760}
+          label="760px: bunched"
+          rule={`${Math.round(sceneWidthFor(760))} units, still at ${minPixelsPerUnit}px each. A row holds ${rowCapacity(sceneWidthFor(760))} birds, so the ${projects.birds.length} on Projects take ${rowsFor(projects.birds.length, sceneWidthFor(760))} rows.`}
+        />
+      </Section>
+
       <Usage
         component="<AviaryView>"
         props={[
@@ -129,7 +193,8 @@ export function AviaryScenePage() {
       >
         <p>
           The view fills its parent and lays itself out from its measured size:
-          the scene keeps the window&apos;s aspect, the top wire leaves room
+          the scene keeps the window&apos;s aspect, narrows rather than drawing
+          a unit under <Code>minPixelsPerUnit</Code>, the top wire leaves room
           above it for a bubble, and the fence keeps a fixed distance from the
           bottom. <Code>layoutAviary(aviary, size)</Code> in{" "}
           <Code>@perch/ui/aviary-layout.ts</Code> holds every placement rule.

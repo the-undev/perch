@@ -80,12 +80,11 @@ export function rowsFor(count: number, width: number): number {
   return Math.max(1, Math.ceil(count / rowCapacity(width)));
 }
 
-/** Each row after a wire's first sits this much further right, as far as the room past its last bird allows, so its birds perch between the row above's. */
-const rowStagger = 150;
+/** The vertical spacing between wires, in steps. */
+export const wireStep = 1;
 
-/** The vertical spacing, in steps: a whole step between wires, less between rows of one wire. */
-const wireStep = 1;
-const rowStep = 0.6;
+/** The vertical spacing between rows of one wire, in steps. */
+export const rowStep = 0.6;
 
 function perched(
   bird: Bird,
@@ -109,32 +108,33 @@ function perched(
   };
 }
 
-/** The birds of one wire, dealt over its rows in turn so the leftmost of each row needs you first. */
+/**
+ * The birds of one wire spread left to right in order as one sequence, each dealt to the next row
+ * in turn, so they step down the rows on a diagonal and the leftmost needs you first.
+ */
 function wireRows(wire: Wire, ys: number[], width: number): WireRow[] {
   const birds = byPosition(wire.birds);
   const rows = ys.length;
-  return ys.map((y, index) => {
-    const inRow = birds.filter((_, i) => i % rows === index);
-    const count = inRow.length;
-    const spacing = placeSpacing(count, wireGap, width);
-    const last = placeAt(count - 1, count, wireGap, width);
-    const shift = Math.min(index * rowStagger, width - edgeMargin - last);
-    return {
-      wire,
-      index,
-      y,
-      birds: inRow.map((bird, slot) => {
-        const x = placeAt(slot, count, wireGap, width) + shift;
-        return perched(
+  const count = birds.length;
+  const rowSpacing = rows * placeSpacing(count, wireGap, width);
+  return ys.map((y, index) => ({
+    wire,
+    index,
+    y,
+    birds: birds.flatMap((bird, i) => {
+      if (i % rows !== index) return [];
+      const x = placeAt(i, count, wireGap, width);
+      return [
+        perched(
           bird,
           x,
           wireHeight(y, x, width),
-          namePlace(slot, spacing, roomyName.drop),
+          namePlace(Math.floor(i / rows), rowSpacing, roomyName.drop),
           width,
-        );
-      }),
-    };
-  });
+        ),
+      ];
+    }),
+  }));
 }
 
 /**

@@ -37,7 +37,7 @@ export function CrowdedPage() {
     <>
       <Section
         title="A wire over more than one row"
-        rule={`A row holds as many birds as fit ${crowdedGap} units apart between the margins: ${fullRow} at full width, fewer in a window too narrow for the full width at the floor. A wire with more takes another row for each row's worth, dealing its birds over the rows in turn, so the leftmost of every row still needs you first. Each further row sits a little to the right, between the birds above; only the first row carries the wire's name and tally.`}
+        rule={`A row holds as many birds as fit ${crowdedGap} units apart between the margins: ${fullRow} at full width, fewer in a window too narrow for the full width at the floor. A wire with more takes another row for each row's worth. Its birds spread left to right in order across the whole wire and are dealt over the rows in turn, so they step down a diagonal and left to right still reads as who needs you first. Only the first row carries the wire's name and tally.`}
         min={900}
       >
         {counts.map((count) => (

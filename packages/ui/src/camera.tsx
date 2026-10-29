@@ -46,6 +46,7 @@ import { recentWords } from "./time.ts";
 import {
   byPosition,
   edgeMargin,
+  labelAdvance,
   namePlace,
   Tally,
   tallyText,
@@ -165,9 +166,6 @@ const stripTallyY = stripWireY + 16;
 
 /** The label's type sizes, in strip units. */
 const stripLabelSize = { name: 26, tally: 13 };
-
-/** The width the layout reserves for a character, as a fraction of its type size: generous, so no bird touches a word. */
-const labelAdvance = 0.6;
 
 /** The most birds in the strip sit apart; a crowded tab squeezes them closer. */
 const stripGap = 175;

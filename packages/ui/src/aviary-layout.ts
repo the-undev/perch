@@ -12,11 +12,15 @@ import {
   edgeMargin,
   facingAt,
   fenceGap,
+  labelClearance,
   namePlace,
   placeAt,
+  placeBetween,
   placeSpacing,
+  spacingBetween,
   wireGap,
   wireHeight,
+  wireLabelRight,
 } from "./wire.tsx";
 
 /** A point in scene units: the layout's width wide, its height tall. */
@@ -109,21 +113,34 @@ function perched(
 }
 
 /**
- * The birds of one wire spread left to right in order as one sequence, each dealt to the next row
- * in turn, so they step down the rows on a diagonal and the leftmost needs you first.
+ * Where a wire's birds start: the margin while their centred spread already clears the wire's
+ * name and tally, else the label's estimated end and a bird's tail past it.
+ */
+export function wireSpanLeft(wire: Wire, width: number): number {
+  const inset = wireLabelRight(wire.name, wire.birds) + labelClearance;
+  const centred = placeAt(0, wire.birds.length, wireGap, width);
+  return centred >= inset ? edgeMargin : inset;
+}
+
+/**
+ * The birds of one wire spread left to right in order as one sequence right of its label, each
+ * dealt to the next row in turn, so they step down the rows on a diagonal and the leftmost needs
+ * you first.
  */
 function wireRows(wire: Wire, ys: number[], width: number): WireRow[] {
   const birds = byPosition(wire.birds);
   const rows = ys.length;
   const count = birds.length;
-  const rowSpacing = rows * placeSpacing(count, wireGap, width);
+  const left = wireSpanLeft(wire, width);
+  const right = width - edgeMargin;
+  const rowSpacing = rows * spacingBetween(count, wireGap, left, right);
   return ys.map((y, index) => ({
     wire,
     index,
     y,
     birds: birds.flatMap((bird, i) => {
       if (i % rows !== index) return [];
-      const x = placeAt(i, count, wireGap, width);
+      const x = placeBetween(i, count, wireGap, left, right);
       return [
         perched(
           bird,

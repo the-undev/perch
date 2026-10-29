@@ -1272,3 +1272,19 @@ build-time calls so they can be revisited.
   it, down from 150; the band above the top wire is 20 per cent of the
   scene, down from 26, and the sun or moon hangs at 0.09 of its height,
   up from 0.11.
+- A wire's birds keep clear of its name and tally. The label's end is
+  estimated as the strip's is, 0.6 of the type size a character, with
+  the name's 0.18em tracking and the tally's 18-unit gap; `labelAdvance`
+  now lives in `wire.tsx` and both share it. The clearance past it is
+  66 units, the plumpest wire bird's tail reach. A wire whose centred
+  spread already starts past that keeps its old places; any other
+  spreads between the inset and the right margin, bunching at the inset
+  when there is no room. The mock's nine Projects birds at 1100px now
+  sit 94 units apart, under the 120 the diagonal's test asks for, so
+  that test runs at 1290 and 1400px.
+- The fence takes no inset. Its label sits 70 units above the rail and
+  a fence bird's head reaches 41 at base size and 69 at the plumpness
+  cap, so no fence bird stands on it; only a capped bird's bob peak, up
+  to 4.4 more, or its song note can graze the capitals. An inset of the
+  label's 285 units and the clearance would cut a 21-bird fence's
+  spacing at 1100px from 49 to 38.

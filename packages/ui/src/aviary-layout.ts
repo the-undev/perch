@@ -137,6 +137,9 @@ function wireRows(wire: Wire, ys: number[], width: number): WireRow[] {
   }));
 }
 
+/** The share of the scene's height kept above the top wire for a bubble, unless the bubble needs more. */
+const skyBand = 0.2;
+
 /**
  * The aviary laid out for a window of the given size in pixels. A window too narrow for the full
  * width at the floor gets a narrower scene, its birds bunching and its wires taking more rows. The
@@ -148,7 +151,7 @@ export function layoutAviary(aviary: Aviary, size: PixelSize): AviaryLayout {
   const width = sceneWidthFor(size.width);
   const height = sceneHeightFor(size);
   const units = (pixels: number) => (pixels * height) / size.height;
-  const top = Math.max(height * 0.26, units(26) + 165);
+  const top = Math.max(height * skyBand, units(26) + 165);
   const fenceY = height - units(100);
   const bottom = Math.max(top, Math.min(height * 0.63, fenceY - 120));
   const rowCounts = aviary.wires.map((wire) =>

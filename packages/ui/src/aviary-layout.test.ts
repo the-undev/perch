@@ -18,7 +18,13 @@ import {
 } from "./aviary-layout.ts";
 import { roomyName } from "./bird.tsx";
 import { mockBird, mockBirds } from "./mock-birds.ts";
-import { minPixelsPerUnit, sceneWidth, sceneWidthFor } from "./scene.tsx";
+import {
+  lightAt,
+  minPixelsPerUnit,
+  sceneWidth,
+  sceneWidthFor,
+  sunRadius,
+} from "./scene.tsx";
 import {
   alternateBelow,
   edgeMargin,
@@ -28,6 +34,7 @@ import {
   placeSpacing,
   smallerBelow,
   wireGap,
+  wireHeight,
 } from "./wire.tsx";
 
 const window = { width: 1400, height: 800 };
@@ -92,16 +99,16 @@ describe("the aviary's layout", () => {
       width: 2000,
       height: 1042,
       rows: [
-        [270.92, [660, 274.03], [1000, 275.92], [1340, 274.03]],
+        [208.4, [660, 211.51], [1000, 213.4], [1340, 211.51]],
         [
-          510.58,
-          [120, 502.93],
-          [560, 512.42],
-          [1000, 515.58],
-          [1440, 512.42],
-          [1880, 502.93],
+          448.06,
+          [120, 440.41],
+          [560, 449.9],
+          [1000, 453.06],
+          [1440, 449.9],
+          [1880, 440.41],
         ],
-        [654.38, [340, 652.26], [780, 658.59], [1220, 658.59], [1660, 652.26]],
+        [591.86, [340, 589.74], [780, 596.07], [1220, 596.07], [1660, 589.74]],
       ],
       fence: [937.8, 795, 1000, 1205],
     });
@@ -109,16 +116,16 @@ describe("the aviary's layout", () => {
       width: 2000,
       height: 802,
       rows: [
-        [208.52, [660, 211.63], [1000, 213.52], [1340, 211.63]],
+        [180.11, [660, 183.22], [1000, 185.11], [1340, 183.22]],
         [
-          392.98,
-          [120, 385.33],
-          [560, 394.82],
-          [1000, 397.98],
-          [1440, 394.82],
-          [1880, 385.33],
+          364.57,
+          [120, 356.92],
+          [560, 366.41],
+          [1000, 369.57],
+          [1440, 366.41],
+          [1880, 356.92],
         ],
-        [503.66, [340, 501.54], [780, 507.87], [1220, 507.87], [1660, 501.54]],
+        [475.25, [340, 473.13], [780, 479.46], [1220, 479.46], [1660, 473.13]],
       ],
       fence: [743.88, 795, 1000, 1205],
     });
@@ -261,6 +268,39 @@ describe("the aviary's layout", () => {
     const ys = layout.rows.map((row) => row.y);
     expect(ys).toEqual([...ys].sort((a, b) => a - b));
     expect(layout.fence.y).toBeGreaterThan(Math.max(...ys));
+  });
+
+  it("keeps a fifth of the scene above the top wire, or the bubble's room where that is more", () => {
+    const tall = { width: 1920, height: 1200 };
+    const short = { width: 3440, height: 1380 };
+    const tallLayout = layoutAviary(mockAviary, tall);
+    const shortLayout = layoutAviary(mockAviary, short);
+
+    expect(tallLayout.rows[0]?.y).toBeCloseTo(tallLayout.height * 0.2);
+    expect(shortLayout.rows[0]?.y).toBeCloseTo(
+      (26 * shortLayout.height) / short.height + 165,
+    );
+    expect(shortLayout.rows[0]?.y).toBeGreaterThan(shortLayout.height * 0.2);
+  });
+
+  it("hangs the sun 0.09 down the scene, its disc at least 50 units clear of the top wire beneath it", () => {
+    expect(lightAt(2000, 1000)).toEqual({ x: 1700, y: 90 });
+    for (const size of [
+      { width: 1100, height: 800 },
+      { width: 1290, height: 800 },
+      { width: 1920, height: 1000 },
+      { width: 3440, height: 1380 },
+      { width: 3440, height: 1540 },
+      { width: 3440, height: 500 },
+      { width: 800, height: 1600 },
+    ]) {
+      const layout = layoutAviary(mockAviary, size);
+      const light = lightAt(layout.width, layout.height);
+      const wire = wireHeight(layout.rows[0]?.y ?? 0, light.x, layout.width);
+
+      expect(wire - (light.y + sunRadius)).toBeGreaterThanOrEqual(50);
+      expect(light.y - sunRadius).toBeGreaterThan(0);
+    }
   });
 
   it("keeps 100 window pixels below the fence", () => {

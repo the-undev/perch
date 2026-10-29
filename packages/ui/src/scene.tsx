@@ -24,11 +24,25 @@ const starCount: Record<SkyPhase, number> = {
   night: 110,
 };
 
+/** The radius of the sun's disc, inside its faint halo. */
+export const sunRadius = 42;
+
+/** How far down the scene the sun or moon hangs, as a share of its height. */
+const lightHeight = 0.09;
+
+/** The centre of the sun or moon in a scene this wide and tall: 300 units in from the right. */
+export function lightAt(
+  width: number,
+  height: number,
+): { x: number; y: number } {
+  return { x: width - 300, y: height * lightHeight };
+}
+
 function Sun({ phase, x, y }: { phase: "dawn" | "day"; x: number; y: number }) {
   const fill = phase === "day" ? "var(--color-sun)" : "var(--color-sun-low)";
   return (
     <g data-part="sun">
-      <circle cx={x} cy={y} r={42} fill={fill} opacity={0.9} />
+      <circle cx={x} cy={y} r={sunRadius} fill={fill} opacity={0.9} />
       <circle cx={x} cy={y} r={58} fill={fill} opacity={0.12} />
     </g>
   );
@@ -92,14 +106,13 @@ export function SkyDrawing({
   width: number;
   height: number;
 }) {
-  const lightX = width - 300;
-  const lightY = height * 0.11;
+  const light = lightAt(width, height);
   return (
     <>
       {phase === "day" || phase === "dawn" ? (
-        <Sun phase={phase} x={lightX} y={lightY} />
+        <Sun phase={phase} x={light.x} y={light.y} />
       ) : (
-        <Moon x={lightX} y={lightY} />
+        <Moon x={light.x} y={light.y} />
       )}
       <Stars count={starCount[phase]} width={width} height={height} />
     </>

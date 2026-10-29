@@ -28,7 +28,22 @@ import {
 } from "./camera.tsx";
 import { mockBird } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth, sceneWidthFor } from "./scene.tsx";
-import { edgeMargin } from "./wire.tsx";
+import {
+  columnEdge,
+  edgeMargin,
+  labelX,
+  paintedInk,
+  paintedSize,
+} from "./wire.tsx";
+
+/** Whether `later` comes after `earlier` in the document, so it is drawn in front of it. */
+function drawnAfter(earlier: Element, later: Element): boolean {
+  return (
+    (earlier.compareDocumentPosition(later) &
+      Node.DOCUMENT_POSITION_FOLLOWING) !==
+    0
+  );
+}
 
 // jsdom measures nothing, so the camera keeps its assumed 1400px window, narrower than the floor's
 // width: its strip is fewer units wide than the full 2000, drawn at the floor.
@@ -328,16 +343,22 @@ describe("the camera", () => {
     }
   });
 
-  it("holds its label on the wire with the birds in the remaining width at the new height", () => {
+  it("paints its name behind the wire and its birds, its tally in front, the birds right of the column at the new height", () => {
     const { container } = camera(detailOf("undev/skiff"));
     const strip = container.querySelector('[data-part="strip"]') as HTMLElement;
     const sky = container.querySelector('[data-part="sky"]') as HTMLElement;
     const drawing = strip.querySelector("svg");
-    const name = strip.querySelector('[data-part="strip-name"]');
+    const line = strip.querySelector("svg > path");
+    const painted = strip.querySelector('[data-part="painted-name"] text');
+    const mask = strip.querySelector('[data-part="painted-name"] mask');
     const tally = strip.querySelector('[data-part="strip-tally"]');
+    const birds = [...strip.querySelectorAll("[data-strip-bird]")];
     const projects = cameraTabs(mockAviary)[2] as BirdTab;
     const layout = stripLayout(projects, stripUnits);
     const xs = stripXs(container);
+    if (line === null || painted === null || mask === null || tally === null) {
+      throw new Error("no wire, painted name, mask or tally drawn");
+    }
 
     expect(stripHeight).toBe(124);
     expect(drawing?.getAttribute("viewBox")).toBe(
@@ -345,26 +366,35 @@ describe("the camera", () => {
     );
     expect(strip.style.height).toBe(`${stripHeight}px`);
     expect(sky.style.height).toBe(`${stripHeight}px`);
-    expect(strip.querySelector("path")?.getAttribute("d")).toMatch(
-      new RegExp(`^M -20 ${stripWireY} `),
-    );
-    // The name's baseline rests just above the wire at its left end; the tally sits beneath it.
-    expect(name?.textContent).toBe("Projects");
-    expect(name?.getAttribute("x")).toBe("36");
-    expect(Number(name?.getAttribute("y"))).toBeLessThan(stripWireY);
-    expect(Number(name?.getAttribute("y"))).toBeGreaterThanOrEqual(
-      stripWireY - 10,
-    );
-    expect(tally?.getAttribute("x")).toBe("36");
-    expect(Number(tally?.getAttribute("y"))).toBeGreaterThan(stripWireY);
-    expect(tally?.textContent).toMatch(/^3 attention/);
-    expect(tally?.querySelector("tspan")?.getAttribute("dx")).toBeNull();
-    // The birds keep their size and centre in the room right of the label.
-    expect(layout.labelRight).toBeGreaterThan(36);
+    expect(line.getAttribute("d")).toMatch(new RegExp(`^M -20 ${stripWireY} `));
+    // The name is painted just above the wire's left end, behind the line and every bird.
+    expect(painted.textContent).toBe("Projects");
+    expect(painted.getAttribute("x")).toBe(String(labelX));
+    expect(painted.getAttribute("y")).toBe(String(stripWireY - 12));
+    expect(painted.getAttribute("font-size")).toBe(String(paintedSize));
+    expect(painted.getAttribute("opacity")).toBe(String(paintedInk));
+    expect(painted.getAttribute("mask")).toBe(`url(#${mask.id})`);
+    expect(drawnAfter(painted, line)).toBe(true);
+    expect(birds.every((bird) => drawnAfter(painted, bird))).toBe(true);
+    expect(
+      [...mask.querySelectorAll("[data-cut]")].map((cut) =>
+        cut.getAttribute("data-cut"),
+      ),
+    ).toEqual(birds.map((bird) => bird.getAttribute("data-strip-bird")));
+    expect(strip.querySelector('[data-part="strip-name"]')).toBeNull();
+    // The tally keeps its one line under the wire's left end, in front and in colour.
+    expect(tally.getAttribute("x")).toBe("36");
+    expect(tally.getAttribute("y")).toBe(String(stripWireY + 16));
+    expect(tally.textContent).toBe("3 attention · 1 drifting");
+    expect(
+      [...tally.querySelectorAll("tspan")]
+        .map((tspan) => tspan.getAttribute("class"))
+        .filter((ink) => ink !== null),
+    ).toEqual(["fill-red", "fill-amber"]);
+    expect(birds.every((bird) => drawnAfter(bird, tally))).toBe(true);
+    // The birds keep their size and centre in the room right of the column.
     expect(xs).toEqual(layout.places.map((place) => place.x));
-    expect(Math.min(...xs)).toBeGreaterThanOrEqual(
-      layout.labelRight + edgeMargin,
-    );
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(columnEdge);
     expect(Math.max(...xs)).toBeLessThanOrEqual(stripUnits - edgeMargin);
     expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(layout.middle);
     expect(
@@ -372,6 +402,20 @@ describe("the camera", () => {
         .querySelector('[data-strip-bird] [data-part="figure"]')
         ?.parentElement?.getAttribute("transform"),
     ).toMatch(/^scale\(-?1 1\)$/);
+  });
+
+  it("starts every tab's birds at the column at any width, whatever its name or tally", () => {
+    for (const width of [300, 500, 1000, stripUnits, sceneWidth]) {
+      for (const tab of cameraTabs(mockAviary)) {
+        if (tab.kind === "aviary") continue;
+        const renamed = { ...tab, label: "A tab with a very long name indeed" };
+
+        for (const place of stripLayout(tab, width).places) {
+          expect(place.x).toBeGreaterThanOrEqual(columnEdge);
+        }
+        expect(stripLayout(renamed, width)).toEqual(stripLayout(tab, width));
+      }
+    }
   });
 
   it("brightens the open bird in the strip and dims the rest", () => {
@@ -392,7 +436,7 @@ describe("the camera", () => {
     ).not.toContain("undev/skiff");
   });
 
-  it("alternates the names of a crowded fence's strip between two baselines, yielding to the label", () => {
+  it("alternates the names of a crowded fence's strip between two baselines, its name painted and counted", () => {
     const birds = Array.from({ length: 21 }, (_, position) => ({
       ...(mockAviary.fence.birds[position % 3] as Bird),
       id: `fence-${position}`,
@@ -414,12 +458,22 @@ describe("the camera", () => {
     expect(
       container.querySelector('[data-part="strip-tally"]')?.textContent,
     ).toBe("21 not adopted");
+    const strip = container.querySelector('[data-part="strip"]') as HTMLElement;
+    expect(
+      strip.querySelector('[data-part="painted-name"] text')?.textContent,
+    ).toBe("On the fence");
+    expect(
+      [...strip.querySelectorAll("[data-cut] > g")].every((cut) =>
+        /scale\(-?0\.8 0\.8\)/.test(cut.getAttribute("transform") ?? ""),
+      ),
+    ).toBe(true);
+    expect(strip.querySelectorAll("[data-cut]")).toHaveLength(21);
     expect(layout.spacing).toBeLessThan(175);
-    expect(Math.min(...xs)).toBeCloseTo(layout.labelRight + edgeMargin);
+    expect(Math.min(...xs)).toBeCloseTo(columnEdge);
     expect(Math.max(...xs)).toBeCloseTo(stripUnits - edgeMargin);
   });
 
-  it("holds the strip at the floor in a window narrower than the floor's width, its birds bunching right of the label", () => {
+  it("holds the strip at the floor in a window narrower than the floor's width, its birds bunching right of the column", () => {
     const { container } = camera(detailOf("undev/skiff"));
     const drawing = container.querySelector('[data-part="strip"] svg');
     const unitsWide = Number(drawing?.getAttribute("viewBox")?.split(" ")[2]);
@@ -430,14 +484,12 @@ describe("the camera", () => {
 
     expect(unitsWide).toBeLessThan(sceneWidth);
     expect(Math.min(assumedWidth / unitsWide, 1)).toBeCloseTo(minPixelsPerUnit);
-    expect(narrow.labelRight).toBe(full.labelRight);
     expect(full.spacing).toBe(175);
     expect(narrow.spacing).toBeLessThan(full.spacing);
     expect(narrow.spacing).toBeCloseTo(
-      (unitsWide - edgeMargin - (narrow.labelRight + edgeMargin)) /
-        (projects.birds.length - 1),
+      (unitsWide - edgeMargin - columnEdge) / (projects.birds.length - 1),
     );
-    expect(Math.min(...xs)).toBeCloseTo(narrow.labelRight + edgeMargin);
+    expect(Math.min(...xs)).toBeCloseTo(columnEdge);
     expect(Math.max(...xs)).toBeCloseTo(unitsWide - edgeMargin);
   });
 

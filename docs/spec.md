@@ -50,6 +50,14 @@ a fence beneath. A wire is the owner's priority band, an ordered named
 list in config; a bird never changes wire by itself, only its position
 along the wire, leftmost needing attention first.
 
+A wire's name is painted large and quiet on the sky above its left end,
+behind the wire and every bird, and cut back round each of its birds by
+a thin rim of sky. Its tally hangs in front under the wire's left end, a
+line per word group in its colour, or "all settled" faintly. The fence
+is drawn the same way: "On the fence" painted behind the rail, the count
+of its birds beneath it. Every wire's birds and the fence's start at the
+same column, 240 units in, whatever the name or tally says.
+
 The aviary is never drawn under 0.9 of its full size. From 1800px wide
 its scene, 2000 units across, scales with the window, past a pixel a
 unit on the ultrawide. Below 1800px a unit keeps 0.9px and the scene

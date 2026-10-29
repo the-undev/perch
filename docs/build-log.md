@@ -1281,10 +1281,39 @@ build-time calls so they can be revisited.
   spreads between the inset and the right margin, bunching at the inset
   when there is no room. The mock's nine Projects birds at 1100px now
   sit 94 units apart, under the 120 the diagonal's test asks for, so
-  that test runs at 1290 and 1400px.
+  that test runs at 1290 and 1400px. Replaced the same day by the wire
+  labels round, below.
 - The fence takes no inset. Its label sits 70 units above the rail and
   a fence bird's head reaches 41 at base size and 69 at the plumpness
   cap, so no fence bird stands on it; only a capped bird's bob peak, up
   to 4.4 more, or its song note can graze the capitals. An inset of the
   label's 285 units and the clearance would cut a 21-bird fence's
-  spacing at 1100px from 49 to 38.
+  spacing at 1100px from 49 to 38. Replaced the same day by the wire
+  labels round, below.
+- The wire labels round's board is `mockups/wire-labels.html`; its
+  verdicts are option 1 with the cut. A wire's name is painted on the
+  sky behind every wire and bird, cut round that wire's birds, its tally
+  stacked in front under the left end, and every wire's and the fence's
+  birds start at a fixed 240-unit column, `columnEdge`. `wireSpanLeft`,
+  `wireLabelRight`, `labelClearance` and `tallyGap` are gone;
+  `labelAdvance` is back in `camera.tsx` for the strip alone.
+- Sizes are the board's. The painted name is the display face, bold,
+  52 units at 12 per cent ink, its baseline 12 above the wire's left
+  end or the rail. The tally's first line is 30 below the wire's left
+  end, 20 between lines, 13 units: attention and drifting semibold in
+  red and amber, "all settled" regular and faint. The fence's count is
+  26 below the rail, 13 units, regular and faint, as the board draws it.
+- The cut is the board's silhouette (tail, body, head and beak, no
+  legs) stroked 9 bird units in a `userSpaceOnUse` mask, drawn at each
+  bird's place, scale and facing. Each cut slides with its bird on a
+  reorder, over the birds' own 700ms transition. A bird whose flyer is
+  still in the air has no cut; a bird landing in the arrival is cut
+  from the start, and the hover lift is not followed.
+- Only a wire's first row carries the painted name and the tally; the
+  cuts cover the wire's birds on every row. Another wire's birds that
+  cross the paint are not cut, as the verdicts cut round that wire's
+  own birds.
+- `rowCapacity` still counts both 120-unit margins, so the column narrows
+  the room a row's birds share without adding rows. The mock's nine
+  Projects birds at 1100px sit 108 units apart. The crowding edges are
+  parked on the roadmap.

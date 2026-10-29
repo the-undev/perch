@@ -62,6 +62,16 @@ Holding the floor there needs a layout with a smaller vertical budget
 first: less room above the top wire, rows closer, or the fence nearer
 the wires.
 
+## Crowding at the edges
+
+The diagonal and the 240-unit column leave three edges. From 9 birds on
+a wire in an 1100px window, consecutive birds sit under 120 units apart
+and only 0.6 of a step lower, so they crowd again. Below about 500px
+everything bunches hard: nine birds share about 200 units. Below about
+445px the detail strip's birds spread back over its label. The fix is a
+vertical-budget round for the aviary, giving crowded rows more height,
+or a minimum window size.
+
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the

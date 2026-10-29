@@ -106,6 +106,7 @@ export function AdoptionPapersPage() {
               openPapers={false}
               arrivalChip={null}
               onSettings={() => {}}
+              panning={false}
             />
           </Stage>
         </Specimen>
@@ -129,6 +130,7 @@ export function AdoptionPapersPage() {
               openPapers={true}
               arrivalChip={null}
               onSettings={() => {}}
+              panning={false}
             />
           </Stage>
         </Specimen>

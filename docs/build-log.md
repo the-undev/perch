@@ -1165,3 +1165,54 @@ build-time calls so they can be revisited.
 - Three tests were replaced, their surviving assertions kept: the
   strip's tally beside the name, the roost in its 480px column, and the
   roost as a row from 460px of its own width.
+
+## 28 October 2026 (the camera pan)
+
+- The round's last phase, its verdict on `mockups/bird-page.html`: between
+  birds the strip holds still and the ground pans towards the chosen
+  bird, replacing the swap's flash. The roadmap entry "Moving the camera
+  between birds" is removed.
+- The pan runs 600ms, the board's duration, on the flights' curve,
+  `cubic-bezier(0.4, 0, 0.2, 1)`. `PanTrack` lays the two pages side by
+  side and slides itself one page's width through the Web Animations
+  API, as the flyers do, holding the end frame until the pan clears.
+  The ground's padding moved into each page, so the pan travels the
+  ground's full width.
+- Direction comes from the strips laid end to end in the header's order:
+  a bird later along its wire, on a later wire or on the fence lies to
+  the right, so its page comes in from the right and the ground slides
+  left; anything else comes in from the left. `panDirection` holds the
+  rule. A move to another tab redraws the strip as the chosen bird's
+  wire at once; only the ground pans.
+- Only a move from one bird's page to another pans. The zoom from the
+  aviary is untouched, and its first arrival keeps the swap; the pan
+  never starts from nowhere. Reduced motion starts no pan, and the page
+  is replaced at once as the remount did.
+- The page left is drawn from the props it last had: the bird, its key
+  files, its entry form, the problems, the papers asked and the arrival
+  chip. By the next render the caller's sheets and form are the chosen
+  bird's, so live props would have emptied its paper pane and dropped
+  its verb mid-pan. It keeps its mounted state, so its scroll and any
+  open papers slide away with it. It is inert and `aria-hidden` for the
+  whole pan and unmounts when the pan settles.
+- Each arrival on a bird mounts a fresh page, keyed by a count of
+  arrivals rather than the bird's id, so going back to a bird mid-pan
+  does not revive the page sliding away. The new page starts at the top
+  of its panes with its papers folded unless the move asks for them.
+- A move during a pan starts a new pan from the arriving page; the page
+  left first unmounts at once. The new pan starts from its own first
+  frame, so the ground jumps rather than carrying on from mid-slide.
+- `DetailView` takes a required `panning`. A page mounted while it is
+  true skips its swap. Every landing waits for it to turn false: the
+  arrival chip, and a chip pressed in the roost's bubble during the pan,
+  which is held and landed once it settles. A roost press during the
+  swap still lands at once, as before. The page left is passed
+  `panning` too, so it lands nothing. A `scrollIntoView` during the pan
+  could scroll the ground, which is overflow hidden but still a scroll
+  container, sideways.
+- The strip's brightness and `aria-current` move to the chosen bird as
+  the navigation lands, before the pan settles. The board's flyer
+  crossing the strip overhead is not built and is parked on the
+  roadmap.
+- The design site's camera scene page carries the rule, and the detail
+  scene page lists `panning`.

@@ -73,7 +73,15 @@ every width. The birds keep their size and centre in the width right of
 the label, the open one bright and the rest dimmed; a crowded wire's
 birds bunch closer and never cross the label. The header tabs are
 the whole navigation, in the scene's own order: The Aviary, one tab per
-wire, On the fence. Each wire tab remembers its last-open bird. The
+wire, On the fence. Each wire tab remembers its last-open bird. Moving
+from one bird's page to another, from the tab row, a header tab or the
+URL, pans the ground beneath the still tab row: the page left slides
+out as the chosen bird's slides in, from the right for a bird further
+along the row or on a later tab, the fence last, and from the left
+otherwise. The bright bird in the tab row moves at once. The new page
+opens at the top of its panes with its papers folded, and a chip the
+move carries lands once the pan settles. With reduced motion the page
+is replaced at once. The
 Aviary tab, the brand and Escape ride the camera home. Large state
 changes between scans re-run the arrival: birds fly in, never crossfade.
 

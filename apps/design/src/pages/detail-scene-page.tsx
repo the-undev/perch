@@ -78,6 +78,7 @@ export function DetailScenePage() {
             openPapers={false}
             arrivalChip={null}
             onSettings={() => setPressed("onSettings()")}
+            panning={false}
           />
         </Stage>
       </div>
@@ -126,6 +127,11 @@ export function DetailScenePage() {
             name: "onSettings",
             type: "() => void",
             what: "A notice's Sources was pressed; the app opens the settings page.",
+          },
+          {
+            name: "panning",
+            type: "boolean",
+            what: "The camera is panning the ground between birds: a page mounted during it skips its swap, and the arrival chip and any roost press wait until it settles.",
           },
         ]}
       >

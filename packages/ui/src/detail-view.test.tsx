@@ -109,6 +109,7 @@ interface PageOptions {
   problems?: string[];
   openPapers?: boolean;
   arrivalChip?: ChipKind | null;
+  panning?: boolean;
 }
 
 function page(bird: Bird, options: PageOptions = {}) {
@@ -127,6 +128,7 @@ function page(bird: Bird, options: PageOptions = {}) {
       openPapers={given.openPapers ?? false}
       arrivalChip={given.arrivalChip ?? null}
       onSettings={onSettings}
+      panning={given.panning ?? false}
     />
   );
   const { container, rerender } = render(view(bird, options));
@@ -412,6 +414,53 @@ describe("the detail view", () => {
       { element: ciRow, options: { block: "center", behavior: "instant" } },
     ]);
     expect(ciRow.querySelector('[data-part="landing"]')).not.toBeNull();
+  });
+
+  it("skips its swap when mounted during a pan, landing an arrival chip only once the pan settles", () => {
+    swapPlaying();
+    const perch = mockBird("dev/perch");
+    const { container, push } = page(perch, {
+      arrivalChip: "ci",
+      panning: true,
+    });
+    const article = screen.getByRole("article", { name: "Perch in full" });
+    const ciRow = container.querySelector(
+      '[data-part="record"] [data-chip="ci"]',
+    );
+
+    expect(article.className).not.toContain("animate-swap");
+    expect(scrolled).toEqual([]);
+
+    push(perch, { arrivalChip: "ci", panning: false });
+
+    expect(scrolled.map(({ element }) => element)).toEqual([ciRow]);
+    expect(ciRow?.querySelector('[data-part="landing"]')).not.toBeNull();
+    expect(article.className).not.toContain("animate-swap");
+  });
+
+  it("holds a roost press while the ground pans, landing it once the pan settles", () => {
+    const perch = mockBird("dev/perch");
+    const { container, push } = page(perch, { panning: true });
+    const [ci] = perch.bubble.chips;
+    if (ci === undefined) throw new Error("perch carries a CI chip");
+
+    fireEvent.click(
+      within(screen.getByRole("region", { name: "Perch says" })).getByRole(
+        "button",
+        { name: ci.label },
+      ),
+    );
+    expect(scrolled).toEqual([]);
+    expect(container.querySelector('[data-part="landing"]')).toBeNull();
+
+    push(perch, { panning: false });
+
+    expect(scrolled).toHaveLength(1);
+    expect(
+      container
+        .querySelector('[data-part="landing"]')
+        ?.parentElement?.getAttribute("data-chip"),
+    ).toBe("ci");
   });
 
   it("lands a roost press at once, while the page's swap still plays", () => {

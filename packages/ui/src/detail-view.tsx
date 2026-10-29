@@ -76,6 +76,8 @@ export interface DetailViewProps {
   arrivalChip: ChipKind | null;
   /** A notice's Sources was pressed: open the settings page. */
   onSettings: () => void;
+  /** The camera is panning the ground between birds' pages: a page mounted during it skips its swap, and every landing waits until it settles. */
+  panning: boolean;
 }
 
 /** What was signed and is not yet in the entry read back: the values written, or the return. */
@@ -200,6 +202,7 @@ export function DetailView({
   openPapers,
   arrivalChip,
   onSettings,
+  panning,
 }: DetailViewProps) {
   const { detail } = bird;
   const [open, setOpen] = useState(openPapers);
@@ -237,25 +240,43 @@ export function DetailView({
       ?.querySelector(`[data-chip="${chip}"]`)
       ?.scrollIntoView({ block: "center", behavior: "instant" });
   }, []);
-  // The arrival lands once the page's own swap is over, since a scroll and a mark during it flicker.
-  const [settled, setSettled] = useState(false);
+  // The arrival lands once the page's own swap is over, or the camera's pan, since a scroll and a
+  // mark during either flicker, and a scroll during a pan would drag the ground sideways. A page
+  // panned in arrives by the pan alone.
+  const [swaps] = useState(!panning);
+  const [swapOver, setSwapOver] = useState(false);
   useLayoutEffect(() => {
-    if (!swapRunning(articleRef.current)) setSettled(true);
-  }, []);
+    if (!swaps || !swapRunning(articleRef.current)) setSwapOver(true);
+  }, [swaps]);
   const settleOnSwap = (event: AnimationEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return;
     if (event.animationName !== "swap") return;
-    setSettled(true);
+    setSwapOver(true);
   };
+  const settled = swapOver && !panning;
   useEffect(() => {
     if (!settled || arrivalChip === null) return;
     landOn(arrivalChip);
   }, [settled, arrivalChip, landOn]);
+  // A roost chip pressed while the ground pans is held until it settles.
+  const [heldChip, setHeldChip] = useState<ChipKind | null>(null);
+  useEffect(() => {
+    if (!settled || heldChip === null) return;
+    setHeldChip(null);
+    landOn(heldChip);
+  }, [settled, heldChip, landOn]);
+  const pressChip = (chip: ChipKind) => {
+    if (panning) {
+      setHeldChip(chip);
+      return;
+    }
+    landOn(chip);
+  };
   return (
     <article
       ref={articleRef}
       aria-label={`${bird.name} in full`}
-      className="@container mx-auto grid min-h-0 w-full max-w-480 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-y-4 overflow-y-clip motion-safe:animate-swap"
+      className={`@container mx-auto grid min-h-0 w-full max-w-480 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-y-4 overflow-y-clip ${swaps ? "motion-safe:animate-swap" : ""}`}
       onAnimationEnd={settleOnSwap}
     >
       <div
@@ -296,7 +317,7 @@ export function DetailView({
           data-part="roost-cell"
           className="mx-auto w-120 max-w-full @min-[860px]:mx-0 @min-[860px]:w-auto @min-[860px]:min-w-0 @min-[860px]:flex-[0_1_auto]"
         >
-          <Roost bird={bird} night={night} onChip={landOn} />
+          <Roost bird={bird} night={night} onChip={pressChip} />
         </div>
       </div>
       {/* The sheet spans both rows: a press anywhere off the papers, the band included, folds them,

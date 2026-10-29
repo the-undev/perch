@@ -1317,3 +1317,13 @@ build-time calls so they can be revisited.
   the room a row's birds share without adding rows. The mock's nine
   Projects birds at 1100px sit 108 units apart. The crowding edges are
   parked on the roadmap.
+- The strip label round's board is `mockups/strip-label.html`. The strip
+  takes the aviary's `PaintedName` unchanged, its baseline 12 above the
+  wire at 76, cut round each tab bird at its strip scale, 1 or 0.8 on
+  the fence, and facing; a tab bird whose flyer is in the air has no
+  cut. The tally keeps its one line at (36, 92), now drawn after the
+  birds, with its weight and colours as before. `stripLayout` places the
+  tabs with the aviary's `placeAt` and `placeSpacing` at the strip's gap
+  of 175, from `columnEdge` to the edge margin; `labelRight`,
+  `labelAdvance`, the 26-unit name and its sizes are gone. The 445px
+  limit where the strip's birds crossed its label is gone with them.

@@ -85,10 +85,11 @@ at risk of loss; is the rest quietly fine):
 Navigation is the camera. The aviary is the zoomed-in view; opening a
 project pulls the camera back, the bird's wire-mates flying into a slim
 tab row at the top while the detail rises beneath. In the tab row the
-wire's name rests on the line at its left end, the tally beneath it, at
-every width. The birds keep their size and centre in the width right of
-the label, the open one bright and the rest dimmed; a crowded wire's
-birds bunch closer and never cross the label. The header tabs are
+wire's name is painted behind the line's left end as in the aviary, cut
+round the birds that cross it, and the tally keeps one line beneath it
+in front, at every width. The birds keep their size and centre in the
+room right of the same 240-unit column, the open one bright and the rest
+dimmed; a crowded wire's birds bunch closer. The header tabs are
 the whole navigation, in the scene's own order: The Aviary, one tab per
 wire, On the fence. Each wire tab remembers its last-open bird. Moving
 from one bird's page to another, from the tab row, a header tab or the

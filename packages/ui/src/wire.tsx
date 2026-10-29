@@ -276,12 +276,10 @@ export interface FenceRailProps {
   width: number;
   /** The scene's height: the posts run from the rail to the bottom. */
   height: number;
-  /** How many birds sit on the fence, for its label. */
-  count: number;
 }
 
-/** The fence's rail on its posts, with its label. */
-export function FenceRail({ y, width, height, count }: FenceRailProps) {
+/** The fence's rail on its posts. */
+export function FenceRail({ y, width, height }: FenceRailProps) {
   const posts = Array.from(
     { length: Math.ceil((width - 120) / 320) },
     (_, i) => 120 + i * 320,
@@ -308,14 +306,28 @@ export function FenceRail({ y, width, height, count }: FenceRailProps) {
           opacity={0.7}
         />
       ))}
-      <text
-        x={36}
-        y={y - 70}
-        className="fill-ink-faint font-body font-bold text-[11px] uppercase tracking-[0.18em]"
-      >
-        On the fence · {count} not adopted
-      </text>
     </>
+  );
+}
+
+/** The fence's painted name. */
+export const fenceName = "On the fence";
+
+/** How far the fence's count hangs beneath the rail. */
+const fenceCountDrop = 26;
+
+/** How many sit on the fence, in front beneath the rail's left end. */
+export function FenceCount({ y, count }: { y: number; count: number }) {
+  return (
+    <text
+      data-part="fence-count"
+      x={labelX}
+      y={y + fenceCountDrop}
+      fontSize={tallySize}
+      className="fill-ink-faint font-body"
+    >
+      {count} not adopted
+    </text>
   );
 }
 
@@ -384,29 +396,43 @@ export interface FenceProps {
   night: boolean;
 }
 
-/** The fence beneath the wires: a rail on posts, every unadopted bird dimmed upon it. */
+/** The fence beneath the wires: its name painted behind, a rail on posts, every unadopted bird dimmed upon it, and the count in front. */
 export function Fence({ fence, y, width, height, night }: FenceProps) {
   const birds = byPosition(fence.birds);
   const spacing = placeSpacing(birds.length, fenceGap, width);
+  const places = birds.map((bird, i) => {
+    const x = placeAt(i, birds.length, fenceGap, width);
+    return { bird, x, facing: facingAt(x, width) };
+  });
   return (
     <g data-fence="">
-      <FenceRail y={y} width={width} height={height} count={birds.length} />
-      {birds.map((bird, i) => {
-        const x = placeAt(i, birds.length, fenceGap, width);
-        return (
-          <Bird
-            key={bird.id}
-            bird={bird}
-            x={x}
-            y={y + 2}
-            facing={facingAt(x, width)}
-            night={night}
-            namePlace={namePlace(i, spacing, roomyName.drop)}
-            speaking={false}
-            idle
-          />
-        );
-      })}
+      <PaintedName
+        name={fenceName}
+        end={y}
+        width={width}
+        cuts={places.map((place) => ({
+          id: place.bird.id,
+          x: place.x,
+          y: y + 2,
+          scale: birdScale(place.bird),
+          facing: place.facing,
+        }))}
+      />
+      <FenceRail y={y} width={width} height={height} />
+      {places.map((place, i) => (
+        <Bird
+          key={place.bird.id}
+          bird={place.bird}
+          x={place.x}
+          y={y + 2}
+          facing={place.facing}
+          night={night}
+          namePlace={namePlace(i, spacing, roomyName.drop)}
+          speaking={false}
+          idle
+        />
+      ))}
+      <FenceCount y={y} count={birds.length} />
     </g>
   );
 }

@@ -62,7 +62,7 @@ export function WirePage() {
 
       <Section
         title="The fence · not adopted"
-        rule="The fence below holds the unadopted, dimmed, ordered by name: it holds no priority. Names share one baseline while neighbours have room; once they sit closer they alternate between two, and closer still they step down a size."
+        rule="The fence below holds the unadopted, dimmed, ordered by name: it holds no priority. Its name is painted behind the rail's left end as a wire's is, the count hangs in front beneath the rail, and its birds start from the same column. Names share one baseline while neighbours have room; once they sit closer they alternate between two, and closer still they step down a size."
         min={900}
       >
         <Specimen
@@ -172,7 +172,7 @@ export function WirePage() {
           , which draws the same pieces: <Code>PaintedName</Code> behind
           everything, cut round the birds it is given, then{" "}
           <Code>WireLine</Code> and <Code>FenceRail</Code>, the birds, and{" "}
-          <Code>WireTally</Code> in front.
+          <Code>WireTally</Code> and <Code>FenceCount</Code> in front.
         </p>
       </Usage>
     </>

@@ -77,10 +77,14 @@ describe("the aviary view", () => {
     for (const wire of mockAviary.wires) {
       expect(container.textContent).toContain(wire.name);
     }
-    expect(container.textContent).toContain("On the fence · 3 not adopted");
+    expect(container.textContent).toContain("On the fence");
+    expect(
+      container.querySelector('[data-part="fence-count"]')?.textContent,
+    ).toBe("3 not adopted");
+    expect(container.querySelector('[class*="tracking-"]')).toBeNull();
   });
 
-  it("paints each wire's name behind every wire and bird, cut round that wire's landed birds", () => {
+  it("paints each wire's name and the fence's behind every wire and bird, cut round its own landed birds", () => {
     const flying = mockAviary.wires[1]?.birds[0]?.id ?? "";
     const { container } = render(
       <AviaryScene
@@ -111,15 +115,20 @@ describe("the aviary view", () => {
         Node.DOCUMENT_POSITION_FOLLOWING) !==
         0;
 
+    const groups = [
+      ...mockAviary.wires,
+      { name: "On the fence", birds: mockAviary.fence.birds },
+    ];
+
     expect(
       painted.map((name) => name.querySelector("text")?.textContent),
-    ).toEqual(mockAviary.wires.map((wire) => wire.name));
+    ).toEqual(groups.map((group) => group.name));
     for (const [i, name] of painted.entries()) {
-      const wire = mockAviary.wires[i];
+      const group = groups[i];
       expect(precedes(name, firstLine)).toBe(true);
       expect(precedes(name, firstBird)).toBe(true);
       expect(cutsOf(name)).toEqual(
-        (wire?.birds ?? [])
+        (group?.birds ?? [])
           .map((bird) => bird.id)
           .filter((id) => id !== flying)
           .sort(),

@@ -38,7 +38,9 @@ import { SkyDrawing, skyBackground } from "./scene.tsx";
 import { isNight, skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
 import {
+  FenceCount,
   FenceRail,
+  fenceName,
   type PaintCut,
   PaintedName,
   WireLine,
@@ -403,6 +405,12 @@ export function AviaryScene({
                 .flatMap((other) => paintCuts(other.birds, flyingIds))}
             />
           ))}
+        <PaintedName
+          name={fenceName}
+          end={layout.fence.y}
+          width={layout.width}
+          cuts={paintCuts(layout.fence.birds, flyingIds)}
+        />
         {layout.rows.map((row) => (
           <WireLine
             key={`${row.wire.name} ${row.index}`}
@@ -414,7 +422,6 @@ export function AviaryScene({
           y={layout.fence.y}
           width={layout.width}
           height={layout.height}
-          count={aviary.fence.birds.length}
         />
         <g key={arrangementKey(aviary)}>
           {placed.map((entry) => (
@@ -439,6 +446,7 @@ export function AviaryScene({
           .map((row) => (
             <WireTally key={row.wire.name} y={row.y} birds={row.wire.birds} />
           ))}
+        <FenceCount y={layout.fence.y} count={aviary.fence.birds.length} />
       </svg>
       <SkyNotices aviary={aviary} now={now} />
       <SkyLegend />

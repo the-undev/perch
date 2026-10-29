@@ -15,6 +15,7 @@ import { Scene } from "./scene.tsx";
 import {
   columnEdge,
   Fence,
+  fenceName,
   labelX,
   paintedInk,
   paintedSize,
@@ -253,7 +254,7 @@ describe("the wire and the fence", () => {
     expect(Math.min(...xs)).toBe(columnEdge);
   });
 
-  it("dims every fence bird and counts them", () => {
+  it("dims every fence bird, paints its name behind them and counts them beneath the rail", () => {
     const { container } = render(
       <Scene phase="night" width={2000} height={400} label="test">
         <Fence
@@ -266,6 +267,17 @@ describe("the wire and the fence", () => {
       </Scene>,
     );
     const breasts = [...container.querySelectorAll('[data-part="breast"]')];
+    const birds = [...container.querySelectorAll("[data-bird]")];
+    const painted = container.querySelector('[data-part="painted-name"] text');
+    const count = container.querySelector('[data-part="fence-count"]');
+    const xs = birds.map((g) =>
+      Number(
+        /translate\(([-\d.]+)/.exec(g.getAttribute("transform") ?? "")?.[1],
+      ),
+    );
+    if (painted === null || count === null) {
+      throw new Error("no painted name or count drawn");
+    }
 
     expect(breasts).toHaveLength(mockAviary.fence.birds.length);
     expect(
@@ -273,7 +285,21 @@ describe("the wire and the fence", () => {
         (b) => b.getAttribute("fill") === "var(--color-breast-dim)",
       ),
     ).toBe(true);
-    expect(container.textContent).toContain("On the fence · 3 not adopted");
+    expect(painted.textContent).toBe(fenceName);
+    expect(Number(painted.getAttribute("y"))).toBeLessThan(300);
+    expect(birds.every((bird) => drawnAfter(painted, bird))).toBe(true);
+    expect(
+      [...container.querySelectorAll("[data-cut]")].map((cut) =>
+        cut.getAttribute("data-cut"),
+      ),
+    ).toEqual(birds.map((bird) => bird.getAttribute("data-bird")));
+    expect(count.textContent).toBe("3 not adopted");
+    expect(count.getAttribute("x")).toBe(String(labelX));
+    expect(Number(count.getAttribute("y"))).toBeGreaterThan(300);
+    expect(count.getAttribute("class")).toContain("fill-ink-faint");
+    expect(birds.every((bird) => drawnAfter(bird, count))).toBe(true);
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(columnEdge);
+    expect(container.textContent).not.toContain("·");
   });
 
   it("drops every other name to a lower baseline on a crowded fence", () => {

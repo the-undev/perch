@@ -6,8 +6,15 @@ import type {
   Fence as FenceModel,
   Wire as WireModel,
 } from "@perch/core/viewmodel.ts";
-import { Fragment } from "react";
-import { Bird, type Facing, type NamePlace, roomyName } from "./bird.tsx";
+import { Fragment, useId } from "react";
+import {
+  Bird,
+  BirdCut,
+  birdScale,
+  type Facing,
+  type NamePlace,
+  roomyName,
+} from "./bird.tsx";
 
 /** The margin no bird is placed inside, at the scene's right end and past the strip's label. */
 export const edgeMargin = 120;
@@ -108,9 +115,6 @@ export function wireTally(birds: BirdModel[]): {
   };
 }
 
-/** The space between a wire's name and its tally, in scene units. */
-export const tallyGap = 18;
-
 /** The tally's words in order, each with its ink; "all settled" when nothing else is said. */
 function tallyWords(
   birds: BirdModel[],
@@ -130,22 +134,121 @@ export function tallyText(birds: BirdModel[]): string {
     .join(" · ");
 }
 
-/**
- * The tally as tspans, set `gap` units after whatever precedes them in their text. The gap rides
- * on the first word itself: an empty tspan holds no character for an offset to move.
- */
-export function Tally({ birds, gap }: { birds: BirdModel[]; gap: number }) {
+/** The tally as tspans on one line, its word groups parted by a dot. */
+export function Tally({ birds }: { birds: BirdModel[] }) {
   return (
     <>
       {tallyWords(birds).map((part, index) => (
         <Fragment key={part.words}>
           {index > 0 && <tspan> · </tspan>}
-          <tspan dx={index === 0 ? gap : undefined} className={part.ink}>
-            {part.words}
-          </tspan>
+          <tspan className={part.ink}>{part.words}</tspan>
         </Fragment>
       ))}
     </>
+  );
+}
+
+/** Where a wire's or the fence's painted name and the words in front of it start, in from the scene's left edge. */
+export const labelX = 36;
+
+/** A painted name's type size in scene units, and how far its baseline sits above the left end of its wire or rail. */
+export const paintedSize = 52;
+const paintedRise = 12;
+
+/** The painted ink's opacity: quiet enough to sit behind the birds. */
+export const paintedInk = 0.12;
+
+/** A bird the paint is cut back round: where its toes rest, its scale and its facing. */
+export interface PaintCut {
+  id: string;
+  x: number;
+  y: number;
+  scale: number;
+  facing: Facing;
+}
+
+export interface PaintedNameProps {
+  name: string;
+  /** The height of the wire's left end or the rail, in scene units: the baseline sits just above it. */
+  end: number;
+  width: number;
+  /** The birds the paint is cut back round, each by a rim of sky. */
+  cuts: PaintCut[];
+}
+
+/** A name painted on the sky behind a wire or the rail, cut back round each of its birds so they keep their outline. */
+export function PaintedName({ name, end, width, cuts }: PaintedNameProps) {
+  const maskId = `paint${useId().replace(/[^\w-]/g, "")}`;
+  const baseline = end - paintedRise;
+  return (
+    <g data-part="painted-name">
+      <mask
+        id={maskId}
+        maskUnits="userSpaceOnUse"
+        x={0}
+        y={baseline - 2 * paintedSize}
+        width={width}
+        height={3 * paintedSize}
+      >
+        <rect
+          x={0}
+          y={baseline - 2 * paintedSize}
+          width={width}
+          height={3 * paintedSize}
+          fill="#fff"
+        />
+        {cuts.map((cut) => (
+          <g
+            key={cut.id}
+            data-cut={cut.id}
+            className="transition-transform duration-700 ease-in-out motion-reduce:transition-none"
+            style={{ transform: `translate(${cut.x}px, ${cut.y}px)` }}
+          >
+            <g
+              transform={`translate(0 ${-3 * cut.scale}) scale(${cut.scale * (cut.facing === "right" ? 1 : -1)} ${cut.scale})`}
+            >
+              <BirdCut />
+            </g>
+          </g>
+        ))}
+      </mask>
+      <text
+        x={labelX}
+        y={baseline}
+        mask={`url(#${maskId})`}
+        opacity={paintedInk}
+        className="fill-ink font-display font-bold"
+        fontSize={paintedSize}
+      >
+        {name}
+      </text>
+    </g>
+  );
+}
+
+/** The tally's type size and the step between its lines, in scene units. */
+export const tallySize = 13;
+const tallyLeading = 20;
+
+/** How far the tally's first baseline hangs beneath the wire's left end. */
+const tallyDrop = 30;
+
+/** The tally under a wire's left end, in front: one line per word group in its colour, or "all settled" faintly. */
+export function WireTally({ y, birds }: { y: number; birds: BirdModel[] }) {
+  return (
+    <g data-part="tally">
+      {tallyWords(birds).map((part, index) => (
+        <text
+          key={part.words}
+          x={labelX}
+          y={y - 12 + tallyDrop + index * tallyLeading}
+          fontSize={tallySize}
+          className={`font-body ${part.ink === undefined ? "fill-ink-faint" : `font-semibold ${part.ink}`}`}
+        >
+          {part.words}
+        </text>
+      ))}
+    </g>
   );
 }
 
@@ -153,33 +256,17 @@ export interface WireLineProps {
   /** The wire's height in scene units, at its ends before the sag. */
   y: number;
   width: number;
-  /** The wire's name and the birds its tally counts; null for a wire's second row, which is unnamed. */
-  label: { name: string; birds: BirdModel[] } | null;
 }
 
-/** The sagging wire itself, with its name and tally above the left end when it has them. */
-export function WireLine({ y, width, label }: WireLineProps) {
+/** The sagging wire itself. */
+export function WireLine({ y, width }: WireLineProps) {
   return (
-    <>
-      <path
-        d={`M -20 ${y - 12} Q ${width / 2} ${y + sag} ${width + 20} ${y - 12}`}
-        stroke="var(--color-wire)"
-        strokeWidth={3}
-        fill="none"
-      />
-      {label !== null && (
-        <text
-          x={36}
-          y={y - 26}
-          className="fill-ink-faint font-body text-[11px]"
-        >
-          <tspan className="font-bold uppercase tracking-[0.18em]">
-            {label.name}
-          </tspan>
-          <Tally birds={label.birds} gap={tallyGap} />
-        </text>
-      )}
-    </>
+    <path
+      d={`M -20 ${y - 12} Q ${width / 2} ${y + sag} ${width + 20} ${y - 12}`}
+      stroke="var(--color-wire)"
+      strokeWidth={3}
+      fill="none"
+    />
   );
 }
 
@@ -246,29 +333,43 @@ export interface WireProps {
   night: boolean;
 }
 
-/** One priority band: the wire, its name and tally, and its birds leftmost first. */
+/** One priority band on one row: its name painted behind, the wire, its birds leftmost first, and its tally in front. */
 export function Wire({ wire, y, width, night }: WireProps) {
   const birds = byPosition(wire.birds);
   const spacing = placeSpacing(birds.length, wireGap, width);
+  const places = birds.map((bird, i) => {
+    const x = placeAt(i, birds.length, wireGap, width);
+    return { bird, x, y: wireHeight(y, x, width), facing: facingAt(x, width) };
+  });
   return (
     <g data-wire={wire.name}>
-      <WireLine y={y} width={width} label={{ name: wire.name, birds }} />
-      {birds.map((bird, i) => {
-        const x = placeAt(i, birds.length, wireGap, width);
-        return (
-          <Bird
-            key={bird.id}
-            bird={bird}
-            x={x}
-            y={wireHeight(y, x, width)}
-            facing={facingAt(x, width)}
-            night={night}
-            namePlace={namePlace(i, spacing, roomyName.drop)}
-            speaking={false}
-            idle
-          />
-        );
-      })}
+      <PaintedName
+        name={wire.name}
+        end={y - 12}
+        width={width}
+        cuts={places.map((place) => ({
+          id: place.bird.id,
+          x: place.x,
+          y: place.y,
+          scale: birdScale(place.bird),
+          facing: place.facing,
+        }))}
+      />
+      <WireLine y={y} width={width} />
+      {places.map((place, i) => (
+        <Bird
+          key={place.bird.id}
+          bird={place.bird}
+          x={place.x}
+          y={place.y}
+          facing={place.facing}
+          night={night}
+          namePlace={namePlace(i, spacing, roomyName.drop)}
+          speaking={false}
+          idle
+        />
+      ))}
+      <WireTally y={y} birds={birds} />
     </g>
   );
 }

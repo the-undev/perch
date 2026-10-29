@@ -80,6 +80,53 @@ describe("the aviary view", () => {
     expect(container.textContent).toContain("On the fence · 3 not adopted");
   });
 
+  it("paints each wire's name behind every wire and bird, cut round that wire's landed birds", () => {
+    const flying = mockAviary.wires[1]?.birds[0]?.id ?? "";
+    const { container } = render(
+      <AviaryScene
+        aviary={mockAviary}
+        now={morning}
+        size={{ width: 1400, height: 800 }}
+        onLaunch={() => {}}
+        onFullStory={() => {}}
+        onAdopt={() => {}}
+        onChip={() => {}}
+        flyingIds={new Set([flying])}
+      />,
+    );
+    const painted = [
+      ...container.querySelectorAll('[data-part="painted-name"]'),
+    ];
+    const firstLine = container.querySelector(
+      'path[stroke="var(--color-wire)"]',
+    );
+    const firstBird = container.querySelector("[data-bird]");
+    const cutsOf = (name: Element) =>
+      [...name.querySelectorAll("[data-cut]")]
+        .map((cut) => cut.getAttribute("data-cut"))
+        .sort();
+    const precedes = (earlier: Element, later: Element | null) =>
+      later !== null &&
+      (earlier.compareDocumentPosition(later) &
+        Node.DOCUMENT_POSITION_FOLLOWING) !==
+        0;
+
+    expect(
+      painted.map((name) => name.querySelector("text")?.textContent),
+    ).toEqual(mockAviary.wires.map((wire) => wire.name));
+    for (const [i, name] of painted.entries()) {
+      const wire = mockAviary.wires[i];
+      expect(precedes(name, firstLine)).toBe(true);
+      expect(precedes(name, firstBird)).toBe(true);
+      expect(cutsOf(name)).toEqual(
+        (wire?.birds ?? [])
+          .map((bird) => bird.id)
+          .filter((id) => id !== flying)
+          .sort(),
+      );
+    }
+  });
+
   it("opens a bird's bubble when it is clicked, and its beak wiggles", () => {
     const { container } = show();
     const prism = mockBird("undev/prism");

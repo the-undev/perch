@@ -483,7 +483,7 @@ function Strip({
         y={stripTallyY}
         className="fill-ink-faint font-body text-[13px]"
       >
-        {dim ? stripTally(tab) : <Tally birds={tab.birds} gap={0} />}
+        {dim ? stripTally(tab) : <Tally birds={tab.birds} />}
       </text>
       {layout.places.map(({ bird, x, facing }, index) => {
         const face = facing === "right" ? 1 : -1;

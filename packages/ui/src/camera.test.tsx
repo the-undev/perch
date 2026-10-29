@@ -358,7 +358,7 @@ describe("the camera", () => {
     expect(tally?.getAttribute("x")).toBe("36");
     expect(Number(tally?.getAttribute("y"))).toBeGreaterThan(stripWireY);
     expect(tally?.textContent).toMatch(/^3 attention/);
-    expect(tally?.querySelector("tspan")?.getAttribute("dx")).toBe("0");
+    expect(tally?.querySelector("tspan")?.getAttribute("dx")).toBeNull();
     // The birds keep their size and centre in the room right of the label.
     expect(layout.labelRight).toBeGreaterThan(36);
     expect(xs).toEqual(layout.places.map((place) => place.x));

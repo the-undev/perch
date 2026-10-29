@@ -37,7 +37,29 @@ import type { CustomProperties } from "./motion.ts";
 import { SkyDrawing, skyBackground } from "./scene.tsx";
 import { isNight, skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
-import { FenceRail, WireLine } from "./wire.tsx";
+import {
+  FenceRail,
+  type PaintCut,
+  PaintedName,
+  WireLine,
+  WireTally,
+} from "./wire.tsx";
+
+/** The birds the paint is cut back round: every one placed, save those whose flyers are still in the air. */
+function paintCuts(
+  birds: PlacedBird[],
+  flyingIds: ReadonlySet<string>,
+): PaintCut[] {
+  return birds
+    .filter((entry) => !flyingIds.has(entry.bird.id))
+    .map((entry) => ({
+      id: entry.bird.id,
+      x: entry.x,
+      y: entry.y,
+      scale: entry.scale,
+      facing: entry.facing,
+    }));
+}
 
 /** Each polled source by name, as the scene's notices say it. */
 export const sourceLabel: Record<PolledSourceName, string> = {
@@ -368,16 +390,24 @@ export function AviaryScene({
       >
         <title>Projects as birds on wires</title>
         <SkyDrawing phase={phase} width={layout.width} height={layout.height} />
+        {layout.rows
+          .filter((row) => row.index === 0)
+          .map((row) => (
+            <PaintedName
+              key={row.wire.name}
+              name={row.wire.name}
+              end={row.y - 12}
+              width={layout.width}
+              cuts={layout.rows
+                .filter((other) => other.wire === row.wire)
+                .flatMap((other) => paintCuts(other.birds, flyingIds))}
+            />
+          ))}
         {layout.rows.map((row) => (
           <WireLine
             key={`${row.wire.name} ${row.index}`}
             y={row.y}
             width={layout.width}
-            label={
-              row.index === 0
-                ? { name: row.wire.name, birds: row.wire.birds }
-                : null
-            }
           />
         ))}
         <FenceRail
@@ -404,6 +434,11 @@ export function AviaryScene({
             />
           ))}
         </g>
+        {layout.rows
+          .filter((row) => row.index === 0)
+          .map((row) => (
+            <WireTally key={row.wire.name} y={row.y} birds={row.wire.birds} />
+          ))}
       </svg>
       <SkyNotices aviary={aviary} now={now} />
       <SkyLegend />

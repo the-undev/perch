@@ -1254,7 +1254,8 @@ build-time calls so they can be revisited.
   stacked there: a wire of 24 did so at full width, and narrow windows
   reach four rows often. A row now moves right as one, only as far as
   the room past its last bird. At full width this changes only rows
-  that reached the margin; the mock's layout is unchanged.
+  that reached the margin; the mock's layout is unchanged. Replaced on
+  29 October by the diagonal.
 - The song note's `Math.max(15, 13 * scale)` is the board's size for
   the note in scene units, not a readability minimum. It stays, and the
   floor applies to it like any other type.
@@ -1262,3 +1263,12 @@ build-time calls so they can be revisited.
   both margins: 494 units, a 445px window, for Machine & Home's. Below
   that its birds spread back over the label. No minimum window size is
   set.
+
+## 29 October 2026 (small windows fixes)
+
+- A crowded wire's birds spread left to right across the whole wire and
+  are dealt over its rows in turn, a diagonal, replacing the row stagger
+  that collapsed on full rows; the fence keeps 100 window pixels below
+  it, down from 150; the band above the top wire is 20 per cent of the
+  scene, down from 26, and the sun or moon hangs at 0.09 of its height,
+  up from 0.11.

@@ -149,7 +149,7 @@ export function layoutAviary(aviary: Aviary, size: PixelSize): AviaryLayout {
   const height = sceneHeightFor(size);
   const units = (pixels: number) => (pixels * height) / size.height;
   const top = Math.max(height * 0.26, units(26) + 165);
-  const fenceY = height - units(150);
+  const fenceY = height - units(100);
   const bottom = Math.max(top, Math.min(height * 0.63, fenceY - 120));
   const rowCounts = aviary.wires.map((wire) =>
     rowsFor(wire.birds.length, width),

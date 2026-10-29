@@ -103,7 +103,7 @@ describe("the aviary's layout", () => {
         ],
         [654.38, [340, 652.26], [780, 658.59], [1220, 658.59], [1660, 652.26]],
       ],
-      fence: [885.7, 795, 1000, 1205],
+      fence: [937.8, 795, 1000, 1205],
     });
     expect(pinned(mockAviary, { width: 3440, height: 1380 })).toEqual({
       width: 2000,
@@ -120,7 +120,7 @@ describe("the aviary's layout", () => {
         ],
         [503.66, [340, 501.54], [780, 507.87], [1220, 507.87], [1660, 501.54]],
       ],
-      fence: [714.83, 795, 1000, 1205],
+      fence: [743.88, 795, 1000, 1205],
     });
   });
 
@@ -261,6 +261,21 @@ describe("the aviary's layout", () => {
     const ys = layout.rows.map((row) => row.y);
     expect(ys).toEqual([...ys].sort((a, b) => a - b));
     expect(layout.fence.y).toBeGreaterThan(Math.max(...ys));
+  });
+
+  it("keeps 100 window pixels below the fence", () => {
+    for (const size of [
+      { width: 1100, height: 800 },
+      { width: 1920, height: 1000 },
+      { width: 3440, height: 1380 },
+      { width: 3440, height: 500 },
+    ]) {
+      const layout = layoutAviary(mockAviary, size);
+      const rail = toPixels({ x: 0, y: layout.fence.y }, layout, size);
+      const foot = toPixels({ x: 0, y: layout.height }, layout, size);
+
+      expect(foot.y - rail.y).toBeCloseTo(100, 0);
+    }
   });
 
   it("splits a crowded wire over two rows, dealing its birds in turn", () => {

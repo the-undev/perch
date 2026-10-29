@@ -19,6 +19,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DetailView } from "./detail-view.tsx";
 import { mockBird, mockEntryForm, mockHome } from "./mock-birds.ts";
 import type { KeyFileSheet } from "./paper.tsx";
+import { roostColumnWidth, roostFrame } from "./roost.tsx";
 
 afterEach(cleanup);
 
@@ -148,6 +149,32 @@ function ledgerRows(container: HTMLElement): string[][] {
     value.previousElementSibling?.textContent ?? "",
     value.textContent ?? "",
   ]);
+}
+
+/** The heights an element declares in pixels: its height attribute, its inline height and min-height, and Tailwind height classes. */
+function declaredHeights(element: Element): number[] {
+  const { style } = element as HTMLElement;
+  const fromStyle = [style.height, style.minHeight]
+    .filter((value) => value.endsWith("px"))
+    .map((value) => Number.parseFloat(value));
+  const fromClasses = (element.getAttribute("class")?.split(" ") ?? []).flatMap(
+    (token) => {
+      const steps = /(?:^|:)(?:min-)?(?:h|size)-(\d+(?:\.\d+)?)$/.exec(token);
+      const pixels = /(?:^|:)(?:min-)?(?:h|size)-\[(\d+(?:\.\d+)?)px\]$/.exec(
+        token,
+      );
+      return [
+        ...(steps === null ? [] : [Number(steps[1]) * 4]),
+        ...(pixels === null ? [] : [Number(pixels[1])]),
+      ];
+    },
+  );
+  const attribute = element.getAttribute("height");
+  return [
+    ...(attribute === null ? [] : [Number(attribute)]),
+    ...fromStyle,
+    ...fromClasses,
+  ];
 }
 
 function headings(): string[] {
@@ -409,51 +436,164 @@ describe("the detail view", () => {
     ).toBe("ci");
   });
 
-  it("fixes the heading and the roost in the band above the panes, the roost in its 480px column", () => {
-    const { container } = page(mockBird("dev/perch"));
-    const roost = screen.getByRole("region", { name: "Perch on its perch" });
+  it("lays the band out as one row above the panes, the bubble between the heading and the bird at its reading cap, its chips on one row", () => {
+    const prism = mockBird("undev/prism");
+    const { container } = page(prism);
+    const roost = screen.getByRole("region", { name: "Prism on its perch" });
+    const bubble = screen.getByRole("region", { name: "Prism says" });
+    const bird = within(roost).getByRole("img");
     const part = (name: string) => {
       const element = container.querySelector(`[data-part="${name}"]`);
       if (element === null) throw new Error(`the page has no ${name}`);
       return element;
     };
+    const classes = (element: Element | null | undefined) =>
+      element?.getAttribute("class")?.split(" ") ?? [];
     const band = part("band");
     const heading = part("heading");
     const panes = part("panes");
+    const cell = part("roost-cell");
+    const speech = part("roost-speech");
     const following = (from: Element, to: Element) =>
       from.compareDocumentPosition(to) & Node.DOCUMENT_POSITION_FOLLOWING;
+    const chips = [...bubble.querySelectorAll("[data-kind]")];
 
-    expect(heading.querySelector("h2")?.textContent).toBe("Perch");
+    expect(heading.querySelector("h2")?.textContent).toBe("Prism");
     expect(band.contains(heading)).toBe(true);
     expect(band.contains(roost)).toBe(true);
-    expect(band.className.split(" ")).toContain("row-start-1");
-    expect(panes.className.split(" ")).toContain("row-start-2");
-    expect(band.className).toContain(
-      "@min-[860px]:grid-cols-[minmax(0,1fr)_480px]",
-    );
-    expect(following(heading, roost)).toBeTruthy();
+    expect(classes(band)).toContain("row-start-1");
+    expect(classes(panes)).toContain("row-start-2");
     expect(following(band, panes)).toBeTruthy();
     expect(band.contains(panes)).toBe(false);
     expect(panes.contains(part("record"))).toBe(true);
     expect(panes.contains(part("paper"))).toBe(true);
-    expect(panes.className.split(" ")).toContain("min-h-0");
-    expect(panes.parentElement?.className.split(" ")).toEqual(
+    expect(classes(panes)).toContain("min-h-0");
+    expect(classes(panes.parentElement)).toEqual(
       expect.arrayContaining([
+        "@container",
         "min-h-0",
         "flex-1",
         "grid-rows-[auto_minmax(0,1fr)]",
       ]),
     );
-    expect(roost.parentElement?.className).toContain("mx-auto");
-    expect(roost.parentElement?.className).toContain(
-      "@min-[860px]:col-start-2",
+    // One row from 860px: the heading, then the bubble, then the bird, in the band's own flow.
+    expect(classes(band)).toEqual(
+      expect.arrayContaining(["flex", "@min-[860px]:flex-row"]),
     );
-    expect(roost.parentElement?.className).toContain(
-      "@min-[860px]:row-start-1",
+    expect([...band.children]).toEqual([heading, cell]);
+    expect(cell.contains(roost)).toBe(true);
+    expect(following(heading, bubble)).toBeTruthy();
+    expect(following(bubble, bird)).toBeTruthy();
+    expect(speech.contains(bubble)).toBe(true);
+    expect(speech.nextElementSibling).toBe(bird);
+    // The heading takes what the roost leaves; the roost is only as wide as the bubble and bird.
+    expect(classes(heading)).toContain("@min-[860px]:flex-[1_1_22rem]");
+    expect(classes(cell)).toEqual(
+      expect.arrayContaining([
+        "@min-[860px]:w-auto",
+        "@min-[860px]:min-w-0",
+        "@min-[860px]:flex-[0_1_auto]",
+      ]),
     );
-    expect(heading.className).toContain("@min-[860px]:col-start-1");
-    expect(heading.className).toContain("@min-[860px]:row-start-1");
-    expect(roost.parentElement?.className).toContain("w-120");
+    expect(band.className).not.toMatch(/480px|grid-cols/);
+    // The bubble grows to its words at a reading cap, and its chips share one wrapping row.
+    expect(classes(speech)).toEqual(
+      expect.arrayContaining([
+        "@min-[460px]:w-max",
+        "@min-[460px]:max-w-[56ch]",
+      ]),
+    );
+    expect(chips.map((chip) => chip.textContent)).toEqual(
+      prism.bubble.chips.map((chip) => chip.label),
+    );
+    expect(new Set(chips.map((chip) => chip.parentElement)).size).toBe(1);
+    expect(classes(chips[0]?.parentElement)).toEqual(
+      expect.arrayContaining(["flex", "flex-wrap"]),
+    );
+  });
+
+  it("keeps the heading to tight rows: name, then the meta with the actions, links and verb beside it", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch, { form: mockEntryForm(perch.id) });
+    const heading = container.querySelector('[data-part="heading"]');
+    const metaRow = heading?.querySelector('[data-part="meta-row"]');
+    const actions = metaRow?.querySelector('[data-part="actions"]');
+
+    expect(metaRow?.firstElementChild?.getAttribute("data-part")).toBe("meta");
+    expect(metaRow?.children).toHaveLength(2);
+    expect(metaRow?.className.split(" ")).toEqual(
+      expect.arrayContaining(["flex", "flex-wrap"]),
+    );
+    expect(
+      actions?.contains(
+        screen.getByRole("button", { name: /Open the folder/ }),
+      ),
+    ).toBe(true);
+    expect(
+      actions?.contains(
+        screen.getByRole("link", { name: /finch\/perch on GitHub/ }),
+      ),
+    ).toBe(true);
+    expect(
+      actions?.contains(screen.getByRole("button", { name: "The papers" })),
+    ).toBe(true);
+    expect(heading?.querySelector('[data-part="notices"]')).toBeNull();
+    expect(heading?.querySelector('[data-part="problems"]')).toBeNull();
+  });
+
+  it("holds the band to the bird's height: nothing in it declares a greater one", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch, {
+      form: mockEntryForm(perch.id),
+      problems: ["Could not open zellij: no such session"],
+    });
+    const band = container.querySelector('[data-part="band"]') as Element;
+    const bird = within(band as HTMLElement).getByRole("img");
+    const layout = band.querySelector(
+      '[data-part="roost-layout"]',
+    ) as HTMLElement;
+    const bleed = Number.parseFloat(
+      layout.style.getPropertyValue("--row-bleed"),
+    );
+    const { perchY } = roostFrame(perch);
+
+    // The drawing is the band's tallest thing: its pole and shadow bleed below, leaving the bird on its crossbar.
+    expect(bird.getAttribute("class")).toContain(
+      "@min-[460px]:-mb-(--row-bleed)",
+    );
+    expect(Number(bird.getAttribute("height")) - bleed).toBe(perchY);
+    for (const element of [band, ...band.querySelectorAll("*")]) {
+      if (element === bird) continue;
+      for (const height of declaredHeights(element)) {
+        expect(height).toBeLessThanOrEqual(perchY);
+      }
+    }
+  });
+
+  it("stacks a narrow page's band as before: the heading, then the roost centred in its column beneath", () => {
+    const { container } = page(mockBird("dev/perch"));
+    const band = container.querySelector('[data-part="band"]');
+    const cell = container.querySelector('[data-part="roost-cell"]');
+    const roostLayout = container.querySelector('[data-part="roost-layout"]');
+    const classes = (element: Element | null | undefined) =>
+      element?.getAttribute("class")?.split(" ") ?? [];
+
+    expect(classes(band)).toEqual(
+      expect.arrayContaining(["flex", "flex-col", "gap-y-3"]),
+    );
+    expect(band?.firstElementChild?.getAttribute("data-part")).toBe("heading");
+    expect(band?.lastElementChild).toBe(cell);
+    expect(classes(cell)).toEqual(
+      expect.arrayContaining(["mx-auto", "w-120", "max-w-full"]),
+    );
+    expect(roostColumnWidth).toBe(480);
+    // Under 460px the roost stacks: the bubble above the bird, its tail hanging to the beak.
+    expect(classes(roostLayout)).toContain("flex-col");
+    expect(
+      container
+        .querySelector('[data-part="tail-hanging"]')
+        ?.getAttribute("class"),
+    ).toContain("@min-[460px]:hidden");
   });
 
   it("holds the key files in the paper pane beside the record, with no height cap of their own", () => {

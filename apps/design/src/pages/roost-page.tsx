@@ -1,18 +1,21 @@
-// The roost: the bird off the wire on its own page, perched on a T-stand with its bubble above or, when wide, beside it.
+// The roost: the bird off the wire on its own page, sitting on a T-stand with its bubble above or, when wide, beside it.
 
-import { Roost, roostRowWidth, roostWidth } from "@perch/ui/roost.tsx";
+import { Roost, roostColumnWidth, roostWidth } from "@perch/ui/roost.tsx";
 import { type ReactNode, useState } from "react";
 import { mockBird, withOutstanding } from "../specimens.ts";
 import { Code, Ground, Pressed, Section, Specimen, Usage } from "../usage.tsx";
 
-/** A column of the given width, as the detail page gives the roost, so its own width picks the arrangement. */
+/** A container of the given width, as the detail page is one, so its width picks the roost's arrangement. */
 function Column({ width, children }: { width: number; children: ReactNode }) {
   return (
-    <div style={{ width }} className="max-w-full">
+    <div style={{ width }} className="@container max-w-full">
       {children}
     </div>
   );
 }
+
+/** A container wider than the bubble's reading cap, as the band gives the roost from 860px. */
+const wideColumn = 900;
 
 export function RoostPage() {
   const [pressed, setPressed] = useState("nothing yet");
@@ -21,7 +24,7 @@ export function RoostPage() {
     <>
       <Section
         title="The bird on its perch"
-        rule="On its own page the bird leaves the wire for a T-stand at the top right, drawn in the post's colour. It is drawn larger than on any wire, idle, and always faces left toward its record. Its bubble continues word for word from the aviary but drops the name and state word, which the page's heading carries, and the keys, which the page's action row carries. The tail meets the beak. Its chips are handles: pressing one hands back the chip's kind, and the detail page lands on the ledger row holding its working. These are drawn in a 330px column, under the 460px at which the roost becomes a row, so they are stacked."
+        rule="On its own page the bird leaves the wire for a T-stand at the top right, drawn in the post's colour. It sits on the crossbar, breast settled and no legs showing, where the wires and the strip keep it standing. It is drawn larger than on any wire, idle, and always faces left toward its record. Its bubble continues word for word from the aviary but drops the name and state word, which the page's heading carries, and the keys, which the heading's action row carries. The tail meets the beak. Its chips are handles: pressing one hands back the chip's kind, and the detail page lands on the ledger row holding its working. These are drawn in a 330px container, under the 460px at which the roost becomes a row, so they are stacked."
         min={380}
       >
         <Specimen
@@ -112,7 +115,7 @@ export function RoostPage() {
       <Pressed text={pressed} />
       <Section
         title="Two arrangements"
-        rule="The roost lays itself out by its own width, not the window's. Under 460px it is stacked: the bubble above, the bird below, the tail hanging from the bubble's bottom edge. The tail is long enough that the paper clears the top of the bird's head with 14px of daylight at the bird's drawn scale. From 460px it is a row: the bubble on the left, the bird on its stand to the right, a tail leaving the bubble's right edge and slanting down to the beak. The bubble sits at the top of the band, and the stand's pole and shadow hang below the band into the space beneath. The detail page gives the roost a 480px column from 860px wide, so it is a row there; below 860px the roost sits above the record and is a row too unless the window is narrower than 460px."
+        rule="The roost takes its arrangement from the width of its container, the page, not its own. Under 460px it is stacked: the bubble above, the bird below, the tail hanging from the bubble's bottom edge. The tail is long enough that the paper clears the top of the bird's head with 14px of daylight at the bird's drawn scale. From 460px it is a row: the bubble on the left, sized to its words up to a reading cap of 56 characters, the bird on its stand at the right end, a tail leaving the bubble's right edge and slanting down to the beak. The roost is then only as wide as the bubble and the bird need, so the detail page's band can set it beside the heading. The bubble sits at the top of the band, and the stand's pole and shadow hang below the band into the space beneath."
         min={660}
       >
         <Specimen
@@ -130,11 +133,11 @@ export function RoostPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="row, 480px"
-          rule="From 460px. The bubble is pinned to the top of the band and the tail's base is 12px below its top, so the tail slants down to the beak, which is the same distance below the band's top whatever the bubble's height. The drawing is only as wide as the stand and tail feathers need, and the bubble takes the rest."
+          label="row, in a narrow page's 480px column"
+          rule="A page under 860px sets the roost beneath its heading in a centred 480px column. The bubble takes what the bird leaves; the tail's base is 12px below the bubble's top, so it slants down to the beak, which is the same distance below the band's top whatever the bubble's height."
         >
           <Ground>
-            <Column width={roostRowWidth}>
+            <Column width={roostColumnWidth}>
               <Roost
                 bird={mockBird("undev/prism")}
                 night={false}
@@ -144,11 +147,25 @@ export function RoostPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="row, short speech"
-          rule="Perch has a single chip row and a short bubble: the tail still lands on the beak, because the tail's tip is fixed to the beak's height below the band's top, not to the bubble's."
+          label="row, wide: the bubble at its reading cap"
+          rule="Skiff in a wide container: the bubble grows to 56 characters and no wider, so a long speech wraps at a reading width and the chips share one row; the room left over sits to the left, where the page's heading takes it."
         >
           <Ground>
-            <Column width={roostRowWidth}>
+            <Column width={wideColumn}>
+              <Roost
+                bird={mockBird("undev/skiff")}
+                night={false}
+                onChip={onChip}
+              />
+            </Column>
+          </Ground>
+        </Specimen>
+        <Specimen
+          label="row, wide, short speech"
+          rule="Perch: a short bubble only as wide as its words, the tail still landing on the beak, because the tail's tip is fixed to the beak's height below the band's top, not to the bubble's."
+        >
+          <Ground>
+            <Column width={wideColumn}>
               <Roost
                 bird={mockBird("dev/perch")}
                 night={false}
@@ -175,11 +192,13 @@ export function RoostPage() {
         ]}
       >
         <p>
-          The roost fills the width it is given: 480px, the right-hand column of
-          the detail page. It sits above the record, centred, when the page is
-          narrow. The bird is drawn at <Code>roostScale</Code> times its
-          plumpness; <Code>roostFrame(bird)</Code> says where its beak lands,
-          the drop of the stacked tail and the reach of the row&apos;s, and the
+          The roost reads the width of the nearest <Code>@container</Code>, the
+          detail page&apos;s article. From 860px the page sets it at the right
+          of its band at its own width; narrower, beneath the heading in a
+          centred 480px column. The bird is drawn sitting at{" "}
+          <Code>roostScale</Code> times its plumpness;{" "}
+          <Code>roostFrame(bird)</Code> says where its beak lands, the drop of
+          the stacked tail and the reach of the row&apos;s, and the
           bubble&apos;s tail is hung there. The bubble is{" "}
           <Code>{"<RoostBubble>"}</Code> from <Code>bubble.tsx</Code>: the
           aviary bubble&apos;s paper, speech and chips without the header and

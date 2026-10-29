@@ -1,4 +1,5 @@
-import type { Bird } from "@perch/core/viewmodel.ts";
+import { mockAviary } from "@perch/core/mock.ts";
+import type { Bird, Wire } from "@perch/core/viewmodel.ts";
 import {
   cleanup,
   fireEvent,
@@ -7,6 +8,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { sitDrop } from "./bird.tsx";
 import { sideTailBaseTop, sideTailOverlap } from "./bubble.tsx";
 import { mockBird } from "./mock-birds.ts";
 import {
@@ -17,6 +19,8 @@ import {
   roostRowGap,
   roostWidth,
 } from "./roost.tsx";
+import { Scene } from "./scene.tsx";
+import { Wire as WireDrawing } from "./wire.tsx";
 
 afterEach(cleanup);
 
@@ -61,6 +65,51 @@ describe("the roost", () => {
       "♪",
     );
     expect(screen.getByRole("img", { name: "Perch, content" })).toBeDefined();
+  });
+
+  it("sits the bird on its crossbar with no legs showing, while the wires' birds stand", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = roost(perch);
+    const frame = roostFrame(perch);
+    const figure = container.querySelector('[data-part="figure"]');
+    const body = container.querySelector('[data-part="body"]');
+    const perched = figure?.parentElement?.parentElement?.parentElement;
+    const crossbar = container.querySelector('[data-part="stand"] rect');
+
+    expect(figure?.getAttribute("data-pose")).toBe("sitting");
+    expect(figure?.querySelector('[data-part="legs"]')).toBeNull();
+    expect(figure?.querySelector("line")).toBeNull();
+    expect(figure?.getAttribute("transform")).toBe(`translate(0 ${sitDrop})`);
+    // The figure's origin is 3 units above the crossbar; the body's foot comes down onto it.
+    expect(perched?.getAttribute("transform")).toBe(
+      `translate(${frame.centreX} ${frame.perchY - 3 * frame.scale})`,
+    );
+    expect(crossbar?.getAttribute("y")).toBe(String(frame.perchY));
+    expect(
+      Number(body?.getAttribute("cy")) +
+        Number(body?.getAttribute("ry")) +
+        sitDrop,
+    ).toBe(3);
+    // The beak is lower by the sit, and the side tail still ends on it.
+    expect(frame.perchY - frame.beakY).toBeCloseTo(
+      (45 - sitDrop) * frame.scale,
+    );
+    cleanup();
+
+    const wire = mockAviary.wires[1] as Wire;
+    const onWire = render(
+      <Scene phase="day" height={400} label="test">
+        <WireDrawing wire={wire} y={200} width={2000} night={false} />
+      </Scene>,
+    ).container;
+    const standing = [...onWire.querySelectorAll('[data-part="figure"]')];
+
+    expect(standing).toHaveLength(wire.birds.length);
+    for (const each of standing) {
+      expect(each.getAttribute("data-pose")).toBe("standing");
+      expect(each.getAttribute("transform")).toBeNull();
+      expect(each.querySelector('[data-part="legs"]')).not.toBeNull();
+    }
   });
 
   it("speaks the bubble's speech and chips, with no name, state word or key beside the chips", () => {
@@ -148,7 +197,7 @@ describe("the roost", () => {
     expect(roostFrame(mockBird("dev/perch")).drop).toBeGreaterThan(26);
   });
 
-  it("becomes a row from 460px of its own width: bubble left, bird right, only as wide as the drawing needs", () => {
+  it("becomes a row from 460px of its container's width: bubble left at its reading cap, bird right, only as wide as the drawing needs", () => {
     const perch = mockBird("dev/perch");
     const { section } = roost(perch);
     const frame = roostFrame(perch);
@@ -158,11 +207,22 @@ describe("the roost", () => {
     const speech = section.querySelector('[data-part="roost-speech"]');
     const drawing = screen.getByRole("img") as unknown as SVGElement;
 
-    expect(section.className).toContain("@container");
+    // The roost is no container itself, so it has an intrinsic width a band can size to.
+    expect(section.className.split(" ")).not.toContain("@container");
     expect(layout.className).toContain("@min-[460px]:flex-row");
+    expect(layout.className).toContain("@min-[460px]:justify-end");
     expect(layout.className).toContain("flex-col");
     expect(speech?.nextElementSibling).toBe(drawing);
-    expect(speech?.className).toContain("@min-[460px]:flex-1");
+    expect(speech?.className.split(" ")).toEqual(
+      expect.arrayContaining([
+        "text-[13.5px]",
+        "@min-[460px]:w-max",
+        "@min-[460px]:max-w-[56ch]",
+        "@min-[460px]:min-w-0",
+        "@min-[460px]:flex-[0_1_auto]",
+      ]),
+    );
+    expect(drawing.getAttribute("class")).toContain("shrink-0");
     expect(drawing.getAttribute("class")).toContain("@min-[460px]:ml-0");
     expect(drawing.getAttribute("width")).toBe(String(frame.width));
     expect(frame.width).toBe(150);

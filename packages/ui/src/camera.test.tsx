@@ -8,8 +8,17 @@ import {
   screen,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type CameraPlace, CameraView } from "./camera.tsx";
+import {
+  type BirdTab,
+  type CameraPlace,
+  CameraView,
+  cameraTabs,
+  stripHeight,
+  stripLayout,
+  stripWireY,
+} from "./camera.tsx";
 import { mockBird } from "./mock-birds.ts";
+import { edgeMargin } from "./wire.tsx";
 
 afterEach(cleanup);
 
@@ -17,11 +26,20 @@ afterEach(cleanup);
 // they swap in an animate that records each flyer's landing for the test to signal.
 const stillAnimate = Element.prototype.animate;
 const landings = new Map<string, () => void>();
+/** Each flyer's keyframes, by bird id: the last is where it lands. */
+const flightPaths = new Map<string, Keyframe[]>();
 
 beforeEach(() => {
   landings.clear();
-  Element.prototype.animate = function animate(this: Element) {
+  flightPaths.clear();
+  Element.prototype.animate = function animate(
+    this: Element,
+    keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
+  ) {
     const flyerId = this.getAttribute("data-flyer");
+    if (flyerId !== null && Array.isArray(keyframes)) {
+      flightPaths.set(flyerId, keyframes);
+    }
     const finished = new Promise<void>((resolve) => {
       if (flyerId !== null) landings.set(flyerId, resolve);
     });
@@ -51,6 +69,15 @@ function sceneDraws(container: HTMLElement, name: string): boolean {
 function stripDraws(container: HTMLElement, birdId: string): boolean {
   const bird = container.querySelector(`[data-strip-bird="${birdId}"]`);
   return bird?.getAttribute("visibility") !== "hidden";
+}
+
+/** Each strip bird's x in the strip's units, left to right as drawn. */
+function stripXs(container: HTMLElement): number[] {
+  return [...container.querySelectorAll("[data-strip-bird]")].map((bird) =>
+    Number(
+      /translate\(([-\d.e]+)/.exec(bird.getAttribute("transform") ?? "")?.[1],
+    ),
+  );
 }
 
 const now = new Date(mockSnapshot.scannedAt);
@@ -249,32 +276,118 @@ describe("the camera", () => {
     }
   });
 
-  it("keeps the strip's tally clear of the wire's name", () => {
+  it("holds its label on the wire with the birds in the remaining width at the new height", () => {
     const { container } = camera(detailOf("undev/skiff"));
-    const name = [...container.querySelectorAll("tspan")].find(
-      (tspan) => tspan.textContent === "Projects",
-    );
+    const strip = container.querySelector('[data-part="strip"]') as HTMLElement;
+    const sky = container.querySelector('[data-part="sky"]') as HTMLElement;
+    const drawing = strip.querySelector("svg");
+    const name = strip.querySelector('[data-part="strip-name"]');
+    const tally = strip.querySelector('[data-part="strip-tally"]');
+    const projects = cameraTabs(mockAviary)[2] as BirdTab;
+    const layout = stripLayout(projects);
+    const xs = stripXs(container);
 
-    expect(name?.nextElementSibling?.textContent).toBe("3 attention");
-    expect(name?.nextElementSibling?.getAttribute("dx")).toBe("18");
+    expect(stripHeight).toBe(124);
+    expect(drawing?.getAttribute("viewBox")).toBe(`0 0 2000 ${stripHeight}`);
+    expect(strip.style.height).toBe(`${stripHeight}px`);
+    expect(sky.style.height).toBe(`${stripHeight}px`);
+    expect(strip.querySelector("path")?.getAttribute("d")).toMatch(
+      new RegExp(`^M -20 ${stripWireY} `),
+    );
+    // The name's baseline rests just above the wire at its left end; the tally sits beneath it.
+    expect(name?.textContent).toBe("Projects");
+    expect(name?.getAttribute("x")).toBe("36");
+    expect(Number(name?.getAttribute("y"))).toBeLessThan(stripWireY);
+    expect(Number(name?.getAttribute("y"))).toBeGreaterThanOrEqual(
+      stripWireY - 10,
+    );
+    expect(tally?.getAttribute("x")).toBe("36");
+    expect(Number(tally?.getAttribute("y"))).toBeGreaterThan(stripWireY);
+    expect(tally?.textContent).toMatch(/^3 attention/);
+    expect(tally?.querySelector("tspan")?.getAttribute("dx")).toBe("0");
+    // The birds keep their size and centre in the room right of the label.
+    expect(layout.labelRight).toBeGreaterThan(36);
+    expect(xs).toEqual(layout.places.map((place) => place.x));
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(
+      layout.labelRight + edgeMargin,
+    );
+    expect(Math.max(...xs)).toBeLessThanOrEqual(2000 - edgeMargin);
+    expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(layout.middle);
+    expect(
+      container
+        .querySelector('[data-strip-bird] [data-part="figure"]')
+        ?.parentElement?.getAttribute("transform"),
+    ).toMatch(/^scale\(-?1 1\)$/);
   });
 
-  it("alternates the names of a crowded fence's strip between two baselines", () => {
+  it("brightens the open bird in the strip and dims the rest", () => {
+    const { container } = camera(detailOf("undev/skiff"));
+    const birds = [...container.querySelectorAll("[data-strip-bird]")];
+    const open = birds.filter((bird) =>
+      bird.getAttribute("class")?.split(" ").includes("opacity-55"),
+    );
+
+    expect(
+      container
+        .querySelector('[data-strip-bird="undev/skiff"]')
+        ?.getAttribute("aria-current"),
+    ).toBe("page");
+    expect(open).toHaveLength(birds.length - 1);
+    expect(
+      open.map((bird) => bird.getAttribute("data-strip-bird")),
+    ).not.toContain("undev/skiff");
+  });
+
+  it("alternates the names of a crowded fence's strip between two baselines, yielding to the label", () => {
     const birds = Array.from({ length: 21 }, (_, position) => ({
       ...(mockAviary.fence.birds[position % 3] as Bird),
       id: `fence-${position}`,
       position,
     }));
-    const { container } = camera(detailOf("fence-0"), false, now, {
-      ...mockAviary,
-      fence: { birds },
-    });
+    const crowded = { ...mockAviary, fence: { birds } };
+    const { container } = camera(detailOf("fence-0"), false, now, crowded);
     const names = [...container.querySelectorAll("[data-strip-bird] > text")];
+    const layout = stripLayout(cameraTabs(crowded).at(-1) as BirdTab);
+    const xs = stripXs(container);
 
     expect(names).toHaveLength(21);
     expect(names[0]?.getAttribute("y")).not.toBe(names[1]?.getAttribute("y"));
     expect(names[0]?.getAttribute("y")).toBe(names[2]?.getAttribute("y"));
     expect(names[0]?.getAttribute("data-name-size")).toBe("small");
+    expect(
+      container.querySelector('[data-part="strip-tally"]')?.textContent,
+    ).toBe("21 not adopted");
+    expect(layout.spacing).toBeLessThan(175);
+    expect(Math.min(...xs)).toBeCloseTo(layout.labelRight + edgeMargin);
+    expect(Math.max(...xs)).toBeCloseTo(2000 - edgeMargin);
+  });
+
+  it("sits the bird on its page's perch while its wire-mates stand in the strip", () => {
+    const { container } = camera(detailOf("undev/skiff"));
+    const poses = (selector: string) =>
+      [...container.querySelectorAll(`${selector} [data-part="figure"]`)].map(
+        (figure) => figure.getAttribute("data-pose"),
+      );
+
+    expect(poses('[data-part="roost"]')).toEqual(["sitting"]);
+    expect(poses("[data-strip-bird]")).toEqual(
+      mockAviary.wires[1]?.birds.map(() => "standing"),
+    );
+  });
+
+  it("presses and keys the strip's birds as tabs", () => {
+    const { onNavigate } = camera(detailOf("undev/skiff"));
+    const spool = screen.getByRole("button", { name: "Open Spool" });
+
+    fireEvent.keyDown(spool, { key: "Enter" });
+    fireEvent.keyDown(spool, { key: " " });
+    fireEvent.keyDown(spool, { key: "a" });
+
+    expect(spool.getAttribute("tabindex")).toBe("0");
+    expect(onNavigate.mock.calls).toEqual([
+      [detailOf("undev/spool")],
+      [detailOf("undev/spool")],
+    ]);
   });
 
   it("switches to a wire-mate from the strip", () => {
@@ -331,6 +444,25 @@ describe("the camera", () => {
         .map((flyer) => flyer.getAttribute("data-flyer"))
         .sort(),
     ).toEqual(mockAviary.wires[0]?.birds.map((bird) => bird.id).sort());
+  });
+
+  it("lands each wire-mate's flight where the strip draws it", () => {
+    const { container, moveTo } = camera(aviaryPlace);
+    const tab = cameraTabs(mockAviary)[1] as BirdTab;
+    // jsdom measures nothing, so the camera keeps its assumed 1400px window: the strip at 0.7.
+    const k = 1400 / 2000;
+
+    moveTo(detailOf("obsidian/Hothouse"));
+
+    expect(flightPaths.size).toBe(tab.birds.length);
+    for (const { bird, x } of stripLayout(tab).places) {
+      const landing = flightPaths.get(bird.id)?.at(-1)?.transform;
+      const y = (stripHeight - stripHeight * k) / 2 + (stripWireY - 3) * k;
+      expect(landing).toBe(
+        `translate(${x * k - 50}px, ${y - 62}px) scale(${k})`,
+      );
+      expect(stripXs(container)).toContain(x);
+    }
   });
 
   it("hides each wire-mate at both ends while its flyer is in the air", () => {

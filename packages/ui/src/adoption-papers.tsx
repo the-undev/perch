@@ -47,6 +47,7 @@ function Portrait({ bird, night }: { bird: Bird; night: boolean }) {
         <BirdFigure
           look={birdLook(bird, night)}
           id={bird.id}
+          pose="standing"
           speaking={false}
           idle
         />

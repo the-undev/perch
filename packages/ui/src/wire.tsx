@@ -108,17 +108,24 @@ function tallyWords(
   return said.length > 0 ? said : [{ words: "all settled", ink: undefined }];
 }
 
+/** The tally as one line of text, as the tspans spell it. */
+export function tallyText(birds: BirdModel[]): string {
+  return tallyWords(birds)
+    .map((part) => part.words)
+    .join(" · ");
+}
+
 /**
- * The tally as tspans, for a wire's name to carry. The gap rides on the first word itself: an
- * empty tspan holds no character for an offset to move.
+ * The tally as tspans, set `gap` units after whatever precedes them in their text. The gap rides
+ * on the first word itself: an empty tspan holds no character for an offset to move.
  */
-export function Tally({ birds }: { birds: BirdModel[] }) {
+export function Tally({ birds, gap }: { birds: BirdModel[]; gap: number }) {
   return (
     <>
       {tallyWords(birds).map((part, index) => (
         <Fragment key={part.words}>
           {index > 0 && <tspan> · </tspan>}
-          <tspan dx={index === 0 ? tallyGap : undefined} className={part.ink}>
+          <tspan dx={index === 0 ? gap : undefined} className={part.ink}>
             {part.words}
           </tspan>
         </Fragment>
@@ -154,7 +161,7 @@ export function WireLine({ y, width, label }: WireLineProps) {
           <tspan className="font-bold uppercase tracking-[0.18em]">
             {label.name}
           </tspan>
-          <Tally birds={label.birds} />
+          <Tally birds={label.birds} gap={tallyGap} />
         </text>
       )}
     </>

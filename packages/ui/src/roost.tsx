@@ -1,21 +1,23 @@
 // The roost: on its own page the bird leaves the wire for a T-stand perch, drawn in the post's
-// colour, facing left toward its record, idle, its bubble as paper without the header the page's
-// heading already carries. The roost lays itself out by its own width: stacked, the bubble sits above
-// the bird with its tail hanging to the beak; wide enough, a row, the bubble on the left with a
-// sideways tail to the beak. The bird is hung from the beak, so the tail meets it at any bubble height.
+// colour, sitting on its crossbar with no legs showing, facing left toward its record, idle, its
+// bubble as paper without the header the page's heading already carries. The roost takes its form
+// from the width of its container, the page: stacked, the bubble sits above the bird with its tail
+// hanging to the beak; wide enough, a row, the bubble on the left at up to a reading width with a
+// sideways tail to the beak, the roost only as wide as the two need. The bird is hung from the
+// beak, so the tail meets it at any bubble height.
 
 import type { Bird, ChipKind } from "@perch/core/viewmodel.ts";
 import type { CSSProperties } from "react";
-import { birdLook, PerchedFigure, plumpScale } from "./bird.tsx";
+import { birdLook, PerchedFigure, plumpScale, sitDrop } from "./bird.tsx";
 import { RoostBubble } from "./bubble.tsx";
 
 /** The width the stacked form is laid out for, in pixels: any roost narrower than the row breakpoint. */
 export const roostWidth = 330;
 
-/** The roost's width in pixels as a row: the page's right-hand column. */
-export const roostRowWidth = 480;
+/** The column a narrow page gives the roost beneath its heading, centred, in pixels. */
+export const roostColumnWidth = 480;
 
-/** The roost's own width at which it becomes a row; written out in the `@min-[460px]` classes below. */
+/** The container width at which the roost becomes a row; written out in the `@min-[460px]` classes below. */
 export const roostRowBreakpoint = 460;
 
 /** The scale a roosting bird is drawn at before its plumpness: larger than the wires' 0.9. */
@@ -66,21 +68,25 @@ export const roostRowBleed = poleLength + shadowRoom;
 const cappedScale = roostScale * plumpScale({ outstanding: 0, fullness: 1 });
 
 // The stand is furniture: its position and the drawing's size are fixed by the plumpest bird, so
-// only the bird varies. The head's top is 58.5 bird units above the crossbar (55.5 above the
-// figure, which sits 3 up), and 6px more leaves room for the bob's lift.
+// only the bird varies. The frame keeps the room a standing head needs, 58.5 bird units above the
+// crossbar (55.5 above the figure, which sits 3 up), and 6px more for the bob's lift; the bird
+// sits `sitDrop` lower inside it, so the band keeps its height and the bubble its room.
 const standPerchY = Math.ceil(58.5 * cappedScale) + 6;
 const standCentreX = Math.ceil(Math.max(50, 37 * cappedScale)) + 6;
 const standTailReach = Math.ceil(Math.max(50, 46 * cappedScale)) + 6;
 
-/** The roost's drawing for this bird: a fixed stand, the bird at its own scale on it, the beak to the left. */
+/** The beak tip's height above the crossbar in bird units: 42 above the figure's origin, 3 up, settled by the sit. */
+const beakAboveBar = 45 - sitDrop;
+
+/** The roost's drawing for this bird: a fixed stand, the bird at its own scale sitting on it, the beak to the left. */
 export function roostFrame(bird: Bird): RoostFrame {
   const scale = roostScale * plumpScale(bird.plumpness);
   const perchY = standPerchY;
-  // The beak tip is at (37, -42) in bird units, mirrored to face left, the bird 3 units up.
+  // The beak tip is at (37, -42) in bird units, mirrored to face left.
   const beakReach = 37 * scale;
   const centreX = standCentreX;
   const beakX = centreX - beakReach;
-  const beakY = perchY - 45 * scale;
+  const beakY = perchY - beakAboveBar * scale;
   return {
     height: perchY + poleLength + shadowRoom,
     width: standCentreX + standTailReach,
@@ -105,7 +111,11 @@ export interface RoostProps {
   onChip: (chip: ChipKind) => void;
 }
 
-/** The bird on its perch with its bubble above, or to its left when the roost is wide, for the top right of the bird's page. */
+/**
+ * The bird on its perch with its bubble above, or to its left when its container is wide, for the
+ * top right of the bird's page. As a row the bubble sizes to its words up to about 56 characters,
+ * the bird at the right end, so a caller can let the roost take its own width.
+ */
 export function Roost({ bird, night, onChip }: RoostProps) {
   const frame = roostFrame(bird);
   const look = birdLook(bird, night);
@@ -115,11 +125,11 @@ export function Roost({ bird, night, onChip }: RoostProps) {
       aria-label={`${bird.name} on its perch`}
       data-part="roost"
       data-facing="left"
-      className="@container w-full"
+      className="w-full"
     >
       <div
         data-part="roost-layout"
-        className="flex flex-col @min-[460px]:flex-row @min-[460px]:items-start @min-[460px]:gap-(--row-gap)"
+        className="flex flex-col @min-[460px]:flex-row @min-[460px]:items-start @min-[460px]:justify-end @min-[460px]:gap-(--row-gap)"
         style={
           {
             "--row-gap": `${roostRowGap}px`,
@@ -131,7 +141,7 @@ export function Roost({ bird, night, onChip }: RoostProps) {
       >
         <div
           data-part="roost-speech"
-          className="@min-[460px]:min-w-0 @min-[460px]:flex-1"
+          className="text-[13.5px] @min-[460px]:w-max @min-[460px]:min-w-0 @min-[460px]:max-w-[56ch] @min-[460px]:flex-[0_1_auto]"
         >
           <RoostBubble
             bubble={bird.bubble}
@@ -183,6 +193,7 @@ export function Roost({ bird, night, onChip }: RoostProps) {
               id={bird.id}
               scale={frame.scale}
               facing="left"
+              pose="sitting"
               speaking={false}
               idle
             />

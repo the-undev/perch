@@ -83,43 +83,65 @@ function flickStyle(id: string): CustomProperties {
   return { "--flick-duration": `${9000 + (hash(id) % 5000)}ms` };
 }
 
+/** How a bird holds itself: standing on its toes on a wire, or sitting settled on its own perch. */
+export type Pose = "standing" | "sitting";
+
+/** How far a sitting bird settles, in its units: its body's foot comes down to the line its toes stood on. */
+export const sitDrop = 10;
+
 export interface BirdFigureProps {
   look: BirdLook;
   id: string;
+  pose: Pose;
   /** The bird has just been asked to speak: its beak wiggles as the bubble opens. */
   speaking: boolean;
   /** The bird is at rest: its idle animations run. False while it arrives. */
   idle: boolean;
 }
 
-/** The bird's parts at unit scale, facing right. */
-export function BirdFigure({ look, id, speaking, idle }: BirdFigureProps) {
+/** The bird's parts at unit scale, facing right; sitting, it shows no legs and rests its body where its toes were. */
+export function BirdFigure({
+  look,
+  id,
+  pose,
+  speaking,
+  idle,
+}: BirdFigureProps) {
   const body = look.dim ? "var(--color-plumage-dim)" : "var(--color-plumage)";
+  const sitting = pose === "sitting";
   return (
-    <g data-part="figure">
-      <line
-        x1={-6}
-        y1={-8}
-        x2={-7}
-        y2={2}
-        stroke="var(--color-leg)"
-        strokeWidth={2.4}
-      />
-      <line
-        x1={6}
-        y1={-8}
-        x2={7}
-        y2={2}
-        stroke="var(--color-leg)"
-        strokeWidth={2.4}
-      />
-      <path
-        d="M -7 2 L -12 3 M -7 2 L -3 3 M 7 2 L 2 3 M 7 2 L 12 3"
-        stroke="var(--color-leg)"
-        strokeWidth={2}
-        fill="none"
-        strokeLinecap="round"
-      />
+    <g
+      data-part="figure"
+      data-pose={pose}
+      transform={sitting ? `translate(0 ${sitDrop})` : undefined}
+    >
+      {!sitting && (
+        <g data-part="legs">
+          <line
+            x1={-6}
+            y1={-8}
+            x2={-7}
+            y2={2}
+            stroke="var(--color-leg)"
+            strokeWidth={2.4}
+          />
+          <line
+            x1={6}
+            y1={-8}
+            x2={7}
+            y2={2}
+            stroke="var(--color-leg)"
+            strokeWidth={2.4}
+          />
+          <path
+            d="M -7 2 L -12 3 M -7 2 L -3 3 M 7 2 L 2 3 M 7 2 L 12 3"
+            stroke="var(--color-leg)"
+            strokeWidth={2}
+            fill="none"
+            strokeLinecap="round"
+          />
+        </g>
+      )}
       <path
         data-part="tail"
         d="M -16 -22 L -42 -10 L -38 -20 L -44 -26 L -20 -32 Z"
@@ -168,6 +190,7 @@ export interface PerchedFigureProps {
   /** The drawn scale: 1 is the board's unit bird. */
   scale: number;
   facing: Facing;
+  pose: Pose;
   /** Its bubble has just opened: the beak wiggles. */
   speaking: boolean;
   /** The bird is at rest: bob, tail flick and song run. */
@@ -180,10 +203,12 @@ export function PerchedFigure({
   id,
   scale,
   facing,
+  pose,
   speaking,
   idle,
 }: PerchedFigureProps) {
   const face = facing === "right" ? 1 : -1;
+  const settle = pose === "sitting" ? sitDrop : 0;
   return (
     <g
       className={
@@ -194,13 +219,19 @@ export function PerchedFigure({
       style={idle ? bobStyle(id, look.restlessness) : undefined}
     >
       <g transform={`scale(${scale * face} ${scale})`}>
-        <BirdFigure look={look} id={id} speaking={speaking} idle={idle} />
+        <BirdFigure
+          look={look}
+          id={id}
+          pose={pose}
+          speaking={speaking}
+          idle={idle}
+        />
       </g>
       {idle && look.singing && (
         <text
           data-part="song"
           x={48 * face * scale}
-          y={-60 * scale}
+          y={(settle - 60) * scale}
           fill="var(--color-ink-accent)"
           fontSize={Math.max(15, 13 * scale)}
           textAnchor="middle"
@@ -277,6 +308,7 @@ export function Bird({
         id={bird.id}
         scale={scale}
         facing={facing}
+        pose="standing"
         speaking={speaking}
         idle={idle}
       />

@@ -1,6 +1,6 @@
 // Launch actions, links out and the detail page's heading.
 
-import type { LaunchAction } from "@perch/core/viewmodel.ts";
+import type { Bird, LaunchAction } from "@perch/core/viewmodel.ts";
 import { LaunchActions, LinksOut } from "@perch/ui/actions.tsx";
 import { DetailHeading } from "@perch/ui/detail-heading.tsx";
 import { useState } from "react";
@@ -120,20 +120,33 @@ export function LinksPage() {
   );
 }
 
+/** The bird's verbs and links as the page sets them beside the meta; nothing launches here. */
+function HeadingActions({ bird }: { bird: Bird }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <LaunchActions actions={bird.detail.actions} onLaunch={() => {}} />
+      <LinksOut links={bird.detail.links} />
+    </div>
+  );
+}
+
 export function HeadingPage() {
   return (
     <>
       <Section
         title="The heading of the detail page"
-        rule="The one place on the page that carries the bird's name and state word: the roost's bubble beside it drops its header, so neither is said twice. The name large, the state word in the mood's colour, what the bird is doing, and beneath them a meta line in mono saying where the bird lives: its clone with home as ~, the forges that hold it, and its wire."
-        min={480}
+        rule="The one place on the page that carries the bird's name and state word: the roost's bubble beside it drops its header, so neither is said twice. The name large, the state word in the mood's colour, what the bird is doing, and beneath them a meta line in mono saying where the bird lives: its clone with home as ~, the forges that hold it, and its wire. The page's launch actions, links out and papers' verb share the meta's row where they fit and drop beneath it where not, so the heading keeps to two or three rows."
+        min={640}
       >
         <Specimen
           label="content, editing, two forges"
           rule="Perch: the song becomes the words editing ♪; cloned here and held on GitHub and Forgejo."
         >
           <Ground>
-            <DetailHeading bird={mockBird("dev/perch")} />
+            <DetailHeading
+              bird={mockBird("dev/perch")}
+              actions={<HeadingActions bird={mockBird("dev/perch")} />}
+            />
           </Ground>
         </Specimen>
         <Specimen
@@ -141,12 +154,18 @@ export function HeadingPage() {
           rule="Skiff: in flight on a branch; settled says nothing."
         >
           <Ground>
-            <DetailHeading bird={mockBird("undev/skiff")} />
+            <DetailHeading
+              bird={mockBird("undev/skiff")}
+              actions={<HeadingActions bird={mockBird("undev/skiff")} />}
+            />
           </Ground>
         </Specimen>
         <Specimen label="distressed" rule="Prism: the red state word.">
           <Ground>
-            <DetailHeading bird={mockBird("undev/prism")} />
+            <DetailHeading
+              bird={mockBird("undev/prism")}
+              actions={<HeadingActions bird={mockBird("undev/prism")} />}
+            />
           </Ground>
         </Specimen>
         <Specimen
@@ -154,7 +173,10 @@ export function HeadingPage() {
           rule="hello: the fence's word, quiet; one disk only, so the meta line names no forge."
         >
           <Ground>
-            <DetailHeading bird={mockBird("dev/odin/hello")} />
+            <DetailHeading
+              bird={mockBird("dev/odin/hello")}
+              actions={<HeadingActions bird={mockBird("dev/odin/hello")} />}
+            />
           </Ground>
         </Specimen>
         <Specimen
@@ -162,7 +184,14 @@ export function HeadingPage() {
           rule="obsidian-tidy: on a forge, never cloned here, so the meta line starts with the forge and the heading has no activity."
         >
           <Ground>
-            <DetailHeading bird={mockBird("github:finch/obsidian-tidy")} />
+            <DetailHeading
+              bird={mockBird("github:finch/obsidian-tidy")}
+              actions={
+                <HeadingActions
+                  bird={mockBird("github:finch/obsidian-tidy")}
+                />
+              }
+            />
           </Ground>
         </Specimen>
       </Section>
@@ -170,6 +199,11 @@ export function HeadingPage() {
         component="<DetailHeading>"
         props={[
           { name: "bird", type: "Bird", what: "The bird whose page this is." },
+          {
+            name: "actions",
+            type: "ReactNode",
+            what: "The page's verbs and links as one group, set after the meta line on its row; null for none.",
+          },
         ]}
       >
         <p>

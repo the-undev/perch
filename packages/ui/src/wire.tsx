@@ -9,14 +9,17 @@ import type {
 import { Fragment } from "react";
 import { Bird, type Facing, type NamePlace, roomyName } from "./bird.tsx";
 
-/** The margin no bird is placed inside, at either end of the scene. */
+/** The margin no bird is placed inside, at the scene's right end and past the strip's label. */
 export const edgeMargin = 120;
+
+/** Where the birds' room starts on every wire and the fence: the left end keeps one bird's room for the tally and the painted name. */
+export const columnEdge = 240;
 
 /** How far a wire dips at its middle below its ends' line. */
 const sag = 22;
 
 /** The x of the index-th of count evenly spaced places, at most `gap` apart, centred between left and right; with no room between them they bunch at left. */
-export function placeBetween(
+function placeBetween(
   index: number,
   count: number,
   gap: number,
@@ -28,59 +31,25 @@ export function placeBetween(
   return left + (room - span) / 2 + (span / Math.max(count - 1, 1)) * index;
 }
 
-/** The x of the index-th of count evenly spaced places, at most `gap` apart, centred between the margins. */
+/** The x of the index-th of count evenly spaced places, at most `gap` apart, centred in the birds' room from the column edge to the right margin. */
 export function placeAt(
   index: number,
   count: number,
   gap: number,
   width: number,
 ): number {
-  return placeBetween(index, count, gap, edgeMargin, width - edgeMargin);
+  return placeBetween(index, count, gap, columnEdge, width - edgeMargin);
 }
 
-/** How far apart neighbours sit among count places at most `gap` apart between left and right: the room shared out. */
-export function spacingBetween(
-  count: number,
-  gap: number,
-  left: number,
-  right: number,
-): number {
-  return Math.min(gap, Math.max(0, right - left) / Math.max(count - 1, 1));
-}
-
-/** How far apart neighbours sit among count places at most `gap` apart between the margins. */
+/** How far apart neighbours sit among count places at most `gap` apart in the birds' room: the room shared out. */
 export function placeSpacing(
   count: number,
   gap: number,
   width: number,
 ): number {
-  return spacingBetween(count, gap, edgeMargin, width - edgeMargin);
+  const room = Math.max(0, width - edgeMargin - columnEdge);
+  return Math.min(gap, room / Math.max(count - 1, 1));
 }
-
-/** The width a layout reserves for a character, as a fraction of its type size: generous, so no bird touches a word. */
-export const labelAdvance = 0.6;
-
-/** Where a wire's name and tally start, in from the scene's left edge. */
-const wireLabelX = 36;
-
-/** The type size of a wire's name and tally, in scene units. */
-const wireLabelSize = 11;
-
-/** The letter spacing of a wire's name, as a fraction of its type size. */
-const wireNameTracking = 0.18;
-
-/** Where a wire's name and tally end, estimated from their characters as the strip's label is. */
-export function wireLabelRight(name: string, birds: BirdModel[]): number {
-  return (
-    wireLabelX +
-    name.length * wireLabelSize * (labelAdvance + wireNameTracking) +
-    tallyGap +
-    tallyText(birds).length * wireLabelSize * labelAdvance
-  );
-}
-
-/** How far right of its label a wire's birds keep: the plumpest wire bird's tail, 44 units behind its toes at 0.9 times 1.65. */
-export const labelClearance = 66;
 
 /** Neighbours closer than this alternate their names between a near and a lower baseline. */
 export const alternateBelow = 150;
@@ -200,7 +169,7 @@ export function WireLine({ y, width, label }: WireLineProps) {
       />
       {label !== null && (
         <text
-          x={wireLabelX}
+          x={36}
           y={y - 26}
           className="fill-ink-faint font-body text-[11px]"
         >

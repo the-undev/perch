@@ -5,6 +5,7 @@ import { CameraView } from "@perch/ui/camera.tsx";
 import { sceneWidth } from "@perch/ui/scene.tsx";
 import {
   alternateBelow,
+  columnEdge,
   edgeMargin,
   fenceGap,
   placeSpacing,
@@ -21,7 +22,7 @@ import { Code, SceneFrame, Section, Specimen, Usage } from "../usage.tsx";
 
 /** The fewest fence birds whose neighbours sit closer than a limit. */
 function fenceCountBelow(limit: number): number {
-  return Math.floor((sceneWidth - 2 * edgeMargin) / limit) + 2;
+  return Math.floor((sceneWidth - columnEdge - edgeMargin) / limit) + 2;
 }
 
 /** The live machine's fence on first look: 21 birds. */
@@ -37,7 +38,7 @@ export function CrowdedPage() {
     <>
       <Section
         title="A wire over more than one row"
-        rule={`A row holds as many birds as fit ${crowdedGap} units apart between the margins: ${fullRow} at full width, fewer in a window too narrow for the full width at the floor. A wire with more takes another row for each row's worth. Its birds spread left to right in order across the whole wire, starting clear of its name and tally, and are dealt over the rows in turn, so they step down a diagonal and left to right still reads as who needs you first. Only the first row carries the wire's name and tally.`}
+        rule={`A row holds as many birds as fit ${crowdedGap} units apart between the margins: ${fullRow} at full width, fewer in a window too narrow for the full width at the floor. A wire with more takes another row for each row's worth. Its birds spread left to right in order across the birds' room, which starts ${columnEdge} units in on every wire whatever its name or tally says, and are dealt over the rows in turn, so they step down a diagonal and left to right still reads as who needs you first. Only the first row carries the wire's name and tally.`}
         min={900}
       >
         {counts.map((count) => (

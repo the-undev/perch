@@ -14,7 +14,6 @@ import {
   rowsFor,
   sceneHeightFor,
   toPixels,
-  wireSpanLeft,
   wireStep,
 } from "./aviary-layout.ts";
 import { roomyName } from "./bird.tsx";
@@ -28,16 +27,15 @@ import {
 } from "./scene.tsx";
 import {
   alternateBelow,
+  columnEdge,
   edgeMargin,
   fenceGap,
-  labelClearance,
   lowerRowDrop,
   namePlace,
   placeSpacing,
   smallerBelow,
   wireGap,
   wireHeight,
-  wireLabelRight,
 } from "./wire.tsx";
 
 const window = { width: 1400, height: 800 };
@@ -102,47 +100,35 @@ describe("the aviary's layout", () => {
       width: 2000,
       height: 1042,
       rows: [
-        [208.4, [660, 211.51], [1000, 213.4], [1340, 211.51]],
+        [208.4, [720, 212.12], [1060, 213.34], [1400, 210.79]],
         [
           448.06,
-          [347.04, 446.09],
-          [730.28, 451.87],
-          [1113.52, 452.85],
-          [1496.76, 449.03],
+          [240, 443.62],
+          [650, 451.06],
+          [1060, 453],
+          [1470, 449.45],
           [1880, 440.41],
         ],
-        [
-          591.86,
-          [538.66, 593.38],
-          [921.9, 596.76],
-          [1305.14, 595.33],
-          [1688.38, 589.11],
-        ],
+        [591.86, [445, 591.82], [855, 596.51], [1265, 595.71], [1675, 589.41]],
       ],
-      fence: [937.8, 795, 1000, 1205],
+      fence: [937.8, 855, 1060, 1265],
     });
     expect(pinned(mockAviary, { width: 3440, height: 1380 })).toEqual({
       width: 2000,
       height: 802,
       rows: [
-        [180.11, [660, 183.22], [1000, 185.11], [1340, 183.22]],
+        [180.11, [720, 183.83], [1060, 185.05], [1400, 182.5]],
         [
           364.57,
-          [347.04, 362.6],
-          [730.28, 368.38],
-          [1113.52, 369.36],
-          [1496.76, 365.54],
+          [240, 360.13],
+          [650, 367.57],
+          [1060, 369.51],
+          [1470, 365.96],
           [1880, 356.92],
         ],
-        [
-          475.25,
-          [538.66, 476.77],
-          [921.9, 480.15],
-          [1305.14, 478.72],
-          [1688.38, 472.5],
-        ],
+        [475.25, [445, 475.21], [855, 479.9], [1265, 479.1], [1675, 472.8]],
       ],
-      fence: [743.88, 795, 1000, 1205],
+      fence: [743.88, 855, 1060, 1265],
     });
   });
 
@@ -190,10 +176,7 @@ describe("the aviary's layout", () => {
     expect(gap(1920)).toBe(wireGap);
     expect(gap(1400)).toBeLessThan(wireGap);
     expect(gap(1400)).toBeCloseTo(
-      (sceneWidthFor(1400) -
-        edgeMargin -
-        wireSpanLeft(wireOf(5), sceneWidthFor(1400))) /
-        4,
+      (sceneWidthFor(1400) - columnEdge - edgeMargin) / 4,
     );
   });
 
@@ -226,16 +209,15 @@ describe("the aviary's layout", () => {
     }
   });
 
-  it("lays a one-row wire whose spread clears its label out as before", () => {
+  it("spreads a one-row wire at the full gap, centred in the birds' room", () => {
     for (const [count, size, xs] of [
-      [3, { width: 1100, height: 800 }, [271.11, 611.11, 951.11]],
-      [4, { width: 1920, height: 1000 }, [490, 830, 1170, 1510]],
+      [3, { width: 1100, height: 800 }, [331.11, 671.11, 1011.11]],
+      [4, { width: 1920, height: 1000 }, [550, 890, 1230, 1570]],
     ] as const) {
       const layout = layoutAviary(aviaryOf([wireOf(count)]), size);
       const birds = layout.rows[0]?.birds ?? [];
 
       expect(layout.rows).toHaveLength(1);
-      expect(wireSpanLeft(wireOf(count), layout.width)).toBe(edgeMargin);
       expect(birds.map((entry) => Math.round(entry.x * 100) / 100)).toEqual(xs);
       expect(birds.map((entry) => entry.namePlace)).toEqual(
         birds.map(() => roomyName),
@@ -243,40 +225,36 @@ describe("the aviary's layout", () => {
     }
   });
 
-  it("keeps a wire's birds right of its name and tally, a tail's length clear", () => {
-    for (const width of [500, 1100]) {
-      for (const aviary of [
-        mockAviary,
-        aviaryOf([wireOf(8)]),
-        aviaryOf([wireOf(13)]),
-      ]) {
+  it("starts every wire's and the fence's birds at the column edge, at any window", () => {
+    for (const width of [320, 500, 760, 1100, 1400, 1920, 3440]) {
+      for (const aviary of [mockAviary, aviaryOf([wireOf(13)]), fenceOf(21)]) {
         const layout = layoutAviary(aviary, { width, height: 800 });
-        for (const row of layout.rows) {
-          const clear =
-            wireLabelRight(row.wire.name, row.wire.birds) + labelClearance;
-          for (const entry of row.birds) {
-            expect(entry.x).toBeGreaterThanOrEqual(clear - 1e-9);
-            expect(entry.x).toBeLessThanOrEqual(
-              layout.width - edgeMargin + 1e-9,
-            );
-          }
+
+        for (const entry of placedBirds(layout)) {
+          expect(entry.x).toBeGreaterThanOrEqual(columnEdge);
         }
       }
     }
+    expect(columnEdge).toBe(240);
   });
 
-  it("bunches a wire at the inset when its label leaves no room, never left of it", () => {
-    const wire = { ...wireOf(4), name: "A wire with a very long name indeed" };
-    const layout = layoutAviary(aviaryOf([wire]), { width: 500, height: 800 });
-    const inset = wireLabelRight(wire.name, wire.birds) + labelClearance;
+  it("never moves a bird for its wire's name or tally", () => {
+    const wire = wireOf(8);
+    const named = { ...wire, name: "A wire with a very long name indeed" };
+    const settled = {
+      ...wire,
+      birds: wire.birds.map((bird) => ({ ...bird, mood: "content" as const })),
+    };
+    const xs = (aviary: Aviary) =>
+      layoutAviary(aviary, { width: 1100, height: 800 }).rows.flatMap((row) =>
+        row.birds.map((entry) => entry.x),
+      );
 
-    expect(inset).toBeGreaterThan(layout.width - edgeMargin);
-    expect(
-      layout.rows.flatMap((row) => row.birds.map((entry) => entry.x)),
-    ).toEqual([inset, inset, inset, inset]);
+    expect(xs(aviaryOf([named]))).toEqual(xs(aviaryOf([wire])));
+    expect(xs(aviaryOf([settled]))).toEqual(xs(aviaryOf([wire])));
   });
 
-  it("spreads a crowded wire left to right in its order, inside the margins", () => {
+  it("spreads a crowded wire left to right in its order, inside the birds' room", () => {
     for (const [count, size] of [
       [13, { width: 1100, height: 800 }],
       [24, { width: 1920, height: 1000 }],
@@ -294,7 +272,7 @@ describe("the aviary's layout", () => {
 
       expect(layout.rows.length).toBeGreaterThan(1);
       expect(xs.slice(1).every((x, i) => x > (xs[i] ?? 0))).toBe(true);
-      expect(Math.min(...xs)).toBeGreaterThanOrEqual(edgeMargin);
+      expect(Math.min(...xs)).toBeGreaterThanOrEqual(columnEdge);
       expect(Math.max(...xs)).toBeLessThanOrEqual(
         layout.width - edgeMargin + 1e-9,
       );
@@ -472,7 +450,7 @@ describe("the names on a crowded perch", () => {
   it("alternates and drops a size step at the live machine's fence of 21 birds", () => {
     const spacing = placeSpacing(21, fenceGap, 2000);
 
-    expect(spacing).toBe(88);
+    expect(spacing).toBe(82);
     expect(spacing).toBeLessThan(smallerBelow);
     expect([0, 1].map((index) => namePlace(index, spacing, 30))).toEqual([
       { drop: 30, size: "small" },

@@ -10,7 +10,7 @@ import type {
   StateWord,
 } from "@perch/core/viewmodel.ts";
 import { ChipHandles } from "./chip.tsx";
-import { actionIcon, Icon } from "./icons.tsx";
+import { Icon } from "./icons.tsx";
 
 /** The state word's ink on paper: the mood's colour, quiet for the fence. */
 export const stateWordTone: Record<StateWord, string> = {
@@ -182,16 +182,17 @@ export function Bubble({
       </p>
       <ChipHandles chips={bubble.chips} onPress={onChip} />
       <div className="mt-3 flex items-center gap-2">
-        {actions.map((action) => (
+        {actions.map((action, index) => (
           <button
-            key={action.kind}
+            // biome-ignore lint/suspicious/noArrayIndexKey: a bird's actions are a fixed list in config order, and two may share a kind or a verb.
+            key={index}
             type="button"
             title={action.verb}
             aria-label={action.verb}
             onClick={() => onLaunch(action)}
             className="inline-flex cursor-pointer items-center rounded-lg bg-key px-2.5 py-2 text-ink hover:bg-key-hi"
           >
-            <Icon name={actionIcon[action.kind]} size={14} />
+            <Icon name={action.icon} size={14} />
           </button>
         ))}
         {onAdopt !== null && (

@@ -129,8 +129,7 @@ function start(): void {
         snapshotPath: paths.snapshotPath,
         now,
       }),
-    launch: (action, current) =>
-      launch(action, current.launch.commands, { run, spawnDetached }),
+    launch: (action) => launch(action, { run, spawnDetached }),
     readText: (path) => readFile(path, "utf8"),
     writeStarter: async () => {
       await writeStarterConfig(paths.userConfigPath, home);

@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Launch actions round</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* The launch actions round: actions are added from a shelf of presets, never
+   assumed. Drawn on the approved ink palette from packages/ui/src/theme.css. */
+:root {
+  --bg: #101214;
+  --rail: #121517;
+  --band: #15181b;
+  --panel: #1a1e22;
+  --panel-hi: #20252a;
+  --edge: #2b3036;
+  --edge-hi: #3e454d;
+  --ink: #ece7db;
+  --muted: #aaa396;
+  --faint: #837d70;
+  --accent: #b9b2a2;
+  --green: #66bb86;
+  --amber: #d8a845;
+  --red: #e25d4f;
+  --paper: #e9e4d8;
+  --paper-head: #171a1e;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --body: "Figtree", system-ui, sans-serif;
+  --mono: ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/1.55 var(--body);
+  padding: 0 max(16px, env(safe-area-inset-left)) 90px;
+}
+main { max-width: 1240px; margin: 0 auto; }
+
+/* Masthead */
+.mast { padding: 42px 0 10px; border-bottom: 1px solid var(--edge); }
+.mast h1 { font: 700 34px/1.1 var(--display); margin: 0 0 10px; }
+.mast .brief { max-width: 72ch; color: var(--muted); margin: 0 0 6px; }
+.mast .brief b { color: var(--ink); font-weight: 600; }
+.mast .meta { color: var(--faint); font-size: 12.5px; margin: 10px 0 18px; }
+
+/* The rules strip */
+.rules { display: flex; flex-wrap: wrap; gap: 12px; padding: 22px 0 8px; }
+.rule {
+  flex: 1 1 260px; background: var(--band); border: 1px solid var(--edge);
+  border-radius: 10px; padding: 14px 16px;
+}
+.rule h3 { font: 600 14.5px/1.3 var(--display); margin: 0 0 5px; }
+.rule p { margin: 0; color: var(--muted); font-size: 13px; }
+
+/* Flow strip */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 26px 0 8px; }
+.flow .step {
+  flex: 1 1 150px; background: var(--panel); border: 1px solid var(--edge);
+  border-radius: 10px; padding: 11px 13px;
+}
+.flow .step strong { display: block; font: 600 13.5px/1.3 var(--display); }
+.flow .step span { color: var(--faint); font-size: 12px; }
+.flow .arrow { align-self: center; color: var(--faint); }
+
+/* Sections */
+section { margin-top: 54px; }
+section > h2 { font: 700 23px/1.2 var(--display); margin: 0 0 4px; }
+section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
+section > .why code, .notes code, .mast code, .rule code {
+  font: 12.5px var(--mono); background: var(--panel); border: 1px solid var(--edge);
+  border-radius: 4px; padding: 1px 5px; color: var(--ink);
+}
+
+/* A drawn screen and its notes */
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 22px; align-items: start; }
+@media (max-width: 980px) { .pair { grid-template-columns: 1fr; } }
+.screen {
+  background: var(--bg); border: 1px solid var(--edge-hi); border-radius: 14px;
+  overflow: hidden; box-shadow: 0 24px 60px -18px rgb(0 0 0 / .75);
+}
+.chrome {
+  display: flex; align-items: center; gap: 18px; padding: 10px 18px;
+  background: var(--rail); border-bottom: 1px solid var(--edge);
+}
+.chrome .brand { font: 700 14px var(--display); }
+.chrome .tabs { display: flex; gap: 14px; color: var(--faint); font-size: 12.5px; }
+.chrome .tabs .on { color: var(--ink); background: var(--panel-hi); border-radius: 99px; padding: 2px 10px; }
+.chrome .right { margin-left: auto; color: var(--faint); font-size: 12px; }
+.notes h3 { font: 600 13.5px/1.3 var(--display); margin: 0 0 6px; color: var(--accent); }
+.notes p { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.notes p b { color: var(--ink); font-weight: 600; }
+
+/* Settings shell: rail plus column */
+.shell { display: grid; grid-template-columns: 168px minmax(0, 1fr); min-height: 380px; }
+.sidenav { background: var(--rail); border-right: 1px solid var(--edge); padding: 18px 0; }
+.sidenav a { display: block; padding: 6px 18px; color: var(--faint); font-size: 13px; text-decoration: none; }
+.sidenav a.on { color: var(--ink); border-left: 2px solid var(--accent); padding-left: 16px; background: var(--band); }
+.sidenav .sub { padding-left: 30px; font-size: 12px; }
+.content { padding: 22px 26px 30px; max-width: 760px; }
+.content h1 { font: 700 20px var(--display); margin: 0 0 2px; }
+.content .lead { color: var(--muted); font-size: 13px; margin: 0 0 18px; max-width: 64ch; }
+
+/* Form idiom */
+.field { min-width: 0; }
+.field label { display: block; font-size: 12px; color: var(--faint); margin: 0 0 3px; }
+.field input, .field .input {
+  width: 100%; background: var(--band); border: 1px solid var(--edge);
+  border-radius: 7px; color: var(--ink); font: 13px var(--mono); padding: 7px 10px;
+}
+.field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field input.word { font: 13px var(--body); }
+.btn {
+  display: inline-block; border-radius: 8px; padding: 7px 14px;
+  font: 600 13px var(--body); border: 1px solid var(--edge);
+  color: var(--muted); background: transparent; cursor: pointer;
+}
+.btn.primary { background: var(--paper); color: var(--paper-head); border-color: var(--paper); }
+
+/* Action cards */
+.action {
+  border: 1px solid var(--edge); border-radius: 10px; background: var(--panel);
+  margin-bottom: 10px; overflow: hidden;
+}
+.action .head {
+  display: flex; align-items: baseline; gap: 12px; padding: 12px 16px; cursor: pointer;
+}
+.action .head .name { font: 600 14.5px var(--display); white-space: nowrap; }
+.action .head .verbsay { color: var(--faint); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.action .head .tools { margin-left: auto; display: flex; gap: 4px; align-items: center; white-space: nowrap; }
+.action .head .tool {
+  background: transparent; border: 0; color: var(--faint); font: 13px var(--body);
+  padding: 2px 7px; border-radius: 6px; cursor: pointer;
+}
+.action .head .tool:hover { color: var(--ink); background: var(--panel-hi); }
+.action .head .tool:disabled { opacity: .3; cursor: default; }
+.action .body { border-top: 1px solid var(--edge); padding: 16px; display: grid; gap: 14px; background: var(--band); }
+.action .body .row { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.action .body .row.single { grid-template-columns: 1fr; }
+.action .quiet { color: var(--faint); font-size: 12.5px; max-width: 62ch; margin: 0; }
+.action .quiet code, .shelf code {
+  font: 12px var(--mono); background: var(--panel); border: 1px solid var(--edge);
+  border-radius: 4px; padding: 1px 5px;
+}
+.action .bad { color: var(--red); font-size: 12.5px; margin: 0; }
+.sessrow { display: flex; gap: 8px; align-items: center; }
+.sessrow .input, .sessrow input { flex: 1; }
+.sessrow .x { color: var(--faint); font-size: 12.5px; }
+
+/* The shelf */
+.shelf { border: 1px dashed var(--edge-hi); border-radius: 10px; margin-top: 16px; }
+.shelf .kind {
+  display: flex; align-items: baseline; gap: 12px; padding: 13px 16px;
+  border-bottom: 1px solid var(--edge);
+}
+.shelf .kind:last-of-type { border-bottom: 0; }
+.shelf .kind .name { font: 600 14px var(--display); min-width: 122px; }
+.shelf .kind .what { color: var(--muted); font-size: 13px; }
+.shelf .kind .needs { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; }
+.shelf .kind .add {
+  color: var(--ink); font-size: 13px; background: none; border: 0; cursor: pointer;
+  font-family: var(--body); font-weight: 600; padding: 0;
+}
+.shelf .kind.taken .add { color: var(--faint); cursor: default; font-weight: 400; }
+.shelf .later { padding: 11px 16px; color: var(--faint); font-size: 12.5px; border-top: 1px solid var(--edge); }
+
+/* Config block */
+pre.toml {
+  background: var(--band); border: 1px solid var(--edge); border-radius: 10px;
+  padding: 16px 18px; font: 12.5px/1.6 var(--mono); color: var(--ink);
+  overflow-x: auto; max-width: 86ch; margin: 0;
+}
+pre.toml .c { color: var(--faint); }
+
+/* The bird's actions strip */
+.birdbar { padding: 26px; }
+.birdbar .birdname { font: 700 19px var(--display); margin: 0 0 3px; }
+.birdbar .says { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.birdbar .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.birdbar .acts .btn { cursor: default; }
+
+/* Widths */
+.widths { display: flex; flex-wrap: wrap; gap: 12px; }
+.width { flex: 1 1 280px; background: var(--band); border: 1px solid var(--edge); border-radius: 10px; padding: 14px 16px; }
+.width h3 { font: 600 13.5px var(--display); margin: 0 0 5px; }
+.width p { margin: 0; color: var(--muted); font-size: 13px; }
+
+/* Decisions */
+.decisions { display: grid; gap: 12px; max-width: 86ch; }
+.decision { background: var(--band); border: 1px solid var(--edge); border-radius: 10px; padding: 14px 18px; }
+.decision h3 { font: 600 14.5px var(--display); margin: 0 0 5px; }
+.decision p { margin: 0 0 6px; color: var(--muted); font-size: 13.5px; }
+.decision p code { font: 12.5px var(--mono); background: var(--panel); border: 1px solid var(--edge); border-radius: 4px; padding: 1px 5px; color: var(--ink); }
+.decision .rec { color: var(--ink); font-size: 13.5px; }
+.decision .rec::before { content: "Recommended: "; color: var(--green); font-weight: 600; }
+.decision .agreed::before { content: "Agreed: "; color: var(--green); font-weight: 600; }
+.decision .agreed { color: var(--ink); font-size: 13.5px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .action { transition: border-color .15s; }
+}
+</style>
+</head>
+<body>
+<main>
+
+<header class="mast">
+  <h1>Launch actions: added from a shelf</h1>
+  <p class="brief">The round answers: <b>launch commands are a fixed five-slot table of raw TOML
+  lines, written for one machine.</b> After this round an action is something you add. The shelf
+  offers presets (VS Code, the zellij tab, nvim, the folder, Obsidian, a custom command); picking
+  one drops a card already filled in, and most adds never touch the command text. Each card is one
+  <code>[[launch.actions]]</code> table; page order is the order on the bird.</p>
+  <p class="meta">Round of 1 November 2026 · drawn on the approved ink palette · verdicts recorded 2 November 2026</p>
+</header>
+
+<div class="rules">
+  <div class="rule"><h3>An action is added, never assumed</h3>
+    <p>A fresh config offers nothing on any bird. Each added action is one card and one config
+    table, removed by removing the card. There is no fixed set of slots to leave empty.</p></div>
+  <div class="rule"><h3>A preset is starting text</h3>
+    <p>Adding VS Code fills the card with <code>["code", "{path}"]</code>; adding nvim fills in a
+    terminal running nvim. The preset is not a live coupling: a machine with kitty instead of
+    alacritty edits one field and the preset is never consulted again.</p></div>
+  <div class="rule"><h3>Two kinds only</h3>
+    <p>Nearly every action is a verb and a command run detached, no shell, placeholders filled.
+    The zellij tab keeps its find-or-open behaviour and carries its session fields. Obsidian
+    becomes a plain command using <code>{obsidian}</code>, which also marks it as for Obsidian
+    birds.</p></div>
+</div>
+
+<div class="flow">
+  <div class="step"><strong>Nothing</strong><span>no actions, birds offer none</span></div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>Add from the shelf</strong><span>a filled card appears</span></div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>Tweak, or not</strong><span>verb and command are plain fields</span></div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>Save</strong><span>writes one table per card</span></div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>The bird offers the verb</strong><span>in page order</span></div>
+</div>
+
+<section>
+  <h2>1 · Launching, empty</h2>
+  <p class="why">The page with nothing added. The zellij session rows leave the page: they move
+  into the zellij card, so all zellij-ness lives in one place and an owner who never uses zellij
+  never sees a session field. The shelf is the whole empty state; there is nothing else to
+  explain.</p>
+  <div class="pair">
+    <div class="screen">
+      <div class="chrome"><span class="brand">perch</span>
+        <span class="tabs"><span>The Aviary</span><span class="on">Settings</span></span>
+        <span class="right">scanned 4 minutes ago</span></div>
+      <div class="shell">
+        <nav class="sidenav">
+          <a href="#">Sources</a>
+          <a class="sub" href="#">Joining up</a>
+          <a href="#">Wires</a>
+          <a href="#">Judgement</a>
+          <a href="#">Scanning</a>
+          <a class="on" href="#">Launching</a>
+        </nav>
+        <div class="content">
+          <h1>Launching</h1>
+          <p class="lead">What a bird's page can open. Each action appears on every bird with a
+          folder on this machine, in this order; one using <code>{obsidian}</code> appears on
+          Obsidian birds only.</p>
+          <div class="shelf">
+            <div class="kind"><span class="name">VS Code</span>
+              <span class="what">Opens the project folder in VS Code.</span>
+              <span class="needs">filled in</span><button class="add" type="button">Add</button></div>
+            <div class="kind"><span class="name">zellij tab</span>
+              <span class="what">Goes to the project's tab in its session, or opens one.</span>
+              <span class="needs">filled in · once</span><button class="add" type="button">Add</button></div>
+            <div class="kind"><span class="name">nvim</span>
+              <span class="what">Opens nvim in the project folder, in a new terminal window.</span>
+              <span class="needs">filled in</span><button class="add" type="button">Add</button></div>
+            <div class="kind"><span class="name">Folder</span>
+              <span class="what">Opens the folder in the file manager.</span>
+              <span class="needs">filled in</span><button class="add" type="button">Add</button></div>
+            <div class="kind"><span class="name">Obsidian</span>
+              <span class="what">Opens the item in Obsidian.</span>
+              <span class="needs">Obsidian only</span><button class="add" type="button">Add</button></div>
+            <div class="kind"><span class="name">Custom command</span>
+              <span class="what">A verb and a command of your own.</span>
+              <span class="needs">you write it</span><button class="add" type="button">Add</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <h3>The shelf rows</h3>
+      <p>Each row is a sentence and a cost, the same idiom as the sources picker. <b>"Filled in"
+      says the add is one click</b>; the two that are not say exactly what they ask of you.</p>
+      <h3>Why the sessions moved</h3>
+      <p>The session default and the roots feed only the zellij action. With them on its card,
+      removing the card removes every zellij word from the page.</p>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <h2>2 · The page in use · live</h2>
+  <p class="why">This screen works: add from the shelf, open and close a card by its head, reorder
+  with the arrows, remove, and type in the fields. The zellij row greys once one exists; every
+  other preset can be added again. Save and the session roots row are drawn only.</p>
+  <div class="pair">
+    <div class="screen">
+      <div class="chrome"><span class="brand">perch</span>
+        <span class="tabs"><span>The Aviary</span><span class="on">Settings</span></span>
+        <span class="right">scanned 4 minutes ago</span></div>
+      <div class="shell">
+        <nav class="sidenav">
+          <a href="#">Sources</a>
+          <a class="sub" href="#">Joining up</a>
+          <a href="#">Wires</a>
+          <a href="#">Judgement</a>
+          <a href="#">Scanning</a>
+          <a class="on" href="#">Launching</a>
+        </nav>
+        <div class="content">
+          <h1>Launching</h1>
+          <p class="lead">What a bird's page can open. Each action appears on every bird with a
+          folder on this machine, in this order; one using <code>{obsidian}</code> appears on
+          Obsidian birds only.</p>
+          <div id="cards"></div>
+          <div class="shelf" id="shelf"></div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <h3>The card's head</h3>
+      <p>Preset name, then <b>the verb as the bird will say it</b>, greyed. The arrows are the
+      order on the bird; there is no separate ordering control to find.</p>
+      <h3>Two fields, usually zero edits</h3>
+      <p>Action is the words on the bird's page. Command keeps the config file's own list form,
+      because a filled preset makes it text you read rather than text you write.</p>
+      <h3>zellij's card</h3>
+      <p>The one card with more on it: its two commands, the session default, and the roots. The
+      shelf offers it once; a second tab action would be the same action twice.</p>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <h2>3 · What saving writes</h2>
+  <p class="why">One table per card, in page order, under one namespace. <code>kind</code> is
+  absent for a plain command. The <code>[launch]</code> table and its five named slots go;
+  nothing else in config changes.</p>
+  <pre class="toml"><span class="c"># ~/.config/perch/config.toml · written by Save, read back on change</span>
+[[launch.actions]]
+kind = "zellij"
+verb = "Open the zellij tab"
+zellij = ["zellij"]
+terminal = ["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
+session = "main"
+[launch.actions.sessions]
+"~/work" = "work"
+
+[[launch.actions]]
+verb = "Open in VS Code"
+command = ["code", "{path}"]
+
+[[launch.actions]]
+verb = "Open in nvim"
+command = ["alacritty", "--working-directory", "{path}", "-e", "nvim", "."]
+
+[[launch.actions]]
+verb = "Open the folder"
+command = ["xdg-open", "{path}"]</pre>
+</section>
+
+<section>
+  <h2>4 · A card's refusals</h2>
+  <p class="why">The two ways a card cannot be saved, said on the card in red, in the words the
+  settings page already uses. "Empty the field to remove the action" dies with the slots: removing
+  an action is removing its card.</p>
+  <div class="pair">
+    <div class="screen">
+      <div class="birdbar" style="padding: 22px 26px;">
+        <div class="action" style="margin-bottom: 10px;">
+          <div class="head" style="cursor: default;"><span class="name">Custom command</span>
+            <span class="verbsay">Open the logs</span>
+            <span class="tools"><span class="tool">↑</span><span class="tool">↓</span><span class="tool">remove</span></span></div>
+          <div class="body">
+            <div class="row single"><div class="field"><label>Action · the words on the bird's page</label>
+              <span class="input" style="font-family: var(--body);">Open the logs</span></div></div>
+            <div class="row single"><div class="field"><label>Command · runs detached, no shell</label>
+              <span class="input">["", "lnav", "{path}/logs"]</span></div></div>
+            <p class="bad">The command must name a program first.</p>
+          </div>
+        </div>
+        <div class="action" style="margin-bottom: 0;">
+          <div class="head" style="cursor: default;"><span class="name">Custom command</span>
+            <span class="verbsay">Open the worktree</span>
+            <span class="tools"><span class="tool">↑</span><span class="tool">↓</span><span class="tool">remove</span></span></div>
+          <div class="body">
+            <div class="row single"><div class="field"><label>Action · the words on the bird's page</label>
+              <span class="input" style="font-family: var(--body);">Open the worktree</span></div></div>
+            <div class="row single"><div class="field"><label>Command · runs detached, no shell</label>
+              <span class="input">["code", "{worktree}"]</span></div></div>
+            <p class="bad">The command has no placeholder {worktree}; it may use {path} and {obsidian}.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <h3>Where they show</h3>
+      <p>On the card as typed, and in the problems list that holds Save, as every settings page
+      problem already does.</p>
+      <h3>A blank verb</h3>
+      <p>Also a refusal: the verb is the button on the bird, so a card needs one. Presets always
+      arrive with it filled.</p>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <h2>5 · Where the verbs land</h2>
+  <p class="why">The bird's page offers the verbs in page order, exactly as typed. An Obsidian
+  bird adds the <code>{obsidian}</code> actions; a bird with no folder on this machine offers
+  none, as now.</p>
+  <div class="pair">
+    <div class="screen">
+      <div class="birdbar">
+        <p class="birdname">perch</p>
+        <p class="says">on the wire Projects · quiet since this morning</p>
+        <div class="acts">
+          <span class="btn">Open the zellij tab</span>
+          <span class="btn">Open in VS Code</span>
+          <span class="btn">Open in nvim</span>
+          <span class="btn">Open the folder</span>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <h3>Order is chosen once</h3>
+      <p>The arrows on the settings page are the only ordering. The first action is the reach-for
+      one; on this machine that is the zellij tab.</p>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <h2>6 · Widths</h2>
+  <div class="widths">
+    <div class="width"><h3>Small monitor (often primary)</h3>
+      <p>Below about 900px the rail folds into a row of words above the column, as the settings
+      page already does. Card heads drop the greyed verb before they truncate the name; the tools
+      stay.</p></div>
+    <div class="width"><h3>Desktop</h3>
+      <p>Rail 168px, column up to 760px. Command fields take the full column; the two-up rows are
+      for the zellij card's short fields only.</p></div>
+    <div class="width"><h3>Ultrawide (3440px)</h3>
+      <p>The shell caps near 1400px and centres. Nothing stretches; the shelf and the cards keep
+      the column's reading width.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>7 · What this round needs decided</h2>
+  <div class="decisions">
+    <div class="decision"><h3>The config shape breaks cleanly</h3>
+      <p><code>[launch.commands]</code> and its five named slots become ordered
+      <code>[[launch.actions]]</code> tables, one per card, no legacy reader. One machine edits
+      one file once; a config that no longer parses leaves the old one in force and says so in
+      the sky.</p>
+      <p class="agreed">1 November 2026, in the planning conversation.</p></div>
+    <div class="decision"><h3>{obsidian} is the Obsidian marker</h3>
+      <p>An action whose command uses <code>{obsidian}</code> (the Obsidian folder's name,
+      encoded for a URI) is offered on Obsidian birds only; everything else goes to any bird with
+      a folder. The alternative is a separate scope field, a second way of saying what the
+      command already says. The item kinds rename for the same specificity in one pass:
+      <code>vault</code> becomes <code>obsidian</code> and <code>repo</code> becomes
+      <code>git</code>, since that is what each detects. <code>server</code> waits until the
+      Kuma bird is dealt with properly. <code>vault=</code> inside the <code>obsidian://</code>
+      URI is Obsidian's own parameter and stays.</p>
+      <p class="agreed">2 November 2026; the placeholder decides, and the kinds rename with it.</p></div>
+    <div class="decision"><h3>The zellij sessions move into the zellij action</h3>
+      <p>The session default and the roots become fields of the zellij table
+      (<code>session</code>, <code>[launch.actions.sessions]</code>), and the top-level
+      <code>[launch]</code> keys go. The shelf offers zellij once; the other presets can be added
+      again, each card its own verb.</p>
+      <p class="agreed">2 November 2026; removing the card removes every zellij word.</p></div>
+    <div class="decision"><h3>Presets carry this machine's flavour</h3>
+      <p>The nvim and zellij presets name alacritty, as the example config does today. A preset
+      is text pasted into the card at add time, so another machine edits one field; keeping
+      presets desktop-neutral would make them wrong everywhere instead of right here.</p>
+      <p class="agreed">2 November 2026; the flavour stays, the Folder preset alone neutral with
+      <code>xdg-open</code>.</p></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// Section 2's live screen: the shelf adds filled cards; cards open by their
+// head, reorder, remove, and hold typed edits. Nothing here persists.
+const presets = [
+  { id: "vscode", name: "VS Code", what: "Opens the project folder in VS Code.",
+    needs: "filled in", verb: "Open in VS Code", command: '["code", "{path}"]' },
+  { id: "zellij", name: "zellij tab",
+    what: "Goes to the project's tab in its session, or opens one.",
+    needs: "filled in · once", verb: "Open the zellij tab",
+    zellij: '["zellij"]',
+    terminal: '["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]',
+    session: "main" },
+  { id: "nvim", name: "nvim", what: "Opens nvim in the project folder, in a new terminal window.",
+    needs: "filled in", verb: "Open in nvim",
+    command: '["alacritty", "--working-directory", "{path}", "-e", "nvim", "."]' },
+  { id: "folder", name: "Folder", what: "Opens the folder in the file manager.",
+    needs: "filled in", verb: "Open the folder", command: '["xdg-open", "{path}"]' },
+  { id: "obsidian", name: "Obsidian", what: "Opens the item in Obsidian.",
+    needs: "Obsidian only", verb: "Open in Obsidian",
+    command: '["xdg-open", "obsidian://open?vault={obsidian}"]' },
+  { id: "custom", name: "Custom command", what: "A verb and a command of your own.",
+    needs: "you write it", verb: "", command: "" },
+];
+const presetOf = (id) => presets.find((preset) => preset.id === id);
+let nextUid = 1;
+const added = (id, open) => ({ uid: nextUid++, preset: id, open, ...structuredClone(presetOf(id)) });
+let actions = [added("zellij", true), added("vscode", false)];
+
+const cardsHost = document.getElementById("cards");
+const shelfHost = document.getElementById("shelf");
+
+function field(labelText, value, mono, onInput) {
+  const wrap = document.createElement("div");
+  wrap.className = "field";
+  const label = document.createElement("label");
+  label.textContent = labelText;
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = value;
+  input.spellcheck = false;
+  if (!mono) input.className = "word";
+  input.setAttribute("aria-label", labelText);
+  input.addEventListener("input", () => onInput(input.value));
+  wrap.append(label, input);
+  return wrap;
+}
+
+function singleRow(child) {
+  const row = document.createElement("div");
+  row.className = "row single";
+  row.append(child);
+  return row;
+}
+
+function tool(text, title, onClick, disabled) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "tool";
+  button.textContent = text;
+  button.title = title;
+  button.disabled = disabled;
+  button.addEventListener("click", (event) => { event.stopPropagation(); onClick(); });
+  return button;
+}
+
+function card(action, at) {
+  const root = document.createElement("div");
+  root.className = "action";
+  const head = document.createElement("div");
+  head.className = "head";
+  const name = document.createElement("span");
+  name.className = "name";
+  name.textContent = action.name;
+  const verbsay = document.createElement("span");
+  verbsay.className = "verbsay";
+  verbsay.textContent = action.verb || "no words yet";
+  const tools = document.createElement("span");
+  tools.className = "tools";
+  tools.append(
+    tool("↑", "Earlier on the bird", () => { move(at, -1); }, at === 0),
+    tool("↓", "Later on the bird", () => { move(at, 1); }, at === actions.length - 1),
+    tool("remove", "Remove the action", () => { actions.splice(at, 1); render(); }, false),
+  );
+  head.append(name, verbsay, tools);
+  head.addEventListener("click", () => { action.open = !action.open; render(); });
+  root.append(head);
+  if (!action.open) return root;
+
+  const body = document.createElement("div");
+  body.className = "body";
+  body.append(singleRow(field("Action · the words on the bird's page", action.verb, false,
+    (value) => { action.verb = value; verbsay.textContent = value || "no words yet"; })));
+  if (action.preset === "zellij") {
+    body.append(
+      singleRow(field("zellij command", action.zellij, true, (value) => { action.zellij = value; })),
+      singleRow(field("Terminal command · attaches a session not running · {session}, {cwd}",
+        action.terminal, true, (value) => { action.terminal = value; })),
+    );
+    const two = document.createElement("div");
+    two.className = "row";
+    two.append(field("Session · for an item no root assigns", action.session, true,
+      (value) => { action.session = value; }));
+    const roots = document.createElement("div");
+    roots.className = "field";
+    const label = document.createElement("label");
+    label.textContent = "Sessions by root · the longest root holding the item";
+    const row = document.createElement("div");
+    row.className = "sessrow";
+    row.innerHTML = '<span class="input">~/work</span><span class="input" style="max-width: 90px;">work</span><span class="x">remove</span>';
+    roots.append(label, row);
+    two.append(roots);
+    body.append(two);
+    const quiet = document.createElement("p");
+    quiet.className = "quiet";
+    quiet.textContent = "Finds the session's tab named after the project and goes to it, or opens one in the project's directory. It does not raise the terminal's window.";
+    body.append(quiet);
+  } else {
+    const quiet = document.createElement("p");
+    quiet.className = "quiet";
+    const say = () => {
+      quiet.textContent = action.command.includes("{obsidian}")
+        ? "Uses {obsidian}, so it is offered on Obsidian birds only."
+        : "Offered on every bird with a folder on this machine.";
+    };
+    say();
+    body.append(singleRow(field("Command · runs detached, no shell · {path}, {obsidian}",
+      action.command, true, (value) => { action.command = value; say(); })));
+    body.append(quiet);
+  }
+  root.append(body);
+  return root;
+}
+
+function move(at, by) {
+  const to = at + by;
+  const [taken] = actions.splice(at, 1);
+  actions.splice(to, 0, taken);
+  render();
+}
+
+function shelfRow(preset) {
+  const taken = preset.id === "zellij" && actions.some((action) => action.preset === "zellij");
+  const row = document.createElement("div");
+  row.className = taken ? "kind taken" : "kind";
+  const name = document.createElement("span");
+  name.className = "name";
+  name.textContent = preset.name;
+  const what = document.createElement("span");
+  what.className = "what";
+  what.textContent = preset.what;
+  const needs = document.createElement("span");
+  needs.className = "needs";
+  needs.textContent = taken ? "already added" : preset.needs;
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "add";
+  add.textContent = "Add";
+  add.disabled = taken;
+  add.addEventListener("click", () => {
+    for (const action of actions) action.open = false;
+    actions.push(added(preset.id, true));
+    render();
+  });
+  row.append(name, what, needs, add);
+  return row;
+}
+
+function render() {
+  cardsHost.replaceChildren(...actions.map(card));
+  const later = document.createElement("div");
+  later.className = "later";
+  later.textContent = "A preset fills the card; the card is yours after that. More presets appear as perch learns more ways to open things.";
+  shelfHost.replaceChildren(...presets.map(shelfRow), later);
+}
+
+render();
+</script>
+</body>
+</html>

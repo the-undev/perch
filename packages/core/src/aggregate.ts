@@ -281,7 +281,7 @@ function itemFor(
       : first?.repo.state === "observed"
         ? first.repo.value.info.name
         : id,
-    kind: local?.presence.obsidian.folder ? "vault" : "repo",
+    kind: local?.presence.obsidian.folder ? "obsidian" : "git",
     path: local ? local.presence.path : null,
     liveSources: [],
     presences: {

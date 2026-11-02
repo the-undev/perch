@@ -342,15 +342,17 @@ describe("the wires", () => {
 
   it("caps plumpness", async () => {
     const config = await adoptAll([]);
-    const vault = item("obsidian/Hothouse", {
-      kind: "vault",
+    const hothouse = item("obsidian/Hothouse", {
+      kind: "obsidian",
       sources: { roadmap: { counts: { bug: 0, feature: 194 }, files: [] } },
     });
 
-    expect(birdIn([vault], config, "obsidian/Hothouse").plumpness).toEqual({
-      outstanding: 194,
-      fullness: 1,
-    });
+    expect(birdIn([hothouse], config, "obsidian/Hothouse").plumpness).toEqual(
+      {
+        outstanding: 194,
+        fullness: 1,
+      },
+    );
   });
 
   it("carries failing sources and warnings to the scene", async () => {
@@ -1116,51 +1118,142 @@ describe("the detail", () => {
     expect(detail.problems).toEqual([{ source: "Forgejo", error: "HTTP 500" }]);
   });
 
-  it("offers launch actions as verbs, in the item's zellij session", async () => {
-    const config = await adoptAll(
-      ["dev/perch", "undev/notes"],
-      '[launch.zellij_sessions]\n"~/undev" = "undev"\n',
+  it("offers launch actions in config order, each with its commands, in the item's zellij session", async () => {
+    const config = await adoptAll(["dev/perch", "undev/notes"]);
+    config.launch.actions = config.launch.actions.map((action) =>
+      action.kind === "zellij"
+        ? { ...action, sessions: { "/home/test/undev": "undev" } }
+        : action,
     );
-    const vault = item("undev/notes", { kind: "vault" });
+    const obsidianBird = item("undev/notes", { kind: "obsidian" });
 
     expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([
       {
-        kind: "zellij-tab",
+        kind: "zellij",
         verb: "Open the zellij tab",
+        icon: "terminal",
+        zellij: ["zellij"],
+        terminal: [
+          "alacritty",
+          "--working-directory",
+          "{cwd}",
+          "-e",
+          "zellij",
+          "attach",
+          "-c",
+          "{session}",
+        ],
         session: "home",
         tab: "perch",
         cwd: "/home/test/dev/perch",
       },
-      { kind: "vscode", verb: "Open in VS Code", path: "/home/test/dev/perch" },
-      { kind: "folder", verb: "Open the folder", path: "/home/test/dev/perch" },
+      {
+        kind: "command",
+        verb: "Open in VS Code",
+        icon: "code",
+        command: ["code", "{path}"],
+        path: "/home/test/dev/perch",
+      },
+      {
+        kind: "command",
+        verb: "Open the folder",
+        icon: "folder",
+        command: ["dolphin", "{path}"],
+        path: "/home/test/dev/perch",
+      },
     ]);
     expect(
-      birdIn([vault], config, "undev/notes").detail.actions.map((action) =>
-        action.kind === "obsidian"
-          ? [action.verb, action.vault]
-          : action.kind === "zellij-tab"
+      birdIn([obsidianBird], config, "undev/notes").detail.actions.map(
+        (action) =>
+          action.kind === "zellij"
             ? [action.verb, action.session]
-            : [action.verb],
+            : [action.verb, action.kind],
       ),
     ).toEqual([
-      ["Open in Obsidian", "notes"],
+      ["Open in Obsidian", "obsidian"],
       ["Open the zellij tab", "undev"],
-      ["Open in VS Code"],
-      ["Open the folder"],
+      ["Open in VS Code", "command"],
+      ["Open the folder", "command"],
     ]);
   });
 
-  it("leaves out an action whose command config leaves out", async () => {
-    const config = await adoptAll(["undev/notes"]);
-    config.launch.commands.terminal = null;
-    config.launch.commands.obsidian = null;
-    const vault = item("undev/notes", { kind: "vault" });
+  it("offers the Obsidian kind, and a custom command using {obsidian}, on Obsidian birds only, with the Obsidian vault's folder name", async () => {
+    const config = await adoptAll(["obsidian/Home Notes", "dev/perch"]);
+    config.launch.actions.push(
+      {
+        kind: "obsidian",
+        verb: "Open it plainly",
+        command: ["obsidian", "{path}"],
+      },
+      {
+        kind: "command",
+        verb: "Note it",
+        command: ["notify-send", "{obsidian}"],
+        icon: "edit",
+      },
+    );
+    const obsidianBird = item("obsidian/Home Notes", { kind: "obsidian" });
+    const obsidianActions = (id: string) =>
+      birdIn([obsidianBird, perch], config, id).detail.actions.filter(
+        (action) => action.kind === "obsidian",
+      );
 
-    expect(
-      birdIn([vault], config, "undev/notes").detail.actions.map(
-        (action) => action.kind,
-      ),
-    ).toEqual(["vscode", "folder"]);
+    expect(obsidianActions("obsidian/Home Notes")).toEqual([
+      {
+        kind: "obsidian",
+        verb: "Open in Obsidian",
+        icon: "obsidian",
+        command: ["xdg-open", "obsidian://open?vault={obsidian}"],
+        path: "/home/test/obsidian/Home Notes",
+        obsidianVault: "Home Notes",
+      },
+      {
+        kind: "obsidian",
+        verb: "Open it plainly",
+        icon: "obsidian",
+        command: ["obsidian", "{path}"],
+        path: "/home/test/obsidian/Home Notes",
+        obsidianVault: "Home Notes",
+      },
+      {
+        kind: "obsidian",
+        verb: "Note it",
+        icon: "edit",
+        command: ["notify-send", "{obsidian}"],
+        path: "/home/test/obsidian/Home Notes",
+        obsidianVault: "Home Notes",
+      },
+    ]);
+    expect(obsidianActions("dev/perch")).toEqual([]);
+  });
+
+  it("gives a custom command not using {obsidian} to every bird, wearing its picked icon", async () => {
+    const config = await adoptAll(["dev/perch"]);
+    config.launch.actions = [
+      {
+        kind: "command",
+        verb: "Follow the log",
+        command: ["lnav", "{path}/logs"],
+        icon: "terminal",
+      },
+    ];
+
+    expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([
+      {
+        kind: "command",
+        verb: "Follow the log",
+        icon: "terminal",
+        command: ["lnav", "{path}/logs"],
+        path: "/home/test/dev/perch",
+      },
+    ]);
+  });
+
+  it("offers nothing when config holds no launch actions", async () => {
+    const config = await adoptAll(["dev/perch"]);
+    config.launch.actions = [];
+
+    expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([]);
   });
 
   it("says where the bird lives: its clone with home as ~, and each forge once", async () => {

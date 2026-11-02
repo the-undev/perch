@@ -81,7 +81,7 @@ describe("aggregate", () => {
     expect(
       snapshot.items.map((item) => [item.id, item.kind, item.liveSources]),
     ).toEqual([
-      ["dev/perch", "repo", []],
+      ["dev/perch", "git", []],
       ["server:Silo", "server", ["dockerContainers"]],
     ]);
     expect(snapshot.items[1]?.name).toBe("Silo");
@@ -89,6 +89,37 @@ describe("aggregate", () => {
     expect(snapshot.aggregatedAt).toBe("2026-10-22T00:00:00.000Z");
     expect(snapshot.warnings).toEqual([
       "include not found: /home/test/missing",
+    ]);
+  });
+
+  it("names a local item's kind by what it holds: obsidian with an .obsidian folder, else git", () => {
+    const siloFiles = rawFiles({
+      includes: { "/home/test/obsidian": "directory" },
+      locals: {
+        "obsidian/notes": localPresence("/home/test/obsidian/notes", {
+          include: "/home/test/obsidian",
+          obsidian: true,
+        }),
+        "obsidian/plain": localPresence("/home/test/obsidian/plain", {
+          include: "/home/test/obsidian",
+        }),
+      },
+      forges: {},
+    });
+
+    const snapshot = aggregate(
+      { ...bundle, files: siloFiles },
+      input,
+      new Date("2026-10-22T00:00:00Z"),
+    );
+
+    expect(
+      snapshot.items
+        .filter((item) => item.path !== null)
+        .map((item) => [item.id, item.kind]),
+    ).toEqual([
+      ["obsidian/notes", "obsidian"],
+      ["obsidian/plain", "git"],
     ]);
   });
 

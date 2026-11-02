@@ -29,7 +29,7 @@ Decided 20 October 2026.
 - Roadmap items get a structured list, grouped by the file's headings with
   kind badges, and the rendered markdown one click away. No ticket-style UI:
   perch is read only, so editing belongs in the editor. Decided
-  20 October 2026. Parsing rule in [vault-tasks](vault-tasks.md).
+  20 October 2026. Parsing rule in [work-items](work-items.md).
 
 ## Open
 

@@ -2,6 +2,7 @@ import type { Bird } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Bubble } from "./bubble.tsx";
+import { Icon } from "./icons.tsx";
 import { mockBird } from "./mock-birds.ts";
 
 afterEach(cleanup);
@@ -101,6 +102,31 @@ describe("the bubble", () => {
 
     expect(onLaunch).toHaveBeenCalledWith(perch.detail.actions[1]);
     expect(onFullStory).toHaveBeenCalledOnce();
+  });
+
+  it("draws each launch action's key with the icon the action carries", () => {
+    const perch = mockBird("dev/perch");
+    const { container: drawn } = render(<Icon name="edit" size={14} />);
+    const editIcon = drawn.innerHTML;
+    cleanup();
+    speak({
+      ...perch,
+      detail: {
+        ...perch.detail,
+        actions: perch.detail.actions.map((action) => ({
+          ...action,
+          icon: "edit" as const,
+        })),
+      },
+    });
+
+    expect(
+      perch.detail.actions.map(
+        (action) =>
+          screen.getByRole("button", { name: action.verb }).querySelector("svg")
+            ?.outerHTML,
+      ),
+    ).toEqual(perch.detail.actions.map(() => editIcon));
   });
 
   it("offers adopt as a fence bird's one key beside the full story, and an adopted bird none", () => {

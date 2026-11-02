@@ -1,8 +1,7 @@
-// Launch actions open things and change nothing perch reads. Each runs the command config gives
-// it, with the action's own values filled in, without a shell.
+// Launch actions open things and change nothing perch reads. Each runs the commands it carries
+// from config, its placeholders filled in with the action's own values, without a shell.
 
 import type { ChildProcess, SpawnOptions } from "node:child_process";
-import type { LaunchCommands } from "@perch/core/config.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 
 export interface LaunchDeps {
@@ -30,34 +29,27 @@ export function runningSessions(listing: string): string[] {
     .map((line) => line.trim().split(/\s+/)[0] ?? "");
 }
 
-function commandFor(command: string[] | null, action: LaunchAction): string[] {
-  if (command === null) {
-    throw new Error(`no command in config for ${action.verb}`);
-  }
-  return command;
-}
-
 /**
  * Goes to the project's tab in its zellij session, or opens one there in its directory. A session
  * that is not running opens in a terminal. A failed listing counts as none running.
  */
 async function openZellijTab(
-  action: Extract<LaunchAction, { kind: "zellij-tab" }>,
-  commands: LaunchCommands,
+  action: Extract<LaunchAction, { kind: "zellij" }>,
   deps: LaunchDeps,
 ): Promise<void> {
-  const zellij = commandFor(commands.zellij, action);
-  const terminal = commandFor(commands.terminal, action);
   const listing = await deps
-    .run([...zellij, "list-sessions", "--no-formatting"])
+    .run([...action.zellij, "list-sessions", "--no-formatting"])
     .catch(() => "");
   if (!runningSessions(listing).includes(action.session)) {
     await deps.spawnDetached(
-      fillCommand(terminal, { session: action.session, cwd: action.cwd }),
+      fillCommand(action.terminal, {
+        session: action.session,
+        cwd: action.cwd,
+      }),
     );
     return;
   }
-  const inSession = [...zellij, "--session", action.session, "action"];
+  const inSession = [...action.zellij, "--session", action.session, "action"];
   const tabs = (await deps.run([...inSession, "query-tab-names"]))
     .split("\n")
     .map((line) => line.trim());
@@ -75,27 +67,26 @@ async function openZellijTab(
   ]);
 }
 
-/** Performs one launch action with the commands from config. */
+/**
+ * Performs one launch action: {path} takes the item's directory as it is, {obsidian} the Obsidian
+ * vault's folder name encoded for a URI, and the zellij action finds or opens its tab.
+ */
 export async function launch(
   action: LaunchAction,
-  commands: LaunchCommands,
   deps: LaunchDeps,
 ): Promise<void> {
   switch (action.kind) {
-    case "zellij-tab":
-      return openZellijTab(action, commands, deps);
-    case "vscode":
+    case "zellij":
+      return openZellijTab(action, deps);
+    case "command":
       return deps.spawnDetached(
-        fillCommand(commandFor(commands.vscode, action), { path: action.path }),
-      );
-    case "folder":
-      return deps.spawnDetached(
-        fillCommand(commandFor(commands.folder, action), { path: action.path }),
+        fillCommand(action.command, { path: action.path }),
       );
     case "obsidian":
       return deps.spawnDetached(
-        fillCommand(commandFor(commands.obsidian, action), {
-          vault: encodeURIComponent(action.vault),
+        fillCommand(action.command, {
+          path: action.path,
+          obsidian: encodeURIComponent(action.obsidianVault),
         }),
       );
   }

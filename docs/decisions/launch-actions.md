@@ -12,8 +12,8 @@ Decided 20 October 2026.
   read-only principle is untouched; only mutating actions (push, commit)
   stay parked.
 - From a project tile: open a terminal in the project directory, open the
-  project in the editor, open the forge or CI page in the browser. From a
-  vault tile: open the vault in Obsidian. `claude --resume` in a terminal
+  project in the editor, open the forge or CI page in the browser. From an
+  Obsidian vault's tile: open the Obsidian vault in Obsidian. `claude --resume` in a terminal
   is a later addition, see the roadmap's Claude Code section.
 - The terminal and editor commands are config values, not hard-coded.
 - "Open terminal" drives zellij rather than opening windows. The owner keeps
@@ -29,10 +29,11 @@ Decided 20 October 2026.
 
 - Actions sit on a right-click context menu per tile, and the list is
   configured per tile: a repo offers the zellij tab, VS Code and the file
-  manager; a vault offers Obsidian and the same; a TUI tile offers run or
+  manager; an Obsidian vault offers Obsidian and the same; a TUI tile offers run or
   focus. Left click stays drill-down. Decided 20 October 2026.
-- Vaults open directly in the right vault via the URI handler:
-  `xdg-open "obsidian://open?vault=<name>"`. No vault switching.
+- Obsidian vaults open directly in the right Obsidian vault via the URI
+  handler: `xdg-open "obsidian://open?vault=<name>"`. No switching between
+  Obsidian vaults.
 - Open directory uses `dolphin <dir>` (or `xdg-open` equivalently).
 - TUI tiles (oxbow and spool from `~/undev`, installed via `make
   install`): perch launches them in tagged windows,

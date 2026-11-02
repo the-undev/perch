@@ -10,6 +10,7 @@ import { defaultConfig } from "@perch/core/config-default.ts";
 import { writeConfig } from "@perch/core/config-write.ts";
 import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
+import type { LaunchActionValues } from "@perch/core/launch-form.ts";
 import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
 import type { Snapshot } from "@perch/core/snapshot.ts";
 import type { Aviary, LaunchAction } from "@perch/core/viewmodel.ts";
@@ -28,8 +29,10 @@ const loaded: LoadedConfig = { config: mockConfig, path: "/config.toml" };
 
 /** A launch action the mock's Perch bird offers. */
 const perchInCode: LaunchAction = {
-  kind: "vscode",
+  kind: "command",
   verb: "Open in VS Code",
+  icon: "code",
+  command: ["code", "{path}"],
   path: "/home/owner/dev/perch",
 };
 
@@ -61,7 +64,7 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
     readCached: async () => mockSnapshot,
     gather: vi.fn(async (_config: Config) => {}),
     aggregate: vi.fn(async (_loaded: LoadedConfig) => mockSnapshot),
-    launch: vi.fn(async (_action: LaunchAction, _config: Config) => {}),
+    launch: vi.fn(async (_action: LaunchAction) => {}),
     readText: async (path) => {
       if (path.endsWith("README.md")) return "# Perch";
       throw new Error("ENOENT");
@@ -252,15 +255,27 @@ describe("the app state", () => {
     expect(published.at(-1)?.scanning).toBe(true);
   });
 
-  it("launches only an action a bird offers, with the config's commands", async () => {
+  it("launches only an action a bird offers, its commands and directory included", async () => {
     const { app, deps } = appState();
     await app.start();
 
     await app.launch(perchInCode);
     await app.launch({ ...perchInCode, path: "/etc" });
+    await app.launch({ ...perchInCode, command: ["rm", "-rf", "{path}"] });
 
     expect(deps.launch).toHaveBeenCalledTimes(1);
-    expect(deps.launch).toHaveBeenCalledWith(perchInCode, mockConfig);
+    expect(deps.launch).toHaveBeenCalledWith(perchInCode);
+  });
+
+  it("launches nothing before a config is read", async () => {
+    const { app, deps, config } = appState();
+    await app.start();
+    config.nextRead({ loaded: null, error: null, missing: true });
+    await app.recheck();
+
+    await app.launch(perchInCode);
+
+    expect(deps.launch).not.toHaveBeenCalled();
   });
 
   it("says when a launch fails, until the next scan", async () => {
@@ -521,24 +536,30 @@ describe("the settings", () => {
     expect(await written()).toBe(first);
   });
 
-  it("adds a zellij session root under ~, rereads the config and asks for a scan", async () => {
+  it("adds a zellij action writing only what differs, a session root under ~, rereads the config and asks for a scan", async () => {
     const { app, deps, published } = await onText(starter());
     const { values } = formOf(app);
+    const zellij: LaunchActionValues = {
+      kind: "zellij",
+      verb: "",
+      zellij: "",
+      terminal: '["kitty", "{cwd}", "{session}"]',
+      session: "",
+      sessions: [{ root: "~/work", session: "work" }],
+    };
 
-    await app.saveSettings({
-      ...values,
-      launch: {
-        ...values.launch,
-        zellijSessions: [{ root: "~/work", session: "work" }],
-      },
-    });
+    await app.saveSettings({ ...values, launch: { actions: [zellij] } });
 
-    expect(parse(await written()).launch).toMatchObject({
-      zellij_sessions: { "~/work": "work" },
+    expect(parse(await written()).launch).toEqual({
+      actions: [
+        {
+          kind: "zellij",
+          terminal: ["kitty", "{cwd}", "{session}"],
+          sessions: { "~/work": "work" },
+        },
+      ],
     });
-    expect(formOf(app).values.launch.zellijSessions).toEqual([
-      { root: "~/work", session: "work" },
-    ]);
+    expect(formOf(app).values.launch.actions).toEqual([zellij]);
     expect(published.at(-1)?.problems).toEqual([]);
     expect(deps.requestScan).toHaveBeenCalledTimes(1);
   });

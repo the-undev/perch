@@ -7,6 +7,7 @@ import {
   deriveDrift,
   deriveStall,
 } from "../src/derivations.ts";
+import { launchKinds } from "../src/launch-kinds.ts";
 import { mockAviary, mockConfig, mockHome, mockSnapshot } from "../src/mock.ts";
 import type { GitData } from "../src/snapshot.ts";
 import { speak } from "../src/speech.ts";
@@ -124,9 +125,50 @@ describe("the mock dataset", () => {
       ),
     ).toBe(true);
     expect(adopted.some((bird) => bird.detail.problems.length > 0)).toBe(true);
-    expect(birds.some((bird) => bird.kind === "vault")).toBe(true);
+    expect(birds.some((bird) => bird.kind === "obsidian")).toBe(true);
     expect(mockAviary.sourceErrors).toHaveLength(1);
     expect(mockAviary.warnings).toHaveLength(1);
+  });
+
+  it("offers every kind of launch action, the Obsidian one on Obsidian birds alone, and none without a clone", () => {
+    const kinds = (bird: (typeof birds)[number]) =>
+      bird.detail.actions.map((action) => action.kind);
+
+    expect(new Set(birds.flatMap(kinds))).toEqual(
+      new Set(["zellij", "command", "obsidian"]),
+    );
+    for (const bird of birds) {
+      expect(kinds(bird).includes("obsidian"), bird.id).toBe(
+        bird.kind === "obsidian",
+      );
+    }
+    const unCloned = birds.filter((bird) => bird.detail.clonePath === null);
+    expect(unCloned.length).toBeGreaterThan(0);
+    expect(unCloned.flatMap(kinds)).toEqual([]);
+  });
+
+  it("holds every kind of launch action in config, one overridden, and a custom command wearing a picked icon", () => {
+    const actions = mockConfig.launch.actions;
+    const perch = birds.find((bird) => bird.id === "dev/perch");
+
+    expect(new Set(actions.map((action) => action.kind))).toEqual(
+      new Set(launchKinds),
+    );
+    expect(actions).toContainEqual(
+      expect.objectContaining({
+        kind: "folder",
+        command: ["dolphin", "{path}"],
+      }),
+    );
+    expect(
+      perch?.detail.actions.map((action) => [action.verb, action.icon]),
+    ).toEqual([
+      ["Open the zellij tab", "terminal"],
+      ["Open in VS Code", "code"],
+      ["Open the folder", "folder"],
+      ["Open in nvim", "edit"],
+      ["Follow the log", "terminal"],
+    ]);
   });
 
   it("hands each chip on a bubble one ledger row or the notice holding its working, and nothing a chip it lacks", () => {

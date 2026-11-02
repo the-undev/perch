@@ -136,7 +136,7 @@ describe("deriveRoadmapFile, per heading", () => {
     expect(actions).toMatchObject({
       source: "heading",
       done: null,
-      body: "Push the branch, commit and push a vault.\n\nParked until the read-only app has proved itself.",
+      body: "Push the branch, commit and push an Obsidian vault.\n\nParked until the read-only app has proved itself.",
     });
   });
 
@@ -274,12 +274,12 @@ describe("roadmap source", () => {
     const files = new Map([
       ["/repo/ROADMAP.md", "## Next\n\n- Upper case wins over TODO\n"],
       ["/repo/TODO.md", "- Not read\n"],
-      ["/vault/Tech/Tech Plans.md", "## Docs\n\n- Write it down\n"],
+      ["/hothouse/Tech/Tech Plans.md", "## Docs\n\n- Write it down\n"],
     ]);
     const source = createRoadmapSource({
       readText: async (path) => files.get(path) ?? null,
       roadmapsFor: () => (id) =>
-        id === "vault" ? ["Tech/Tech Plans.md", "Missing.md"] : null,
+        id === "hothouse" ? ["Tech/Tech Plans.md", "Missing.md"] : null,
     });
 
     const entries = await source.gather({
@@ -291,7 +291,10 @@ describe("roadmap source", () => {
           presences: {
             repo: localPresence("/repo", { include: "/repo" }),
             empty: localPresence("/empty", { include: "/empty" }),
-            vault: localPresence("/vault", { include: "/vault", vault: true }),
+            hothouse: localPresence("/hothouse", {
+              include: "/hothouse",
+              obsidian: true,
+            }),
           },
         },
       },
@@ -307,7 +310,7 @@ describe("roadmap source", () => {
       state: "absent",
       reason: "no-roadmap-file",
     });
-    expect(entries.vault).toMatchObject({
+    expect(entries.hothouse).toMatchObject({
       state: "observed",
       value: {
         files: [

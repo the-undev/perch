@@ -281,7 +281,7 @@ live machine. The scan feeds the glance unattended: no prompting
 routes, no SSH. Detail views may use live sources; the window never
 blocks on aggregation and renders from the cached snapshot.
 
-Sources today: local repositories and vaults (git state with the
+Sources today: local repositories and Obsidian vaults (git state with the
 default branch's newest commits, Obsidian markers), the GitHub and
 Forgejo account listings and per-repository detail (PRs, CI, newest
 default-branch commits, each its own request, so a failed request fails
@@ -297,7 +297,7 @@ beside live values, is the atlas (`design/atlas.html`).
 ## Projects, joining and adoption
 
 A project is a joined entity over presences: a local clone, forge
-repositories, vault state. Observation joins what remote URLs prove;
+repositories, Obsidian vault state. Observation joins what remote URLs prove;
 config asserts what they cannot, and on conflict the observation wins,
 flagged. Everything found starts on the fence; adopting a bird means
 adding it to config, which puts it on a wire and may assert further
@@ -337,10 +337,10 @@ vocabulary (entries, keys) stays in the config file and these docs.
 `~/.config/perch/config.toml`, stowed from the dotfiles so backup is a
 dotfiles push. It holds: the wires as an ordered named list, the
 sources, the health windows, the scan interval and the finalised commit
-count, the zellij session defaults, the launch commands (an action whose
-command is left out is not offered), per-project assertions (joins,
-wire, display names, thresholds, key file
-lists, zellij session names). An entry for an item adopts it. No
+count, the launch actions in the order a bird offers them (none until one
+is added, the zellij action carrying the session defaults), per-project
+assertions (joins, wire, display names, thresholds, key file lists, zellij
+session names). An entry for an item adopts it. No
 secrets, ever. Every field is shown, with placeholder values, in
 `config.example.toml`.
 
@@ -402,6 +402,22 @@ wire takes a second press on its remove, after the row says how many
 birds name it and that they move to the default. The default cannot be
 removed until another wire is picked. Save is held while a wire has no
 name or two wires share one.
+
+The Launching page holds one card per launch action, in the order birds
+offer them. A card's head wears the action's icon, its kind's name (VS
+Code, nvim, Folder, Obsidian, zellij tab or Custom command) and its
+verb, greyed, with arrows that move it earlier or later on the bird and
+its remove; the head opens the card. Opened, a card shows its verb and
+its command as a list line in the config file's form. A kind's fields
+show its defaults in grey until typed over, and the file holds only what
+differs. The zellij card holds its zellij and terminal commands, its
+session and its sessions by root. A custom command names its own verb
+and command and picks its icon from a row of the app's line icons.
+Beneath the cards a shelf lists the kinds and the custom command, each
+with what it does and what it asks; adding one adds its card, open, and
+zellij is held back once one exists. A refusal shows in red on its card
+and holds Save: a custom command without words or a command, a command
+not naming a program first, a placeholder its kind may not use.
 
 The app writes the file without comments, paths under the home
 directory with `~`. An edit to the file by hand is read as soon as it is
@@ -466,13 +482,22 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   and `?chip=<kind>` to land on a chip's ledger row, an unknown kind read
   as none. `/settings` is the settings page in
   the camera's place; Escape goes home from it as from a bird.
-- Launch actions run their commands from config, detached, and only
-  ones some bird offers. Links open in the browser; the window never
-  navigates. Key files are read by the main process when a detail opens
-  and again after every scan.
-- The zellij tab action goes to the project's tab in its session, or
-  opens one in the project's directory; a session that is not running
-  opens in the configured terminal. It does not raise the terminal's
+- Launch actions are `[[launch.actions]]` tables, each naming its kind
+  and only what differs from the kind's defaults, offered on a bird's
+  page in their order. An action other than zellij runs its command
+  detached and without a shell, `{path}` filled with the item's
+  directory and `{obsidian}` with the Obsidian vault's folder name
+  encoded for a URI. The Obsidian kind, and a custom command using
+  `{obsidian}`, are offered on Obsidian birds only; every other action
+  on every bird with a folder on this machine. The main process runs only
+  an action some bird offers, its commands included. Links open in the
+  browser; the window never navigates. Key files are read by the main
+  process when a detail opens and again after every scan.
+- The zellij action, at most one, goes to the project's tab in its
+  session, or opens one in the project's directory; a session that is
+  not running opens in the action's terminal command. The session is
+  the item's own, else that of the action's longest root holding the
+  item, else the action's default. It does not raise the terminal's
   window.
 
 ## Standing decisions
@@ -511,7 +536,7 @@ Facts the design relies on. Verify before relying on them later.
 | Desktop | KDE Plasma 6.7.5, Wayland |
 | GPU | NVIDIA RTX 5070 Ti, nvidia-open 615 |
 | Node, pnpm | 26, 11 |
-| Forgejo | `http://forge.example.lan:3000`, SSH alias `forgejo` on port 2222, documented in the Hothouse vault at `Tech/Server/Forgejo.md` |
+| Forgejo | `http://forge.example.lan:3000`, SSH alias `forgejo` on port 2222, documented in the Hothouse Obsidian vault at `Tech/Server/Forgejo.md` |
 | Keyring tokens | service `perch`, the five keys under Secrets |
 | Claude Code sessions | `~/.claude/projects/`, one directory per working directory, non-alphanumerics encoded as `-` |
-| Git identities | `~/dev` and `~/.dotfiles` are `finch`, `~/undev` is `the-undev`; see the Pocket vault, `Code/Git Identities.md` |
+| Git identities | `~/dev` and `~/.dotfiles` are `finch`, `~/undev` is `the-undev`; see the Pocket Obsidian vault, `Code/Git Identities.md` |

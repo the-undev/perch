@@ -29,18 +29,18 @@ export function Welcome({
           perch
         </h1>
         <p className="m-0">
-          Birds need a wire before they can perch. perch watches the places you
-          name and shows what it finds as birds on wires. It only ever reads;
-          you never type a status.
+          The repositories, Obsidian vaults and forges you name are watched and
+          shown as birds on wires. Everything shown is read from them; a status
+          is never typed in.
         </p>
         <p className="m-0">There is no config file yet:</p>
         <code className="self-start rounded-lg border border-edge bg-panel px-3 py-2 font-mono text-[13px] text-ink">
           ~/.config/perch/config.toml
         </code>
         <p className="m-0">
-          Create it with one wire, the standard windows and no sources yet, then
-          add the first place to look from inside the app. Or write the file
-          yourself; perch notices as soon as it exists.
+          Create it with one wire, the default thresholds and no sources yet,
+          then add the first place to look from inside the app. Or write the
+          file yourself; it is noticed as soon as it exists.
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <button

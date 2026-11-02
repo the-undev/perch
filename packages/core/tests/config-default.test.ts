@@ -27,6 +27,13 @@ describe("the default config", () => {
     expect(writeConfig(config, home)).not.toContain("sources");
   });
 
+  it("offers no launch actions and writes no launch table", () => {
+    const config = defaultConfig();
+
+    expect(config.launch).toEqual({ actions: [] });
+    expect(writeConfig(config, home)).not.toContain("launch");
+  });
+
   it("holds settings the settings page can save as they are", () => {
     expect(
       settingsProblems(settingsFormFor(defaultConfig(), home).values),

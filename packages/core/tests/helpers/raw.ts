@@ -62,12 +62,12 @@ export function withRemotes(
 
 export function localPresence(
   path: string,
-  options: { include: string; git?: Partial<RawGit>; vault?: boolean },
+  options: { include: string; git?: Partial<RawGit>; obsidian?: boolean },
 ): RawLocalPresence {
   return {
     path,
     include: options.include,
-    obsidian: { folder: options.vault ?? false, livesyncPlugin: false },
+    obsidian: { folder: options.obsidian ?? false, livesyncPlugin: false },
     git: { state: "observed", value: rawGit(options.git ?? {}) },
   };
 }

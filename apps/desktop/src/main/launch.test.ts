@@ -1,6 +1,5 @@
 import type { ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
-import type { LaunchCommands } from "@perch/core/config.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import { describe, expect, it, vi } from "vitest";
 import { isWebUrl } from "./external-links.ts";
@@ -13,7 +12,10 @@ import {
   type Spawn,
 } from "./launch.ts";
 
-const commands: LaunchCommands = {
+const zellijTab: LaunchAction = {
+  kind: "zellij",
+  verb: "Open the zellij tab",
+  icon: "terminal",
   zellij: ["zellij"],
   terminal: [
     "alacritty",
@@ -25,14 +27,6 @@ const commands: LaunchCommands = {
     "-c",
     "{session}",
   ],
-  vscode: ["code", "{path}"],
-  folder: ["dolphin", "{path}"],
-  obsidian: ["xdg-open", "obsidian://open?vault={vault}"],
-};
-
-const zellijTab: LaunchAction = {
-  kind: "zellij-tab",
-  verb: "Open the zellij tab",
   session: "home",
   tab: "perch",
   cwd: "/home/owner/dev/perch",
@@ -57,38 +51,105 @@ describe("launch actions", () => {
     ).toEqual(["code", "--new-window", "/a b"]);
   });
 
-  it("open VS Code and the folder on the project's directory", async () => {
-    const { deps, spawnDetached } = recorder({});
+  it("run a command action detached, its {path} the item's directory as it is", async () => {
+    const { deps, run, spawnDetached } = recorder({});
 
     await launch(
-      { kind: "vscode", verb: "Open in VS Code", path: "/home/owner/dev/a" },
-      commands,
-      deps,
-    );
-    await launch(
-      { kind: "folder", verb: "Open the folder", path: "/home/owner/dev/a" },
-      commands,
+      {
+        kind: "command",
+        verb: "Open in nvim",
+        icon: "edit",
+        command: ["alacritty", "--working-directory", "{path}", "-e", "nvim"],
+        path: "/home/owner/My Notes",
+      },
       deps,
     );
 
     expect(spawnDetached.mock.calls).toEqual([
-      [["code", "/home/owner/dev/a"]],
-      [["dolphin", "/home/owner/dev/a"]],
+      [
+        [
+          "alacritty",
+          "--working-directory",
+          "/home/owner/My Notes",
+          "-e",
+          "nvim",
+        ],
+      ],
     ]);
+    expect(run).not.toHaveBeenCalled();
   });
 
-  it("open a vault in Obsidian by its name, encoded for the URI", async () => {
+  it("open an Obsidian vault in Obsidian by its name, encoded for the URI, its {path} raw", async () => {
     const { deps, spawnDetached } = recorder({});
 
     await launch(
-      { kind: "obsidian", verb: "Open in Obsidian", vault: "Home Notes" },
-      commands,
+      {
+        kind: "obsidian",
+        verb: "Open in Obsidian",
+        icon: "obsidian",
+        command: ["xdg-open", "obsidian://open?vault={obsidian}"],
+        path: "/home/owner/obsidian/Home & Notes",
+        obsidianVault: "Home & Notes",
+      },
+      deps,
+    );
+    await launch(
+      {
+        kind: "obsidian",
+        verb: "Note the Obsidian vault",
+        icon: "obsidian",
+        command: ["notify-send", "{obsidian}", "{path}"],
+        path: "/home/owner/obsidian/Home & Notes",
+        obsidianVault: "Home & Notes",
+      },
       deps,
     );
 
+    expect(spawnDetached.mock.calls).toEqual([
+      [["xdg-open", "obsidian://open?vault=Home%20%26%20Notes"]],
+      [
+        [
+          "notify-send",
+          "Home%20%26%20Notes",
+          "/home/owner/obsidian/Home & Notes",
+        ],
+      ],
+    ]);
+  });
+
+  it("ask the zellij action's own zellij, and open its own terminal", async () => {
+    const { deps, run, spawnDetached } = recorder({
+      "/opt/zellij list-sessions --no-formatting": "",
+    });
+
+    await launch(
+      {
+        ...zellijTab,
+        zellij: ["/opt/zellij"],
+        terminal: [
+          "kitty",
+          "--directory",
+          "{cwd}",
+          "zellij",
+          "-s",
+          "{session}",
+        ],
+      },
+      deps,
+    );
+
+    expect(run).toHaveBeenCalledWith([
+      "/opt/zellij",
+      "list-sessions",
+      "--no-formatting",
+    ]);
     expect(spawnDetached).toHaveBeenCalledWith([
-      "xdg-open",
-      "obsidian://open?vault=Home%20Notes",
+      "kitty",
+      "--directory",
+      "/home/owner/dev/perch",
+      "zellij",
+      "-s",
+      "home",
     ]);
   });
 
@@ -99,7 +160,7 @@ describe("launch actions", () => {
       "zellij --session home action query-tab-names": "dotfiles\nperch\n",
     });
 
-    await launch(zellijTab, commands, deps);
+    await launch(zellijTab, deps);
 
     expect(run).toHaveBeenLastCalledWith([
       "zellij",
@@ -118,7 +179,7 @@ describe("launch actions", () => {
       "zellij --session home action query-tab-names": "dotfiles\n",
     });
 
-    await launch(zellijTab, commands, deps);
+    await launch(zellijTab, deps);
 
     expect(run).toHaveBeenLastCalledWith([
       "zellij",
@@ -139,7 +200,7 @@ describe("launch actions", () => {
         "home [Created 2h ago] (EXITED - attach to resurrect)\n",
     });
 
-    await launch(zellijTab, commands, deps);
+    await launch(zellijTab, deps);
 
     expect(run).toHaveBeenCalledTimes(1);
     expect(spawnDetached).toHaveBeenCalledWith([
@@ -160,18 +221,6 @@ describe("launch actions", () => {
         "home [Created 1h ago] (current)\nold [Created 3d ago] (EXITED - attach to resurrect)\n\n",
       ),
     ).toEqual(["home"]);
-  });
-
-  it("refuse an action whose command config leaves out", async () => {
-    const { deps } = recorder({});
-
-    await expect(
-      launch(
-        { kind: "folder", verb: "Open the folder", path: "/a" },
-        { ...commands, folder: null },
-        deps,
-      ),
-    ).rejects.toThrow("no command in config for Open the folder");
   });
 });
 

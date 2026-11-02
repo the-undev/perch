@@ -207,27 +207,63 @@ export function SettingsGroupsPage() {
       </Section>
       <Section
         title="Launching"
-        rule="The zellij session, sessions by root, and each command as one list line in the file's own form, read as JSON. Arguments are never split on spaces; an empty field removes the action."
+        rule="One card per launch action, in the order a bird offers them, then the shelf of kinds and the custom command that adds one. A card's head wears its icon, its kind's name and its verb, greyed, with the arrows and remove; its head opens it. A kind's fields show its defaults in grey until typed over, and only what differs is written. A custom command names its own verb and command and picks its icon. A command keeps the file's list form, read as JSON, never split on spaces. The shelf offers zellij once; refusals are red on the card and listed beside Save."
         min={620}
       >
         <GroupSpecimen
           label="As the mock holds it"
-          rule="Every command set, ~/undev in its own session."
+          rule="Obsidian, the zellij tab with its own terminal and ~/undev in its own session, VS Code, the folder in dolphin, nvim, and a custom command wearing the terminal; zellij greys on the shelf. Press a head to open its card."
           start={mock}
           group={launch}
         />
         <GroupSpecimen
-          label="Malformed commands, and one removed"
-          rule="VS Code typed as words, Folder with a placeholder it cannot fill, Obsidian emptied, which removes Open in Obsidian."
+          label="Nothing added"
+          rule="A fresh config offers nothing on any bird: the shelf is the whole page, zellij among its kinds."
+          start={withMock({ launch: { actions: [] } })}
+          group={launch}
+        />
+        <GroupSpecimen
+          label="A card's refusals"
+          rule="A folder command not naming a program first, a VS Code command using {obsidian}, which only the Obsidian kind and a custom command may, and a custom command with no words; each card with a refusal starts open."
           start={withMock({
             launch: {
-              ...mock.launch,
-              commands: {
-                ...mock.launch.commands,
-                vscode: "code {path}",
-                folder: '["dolphin", "{cwd}"]',
-                obsidian: "",
-              },
+              actions: [
+                {
+                  kind: "folder",
+                  verb: "",
+                  command: '["", "dolphin", "{path}"]',
+                },
+                {
+                  kind: "vscode",
+                  verb: "",
+                  command: '["code", "{obsidian}"]',
+                },
+                {
+                  kind: "command",
+                  verb: "",
+                  command: '["lnav", "{path}/logs"]',
+                  icon: "terminal",
+                },
+              ],
+            },
+          })}
+          group={launch}
+        />
+        <GroupSpecimen
+          label="The zellij card's refusals"
+          rule="Its two commands, the session and the roots on the one card: a root not starting with / or ~, and a terminal using {path}, which zellij's terminal may not."
+          start={withMock({
+            launch: {
+              actions: [
+                {
+                  kind: "zellij",
+                  verb: "",
+                  zellij: "",
+                  terminal: '["alacritty", "--working-directory", "{path}"]',
+                  session: "",
+                  sessions: [{ root: "work", session: "work" }],
+                },
+              ],
             },
           })}
           group={launch}

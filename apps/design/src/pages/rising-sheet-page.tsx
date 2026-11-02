@@ -43,7 +43,7 @@ function Covered({
             width.
           </p>
           {long &&
-            ["What perch has seen", "What you say", "More particulars"].map(
+            ["What the scan found", "What you set", "More particulars"].map(
               (heading) => (
                 <p key={heading} className="m-0 mt-6 text-[13px]">
                   <span className="font-semibold text-paper-head">

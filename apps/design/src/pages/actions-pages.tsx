@@ -10,14 +10,12 @@ import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 /** What a launch action would open, in words, so the page shows the callback working. */
 function describe(action: LaunchAction): string {
   switch (action.kind) {
-    case "zellij-tab":
+    case "zellij":
       return `zellij session ${action.session}, tab ${action.tab}, in ${action.cwd}`;
-    case "vscode":
-      return `VS Code on ${action.path}`;
-    case "folder":
-      return `the file manager on ${action.path}`;
+    case "command":
+      return `${action.command.join(" ")} on ${action.path}`;
     case "obsidian":
-      return `the ${action.vault} vault in Obsidian`;
+      return `the ${action.obsidianVault} Obsidian vault: ${action.command.join(" ")}`;
   }
 }
 
@@ -31,12 +29,12 @@ export function ActionsPage() {
       </p>
       <Section
         title="Launch actions · verbs"
-        rule="Launch actions open the terminal, editor or files without perch mutating anything. Each is a verb with its icon; ↗ marks that it leaves the app."
+        rule="Launch actions open the terminal, editor or files without perch mutating anything. Each is a verb with the icon it carries, its kind's or a custom command's pick; ↗ marks that it leaves the app."
         min={560}
       >
         <Specimen
           label="A repository"
-          rule="Perch: the zellij tab, VS Code, the folder."
+          rule="Perch: the zellij tab, VS Code, the folder, nvim, and a custom command wearing the terminal."
         >
           <Ground>
             <LaunchActions
@@ -46,8 +44,8 @@ export function ActionsPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="A vault"
-          rule="The Hothouse Vault: Open in Obsidian comes first."
+          label="An Obsidian bird"
+          rule="The Hothouse Obsidian vault: Open in Obsidian, first in the mock's config, a kind offered on Obsidian birds only."
         >
           <Ground>
             <LaunchActions
@@ -73,8 +71,8 @@ export function ActionsPage() {
         ]}
       >
         <p>
-          The verbs come from the view model. The commands that open them are
-          not in config yet; see the roadmap&apos;s launcher commands item.
+          The verbs come from the view model in config order, each carrying its
+          commands; the main process fills in the placeholders and runs them.
         </p>
       </Usage>
     </>

@@ -85,28 +85,64 @@ interval_minutes = 15
 # Commits on each forge repository's default branch to read as finalised.
 finalised_commits = 10
 
-# The zellij session that holds a project's terminal tab: the item's own
-# zellij_session, else the session of the longest root containing the project
-# in a [launch.zellij_sessions] table of roots and sessions, such as
-# "~/work" = "work", else zellij_session here.
-[launch]
-zellij_session = "main"
+# Launch actions: what a bird's page can open, one table per action in the
+# order the page offers them. A config with none offers nothing.
+#
+# Each table names its kind and only what differs from the kind's defaults:
+# its verb, the words on the bird's page, and its command, run without a
+# shell, detached from perch. The placeholders in braces are filled in at
+# launch: {path} is the item's directory, and {obsidian} the Obsidian vault's
+# folder name, encoded for a URI.
+#
+#   vscode    Open in VS Code    ["code", "{path}"]
+#   nvim      Open in nvim       ["alacritty", "--working-directory", "{path}", "-e", "nvim", "."]
+#   folder    Open the folder    ["xdg-open", "{path}"]
+#   obsidian  Open in Obsidian   ["xdg-open", "obsidian://open?vault={obsidian}"]
+#
+# The obsidian kind is offered on Obsidian birds only, and may use
+# {obsidian}; every other kind on every bird with a folder on this machine.
+# A kind may appear more than once, each with its own verb.
+#
+# The zellij kind, at most once, finds the session's tab named after the
+# project and goes to it, or opens one in the project's directory. A session
+# that is not running opens in its terminal command, with {session} and
+# {cwd}, the project's directory. The session is the item's own
+# zellij_session, else the session of the longest root holding the item in
+# [launch.actions.sessions], else its session. Its defaults:
+#
+#   verb      "Open the zellij tab"
+#   zellij    ["zellij"]
+#   terminal  ["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
+#   session   "main"
+[[launch.actions]]
+kind = "zellij"
+[launch.actions.sessions]
+"~/work" = "work"
 
-# The commands behind the launch actions, each an argument list run without
-# a shell. Placeholders in braces are filled in at launch. Leave a command
-# out and its action is not offered.
-[launch.commands]
-# zellij itself. perch finds the session's tab named after the project and
-# goes to it, or opens one in the project's directory.
-zellij = ["zellij"]
-# Opens a terminal on a session that is not running: {session}, and {cwd}
-# the project's directory. Needed with zellij for the zellij tab.
-terminal = ["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
-# {path} is the project's directory.
-vscode = ["code", "{path}"]
-folder = ["dolphin", "{path}"]
-# {vault} is the vault's folder name, encoded for a URI.
-obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
+[[launch.actions]]
+kind = "vscode"
+
+[[launch.actions]]
+kind = "nvim"
+
+[[launch.actions]]
+kind = "folder"
+
+# Obsidian, and a kind's verb and command overridden:
+# [[launch.actions]]
+# kind = "obsidian"
+# verb = "Open the Obsidian vault"
+# command = ["obsidian", "obsidian://open?vault={obsidian}"]
+
+# A custom command names its verb and command, which may use {path} and
+# {obsidian}; one using {obsidian} is offered on Obsidian birds only. Its icon
+# is one of terminal, code, folder, forge, obsidian, adopt and edit, the
+# folder unless named.
+# [[launch.actions]]
+# kind = "command"
+# verb = "Follow the log"
+# command = ["alacritty", "-e", "lnav", "{path}/logs"]
+# icon = "terminal"
 
 # Item entries. An entry adopts the bird and puts it on a wire. Its key names
 # any presence of the item: a local id, or a forge presence such as

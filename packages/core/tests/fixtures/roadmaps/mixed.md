@@ -13,7 +13,7 @@ Work identified and not done.
 
 ## Actions from tiles
 
-Push the branch, commit and push a vault.
+Push the branch, commit and push an Obsidian vault.
 
 Parked until the read-only app has proved itself.
 

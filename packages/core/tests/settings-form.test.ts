@@ -5,10 +5,21 @@ import { describe, expect, it } from "vitest";
 import { type Config, parseConfig } from "../src/config.ts";
 import { defaultConfig } from "../src/config-default.ts";
 import { writeConfig } from "../src/config-write.ts";
+import {
+  cardIcon,
+  cardObsidianOnly,
+  cardVerb,
+  kindTaken,
+  type LaunchActionValues,
+  launchDefaults,
+  launchProblems,
+  newCard,
+  withKindAdded,
+} from "../src/launch-form.ts";
+import { launchKinds } from "../src/launch-kinds.ts";
+import { listLine, parseListLine } from "../src/list-line.ts";
 import { mockConfig } from "../src/mock.ts";
 import {
-  listLine,
-  parseListLine,
   type SettingsValues,
   settingsFormFor,
   settingsProblems,
@@ -35,6 +46,22 @@ const changed = (change: Partial<SettingsValues>): SettingsValues => ({
   ...mockValues(),
   ...change,
 });
+
+/** The mock's values with its launch actions replaced. */
+const withActions = (actions: LaunchActionValues[]): SettingsValues =>
+  changed({ launch: { actions } });
+
+/** The mock's launch actions as the settings page shows them. */
+const mockActions = () => mockValues().launch.actions;
+
+/** The mock's zellij action's card, and where it sits. */
+function mockZellij() {
+  const actions = mockActions();
+  const index = actions.findIndex((action) => action.kind === "zellij");
+  const action = actions[index];
+  if (action?.kind !== "zellij") throw new Error("the mock has no zellij");
+  return { actions, index, action };
+}
 
 describe("the settings form", () => {
   it("reads config into values and puts them back unchanged", async () => {
@@ -63,29 +90,31 @@ describe("the settings form", () => {
   });
 
   it("shows zellij session roots as typed with ~, and keeps ~ entries added beside them", () => {
-    const values = mockValues();
+    const { actions, index, action } = mockZellij();
+    expect(action.sessions).toEqual([{ root: "~/undev", session: "undev" }]);
     const next = withSettings(
       mockConfig,
-      {
-        ...values,
-        launch: {
-          ...values.launch,
-          zellijSessions: [
-            ...values.launch.zellijSessions,
-            { root: "~/work", session: "work" },
-          ],
-        },
-      },
+      withActions(
+        actions.with(index, {
+          ...action,
+          sessions: [...action.sessions, { root: "~/work", session: "work" }],
+        }),
+      ),
       home,
     );
 
-    expect(next.launch.zellijSessions[`${home}/work`]).toBe("work");
     const written = writeConfig(next, home);
     expect(written).toContain('"~/work" = "work"');
     expect(
-      settingsFormFor(parseConfig(written, home), home).values.launch
-        .zellijSessions,
-    ).toContainEqual({ root: "~/work", session: "work" });
+      settingsFormFor(parseConfig(written, home), home).values.launch.actions[
+        index
+      ],
+    ).toMatchObject({
+      sessions: [
+        { root: "~/undev", session: "undev" },
+        { root: "~/work", session: "work" },
+      ],
+    });
   });
 
   it("edits finalised commits in the scan group and leaves the sources alone", () => {
@@ -121,70 +150,254 @@ describe("launch commands as list lines", () => {
   });
 
   it("keeps an argument with spaces whole, never splitting on spaces", () => {
-    const values = mockValues();
     const next = withSettings(
       mockConfig,
-      {
-        ...values,
-        launch: {
-          ...values.launch,
-          commands: {
-            ...values.launch.commands,
-            folder: '["dolphin", "--new-window", "{path}", "with a space"]',
-          },
+      withActions([
+        {
+          kind: "folder",
+          verb: "",
+          command: '["dolphin", "--new-window", "{path}", "with a space"]',
         },
-      },
+      ]),
       home,
     );
 
-    expect(next.launch.commands.folder).toEqual([
-      "dolphin",
-      "--new-window",
-      "{path}",
-      "with a space",
+    expect(next.launch.actions).toEqual([
+      {
+        kind: "folder",
+        verb: "Open the folder",
+        command: ["dolphin", "--new-window", "{path}", "with a space"],
+      },
+    ]);
+  });
+});
+
+describe("launch actions on the settings page", () => {
+  it("shows each action as a card of its kind in config order, empty where it holds the kind's default", () => {
+    expect(mockActions()).toEqual([
+      { kind: "obsidian", verb: "", command: "" },
+      {
+        kind: "zellij",
+        verb: "",
+        zellij: "",
+        terminal: '["alacritty", "-e", "zellij", "attach", "-c", "{session}"]',
+        session: "home",
+        sessions: [{ root: "~/undev", session: "undev" }],
+      },
+      { kind: "vscode", verb: "", command: "" },
+      { kind: "folder", verb: "", command: '["dolphin", "{path}"]' },
+      { kind: "nvim", verb: "", command: "" },
+      {
+        kind: "command",
+        verb: "Follow the log",
+        command: '["alacritty", "-e", "lnav", "{path}/logs"]',
+        icon: "terminal",
+      },
     ]);
   });
 
-  it("removes the action of a command emptied", () => {
-    const values = mockValues();
-    const next = withSettings(
-      mockConfig,
+  it("saves the cards in their order, and writes no launch table without any", () => {
+    const reversed = [...mockActions()].reverse();
+
+    const next = withSettings(mockConfig, withActions(reversed), home);
+    const none = withSettings(mockConfig, withActions([]), home);
+
+    expect(next.launch.actions.map((action) => action.kind)).toEqual([
+      "command",
+      "nvim",
+      "folder",
+      "vscode",
+      "zellij",
+      "obsidian",
+    ]);
+    expect(writeConfig(none, home)).not.toContain("launch");
+  });
+
+  it("adds a kind's card holding just its kind, which saves as the kind alone, and a custom command blank", () => {
+    const actions = launchKinds.reduce<LaunchActionValues[]>(
+      (cards, kind) => withKindAdded(cards, kind),
+      [],
+    );
+    const saved = withSettings(
+      defaultConfig(),
       {
-        ...values,
-        launch: {
-          ...values.launch,
-          commands: { ...values.launch.commands, vscode: "  " },
-        },
+        ...settingsFormFor(defaultConfig(), home).values,
+        launch: { actions: actions.slice(0, -1) },
       },
       home,
     );
 
-    expect(next.launch.commands.vscode).toBeNull();
-    expect(writeConfig(next, home)).not.toContain("vscode");
+    expect(actions.at(-1)).toEqual({
+      kind: "command",
+      verb: "",
+      command: "",
+      icon: "folder",
+    });
+    expect(
+      (parse(writeConfig(saved, home)).launch as { actions: unknown[] })
+        .actions,
+    ).toEqual([
+      { kind: "vscode" },
+      { kind: "zellij" },
+      { kind: "nvim" },
+      { kind: "folder" },
+      { kind: "obsidian" },
+    ]);
   });
 
-  it("names each malformed command", () => {
-    const values = mockValues();
-    const problems = settingsProblems({
-      ...values,
-      launch: {
-        ...values.launch,
-        commands: {
-          zellij: "zellij",
-          terminal: '["alacritty", 3]',
-          vscode: "[]",
-          folder: '["dolphin", "{cwd}"]',
-          obsidian: "['xdg-open']",
+  it("takes an emptied field back to its kind's default", () => {
+    const next = withSettings(
+      mockConfig,
+      withActions([
+        { kind: "folder", verb: " ", command: "" },
+        {
+          kind: "zellij",
+          verb: "",
+          zellij: "",
+          terminal: "",
+          session: "",
+          sessions: [],
         },
+      ]),
+      home,
+    );
+
+    expect(next.launch.actions).toEqual([
+      {
+        kind: "folder",
+        verb: "Open the folder",
+        command: ["xdg-open", "{path}"],
       },
+      {
+        kind: "zellij",
+        verb: "Open the zellij tab",
+        zellij: ["zellij"],
+        terminal: [
+          "alacritty",
+          "--working-directory",
+          "{cwd}",
+          "-e",
+          "zellij",
+          "attach",
+          "-c",
+          "{session}",
+        ],
+        session: "main",
+        sessions: {},
+      },
+    ]);
+  });
+
+  it("shows each kind's defaults, which a custom command has none of", () => {
+    expect(launchDefaults("vscode")).toMatchObject({
+      verb: "Open in VS Code",
+      command: '["code", "{path}"]',
     });
+    expect(launchDefaults("zellij")).toMatchObject({
+      verb: "Open the zellij tab",
+      zellij: '["zellij"]',
+      session: "main",
+    });
+    expect(launchDefaults("command")).toEqual({
+      verb: "",
+      command: "",
+      zellij: "",
+      terminal: "",
+      session: "",
+    });
+  });
+
+  it("gives a card its own verb and icon, else its kind's, and says which are for Obsidian birds only", () => {
+    const actions = [
+      ...mockActions(),
+      {
+        kind: "command" as const,
+        verb: "Note it",
+        command: '["notify-send", "{obsidian}"]',
+        icon: "obsidian" as const,
+      },
+    ];
+
+    expect(
+      actions.map((action) => [
+        cardIcon(action),
+        cardVerb(action),
+        cardObsidianOnly(action),
+      ]),
+    ).toEqual([
+      ["obsidian", "Open in Obsidian", true],
+      ["terminal", "Open the zellij tab", false],
+      ["code", "Open in VS Code", false],
+      ["folder", "Open the folder", false],
+      ["edit", "Open in nvim", false],
+      ["terminal", "Follow the log", false],
+      ["obsidian", "Note it", true],
+    ]);
+  });
+
+  it("holds zellij back once a zellij action exists, and no other kind", () => {
+    const actions = mockActions();
+    const withoutZellij = actions.filter((action) => action.kind !== "zellij");
+
+    expect(launchKinds.filter((kind) => kindTaken(actions, kind))).toEqual([
+      "zellij",
+    ]);
+    expect(
+      launchKinds.filter((kind) => kindTaken(withoutZellij, kind)),
+    ).toEqual([]);
+  });
+
+  it("refuses a custom command without words or a command, a command not naming a program first, and a placeholder the kind may not use", () => {
+    const problems = settingsProblems(
+      withActions([
+        {
+          kind: "command",
+          verb: "",
+          command: '["code", "{path}"]',
+          icon: "folder",
+        },
+        { kind: "command", verb: "Run", command: "", icon: "folder" },
+        { kind: "folder", verb: "", command: '["", "lnav", "{path}/logs"]' },
+        { kind: "vscode", verb: "", command: '["code", "{obsidian}"]' },
+        {
+          kind: "command",
+          verb: "Open the worktree",
+          command: '["code", "{worktree}"]',
+          icon: "code",
+        },
+        { kind: "nvim", verb: "", command: "nvim {path}" },
+        {
+          kind: "zellij",
+          verb: "",
+          zellij: '["zellij", "{session}"]',
+          terminal: '["kitty", "{path}"]',
+          session: "",
+          sessions: [],
+        },
+      ]),
+    );
 
     expect(problems).toEqual([
-      'Launch command zellij: must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
-      'Launch command terminal: must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
-      "Launch command vscode: must name a program first; empty the field to remove the action",
-      "Launch command folder: has no placeholder {cwd}; it may use {path}",
-      'Launch command obsidian: must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
+      "Launch action 1, action: needs words for the bird's page",
+      "Launch action 2, command: needs a command",
+      "Launch action 3, command: must name a program first",
+      "Launch action 4, command: has no placeholder {obsidian}; it may use {path}",
+      "Launch action 5, command: has no placeholder {worktree}; it may use {path} and {obsidian}",
+      'Launch action 6, command: must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
+      "Launch action 7, zellij command: has no placeholder {session}; it may use none",
+      "Launch action 7, terminal command: has no placeholder {path}; it may use {session} and {cwd}",
+    ]);
+  });
+
+  it("refuses a second zellij action, as the config parser does", () => {
+    const zellij = newCard("zellij");
+
+    expect(launchProblems([zellij, zellij])).toEqual([
+      {
+        index: 1,
+        field: "zellij",
+        problem: "a second zellij action; there may be one",
+      },
     ]);
   });
 });
@@ -285,27 +498,31 @@ describe("what the settings cannot be", () => {
   });
 
   it("wants zellij sessions and joins filled in", () => {
-    const values = mockValues();
+    const { actions, index, action } = mockZellij();
+    const unnamed = (sessions: typeof action.sessions) =>
+      launchProblems(
+        actions.with(index, { ...action, session: "", sessions }),
+      ).map((problem) => problem.problem);
 
+    expect(unnamed([{ root: "undev", session: "undev" }])).toEqual([
+      "each root must start with / or ~",
+    ]);
+    expect(unnamed([{ root: "~/undev", session: "" }])).toEqual([
+      "every root needs a session name",
+    ]);
+    expect(
+      unnamed([
+        { root: "~/undev", session: "a" },
+        { root: "~/undev", session: "b" },
+      ]),
+    ).toEqual(["each root once"]);
     expect(
       settingsProblems({
-        ...values,
-        launch: {
-          ...values.launch,
-          zellijSession: "",
-          zellijSessions: [
-            { root: "undev", session: "" },
-            { root: "undev", session: "undev" },
-          ],
-        },
+        ...mockValues(),
         joins: ['["github:finch/notes"]', "github:a/b forgejo:a/b"],
         ignore: [""],
       }),
     ).toEqual([
-      "Launch: the zellij session needs a name",
-      "Zellij sessions: each root must start with / or ~",
-      "Zellij sessions: every root needs a session name",
-      "Zellij sessions: each root once",
       "Joins: each join names two references or more",
       'Joins: each join must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
       "Ignored presences: a reference cannot be empty",

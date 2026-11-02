@@ -54,12 +54,16 @@ stalled_red_days = 30
 interval_minutes = 15
 finalised_commits = 10
 
-[launch]
-zellij_session = "home"
+[[launch.actions]]
+kind = "obsidian"
 
-[launch.commands]
-zellij = ["zellij"]
-terminal = ["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
-vscode = ["code", "{path}"]
-folder = ["dolphin", "{path}"]
-obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
+[[launch.actions]]
+kind = "zellij"
+session = "home"
+
+[[launch.actions]]
+kind = "vscode"
+
+[[launch.actions]]
+kind = "folder"
+command = ["dolphin", "{path}"]

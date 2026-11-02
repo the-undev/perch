@@ -30,7 +30,7 @@ data. Verdicts from the owner's reactions:
   rather than enumerating: top tier large, projects compact, the rest
   collapsed.
 - Priority grouping is central: machine and home IT (dotfiles, config,
-  vaults, monitoring) outrank other projects.
+  Obsidian vaults, monitoring) outrank other projects.
 - Red must be rare to mean anything. Not-set-up repos are triage, not ill
   health: one summary element, never twenty red tiles.
 - Detail opens as a full takeover that morphs out of the clicked card; a

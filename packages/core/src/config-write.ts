@@ -7,12 +7,12 @@ import {
   collapseHome,
   type GithubSourceConfig,
   type ItemEntry,
-  type LaunchCommandName,
-  launchPlaceholders,
+  type LaunchActionConfig,
   type ThresholdOverrides,
   type Thresholds,
   thresholdKeys,
 } from "./config.ts";
+import { commandKinds, customKind, zellijKind } from "./launch-kinds.ts";
 
 type Table = Record<string, unknown>;
 
@@ -81,25 +81,65 @@ function sourcesTable(
   return out;
 }
 
-function commandsTable(commands: Config["launch"]["commands"]): Table {
-  const out: Table = {};
-  for (const name of Object.keys(launchPlaceholders) as LaunchCommandName[]) {
-    const argv = commands[name];
-    if (argv !== null) out[name] = argv;
-  }
-  return out;
-}
-
 /** The table, or nothing when it is empty: the parser reads a table left out as an empty one. */
 function unlessEmpty(table: Table): Table | undefined {
   return Object.keys(table).length === 0 ? undefined : table;
 }
 
+/** The value, or nothing when it is the default: config holds only what differs. */
+function unlessDefault<T>(value: T, fallback: T): T | undefined {
+  return JSON.stringify(value) === JSON.stringify(fallback) ? undefined : value;
+}
+
+/**
+ * One [[launch.actions]] table: its kind, and what differs from the kind's defaults. A custom
+ * command writes its verb and command, and its icon unless it is the folder.
+ */
+function actionTable(
+  action: LaunchActionConfig,
+  path: (stored: string) => string,
+): Table {
+  if (action.kind === "command") {
+    return {
+      kind: action.kind,
+      verb: action.verb,
+      command: action.command,
+      icon: unlessDefault(action.icon, customKind.icon),
+    };
+  }
+  if (action.kind === "zellij") {
+    return {
+      kind: action.kind,
+      verb: unlessDefault(action.verb, zellijKind.verb),
+      zellij: unlessDefault(action.zellij, zellijKind.zellij),
+      terminal: unlessDefault(action.terminal, zellijKind.terminal),
+      session: unlessDefault(action.session, zellijKind.session),
+      sessions: unlessEmpty(
+        sortedByKey(
+          Object.fromEntries(
+            Object.entries(action.sessions).map(([root, session]) => [
+              path(root),
+              session,
+            ]),
+          ),
+        ),
+      ),
+    };
+  }
+  const defaults = commandKinds[action.kind];
+  return {
+    kind: action.kind,
+    verb: unlessDefault(action.verb, defaults.verb),
+    command: unlessDefault(action.command, defaults.command),
+  };
+}
+
 /**
  * Serialises config to TOML that parseConfig reads back to an equal config, deterministic because
- * item entries and zellij session roots are sorted by key and every list, sources among them,
- * keeps its order. Paths at or under the home directory are written with a leading ~, and empty
- * optional tables and source kinds are left out.
+ * item entries and zellij session roots are sorted by key and every list, sources and launch
+ * actions among them, keeps its order. Paths at or under the home directory are written with a
+ * leading ~, empty optional tables, source kinds and launch actions are left out, and so is a
+ * launch action's field that holds its kind's default.
  */
 export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);
@@ -113,19 +153,14 @@ export function writeConfig(config: Config, home: string): string {
       interval_minutes: config.scan.intervalMinutes,
       finalised_commits: config.scan.finalisedCommits,
     },
-    launch: {
-      zellij_session: config.launch.zellijSession,
-      zellij_sessions: unlessEmpty(
-        sortedByKey(
-          Object.fromEntries(
-            Object.entries(config.launch.zellijSessions).map(
-              ([root, session]) => [path(root), session],
+    launch:
+      config.launch.actions.length === 0
+        ? undefined
+        : {
+            actions: config.launch.actions.map((action) =>
+              actionTable(action, path),
             ),
-          ),
-        ),
-      ),
-      commands: unlessEmpty(commandsTable(config.launch.commands)),
-    },
+          },
     items: unlessEmpty(
       Object.fromEntries(
         Object.entries(sortedByKey(config.items)).map(([key, entry]) => [

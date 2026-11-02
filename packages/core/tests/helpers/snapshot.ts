@@ -78,7 +78,7 @@ export function item(id: string, overrides: Partial<Item> = {}): Item {
   return {
     id,
     name: id.slice(id.lastIndexOf("/") + 1),
-    kind: "repo",
+    kind: "git",
     path,
     liveSources: [],
     presences: { local: { ref: `local:${id}`, path }, forges: [] },

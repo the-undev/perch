@@ -1327,3 +1327,57 @@ build-time calls so they can be revisited.
   of 175, from `columnEdge` to the edge margin; `labelRight`,
   `labelAdvance`, the 26-unit name and its sizes are gone. The 445px
   limit where the strip's birds crossed its label is gone with them.
+
+## 2 November 2026 (the launch actions round)
+
+- The launch actions round is agreed on `mockups/launch-actions.html`.
+  The fixed `[launch.commands]` slots become ordered `[[launch.actions]]`
+  tables, one per card on the Launching page, added from a shelf of
+  presets (VS Code, zellij tab, nvim, Folder, Obsidian, Custom command)
+  that arrive filled in. Two kinds: a plain command run detached, and
+  zellij, which keeps its find-or-open tab behaviour and takes the
+  session default and the session roots onto its own card, the top-level
+  `[launch]` keys going with them. A clean break, no legacy reader.
+- `{obsidian}` fills in the vault folder's name, percent-encoded for the
+  `obsidian://` URI, and marks an action as offered on Obsidian birds
+  only; everything else goes to any bird with a folder. No scope field.
+- The item kinds rename for specificity: `vault` becomes `obsidian` and
+  `repo` becomes `git`. `server` waits until the Kuma bird is dealt
+  with properly.
+- Presets carry this machine's flavour: nvim and the zellij terminal
+  name alacritty. A preset is text pasted into the card at add time,
+  never consulted again; the Folder preset alone stays neutral with
+  `xdg-open`.
+
+## 2 November 2026 (the launch action kinds)
+
+- First-class kinds supersede the round's "two kinds only": `vscode`,
+  `nvim`, `folder`, `obsidian` and `zellij` carry real meaning, so config
+  and the Launching page say more, and `command` stays the open door for
+  anything else. Each kind carries its name, icon, default verb and
+  default command in `packages/core/src/launch-kinds.ts`. The `obsidian`
+  kind is offered on Obsidian birds only as a fact of the kind; a custom
+  command using `{obsidian}` keeps the same rule. Kinds other than
+  zellij may repeat.
+- Config stores the kind and only deviations, superseding "a preset is
+  starting text": `kind = "vscode"` alone is a complete action, and the
+  writer leaves out a verb, command or session equal to the kind's
+  default. Every table names its kind; a table without one is refused.
+  An empty field on a kind's card takes the default, shown in grey as
+  the field's placeholder.
+- The icon is carried by the kind and travels on the view model's
+  action, which the bubble and the detail draw; only a custom command
+  picks one, from the app's line icons, the folder unless picked. nvim
+  wears `edit`. An unknown icon name is refused.
+- Placeholders per kind: `{path}` in every command kind and the custom
+  command, `{obsidian}` in the `obsidian` kind and the custom command
+  only. zellij keeps its own rules: none in its zellij command,
+  `{session}` and `{cwd}` in its terminal.
+- The shelf's cost words for a kind are "ready as it is", zellij's
+  "ready as it is · once", Obsidian's "Obsidian birds only". The mock
+  config holds every kind, the folder overridden to dolphin, and a
+  custom command wearing the terminal.
+- The bare word "vault" goes from prose, UI copy, comments, test names
+  and docs, in favour of "Obsidian vault" in full or "Obsidian bird";
+  identifiers follow, as `obsidianVault`. The `vault=` parameter of the
+  `obsidian://` URI is Obsidian's own and stays.

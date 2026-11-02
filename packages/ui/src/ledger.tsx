@@ -314,8 +314,8 @@ function RiverLine({ part, text }: { part: string; text: string }) {
 /** The heading names the branch the river judges, when one does. */
 function riverHeading(branch: string | null): string {
   return branch === null
-    ? "Where each commit has reached"
-    : `Where each commit on ${branch} has reached`;
+    ? "Commits, and where each has reached"
+    : `Commits on ${branch}, and where each has reached`;
 }
 
 /** The newest commits on the default branch, each once, a dot before each saying how far it has spread. */

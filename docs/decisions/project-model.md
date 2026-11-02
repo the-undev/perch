@@ -17,8 +17,8 @@ presences independently, and any side may be missing:
 - A forge repo, from the GitHub source (both accounts) and the Forgejo
   source (account listings, not just remotes of local clones). A forge repo
   with no local clone is still a project and still gets data.
-- A vault's sync state, later, from LiveSync's CouchDB (metadata only; the
-  Pocket vault is end to end encrypted and perch never reads content).
+- An Obsidian vault's sync state, later, from LiveSync's CouchDB (metadata
+  only; the Pocket Obsidian vault is end to end encrypted and perch never reads content).
   Needs a verification spike.
 
 Forge listings, decided 21 October 2026: forks are ignored by default,
@@ -39,7 +39,7 @@ the full picture prompts archiving, ignoring or adopting.
 
 Collectors are typed: root collectors (config, local directories, forge
 accounts) produce presences; enrichers consume them and produce more
-(roadmap parsing from local presences, LiveSync state from detected vaults,
+(roadmap parsing from local presences, LiveSync state from detected Obsidian vaults,
 PRs and CI from forge presences). The scheduler reruns collectors whose
 inputs grew until nothing grows. The chain is two or three rounds deep in
 practice; the PoC implements explicit rounds, not a generic dataflow
@@ -49,7 +49,7 @@ engine, until a deeper chain exists in reality.
 
 Detect what leaves a trace; config asserts only what does not.
 
-- Observed: a vault is a repo whose root holds `.obsidian/`; LiveSync is
+- Observed: an Obsidian vault is a repo whose root holds `.obsidian/`; LiveSync is
   visible under `.obsidian/plugins/obsidian-livesync/`. Kind detection
   needs no config.
 - Asserted in config: importance, ignores, joins the URLs cannot prove,
@@ -84,7 +84,7 @@ join. The model would be a config-asserted member list per project,
 with health rolling up worst-of across members. How a multi-repo
 project displays on its detail page is part of the same open question.
 Parked until dogfooding shows whether any two things actually want to
-be one bird; for now one bird per repository or vault.
+be one bird; for now one bird per repository or Obsidian vault.
 
 ## Adoption
 

@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LaunchActions, LinksOut } from "./actions.tsx";
 import { DetailHeading } from "./detail-heading.tsx";
+import { Icon, type IconName } from "./icons.tsx";
 import { PullRequestLines, SourceProblems } from "./ledger.tsx";
 import { mockBird } from "./mock-birds.ts";
 
@@ -25,9 +26,37 @@ describe("the detail page's pieces", () => {
       "Open the zellij tab↗",
       "Open in VS Code↗",
       "Open the folder↗",
+      "Open in nvim↗",
+      "Follow the log↗",
     ]);
     fireEvent.click(screen.getByRole("button", { name: /zellij/ }));
     expect(onLaunch).toHaveBeenCalledWith(hothouse.detail.actions[1]);
+  });
+
+  it("draws each launch action with the icon it carries", () => {
+    const [first] = mockBird("dev/perch").detail.actions;
+    if (first === undefined) throw new Error("Perch offers no action");
+    const drawn = (icon: IconName) => {
+      const { container, unmount } = render(<Icon name={icon} size={15} />);
+      const svg = container.innerHTML;
+      unmount();
+      return svg;
+    };
+    render(
+      <LaunchActions
+        actions={[
+          { ...first, icon: "edit" },
+          { ...first, icon: "forge" },
+        ]}
+        onLaunch={() => {}}
+      />,
+    );
+
+    expect(
+      screen
+        .getAllByRole("button")
+        .map((button) => button.querySelector("svg")?.outerHTML),
+    ).toEqual([drawn("edit"), drawn("forge")]);
   });
 
   it("links out to each forge page", () => {

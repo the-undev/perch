@@ -1,17 +1,10 @@
 // The board's line icons for launch actions, links out and the config entry's verbs, stroked in
 // the accent.
 
-import type { LaunchAction } from "@perch/core/viewmodel.ts";
+import type { IconName } from "@perch/core/launch-kinds.ts";
 import type { ReactNode } from "react";
 
-export type IconName =
-  | "terminal"
-  | "code"
-  | "folder"
-  | "forge"
-  | "obsidian"
-  | "adopt"
-  | "edit";
+export type { IconName };
 
 const paths: Record<IconName, ReactNode> = {
   terminal: (
@@ -53,14 +46,6 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M13 7l4 4" />
     </>
   ),
-};
-
-/** The icon each launch action wears. */
-export const actionIcon: Record<LaunchAction["kind"], IconName> = {
-  "zellij-tab": "terminal",
-  vscode: "code",
-  folder: "folder",
-  obsidian: "obsidian",
 };
 
 /** One line icon at the given size in pixels; decorative, so hidden from assistive technology. */

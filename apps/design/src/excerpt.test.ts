@@ -89,7 +89,7 @@ describe("excerpts of the real sources", () => {
 });
 
 describe("tables of a TOML file", () => {
-  it("cuts at each header, the comment above it going with it, numbering an array's tables", () => {
+  it("cuts at each header, the comment above it going with it, numbering an array's tables and placing a subtable in the latest", () => {
     const toml = `# The file.
 joins = []
 
@@ -106,6 +106,14 @@ account = "a"
 
 [[sources.github]]
 account = "b"
+
+[[launch.actions]]
+verb = "Open"
+
+[[launch.actions]]
+kind = "zellij"
+[launch.actions.sessions]
+"~/work" = "work"
 `;
 
     expect(tomlTables(toml)).toEqual([
@@ -129,6 +137,21 @@ account = "b"
         path: ["sources", "github", "1"],
         array: true,
         text: '[[sources.github]]\naccount = "b"',
+      },
+      {
+        path: ["launch", "actions", "0"],
+        array: true,
+        text: '[[launch.actions]]\nverb = "Open"',
+      },
+      {
+        path: ["launch", "actions", "1"],
+        array: true,
+        text: '[[launch.actions]]\nkind = "zellij"',
+      },
+      {
+        path: ["launch", "actions", "1", "sessions"],
+        array: false,
+        text: '[launch.actions.sessions]\n"~/work" = "work"',
       },
     ]);
   });

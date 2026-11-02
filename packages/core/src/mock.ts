@@ -4,8 +4,8 @@
 // mood and activity, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed backlog, a stalled
 // branch and clean zeros, a bird with no clone here and one on no forge, a remote no card can
 // read, forges that couldn't be read at all and one whose pull requests alone couldn't be read,
-// and the source cards every scan state;
-// tests/mock.test.ts keeps it so. Roadmap files carry
+// the source cards every scan state, and every kind of launch action, some overridden, the
+// Obsidian one on Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
 // numbered placeholder items, as many as each file's open counts.
 
 import type { Config, ItemEntry } from "./config.ts";
@@ -144,15 +144,45 @@ export const mockConfig: Config = {
     finalisedCommits: 10,
   },
   launch: {
-    zellijSession: "home",
-    zellijSessions: { [`${home}/undev`]: "undev" },
-    commands: {
-      zellij: ["zellij"],
-      terminal: ["alacritty", "-e", "zellij", "attach", "-c", "{session}"],
-      vscode: ["code", "{path}"],
-      folder: ["dolphin", "{path}"],
-      obsidian: ["xdg-open", "obsidian://open?vault={vault}"],
-    },
+    actions: [
+      {
+        kind: "obsidian",
+        verb: "Open in Obsidian",
+        command: ["xdg-open", "obsidian://open?vault={obsidian}"],
+      },
+      {
+        kind: "zellij",
+        verb: "Open the zellij tab",
+        zellij: ["zellij"],
+        terminal: ["alacritty", "-e", "zellij", "attach", "-c", "{session}"],
+        session: "home",
+        sessions: { [`${home}/undev`]: "undev" },
+      },
+      { kind: "vscode", verb: "Open in VS Code", command: ["code", "{path}"] },
+      {
+        kind: "folder",
+        verb: "Open the folder",
+        command: ["dolphin", "{path}"],
+      },
+      {
+        kind: "nvim",
+        verb: "Open in nvim",
+        command: [
+          "alacritty",
+          "--working-directory",
+          "{path}",
+          "-e",
+          "nvim",
+          ".",
+        ],
+      },
+      {
+        kind: "command",
+        verb: "Follow the log",
+        command: ["alacritty", "-e", "lnav", "{path}/logs"],
+        icon: "terminal",
+      },
+    ],
   },
 };
 
@@ -258,7 +288,7 @@ function localItem(
   return {
     id,
     name: id.slice(id.lastIndexOf("/") + 1),
-    kind: fields.kind ?? "repo",
+    kind: fields.kind ?? "git",
     path,
     liveSources: [],
     presences: { local: { ref: `local:${id}`, path }, forges: fields.forges },
@@ -378,7 +408,7 @@ const dotfiles = localItem(".dotfiles", {
 
 /** Restless and being edited: six changes uncommitted for 30 hours, a full roadmap. */
 const hothouse = localItem("obsidian/Hothouse", {
-  kind: "vault",
+  kind: "obsidian",
   forges: [presence("forgejo", "finch/Hothouse", "account-listing")],
   sources: {
     git: {
@@ -453,7 +483,7 @@ const hothouse = localItem("obsidian/Hothouse", {
 
 /** Content, settled, with a backlog on offer. */
 const pocket = localItem("obsidian/Pocket", {
-  kind: "vault",
+  kind: "obsidian",
   forges: [presence("forgejo", "finch/Pocket", "account-listing")],
   sources: {
     git: {
@@ -472,14 +502,14 @@ const pocket = localItem("obsidian/Pocket", {
         branch(
           "main",
           "2026-10-16T14:20:00.000Z",
-          "Describe the vault's LiveSync setup in CLAUDE.md",
+          "Describe the Obsidian vault's LiveSync setup in CLAUDE.md",
         ),
       ],
       defaultBranchCommits: [
         {
           sha: "77045f066b56d1e3a5c7e9b1d3f5a7c9e1b3d5f7",
           committedAt: "2026-10-16T14:20:00.000Z",
-          subject: "Describe the vault's LiveSync setup in CLAUDE.md",
+          subject: "Describe the Obsidian vault's LiveSync setup in CLAUDE.md",
         },
       ],
       remotes: [
@@ -506,7 +536,7 @@ const pocket = localItem("obsidian/Pocket", {
         {
           sha: "77045f066b56d1e3a5c7e9b1d3f5a7c9e1b3d5f7",
           committedAt: "2026-10-16T14:20:00.000Z",
-          subject: "Describe the vault's LiveSync setup in CLAUDE.md",
+          subject: "Describe the Obsidian vault's LiveSync setup in CLAUDE.md",
         },
       ],
     }),
@@ -1236,7 +1266,7 @@ const spool = localItem("undev/spool", {
 
 /** Content and in flight on a branch with one fresh commit not yet pushed. */
 const glyphDocs = localItem("undev/glyph-docs", {
-  kind: "vault",
+  kind: "obsidian",
   forges: [presence("forgejo", "the-undev/glyph-docs")],
   sources: {
     git: {
@@ -1416,7 +1446,7 @@ const hello = localItem("dev/odin/hello", {
 const obsidianTidy: Item = {
   id: "github:finch/obsidian-tidy",
   name: "obsidian-tidy",
-  kind: "repo",
+  kind: "git",
   path: null,
   liveSources: [],
   presences: {

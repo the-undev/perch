@@ -39,8 +39,8 @@ export interface AppStateDeps {
   gather: (config: Config) => Promise<void>;
   /** Aggregates the raw directory into a snapshot and caches it. */
   aggregate: (loaded: LoadedConfig) => Promise<Snapshot>;
-  /** Performs a launch action with the commands from config. */
-  launch: (action: LaunchAction, config: Config) => Promise<void>;
+  /** Performs a launch action with the commands it carries. */
+  launch: (action: LaunchAction) => Promise<void>;
   /** Reads a file's text; rejects when it cannot. */
   readText: (path: string) => Promise<string>;
   /** Writes the starter config; rejects, writing nothing, when the file exists. */
@@ -63,8 +63,8 @@ export interface AppState {
   recheck(): Promise<void>;
   setScanning(scanning: boolean): void;
   /**
-   * Performs a launch action when some bird in the aviary offers it, else nothing; a failure
-   * becomes a problem until the next scan.
+   * Performs a launch action when some bird in the aviary offers it, commands and all, else
+   * nothing; a failure becomes a problem until the next scan.
    */
   launch(action: LaunchAction): Promise<void>;
   /** A bird's key files with what was read from each; none for a bird the aviary does not hold. */
@@ -92,13 +92,9 @@ export interface AppState {
   saveSettings(values: SettingsValues): Promise<void>;
 }
 
-/** Two launch actions are the same when every field is: they are flat records of strings. */
+/** Two launch actions are the same when they serialise alike: they are plain data, commands and all. */
 function sameAction(a: LaunchAction, b: LaunchAction): boolean {
-  const fields = Object.entries(a);
-  return (
-    fields.length === Object.keys(b).length &&
-    fields.every(([key, value]) => b[key as keyof LaunchAction] === value)
-  );
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 function birdsOf(aviary: Aviary): Bird[] {
@@ -235,10 +231,9 @@ export function createAppState(deps: AppStateDeps): AppState {
       const action = (current === null ? [] : birdsOf(current))
         .flatMap((candidate) => candidate.detail.actions)
         .find((candidate) => sameAction(candidate, requested));
-      const config = deps.config.current().loaded?.config;
-      if (action === undefined || config === undefined) return;
+      if (action === undefined) return;
       try {
-        await deps.launch(action, config);
+        await deps.launch(action);
       } catch (error) {
         launchError = `${action.verb} failed: ${errorMessage(error)}`;
         publish();

@@ -69,7 +69,7 @@ describe("local source", () => {
     ]);
   });
 
-  it("observes a vault by its .obsidian folder and records the LiveSync plugin folder", async () => {
+  it("observes an Obsidian vault by its .obsidian folder and records the LiveSync plugin folder", async () => {
     initRepo(join(home, "notes"));
     mkdirSync(
       join(home, "notes", ".obsidian", "plugins", "obsidian-livesync"),

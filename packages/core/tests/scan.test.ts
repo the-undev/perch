@@ -34,8 +34,6 @@ stalled_red_days = 30
 [scan]
 interval_minutes = 15
 finalised_commits = 10
-[launch]
-zellij_session = "home"
 [items."dev/kept"]
 `;
 

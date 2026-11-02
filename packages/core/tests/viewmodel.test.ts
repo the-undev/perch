@@ -1116,51 +1116,86 @@ describe("the detail", () => {
     expect(detail.problems).toEqual([{ source: "Forgejo", error: "HTTP 500" }]);
   });
 
-  it("offers launch actions as verbs, in the item's zellij session", async () => {
-    const config = await adoptAll(
-      ["dev/perch", "undev/notes"],
-      '[launch.zellij_sessions]\n"~/undev" = "undev"\n',
+  it("offers launch actions in config order, each with its commands, in the item's zellij session", async () => {
+    const config = await adoptAll(["dev/perch", "undev/notes"]);
+    config.launch.actions = config.launch.actions.map((action) =>
+      action.kind === "zellij"
+        ? { ...action, sessions: { "/home/test/undev": "undev" } }
+        : action,
     );
     const vault = item("undev/notes", { kind: "obsidian" });
 
     expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([
       {
-        kind: "zellij-tab",
+        kind: "zellij",
         verb: "Open the zellij tab",
+        zellij: ["zellij"],
+        terminal: [
+          "alacritty",
+          "--working-directory",
+          "{cwd}",
+          "-e",
+          "zellij",
+          "attach",
+          "-c",
+          "{session}",
+        ],
         session: "home",
         tab: "perch",
         cwd: "/home/test/dev/perch",
       },
-      { kind: "vscode", verb: "Open in VS Code", path: "/home/test/dev/perch" },
-      { kind: "folder", verb: "Open the folder", path: "/home/test/dev/perch" },
+      {
+        kind: "command",
+        verb: "Open in VS Code",
+        command: ["code", "{path}"],
+        path: "/home/test/dev/perch",
+      },
+      {
+        kind: "command",
+        verb: "Open the folder",
+        command: ["dolphin", "{path}"],
+        path: "/home/test/dev/perch",
+      },
     ]);
     expect(
       birdIn([vault], config, "undev/notes").detail.actions.map((action) =>
-        action.kind === "obsidian"
-          ? [action.verb, action.vault]
-          : action.kind === "zellij-tab"
-            ? [action.verb, action.session]
-            : [action.verb],
+        action.kind === "zellij"
+          ? [action.verb, action.session]
+          : [action.verb, action.kind],
       ),
     ).toEqual([
-      ["Open in Obsidian", "notes"],
+      ["Open in Obsidian", "obsidian"],
       ["Open the zellij tab", "undev"],
-      ["Open in VS Code"],
-      ["Open the folder"],
+      ["Open in VS Code", "command"],
+      ["Open the folder", "command"],
     ]);
   });
 
-  it("leaves out an action whose command config leaves out", async () => {
-    const config = await adoptAll(["undev/notes"]);
-    config.launch.commands.terminal = null;
-    config.launch.commands.obsidian = null;
-    const vault = item("undev/notes", { kind: "obsidian" });
+  it("offers an action using {obsidian} on Obsidian birds only, with the vault's folder name", async () => {
+    const config = await adoptAll(["obsidian/Home Notes", "dev/perch"]);
+    const vault = item("obsidian/Home Notes", { kind: "obsidian" });
+    const obsidianActions = (id: string) =>
+      birdIn([vault, perch], config, id).detail.actions.filter(
+        (action) => action.kind === "obsidian",
+      );
 
-    expect(
-      birdIn([vault], config, "undev/notes").detail.actions.map(
-        (action) => action.kind,
-      ),
-    ).toEqual(["vscode", "folder"]);
+    expect(obsidianActions("obsidian/Home Notes")).toEqual([
+      {
+        kind: "obsidian",
+        verb: "Open in Obsidian",
+        command: ["xdg-open", "obsidian://open?vault={obsidian}"],
+        path: "/home/test/obsidian/Home Notes",
+        vault: "Home Notes",
+      },
+    ]);
+    expect(obsidianActions("dev/perch")).toEqual([]);
+  });
+
+  it("offers nothing when config holds no launch actions", async () => {
+    const config = await adoptAll(["dev/perch"]);
+    config.launch.actions = [];
+
+    expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([]);
   });
 
   it("says where the bird lives: its clone with home as ~, and each forge once", async () => {

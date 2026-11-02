@@ -207,27 +207,33 @@ export function SettingsGroupsPage() {
       </Section>
       <Section
         title="Launching"
-        rule="The zellij session, sessions by root, and each command as one list line in the file's own form, read as JSON. Arguments are never split on spaces; an empty field removes the action."
+        rule="Each launch action in config order, its words and each command as one list line in the file's own form, read as JSON. Arguments are never split on spaces."
         min={620}
       >
         <GroupSpecimen
           label="As the mock holds it"
-          rule="Every command set, ~/undev in its own session."
+          rule="Obsidian, the zellij tab with ~/undev in its own session, VS Code and the folder."
           start={mock}
           group={launch}
         />
         <GroupSpecimen
-          label="Malformed commands, and one removed"
-          rule="VS Code typed as words, Folder with a placeholder it cannot fill, Obsidian emptied, which removes Open in Obsidian."
+          label="Refusals"
+          rule="A blank verb, a command typed as words, and one with a placeholder it may not use."
           start={withMock({
             launch: {
-              ...mock.launch,
-              commands: {
-                ...mock.launch.commands,
-                vscode: "code {path}",
-                folder: '["dolphin", "{cwd}"]',
-                obsidian: "",
-              },
+              actions: [
+                { kind: "command", verb: "", command: '["code", "{path}"]' },
+                {
+                  kind: "command",
+                  verb: "Open the logs",
+                  command: "lnav {path}",
+                },
+                {
+                  kind: "command",
+                  verb: "Open the worktree",
+                  command: '["code", "{worktree}"]',
+                },
+              ],
             },
           })}
           group={launch}

@@ -7,8 +7,6 @@ import {
   collapseHome,
   expandHome,
   type ItemEntry,
-  type LaunchCommandName,
-  launchPlaceholders,
   type SourcesConfig,
   type Thresholds,
 } from "./config.ts";
@@ -18,14 +16,15 @@ import {
   type ThresholdKey,
   thresholdProblems,
 } from "./entry-form.ts";
+import {
+  type LaunchActionValues,
+  launchConfigOf,
+  launchProblemLine,
+  launchProblems,
+  launchValuesOf,
+} from "./launch-form.ts";
+import { listLine, listOf, parseListLine } from "./list-line.ts";
 import { sourceProblemLine, sourceProblems } from "./sources-form.ts";
-
-/** A zellij session and the root directory whose items it holds. */
-export interface SessionRoot {
-  /** The root as shown: a path under the home directory starts with ~. */
-  root: string;
-  session: string;
-}
 
 /** A wire on the settings page: the config wire it started as, null for one added, and its name now. */
 export interface WireRow {
@@ -45,10 +44,8 @@ export interface SettingsValues {
     finalisedCommits: number;
   };
   launch: {
-    zellijSession: string;
-    zellijSessions: SessionRoot[];
-    /** Each command's argument list as one list line (see listLine); empty for no command. */
-    commands: Record<LaunchCommandName, string>;
+    /** One card per launch action, in the order a bird offers them. */
+    actions: LaunchActionValues[];
   };
   /** Each join's presence references as one list line. */
   joins: string[];
@@ -61,35 +58,6 @@ export interface SettingsForm {
   values: SettingsValues;
   /** The keys of the entries naming each config wire, which removing it moves to the default. */
   named: { wires: Record<string, string[]> };
-}
-
-/**
- * A list of strings as one line, in the config file's own form: brackets around double-quoted
- * strings, with JSON's escapes, such as ["code", "{path}"].
- */
-export function listLine(list: readonly string[]): string {
-  return `[${list.map((entry) => JSON.stringify(entry)).join(", ")}]`;
-}
-
-/** The strings a list line holds, or why it holds none. */
-export function parseListLine(
-  line: string,
-): { list: string[] } | { problem: string } {
-  const shape =
-    'must be a list in brackets of strings in double quotes, such as ["code", "{path}"]';
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(line);
-  } catch {
-    return { problem: shape };
-  }
-  if (
-    !Array.isArray(parsed) ||
-    !parsed.every((entry) => typeof entry === "string")
-  ) {
-    return { problem: shape };
-  }
-  return { list: parsed };
 }
 
 function namedBy(
@@ -108,11 +76,6 @@ function namedBy(
 /** The settings form for a config, paths under the home directory shown with ~. */
 export function settingsFormFor(config: Config, home: string): SettingsForm {
   const path = (stored: string) => collapseHome(stored, home);
-  const commands = {} as Record<LaunchCommandName, string>;
-  for (const name of Object.keys(launchPlaceholders) as LaunchCommandName[]) {
-    const argv = config.launch.commands[name];
-    commands[name] = argv === null ? "" : listLine(argv);
-  }
   return {
     values: {
       wires: {
@@ -126,11 +89,9 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
       >,
       scan: { ...config.scan },
       launch: {
-        zellijSession: config.launch.zellijSession,
-        zellijSessions: Object.entries(config.launch.zellijSessions).map(
-          ([root, session]) => ({ root: path(root), session }),
+        actions: config.launch.actions.map((action) =>
+          launchValuesOf(action, path),
         ),
-        commands,
       },
       joins: config.joins.map(listLine),
       ignore: [...config.ignore],
@@ -165,9 +126,6 @@ function mapSourcePaths(
 }
 
 const isWhole = (value: number) => Number.isInteger(value) && value > 0;
-
-const isAbsolute = (path: string) =>
-  path.startsWith("/") || path === "~" || path.startsWith("~/");
 
 const isBlank = (text: string) => text.trim() === "";
 
@@ -209,25 +167,6 @@ function wiresProblems(wires: SettingsValues["wires"]): string[] {
   return problems;
 }
 
-/** Why a launch command's line cannot be written, or null when it can or is empty. */
-function commandProblem(name: LaunchCommandName, line: string): string | null {
-  if (isBlank(line)) return null;
-  const parsed = parseListLine(line);
-  if ("problem" in parsed) return `Launch command ${name}: ${parsed.problem}`;
-  const [program] = parsed.list;
-  if (program === undefined || isBlank(program)) {
-    return `Launch command ${name}: must name a program first; empty the field to remove the action`;
-  }
-  const allowed = launchPlaceholders[name];
-  for (const [, placeholder] of parsed.list.join(" ").matchAll(/\{(\w+)\}/g)) {
-    if (placeholder !== undefined && !allowed.includes(placeholder)) {
-      const may = allowed.map((entry) => `{${entry}}`).join(", ") || "none";
-      return `Launch command ${name}: has no placeholder {${placeholder}}; it may use ${may}`;
-    }
-  }
-  return null;
-}
-
 /** Why the values cannot be saved, in words; empty when they can. */
 export function settingsProblems(values: SettingsValues): string[] {
   const problems: string[] = [];
@@ -241,24 +180,9 @@ export function settingsProblems(values: SettingsValues): string[] {
   if (!isWhole(values.scan.finalisedCommits)) {
     problems.push("Finalised commits: must be a whole number above zero");
   }
-  const { launch } = values;
-  if (isBlank(launch.zellijSession)) {
-    problems.push("Launch: the zellij session needs a name");
-  }
-  if (!launch.zellijSessions.every(({ root }) => isAbsolute(root))) {
-    problems.push("Zellij sessions: each root must start with / or ~");
-  }
-  if (launch.zellijSessions.some(({ session }) => isBlank(session))) {
-    problems.push("Zellij sessions: every root needs a session name");
-  }
-  const roots = launch.zellijSessions.map(({ root }) => root);
-  if (new Set(roots).size !== roots.length) {
-    problems.push("Zellij sessions: each root once");
-  }
-  for (const name of Object.keys(launchPlaceholders) as LaunchCommandName[]) {
-    const problem = commandProblem(name, launch.commands[name]);
-    if (problem !== null) problems.push(problem);
-  }
+  problems.push(
+    ...launchProblems(values.launch.actions).map(launchProblemLine),
+  );
   for (const line of values.joins) {
     const parsed = parseListLine(line);
     if ("problem" in parsed) {
@@ -295,13 +219,6 @@ export function wireWarnings(
     );
 }
 
-/** A list line's strings; the line has passed settingsProblems. */
-function listOf(line: string): string[] {
-  const parsed = parseListLine(line);
-  if ("problem" in parsed) throw new Error(parsed.problem);
-  return parsed.list;
-}
-
 /**
  * Config with everything but its item entries set to the values, paths expanded against the home
  * directory. An entry's wire follows the row that starts as it to that row's name, all in one
@@ -316,11 +233,6 @@ export function withSettings(
   const problems = settingsProblems(values);
   if (problems.length > 0) throw new Error(problems.join("; "));
   const path = (shown: string) => expandHome(shown, home);
-  const commands = {} as Config["launch"]["commands"];
-  for (const name of Object.keys(launchPlaceholders) as LaunchCommandName[]) {
-    const line = values.launch.commands[name];
-    commands[name] = isBlank(line) ? null : listOf(line);
-  }
   const { rows } = values.wires;
   const renamed = new Map(
     rows.flatMap((row) => (row.from === null ? [] : [[row.from, row.name]])),
@@ -345,14 +257,9 @@ export function withSettings(
     ),
     scan: { ...values.scan },
     launch: {
-      zellijSession: values.launch.zellijSession,
-      zellijSessions: Object.fromEntries(
-        values.launch.zellijSessions.map(({ root, session }) => [
-          path(root),
-          session,
-        ]),
+      actions: values.launch.actions.map((action) =>
+        launchConfigOf(action, path),
       ),
-      commands,
     },
   };
 }

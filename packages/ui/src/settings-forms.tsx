@@ -3,11 +3,8 @@
 // Each page is presentational, its value in and every change out; the editor holds the draft
 // across them and shows the page the rail has open.
 
-import {
-  type LaunchCommandName,
-  launchPlaceholders,
-} from "@perch/core/config.ts";
 import { thresholdWindows } from "@perch/core/entry-form.ts";
+import { type LaunchActionValues, presetOf } from "@perch/core/launch-form.ts";
 import {
   defaultName,
   type SettingsForm,
@@ -439,83 +436,67 @@ function RecordRows<Field extends string>({
   );
 }
 
-/** Each launch command's name on the page, with what its action does. */
-const commandWords: Record<LaunchCommandName, { label: string; does: string }> =
-  {
-    zellij: { label: "zellij", does: "Finds or opens the item's tab" },
-    terminal: { label: "Terminal", does: "Attaches a session not running" },
-    vscode: { label: "VS Code", does: "Open in VS Code" },
-    folder: { label: "Folder", does: "Open the folder" },
-    obsidian: { label: "Obsidian", does: "Open in Obsidian" },
-  };
-
-/** The zellij sessions and the commands behind the launch actions, each a list line. */
+/** The launch actions in the order a bird offers them, each its words and commands as list lines. */
 export function LaunchGroup({
   value,
   onChange,
 }: GroupProps<SettingsValues["launch"]>) {
+  const set = (index: number, action: LaunchActionValues) =>
+    onChange({ actions: value.actions.with(index, action) });
+  const line = (
+    label: string,
+    text: string,
+    change: (text: string) => void,
+  ) => (
+    <input
+      type="text"
+      aria-label={label}
+      spellCheck={false}
+      value={text}
+      onChange={(event) => change(event.target.value)}
+      className={monoInputClass}
+    />
+  );
   return (
     <SettingsGroup
       title="Launching"
-      table="[launch]"
-      lead={
-        <>
-          Each command is a list in brackets of strings in double quotes, as in
-          the config file, with JSON's escapes:{" "}
-          <code className="font-mono">["code", "{"{path}"}"]</code>. Arguments
-          are never split on spaces, and a command runs without a shell. An
-          empty field removes the action.
-        </>
-      }
+      table="[[launch.actions]]"
+      lead="What a bird's page can open, in this order. Each command is a list line, as in the config file."
     >
-      <FormRow label="Zellij session" sub="For an item nothing else assigns">
-        <input
-          type="text"
-          aria-label="Zellij session"
-          value={value.zellijSession}
-          onChange={(event) =>
-            onChange({ ...value, zellijSession: event.target.value })
-          }
-          className={`${monoInputClass} max-w-60`}
-        />
-      </FormRow>
-      <FormRow label="Sessions by root" sub="The longest root holding the item">
-        <RecordRows
-          noun="session root"
-          fields={[
-            { key: "root", label: "root", placeholder: "~/work" },
-            { key: "session", label: "session", placeholder: "work" },
-          ]}
-          rows={value.zellijSessions}
-          onChange={(zellijSessions) => onChange({ ...value, zellijSessions })}
-        />
-      </FormRow>
-      {(Object.keys(launchPlaceholders) as LaunchCommandName[]).map((name) => {
-        const placeholders = launchPlaceholders[name];
+      {value.actions.map((action, index) => {
+        const at = `Action ${index + 1}`;
         return (
-          <FormRow
-            key={name}
-            label={commandWords[name].label}
-            sub={
-              placeholders.length === 0
-                ? commandWords[name].does
-                : `${commandWords[name].does}; ${placeholders.map((entry) => `{${entry}}`).join(", ")}`
-            }
-          >
-            <input
-              type="text"
-              aria-label={`${commandWords[name].label} command`}
-              placeholder="Not offered"
-              spellCheck={false}
-              value={value.commands[name]}
-              onChange={(event) =>
-                onChange({
-                  ...value,
-                  commands: { ...value.commands, [name]: event.target.value },
-                })
-              }
-              className={monoInputClass}
-            />
+          // biome-ignore lint/suspicious/noArrayIndexKey: actions are edited in place, so the position is the row's identity.
+          <FormRow key={index} label={presetOf(action).name} sub={at}>
+            {line(`${at}, words`, action.verb, (verb) =>
+              set(index, { ...action, verb }),
+            )}
+            {action.kind === "command" ? (
+              line(`${at}, command`, action.command, (command) =>
+                set(index, { ...action, command }),
+              )
+            ) : (
+              <>
+                {line(`${at}, zellij command`, action.zellij, (zellij) =>
+                  set(index, { ...action, zellij }),
+                )}
+                {line(`${at}, terminal command`, action.terminal, (terminal) =>
+                  set(index, { ...action, terminal }),
+                )}
+                {line(`${at}, session`, action.session, (session) =>
+                  set(index, { ...action, session }),
+                )}
+                <RecordRows
+                  noun="session root"
+                  fields={[
+                    { key: "root", label: "root", placeholder: "~/work" },
+                    { key: "session", label: "session", placeholder: "work" },
+                  ]}
+                  rows={action.sessions}
+                  onChange={(sessions) => set(index, { ...action, sessions })}
+                />
+              </>
+            )}
           </FormRow>
         );
       })}

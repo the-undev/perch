@@ -9,6 +9,7 @@ import {
   hostsOf,
   type ItemEntry,
   resolveEntry,
+  usesObsidian,
   wireFor,
   zellijSessionFor,
 } from "./config.ts";
@@ -300,18 +301,30 @@ export interface FlagLine {
   level: HealthLevel | null;
 }
 
-/** Launch actions open things and change nothing. */
+/**
+ * Launch actions open things and change nothing. Each carries its commands from config with the
+ * values that fill their placeholders at launch.
+ */
 export type LaunchAction =
   | {
-      kind: "zellij-tab";
+      kind: "zellij";
       verb: string;
+      zellij: string[];
+      terminal: string[];
       session: string;
       tab: string;
       cwd: string;
     }
-  | { kind: "vscode"; verb: string; path: string }
-  | { kind: "folder"; verb: string; path: string }
-  | { kind: "obsidian"; verb: string; vault: string };
+  | { kind: "command"; verb: string; command: string[]; path: string }
+  | {
+      /** A command using {obsidian}, offered on Obsidian birds only. */
+      kind: "obsidian";
+      verb: string;
+      command: string[];
+      path: string;
+      /** The vault's folder name. */
+      vault: string;
+    };
 
 export interface LinkOut {
   label: string;
@@ -1086,7 +1099,10 @@ function pullRequestsFor(item: Item): PullRequestLine[] {
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
-/** The launch actions for a local item; one whose command config leaves out is not offered. */
+/**
+ * The launch actions for a local item, in config order: every action, bar one using {obsidian} on
+ * a bird that is not an Obsidian vault.
+ */
 function actionsFor(
   item: Item,
   entry: ItemEntry | null,
@@ -1094,28 +1110,27 @@ function actionsFor(
 ): LaunchAction[] {
   const path = item.path;
   if (path === null) return [];
-  const commands = config.launch.commands;
-  const offered: (LaunchAction | null)[] = [
-    item.kind === "obsidian" && commands.obsidian
-      ? {
-          kind: "obsidian",
-          verb: "Open in Obsidian",
-          vault: path.slice(path.lastIndexOf("/") + 1),
-        }
-      : null,
-    commands.zellij && commands.terminal
-      ? {
-          kind: "zellij-tab",
-          verb: "Open the zellij tab",
-          session: zellijSessionFor(config, entry, path),
+  return config.launch.actions.flatMap((action): LaunchAction[] => {
+    if (action.kind === "zellij") {
+      return [
+        {
+          kind: "zellij",
+          verb: action.verb,
+          zellij: action.zellij,
+          terminal: action.terminal,
+          session: zellijSessionFor(action, entry, path),
           tab: item.name,
           cwd: path,
-        }
-      : null,
-    commands.vscode ? { kind: "vscode", verb: "Open in VS Code", path } : null,
-    commands.folder ? { kind: "folder", verb: "Open the folder", path } : null,
-  ];
-  return offered.filter((action) => action !== null);
+        },
+      ];
+    }
+    const { verb, command } = action;
+    if (!usesObsidian(command))
+      return [{ kind: "command", verb, command, path }];
+    if (item.kind !== "obsidian") return [];
+    const vault = path.slice(path.lastIndexOf("/") + 1);
+    return [{ kind: "obsidian", verb, command, path, vault }];
+  });
 }
 
 function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {

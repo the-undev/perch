@@ -71,17 +71,24 @@ stalled_red_days = 20
 interval_minutes = 5
 finalised_commits = 25
 
-[launch]
-zellij_session = "main"
+[[launch.actions]]
+verb = "Open in VS Code"
+command = ["code", "{path}"]
 
-[launch.zellij_sessions]
+[[launch.actions]]
+kind = "zellij"
+verb = "Open the tab"
+zellij = ["zellij"]
+terminal = ["konsole", "--workdir", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
+session = "main"
+
+[launch.actions.sessions]
 "~/undev/tools" = "tools"
 "~/undev" = "undev"
 
-[launch.commands]
-terminal = ["konsole", "--workdir", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
-vscode = ["code", "{path}"]
-obsidian = ["xdg-open", "obsidian://open?vault={vault}"]
+[[launch.actions]]
+verb = "Open in Obsidian"
+command = ["xdg-open", "obsidian://open?vault={obsidian}"]
 
 [items."dev/perch"]
 wire = "Projects"
@@ -106,6 +113,27 @@ function roundTrip(config: Config): Config {
   return parseConfig(writeConfig(config, home), home);
 }
 
+/** The config with its zellij action's sessions replaced. */
+function withSessions(
+  config: Config,
+  sessions: Record<string, string>,
+): Config {
+  return {
+    ...config,
+    launch: {
+      actions: config.launch.actions.map((action) =>
+        action.kind === "zellij" ? { ...action, sessions } : action,
+      ),
+    },
+  };
+}
+
+/** The zellij action's sessions in a written document. */
+function writtenSessions(document: Record<string, unknown>): unknown {
+  const launch = document.launch as { actions: Record<string, unknown>[] };
+  return launch.actions.find((action) => action.kind === "zellij")?.sessions;
+}
+
 describe("writeConfig", () => {
   it("writes the example config back to an equal config", async () => {
     const config = parseConfig(await exampleText(), home);
@@ -118,7 +146,11 @@ describe("writeConfig", () => {
 
     expect(config.sources.kuma).toHaveLength(2);
     expect(config.items["forgejo:finch/hollow"]?.keyFiles).toEqual([]);
-    expect(config.launch.commands.zellij).toBeNull();
+    expect(config.launch.actions.map((action) => action.kind)).toEqual([
+      "command",
+      "zellij",
+      "command",
+    ]);
     expect(roundTrip(config)).toEqual(config);
   });
 
@@ -172,14 +204,11 @@ describe("writeConfig", () => {
   it("writes the same bytes every time, whatever order entries were added in", () => {
     const config = parseConfig(maximalText, home);
     const reordered: Config = {
-      ...config,
+      ...withSessions(config, {
+        [`${home}/undev`]: "undev",
+        [`${home}/undev/tools`]: "tools",
+      }),
       items: Object.fromEntries(Object.entries(config.items).reverse()),
-      launch: {
-        ...config.launch,
-        zellijSessions: Object.fromEntries(
-          Object.entries(config.launch.zellijSessions).reverse(),
-        ),
-      },
     };
 
     const text = writeConfig(config, home);
@@ -207,7 +236,10 @@ describe("writeConfig", () => {
   });
 
   it("writes paths at or under the home directory with ~, and any other path as it is", () => {
-    const config = parseConfig(maximalText, home);
+    const config = withSessions(parseConfig(maximalText, home), {
+      [`${home}/undev`]: "undev",
+      "/srv": "srv",
+    });
     const paths: Config = {
       ...config,
       sources: {
@@ -219,10 +251,6 @@ describe("writeConfig", () => {
           },
         ],
       },
-      launch: {
-        ...config.launch,
-        zellijSessions: { [`${home}/undev`]: "undev", "/srv": "srv" },
-      },
     };
 
     const document = parse(writeConfig(paths, home));
@@ -233,36 +261,46 @@ describe("writeConfig", () => {
         exclude: ["~/dev/archived"],
       },
     ]);
-    expect(
-      (document.launch as Record<string, unknown>).zellij_sessions,
-    ).toEqual({ "/srv": "srv", "~/undev": "undev" });
+    expect(writtenSessions(document)).toEqual({
+      "/srv": "srv",
+      "~/undev": "undev",
+    });
     expect(roundTrip(paths)).toEqual(paths);
   });
 
-  it("leaves out empty item, zellij session and command tables", () => {
+  it("leaves out empty item and session tables, and the launch table with no actions", () => {
     const config = parseConfig(maximalText, home);
-    const empty: Config = {
-      ...config,
-      items: {},
-      launch: {
-        ...config.launch,
-        zellijSessions: {},
-        commands: {
-          zellij: null,
-          terminal: null,
-          vscode: null,
-          folder: null,
-          obsidian: null,
-        },
-      },
-    };
+    const noSessions: Config = { ...withSessions(config, {}), items: {} };
+    const noActions: Config = { ...config, launch: { actions: [] } };
 
-    const text = writeConfig(empty, home);
+    const text = writeConfig(noSessions, home);
 
     expect(text).not.toContain("[items]");
-    expect(text).not.toContain("zellij_sessions");
-    expect(text).not.toContain("[launch.commands]");
-    expect(roundTrip(empty)).toEqual(empty);
+    expect(text).not.toContain("sessions");
+    expect(roundTrip(noSessions)).toEqual(noSessions);
+    expect(writeConfig(noActions, home)).not.toContain("launch");
+    expect(roundTrip(noActions)).toEqual(noActions);
+  });
+
+  it("writes one table per launch action in order, a command action's kind left out", () => {
+    const config = parseConfig(maximalText, home);
+    const reversed: Config = {
+      ...config,
+      launch: { actions: [...config.launch.actions].reverse() },
+    };
+
+    const document = parse(writeConfig(reversed, home));
+
+    expect(
+      (document.launch as { actions: Record<string, unknown>[] }).actions.map(
+        (action) => [action.kind, action.verb],
+      ),
+    ).toEqual([
+      [undefined, "Open in Obsidian"],
+      ["zellij", "Open the tab"],
+      [undefined, "Open in VS Code"],
+    ]);
+    expect(roundTrip(reversed)).toEqual(reversed);
   });
 
   it("writes no comments", async () => {

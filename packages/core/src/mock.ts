@@ -4,8 +4,8 @@
 // mood and activity, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed backlog, a stalled
 // branch and clean zeros, a bird with no clone here and one on no forge, a remote no card can
 // read, forges that couldn't be read at all and one whose pull requests alone couldn't be read,
-// and the source cards every scan state;
-// tests/mock.test.ts keeps it so. Roadmap files carry
+// the source cards every scan state, and every kind of launch action, the Obsidian one on
+// Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
 // numbered placeholder items, as many as each file's open counts.
 
 import type { Config, ItemEntry } from "./config.ts";
@@ -144,15 +144,27 @@ export const mockConfig: Config = {
     finalisedCommits: 10,
   },
   launch: {
-    zellijSession: "home",
-    zellijSessions: { [`${home}/undev`]: "undev" },
-    commands: {
-      zellij: ["zellij"],
-      terminal: ["alacritty", "-e", "zellij", "attach", "-c", "{session}"],
-      vscode: ["code", "{path}"],
-      folder: ["dolphin", "{path}"],
-      obsidian: ["xdg-open", "obsidian://open?vault={vault}"],
-    },
+    actions: [
+      {
+        kind: "command",
+        verb: "Open in Obsidian",
+        command: ["xdg-open", "obsidian://open?vault={obsidian}"],
+      },
+      {
+        kind: "zellij",
+        verb: "Open the zellij tab",
+        zellij: ["zellij"],
+        terminal: ["alacritty", "-e", "zellij", "attach", "-c", "{session}"],
+        session: "home",
+        sessions: { [`${home}/undev`]: "undev" },
+      },
+      { kind: "command", verb: "Open in VS Code", command: ["code", "{path}"] },
+      {
+        kind: "command",
+        verb: "Open the folder",
+        command: ["dolphin", "{path}"],
+      },
+    ],
   },
 };
 

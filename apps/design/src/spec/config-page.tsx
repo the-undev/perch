@@ -26,13 +26,9 @@ function modelKey(key: string): string {
     : key;
 }
 
+/** A table's header as the file writes it; the keys above the first table are the top level. */
 function tableName(table: TomlTable): string {
-  if (table.path.length === 0) return "top level";
-  const keys = table.array ? table.path.slice(0, -1) : table.path;
-  const name = keys
-    .map((key) => (bareKey.test(key) ? key : `"${key}"`))
-    .join(".");
-  return table.array ? `[[${name}]]` : `[${name}]`;
+  return /^\[.*\]$/m.exec(table.text)?.[0] ?? "top level";
 }
 
 /** What parseConfig made of one table: its part of the model, less the tables nested in it. */

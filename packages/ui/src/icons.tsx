@@ -57,9 +57,8 @@ const paths: Record<IconName, ReactNode> = {
 
 /** The icon each launch action wears. */
 export const actionIcon: Record<LaunchAction["kind"], IconName> = {
-  "zellij-tab": "terminal",
-  vscode: "code",
-  folder: "folder",
+  zellij: "terminal",
+  command: "folder",
   obsidian: "obsidian",
 };
 

@@ -9,6 +9,7 @@ import {
   resolveEntry,
   type ThresholdOverrides,
   thresholdKeys,
+  zellijActionOf,
   zellijSessionFor,
 } from "./config.ts";
 import { itemRefs } from "./refs.ts";
@@ -29,7 +30,7 @@ export interface EntryValues {
   roadmaps: string[] | null;
   /** The overrides set; a key left out takes the global value. */
   thresholds: Partial<Record<ThresholdKey, number>>;
-  /** The zellij session holding the item's tab; null takes it from the launch section. */
+  /** The zellij session holding the item's tab; null takes it from the zellij action. */
   zellijSession: string | null;
 }
 
@@ -65,7 +66,7 @@ export interface EntryForm {
   /** The name the scan found, which a name left unset keeps. */
   scannedName: string;
   seen: EntrySeen;
-  /** The session the launch rules give the clone, which a session left unset takes; null without one. */
+  /** The session the zellij action gives the clone, which a session left unset takes; null without either. */
   defaultSession: string | null;
   /** The entry's values; null for a bird on the fence. */
   values: EntryValues | null;
@@ -209,12 +210,15 @@ export function entryFormFor(
   home: string,
 ): EntryForm {
   const { entry, keys } = resolveEntry(config, item.id, itemRefs(item));
+  const zellij = zellijActionOf(config);
   return {
     key: keys[0] ?? null,
     scannedName: item.name,
     seen: entrySeen(item, home),
     defaultSession:
-      item.path === null ? null : zellijSessionFor(config, null, item.path),
+      zellij === null || item.path === null
+        ? null
+        : zellijSessionFor(zellij, null, item.path),
     values: entry === null ? null : entryValues(entry),
     options: entryOptions(config),
   };

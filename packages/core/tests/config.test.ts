@@ -9,6 +9,7 @@ import {
   thresholdsFor,
   userConfigPath,
   wireFor,
+  zellijActionOf,
   zellijSessionFor,
 } from "../src/config.ts";
 import { fixtureConfigText } from "./helpers/config.ts";
@@ -55,10 +56,10 @@ describe("example config", () => {
       intervalMinutes: 15,
       finalisedCommits: 10,
     });
-    expect(config.launch).toEqual({
-      zellijSession: "main",
-      zellijSessions: {},
-      commands: {
+    expect(config.launch.actions).toEqual([
+      {
+        kind: "zellij",
+        verb: "Open the zellij tab",
         zellij: ["zellij"],
         terminal: [
           "alacritty",
@@ -70,11 +71,28 @@ describe("example config", () => {
           "-c",
           "{session}",
         ],
-        vscode: ["code", "{path}"],
-        folder: ["dolphin", "{path}"],
-        obsidian: ["xdg-open", "obsidian://open?vault={vault}"],
+        session: "main",
+        sessions: { "/home/test/work": "work" },
       },
-    });
+      { kind: "command", verb: "Open in VS Code", command: ["code", "{path}"] },
+      {
+        kind: "command",
+        verb: "Open in nvim",
+        command: [
+          "alacritty",
+          "--working-directory",
+          "{path}",
+          "-e",
+          "nvim",
+          ".",
+        ],
+      },
+      {
+        kind: "command",
+        verb: "Open the folder",
+        command: ["xdg-open", "{path}"],
+      },
+    ]);
     expect(config.sources.github).toEqual([
       {
         account: "someone",
@@ -97,7 +115,7 @@ describe("example config", () => {
 
   it("parses its commented kuma source once uncommented", async () => {
     const text = (await exampleText()).replace(
-      /^# (\[\[sources\.kuma\]\]|name = |base_url = |status_page = )/gm,
+      /^# (\[\[sources\.kuma\]\]|name = "Server"|base_url = |status_page = )/gm,
       "$1",
     );
 
@@ -108,6 +126,19 @@ describe("example config", () => {
         statusPage: "status",
       },
     ]);
+  });
+
+  it("parses its commented Obsidian action once uncommented, last on the bird", async () => {
+    const text = (await exampleText()).replace(
+      /^# (\[\[launch\.actions\]\]|verb = |command = )/gm,
+      "$1",
+    );
+
+    expect(parseConfig(text, home).launch.actions.at(-1)).toEqual({
+      kind: "command",
+      verb: "Open in Obsidian",
+      command: ["xdg-open", "obsidian://open?vault={obsidian}"],
+    });
   });
 
   it("gives every item the global thresholds when nothing is overridden", async () => {
@@ -185,35 +216,44 @@ describe("item overrides", () => {
     expect(wireFor(config, entryOf(config, "dev/hello"))).toBeNull();
   });
 
-  it("choose the zellij session from the entry, then the longest root, then the default", async () => {
+  it("choose the zellij session from the entry, then the action's longest root, then its default", async () => {
     const text = await withOverrides(
-      '[items."undev/spool"]\nzellij_session = "spool"\n\n[launch.zellij_sessions]\n"~/undev" = "undev"\n"~/undev/tools" = "tools"\n',
+      '[items."undev/spool"]\nzellij_session = "spool"\n',
     );
     const config = parseConfig(text, home);
+    const zellij = zellijActionOf(config);
+    if (zellij === null) throw new Error("the fixture has no zellij action");
+    const action = {
+      ...zellij,
+      sessions: {
+        "/home/test/undev": "undev",
+        "/home/test/undev/tools": "tools",
+      },
+    };
 
     expect(
       zellijSessionFor(
-        config,
+        action,
         entryOf(config, "undev/spool"),
         "/home/test/undev/spool",
       ),
     ).toBe("spool");
     expect(
       zellijSessionFor(
-        config,
+        action,
         entryOf(config, "undev/x"),
         "/home/test/undev/tools/x",
       ),
     ).toBe("tools");
     expect(
       zellijSessionFor(
-        config,
+        action,
         entryOf(config, "undev/y"),
         "/home/test/undev/y",
       ),
     ).toBe("undev");
     expect(
-      zellijSessionFor(config, entryOf(config, "undevx"), "/home/test/undevx"),
+      zellijSessionFor(action, entryOf(config, "undevx"), "/home/test/undevx"),
     ).toBe("home");
   });
 
@@ -509,43 +549,128 @@ hosts = ["github-alias"]
   });
 });
 
-describe("launch commands", () => {
-  /** The fixture with its launch commands, its last table, replaced. */
-  async function withCommands(commands: string): Promise<string> {
-    const text = await fixtureConfigText("");
-    const start = text.indexOf("[launch.commands]");
-    return `${text.slice(0, start)}[launch.commands]\n${commands}\n`;
-  }
+/** The fixture config's text, its launch actions the last tables. */
+const fixture = await fixtureConfigText("");
 
-  it("leave a command out as null", async () => {
+/** The fixture with its launch actions replaced. */
+const withActions = (actions: string) =>
+  `${fixture.slice(0, fixture.indexOf("[[launch.actions]]"))}${actions}\n`;
+
+describe("launch actions", () => {
+  it("read in order, a table naming no kind a command, the zellij one with its sessions", () => {
     const config = parseConfig(
-      await withCommands('folder = ["xdg-open", "{path}"]'),
+      withActions(
+        '[[launch.actions]]\nverb = "Open the folder"\ncommand = ["xdg-open", "{path}"]\n\n[[launch.actions]]\nkind = "zellij"\nverb = "Open the tab"\nzellij = ["zellij"]\nterminal = ["kitty", "{cwd}", "{session}"]\nsession = "main"\n[launch.actions.sessions]\n"~/work" = "work"\n\n[[launch.actions]]\nkind = "command"\nverb = "Open in Obsidian"\ncommand = ["xdg-open", "obsidian://open?vault={obsidian}&path={path}"]',
+      ),
       home,
     );
 
-    expect(config.launch.commands).toEqual({
-      zellij: null,
-      terminal: null,
-      vscode: null,
-      folder: ["xdg-open", "{path}"],
-      obsidian: null,
+    expect(config.launch.actions).toEqual([
+      {
+        kind: "command",
+        verb: "Open the folder",
+        command: ["xdg-open", "{path}"],
+      },
+      {
+        kind: "zellij",
+        verb: "Open the tab",
+        zellij: ["zellij"],
+        terminal: ["kitty", "{cwd}", "{session}"],
+        session: "main",
+        sessions: { "/home/test/work": "work" },
+      },
+      {
+        kind: "command",
+        verb: "Open in Obsidian",
+        command: ["xdg-open", "obsidian://open?vault={obsidian}&path={path}"],
+      },
+    ]);
+  });
+
+  it("are none when config holds no launch table", () => {
+    expect(parseConfig(withActions(""), home).launch).toEqual({
+      actions: [],
     });
   });
 
-  it("reject a placeholder the command cannot fill", async () => {
-    const text = await withCommands('vscode = ["code", "{vault}"]');
+  it("refuse a placeholder the command may not use", () => {
+    const cases: [string, string][] = [
+      [
+        '[[launch.actions]]\nverb = "Open"\ncommand = ["code", "{worktree}"]',
+        "config: launch.actions[0].command has no placeholder {worktree}; it may use {path} and {obsidian}",
+      ],
+      [
+        '[[launch.actions]]\nkind = "zellij"\nverb = "Tab"\nzellij = ["zellij", "{path}"]\nterminal = ["kitty"]\nsession = "main"',
+        "config: launch.actions[0].zellij has no placeholder {path}; it may use none",
+      ],
+      [
+        '[[launch.actions]]\nkind = "zellij"\nverb = "Tab"\nzellij = ["zellij"]\nterminal = ["kitty", "{path}"]\nsession = "main"',
+        "config: launch.actions[0].terminal has no placeholder {path}; it may use {session} and {cwd}",
+      ],
+    ];
 
-    expect(() => parseConfig(text, home)).toThrow(
-      "config: launch.commands.vscode has no placeholder {vault}; it may use {path}",
-    );
+    for (const [actions, message] of cases) {
+      expect(() => parseConfig(withActions(actions), home)).toThrow(message);
+    }
   });
 
-  it("reject a command with no program", async () => {
-    const text = await withCommands("folder = []");
+  it("refuse a command not naming a program first, and a blank verb", () => {
+    const cases: [string, string][] = [
+      [
+        '[[launch.actions]]\nverb = "Open"\ncommand = []',
+        "config: launch.actions[0].command must name a program first",
+      ],
+      [
+        '[[launch.actions]]\nverb = "Open"\ncommand = ["", "lnav"]',
+        "config: launch.actions[0].command must name a program first",
+      ],
+      [
+        '[[launch.actions]]\nverb = " "\ncommand = ["code"]',
+        "config: launch.actions[0].verb must not be blank",
+      ],
+    ];
 
-    expect(() => parseConfig(text, home)).toThrow(
-      "config: launch.commands.folder must name a program",
+    for (const [actions, message] of cases) {
+      expect(() => parseConfig(withActions(actions), home)).toThrow(message);
+    }
+  });
+
+  it("refuse a second zellij action, an unknown kind, and a key the kind does not hold", () => {
+    const zellij =
+      '[[launch.actions]]\nkind = "zellij"\nverb = "Tab"\nzellij = ["zellij"]\nterminal = ["kitty"]\nsession = "main"\n';
+
+    expect(() =>
+      parseConfig(withActions(`${zellij}\n${zellij}`), home),
+    ).toThrow(
+      "config: launch.actions holds two zellij actions; there may be one",
     );
+    expect(() =>
+      parseConfig(
+        withActions('[[launch.actions]]\nkind = "shell"\nverb = "Run"'),
+        home,
+      ),
+    ).toThrow("config: launch.actions[0].kind must be one of command, zellij");
+    expect(() =>
+      parseConfig(
+        withActions(
+          '[[launch.actions]]\nverb = "Open"\ncommand = ["code"]\nsession = "main"',
+        ),
+        home,
+      ),
+    ).toThrow("config: launch.actions[0].session is not a config key");
+  });
+
+  it("refuse the old [launch] keys", () => {
+    const cases: [string, string][] = [
+      ['[launch]\nzellij_session = "main"', "zellij_session"],
+      ['[launch.commands]\nvscode = ["code", "{path}"]', "commands"],
+    ];
+
+    for (const [old, key] of cases) {
+      expect(() => parseConfig(withActions(old), home)).toThrow(
+        `config: launch.${key} is not a config key`,
+      );
+    }
   });
 });
 

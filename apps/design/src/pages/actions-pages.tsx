@@ -10,12 +10,10 @@ import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 /** What a launch action would open, in words, so the page shows the callback working. */
 function describe(action: LaunchAction): string {
   switch (action.kind) {
-    case "zellij-tab":
+    case "zellij":
       return `zellij session ${action.session}, tab ${action.tab}, in ${action.cwd}`;
-    case "vscode":
-      return `VS Code on ${action.path}`;
-    case "folder":
-      return `the file manager on ${action.path}`;
+    case "command":
+      return `${action.command.join(" ")} on ${action.path}`;
     case "obsidian":
       return `the ${action.vault} vault in Obsidian`;
   }
@@ -47,7 +45,7 @@ export function ActionsPage() {
         </Specimen>
         <Specimen
           label="An Obsidian bird"
-          rule="The Hothouse Vault: Open in Obsidian comes first."
+          rule="The Hothouse Vault: Open in Obsidian, first in the mock's config and offered on Obsidian birds only."
         >
           <Ground>
             <LaunchActions
@@ -73,8 +71,8 @@ export function ActionsPage() {
         ]}
       >
         <p>
-          The verbs come from the view model. The commands that open them are
-          not in config yet; see the roadmap&apos;s launcher commands item.
+          The verbs come from the view model in config order, each carrying its
+          commands; the main process fills in the placeholders and runs them.
         </p>
       </Usage>
     </>

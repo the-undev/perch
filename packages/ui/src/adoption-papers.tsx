@@ -456,7 +456,7 @@ export function AdoptionPapers({
             </FormRow>
             <FormRow
               label="Zellij session"
-              sub="Blank follows the launch rules"
+              sub="Blank follows the zellij action"
             >
               <input
                 type="text"

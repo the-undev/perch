@@ -1,6 +1,6 @@
-// The config perch starts from: no sources, no item entries, one wire, and the standard windows
-// and scan interval. The starter config file is this written out; the CLI scans with it when
-// the owner has no config. No Node modules, so the renderer may import it.
+// The config perch starts from: no sources, no item entries, no launch actions, one wire, and the
+// standard windows and scan interval. The starter config file is this written out; the CLI scans
+// with it when the owner has no config. No Node modules, so the renderer may import it.
 
 import type { Config } from "./config.ts";
 
@@ -20,16 +20,6 @@ export function defaultConfig(): Config {
       intervalMinutes: 15,
       finalisedCommits: 10,
     },
-    launch: {
-      zellijSession: "main",
-      zellijSessions: {},
-      commands: {
-        zellij: null,
-        terminal: null,
-        vscode: null,
-        folder: null,
-        obsidian: null,
-      },
-    },
+    launch: { actions: [] },
   };
 }

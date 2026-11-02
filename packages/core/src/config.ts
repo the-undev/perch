@@ -28,7 +28,7 @@ export interface ItemEntry {
   keyFiles: string[] | null;
   /** Roadmap files relative to the item, replacing the standard names; null keeps them. */
   roadmaps: string[] | null;
-  /** The zellij session holding the item's tab; null takes it from the launch section. */
+  /** The zellij session holding the item's tab; null takes it from the zellij action. */
   zellijSession: string | null;
 }
 
@@ -93,37 +93,76 @@ export interface Config {
     finalisedCommits: number;
   };
   launch: {
-    /** The zellij session for an item no root or entry assigns. */
-    zellijSession: string;
-    /** Sessions by root directory, home expanded; the longest root containing the item wins. */
-    zellijSessions: Record<string, string>;
-    commands: LaunchCommands;
+    /** The launch actions in the order a bird offers them; none is offered until one is added. */
+    actions: LaunchActionConfig[];
   };
 }
 
-/** A launch command's name in config, which is also the launch action it serves. */
-export type LaunchCommandName =
-  | "zellij"
-  | "terminal"
-  | "vscode"
-  | "folder"
-  | "obsidian";
+/** A launch action that runs one command detached, without a shell, its placeholders filled in. */
+export interface CommandActionConfig {
+  kind: "command";
+  /** The words on the bird's page. */
+  verb: string;
+  command: string[];
+}
 
-/**
- * The commands behind the launch actions, each an argument list with placeholders filled in at
- * launch; null when config leaves it out, and then its action is not offered.
- */
-export type LaunchCommands = Record<LaunchCommandName, string[] | null>;
+/** The zellij tab action: goes to the item's tab in its session, or opens one there. */
+export interface ZellijActionConfig {
+  kind: "zellij";
+  /** The words on the bird's page. */
+  verb: string;
+  /** zellij itself, asked for the running sessions and their tabs. */
+  zellij: string[];
+  /** Opens a terminal attached to a session that is not running. */
+  terminal: string[];
+  /** The session for an item no root or entry assigns. */
+  session: string;
+  /** Sessions by root directory, home expanded; the longest root containing the item wins. */
+  sessions: Record<string, string>;
+}
 
-/** The placeholders each launch command may use. */
-export const launchPlaceholders: Record<LaunchCommandName, readonly string[]> =
-  {
-    zellij: [],
-    terminal: ["session", "cwd"],
-    vscode: ["path"],
-    folder: ["path"],
-    obsidian: ["vault"],
-  };
+export type LaunchActionConfig = CommandActionConfig | ZellijActionConfig;
+
+/** The placeholders each launch command may use: a command action's, zellij's, and its terminal's. */
+export const launchPlaceholders: Record<
+  "command" | "zellij" | "terminal",
+  readonly string[]
+> = {
+  command: ["path", "obsidian"],
+  zellij: [],
+  terminal: ["session", "cwd"],
+};
+
+/** The placeholders an argument list uses, each once, in order. */
+export function placeholdersIn(argv: readonly string[]): string[] {
+  return [
+    ...new Set(
+      argv.flatMap((part) =>
+        [...part.matchAll(/\{(\w+)\}/g)].map((match) => match[1] ?? ""),
+      ),
+    ),
+  ];
+}
+
+/** Whether a command uses {obsidian}, which offers its action on Obsidian birds only. */
+export function usesObsidian(command: readonly string[]): boolean {
+  return placeholdersIn(command).includes("obsidian");
+}
+
+/** Why an argument list cannot be a launch command using only the placeholders allowed; null when it can. */
+export function launchCommandProblem(
+  argv: readonly string[],
+  allowed: readonly string[],
+): string | null {
+  const [program] = argv;
+  if (program === undefined || program.trim() === "") {
+    return "must name a program first";
+  }
+  const stray = placeholdersIn(argv).find((name) => !allowed.includes(name));
+  if (stray === undefined) return null;
+  const may = allowed.map((name) => `{${name}}`).join(" and ") || "none";
+  return `has no placeholder {${stray}}; it may use ${may}`;
+}
 
 export interface LoadedConfig {
   config: Config;
@@ -434,31 +473,73 @@ function parseSources(document: Table, home: string): SourcesConfig {
   return parsed;
 }
 
-function parseLaunchCommands(commands: Table): LaunchCommands {
-  const parsed = {} as LaunchCommands;
-  for (const [command, allowed] of Object.entries(launchPlaceholders) as [
-    LaunchCommandName,
-    readonly string[],
-  ][]) {
-    const name = `launch.commands.${command}`;
-    if (commands[command] === undefined) {
-      parsed[command] = null;
-      continue;
-    }
-    const argv = stringArray(commands[command], name);
-    if (argv.length === 0) {
-      throw new Error(`config: ${name} must name a program`);
-    }
-    for (const [, placeholder] of argv.join(" ").matchAll(/\{(\w+)\}/g)) {
-      if (placeholder !== undefined && !allowed.includes(placeholder)) {
-        throw new Error(
-          `config: ${name} has no placeholder {${placeholder}}; it may use ${allowed.map((entry) => `{${entry}}`).join(", ") || "none"}`,
-        );
-      }
-    }
-    parsed[command] = argv;
+/** One [[launch.actions]] table: a command action when it names no kind. */
+function parseLaunchAction(
+  value: unknown,
+  where: string,
+  home: string,
+): LaunchActionConfig {
+  if (!isTable(value)) throw new Error(`config: ${where} must be a table`);
+  const at = `${where}.`;
+  const kind =
+    value.kind === undefined
+      ? "command"
+      : oneOf(string(value, "kind", at), ["command", "zellij"], `${at}kind`);
+  const verb = string(value, "verb", at);
+  if (verb.trim() === "")
+    throw new Error(`config: ${at}verb must not be blank`);
+  const argv = (key: string, allowed: readonly string[]) => {
+    const list = stringArray(value[key], `${at}${key}`);
+    const problem = launchCommandProblem(list, allowed);
+    if (problem !== null) throw new Error(`config: ${at}${key} ${problem}`);
+    return list;
+  };
+  if (kind === "command") {
+    onlyKeys(value, ["kind", "verb", "command"], at);
+    return {
+      kind,
+      verb,
+      command: argv("command", launchPlaceholders.command),
+    };
   }
-  return parsed;
+  onlyKeys(
+    value,
+    ["kind", "verb", "zellij", "terminal", "session", "sessions"],
+    at,
+  );
+  const sessions = optionalTable(value, "sessions", at);
+  return {
+    kind: "zellij",
+    verb,
+    zellij: argv("zellij", launchPlaceholders.zellij),
+    terminal: argv("terminal", launchPlaceholders.terminal),
+    session: string(value, "session", at),
+    sessions: Object.fromEntries(
+      Object.keys(sessions).map((root) => [
+        expandHome(root, home),
+        string(sessions, root, `${at}sessions.`),
+      ]),
+    ),
+  };
+}
+
+/** The [launch] table, its actions in order and at most one of them zellij; none when absent. */
+function parseLaunch(document: Table, home: string): Config["launch"] {
+  const launch = optionalTable(document, "launch", "");
+  onlyKeys(launch, ["actions"], "launch.");
+  const tables = launch.actions ?? [];
+  if (!Array.isArray(tables)) {
+    throw new Error("config: launch.actions must be an array of tables");
+  }
+  const actions = tables.map((value, index) =>
+    parseLaunchAction(value, `launch.actions[${index}]`, home),
+  );
+  if (actions.filter((action) => action.kind === "zellij").length > 1) {
+    throw new Error(
+      "config: launch.actions holds two zellij actions; there may be one",
+    );
+  }
+  return { actions };
 }
 
 function stringArrays(value: unknown, name: string): string[][] {
@@ -499,8 +580,6 @@ export function parseConfig(text: string, home: string): Config {
   const items = optionalTable(document, "items", "");
   const scan = table(document, "scan", "");
   onlyKeys(scan, ["interval_minutes", "finalised_commits"], "scan.");
-  const launch = table(document, "launch", "");
-  const sessions = optionalTable(launch, "zellij_sessions", "launch.");
 
   return {
     wires: { names: wireNames, default: defaultWire },
@@ -524,18 +603,7 @@ export function parseConfig(text: string, home: string): Config {
         "scan.finalised_commits",
       ),
     },
-    launch: {
-      zellijSession: string(launch, "zellij_session", "launch."),
-      zellijSessions: Object.fromEntries(
-        Object.keys(sessions).map((root) => [
-          expandHome(root, home),
-          string(sessions, root, "launch.zellij_sessions."),
-        ]),
-      ),
-      commands: parseLaunchCommands(
-        optionalTable(launch, "commands", "launch."),
-      ),
-    },
+    launch: parseLaunch(document, home),
   };
 }
 
@@ -608,21 +676,30 @@ export function wireFor(
   return entry.wire ?? config.wires.default;
 }
 
+/** The config's zellij action, or null when it has none. */
+export function zellijActionOf(config: Config): ZellijActionConfig | null {
+  return (
+    config.launch.actions.find(
+      (action): action is ZellijActionConfig => action.kind === "zellij",
+    ) ?? null
+  );
+}
+
 /**
- * The zellij session for an item at a path: its entry's, else the session of the longest root
- * containing the path, else the launch default.
+ * The zellij session for an item at a path: its entry's, else the session of the action's longest
+ * root containing the path, else the action's default.
  */
 export function zellijSessionFor(
-  config: Config,
+  action: ZellijActionConfig,
   entry: ItemEntry | null,
   path: string,
 ): string {
   const asserted = entry?.zellijSession;
   if (asserted) return asserted;
-  const byRoot = Object.entries(config.launch.zellijSessions)
+  const byRoot = Object.entries(action.sessions)
     .filter(([root]) => path === root || path.startsWith(`${root}/`))
     .sort(([a], [b]) => b.length - a.length)[0];
-  return byRoot?.[1] ?? config.launch.zellijSession;
+  return byRoot?.[1] ?? action.session;
 }
 
 /** Where the owner's config lives under a home directory: ~/.config/perch/config.toml. */

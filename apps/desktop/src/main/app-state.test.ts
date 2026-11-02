@@ -10,6 +10,7 @@ import { defaultConfig } from "@perch/core/config-default.ts";
 import { writeConfig } from "@perch/core/config-write.ts";
 import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
+import type { LaunchActionValues } from "@perch/core/launch-form.ts";
 import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
 import type { Snapshot } from "@perch/core/snapshot.ts";
 import type { Aviary, LaunchAction } from "@perch/core/viewmodel.ts";
@@ -28,8 +29,9 @@ const loaded: LoadedConfig = { config: mockConfig, path: "/config.toml" };
 
 /** A launch action the mock's Perch bird offers. */
 const perchInCode: LaunchAction = {
-  kind: "vscode",
+  kind: "command",
   verb: "Open in VS Code",
+  command: ["code", "{path}"],
   path: "/home/owner/dev/perch",
 };
 
@@ -521,24 +523,24 @@ describe("the settings", () => {
     expect(await written()).toBe(first);
   });
 
-  it("adds a zellij session root under ~, rereads the config and asks for a scan", async () => {
+  it("adds a launch action with a zellij session root under ~, rereads the config and asks for a scan", async () => {
     const { app, deps, published } = await onText(starter());
     const { values } = formOf(app);
+    const zellij: LaunchActionValues = {
+      kind: "zellij",
+      verb: "Open the zellij tab",
+      zellij: '["zellij"]',
+      terminal: '["kitty", "{cwd}", "{session}"]',
+      session: "main",
+      sessions: [{ root: "~/work", session: "work" }],
+    };
 
-    await app.saveSettings({
-      ...values,
-      launch: {
-        ...values.launch,
-        zellijSessions: [{ root: "~/work", session: "work" }],
-      },
-    });
+    await app.saveSettings({ ...values, launch: { actions: [zellij] } });
 
     expect(parse(await written()).launch).toMatchObject({
-      zellij_sessions: { "~/work": "work" },
+      actions: [{ kind: "zellij", sessions: { "~/work": "work" } }],
     });
-    expect(formOf(app).values.launch.zellijSessions).toEqual([
-      { root: "~/work", session: "work" },
-    ]);
+    expect(formOf(app).values.launch.actions).toEqual([zellij]);
     expect(published.at(-1)?.problems).toEqual([]);
     expect(deps.requestScan).toHaveBeenCalledTimes(1);
   });

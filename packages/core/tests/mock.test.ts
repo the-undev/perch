@@ -129,6 +129,23 @@ describe("the mock dataset", () => {
     expect(mockAviary.warnings).toHaveLength(1);
   });
 
+  it("offers every kind of launch action, the Obsidian one on Obsidian birds alone, and none without a clone", () => {
+    const kinds = (bird: (typeof birds)[number]) =>
+      bird.detail.actions.map((action) => action.kind);
+
+    expect(new Set(birds.flatMap(kinds))).toEqual(
+      new Set(["zellij", "command", "obsidian"]),
+    );
+    for (const bird of birds) {
+      expect(kinds(bird).includes("obsidian"), bird.id).toBe(
+        bird.kind === "obsidian",
+      );
+    }
+    const unCloned = birds.filter((bird) => bird.detail.clonePath === null);
+    expect(unCloned.length).toBeGreaterThan(0);
+    expect(unCloned.flatMap(kinds)).toEqual([]);
+  });
+
   it("hands each chip on a bubble one ledger row or the notice holding its working, and nothing a chip it lacks", () => {
     for (const bird of birds) {
       const handled = [

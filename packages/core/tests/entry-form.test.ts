@@ -95,7 +95,16 @@ describe("the entry form", () => {
     });
   });
 
-  it("names the session the launch rules give a clone, and none without one", () => {
+  it("names the session the zellij action gives a clone, and none without a clone or the action", () => {
+    const noZellij: Config = {
+      ...mockConfig,
+      launch: {
+        actions: mockConfig.launch.actions.filter(
+          (action) => action.kind !== "zellij",
+        ),
+      },
+    };
+
     expect(entryFormFor(mockConfig, perch, home).defaultSession).toBe("home");
     expect(
       entryFormFor(mockConfig, mockItem("undev/spool"), home).defaultSession,
@@ -103,6 +112,7 @@ describe("the entry form", () => {
     expect(
       entryFormFor(mockConfig, obsidianTidy, home).defaultSession,
     ).toBeNull();
+    expect(entryFormFor(noZellij, perch, home).defaultSession).toBeNull();
   });
 
   it("adopts a fence bird under its item id", () => {

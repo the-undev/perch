@@ -386,8 +386,9 @@ describe("the window", () => {
 
     expect(fake.launches).toEqual([
       {
-        kind: "vscode",
+        kind: "command",
         verb: "Open in VS Code",
+        command: ["code", "{path}"],
         path: "/home/owner/dev/perch",
       },
     ]);

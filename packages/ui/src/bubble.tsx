@@ -182,9 +182,10 @@ export function Bubble({
       </p>
       <ChipHandles chips={bubble.chips} onPress={onChip} />
       <div className="mt-3 flex items-center gap-2">
-        {actions.map((action) => (
+        {actions.map((action, index) => (
           <button
-            key={action.kind}
+            // biome-ignore lint/suspicious/noArrayIndexKey: a bird's actions are a fixed list in config order, and two may share a kind or a verb.
+            key={index}
             type="button"
             title={action.verb}
             aria-label={action.verb}

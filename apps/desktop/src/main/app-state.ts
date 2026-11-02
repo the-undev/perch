@@ -92,13 +92,9 @@ export interface AppState {
   saveSettings(values: SettingsValues): Promise<void>;
 }
 
-/** Two launch actions are the same when every field is: they are flat records of strings. */
+/** Two launch actions are the same when they serialise alike: they are plain data, commands and all. */
 function sameAction(a: LaunchAction, b: LaunchAction): boolean {
-  const fields = Object.entries(a);
-  return (
-    fields.length === Object.keys(b).length &&
-    fields.every(([key, value]) => b[key as keyof LaunchAction] === value)
-  );
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 function birdsOf(aviary: Aviary): Bird[] {

@@ -339,37 +339,38 @@ describe("the settings editor", () => {
     ).toBeDefined();
   });
 
-  it("edits a launch command as a list line, quoting kept, and removes one emptied", () => {
+  it("edits a launch action's words and command as a list line, quoting kept", () => {
     const { onSave, form } = editor("launching");
     const launch = group("Launching");
-    const vscode = launch.getByRole("textbox", { name: "VS Code command" });
+    const vscode = launch.getByRole("textbox", { name: "Action 3, command" });
 
     expect((vscode as HTMLInputElement).value).toBe('["code", "{path}"]');
     type(vscode, "code {path}");
     expect(
       screen.getByText(
-        'Launch command vscode: must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
+        'Launch action 3, command: must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
       ),
     ).toBeDefined();
     type(vscode, '["code", "--title", "my \\"project\\"", "{path}"]');
-    type(launch.getByRole("textbox", { name: "Folder command" }), "");
+    type(launch.getByRole("textbox", { name: "Action 3, words" }), "Code it");
     fireEvent.click(saveButton());
 
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
       launch: {
-        ...form.values.launch,
-        commands: {
-          ...form.values.launch.commands,
-          vscode: '["code", "--title", "my \\"project\\"", "{path}"]',
-          folder: "",
-        },
+        actions: form.values.launch.actions.with(2, {
+          kind: "command",
+          verb: "Code it",
+          command: '["code", "--title", "my \\"project\\"", "{path}"]',
+        }),
       },
     });
   });
 
-  it("edits zellij sessions by root as rows", () => {
+  it("edits the zellij action's sessions by root as rows", () => {
     const { onSave, form } = editor("launching");
+    const zellij = form.values.launch.actions[1];
+    if (zellij?.kind !== "zellij") throw new Error("the mock has no zellij");
 
     fireEvent.click(
       group("Launching").getByRole("button", { name: "Add session root" }),
@@ -387,11 +388,13 @@ describe("the settings editor", () => {
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
       launch: {
-        ...form.values.launch,
-        zellijSessions: [
-          { root: "~/undev", session: "undev" },
-          { root: "~/work", session: "work" },
-        ],
+        actions: form.values.launch.actions.with(1, {
+          ...zellij,
+          sessions: [
+            { root: "~/undev", session: "undev" },
+            { root: "~/work", session: "work" },
+          ],
+        }),
       },
     });
   });

@@ -131,6 +131,17 @@ function headerPath(header: string): string[] {
   );
 }
 
+/** A header's path with the position of the latest table of each array it runs through. */
+function placedPath(
+  keys: readonly string[],
+  arrayLengths: ReadonlyMap<string, number>,
+): string[] {
+  return keys.flatMap((key, index) => {
+    const length = arrayLengths.get(keys.slice(0, index + 1).join("."));
+    return length === undefined ? [key] : [key, String(length - 1)];
+  });
+}
+
 /** A TOML file cut into its tables, each with the comment lines directly above its header. */
 export function tomlTables(text: string): TomlTable[] {
   const lines = text.trimEnd().split("\n");
@@ -141,13 +152,23 @@ export function tomlTables(text: string): TomlTable[] {
     if (header === undefined) return [];
     let start = index;
     while (start > 0 && (lines[start - 1] ?? "").startsWith("#")) start -= 1;
+    const keys = headerPath(header);
     if (match?.[1] !== "[[") {
-      return [{ start, path: headerPath(header), array: false }];
+      return [{ start, path: placedPath(keys, arrayLengths), array: false }];
     }
-    const position = arrayLengths.get(header) ?? 0;
-    arrayLengths.set(header, position + 1);
+    const name = keys.join(".");
+    const position = arrayLengths.get(name) ?? 0;
+    arrayLengths.set(name, position + 1);
     return [
-      { start, path: [...headerPath(header), String(position)], array: true },
+      {
+        start,
+        path: [
+          ...placedPath(keys.slice(0, -1), arrayLengths),
+          ...keys.slice(-1),
+          String(position),
+        ],
+        array: true,
+      },
     ];
   });
   const chunks = [{ start: 0, path: [] as string[], array: false }, ...starts];

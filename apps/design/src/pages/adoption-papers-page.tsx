@@ -177,8 +177,8 @@ export function AdoptionPapersPage() {
           {specimen("obsidian/Hothouse")}
         </Specimen>
         <Specimen
-          label="A session from the launch rules"
-          rule="Spool: open the fold, and the session field's placeholder is undev, the session the launch rules give ~/undev."
+          label="A session from the zellij action"
+          rule="Spool: open the fold, and the session field's placeholder is undev, the session the zellij action gives ~/undev."
         >
           {specimen("undev/spool")}
         </Specimen>
@@ -227,7 +227,7 @@ export function AdoptionPapersPage() {
           {
             name: "form",
             type: "EntryForm",
-            what: "The bird's entry form: what perch has seen, the choices, the session the launch rules give, and the entry's values, null for a fence bird.",
+            what: "The bird's entry form: what perch has seen, the choices, the session the zellij action gives, and the entry's values, null for a fence bird.",
           },
           {
             name: "night",

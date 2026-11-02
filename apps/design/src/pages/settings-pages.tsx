@@ -207,31 +207,56 @@ export function SettingsGroupsPage() {
       </Section>
       <Section
         title="Launching"
-        rule="Each launch action in config order, its words and each command as one list line in the file's own form, read as JSON. Arguments are never split on spaces."
+        rule="One card per launch action, in the order a bird offers them, then the shelf of presets that adds one. A card's head names the preset it shows it came from, the custom command when none runs its command, with the verb greyed and the arrows and remove; its head opens it. A command keeps the file's list form, read as JSON, never split on spaces. The shelf offers zellij once; refusals are red on the card and listed beside Save."
         min={620}
       >
         <GroupSpecimen
           label="As the mock holds it"
-          rule="Obsidian, the zellij tab with ~/undev in its own session, VS Code and the folder."
+          rule="Obsidian, the zellij tab with ~/undev in its own session, VS Code, and the folder in dolphin, which no preset runs; zellij greys on the shelf. Press a head to open its card."
           start={mock}
           group={launch}
         />
         <GroupSpecimen
-          label="Refusals"
-          rule="A blank verb, a command typed as words, and one with a placeholder it may not use."
+          label="Nothing added"
+          rule="A fresh config offers nothing on any bird: the shelf is the whole page, zellij among its presets."
+          start={withMock({ launch: { actions: [] } })}
+          group={launch}
+        />
+        <GroupSpecimen
+          label="A card's refusals"
+          rule="A command not naming a program first, one with a placeholder it may not use, and a blank verb; each card with a refusal starts open."
           start={withMock({
             launch: {
               actions: [
-                { kind: "command", verb: "", command: '["code", "{path}"]' },
                 {
                   kind: "command",
                   verb: "Open the logs",
-                  command: "lnav {path}",
+                  command: '["", "lnav", "{path}/logs"]',
                 },
                 {
                   kind: "command",
                   verb: "Open the worktree",
                   command: '["code", "{worktree}"]',
+                },
+                { kind: "command", verb: "", command: '["code", "{path}"]' },
+              ],
+            },
+          })}
+          group={launch}
+        />
+        <GroupSpecimen
+          label="The zellij card's refusals"
+          rule="Its two commands, the session and the roots on the one card: a session left blank, a root not starting with / or ~, and a terminal using {path}, which only a command action may."
+          start={withMock({
+            launch: {
+              actions: [
+                {
+                  kind: "zellij",
+                  verb: "Open the zellij tab",
+                  zellij: '["zellij"]',
+                  terminal: '["alacritty", "--working-directory", "{path}"]',
+                  session: "",
+                  sessions: [{ root: "work", session: "work" }],
                 },
               ],
             },

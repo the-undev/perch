@@ -1,4 +1,8 @@
-import type { SettingsForm } from "@perch/core/settings-form.ts";
+import { defaultConfig } from "@perch/core/config-default.ts";
+import {
+  type SettingsForm,
+  settingsFormFor,
+} from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
 import {
   cleanup,
@@ -8,7 +12,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mockSettingsForm } from "./mock-birds.ts";
+import { mockHome, mockSettingsForm } from "./mock-birds.ts";
 import { SettingsEditor, type SettingsPageName } from "./settings-forms.tsx";
 import { SettingsView } from "./settings-view.tsx";
 
@@ -339,66 +343,6 @@ describe("the settings editor", () => {
     ).toBeDefined();
   });
 
-  it("edits a launch action's words and command as a list line, quoting kept", () => {
-    const { onSave, form } = editor("launching");
-    const launch = group("Launching");
-    const vscode = launch.getByRole("textbox", { name: "Action 3, command" });
-
-    expect((vscode as HTMLInputElement).value).toBe('["code", "{path}"]');
-    type(vscode, "code {path}");
-    expect(
-      screen.getByText(
-        'Launch action 3, command: must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
-      ),
-    ).toBeDefined();
-    type(vscode, '["code", "--title", "my \\"project\\"", "{path}"]');
-    type(launch.getByRole("textbox", { name: "Action 3, words" }), "Code it");
-    fireEvent.click(saveButton());
-
-    expect(onSave).toHaveBeenCalledWith({
-      ...form.values,
-      launch: {
-        actions: form.values.launch.actions.with(2, {
-          kind: "command",
-          verb: "Code it",
-          command: '["code", "--title", "my \\"project\\"", "{path}"]',
-        }),
-      },
-    });
-  });
-
-  it("edits the zellij action's sessions by root as rows", () => {
-    const { onSave, form } = editor("launching");
-    const zellij = form.values.launch.actions[1];
-    if (zellij?.kind !== "zellij") throw new Error("the mock has no zellij");
-
-    fireEvent.click(
-      group("Launching").getByRole("button", { name: "Add session root" }),
-    );
-    type(
-      screen.getByRole("textbox", { name: "session root 2, root" }),
-      "~/work",
-    );
-    type(
-      screen.getByRole("textbox", { name: "session root 2, session" }),
-      "work",
-    );
-    fireEvent.click(saveButton());
-
-    expect(onSave).toHaveBeenCalledWith({
-      ...form.values,
-      launch: {
-        actions: form.values.launch.actions.with(1, {
-          ...zellij,
-          sessions: [
-            { root: "~/undev", session: "undev" },
-            { root: "~/work", session: "work" },
-          ],
-        }),
-      },
-    });
-  });
-
   it("adds a join as a list line and an ignored presence", () => {
     const { onSave, form } = editor("joining");
     const presences = group("Joining up");
@@ -486,6 +430,228 @@ describe("the settings editor", () => {
 
     expect(screen.queryByText(/The config file changed/)).toBeNull();
     expect(saveButton().disabled).toBe(true);
+  });
+});
+
+/** Each action card on the Launching page, in order. */
+const actionCards = () => group("Launching").queryAllByRole("region");
+
+/** One action card's head: its name, its verb, and whether it is open. */
+const cardHeads = () =>
+  actionCards().map((card) => {
+    const head = within(card).getAllByRole("button")[0] as HTMLElement;
+    return [
+      head.textContent,
+      head.closest("h3")?.nextElementSibling?.textContent,
+      head.getAttribute("aria-expanded"),
+    ];
+  });
+
+/** The card at a place, for queries within it. */
+const cardAt = (index: number) => within(actionCards()[index] as HTMLElement);
+
+/** Opens the card at a place by its head. */
+const openCard = (index: number) =>
+  fireEvent.click(cardAt(index).getAllByRole("button")[0] as HTMLElement);
+
+const shelfAdd = (name: string) =>
+  within(screen.getByRole("list", { name: "Presets" })).getByRole("button", {
+    name: `Add ${name}`,
+  }) as HTMLButtonElement;
+
+describe("the Launching page", () => {
+  it("shows one closed card per action in config order, named by its preset, its verb greyed", () => {
+    editor("launching");
+
+    expect(cardHeads()).toEqual([
+      ["Obsidian", "Open in Obsidian", "false"],
+      ["zellij tab", "Open the zellij tab", "false"],
+      ["VS Code", "Open in VS Code", "false"],
+      ["Custom command", "Open the folder", "false"],
+    ]);
+  });
+
+  it("opens a card by its head, and refuses a command not in list form on the card in red and beside Save", () => {
+    const { onSave, form } = editor("launching");
+    openCard(2);
+    const command = cardAt(2).getByRole("textbox", { name: "Command" });
+
+    expect((command as HTMLInputElement).value).toBe('["code", "{path}"]');
+    expect(
+      cardAt(2).getByText(/^Offered on every bird with a folder/),
+    ).toBeDefined();
+    type(command, "code {path}");
+    expect(
+      cardAt(2).getByText(/^must be a list in brackets/).className,
+    ).toContain("text-red");
+    expect(
+      screen.getByText(/^Launch action 3, command: must be a list in brackets/),
+    ).toBeDefined();
+    expect(saveButton().disabled).toBe(true);
+    type(command, '["code", "--title", "my \\"project\\"", "{path}"]');
+    type(cardAt(2).getByRole("textbox", { name: "Action" }), "Code it");
+    fireEvent.click(saveButton());
+
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      launch: {
+        actions: form.values.launch.actions.with(2, {
+          kind: "command",
+          verb: "Code it",
+          command: '["code", "--title", "my \\"project\\"", "{path}"]',
+        }),
+      },
+    });
+  });
+
+  it("refuses a blank verb and a placeholder the action may not use", () => {
+    editor("launching");
+    openCard(0);
+    expect(
+      cardAt(0).getByText(
+        /^Uses \{obsidian\}, so it is offered on Obsidian birds only\./,
+      ),
+    ).toBeDefined();
+
+    type(cardAt(0).getByRole("textbox", { name: "Action" }), " ");
+    type(
+      cardAt(0).getByRole("textbox", { name: "Command" }),
+      '["code", "{worktree}"]',
+    );
+
+    expect(cardHeads()[0]).toEqual(["Custom command", "no words yet", "true"]);
+    expect(
+      cardAt(0).getByText("needs words for the bird's page"),
+    ).toBeDefined();
+    expect(
+      cardAt(0).getByText(
+        "has no placeholder {worktree}; it may use {path} and {obsidian}",
+      ),
+    ).toBeDefined();
+    expect(saveButton().disabled).toBe(true);
+  });
+
+  it("orders the cards with the arrows and removes one, saving them in that order", () => {
+    const { onSave, form } = editor("launching");
+    const [obsidian, zellij, vscode] = form.values.launch.actions;
+
+    fireEvent.click(
+      cardAt(2).getByRole("button", {
+        name: "Move Open in VS Code earlier on the bird",
+      }),
+    );
+    fireEvent.click(
+      cardAt(3).getByRole("button", { name: "Remove Open the folder" }),
+    );
+    fireEvent.click(saveButton());
+
+    expect(
+      cardAt(0).getByRole("button", { name: /earlier on the bird$/ }),
+    ).toHaveProperty("disabled", true);
+    expect(
+      cardAt(2).getByRole("button", { name: /later on the bird$/ }),
+    ).toHaveProperty("disabled", true);
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      launch: { actions: [obsidian, vscode, zellij] },
+    });
+  });
+
+  it("adds a preset's card at the end, filled in and open alone, and holds zellij back while one exists", () => {
+    const { onSave, form } = editor("launching");
+    openCard(0);
+
+    expect(shelfAdd("zellij tab").disabled).toBe(true);
+    expect(shelfAdd("zellij tab").closest("li")?.textContent).toContain(
+      "already added",
+    );
+    fireEvent.click(shelfAdd("Folder"));
+
+    expect(cardHeads().map(([, , expanded]) => expanded)).toEqual([
+      "false",
+      "false",
+      "false",
+      "false",
+      "true",
+    ]);
+    expect(
+      (cardAt(4).getByRole("textbox", { name: "Command" }) as HTMLInputElement)
+        .value,
+    ).toBe('["xdg-open", "{path}"]');
+    fireEvent.click(saveButton());
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      launch: {
+        actions: [
+          ...form.values.launch.actions,
+          {
+            kind: "command",
+            verb: "Open the folder",
+            command: '["xdg-open", "{path}"]',
+          },
+        ],
+      },
+    });
+  });
+
+  it("starts with the shelf alone, offers zellij until one is added, and holds a custom card until it is written", () => {
+    editor("launching", settingsFormFor(defaultConfig(), mockHome));
+
+    expect(actionCards()).toEqual([]);
+    fireEvent.click(shelfAdd("zellij tab"));
+    expect(shelfAdd("zellij tab").disabled).toBe(true);
+    fireEvent.click(shelfAdd("Custom command"));
+
+    expect(cardHeads()).toEqual([
+      ["zellij tab", "Open the zellij tab", "false"],
+      ["Custom command", "no words yet", "true"],
+    ]);
+    expect(
+      screen.getAllByText(/^Launch action 2, /).map((line) => line.textContent),
+    ).toEqual([
+      "Launch action 2, action: needs words for the bird's page",
+      "Launch action 2, command: needs a command",
+    ]);
+    expect(saveButton().disabled).toBe(true);
+  });
+
+  it("holds the zellij action's commands, session and sessions by root on its card", () => {
+    const { onSave, form } = editor("launching");
+    const zellij = form.values.launch.actions[1];
+    if (zellij?.kind !== "zellij") throw new Error("the mock has no zellij");
+    openCard(1);
+
+    expect(
+      ["zellij command", "Terminal command", "Session"].map(
+        (name) =>
+          (cardAt(1).getByRole("textbox", { name }) as HTMLInputElement).value,
+      ),
+    ).toEqual([zellij.zellij, zellij.terminal, "home"]);
+    fireEvent.click(
+      cardAt(1).getByRole("button", { name: "Add session root" }),
+    );
+    type(
+      cardAt(1).getByRole("textbox", { name: "session root 2, root" }),
+      "~/work",
+    );
+    type(
+      cardAt(1).getByRole("textbox", { name: "session root 2, session" }),
+      "work",
+    );
+    fireEvent.click(saveButton());
+
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      launch: {
+        actions: form.values.launch.actions.with(1, {
+          ...zellij,
+          sessions: [
+            { root: "~/undev", session: "undev" },
+            { root: "~/work", session: "work" },
+          ],
+        }),
+      },
+    });
   });
 });
 

@@ -3,8 +3,21 @@
 // Each page is presentational, its value in and every change out; the editor holds the draft
 // across them and shows the page the rail has open.
 
+import { usesObsidian } from "@perch/core/config.ts";
 import { thresholdWindows } from "@perch/core/entry-form.ts";
-import { type LaunchActionValues, presetOf } from "@perch/core/launch-form.ts";
+import {
+  type LaunchActionValues,
+  type LaunchField,
+  type LaunchPreset,
+  type LaunchProblem,
+  launchFieldLabels,
+  launchPresets,
+  launchProblems,
+  presetOf,
+  presetTaken,
+  withPresetAdded,
+} from "@perch/core/launch-form.ts";
+import { parseListLine } from "@perch/core/list-line.ts";
 import {
   defaultName,
   type SettingsForm,
@@ -19,6 +32,7 @@ import { type ReactNode, useId, useState } from "react";
 import {
   FormNotes,
   FormRow,
+  inputClass,
   monoInputClass,
   moved,
   NumberInput,
@@ -436,71 +450,381 @@ function RecordRows<Field extends string>({
   );
 }
 
-/** The launch actions in the order a bird offers them, each its words and commands as list lines. */
+/** A labelled field on a launch action's card, with its refusals in red beneath. */
+function ActionField({
+  field,
+  sub,
+  problems,
+  children,
+}: {
+  field: LaunchField;
+  /** A quiet second half of the label, or nothing. */
+  sub: string;
+  problems: string[];
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col items-stretch gap-1.5">
+      <span className="text-[12px] text-ink-faint">
+        {launchFieldLabels[field]}
+        {sub !== "" && ` · ${sub}`}
+      </span>
+      {children}
+      {problems.map((problem) => (
+        <p key={problem} className="m-0 text-[12.5px] text-red">
+          {problem}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+const quietLineClass =
+  "m-0 max-w-[62ch] text-[12.5px] text-ink-faint leading-normal";
+
+/** Where a command action is offered, in words: Obsidian birds only when it uses {obsidian}. */
+function reachWords(command: string): string {
+  const parsed = parseListLine(command);
+  const obsidian = "list" in parsed && usesObsidian(parsed.list);
+  return obsidian
+    ? "Uses {obsidian}, so it is offered on Obsidian birds only."
+    : "Offered on every bird with a folder on this machine.";
+}
+
+/** A launch action's fields by its kind, each with its refusals. */
+function ActionFields({
+  action,
+  problems,
+  onChange,
+}: {
+  action: LaunchActionValues;
+  problems: (field: LaunchField) => string[];
+  onChange: (action: LaunchActionValues) => void;
+}) {
+  const text = (
+    field: LaunchField,
+    value: string,
+    change: (value: string) => void,
+    mono: boolean,
+  ) => (
+    <input
+      type="text"
+      aria-label={launchFieldLabels[field]}
+      spellCheck={false}
+      value={value}
+      onChange={(event) => change(event.target.value)}
+      className={mono ? monoInputClass : inputClass}
+    />
+  );
+  const verb = (
+    <ActionField
+      field="verb"
+      sub="the words on the bird's page"
+      problems={problems("verb")}
+    >
+      {text(
+        "verb",
+        action.verb,
+        (next) => onChange({ ...action, verb: next }),
+        false,
+      )}
+    </ActionField>
+  );
+  if (action.kind === "command") {
+    return (
+      <>
+        {verb}
+        <ActionField
+          field="command"
+          sub="runs detached, no shell · {path}, {obsidian}"
+          problems={problems("command")}
+        >
+          {text(
+            "command",
+            action.command,
+            (command) => onChange({ ...action, command }),
+            true,
+          )}
+        </ActionField>
+        <p className={quietLineClass}>{reachWords(action.command)}</p>
+      </>
+    );
+  }
+  return (
+    <>
+      {verb}
+      <ActionField field="zellij" sub="" problems={problems("zellij")}>
+        {text(
+          "zellij",
+          action.zellij,
+          (zellij) => onChange({ ...action, zellij }),
+          true,
+        )}
+      </ActionField>
+      <ActionField
+        field="terminal"
+        sub="attaches a session not running · {session}, {cwd}"
+        problems={problems("terminal")}
+      >
+        {text(
+          "terminal",
+          action.terminal,
+          (terminal) => onChange({ ...action, terminal }),
+          true,
+        )}
+      </ActionField>
+      <div className="grid gap-2.5 @min-[520px]:grid-cols-2">
+        <ActionField
+          field="session"
+          sub="for an item no root assigns"
+          problems={problems("session")}
+        >
+          {text(
+            "session",
+            action.session,
+            (session) => onChange({ ...action, session }),
+            true,
+          )}
+        </ActionField>
+        <ActionField
+          field="sessions"
+          sub="the longest root holding the item"
+          problems={problems("sessions")}
+        >
+          <RecordRows
+            noun="session root"
+            fields={[
+              { key: "root", label: "root", placeholder: "~/work" },
+              { key: "session", label: "session", placeholder: "work" },
+            ]}
+            rows={action.sessions}
+            onChange={(sessions) => onChange({ ...action, sessions })}
+          />
+        </ActionField>
+      </div>
+      <p className={quietLineClass}>
+        Finds the session&apos;s tab named after the project and goes to it, or
+        opens one in the project&apos;s directory. It does not raise the
+        terminal&apos;s window.
+      </p>
+    </>
+  );
+}
+
+/**
+ * One launch action's card: the preset it shows it came from and its verb, greyed, with the arrows
+ * that order it on the bird and its remove; opened by its head to its fields.
+ */
+function ActionCard({
+  action,
+  index,
+  last,
+  open,
+  problems,
+  onToggle,
+  onChange,
+  onMove,
+  onRemove,
+}: {
+  action: LaunchActionValues;
+  index: number;
+  /** The card is the last, so it cannot move later. */
+  last: boolean;
+  open: boolean;
+  problems: LaunchProblem[];
+  onToggle: () => void;
+  onChange: (action: LaunchActionValues) => void;
+  onMove: (by: -1 | 1) => void;
+  onRemove: () => void;
+}) {
+  const headingId = useId();
+  const bodyId = useId();
+  const name = presetOf(action).name;
+  const called = action.verb.trim() === "" ? name : action.verb;
+  const fieldProblems = (field: LaunchField) =>
+    problems
+      .filter((problem) => problem.field === field)
+      .map((problem) => problem.problem);
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="mb-2.5 overflow-hidden rounded-[10px] border border-edge bg-panel"
+    >
+      <div className="relative flex items-baseline gap-3 px-4 py-3">
+        <h3
+          id={headingId}
+          className="m-0 shrink-0 whitespace-nowrap font-display font-semibold text-[14.5px] text-ink"
+        >
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={bodyId}
+            onClick={onToggle}
+            className="cursor-pointer text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-ink-accent"
+          >
+            {name}
+          </button>
+        </h3>
+        <span className="min-w-0 truncate text-[12.5px] text-ink-faint">
+          {action.verb.trim() === "" ? "no words yet" : action.verb}
+        </span>
+        <span className="relative ml-auto flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            aria-label={`Move ${called} earlier on the bird`}
+            title="Earlier on the bird"
+            disabled={index === 0}
+            onClick={() => onMove(-1)}
+            className={quietClass}
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            aria-label={`Move ${called} later on the bird`}
+            title="Later on the bird"
+            disabled={last}
+            onClick={() => onMove(1)}
+            className={quietClass}
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            aria-label={`Remove ${called}`}
+            onClick={onRemove}
+            className={`${quietClass} hover:text-red`}
+          >
+            remove
+          </button>
+        </span>
+      </div>
+      {open && (
+        <div
+          id={bodyId}
+          className="@container grid gap-3.5 border-edge border-t bg-band p-4"
+        >
+          <ActionFields
+            action={action}
+            problems={fieldProblems}
+            onChange={onChange}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** The presets as rows of a name, what it does and what adding it asks; zellij greys once added. */
+function LaunchShelf({
+  actions,
+  onAdd,
+}: {
+  actions: LaunchActionValues[];
+  onAdd: (preset: LaunchPreset) => void;
+}) {
+  return (
+    <div className="mt-4 rounded-[10px] border border-edge-hi border-dashed">
+      <ul aria-label="Presets" className="m-0 list-none p-0">
+        {launchPresets.map((preset) => {
+          const taken = presetTaken(actions, preset);
+          return (
+            <li
+              key={preset.name}
+              className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-edge border-b px-4 py-3.25"
+            >
+              <span
+                className={`min-w-30.5 font-display font-semibold text-[14px] ${taken ? "text-ink-faint" : "text-ink"}`}
+              >
+                {preset.name}
+              </span>
+              <span className="min-w-0 flex-[1_1_18rem] text-[13px] text-ink-muted">
+                {preset.what}
+              </span>
+              <span className="ml-auto whitespace-nowrap text-[12px] text-ink-faint">
+                {taken ? "already added" : preset.needs}
+              </span>
+              <button
+                type="button"
+                aria-label={`Add ${preset.name}`}
+                disabled={taken}
+                onClick={() => onAdd(preset)}
+                className="cursor-pointer font-body font-semibold text-[13px] text-ink hover:text-ink-accent focus-visible:outline-2 focus-visible:outline-ink-accent disabled:cursor-default disabled:font-normal disabled:text-ink-faint"
+              >
+                Add
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="m-0 px-4 py-2.75 text-[12.5px] text-ink-faint">
+        A preset fills the card; the card is yours after that. More presets
+        appear as perch learns more ways to open things.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The Launching page: one card per launch action in the order a bird offers them, then the shelf
+ * of presets that adds one. A card with refusals starts open, and an added card opens alone.
+ */
 export function LaunchGroup({
   value,
   onChange,
 }: GroupProps<SettingsValues["launch"]>) {
-  const set = (index: number, action: LaunchActionValues) =>
-    onChange({ actions: value.actions.with(index, action) });
-  const line = (
-    label: string,
-    text: string,
-    change: (text: string) => void,
-  ) => (
-    <input
-      type="text"
-      aria-label={label}
-      spellCheck={false}
-      value={text}
-      onChange={(event) => change(event.target.value)}
-      className={monoInputClass}
-    />
+  const { actions } = value;
+  const problems = launchProblems(actions);
+  const [open, setOpen] = useState(() =>
+    actions.map((_, index) =>
+      problems.some((problem) => problem.index === index),
+    ),
   );
+  // The file can change under the page, so each card reads its place, closed when it has none.
+  const shown = actions.map((_, index) => open[index] ?? false);
   return (
-    <SettingsGroup
-      title="Launching"
-      table="[[launch.actions]]"
-      lead="What a bird's page can open, in this order. Each command is a list line, as in the config file."
-    >
-      {value.actions.map((action, index) => {
-        const at = `Action ${index + 1}`;
-        return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: actions are edited in place, so the position is the row's identity.
-          <FormRow key={index} label={presetOf(action).name} sub={at}>
-            {line(`${at}, words`, action.verb, (verb) =>
-              set(index, { ...action, verb }),
-            )}
-            {action.kind === "command" ? (
-              line(`${at}, command`, action.command, (command) =>
-                set(index, { ...action, command }),
-              )
-            ) : (
-              <>
-                {line(`${at}, zellij command`, action.zellij, (zellij) =>
-                  set(index, { ...action, zellij }),
-                )}
-                {line(`${at}, terminal command`, action.terminal, (terminal) =>
-                  set(index, { ...action, terminal }),
-                )}
-                {line(`${at}, session`, action.session, (session) =>
-                  set(index, { ...action, session }),
-                )}
-                <RecordRows
-                  noun="session root"
-                  fields={[
-                    { key: "root", label: "root", placeholder: "~/work" },
-                    { key: "session", label: "session", placeholder: "work" },
-                  ]}
-                  rows={action.sessions}
-                  onChange={(sessions) => set(index, { ...action, sessions })}
-                />
-              </>
-            )}
-          </FormRow>
-        );
-      })}
-    </SettingsGroup>
+    <section aria-label="Launching" className="pb-5">
+      <SettingsPageHead
+        title="Launching"
+        table="[[launch.actions]]"
+        lead={
+          <>
+            What a bird&apos;s page can open. Each action appears on every bird
+            with a folder on this machine, in this order; one using{" "}
+            <code className="font-mono">{"{obsidian}"}</code> appears on
+            Obsidian birds only.
+          </>
+        }
+      />
+      {actions.map((action, index) => (
+        <ActionCard
+          // biome-ignore lint/suspicious/noArrayIndexKey: cards hold no state of their own, so the position is the card's identity.
+          key={index}
+          action={action}
+          index={index}
+          last={index === actions.length - 1}
+          open={shown[index] ?? false}
+          problems={problems.filter((problem) => problem.index === index)}
+          onToggle={() => setOpen(shown.with(index, !shown[index]))}
+          onChange={(next) => onChange({ actions: actions.with(index, next) })}
+          onMove={(by) => {
+            setOpen(moved(shown, index, by));
+            onChange({ actions: moved(actions, index, by) });
+          }}
+          onRemove={() => {
+            setOpen(shown.filter((_, at) => at !== index));
+            onChange({ actions: actions.filter((_, at) => at !== index) });
+          }}
+        />
+      ))}
+      <LaunchShelf
+        actions={actions}
+        onAdd={(preset) => {
+          setOpen([...actions.map(() => false), true]);
+          onChange({ actions: withPresetAdded(actions, preset) });
+        }}
+      />
+    </section>
   );
 }
 

@@ -499,7 +499,9 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   `/bird/<id>` for a bird's detail, `?papers=true` to unfold its papers
   and `?chip=<kind>` to land on a chip's ledger row, an unknown kind read
   as none. `/settings` is the settings page in
-  the camera's place; Escape goes home from it as from a bird.
+  the camera's place, `?unfold=<kind>` starting that kind's source cards
+  open, an unknown kind read as none; Escape goes home from it as from a
+  bird.
 - Launch actions are `[[launch.actions]]` tables, each naming its kind
   and only what differs from the kind's defaults, offered on a bird's
   page in their order. An action other than zellij runs its command

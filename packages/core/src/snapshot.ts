@@ -5,7 +5,7 @@ import type { FailureReason, ForgeName, PolledSourceName } from "./raw.ts";
 
 export type { FailureReason, ForgeName, PolledSourceName };
 
-export type ItemKind = "repo" | "vault" | "server";
+export type ItemKind = "git" | "obsidian" | "server";
 
 export type LiveSourceName = "dockerContainers";
 

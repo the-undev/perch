@@ -124,7 +124,7 @@ describe("the mock dataset", () => {
       ),
     ).toBe(true);
     expect(adopted.some((bird) => bird.detail.problems.length > 0)).toBe(true);
-    expect(birds.some((bird) => bird.kind === "vault")).toBe(true);
+    expect(birds.some((bird) => bird.kind === "obsidian")).toBe(true);
     expect(mockAviary.sourceErrors).toHaveLength(1);
     expect(mockAviary.warnings).toHaveLength(1);
   });

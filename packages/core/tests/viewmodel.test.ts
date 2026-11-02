@@ -343,7 +343,7 @@ describe("the wires", () => {
   it("caps plumpness", async () => {
     const config = await adoptAll([]);
     const vault = item("obsidian/Hothouse", {
-      kind: "vault",
+      kind: "obsidian",
       sources: { roadmap: { counts: { bug: 0, feature: 194 }, files: [] } },
     });
 
@@ -1121,7 +1121,7 @@ describe("the detail", () => {
       ["dev/perch", "undev/notes"],
       '[launch.zellij_sessions]\n"~/undev" = "undev"\n',
     );
-    const vault = item("undev/notes", { kind: "vault" });
+    const vault = item("undev/notes", { kind: "obsidian" });
 
     expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([
       {
@@ -1154,7 +1154,7 @@ describe("the detail", () => {
     const config = await adoptAll(["undev/notes"]);
     config.launch.commands.terminal = null;
     config.launch.commands.obsidian = null;
-    const vault = item("undev/notes", { kind: "vault" });
+    const vault = item("undev/notes", { kind: "obsidian" });
 
     expect(
       birdIn([vault], config, "undev/notes").detail.actions.map(

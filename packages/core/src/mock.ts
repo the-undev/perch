@@ -258,7 +258,7 @@ function localItem(
   return {
     id,
     name: id.slice(id.lastIndexOf("/") + 1),
-    kind: fields.kind ?? "repo",
+    kind: fields.kind ?? "git",
     path,
     liveSources: [],
     presences: { local: { ref: `local:${id}`, path }, forges: fields.forges },
@@ -378,7 +378,7 @@ const dotfiles = localItem(".dotfiles", {
 
 /** Restless and being edited: six changes uncommitted for 30 hours, a full roadmap. */
 const hothouse = localItem("obsidian/Hothouse", {
-  kind: "vault",
+  kind: "obsidian",
   forges: [presence("forgejo", "finch/Hothouse", "account-listing")],
   sources: {
     git: {
@@ -453,7 +453,7 @@ const hothouse = localItem("obsidian/Hothouse", {
 
 /** Content, settled, with a backlog on offer. */
 const pocket = localItem("obsidian/Pocket", {
-  kind: "vault",
+  kind: "obsidian",
   forges: [presence("forgejo", "finch/Pocket", "account-listing")],
   sources: {
     git: {
@@ -1236,7 +1236,7 @@ const spool = localItem("undev/spool", {
 
 /** Content and in flight on a branch with one fresh commit not yet pushed. */
 const glyphDocs = localItem("undev/glyph-docs", {
-  kind: "vault",
+  kind: "obsidian",
   forges: [presence("forgejo", "the-undev/glyph-docs")],
   sources: {
     git: {
@@ -1416,7 +1416,7 @@ const hello = localItem("dev/odin/hello", {
 const obsidianTidy: Item = {
   id: "github:finch/obsidian-tidy",
   name: "obsidian-tidy",
-  kind: "repo",
+  kind: "git",
   path: null,
   liveSources: [],
   presences: {

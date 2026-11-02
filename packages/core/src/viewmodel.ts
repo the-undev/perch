@@ -1096,7 +1096,7 @@ function actionsFor(
   if (path === null) return [];
   const commands = config.launch.commands;
   const offered: (LaunchAction | null)[] = [
-    item.kind === "vault" && commands.obsidian
+    item.kind === "obsidian" && commands.obsidian
       ? {
           kind: "obsidian",
           verb: "Open in Obsidian",

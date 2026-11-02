@@ -291,7 +291,10 @@ describe("roadmap source", () => {
           presences: {
             repo: localPresence("/repo", { include: "/repo" }),
             empty: localPresence("/empty", { include: "/empty" }),
-            vault: localPresence("/vault", { include: "/vault", vault: true }),
+            vault: localPresence("/vault", {
+              include: "/vault",
+              obsidian: true,
+            }),
           },
         },
       },

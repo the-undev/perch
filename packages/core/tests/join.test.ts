@@ -405,7 +405,7 @@ describe("aggregating joined projects", () => {
       backup: "unjoined-remote",
     });
     expect(byId["github:finch/notes"]).toMatchObject({
-      kind: "repo",
+      kind: "git",
       path: null,
       name: "notes",
     });

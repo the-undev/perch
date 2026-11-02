@@ -46,7 +46,7 @@ export function ActionsPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="A vault"
+          label="An Obsidian bird"
           rule="The Hothouse Vault: Open in Obsidian comes first."
         >
           <Ground>

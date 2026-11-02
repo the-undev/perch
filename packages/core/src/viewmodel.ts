@@ -363,6 +363,18 @@ export interface RemoteNotice {
   fix: string;
 }
 
+/** What the slip says for a bird seen on its forges with no clone on this machine. */
+export interface NoClone {
+  /** The forges holding the repository, as the slip names them: "Forgejo", or "GitHub and Forgejo". */
+  forges: string;
+  /** The repository a clone's remote points at to join the bird, such as finch/pocket. */
+  reference: string;
+  /** The SSH address to clone from, the first a forge gives; null while unknown. */
+  cloneAddress: string | null;
+  /** Whether the meta line says "no local clone": config holds at least one launch action. */
+  onMetaLine: boolean;
+}
+
 /** Everything about one bird beyond its look and bubble, which the detail page also shows. */
 export interface Detail {
   /** Where the clone is on disk, home as ~; null for a bird with no clone here. */
@@ -379,6 +391,8 @@ export interface Detail {
   actions: LaunchAction[];
   links: LinkOut[];
   keyFiles: KeyFile[];
+  /** The slip where the key files would be: null for a bird with a clone here or on no forge. */
+  noClone: NoClone | null;
   problems: SourceProblem[];
 }
 
@@ -1157,6 +1171,29 @@ function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {
   return files.map((file) => ({ path: file, absolutePath: `${path}/${file}` }));
 }
 
+/**
+ * The slip for a bird held by at least one forge and cloned nowhere here: the forges by name, the
+ * first presence's repository, and the first clone address a forge gave.
+ */
+function noCloneFor(item: Item, config: Config): NoClone | null {
+  const [first] = item.presences.forges;
+  if (item.path !== null || first === undefined) return null;
+  const held = new Set(item.presences.forges.map((presence) => presence.forge));
+  return {
+    forges: forgeNames
+      .filter((forge) => held.has(forge))
+      .map((forge) => forgeLabel[forge])
+      .join(" and "),
+    reference: first.ref.slice(first.ref.indexOf(":") + 1),
+    // A snapshot cached before the scanner kept the address has no field at all.
+    cloneAddress:
+      item.presences.forges
+        .map((presence) => presence.sshUrl ?? null)
+        .find((address) => address !== null) ?? null,
+    onMetaLine: config.launch.actions.length > 0,
+  };
+}
+
 /** Each source that couldn't be read for the bird, then each part of a forge read without it. */
 function problemsFor(item: Item): SourceProblem[] {
   const sources = Object.entries(item.sources).flatMap(([source, data]) =>
@@ -1326,6 +1363,7 @@ export function deriveBird(
             ],
       ),
       keyFiles: keyFilesFor(item, entry),
+      noClone: noCloneFor(item, config),
       problems: problemsFor(item),
     },
   };

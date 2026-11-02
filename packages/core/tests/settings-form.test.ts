@@ -572,7 +572,12 @@ const wiresByEntry = (config: Config) =>
     Object.entries(config.items).map(([key, entry]) => [key, entry.wire]),
   );
 
-const homeEntries = [".dotfiles", "obsidian/Hothouse", "obsidian/Pocket"];
+const homeEntries = [
+  ".dotfiles",
+  "obsidian/Hothouse",
+  "obsidian/Pocket",
+  "forgejo:finch/field-notes",
+];
 
 /** The saved config, read back from the bytes written, so the writer agrees. */
 function saved(config: Config, values: SettingsValues): Config {
@@ -676,7 +681,7 @@ describe("renaming, removing and adding wires", () => {
     );
 
     expect(wireWarnings(form.named.wires, values.wires)).toEqual([
-      ".dotfiles, obsidian/Hothouse and obsidian/Pocket sit on Machine & Home, which is removed: saving moves them to the default wire, Projects.",
+      ".dotfiles, obsidian/Hothouse, obsidian/Pocket and forgejo:finch/field-notes sit on Machine & Home, which is removed: saving moves them to the default wire, Projects.",
     ]);
     expect(wireWarnings(form.named.wires, form.values.wires)).toEqual([]);
     const next = saved(mockConfig, values);

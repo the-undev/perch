@@ -2,7 +2,8 @@
 // site and the app to render every view model state without a scan. The scan is at 09:00 on
 // 22 October 2026, and every age below is measured from it. Between them the birds cover every
 // mood and activity, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed backlog, a stalled
-// branch and clean zeros, a bird with no clone here and one on no forge, a remote no card can
+// branch and clean zeros, a bird with no clone here on a wire and one on the fence, each with its
+// no-clone slip, and one on no forge, a remote no card can
 // read, forges that couldn't be read at all and one whose pull requests alone couldn't be read,
 // the source cards every scan state, and every kind of launch action, some overridden, the
 // Obsidian one on Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
@@ -138,6 +139,10 @@ export const mockConfig: Config = {
     "undev/gramophone": entry({ name: "Gramophone" }),
     "undev/spool": entry({ name: "Spool" }),
     "undev/glyph-docs": entry({ name: "Glyph Docs" }),
+    "forgejo:finch/field-notes": entry({
+      wire: "Machine & Home",
+      name: "Pergola Notes",
+    }),
   },
   scan: {
     intervalMinutes: 15,
@@ -194,6 +199,13 @@ function repoUrl(forge: ForgeName, fullName: string): string {
     : `${forgejoBase}/${fullName}`;
 }
 
+/** The SSH address each forge gives for cloning, Forgejo's on its SSH port. */
+function sshUrl(forge: ForgeName, fullName: string): string {
+  return forge === "github"
+    ? `git@github.com:${fullName}.git`
+    : `ssh://git@forgejo:2222/${fullName}.git`;
+}
+
 function presence(
   forge: ForgeName,
   fullName: string,
@@ -204,6 +216,7 @@ function presence(
     ref: `${forge}:${fullName.toLowerCase()}`,
     fullName,
     url: repoUrl(forge, fullName),
+    sshUrl: sshUrl(forge, fullName),
     foundBy,
   };
 }
@@ -779,6 +792,7 @@ const skiff = localItem("undev/skiff", {
       ref: "github:skiff-app/skiff",
       fullName: "skiff-app/skiff",
       url: null,
+      sshUrl: null,
       foundBy: "local-remote",
     },
     presence("forgejo", "the-undev/skiff"),
@@ -1467,6 +1481,31 @@ const obsidianTidy: Item = {
   },
 };
 
+/** Adopted while only on Forgejo: no clone here, so its slip says so and the meta line too. */
+const pergolaNotes: Item = {
+  id: "forgejo:finch/field-notes",
+  name: "field-notes",
+  kind: "git",
+  path: null,
+  liveSources: [],
+  presences: {
+    local: null,
+    forges: [presence("forgejo", "finch/field-notes", "account-listing")],
+  },
+  flags: [],
+  sources: {
+    forgejo: forge("forgejo", "finch/field-notes", {
+      finalisedCommits: [
+        {
+          sha: "5d2e8f0a1b3c4d5e6f708192a3b4c5d6e7f80912",
+          committedAt: "2026-10-20T08:12:00Z",
+          subject: "Add the boiler service notes",
+        },
+      ],
+    }),
+  },
+};
+
 /** The server item, which waits for server monitoring and is not a bird. */
 const server: Item = {
   id: "server:Silo",
@@ -1495,6 +1534,7 @@ const items: Item[] = [
   homeItConfig,
   hello,
   obsidianTidy,
+  pergolaNotes,
   server,
 ];
 

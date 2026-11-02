@@ -248,6 +248,11 @@ export interface ForgePresence {
   fullName: string;
   /** The repository's page; null when it could not be read. */
   url: string | null;
+  /**
+   * The SSH address the forge gives for cloning: null when it gives none or the repository could not
+   * be read, absent from a snapshot cached before the scanner kept it.
+   */
+  sshUrl?: string | null;
   foundBy: "account-listing" | "local-remote";
 }
 

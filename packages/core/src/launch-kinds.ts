@@ -44,7 +44,7 @@ export const commandKinds: Record<CommandKind, CommandKindDefaults> = {
   vscode: {
     name: "VS Code",
     what: "Opens the project folder in VS Code.",
-    needs: "ready as it is",
+    needs: "defaults filled in",
     icon: "code",
     verb: "Open in VS Code",
     command: ["code", "{path}"],
@@ -54,7 +54,7 @@ export const commandKinds: Record<CommandKind, CommandKindDefaults> = {
   nvim: {
     name: "nvim",
     what: "Opens nvim in the project folder, in a new terminal window.",
-    needs: "ready as it is",
+    needs: "defaults filled in",
     icon: "edit",
     verb: "Open in nvim",
     command: ["alacritty", "--working-directory", "{path}", "-e", "nvim", "."],
@@ -64,7 +64,7 @@ export const commandKinds: Record<CommandKind, CommandKindDefaults> = {
   folder: {
     name: "Folder",
     what: "Opens the folder in the file manager.",
-    needs: "ready as it is",
+    needs: "defaults filled in",
     icon: "folder",
     verb: "Open the folder",
     command: ["xdg-open", "{path}"],
@@ -96,7 +96,7 @@ export interface ZellijKindDefaults extends KindWords {
 export const zellijKind: ZellijKindDefaults = {
   name: "zellij tab",
   what: "Goes to the project's tab in its session, or opens one.",
-  needs: "ready as it is · once",
+  needs: "defaults filled in · once",
   icon: "terminal",
   verb: "Open the zellij tab",
   zellij: ["zellij"],
@@ -123,7 +123,7 @@ export interface CustomKindDefaults extends KindWords {
 export const customKind: CustomKindDefaults = {
   name: "Custom command",
   what: "A verb and a command of your own.",
-  needs: "you write it",
+  needs: "blank",
   icon: "folder",
   placeholders: ["path", "obsidian"],
 };

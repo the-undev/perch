@@ -1,6 +1,6 @@
 // The adoption papers: one sheet of paper on a bird's page that adopts a fence bird and, reopened,
 // amends an adopted one. The head carries the portrait and the ring, the config key; then what
-// perch has seen, in the scanner's mono and not editable; then what the owner says, the common
+// the scan found, in the scanner's mono and not editable; then what the owner says, the common
 // choices above a fold that names the rare ones; then the signature line. The sheet holds only its
 // draft: what is signed leaves through the callbacks, and the caller decides when it folds away.
 
@@ -351,7 +351,7 @@ export function AdoptionPapers({
         <Portrait bird={bird} night={night} />
       </div>
 
-      <Part name="What perch has seen">
+      <Part name="What the scan found">
         <div
           data-part="seen"
           className="font-mono text-[12.5px] text-paper-text leading-[2]"
@@ -385,7 +385,7 @@ export function AdoptionPapers({
         </div>
       </Part>
 
-      <Part name="What you say">
+      <Part name="What you set">
         <div className="my-3.5">
           <FieldHead
             id={ids.wire}
@@ -438,7 +438,7 @@ export function AdoptionPapers({
         </button>
         {moreOpen && (
           <div id={ids.more} data-material="paper" className="pb-3.5">
-            <FormRow label="Key files" sub="Shown as paper on its page">
+            <FormRow label="Key files" sub="Shown on its page">
               <PathList
                 noun="key file"
                 defaults="The README and the roadmaps"

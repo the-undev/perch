@@ -569,7 +569,7 @@ function ActionFields({
   const verb = (
     <ActionField
       field="verb"
-      sub="the words on the bird's page"
+      sub="the action's label on the bird's page"
       problems={problems("verb")}
     >
       {text(
@@ -823,7 +823,7 @@ function LaunchShelf({
       </ul>
       <p className="m-0 px-4 py-2.75 text-[12.5px] text-ink-faint">
         Each kind works as it is; its card changes its words or command. More
-        kinds appear as perch learns more ways to open things.
+        kinds are added in later versions.
       </p>
     </div>
   );
@@ -903,7 +903,7 @@ export function PresencesGroup({
     <SettingsGroup
       title="Joining up"
       table="joins, ignore"
-      lead="A presence is local: and a path under the home directory, github:owner/name or forgejo:owner/name. A join is a list line, as a launch command is."
+      lead="A presence is local: and a path under the home directory, github:owner/name or forgejo:owner/name. A join is a list line: its presences in brackets, double-quoted."
     >
       <FormRow label="Joins" sub="Presences that are one project">
         <StringList

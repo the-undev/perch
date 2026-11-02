@@ -287,7 +287,7 @@ describe("testing a connection", () => {
     expect(tested).toEqual({
       ok: false,
       problem:
-        "api.github.com answered with something perch cannot read: bad header Bearer [token]",
+        "api.github.com answered with a response that could not be read: bad header Bearer [token]",
     });
   });
 });

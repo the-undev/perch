@@ -38,7 +38,7 @@ const checked = (role: "radio" | "checkbox", name: string | RegExp) =>
 const openFold = () => press(/^More particulars/);
 
 describe("the adoption papers", () => {
-  it("head the sheet with the bird's name and ring, and set out what perch has seen", () => {
+  it("head the sheet with the bird's name and ring, and set out what the scan found", () => {
     papers("dev/odin/hello");
 
     expect(

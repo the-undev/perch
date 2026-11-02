@@ -163,14 +163,14 @@ describe("the sources page", () => {
   it("opens the picker with every offered kind on a page with no sources", () => {
     sourcesPage(noSources(), []);
 
-    expect(screen.getByText("Nowhere to look yet")).toBeDefined();
+    expect(screen.getByText("No sources yet")).toBeDefined();
     const kinds = within(screen.getByRole("list", { name: "Kinds of source" }));
     expect(
       kinds.getAllByRole("button").map((button) => button.ariaLabel),
     ).toEqual(["Add Local folders", "Add GitHub", "Add Forgejo"]);
     expect(
       screen.getByText(
-        "Every kind can be added again · more kinds appear as perch learns to read them.",
+        "Every kind can be added again · more kinds are added in later versions.",
       ),
     ).toBeDefined();
   });

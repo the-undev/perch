@@ -98,7 +98,7 @@ function failureWords(error: unknown, host: string): string {
     return `${host} answered HTTP ${error.status}`;
   }
   const detail = error instanceof Error ? error.message : String(error);
-  return `${host} answered with something perch cannot read: ${detail}`;
+  return `${host} answered with a response that could not be read: ${detail}`;
 }
 
 /**

@@ -222,7 +222,7 @@ function TokenRow({
     (values.kind === "github" || values.baseUrl.trim() !== "");
   const failed = (error: unknown) => ({
     ok: false as const,
-    problem: `the call did not reach perch: ${error instanceof Error ? error.message : String(error)}`,
+    problem: `the call did not reach the main process: ${error instanceof Error ? error.message : String(error)}`,
   });
   const store = () => {
     const key = values.key;
@@ -356,9 +356,9 @@ function AccountFields<Source extends GithubSourceConfig>({
       <TokenRow values={testValues} keyring={keyring} />
       <p className={quietLineClass}>
         The read-only token lives in the system keyring under this key, never in
-        the file, and perch never shows it back. A fine-grained token with
-        read-only contents, metadata, actions and pull requests is enough.
-        Prefer the terminal?{" "}
+        the file, and is never shown again. A fine-grained token with read-only
+        contents, metadata, actions and pull requests is enough. Prefer the
+        terminal?{" "}
         <code className="rounded border border-edge bg-panel px-1.25 py-px font-mono text-[12px] text-ink">
           secret-tool store --label perch service perch key {key}
         </code>
@@ -494,7 +494,7 @@ function CardBody({
           <div className="grid gap-2.5 @min-[520px]:grid-cols-2">
             <TextField
               field="name"
-              sub="the server this page watches"
+              sub="the server this source reads"
               value={source.name}
               placeholder="Server"
               problems={problems("name")}
@@ -695,8 +695,8 @@ export function SourcePicker({
       </ul>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 px-4 py-2.75 text-[12.5px] text-ink-faint">
         <span>
-          Every kind can be added again · more kinds appear as perch learns to
-          read them.
+          Every kind can be added again · more kinds are added in later
+          versions.
         </span>
         <button type="button" onClick={onClose} className={quietClass}>
           close
@@ -729,11 +729,9 @@ function NowhereYet() {
         <rect x="185" y="18" width="5" height="26" className="fill-post" />
       </svg>
       <h3 className="m-0 mb-1 font-bold font-display text-[18px] text-ink">
-        Nowhere to look yet
+        No sources yet
       </h3>
-      <p className="m-0 mb-5 text-ink-muted">
-        perch reads places you name and never asks again. Add the first one.
-      </p>
+      <p className="m-0 mb-5 text-ink-muted">Add the first place to read.</p>
     </div>
   );
 }
@@ -767,7 +765,7 @@ export function SourcesPage({
       <SettingsPageHead
         title="Sources"
         table="[[sources.*]]"
-        lead="The places perch looks. Every scan reads each one; remove a source and perch stops looking there."
+        lead="The places every scan reads. A removed source is no longer read."
       />
       {drafts.length === 0 && <NowhereYet />}
       {drafts.map((card) => (

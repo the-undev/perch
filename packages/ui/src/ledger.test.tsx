@@ -284,7 +284,7 @@ describe("the ledger's sections", () => {
     );
 
     expect(screen.getByRole("heading").textContent).toBe(
-      "Where each commit on main has reached",
+      "Commits on main, and where each has reached",
     );
     expect(dots(container)).toEqual([
       ["amber", "only on github", "only on github"],

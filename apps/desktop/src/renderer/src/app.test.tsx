@@ -111,7 +111,7 @@ describe("the window", () => {
     expect(await screen.findByRole("main", { name: "perch" })).toBeDefined();
     expect(screen.getByText("~/.config/perch/config.toml")).toBeDefined();
     expect(
-      screen.getByText(/one wire, the standard windows and no sources yet/),
+      screen.getByText(/one wire, the default thresholds and no sources yet/),
     ).toBeDefined();
     expect(screen.queryByRole("status")).toBeNull();
 
@@ -146,7 +146,7 @@ describe("the window", () => {
     expect(
       await screen.findByRole("region", { name: "Sources" }),
     ).toBeDefined();
-    expect(screen.getByText("Nowhere to look yet")).toBeDefined();
+    expect(screen.getByText("No sources yet")).toBeDefined();
     expect(
       screen.getByRole("button", { name: "Add Local folders" }),
     ).toBeDefined();

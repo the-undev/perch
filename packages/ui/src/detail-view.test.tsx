@@ -745,7 +745,7 @@ describe("the detail view", () => {
     );
     expect(
       headings().filter(
-        (heading) => heading === "Where each commit on main has reached",
+        (heading) => heading === "Commits on main, and where each has reached",
       ),
     ).toHaveLength(1);
     cleanup();
@@ -757,7 +757,9 @@ describe("the detail view", () => {
         river: { ...perch.detail.river, commits: [] },
       },
     });
-    expect(headings()).not.toContain("Where each commit on main has reached");
+    expect(headings()).not.toContain(
+      "Commits on main, and where each has reached",
+    );
     cleanup();
 
     page(mockBird("undev/prism"));

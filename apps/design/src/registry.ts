@@ -221,7 +221,7 @@ export const pages: DesignPage[] = [
     group: "components",
     title: "Adoption papers",
     summary:
-      "The sheet that adopts a fence bird and amends an adopted one: what perch has seen, what you say, a named fold and the signature.",
+      "The sheet that adopts a fence bird and amends an adopted one: what the scan found, what you set, a named fold and the signature.",
     component: AdoptionPapersPage,
   },
   {

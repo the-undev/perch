@@ -137,7 +137,7 @@ export function AdoptionPapersPage() {
       </Section>
       <Section
         title="Adopting"
-        rule="What perch has seen is set in mono and cannot be edited: where the clone is, the forges that also hold it, and the last commit. What you say starts on the defaults; a choice left on its default is written as nothing. The signature button names the wire it will write."
+        rule="What the scan found is set in mono and cannot be edited: where the clone is, the forges that also hold it, and the last commit. What you set starts on the defaults; a choice left on its default is written as nothing. The signature button names the wire it will write."
         min={560}
       >
         <Specimen
@@ -227,7 +227,7 @@ export function AdoptionPapersPage() {
           {
             name: "form",
             type: "EntryForm",
-            what: "The bird's entry form: what perch has seen, the choices, the session the zellij action gives, and the entry's values, null for a fence bird.",
+            what: "The bird's entry form: what the scan found, the choices, the session the zellij action gives, and the entry's values, null for a fence bird.",
           },
           {
             name: "night",

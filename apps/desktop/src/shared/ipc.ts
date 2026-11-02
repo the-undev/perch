@@ -51,7 +51,7 @@ export interface PerchApi {
   /** Performs a launch action a bird offers, commands and all; a failure arrives as a problem in the state. */
   launch(action: LaunchAction): Promise<void>;
   /**
-   * Writes the default config (one wire, the standard windows, no sources) to the
+   * Writes the default config (one wire, the default thresholds, no sources) to the
    * config path and starts a scan, resolving true once written; refuses, writing nothing, when
    * the file exists, resolving false, and the refusal arrives as a problem in the state.
    */

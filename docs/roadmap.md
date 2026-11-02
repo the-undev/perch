@@ -23,8 +23,8 @@ distress the bird. "Set up CI" as a critical item then carries the
 urgency the expectation thresholds carried, derived from a file the
 scanner already reads, and the rule works for any goal on any kind of
 bird. The marking convention is `TBD`, to be designed with the
-vault-tasks parse rules in mind, see
-[decisions/vault-tasks.md](decisions/vault-tasks.md).
+work items parse rules in mind, see
+[decisions/work-items.md](decisions/work-items.md).
 
 It replaces expectations, removed on 26 October 2026. An entry's
 `expect = ["ci"]` flagged a bird whose forges reported no CI, amber at 7
@@ -134,7 +134,7 @@ already.
 
 ## Actions from tiles
 
-Push the branch, commit and push a vault, open in the editor. Each one changes
+Push the branch, commit and push an Obsidian vault, open in the editor. Each one changes
 something the scanner reads, so each needs a rescan after and an undo story.
 Parked until the read-only app has proved itself.
 
@@ -145,8 +145,8 @@ are whatever branch is checked out, including a work-in-progress edit of the
 roadmap itself. Decide whether that is acceptable or whether the stable read
 should come from the default branch without touching the checkout, via
 `git show main:docs/roadmap.md`, with the working-copy version shown as a
-divergence when the two differ. Vaults are unaffected; they live on one
-branch.
+divergence when the two differ. Obsidian vaults are unaffected; they live on
+one branch.
 
 ## Tray icon status
 
@@ -157,7 +157,7 @@ the glance view.
 
 ## Nudges
 
-Rules over a scan, such as a vault unpushed for more than three days, shown as
+Rules over a scan, such as an Obsidian vault unpushed for more than three days, shown as
 a flag on the tile or as a desktop notification. Worth having, easy to overdo;
 start with the flag.
 
@@ -219,7 +219,7 @@ anyway once built.
 
 The detail page renders roadmap files as plain markdown first. Later:
 a structured view where sections become epics and features with their
-task lists and progress, per the vault-tasks parse rules. Parked until
+task lists and progress, per the work items parse rules. Parked until
 plain rendering has lived a while.
 
 ## Docs tree browsing
@@ -352,9 +352,9 @@ entries written without one.
 
 ## Other sources
 
-Candidates that fit the derived-only rule: the vault roadmaps as tiles of their
-own, the family PC's setup runbook progress if it is a checklist in the
-vault, browser reading list.
+Candidates that fit the derived-only rule: the Obsidian vault roadmaps as tiles
+of their own, the family PC's setup runbook progress if it is a checklist in
+an Obsidian vault, browser reading list.
 
 ## Just pushed
 

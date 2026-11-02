@@ -281,7 +281,7 @@ live machine. The scan feeds the glance unattended: no prompting
 routes, no SSH. Detail views may use live sources; the window never
 blocks on aggregation and renders from the cached snapshot.
 
-Sources today: local repositories and vaults (git state with the
+Sources today: local repositories and Obsidian vaults (git state with the
 default branch's newest commits, Obsidian markers), the GitHub and
 Forgejo account listings and per-repository detail (PRs, CI, newest
 default-branch commits, each its own request, so a failed request fails
@@ -297,7 +297,7 @@ beside live values, is the atlas (`design/atlas.html`).
 ## Projects, joining and adoption
 
 A project is a joined entity over presences: a local clone, forge
-repositories, vault state. Observation joins what remote URLs prove;
+repositories, Obsidian vault state. Observation joins what remote URLs prove;
 config asserts what they cannot, and on conflict the observation wins,
 flagged. Everything found starts on the fence; adopting a bird means
 adding it to config, which puts it on a wire and may assert further
@@ -536,7 +536,7 @@ Facts the design relies on. Verify before relying on them later.
 | Desktop | KDE Plasma 6.7.5, Wayland |
 | GPU | NVIDIA RTX 5070 Ti, nvidia-open 615 |
 | Node, pnpm | 26, 11 |
-| Forgejo | `http://forge.example.lan:3000`, SSH alias `forgejo` on port 2222, documented in the Hothouse vault at `Tech/Server/Forgejo.md` |
+| Forgejo | `http://forge.example.lan:3000`, SSH alias `forgejo` on port 2222, documented in the Hothouse Obsidian vault at `Tech/Server/Forgejo.md` |
 | Keyring tokens | service `perch`, the five keys under Secrets |
 | Claude Code sessions | `~/.claude/projects/`, one directory per working directory, non-alphanumerics encoded as `-` |
-| Git identities | `~/dev` and `~/.dotfiles` are `finch`, `~/undev` is `the-undev`; see the Pocket vault, `Code/Git Identities.md` |
+| Git identities | `~/dev` and `~/.dotfiles` are `finch`, `~/undev` is `the-undev`; see the Pocket Obsidian vault, `Code/Git Identities.md` |

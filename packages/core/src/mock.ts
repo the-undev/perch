@@ -502,14 +502,14 @@ const pocket = localItem("obsidian/Pocket", {
         branch(
           "main",
           "2026-10-16T14:20:00.000Z",
-          "Describe the vault's LiveSync setup in CLAUDE.md",
+          "Describe the Obsidian vault's LiveSync setup in CLAUDE.md",
         ),
       ],
       defaultBranchCommits: [
         {
           sha: "77045f066b56d1e3a5c7e9b1d3f5a7c9e1b3d5f7",
           committedAt: "2026-10-16T14:20:00.000Z",
-          subject: "Describe the vault's LiveSync setup in CLAUDE.md",
+          subject: "Describe the Obsidian vault's LiveSync setup in CLAUDE.md",
         },
       ],
       remotes: [
@@ -536,7 +536,7 @@ const pocket = localItem("obsidian/Pocket", {
         {
           sha: "77045f066b56d1e3a5c7e9b1d3f5a7c9e1b3d5f7",
           committedAt: "2026-10-16T14:20:00.000Z",
-          subject: "Describe the vault's LiveSync setup in CLAUDE.md",
+          subject: "Describe the Obsidian vault's LiveSync setup in CLAUDE.md",
         },
       ],
     }),

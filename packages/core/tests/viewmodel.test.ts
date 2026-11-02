@@ -342,15 +342,17 @@ describe("the wires", () => {
 
   it("caps plumpness", async () => {
     const config = await adoptAll([]);
-    const vault = item("obsidian/Hothouse", {
+    const hothouse = item("obsidian/Hothouse", {
       kind: "obsidian",
       sources: { roadmap: { counts: { bug: 0, feature: 194 }, files: [] } },
     });
 
-    expect(birdIn([vault], config, "obsidian/Hothouse").plumpness).toEqual({
-      outstanding: 194,
-      fullness: 1,
-    });
+    expect(birdIn([hothouse], config, "obsidian/Hothouse").plumpness).toEqual(
+      {
+        outstanding: 194,
+        fullness: 1,
+      },
+    );
   });
 
   it("carries failing sources and warnings to the scene", async () => {

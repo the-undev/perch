@@ -474,9 +474,11 @@ command = ["xdg-open", "{path}"]</pre>
       <p>An action whose command uses <code>{obsidian}</code> (the Obsidian folder's name,
       encoded for a URI) is offered on Obsidian birds only; everything else goes to any bird with
       a folder. The alternative is a separate scope field, a second way of saying what the
-      command already says. The item kind named <code>vault</code> in core renames to
-      <code>obsidian</code> in the same round; <code>vault=</code> inside the
-      <code>obsidian://</code> URI is Obsidian's own parameter and stays.</p>
+      command already says. The item kinds rename for the same specificity in one pass:
+      <code>vault</code> becomes <code>obsidian</code> and <code>repo</code> becomes
+      <code>git</code>, since that is what each detects. <code>server</code> waits until the
+      Kuma bird is dealt with properly. <code>vault=</code> inside the <code>obsidian://</code>
+      URI is Obsidian's own parameter and stays.</p>
       <p class="rec">the placeholder decides.</p></div>
     <div class="decision"><h3>The zellij sessions move into the zellij action</h3>
       <p>The session default and the roots become fields of the zellij table

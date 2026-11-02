@@ -247,7 +247,7 @@ section > .why code, .notes code, .rule code, .decision p code {
       <div class="detail">
         <p class="birdname">Pergola Notes</p>
         <p class="metaline"><span>on the wire Important</span>
-          <span class="quiet-open">nothing to open here</span>
+          <span class="quiet-open">no local clone</span>
           <span class="act">The papers</span></p>
         <div class="panes">
           <div class="ledger">
@@ -259,16 +259,15 @@ section > .why code, .notes code, .rule code, .decision p code {
           <div class="docs">
             <div class="slip">
               <span class="stamp">No clone on this machine</span>
-              <p>Forgejo knows this repository; perch has never seen its folder, so there are no
-              papers to read here.</p>
+              <p>This repository is on Forgejo. No local clone was found.</p>
               <div class="acts">
                 <span class="btnp">Choose its folder</span>
                 <span class="copyrow"><span class="addr">ssh://git@forgejo:2222/finch/Pocket.git</span>
                 <span class="copy">Copy</span></span>
               </div>
-              <p class="quiet">A chosen folder is added to the searched folders and scanned at
-              once; its remote must point at <span class="ref">finch/pocket</span>. A whole
-              folder of clones is added under Sources.</p>
+              <p class="quiet">The chosen folder is added to the searched folders and scanned;
+              its remote must point at <span class="ref">finch/pocket</span>. A directory
+              of many clones is added in Sources.</p>
             </div>
           </div>
         </div>
@@ -288,11 +287,15 @@ section > .why code, .notes code, .rule code, .decision p code {
       runs. If the folder's remote does not match, the next scan says what it found instead and
       the slip stays.</p>
       <h3>The address, copyable</h3>
-      <p>For the clone that does not exist yet. perch never runs git itself; it hands over the
-      address the forge gives and notices the clone wherever it lands, once searched.</p>
+      <p>For the clone that does not exist yet. perch never runs git; the address is there to
+      clone with your own tools, and the next scan finds it under any searched folder.</p>
       <h3>The meta line</h3>
-      <p>"nothing to open here" sits where the action buttons would, in the faint voice. It
-      does not name the cause; the slip does.</p>
+      <p>"no local clone" sits where the action buttons would, in the faint voice: the cause in
+      three words, expanded by the slip.</p>
+      <h3>The register</h3>
+      <p><b>Plain and technical.</b> Repository, clone, remote are the right words; the copy
+      packages them into short sentences rather than replacing them. No anthropomorphising, no
+      fluff: every sentence is readable at a glance.</p>
     </aside>
   </div>
 </section>
@@ -303,11 +306,9 @@ section > .why code, .notes code, .rule code, .decision p code {
   stamp never changes.</p>
   <div class="words">
     <div class="word"><h3>One forge</h3>
-      <p><b>Forgejo knows this repository; perch has never seen its folder, so there are no
-      papers to read here.</b></p></div>
+      <p><b>This repository is on Forgejo. No local clone was found.</b></p></div>
     <div class="word"><h3>Two forges</h3>
-      <p><b>GitHub and Forgejo know this repository; perch has never seen its folder, so there
-      are no papers to read here.</b></p></div>
+      <p><b>This repository is on GitHub and Forgejo. No local clone was found.</b></p></div>
     <div class="word"><h3>On the fence, not yet adopted</h3>
       <p>The same slip. Adoption and the clone are separate facts; the papers' verb beside the
       meta line already says Adopt.</p></div>

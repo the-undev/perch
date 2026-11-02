@@ -1327,3 +1327,24 @@ build-time calls so they can be revisited.
   of 175, from `columnEdge` to the edge margin; `labelRight`,
   `labelAdvance`, the 26-unit name and its sizes are gone. The 445px
   limit where the strip's birds crossed its label is gone with them.
+
+## 2 November 2026 (the launch actions round)
+
+- The launch actions round is agreed on `mockups/launch-actions.html`.
+  The fixed `[launch.commands]` slots become ordered `[[launch.actions]]`
+  tables, one per card on the Launching page, added from a shelf of
+  presets (VS Code, zellij tab, nvim, Folder, Obsidian, Custom command)
+  that arrive filled in. Two kinds: a plain command run detached, and
+  zellij, which keeps its find-or-open tab behaviour and takes the
+  session default and the session roots onto its own card, the top-level
+  `[launch]` keys going with them. A clean break, no legacy reader.
+- `{obsidian}` fills in the vault folder's name, percent-encoded for the
+  `obsidian://` URI, and marks an action as offered on Obsidian birds
+  only; everything else goes to any bird with a folder. No scope field.
+- The item kinds rename for specificity: `vault` becomes `obsidian` and
+  `repo` becomes `git`. `server` waits until the Kuma bird is dealt
+  with properly.
+- Presets carry this machine's flavour: nvim and the zellij terminal
+  name alacritty. A preset is text pasted into the card at add time,
+  never consulted again; the Folder preset alone stays neutral with
+  `xdg-open`.

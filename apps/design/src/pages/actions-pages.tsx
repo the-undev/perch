@@ -15,7 +15,7 @@ function describe(action: LaunchAction): string {
     case "command":
       return `${action.command.join(" ")} on ${action.path}`;
     case "obsidian":
-      return `the ${action.vault} vault in Obsidian`;
+      return `the ${action.obsidianVault} Obsidian vault: ${action.command.join(" ")}`;
   }
 }
 
@@ -29,12 +29,12 @@ export function ActionsPage() {
       </p>
       <Section
         title="Launch actions · verbs"
-        rule="Launch actions open the terminal, editor or files without perch mutating anything. Each is a verb with its icon; ↗ marks that it leaves the app."
+        rule="Launch actions open the terminal, editor or files without perch mutating anything. Each is a verb with the icon it carries, its kind's or a custom command's pick; ↗ marks that it leaves the app."
         min={560}
       >
         <Specimen
           label="A repository"
-          rule="Perch: the zellij tab, VS Code, the folder."
+          rule="Perch: the zellij tab, VS Code, the folder, nvim, and a custom command wearing the terminal."
         >
           <Ground>
             <LaunchActions
@@ -45,7 +45,7 @@ export function ActionsPage() {
         </Specimen>
         <Specimen
           label="An Obsidian bird"
-          rule="The Hothouse Vault: Open in Obsidian, first in the mock's config and offered on Obsidian birds only."
+          rule="The Hothouse Obsidian vault: Open in Obsidian, first in the mock's config, a kind offered on Obsidian birds only."
         >
           <Ground>
             <LaunchActions

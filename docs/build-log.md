@@ -1348,3 +1348,36 @@ build-time calls so they can be revisited.
   name alacritty. A preset is text pasted into the card at add time,
   never consulted again; the Folder preset alone stays neutral with
   `xdg-open`.
+
+## 2 November 2026 (the launch action kinds)
+
+- First-class kinds supersede the round's "two kinds only": `vscode`,
+  `nvim`, `folder`, `obsidian` and `zellij` carry real meaning, so config
+  and the Launching page say more, and `command` stays the open door for
+  anything else. Each kind carries its name, icon, default verb and
+  default command in `packages/core/src/launch-kinds.ts`. The `obsidian`
+  kind is offered on Obsidian birds only as a fact of the kind; a custom
+  command using `{obsidian}` keeps the same rule. Kinds other than
+  zellij may repeat.
+- Config stores the kind and only deviations, superseding "a preset is
+  starting text": `kind = "vscode"` alone is a complete action, and the
+  writer leaves out a verb, command or session equal to the kind's
+  default. Every table names its kind; a table without one is refused.
+  An empty field on a kind's card takes the default, shown in grey as
+  the field's placeholder.
+- The icon is carried by the kind and travels on the view model's
+  action, which the bubble and the detail draw; only a custom command
+  picks one, from the app's line icons, the folder unless picked. nvim
+  wears `edit`. An unknown icon name is refused.
+- Placeholders per kind: `{path}` in every command kind and the custom
+  command, `{obsidian}` in the `obsidian` kind and the custom command
+  only. zellij keeps its own rules: none in its zellij command,
+  `{session}` and `{cwd}` in its terminal.
+- The shelf's cost words for a kind are "ready as it is", zellij's
+  "ready as it is · once", Obsidian's "Obsidian birds only". The mock
+  config holds every kind, the folder overridden to dolphin, and a
+  custom command wearing the terminal.
+- The bare word "vault" goes from prose, UI copy, comments, test names
+  and docs, in favour of "Obsidian vault" in full or "Obsidian bird";
+  identifiers follow, as `obsidianVault`. The `vault=` parameter of the
+  `obsidian://` URI is Obsidian's own and stays.

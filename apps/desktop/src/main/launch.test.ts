@@ -15,6 +15,7 @@ import {
 const zellijTab: LaunchAction = {
   kind: "zellij",
   verb: "Open the zellij tab",
+  icon: "terminal",
   zellij: ["zellij"],
   terminal: [
     "alacritty",
@@ -57,6 +58,7 @@ describe("launch actions", () => {
       {
         kind: "command",
         verb: "Open in nvim",
+        icon: "edit",
         command: ["alacritty", "--working-directory", "{path}", "-e", "nvim"],
         path: "/home/owner/My Notes",
       },
@@ -77,26 +79,28 @@ describe("launch actions", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("open a vault in Obsidian by its name, encoded for the URI, its {path} raw", async () => {
+  it("open an Obsidian vault in Obsidian by its name, encoded for the URI, its {path} raw", async () => {
     const { deps, spawnDetached } = recorder({});
 
     await launch(
       {
         kind: "obsidian",
         verb: "Open in Obsidian",
+        icon: "obsidian",
         command: ["xdg-open", "obsidian://open?vault={obsidian}"],
         path: "/home/owner/obsidian/Home & Notes",
-        vault: "Home & Notes",
+        obsidianVault: "Home & Notes",
       },
       deps,
     );
     await launch(
       {
         kind: "obsidian",
-        verb: "Note the vault",
+        verb: "Note the Obsidian vault",
+        icon: "obsidian",
         command: ["notify-send", "{obsidian}", "{path}"],
         path: "/home/owner/obsidian/Home & Notes",
-        vault: "Home & Notes",
+        obsidianVault: "Home & Notes",
       },
       deps,
     );

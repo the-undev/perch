@@ -388,6 +388,7 @@ describe("the window", () => {
       {
         kind: "command",
         verb: "Open in VS Code",
+        icon: "code",
         command: ["code", "{path}"],
         path: "/home/owner/dev/perch",
       },

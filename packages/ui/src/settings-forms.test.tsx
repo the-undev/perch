@@ -455,31 +455,47 @@ const openCard = (index: number) =>
   fireEvent.click(cardAt(index).getAllByRole("button")[0] as HTMLElement);
 
 const shelfAdd = (name: string) =>
-  within(screen.getByRole("list", { name: "Presets" })).getByRole("button", {
-    name: `Add ${name}`,
-  }) as HTMLButtonElement;
+  within(screen.getByRole("list", { name: "Kinds of action" })).getByRole(
+    "button",
+    {
+      name: `Add ${name}`,
+    },
+  ) as HTMLButtonElement;
+
+/** A text field's value and the default it shows in grey. */
+const shownIn = (index: number, name: string) => {
+  const field = cardAt(index).getByRole("textbox", {
+    name,
+  }) as HTMLInputElement;
+  return [field.value, field.placeholder];
+};
 
 describe("the Launching page", () => {
-  it("shows one closed card per action in config order, named by its preset, its verb greyed", () => {
+  it("shows one closed card per action in config order, each its kind's name and verb", () => {
     editor("launching");
 
     expect(cardHeads()).toEqual([
       ["Obsidian", "Open in Obsidian", "false"],
       ["zellij tab", "Open the zellij tab", "false"],
       ["VS Code", "Open in VS Code", "false"],
-      ["Custom command", "Open the folder", "false"],
+      ["Folder", "Open the folder", "false"],
+      ["nvim", "Open in nvim", "false"],
+      ["Custom command", "Follow the log", "false"],
     ]);
   });
 
-  it("opens a card by its head, and refuses a command not in list form on the card in red and beside Save", () => {
+  it("shows a kind's defaults in grey until typed over, and refuses a command not in list form on the card in red and beside Save", () => {
     const { onSave, form } = editor("launching");
     openCard(2);
-    const command = cardAt(2).getByRole("textbox", { name: "Command" });
 
-    expect((command as HTMLInputElement).value).toBe('["code", "{path}"]');
+    expect(shownIn(2, "Action")).toEqual(["", "Open in VS Code"]);
+    expect(shownIn(2, "Command")).toEqual(["", '["code", "{path}"]']);
     expect(
-      cardAt(2).getByText(/^Offered on every bird with a folder/),
+      cardAt(2).getByText(
+        "Offered on every bird with a folder on this machine.",
+      ),
     ).toBeDefined();
+    const command = cardAt(2).getByRole("textbox", { name: "Command" });
     type(command, "code {path}");
     expect(
       cardAt(2).getByText(/^must be a list in brackets/).className,
@@ -490,13 +506,14 @@ describe("the Launching page", () => {
     expect(saveButton().disabled).toBe(true);
     type(command, '["code", "--title", "my \\"project\\"", "{path}"]');
     type(cardAt(2).getByRole("textbox", { name: "Action" }), "Code it");
+    expect(cardHeads()[2]).toEqual(["VS Code", "Code it", "true"]);
     fireEvent.click(saveButton());
 
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
       launch: {
         actions: form.values.launch.actions.with(2, {
-          kind: "command",
+          kind: "vscode",
           verb: "Code it",
           command: '["code", "--title", "my \\"project\\"", "{path}"]',
         }),
@@ -504,36 +521,70 @@ describe("the Launching page", () => {
     });
   });
 
-  it("refuses a blank verb and a placeholder the action may not use", () => {
+  it("refuses a custom command without words, and a placeholder the kind may not use", () => {
     editor("launching");
     openCard(0);
-    expect(
-      cardAt(0).getByText(
-        /^Uses \{obsidian\}, so it is offered on Obsidian birds only\./,
-      ),
-    ).toBeDefined();
+    openCard(5);
 
-    type(cardAt(0).getByRole("textbox", { name: "Action" }), " ");
+    expect(
+      cardAt(0).getByText("Offered on Obsidian birds only."),
+    ).toBeDefined();
+    type(cardAt(5).getByRole("textbox", { name: "Action" }), "");
     type(
-      cardAt(0).getByRole("textbox", { name: "Command" }),
+      cardAt(5).getByRole("textbox", { name: "Command" }),
       '["code", "{worktree}"]',
     );
 
-    expect(cardHeads()[0]).toEqual(["Custom command", "no words yet", "true"]);
+    expect(cardHeads()[5]).toEqual(["Custom command", "no words yet", "true"]);
     expect(
-      cardAt(0).getByText("needs words for the bird's page"),
+      cardAt(5).getByText("needs words for the bird's page"),
     ).toBeDefined();
     expect(
-      cardAt(0).getByText(
+      cardAt(5).getByText(
         "has no placeholder {worktree}; it may use {path} and {obsidian}",
       ),
     ).toBeDefined();
     expect(saveButton().disabled).toBe(true);
   });
 
+  it("picks a custom command's icon from the row of line icons, which only custom cards hold", () => {
+    const { onSave, form } = editor("launching");
+    const custom = form.values.launch.actions[5];
+    if (custom?.kind !== "command") throw new Error("the mock has no custom");
+    openCard(2);
+    openCard(5);
+    const icons = cardAt(5).getAllByRole("radio") as HTMLInputElement[];
+
+    expect(cardAt(2).queryAllByRole("radio")).toEqual([]);
+    expect(
+      icons.map((icon) => [icon.getAttribute("aria-label"), icon.checked]),
+    ).toEqual([
+      ["terminal", true],
+      ["code", false],
+      ["folder", false],
+      ["forge", false],
+      ["obsidian", false],
+      ["adopt", false],
+      ["edit", false],
+    ]);
+    fireEvent.click(cardAt(5).getByRole("radio", { name: "edit" }));
+    fireEvent.click(saveButton());
+
+    expect(onSave).toHaveBeenCalledWith({
+      ...form.values,
+      launch: {
+        actions: form.values.launch.actions.with(5, {
+          ...custom,
+          icon: "edit",
+        }),
+      },
+    });
+  });
+
   it("orders the cards with the arrows and removes one, saving them in that order", () => {
     const { onSave, form } = editor("launching");
-    const [obsidian, zellij, vscode] = form.values.launch.actions;
+    const [obsidian, zellij, vscode, , nvim, custom] =
+      form.values.launch.actions;
 
     fireEvent.click(
       cardAt(2).getByRole("button", {
@@ -549,15 +600,15 @@ describe("the Launching page", () => {
       cardAt(0).getByRole("button", { name: /earlier on the bird$/ }),
     ).toHaveProperty("disabled", true);
     expect(
-      cardAt(2).getByRole("button", { name: /later on the bird$/ }),
+      cardAt(4).getByRole("button", { name: /later on the bird$/ }),
     ).toHaveProperty("disabled", true);
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
-      launch: { actions: [obsidian, vscode, zellij] },
+      launch: { actions: [obsidian, vscode, zellij, nvim, custom] },
     });
   });
 
-  it("adds a preset's card at the end, filled in and open alone, and holds zellij back while one exists", () => {
+  it("adds a kind's card at the end, holding just its kind and open alone, and holds zellij back while one exists", () => {
     const { onSave, form } = editor("launching");
     openCard(0);
 
@@ -572,23 +623,18 @@ describe("the Launching page", () => {
       "false",
       "false",
       "false",
+      "false",
+      "false",
       "true",
     ]);
-    expect(
-      (cardAt(4).getByRole("textbox", { name: "Command" }) as HTMLInputElement)
-        .value,
-    ).toBe('["xdg-open", "{path}"]');
+    expect(shownIn(6, "Command")).toEqual(["", '["xdg-open", "{path}"]']);
     fireEvent.click(saveButton());
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
       launch: {
         actions: [
           ...form.values.launch.actions,
-          {
-            kind: "command",
-            verb: "Open the folder",
-            command: '["xdg-open", "{path}"]',
-          },
+          { kind: "folder", verb: "", command: "" },
         ],
       },
     });
@@ -615,18 +661,24 @@ describe("the Launching page", () => {
     expect(saveButton().disabled).toBe(true);
   });
 
-  it("holds the zellij action's commands, session and sessions by root on its card", () => {
+  it("holds the zellij action's commands, session and sessions by root on its card, its defaults in grey", () => {
     const { onSave, form } = editor("launching");
     const zellij = form.values.launch.actions[1];
     if (zellij?.kind !== "zellij") throw new Error("the mock has no zellij");
     openCard(1);
 
     expect(
-      ["zellij command", "Terminal command", "Session"].map(
-        (name) =>
-          (cardAt(1).getByRole("textbox", { name }) as HTMLInputElement).value,
+      ["zellij command", "Terminal command", "Session"].map((name) =>
+        shownIn(1, name),
       ),
-    ).toEqual([zellij.zellij, zellij.terminal, "home"]);
+    ).toEqual([
+      ["", '["zellij"]'],
+      [
+        '["alacritty", "-e", "zellij", "attach", "-c", "{session}"]',
+        '["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]',
+      ],
+      ["home", "main"],
+    ]);
     fireEvent.click(
       cardAt(1).getByRole("button", { name: "Add session root" }),
     );

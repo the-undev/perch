@@ -74,9 +74,9 @@ describe("example config", () => {
         session: "main",
         sessions: { "/home/test/work": "work" },
       },
-      { kind: "command", verb: "Open in VS Code", command: ["code", "{path}"] },
+      { kind: "vscode", verb: "Open in VS Code", command: ["code", "{path}"] },
       {
-        kind: "command",
+        kind: "nvim",
         verb: "Open in nvim",
         command: [
           "alacritty",
@@ -88,7 +88,7 @@ describe("example config", () => {
         ],
       },
       {
-        kind: "command",
+        kind: "folder",
         verb: "Open the folder",
         command: ["xdg-open", "{path}"],
       },
@@ -128,17 +128,25 @@ describe("example config", () => {
     ]);
   });
 
-  it("parses its commented Obsidian action once uncommented, last on the bird", async () => {
+  it("parses its commented Obsidian and custom actions once uncommented, last on the bird", async () => {
     const text = (await exampleText()).replace(
-      /^# (\[\[launch\.actions\]\]|verb = |command = )/gm,
+      /^# (\[\[launch\.actions\]\]|kind = |verb = |command = |icon = )/gm,
       "$1",
     );
 
-    expect(parseConfig(text, home).launch.actions.at(-1)).toEqual({
-      kind: "command",
-      verb: "Open in Obsidian",
-      command: ["xdg-open", "obsidian://open?vault={obsidian}"],
-    });
+    expect(parseConfig(text, home).launch.actions.slice(-2)).toEqual([
+      {
+        kind: "obsidian",
+        verb: "Open the Obsidian vault",
+        command: ["obsidian", "obsidian://open?vault={obsidian}"],
+      },
+      {
+        kind: "command",
+        verb: "Follow the log",
+        command: ["alacritty", "-e", "lnav", "{path}/logs"],
+        icon: "terminal",
+      },
+    ]);
   });
 
   it("gives every item the global thresholds when nothing is overridden", async () => {
@@ -557,10 +565,52 @@ const withActions = (actions: string) =>
   `${fixture.slice(0, fixture.indexOf("[[launch.actions]]"))}${actions}\n`;
 
 describe("launch actions", () => {
-  it("read in order, a table naming no kind a command, the zellij one with its sessions", () => {
+  it("read in order, a kind alone taking every default, and only what differs overriding them", () => {
     const config = parseConfig(
       withActions(
-        '[[launch.actions]]\nverb = "Open the folder"\ncommand = ["xdg-open", "{path}"]\n\n[[launch.actions]]\nkind = "zellij"\nverb = "Open the tab"\nzellij = ["zellij"]\nterminal = ["kitty", "{cwd}", "{session}"]\nsession = "main"\n[launch.actions.sessions]\n"~/work" = "work"\n\n[[launch.actions]]\nkind = "command"\nverb = "Open in Obsidian"\ncommand = ["xdg-open", "obsidian://open?vault={obsidian}&path={path}"]',
+        '[[launch.actions]]\nkind = "folder"\n\n[[launch.actions]]\nkind = "zellij"\nterminal = ["kitty", "{cwd}", "{session}"]\n[launch.actions.sessions]\n"~/work" = "work"\n\n[[launch.actions]]\nkind = "nvim"\nverb = "Edit it"\n\n[[launch.actions]]\nkind = "folder"\ncommand = ["dolphin", "{path}"]',
+      ),
+      home,
+    );
+
+    expect(config.launch.actions).toEqual([
+      {
+        kind: "folder",
+        verb: "Open the folder",
+        command: ["xdg-open", "{path}"],
+      },
+      {
+        kind: "zellij",
+        verb: "Open the zellij tab",
+        zellij: ["zellij"],
+        terminal: ["kitty", "{cwd}", "{session}"],
+        session: "main",
+        sessions: { "/home/test/work": "work" },
+      },
+      {
+        kind: "nvim",
+        verb: "Edit it",
+        command: [
+          "alacritty",
+          "--working-directory",
+          "{path}",
+          "-e",
+          "nvim",
+          ".",
+        ],
+      },
+      {
+        kind: "folder",
+        verb: "Open the folder",
+        command: ["dolphin", "{path}"],
+      },
+    ]);
+  });
+
+  it("read a custom command's verb, command and icon, the folder unless named", () => {
+    const config = parseConfig(
+      withActions(
+        '[[launch.actions]]\nkind = "command"\nverb = "Follow the log"\ncommand = ["lnav", "{path}"]\nicon = "terminal"\n\n[[launch.actions]]\nkind = "command"\nverb = "Note it"\ncommand = ["notify-send", "{obsidian}"]',
       ),
       home,
     );
@@ -568,21 +618,15 @@ describe("launch actions", () => {
     expect(config.launch.actions).toEqual([
       {
         kind: "command",
-        verb: "Open the folder",
-        command: ["xdg-open", "{path}"],
-      },
-      {
-        kind: "zellij",
-        verb: "Open the tab",
-        zellij: ["zellij"],
-        terminal: ["kitty", "{cwd}", "{session}"],
-        session: "main",
-        sessions: { "/home/test/work": "work" },
+        verb: "Follow the log",
+        command: ["lnav", "{path}"],
+        icon: "terminal",
       },
       {
         kind: "command",
-        verb: "Open in Obsidian",
-        command: ["xdg-open", "obsidian://open?vault={obsidian}&path={path}"],
+        verb: "Note it",
+        command: ["notify-send", "{obsidian}"],
+        icon: "folder",
       },
     ]);
   });
@@ -593,18 +637,26 @@ describe("launch actions", () => {
     });
   });
 
-  it("refuse a placeholder the command may not use", () => {
+  it("refuse a placeholder the kind may not use", () => {
     const cases: [string, string][] = [
       [
-        '[[launch.actions]]\nverb = "Open"\ncommand = ["code", "{worktree}"]',
+        '[[launch.actions]]\nkind = "vscode"\ncommand = ["code", "{obsidian}"]',
+        "config: launch.actions[0].command has no placeholder {obsidian}; it may use {path}",
+      ],
+      [
+        '[[launch.actions]]\nkind = "obsidian"\ncommand = ["code", "{worktree}"]',
         "config: launch.actions[0].command has no placeholder {worktree}; it may use {path} and {obsidian}",
       ],
       [
-        '[[launch.actions]]\nkind = "zellij"\nverb = "Tab"\nzellij = ["zellij", "{path}"]\nterminal = ["kitty"]\nsession = "main"',
+        '[[launch.actions]]\nkind = "command"\nverb = "Open"\ncommand = ["code", "{worktree}"]',
+        "config: launch.actions[0].command has no placeholder {worktree}; it may use {path} and {obsidian}",
+      ],
+      [
+        '[[launch.actions]]\nkind = "zellij"\nzellij = ["zellij", "{path}"]',
         "config: launch.actions[0].zellij has no placeholder {path}; it may use none",
       ],
       [
-        '[[launch.actions]]\nkind = "zellij"\nverb = "Tab"\nzellij = ["zellij"]\nterminal = ["kitty", "{path}"]\nsession = "main"',
+        '[[launch.actions]]\nkind = "zellij"\nterminal = ["kitty", "{path}"]',
         "config: launch.actions[0].terminal has no placeholder {path}; it may use {session} and {cwd}",
       ],
     ];
@@ -614,19 +666,27 @@ describe("launch actions", () => {
     }
   });
 
-  it("refuse a command not naming a program first, and a blank verb", () => {
+  it("refuse a command not naming a program first, a blank verb, and a custom command missing either", () => {
     const cases: [string, string][] = [
       [
-        '[[launch.actions]]\nverb = "Open"\ncommand = []',
+        '[[launch.actions]]\nkind = "folder"\ncommand = []',
         "config: launch.actions[0].command must name a program first",
       ],
       [
-        '[[launch.actions]]\nverb = "Open"\ncommand = ["", "lnav"]',
+        '[[launch.actions]]\nkind = "command"\nverb = "Open"\ncommand = ["", "lnav"]',
         "config: launch.actions[0].command must name a program first",
       ],
       [
-        '[[launch.actions]]\nverb = " "\ncommand = ["code"]',
+        '[[launch.actions]]\nkind = "vscode"\nverb = " "',
         "config: launch.actions[0].verb must not be blank",
+      ],
+      [
+        '[[launch.actions]]\nkind = "command"\ncommand = ["code"]',
+        "config: launch.actions[0].verb must be a string",
+      ],
+      [
+        '[[launch.actions]]\nkind = "command"\nverb = "Open"',
+        "config: launch.actions[0].command must be an array of strings",
       ],
     ];
 
@@ -635,29 +695,37 @@ describe("launch actions", () => {
     }
   });
 
-  it("refuse a second zellij action, an unknown kind, and a key the kind does not hold", () => {
-    const zellij =
-      '[[launch.actions]]\nkind = "zellij"\nverb = "Tab"\nzellij = ["zellij"]\nterminal = ["kitty"]\nsession = "main"\n';
+  it("refuse a second zellij action, a missing or unknown kind, an unknown icon, and a key the kind does not hold", () => {
+    const cases: [string, string][] = [
+      [
+        '[[launch.actions]]\nkind = "zellij"\n\n[[launch.actions]]\nkind = "zellij"',
+        "config: launch.actions holds two zellij actions; there may be one",
+      ],
+      [
+        '[[launch.actions]]\nverb = "Run"\ncommand = ["code"]',
+        "config: launch.actions[0].kind must be a string",
+      ],
+      [
+        '[[launch.actions]]\nkind = "shell"',
+        "config: launch.actions[0].kind must be one of vscode, zellij, nvim, folder, obsidian, command",
+      ],
+      [
+        '[[launch.actions]]\nkind = "command"\nverb = "Run"\ncommand = ["code"]\nicon = "rocket"',
+        "config: launch.actions[0].icon must be one of terminal, code, folder, forge, obsidian, adopt, edit",
+      ],
+      [
+        '[[launch.actions]]\nkind = "vscode"\nicon = "code"',
+        "config: launch.actions[0].icon is not a config key",
+      ],
+      [
+        '[[launch.actions]]\nkind = "folder"\nsession = "main"',
+        "config: launch.actions[0].session is not a config key",
+      ],
+    ];
 
-    expect(() =>
-      parseConfig(withActions(`${zellij}\n${zellij}`), home),
-    ).toThrow(
-      "config: launch.actions holds two zellij actions; there may be one",
-    );
-    expect(() =>
-      parseConfig(
-        withActions('[[launch.actions]]\nkind = "shell"\nverb = "Run"'),
-        home,
-      ),
-    ).toThrow("config: launch.actions[0].kind must be one of command, zellij");
-    expect(() =>
-      parseConfig(
-        withActions(
-          '[[launch.actions]]\nverb = "Open"\ncommand = ["code"]\nsession = "main"',
-        ),
-        home,
-      ),
-    ).toThrow("config: launch.actions[0].session is not a config key");
+    for (const [actions, message] of cases) {
+      expect(() => parseConfig(withActions(actions), home)).toThrow(message);
+    }
   });
 
   it("refuse the old [launch] keys", () => {

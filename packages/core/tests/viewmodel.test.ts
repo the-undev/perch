@@ -1123,12 +1123,13 @@ describe("the detail", () => {
         ? { ...action, sessions: { "/home/test/undev": "undev" } }
         : action,
     );
-    const vault = item("undev/notes", { kind: "obsidian" });
+    const obsidianBird = item("undev/notes", { kind: "obsidian" });
 
     expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([
       {
         kind: "zellij",
         verb: "Open the zellij tab",
+        icon: "terminal",
         zellij: ["zellij"],
         terminal: [
           "alacritty",
@@ -1147,21 +1148,24 @@ describe("the detail", () => {
       {
         kind: "command",
         verb: "Open in VS Code",
+        icon: "code",
         command: ["code", "{path}"],
         path: "/home/test/dev/perch",
       },
       {
         kind: "command",
         verb: "Open the folder",
+        icon: "folder",
         command: ["dolphin", "{path}"],
         path: "/home/test/dev/perch",
       },
     ]);
     expect(
-      birdIn([vault], config, "undev/notes").detail.actions.map((action) =>
-        action.kind === "zellij"
-          ? [action.verb, action.session]
-          : [action.verb, action.kind],
+      birdIn([obsidianBird], config, "undev/notes").detail.actions.map(
+        (action) =>
+          action.kind === "zellij"
+            ? [action.verb, action.session]
+            : [action.verb, action.kind],
       ),
     ).toEqual([
       ["Open in Obsidian", "obsidian"],
@@ -1171,11 +1175,24 @@ describe("the detail", () => {
     ]);
   });
 
-  it("offers an action using {obsidian} on Obsidian birds only, with the vault's folder name", async () => {
+  it("offers the Obsidian kind, and a custom command using {obsidian}, on Obsidian birds only, with the Obsidian vault's folder name", async () => {
     const config = await adoptAll(["obsidian/Home Notes", "dev/perch"]);
-    const vault = item("obsidian/Home Notes", { kind: "obsidian" });
+    config.launch.actions.push(
+      {
+        kind: "obsidian",
+        verb: "Open it plainly",
+        command: ["obsidian", "{path}"],
+      },
+      {
+        kind: "command",
+        verb: "Note it",
+        command: ["notify-send", "{obsidian}"],
+        icon: "edit",
+      },
+    );
+    const obsidianBird = item("obsidian/Home Notes", { kind: "obsidian" });
     const obsidianActions = (id: string) =>
-      birdIn([vault, perch], config, id).detail.actions.filter(
+      birdIn([obsidianBird, perch], config, id).detail.actions.filter(
         (action) => action.kind === "obsidian",
       );
 
@@ -1183,12 +1200,51 @@ describe("the detail", () => {
       {
         kind: "obsidian",
         verb: "Open in Obsidian",
+        icon: "obsidian",
         command: ["xdg-open", "obsidian://open?vault={obsidian}"],
         path: "/home/test/obsidian/Home Notes",
-        vault: "Home Notes",
+        obsidianVault: "Home Notes",
+      },
+      {
+        kind: "obsidian",
+        verb: "Open it plainly",
+        icon: "obsidian",
+        command: ["obsidian", "{path}"],
+        path: "/home/test/obsidian/Home Notes",
+        obsidianVault: "Home Notes",
+      },
+      {
+        kind: "obsidian",
+        verb: "Note it",
+        icon: "edit",
+        command: ["notify-send", "{obsidian}"],
+        path: "/home/test/obsidian/Home Notes",
+        obsidianVault: "Home Notes",
       },
     ]);
     expect(obsidianActions("dev/perch")).toEqual([]);
+  });
+
+  it("gives a custom command not using {obsidian} to every bird, wearing its picked icon", async () => {
+    const config = await adoptAll(["dev/perch"]);
+    config.launch.actions = [
+      {
+        kind: "command",
+        verb: "Follow the log",
+        command: ["lnav", "{path}/logs"],
+        icon: "terminal",
+      },
+    ];
+
+    expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([
+      {
+        kind: "command",
+        verb: "Follow the log",
+        icon: "terminal",
+        command: ["lnav", "{path}/logs"],
+        path: "/home/test/dev/perch",
+      },
+    ]);
   });
 
   it("offers nothing when config holds no launch actions", async () => {

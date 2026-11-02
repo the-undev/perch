@@ -7,6 +7,7 @@ import {
   deriveDrift,
   deriveStall,
 } from "../src/derivations.ts";
+import { launchKinds } from "../src/launch-kinds.ts";
 import { mockAviary, mockConfig, mockHome, mockSnapshot } from "../src/mock.ts";
 import type { GitData } from "../src/snapshot.ts";
 import { speak } from "../src/speech.ts";
@@ -144,6 +145,30 @@ describe("the mock dataset", () => {
     const unCloned = birds.filter((bird) => bird.detail.clonePath === null);
     expect(unCloned.length).toBeGreaterThan(0);
     expect(unCloned.flatMap(kinds)).toEqual([]);
+  });
+
+  it("holds every kind of launch action in config, one overridden, and a custom command wearing a picked icon", () => {
+    const actions = mockConfig.launch.actions;
+    const perch = birds.find((bird) => bird.id === "dev/perch");
+
+    expect(new Set(actions.map((action) => action.kind))).toEqual(
+      new Set(launchKinds),
+    );
+    expect(actions).toContainEqual(
+      expect.objectContaining({
+        kind: "folder",
+        command: ["dolphin", "{path}"],
+      }),
+    );
+    expect(
+      perch?.detail.actions.map((action) => [action.verb, action.icon]),
+    ).toEqual([
+      ["Open the zellij tab", "terminal"],
+      ["Open in VS Code", "code"],
+      ["Open the folder", "folder"],
+      ["Open in nvim", "edit"],
+      ["Follow the log", "terminal"],
+    ]);
   });
 
   it("hands each chip on a bubble one ledger row or the notice holding its working, and nothing a chip it lacks", () => {

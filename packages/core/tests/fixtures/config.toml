@@ -55,20 +55,15 @@ interval_minutes = 15
 finalised_commits = 10
 
 [[launch.actions]]
-verb = "Open in Obsidian"
-command = ["xdg-open", "obsidian://open?vault={obsidian}"]
+kind = "obsidian"
 
 [[launch.actions]]
 kind = "zellij"
-verb = "Open the zellij tab"
-zellij = ["zellij"]
-terminal = ["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
 session = "home"
 
 [[launch.actions]]
-verb = "Open in VS Code"
-command = ["code", "{path}"]
+kind = "vscode"
 
 [[launch.actions]]
-verb = "Open the folder"
+kind = "folder"
 command = ["dolphin", "{path}"]

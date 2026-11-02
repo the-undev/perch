@@ -207,38 +207,43 @@ export function SettingsGroupsPage() {
       </Section>
       <Section
         title="Launching"
-        rule="One card per launch action, in the order a bird offers them, then the shelf of presets that adds one. A card's head names the preset it shows it came from, the custom command when none runs its command, with the verb greyed and the arrows and remove; its head opens it. A command keeps the file's list form, read as JSON, never split on spaces. The shelf offers zellij once; refusals are red on the card and listed beside Save."
+        rule="One card per launch action, in the order a bird offers them, then the shelf of kinds and the custom command that adds one. A card's head wears its icon, its kind's name and its verb, greyed, with the arrows and remove; its head opens it. A kind's fields show its defaults in grey until typed over, and only what differs is written. A custom command names its own verb and command and picks its icon. A command keeps the file's list form, read as JSON, never split on spaces. The shelf offers zellij once; refusals are red on the card and listed beside Save."
         min={620}
       >
         <GroupSpecimen
           label="As the mock holds it"
-          rule="Obsidian, the zellij tab with ~/undev in its own session, VS Code, and the folder in dolphin, which no preset runs; zellij greys on the shelf. Press a head to open its card."
+          rule="Obsidian, the zellij tab with its own terminal and ~/undev in its own session, VS Code, the folder in dolphin, nvim, and a custom command wearing the terminal; zellij greys on the shelf. Press a head to open its card."
           start={mock}
           group={launch}
         />
         <GroupSpecimen
           label="Nothing added"
-          rule="A fresh config offers nothing on any bird: the shelf is the whole page, zellij among its presets."
+          rule="A fresh config offers nothing on any bird: the shelf is the whole page, zellij among its kinds."
           start={withMock({ launch: { actions: [] } })}
           group={launch}
         />
         <GroupSpecimen
           label="A card's refusals"
-          rule="A command not naming a program first, one with a placeholder it may not use, and a blank verb; each card with a refusal starts open."
+          rule="A folder command not naming a program first, a VS Code command using {obsidian}, which only the Obsidian kind and a custom command may, and a custom command with no words; each card with a refusal starts open."
           start={withMock({
             launch: {
               actions: [
                 {
-                  kind: "command",
-                  verb: "Open the logs",
-                  command: '["", "lnav", "{path}/logs"]',
+                  kind: "folder",
+                  verb: "",
+                  command: '["", "dolphin", "{path}"]',
+                },
+                {
+                  kind: "vscode",
+                  verb: "",
+                  command: '["code", "{obsidian}"]',
                 },
                 {
                   kind: "command",
-                  verb: "Open the worktree",
-                  command: '["code", "{worktree}"]',
+                  verb: "",
+                  command: '["lnav", "{path}/logs"]',
+                  icon: "terminal",
                 },
-                { kind: "command", verb: "", command: '["code", "{path}"]' },
               ],
             },
           })}
@@ -246,14 +251,14 @@ export function SettingsGroupsPage() {
         />
         <GroupSpecimen
           label="The zellij card's refusals"
-          rule="Its two commands, the session and the roots on the one card: a session left blank, a root not starting with / or ~, and a terminal using {path}, which only a command action may."
+          rule="Its two commands, the session and the roots on the one card: a root not starting with / or ~, and a terminal using {path}, which zellij's terminal may not."
           start={withMock({
             launch: {
               actions: [
                 {
                   kind: "zellij",
-                  verb: "Open the zellij tab",
-                  zellij: '["zellij"]',
+                  verb: "",
+                  zellij: "",
                   terminal: '["alacritty", "--working-directory", "{path}"]',
                   session: "",
                   sessions: [{ root: "work", session: "work" }],

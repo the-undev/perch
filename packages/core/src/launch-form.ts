@@ -1,12 +1,21 @@
-// The launch actions as the settings page edits them: the presets the shelf offers, a card's
-// values and name, and what a card's fields cannot be. Commands are list lines, session roots are
-// written with ~. No Node modules, so the renderer may import it.
+// The launch actions as the settings page edits them: a card's values, the kind's defaults it shows
+// until overridden, and what a card's fields cannot be. A field left empty on a kind's card holds
+// the kind's default; a custom command has no defaults but its icon. Commands are list lines,
+// session roots are written with ~. No Node modules, so the renderer may import it.
 
 import {
   type LaunchActionConfig,
   launchCommandProblem,
-  launchPlaceholders,
+  placeholdersIn,
 } from "./config.ts";
+import {
+  type CommandKind,
+  commandKinds,
+  customKind,
+  type IconName,
+  type LaunchKind,
+  zellijKind,
+} from "./launch-kinds.ts";
 import { listLine, listOf, parseListLine } from "./list-line.ts";
 
 /** A zellij session and the root directory whose items it holds. */
@@ -16,9 +25,10 @@ export interface SessionRoot {
   session: string;
 }
 
-/** One launch action's card: its verb and each command as a list line. */
+/** One launch action's card: its kind, its verb and each command as a list line, empty for the default. */
 export type LaunchActionValues =
-  | { kind: "command"; verb: string; command: string }
+  | { kind: CommandKind; verb: string; command: string }
+  | { kind: "command"; verb: string; command: string; icon: IconName }
   | {
       kind: "zellij";
       verb: string;
@@ -28,134 +38,86 @@ export type LaunchActionValues =
       sessions: SessionRoot[];
     };
 
-/** A preset on the shelf: its name, what it does, what adding it asks, and the card it fills. */
-export interface LaunchPreset {
-  name: string;
-  what: string;
-  needs: string;
-  values: LaunchActionValues;
-}
-
-/** The presets the shelf offers, in its order; adding one drops a card already filled in. */
-export const launchPresets: readonly LaunchPreset[] = [
-  {
-    name: "VS Code",
-    what: "Opens the project folder in VS Code.",
-    needs: "filled in",
-    values: {
-      kind: "command",
-      verb: "Open in VS Code",
-      command: listLine(["code", "{path}"]),
-    },
-  },
-  {
-    name: "zellij tab",
-    what: "Goes to the project's tab in its session, or opens one.",
-    needs: "filled in · once",
-    values: {
-      kind: "zellij",
-      verb: "Open the zellij tab",
-      zellij: listLine(["zellij"]),
-      terminal: listLine([
-        "alacritty",
-        "--working-directory",
-        "{cwd}",
-        "-e",
-        "zellij",
-        "attach",
-        "-c",
-        "{session}",
-      ]),
-      session: "main",
+/** A fresh card of a kind: just its kind, everything else its defaults, a custom command blank. */
+export function newCard(kind: LaunchKind): LaunchActionValues {
+  if (kind === "command") {
+    return { kind, verb: "", command: "", icon: customKind.icon };
+  }
+  if (kind === "zellij") {
+    return {
+      kind,
+      verb: "",
+      zellij: "",
+      terminal: "",
+      session: "",
       sessions: [],
-    },
-  },
-  {
-    name: "nvim",
-    what: "Opens nvim in the project folder, in a new terminal window.",
-    needs: "filled in",
-    values: {
-      kind: "command",
-      verb: "Open in nvim",
-      command: listLine([
-        "alacritty",
-        "--working-directory",
-        "{path}",
-        "-e",
-        "nvim",
-        ".",
-      ]),
-    },
-  },
-  {
-    name: "Folder",
-    what: "Opens the folder in the file manager.",
-    needs: "filled in",
-    values: {
-      kind: "command",
-      verb: "Open the folder",
-      command: listLine(["xdg-open", "{path}"]),
-    },
-  },
-  {
-    name: "Obsidian",
-    what: "Opens the item in Obsidian.",
-    needs: "Obsidian only",
-    values: {
-      kind: "command",
-      verb: "Open in Obsidian",
-      command: listLine(["xdg-open", "obsidian://open?vault={obsidian}"]),
-    },
-  },
-  {
-    name: "Custom command",
-    what: "A verb and a command of your own.",
-    needs: "you write it",
-    values: { kind: "command", verb: "", command: "" },
-  },
-];
-
-const customPreset = launchPresets[launchPresets.length - 1] as LaunchPreset;
-
-/** Whether two list lines hold the same strings; a line that does not parse matches nothing. */
-function sameLine(a: string, b: string): boolean {
-  const left = parseListLine(a);
-  const right = parseListLine(b);
-  if ("problem" in left || "problem" in right) return false;
-  return JSON.stringify(left.list) === JSON.stringify(right.list);
+    };
+  }
+  return { kind, verb: "", command: "" };
 }
 
-/**
- * The preset a card shows it came from: zellij's for the zellij action, else the preset running the
- * same command, else the custom command.
- */
-export function presetOf(action: LaunchActionValues): LaunchPreset {
-  const match = launchPresets.find(({ values }) => {
-    if (values.kind === "zellij") return action.kind === "zellij";
-    return (
-      action.kind === "command" && sameLine(values.command, action.command)
-    );
-  });
-  return match ?? customPreset;
-}
-
-/** Whether the shelf holds a preset back: zellij once a zellij action exists. */
-export function presetTaken(
+/** Whether the shelf holds a kind back: zellij once a zellij action exists. */
+export function kindTaken(
   actions: readonly LaunchActionValues[],
-  preset: LaunchPreset,
+  kind: LaunchKind,
 ): boolean {
-  return (
-    preset.values.kind === "zellij" &&
-    actions.some((action) => action.kind === "zellij")
-  );
+  return kind === "zellij" && actions.some((action) => action.kind === kind);
 }
 
-/** The actions with a card of the preset added at the end, its values a copy. */
-export function withPresetAdded(
+/** The actions with a fresh card of the kind added at the end. */
+export function withKindAdded(
   actions: readonly LaunchActionValues[],
-  preset: LaunchPreset,
+  kind: LaunchKind,
 ): LaunchActionValues[] {
-  return [...actions, structuredClone(preset.values)];
+  return [...actions, newCard(kind)];
+}
+
+/** What a kind's fields hold until overridden, as the card shows them; empty where it has none. */
+export function launchDefaults(
+  kind: LaunchKind,
+): Record<"verb" | "command" | "zellij" | "terminal" | "session", string> {
+  const none = { verb: "", command: "", zellij: "", terminal: "", session: "" };
+  if (kind === "command") return none;
+  if (kind === "zellij") {
+    return {
+      ...none,
+      verb: zellijKind.verb,
+      zellij: listLine(zellijKind.zellij),
+      terminal: listLine(zellijKind.terminal),
+      session: zellijKind.session,
+    };
+  }
+  const defaults = commandKinds[kind];
+  return {
+    ...none,
+    verb: defaults.verb,
+    command: listLine(defaults.command),
+  };
+}
+
+/** The words the bird's page will show for a card: its own, else its kind's. */
+export function cardVerb(action: LaunchActionValues): string {
+  return action.verb === "" ? launchDefaults(action.kind).verb : action.verb;
+}
+
+/** The icon a card wears: a custom command's picked icon, else its kind's. */
+export function cardIcon(action: LaunchActionValues): IconName {
+  if (action.kind === "command") return action.icon;
+  if (action.kind === "zellij") return zellijKind.icon;
+  return commandKinds[action.kind].icon;
+}
+
+/** Whether a card is offered on Obsidian birds only: the Obsidian kind, or a custom command using {obsidian}. */
+export function cardObsidianOnly(action: LaunchActionValues): boolean {
+  if (action.kind === "zellij") return false;
+  if (action.kind !== "command") return commandKinds[action.kind].obsidianOnly;
+  const parsed = parseListLine(action.command);
+  return "list" in parsed && placeholdersIn(parsed.list).includes("obsidian");
+}
+
+/** A config value as a card shows it: empty when it is the kind's default. */
+function shown(value: string, fallback: string): string {
+  return value === fallback ? "" : value;
 }
 
 /** A config action as its card's values, roots shown through path. */
@@ -163,24 +125,38 @@ export function launchValuesOf(
   action: LaunchActionConfig,
   path: (stored: string) => string,
 ): LaunchActionValues {
+  const defaults = launchDefaults(action.kind);
   if (action.kind === "command") {
     return {
-      kind: "command",
+      kind: action.kind,
       verb: action.verb,
       command: listLine(action.command),
+      icon: action.icon,
+    };
+  }
+  if (action.kind === "zellij") {
+    return {
+      kind: action.kind,
+      verb: shown(action.verb, defaults.verb),
+      zellij: shown(listLine(action.zellij), defaults.zellij),
+      terminal: shown(listLine(action.terminal), defaults.terminal),
+      session: shown(action.session, defaults.session),
+      sessions: Object.entries(action.sessions).map(([root, session]) => ({
+        root: path(root),
+        session,
+      })),
     };
   }
   return {
-    kind: "zellij",
-    verb: action.verb,
-    zellij: listLine(action.zellij),
-    terminal: listLine(action.terminal),
-    session: action.session,
-    sessions: Object.entries(action.sessions).map(([root, session]) => ({
-      root: path(root),
-      session,
-    })),
+    kind: action.kind,
+    verb: shown(action.verb, defaults.verb),
+    command: shown(listLine(action.command), defaults.command),
   };
+}
+
+/** A card's text, or its kind's default when the field is empty. */
+function orDefault(value: string, fallback: string): string {
+  return value.trim() === "" ? fallback : value;
 }
 
 /** A card's values as a config action, roots stored through path; the card has no problems. */
@@ -188,22 +164,31 @@ export function launchConfigOf(
   values: LaunchActionValues,
   path: (shown: string) => string,
 ): LaunchActionConfig {
+  const defaults = launchDefaults(values.kind);
   if (values.kind === "command") {
     return {
-      kind: "command",
+      kind: values.kind,
       verb: values.verb,
       command: listOf(values.command),
+      icon: values.icon,
+    };
+  }
+  if (values.kind === "zellij") {
+    return {
+      kind: values.kind,
+      verb: orDefault(values.verb, defaults.verb),
+      zellij: listOf(orDefault(values.zellij, defaults.zellij)),
+      terminal: listOf(orDefault(values.terminal, defaults.terminal)),
+      session: orDefault(values.session, defaults.session),
+      sessions: Object.fromEntries(
+        values.sessions.map(({ root, session }) => [path(root), session]),
+      ),
     };
   }
   return {
-    kind: "zellij",
-    verb: values.verb,
-    zellij: listOf(values.zellij),
-    terminal: listOf(values.terminal),
-    session: values.session,
-    sessions: Object.fromEntries(
-      values.sessions.map(({ root, session }) => [path(root), session]),
-    ),
+    kind: values.kind,
+    verb: orDefault(values.verb, defaults.verb),
+    command: listOf(orDefault(values.command, defaults.command)),
   };
 }
 
@@ -238,12 +223,16 @@ const isBlank = (text: string) => text.trim() === "";
 const isAbsolute = (path: string) =>
   path.startsWith("/") || path === "~" || path.startsWith("~/");
 
-/** Why a command line cannot be written with the placeholders allowed, or null when it can. */
+/**
+ * Why a command line cannot be written with the placeholders allowed, or null when it can; an
+ * empty line takes the kind's default, which a custom command has none of.
+ */
 function commandLineProblem(
   line: string,
   allowed: readonly string[],
+  custom: boolean,
 ): string | null {
-  if (isBlank(line)) return "needs a command";
+  if (isBlank(line)) return custom ? "needs a command" : null;
   const parsed = parseListLine(line);
   if ("problem" in parsed) return parsed.problem;
   return launchCommandProblem(parsed.list, allowed);
@@ -272,14 +261,25 @@ export function launchProblems(
     const add = (field: LaunchField, problem: string | null) => {
       if (problem !== null) problems.push({ index, field, problem });
     };
-    add(
-      "verb",
-      isBlank(action.verb) ? "needs words for the bird's page" : null,
-    );
     if (action.kind === "command") {
       add(
+        "verb",
+        isBlank(action.verb) ? "needs words for the bird's page" : null,
+      );
+      add(
         "command",
-        commandLineProblem(action.command, launchPlaceholders.command),
+        commandLineProblem(action.command, customKind.placeholders, true),
+      );
+      return;
+    }
+    if (action.kind !== "zellij") {
+      add(
+        "command",
+        commandLineProblem(
+          action.command,
+          commandKinds[action.kind].placeholders,
+          false,
+        ),
       );
       return;
     }
@@ -287,13 +287,20 @@ export function launchProblems(
       "zellij",
       zellijSeen
         ? "a second zellij action; there may be one"
-        : commandLineProblem(action.zellij, launchPlaceholders.zellij),
+        : commandLineProblem(
+            action.zellij,
+            zellijKind.placeholders.zellij,
+            false,
+          ),
     );
     add(
       "terminal",
-      commandLineProblem(action.terminal, launchPlaceholders.terminal),
+      commandLineProblem(
+        action.terminal,
+        zellijKind.placeholders.terminal,
+        false,
+      ),
     );
-    add("session", isBlank(action.session) ? "needs a session name" : null);
     add("sessions", sessionsProblem(action.sessions));
     zellijSeen = true;
   });

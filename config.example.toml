@@ -88,43 +88,61 @@ finalised_commits = 10
 # Launch actions: what a bird's page can open, one table per action in the
 # order the page offers them. A config with none offers nothing.
 #
-# A plain action runs its command without a shell, detached from perch. The
-# placeholders in braces are filled in at launch: {path} is the item's
-# directory, and {obsidian} the Obsidian vault's folder name, encoded for a
-# URI. An action using {obsidian} is offered on Obsidian birds only; every
-# other action on every bird with a folder on this machine.
+# Each table names its kind and only what differs from the kind's defaults:
+# its verb, the words on the bird's page, and its command, run without a
+# shell, detached from perch. The placeholders in braces are filled in at
+# launch: {path} is the item's directory, and {obsidian} the Obsidian vault's
+# folder name, encoded for a URI.
 #
-# The zellij action, kind = "zellij", appears at most once. It finds the
-# session's tab named after the project and goes to it, or opens one in the
-# project's directory. A session that is not running opens in the terminal
-# command, with {session} and {cwd}, the project's directory. The session is
-# the item's own zellij_session, else the session of the longest root holding
-# the item in [launch.actions.sessions], else session here.
+#   vscode    Open in VS Code    ["code", "{path}"]
+#   nvim      Open in nvim       ["alacritty", "--working-directory", "{path}", "-e", "nvim", "."]
+#   folder    Open the folder    ["xdg-open", "{path}"]
+#   obsidian  Open in Obsidian   ["xdg-open", "obsidian://open?vault={obsidian}"]
+#
+# The obsidian kind is offered on Obsidian birds only, and may use
+# {obsidian}; every other kind on every bird with a folder on this machine.
+# A kind may appear more than once, each with its own verb.
+#
+# The zellij kind, at most once, finds the session's tab named after the
+# project and goes to it, or opens one in the project's directory. A session
+# that is not running opens in its terminal command, with {session} and
+# {cwd}, the project's directory. The session is the item's own
+# zellij_session, else the session of the longest root holding the item in
+# [launch.actions.sessions], else its session. Its defaults:
+#
+#   verb      "Open the zellij tab"
+#   zellij    ["zellij"]
+#   terminal  ["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
+#   session   "main"
 [[launch.actions]]
 kind = "zellij"
-verb = "Open the zellij tab"
-zellij = ["zellij"]
-terminal = ["alacritty", "--working-directory", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
-session = "main"
 [launch.actions.sessions]
 "~/work" = "work"
 
 [[launch.actions]]
-verb = "Open in VS Code"
-command = ["code", "{path}"]
+kind = "vscode"
 
 [[launch.actions]]
-verb = "Open in nvim"
-command = ["alacritty", "--working-directory", "{path}", "-e", "nvim", "."]
+kind = "nvim"
 
 [[launch.actions]]
-verb = "Open the folder"
-command = ["xdg-open", "{path}"]
+kind = "folder"
 
-# An Obsidian vault opens in Obsidian with:
+# Obsidian, and a kind's verb and command overridden:
 # [[launch.actions]]
-# verb = "Open in Obsidian"
-# command = ["xdg-open", "obsidian://open?vault={obsidian}"]
+# kind = "obsidian"
+# verb = "Open the Obsidian vault"
+# command = ["obsidian", "obsidian://open?vault={obsidian}"]
+
+# A custom command names its verb and command, which may use {path} and
+# {obsidian}; one using {obsidian} is offered on Obsidian birds only. Its icon
+# is one of terminal, code, folder, forge, obsidian, adopt and edit, the
+# folder unless named.
+# [[launch.actions]]
+# kind = "command"
+# verb = "Follow the log"
+# command = ["alacritty", "-e", "lnav", "{path}/logs"]
+# icon = "terminal"
 
 # Item entries. An entry adopts the bird and puts it on a wire. Its key names
 # any presence of the item: a local id, or a forge presence such as

@@ -31,6 +31,7 @@ const loaded: LoadedConfig = { config: mockConfig, path: "/config.toml" };
 const perchInCode: LaunchAction = {
   kind: "command",
   verb: "Open in VS Code",
+  icon: "code",
   command: ["code", "{path}"],
   path: "/home/owner/dev/perch",
 };
@@ -535,22 +536,28 @@ describe("the settings", () => {
     expect(await written()).toBe(first);
   });
 
-  it("adds a launch action with a zellij session root under ~, rereads the config and asks for a scan", async () => {
+  it("adds a zellij action writing only what differs, a session root under ~, rereads the config and asks for a scan", async () => {
     const { app, deps, published } = await onText(starter());
     const { values } = formOf(app);
     const zellij: LaunchActionValues = {
       kind: "zellij",
-      verb: "Open the zellij tab",
-      zellij: '["zellij"]',
+      verb: "",
+      zellij: "",
       terminal: '["kitty", "{cwd}", "{session}"]',
-      session: "main",
+      session: "",
       sessions: [{ root: "~/work", session: "work" }],
     };
 
     await app.saveSettings({ ...values, launch: { actions: [zellij] } });
 
-    expect(parse(await written()).launch).toMatchObject({
-      actions: [{ kind: "zellij", sessions: { "~/work": "work" } }],
+    expect(parse(await written()).launch).toEqual({
+      actions: [
+        {
+          kind: "zellij",
+          terminal: ["kitty", "{cwd}", "{session}"],
+          sessions: { "~/work": "work" },
+        },
+      ],
     });
     expect(formOf(app).values.launch.actions).toEqual([zellij]);
     expect(published.at(-1)?.problems).toEqual([]);

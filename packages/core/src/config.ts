@@ -2,6 +2,16 @@
 // uses no Node modules, so the renderer may import the lookups below.
 
 import { parse } from "smol-toml";
+import {
+  type CommandKind,
+  commandKinds,
+  customKind,
+  type IconName,
+  type LaunchKind,
+  launchKinds,
+  lineIcons,
+  zellijKind,
+} from "./launch-kinds.ts";
 import { candidateRefs } from "./refs.ts";
 import type { DayThresholds, HourThresholds } from "./snapshot.ts";
 
@@ -98,12 +108,23 @@ export interface Config {
   };
 }
 
-/** A launch action that runs one command detached, without a shell, its placeholders filled in. */
-export interface CommandActionConfig {
-  kind: "command";
+/**
+ * An action of a kind that runs one command detached, without a shell, its placeholders filled in:
+ * VS Code, nvim, the folder or Obsidian. Config holds only what differs from the kind's defaults.
+ */
+export interface KindActionConfig {
+  kind: CommandKind;
   /** The words on the bird's page. */
   verb: string;
   command: string[];
+}
+
+/** A custom command: its words and command its own, and the line icon it wears. */
+export interface CommandActionConfig {
+  kind: "command";
+  verb: string;
+  command: string[];
+  icon: IconName;
 }
 
 /** The zellij tab action: goes to the item's tab in its session, or opens one there. */
@@ -121,17 +142,10 @@ export interface ZellijActionConfig {
   sessions: Record<string, string>;
 }
 
-export type LaunchActionConfig = CommandActionConfig | ZellijActionConfig;
-
-/** The placeholders each launch command may use: a command action's, zellij's, and its terminal's. */
-export const launchPlaceholders: Record<
-  "command" | "zellij" | "terminal",
-  readonly string[]
-> = {
-  command: ["path", "obsidian"],
-  zellij: [],
-  terminal: ["session", "cwd"],
-};
+export type LaunchActionConfig =
+  | KindActionConfig
+  | CommandActionConfig
+  | ZellijActionConfig;
 
 /** The placeholders an argument list uses, each once, in order. */
 export function placeholdersIn(argv: readonly string[]): string[] {
@@ -144,9 +158,17 @@ export function placeholdersIn(argv: readonly string[]): string[] {
   ];
 }
 
-/** Whether a command uses {obsidian}, which offers its action on Obsidian birds only. */
-export function usesObsidian(command: readonly string[]): boolean {
-  return placeholdersIn(command).includes("obsidian");
+/**
+ * Whether an action is offered on Obsidian birds only: the Obsidian kind always, and a custom
+ * command using {obsidian}.
+ */
+export function obsidianOnly(
+  action: KindActionConfig | CommandActionConfig,
+): boolean {
+  if (action.kind === "command") {
+    return placeholdersIn(action.command).includes("obsidian");
+  }
+  return commandKinds[action.kind].obsidianOnly;
 }
 
 /** Why an argument list cannot be a launch command using only the placeholders allowed; null when it can. */
@@ -473,7 +495,10 @@ function parseSources(document: Table, home: string): SourcesConfig {
   return parsed;
 }
 
-/** One [[launch.actions]] table: a command action when it names no kind. */
+/**
+ * One [[launch.actions]] table: its kind, and only what differs from the kind's defaults, bar a
+ * custom command, which names its verb and command and may pick its icon.
+ */
 function parseLaunchAction(
   value: unknown,
   where: string,
@@ -481,45 +506,80 @@ function parseLaunchAction(
 ): LaunchActionConfig {
   if (!isTable(value)) throw new Error(`config: ${where} must be a table`);
   const at = `${where}.`;
-  const kind =
-    value.kind === undefined
-      ? "command"
-      : oneOf(string(value, "kind", at), ["command", "zellij"], `${at}kind`);
-  const verb = string(value, "verb", at);
-  if (verb.trim() === "")
-    throw new Error(`config: ${at}verb must not be blank`);
-  const argv = (key: string, allowed: readonly string[]) => {
+  const kind = oneOf(
+    string(value, "kind", at),
+    launchKinds,
+    `${at}kind`,
+  ) as LaunchKind;
+  const verb = (fallback: string | null) => {
+    if (value.verb === undefined && fallback !== null) return fallback;
+    const words = string(value, "verb", at);
+    if (words.trim() === "") {
+      throw new Error(`config: ${at}verb must not be blank`);
+    }
+    return words;
+  };
+  const argv = (
+    key: string,
+    fallback: readonly string[] | null,
+    allowed: readonly string[],
+  ) => {
+    if (value[key] === undefined && fallback !== null) return [...fallback];
     const list = stringArray(value[key], `${at}${key}`);
     const problem = launchCommandProblem(list, allowed);
     if (problem !== null) throw new Error(`config: ${at}${key} ${problem}`);
     return list;
   };
   if (kind === "command") {
-    onlyKeys(value, ["kind", "verb", "command"], at);
+    onlyKeys(value, ["kind", "verb", "command", "icon"], at);
     return {
       kind,
-      verb,
-      command: argv("command", launchPlaceholders.command),
+      verb: verb(null),
+      command: argv("command", null, customKind.placeholders),
+      icon:
+        value.icon === undefined
+          ? customKind.icon
+          : (oneOf(
+              string(value, "icon", at),
+              lineIcons,
+              `${at}icon`,
+            ) as IconName),
     };
   }
-  onlyKeys(
-    value,
-    ["kind", "verb", "zellij", "terminal", "session", "sessions"],
-    at,
-  );
-  const sessions = optionalTable(value, "sessions", at);
+  if (kind === "zellij") {
+    onlyKeys(
+      value,
+      ["kind", "verb", "zellij", "terminal", "session", "sessions"],
+      at,
+    );
+    const sessions = optionalTable(value, "sessions", at);
+    return {
+      kind,
+      verb: verb(zellijKind.verb),
+      zellij: argv("zellij", zellijKind.zellij, zellijKind.placeholders.zellij),
+      terminal: argv(
+        "terminal",
+        zellijKind.terminal,
+        zellijKind.placeholders.terminal,
+      ),
+      session:
+        value.session === undefined
+          ? zellijKind.session
+          : string(value, "session", at),
+      sessions: Object.fromEntries(
+        Object.keys(sessions).map((root) => [
+          expandHome(root, home),
+          string(sessions, root, `${at}sessions.`),
+        ]),
+      ),
+    };
+  }
+  onlyKeys(value, ["kind", "verb", "command"], at);
+  const defaults = commandKinds[kind];
   return {
-    kind: "zellij",
-    verb,
-    zellij: argv("zellij", launchPlaceholders.zellij),
-    terminal: argv("terminal", launchPlaceholders.terminal),
-    session: string(value, "session", at),
-    sessions: Object.fromEntries(
-      Object.keys(sessions).map((root) => [
-        expandHome(root, home),
-        string(sessions, root, `${at}sessions.`),
-      ]),
-    ),
+    kind,
+    verb: verb(defaults.verb),
+    command: argv("command", defaults.command, defaults.placeholders),
   };
 }
 

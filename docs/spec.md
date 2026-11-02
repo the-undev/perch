@@ -403,6 +403,22 @@ birds name it and that they move to the default. The default cannot be
 removed until another wire is picked. Save is held while a wire has no
 name or two wires share one.
 
+The Launching page holds one card per launch action, in the order birds
+offer them. A card's head wears the action's icon, its kind's name (VS
+Code, nvim, Folder, Obsidian, zellij tab or Custom command) and its
+verb, greyed, with arrows that move it earlier or later on the bird and
+its remove; the head opens the card. Opened, a card shows its verb and
+its command as a list line in the config file's form. A kind's fields
+show its defaults in grey until typed over, and the file holds only what
+differs. The zellij card holds its zellij and terminal commands, its
+session and its sessions by root. A custom command names its own verb
+and command and picks its icon from a row of the app's line icons.
+Beneath the cards a shelf lists the kinds and the custom command, each
+with what it does and what it asks; adding one adds its card, open, and
+zellij is held back once one exists. A refusal shows in red on its card
+and holds Save: a custom command without words or a command, a command
+not naming a program first, a placeholder its kind may not use.
+
 The app writes the file without comments, paths under the home
 directory with `~`. An edit to the file by hand is read as soon as it is
 saved, and the open page or papers show it, and a scan follows; the last write wins.
@@ -466,13 +482,14 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   and `?chip=<kind>` to land on a chip's ledger row, an unknown kind read
   as none. `/settings` is the settings page in
   the camera's place; Escape goes home from it as from a bird.
-- Launch actions are `[[launch.actions]]` tables, added from the
-  Launching page's shelf of presets and offered on a bird's page in
-  their order. A command action runs its command from config, detached
-  and without a shell, `{path}` filled with the item's directory and
-  `{obsidian}` with the vault's folder name encoded for a URI. One using
-  `{obsidian}` is offered on Obsidian birds only; every other action on
-  every bird with a folder on this machine. The main process runs only
+- Launch actions are `[[launch.actions]]` tables, each naming its kind
+  and only what differs from the kind's defaults, offered on a bird's
+  page in their order. An action other than zellij runs its command
+  detached and without a shell, `{path}` filled with the item's
+  directory and `{obsidian}` with the Obsidian vault's folder name
+  encoded for a URI. The Obsidian kind, and a custom command using
+  `{obsidian}`, are offered on Obsidian birds only; every other action
+  on every bird with a folder on this machine. The main process runs only
   an action some bird offers, its commands included. Links open in the
   browser; the window never navigates. Key files are read by the main
   process when a detail opens and again after every scan.

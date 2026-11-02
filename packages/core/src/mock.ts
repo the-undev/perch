@@ -4,8 +4,8 @@
 // mood and activity, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed backlog, a stalled
 // branch and clean zeros, a bird with no clone here and one on no forge, a remote no card can
 // read, forges that couldn't be read at all and one whose pull requests alone couldn't be read,
-// the source cards every scan state, and every kind of launch action, the Obsidian one on
-// Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
+// the source cards every scan state, and every kind of launch action, some overridden, the
+// Obsidian one on Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
 // numbered placeholder items, as many as each file's open counts.
 
 import type { Config, ItemEntry } from "./config.ts";
@@ -146,7 +146,7 @@ export const mockConfig: Config = {
   launch: {
     actions: [
       {
-        kind: "command",
+        kind: "obsidian",
         verb: "Open in Obsidian",
         command: ["xdg-open", "obsidian://open?vault={obsidian}"],
       },
@@ -158,11 +158,29 @@ export const mockConfig: Config = {
         session: "home",
         sessions: { [`${home}/undev`]: "undev" },
       },
-      { kind: "command", verb: "Open in VS Code", command: ["code", "{path}"] },
+      { kind: "vscode", verb: "Open in VS Code", command: ["code", "{path}"] },
       {
-        kind: "command",
+        kind: "folder",
         verb: "Open the folder",
         command: ["dolphin", "{path}"],
+      },
+      {
+        kind: "nvim",
+        verb: "Open in nvim",
+        command: [
+          "alacritty",
+          "--working-directory",
+          "{path}",
+          "-e",
+          "nvim",
+          ".",
+        ],
+      },
+      {
+        kind: "command",
+        verb: "Follow the log",
+        command: ["alacritty", "-e", "lnav", "{path}/logs"],
+        icon: "terminal",
       },
     ],
   },

@@ -12,6 +12,7 @@ import {
   type Thresholds,
   thresholdKeys,
 } from "./config.ts";
+import { commandKinds, customKind, zellijKind } from "./launch-kinds.ts";
 
 type Table = Record<string, unknown>;
 
@@ -85,30 +86,51 @@ function unlessEmpty(table: Table): Table | undefined {
   return Object.keys(table).length === 0 ? undefined : table;
 }
 
-/** One [[launch.actions]] table; a command action leaves its kind out, as the parser's default. */
+/** The value, or nothing when it is the default: config holds only what differs. */
+function unlessDefault<T>(value: T, fallback: T): T | undefined {
+  return JSON.stringify(value) === JSON.stringify(fallback) ? undefined : value;
+}
+
+/**
+ * One [[launch.actions]] table: its kind, and what differs from the kind's defaults. A custom
+ * command writes its verb and command, and its icon unless it is the folder.
+ */
 function actionTable(
   action: LaunchActionConfig,
   path: (stored: string) => string,
 ): Table {
   if (action.kind === "command") {
-    return { verb: action.verb, command: action.command };
+    return {
+      kind: action.kind,
+      verb: action.verb,
+      command: action.command,
+      icon: unlessDefault(action.icon, customKind.icon),
+    };
   }
-  return {
-    kind: action.kind,
-    verb: action.verb,
-    zellij: action.zellij,
-    terminal: action.terminal,
-    session: action.session,
-    sessions: unlessEmpty(
-      sortedByKey(
-        Object.fromEntries(
-          Object.entries(action.sessions).map(([root, session]) => [
-            path(root),
-            session,
-          ]),
+  if (action.kind === "zellij") {
+    return {
+      kind: action.kind,
+      verb: unlessDefault(action.verb, zellijKind.verb),
+      zellij: unlessDefault(action.zellij, zellijKind.zellij),
+      terminal: unlessDefault(action.terminal, zellijKind.terminal),
+      session: unlessDefault(action.session, zellijKind.session),
+      sessions: unlessEmpty(
+        sortedByKey(
+          Object.fromEntries(
+            Object.entries(action.sessions).map(([root, session]) => [
+              path(root),
+              session,
+            ]),
+          ),
         ),
       ),
-    ),
+    };
+  }
+  const defaults = commandKinds[action.kind];
+  return {
+    kind: action.kind,
+    verb: unlessDefault(action.verb, defaults.verb),
+    command: unlessDefault(action.command, defaults.command),
   };
 }
 
@@ -116,7 +138,8 @@ function actionTable(
  * Serialises config to TOML that parseConfig reads back to an equal config, deterministic because
  * item entries and zellij session roots are sorted by key and every list, sources and launch
  * actions among them, keeps its order. Paths at or under the home directory are written with a
- * leading ~, and empty optional tables, source kinds and launch actions are left out.
+ * leading ~, empty optional tables, source kinds and launch actions are left out, and so is a
+ * launch action's field that holds its kind's default.
  */
 export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);

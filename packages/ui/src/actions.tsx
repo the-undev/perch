@@ -2,7 +2,7 @@
 // to the bird's pages on its forges.
 
 import type { LaunchAction, LinkOut } from "@perch/core/viewmodel.ts";
-import { actionIcon, Icon } from "./icons.tsx";
+import { Icon } from "./icons.tsx";
 
 /** A verb on the detail page's action row: quiet until hovered. */
 export const actionClass =
@@ -29,7 +29,7 @@ export function LaunchActions({ actions, onLaunch }: LaunchActionsProps) {
           onClick={() => onLaunch(action)}
           className={actionClass}
         >
-          <Icon name={actionIcon[action.kind]} size={15} />
+          <Icon name={action.icon} size={15} />
           {action.verb}
           <Away />
         </button>

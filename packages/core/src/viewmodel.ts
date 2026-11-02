@@ -8,8 +8,8 @@ import {
   collapseHome,
   hostsOf,
   type ItemEntry,
+  obsidianOnly,
   resolveEntry,
-  usesObsidian,
   wireFor,
   zellijSessionFor,
 } from "./config.ts";
@@ -19,6 +19,7 @@ import {
   hoursSince,
   latestRunOf,
 } from "./derivations.ts";
+import { commandKinds, type IconName, zellijKind } from "./launch-kinds.ts";
 import { itemRefs } from "./refs.ts";
 import { parseRemoteUrl } from "./remote-url.ts";
 import type {
@@ -302,28 +303,36 @@ export interface FlagLine {
 }
 
 /**
- * Launch actions open things and change nothing. Each carries its commands from config with the
- * values that fill their placeholders at launch.
+ * Launch actions open things and change nothing. Each wears its line icon and carries its commands
+ * from config with the values that fill their placeholders at launch.
  */
 export type LaunchAction =
   | {
       kind: "zellij";
       verb: string;
+      icon: IconName;
       zellij: string[];
       terminal: string[];
       session: string;
       tab: string;
       cwd: string;
     }
-  | { kind: "command"; verb: string; command: string[]; path: string }
   | {
-      /** A command using {obsidian}, offered on Obsidian birds only. */
-      kind: "obsidian";
+      kind: "command";
       verb: string;
+      icon: IconName;
       command: string[];
       path: string;
-      /** The vault's folder name. */
-      vault: string;
+    }
+  | {
+      /** An action offered on Obsidian birds only, which may fill in {obsidian}. */
+      kind: "obsidian";
+      verb: string;
+      icon: IconName;
+      command: string[];
+      path: string;
+      /** The Obsidian vault's folder name. */
+      obsidianVault: string;
     };
 
 export interface LinkOut {
@@ -1100,8 +1109,8 @@ function pullRequestsFor(item: Item): PullRequestLine[] {
 }
 
 /**
- * The launch actions for a local item, in config order: every action, bar one using {obsidian} on
- * a bird that is not an Obsidian vault.
+ * The launch actions for a local item, in config order: every action, bar one offered on Obsidian
+ * birds only on a bird that is not one.
  */
 function actionsFor(
   item: Item,
@@ -1116,6 +1125,7 @@ function actionsFor(
         {
           kind: "zellij",
           verb: action.verb,
+          icon: zellijKind.icon,
           zellij: action.zellij,
           terminal: action.terminal,
           session: zellijSessionFor(action, entry, path),
@@ -1125,11 +1135,14 @@ function actionsFor(
       ];
     }
     const { verb, command } = action;
-    if (!usesObsidian(command))
-      return [{ kind: "command", verb, command, path }];
+    const icon =
+      action.kind === "command" ? action.icon : commandKinds[action.kind].icon;
+    if (!obsidianOnly(action)) {
+      return [{ kind: "command", verb, icon, command, path }];
+    }
     if (item.kind !== "obsidian") return [];
-    const vault = path.slice(path.lastIndexOf("/") + 1);
-    return [{ kind: "obsidian", verb, command, path, vault }];
+    const obsidianVault = path.slice(path.lastIndexOf("/") + 1);
+    return [{ kind: "obsidian", verb, icon, command, path, obsidianVault }];
   });
 }
 

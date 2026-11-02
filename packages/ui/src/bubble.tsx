@@ -10,7 +10,7 @@ import type {
   StateWord,
 } from "@perch/core/viewmodel.ts";
 import { ChipHandles } from "./chip.tsx";
-import { actionIcon, Icon } from "./icons.tsx";
+import { Icon } from "./icons.tsx";
 
 /** The state word's ink on paper: the mood's colour, quiet for the fence. */
 export const stateWordTone: Record<StateWord, string> = {
@@ -192,7 +192,7 @@ export function Bubble({
             onClick={() => onLaunch(action)}
             className="inline-flex cursor-pointer items-center rounded-lg bg-key px-2.5 py-2 text-ink hover:bg-key-hi"
           >
-            <Icon name={actionIcon[action.kind]} size={14} />
+            <Icon name={action.icon} size={14} />
           </button>
         ))}
         {onAdopt !== null && (

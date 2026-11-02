@@ -3,21 +3,30 @@
 // Each page is presentational, its value in and every change out; the editor holds the draft
 // across them and shows the page the rail has open.
 
-import { usesObsidian } from "@perch/core/config.ts";
 import { thresholdWindows } from "@perch/core/entry-form.ts";
 import {
+  cardIcon,
+  cardObsidianOnly,
+  cardVerb,
+  kindTaken,
   type LaunchActionValues,
   type LaunchField,
-  type LaunchPreset,
   type LaunchProblem,
+  launchDefaults,
   launchFieldLabels,
-  launchPresets,
   launchProblems,
-  presetOf,
-  presetTaken,
-  withPresetAdded,
+  newCard,
+  withKindAdded,
 } from "@perch/core/launch-form.ts";
-import { parseListLine } from "@perch/core/list-line.ts";
+import {
+  commandKinds,
+  customKind,
+  type IconName,
+  kindWords,
+  type LaunchKind,
+  launchKinds,
+  lineIcons,
+} from "@perch/core/launch-kinds.ts";
 import {
   defaultName,
   type SettingsForm,
@@ -38,6 +47,8 @@ import {
   NumberInput,
   PillChoice,
   panelClass,
+  pillClass,
+  pillGroupClass,
   primaryClass,
   quietClass,
   SettingsPageHead,
@@ -45,6 +56,7 @@ import {
   secondaryClass,
   ThresholdField,
 } from "./form-parts.tsx";
+import { Icon } from "./icons.tsx";
 import { SourcesPage } from "./sources-page.tsx";
 
 /** A page the settings rail names. */
@@ -482,16 +494,52 @@ function ActionField({
 const quietLineClass =
   "m-0 max-w-[62ch] text-[12.5px] text-ink-faint leading-normal";
 
-/** Where a command action is offered, in words: Obsidian birds only when it uses {obsidian}. */
-function reachWords(command: string): string {
-  const parsed = parseListLine(command);
-  const obsidian = "list" in parsed && usesObsidian(parsed.list);
-  return obsidian
-    ? "Uses {obsidian}, so it is offered on Obsidian birds only."
-    : "Offered on every bird with a folder on this machine.";
+/** The placeholders a kind's command may use, as the field's label says them. */
+function placeholderWords(kind: LaunchKind): string {
+  const allowed =
+    kind === "command" || kind === "zellij"
+      ? customKind.placeholders
+      : commandKinds[kind].placeholders;
+  return allowed.map((name) => `{${name}}`).join(", ");
 }
 
-/** A launch action's fields by its kind, each with its refusals. */
+/** The line icons as a row of choices, the chosen one marked: a custom command's icon. */
+function IconPicker({
+  value,
+  onChange,
+}: {
+  value: IconName;
+  onChange: (icon: IconName) => void;
+}) {
+  const name = useId();
+  return (
+    <fieldset className="m-0 flex min-w-0 flex-col items-start gap-1.5 border-0 p-0">
+      <legend className="mb-1.5 p-0 text-[12px] text-ink-faint">
+        Icon · worn on the bird&apos;s page
+      </legend>
+      <div className={pillGroupClass}>
+        {lineIcons.map((icon) => (
+          <label key={icon} title={icon} className={`${pillClass} px-2.5`}>
+            <input
+              type="radio"
+              name={name}
+              aria-label={icon}
+              className="sr-only"
+              checked={icon === value}
+              onChange={() => onChange(icon)}
+            />
+            <Icon name={icon} size={15} />
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/**
+ * A launch action's fields by its kind, each with its refusals. A kind's fields show its defaults
+ * in grey until typed over; a custom command's are its own, with its icon picked beside them.
+ */
 function ActionFields({
   action,
   problems,
@@ -501,8 +549,9 @@ function ActionFields({
   problems: (field: LaunchField) => string[];
   onChange: (action: LaunchActionValues) => void;
 }) {
+  const defaults = launchDefaults(action.kind);
   const text = (
-    field: LaunchField,
+    field: "verb" | "command" | "zellij" | "terminal" | "session",
     value: string,
     change: (value: string) => void,
     mono: boolean,
@@ -511,6 +560,7 @@ function ActionFields({
       type="text"
       aria-label={launchFieldLabels[field]}
       spellCheck={false}
+      placeholder={defaults[field]}
       value={value}
       onChange={(event) => change(event.target.value)}
       className={mono ? monoInputClass : inputClass}
@@ -530,13 +580,13 @@ function ActionFields({
       )}
     </ActionField>
   );
-  if (action.kind === "command") {
+  if (action.kind !== "zellij") {
     return (
       <>
         {verb}
         <ActionField
           field="command"
-          sub="runs detached, no shell · {path}, {obsidian}"
+          sub={`runs detached, no shell · ${placeholderWords(action.kind)}`}
           problems={problems("command")}
         >
           {text(
@@ -546,7 +596,17 @@ function ActionFields({
             true,
           )}
         </ActionField>
-        <p className={quietLineClass}>{reachWords(action.command)}</p>
+        {action.kind === "command" && (
+          <IconPicker
+            value={action.icon}
+            onChange={(icon) => onChange({ ...action, icon })}
+          />
+        )}
+        <p className={quietLineClass}>
+          {cardObsidianOnly(action)
+            ? "Offered on Obsidian birds only."
+            : "Offered on every bird with a folder on this machine."}
+        </p>
       </>
     );
   }
@@ -612,8 +672,8 @@ function ActionFields({
 }
 
 /**
- * One launch action's card: the preset it shows it came from and its verb, greyed, with the arrows
- * that order it on the bird and its remove; opened by its head to its fields.
+ * One launch action's card: its icon, its kind's name and its verb, greyed, with the arrows that
+ * order it on the bird and its remove; opened by its head to its fields.
  */
 function ActionCard({
   action,
@@ -639,8 +699,9 @@ function ActionCard({
 }) {
   const headingId = useId();
   const bodyId = useId();
-  const name = presetOf(action).name;
-  const called = action.verb.trim() === "" ? name : action.verb;
+  const name = kindWords(action.kind).name;
+  const verb = cardVerb(action);
+  const called = verb.trim() === "" ? name : verb;
   const fieldProblems = (field: LaunchField) =>
     problems
       .filter((problem) => problem.field === field)
@@ -650,7 +711,8 @@ function ActionCard({
       aria-labelledby={headingId}
       className="mb-2.5 overflow-hidden rounded-[10px] border border-edge bg-panel"
     >
-      <div className="relative flex items-baseline gap-3 px-4 py-3">
+      <div className="relative flex items-center gap-3 px-4 py-3">
+        <Icon name={cardIcon(action)} size={15} />
         <h3
           id={headingId}
           className="m-0 shrink-0 whitespace-nowrap font-display font-semibold text-[14.5px] text-ink"
@@ -666,7 +728,7 @@ function ActionCard({
           </button>
         </h3>
         <span className="min-w-0 truncate text-[12.5px] text-ink-faint">
-          {action.verb.trim() === "" ? "no words yet" : action.verb}
+          {verb.trim() === "" ? "no words yet" : verb}
         </span>
         <span className="relative ml-auto flex shrink-0 items-center gap-1">
           <button
@@ -715,40 +777,42 @@ function ActionCard({
   );
 }
 
-/** The presets as rows of a name, what it does and what adding it asks; zellij greys once added. */
+/** The kinds, then the custom command, as rows of what each does and asks; zellij greys once added. */
 function LaunchShelf({
   actions,
   onAdd,
 }: {
   actions: LaunchActionValues[];
-  onAdd: (preset: LaunchPreset) => void;
+  onAdd: (kind: LaunchKind) => void;
 }) {
   return (
     <div className="mt-4 rounded-[10px] border border-edge-hi border-dashed">
-      <ul aria-label="Presets" className="m-0 list-none p-0">
-        {launchPresets.map((preset) => {
-          const taken = presetTaken(actions, preset);
+      <ul aria-label="Kinds of action" className="m-0 list-none p-0">
+        {launchKinds.map((kind) => {
+          const words = kindWords(kind);
+          const taken = kindTaken(actions, kind);
           return (
             <li
-              key={preset.name}
-              className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-edge border-b px-4 py-3.25"
+              key={kind}
+              className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-edge border-b px-4 py-3.25"
             >
               <span
-                className={`min-w-30.5 font-display font-semibold text-[14px] ${taken ? "text-ink-faint" : "text-ink"}`}
+                className={`flex min-w-36 items-center gap-2 font-display font-semibold text-[14px] ${taken ? "text-ink-faint" : "text-ink"}`}
               >
-                {preset.name}
+                <Icon name={cardIcon(newCard(kind))} size={15} />
+                {words.name}
               </span>
               <span className="min-w-0 flex-[1_1_18rem] text-[13px] text-ink-muted">
-                {preset.what}
+                {words.what}
               </span>
               <span className="ml-auto whitespace-nowrap text-[12px] text-ink-faint">
-                {taken ? "already added" : preset.needs}
+                {taken ? "already added" : words.needs}
               </span>
               <button
                 type="button"
-                aria-label={`Add ${preset.name}`}
+                aria-label={`Add ${words.name}`}
                 disabled={taken}
-                onClick={() => onAdd(preset)}
+                onClick={() => onAdd(kind)}
                 className="cursor-pointer font-body font-semibold text-[13px] text-ink hover:text-ink-accent focus-visible:outline-2 focus-visible:outline-ink-accent disabled:cursor-default disabled:font-normal disabled:text-ink-faint"
               >
                 Add
@@ -758,8 +822,8 @@ function LaunchShelf({
         })}
       </ul>
       <p className="m-0 px-4 py-2.75 text-[12.5px] text-ink-faint">
-        A preset fills the card; the card is yours after that. More presets
-        appear as perch learns more ways to open things.
+        Each kind works as it is; its card changes its words or command. More
+        kinds appear as perch learns more ways to open things.
       </p>
     </div>
   );
@@ -767,7 +831,7 @@ function LaunchShelf({
 
 /**
  * The Launching page: one card per launch action in the order a bird offers them, then the shelf
- * of presets that adds one. A card with refusals starts open, and an added card opens alone.
+ * of kinds that adds one. A card with refusals starts open, and an added card opens alone.
  */
 export function LaunchGroup({
   value,
@@ -790,9 +854,11 @@ export function LaunchGroup({
         lead={
           <>
             What a bird&apos;s page can open. Each action appears on every bird
-            with a folder on this machine, in this order; one using{" "}
-            <code className="font-mono">{"{obsidian}"}</code> appears on
-            Obsidian birds only.
+            with a folder on this machine, in this order; the Obsidian kind, and
+            a custom command using{" "}
+            <code className="font-mono">{"{obsidian}"}</code>, on Obsidian birds
+            only. A kind&apos;s card shows its defaults in grey until they are
+            typed over.
           </>
         }
       />
@@ -819,9 +885,9 @@ export function LaunchGroup({
       ))}
       <LaunchShelf
         actions={actions}
-        onAdd={(preset) => {
+        onAdd={(kind) => {
           setOpen([...actions.map(() => false), true]);
-          onChange({ actions: withPresetAdded(actions, preset) });
+          onChange({ actions: withKindAdded(actions, kind) });
         }}
       />
     </section>

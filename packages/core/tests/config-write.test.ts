@@ -72,23 +72,23 @@ interval_minutes = 5
 finalised_commits = 25
 
 [[launch.actions]]
-verb = "Open in VS Code"
-command = ["code", "{path}"]
+kind = "vscode"
 
 [[launch.actions]]
 kind = "zellij"
 verb = "Open the tab"
-zellij = ["zellij"]
 terminal = ["konsole", "--workdir", "{cwd}", "-e", "zellij", "attach", "-c", "{session}"]
-session = "main"
+session = "work"
 
 [launch.actions.sessions]
 "~/undev/tools" = "tools"
 "~/undev" = "undev"
 
 [[launch.actions]]
-verb = "Open in Obsidian"
-command = ["xdg-open", "obsidian://open?vault={obsidian}"]
+kind = "command"
+verb = "Note the Obsidian vault"
+command = ["notify-send", "{obsidian}"]
+icon = "obsidian"
 
 [items."dev/perch"]
 wire = "Projects"
@@ -147,7 +147,7 @@ describe("writeConfig", () => {
     expect(config.sources.kuma).toHaveLength(2);
     expect(config.items["forgejo:finch/hollow"]?.keyFiles).toEqual([]);
     expect(config.launch.actions.map((action) => action.kind)).toEqual([
-      "command",
+      "vscode",
       "zellij",
       "command",
     ]);
@@ -282,7 +282,7 @@ describe("writeConfig", () => {
     expect(roundTrip(noActions)).toEqual(noActions);
   });
 
-  it("writes one table per launch action in order, a command action's kind left out", () => {
+  it("writes one table per launch action in order, each naming its kind", () => {
     const config = parseConfig(maximalText, home);
     const reversed: Config = {
       ...config,
@@ -296,11 +296,64 @@ describe("writeConfig", () => {
         (action) => [action.kind, action.verb],
       ),
     ).toEqual([
-      [undefined, "Open in Obsidian"],
+      ["command", "Note the Obsidian vault"],
       ["zellij", "Open the tab"],
-      [undefined, "Open in VS Code"],
+      ["vscode", undefined],
     ]);
     expect(roundTrip(reversed)).toEqual(reversed);
+  });
+
+  it("writes only what differs from a kind's defaults, and a custom command's icon unless it is the folder", () => {
+    const config: Config = {
+      ...parseConfig(maximalText, home),
+      launch: {
+        actions: [
+          {
+            kind: "nvim",
+            verb: "Open in nvim",
+            command: ["kitty", "{path}", "nvim"],
+          },
+          {
+            kind: "zellij",
+            verb: "Open the zellij tab",
+            zellij: ["zellij"],
+            terminal: [
+              "alacritty",
+              "--working-directory",
+              "{cwd}",
+              "-e",
+              "zellij",
+              "attach",
+              "-c",
+              "{session}",
+            ],
+            session: "main",
+            sessions: {},
+          },
+          {
+            kind: "obsidian",
+            verb: "Open the Obsidian vault",
+            command: ["xdg-open", "obsidian://open?vault={obsidian}"],
+          },
+          {
+            kind: "command",
+            verb: "Run",
+            command: ["make", "-C", "{path}"],
+            icon: "folder",
+          },
+        ],
+      },
+    };
+
+    const document = parse(writeConfig(config, home));
+
+    expect((document.launch as { actions: unknown[] }).actions).toEqual([
+      { kind: "nvim", command: ["kitty", "{path}", "nvim"] },
+      { kind: "zellij" },
+      { kind: "obsidian", verb: "Open the Obsidian vault" },
+      { kind: "command", verb: "Run", command: ["make", "-C", "{path}"] },
+    ]);
+    expect(roundTrip(config)).toEqual(config);
   });
 
   it("writes no comments", async () => {

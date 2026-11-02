@@ -234,11 +234,11 @@ section > .why code, .notes code, .rule code, .decision p code {
 <section>
   <h2>2 · The slip</h2>
   <p class="why">Where the README paper would sit, a slip of the same paper: clearly cut short,
-  stamped, then the three ways forward in order of directness. A clone already on disk is one
-  button away; no clone yet means copying the address and cloning with your own tools; a whole
-  folder of clones belongs in Sources. The stamp is the page's one bold element; everything else
-  stays in the paper's quiet voice. The meta line gains its one clause where actions would
-  be.</p>
+  stamped, the fact in two sentences, then the ways forward. perch can search a directory for
+  repositories or take the clone's folder itself; both are edits to Sources, so the button opens
+  Sources on the local folders card. No clone yet means copying the address and cloning with
+  your own tools. The stamp is the page's one bold element. The meta line gains its one clause
+  where actions would be.</p>
   <div class="pair">
     <div class="screen">
       <div class="chrome"><span class="brand">perch</span>
@@ -260,14 +260,14 @@ section > .why code, .notes code, .rule code, .decision p code {
             <div class="slip">
               <span class="stamp">No clone on this machine</span>
               <p>This repository is on Forgejo. No local clone was found.</p>
+              <p class="quiet">Add a directory for perch to search, or the clone's folder
+              itself, in Sources. A clone whose remote points at
+              <span class="ref">finch/pocket</span> joins this bird on the next scan.</p>
               <div class="acts">
-                <span class="btnp">Choose its folder</span>
+                <span class="btnp">Open Sources</span>
                 <span class="copyrow"><span class="addr">ssh://git@forgejo:2222/finch/Pocket.git</span>
                 <span class="copy">Copy</span></span>
               </div>
-              <p class="quiet">The chosen folder is added to the searched folders and scanned;
-              its remote must point at <span class="ref">finch/pocket</span>. A directory
-              of many clones is added in Sources.</p>
             </div>
           </div>
         </div>
@@ -281,11 +281,11 @@ section > .why code, .notes code, .rule code, .decision p code {
       <h3>The cut edge</h3>
       <p>The slip's bottom edge is cut in small teeth: a docket, not a document that failed to
       load. The pane beneath it stays empty on purpose.</p>
-      <h3>Choose its folder</h3>
-      <p><b>For the clone that already exists.</b> A directory chooser; the pick lands in the
-      local source's searched folders, the same config edit the Sources page makes, and a scan
-      runs. If the folder's remote does not match, the next scan says what it found instead and
-      the slip stays.</p>
+      <h3>Open Sources</h3>
+      <p><b>One place edits the searched folders.</b> The button goes to Settings, Sources,
+      with the local folders card open, where a directory to search or the clone's own folder
+      is added. No inline chooser: a second place editing sources would drift from the
+      first.</p>
       <h3>The address, copyable</h3>
       <p>For the clone that does not exist yet. perch never runs git; the address is there to
       clone with your own tools, and the next scan finds it under any searched folder.</p>
@@ -341,17 +341,17 @@ section > .why code, .notes code, .rule code, .decision p code {
       fence. It leaves the scan after a clone is found, with no trace.</p>
       <p class="rec">derive it from exactly that, nothing configurable.</p></div>
     <div class="decision"><h3>What the slip offers</h3>
-      <p>Three ways forward, in order of directness: Choose its folder (a directory chooser
-      whose pick is added to the searched folders and scanned), the clone address with Copy
-      (perch never runs git; cloning stays in your own hands), and the quiet sentence pointing a
-      whole folder of clones at Sources. The alternative is the stamp and sentence alone,
-      leaving every route to be discovered.</p>
-      <p class="rec">all three, exactly this prominent each.</p></div>
-    <div class="decision"><h3>Where a chosen folder lands in config</h3>
-      <p>The pick is appended to the first local source's include list, creating a local source
-      when none exists: the same shape the Sources page writes. The clone address is one new
-      field the gather keeps from the forge's repository record, which it already fetches.</p>
-      <p class="rec">first local source; one rule, no chooser of sources.</p></div>
+      <p>The fact, the two ways to give perch the clone (a directory to search, or the clone's
+      folder itself, both edits made in Sources), the Open Sources button, and the clone
+      address with Copy, since perch never runs git. The alternative is the stamp and sentence
+      alone, leaving every route to be discovered.</p>
+      <p class="rec">all of it, the button the only bold act.</p></div>
+    <div class="decision"><h3>Open Sources lands on the local folders card</h3>
+      <p>The button deep-links to the settings page, Sources open, the local folders card
+      unfolded, creating one when none exists being that page's own business. The clone
+      address is one new field the gather keeps from the forge's repository record, which it
+      already fetches.</p>
+      <p class="rec">deep-link, no inline chooser.</p></div>
     <div class="decision"><h3>The meta line's clause</h3>
       <p>"nothing to open here" in the faint voice, only when the bird offers no actions and
       config holds at least one. A config with no actions at all stays silent everywhere, as

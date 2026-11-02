@@ -117,6 +117,8 @@ function page(bird: Bird, options: PageOptions = {}) {
   const onSave = vi.fn();
   const onRemove = vi.fn();
   const onSettings = vi.fn();
+  const onLocalSources = vi.fn();
+  const onCopy = vi.fn<(text: string) => Promise<void>>(async () => undefined);
   const view = (next: Bird, given: PageOptions) => (
     <DetailView
       bird={next}
@@ -128,6 +130,8 @@ function page(bird: Bird, options: PageOptions = {}) {
       openPapers={given.openPapers ?? false}
       arrivalChip={given.arrivalChip ?? null}
       onSettings={onSettings}
+      onLocalSources={onLocalSources}
+      onCopy={onCopy}
       panning={given.panning ?? false}
     />
   );
@@ -138,6 +142,8 @@ function page(bird: Bird, options: PageOptions = {}) {
     onSave,
     onRemove,
     onSettings,
+    onLocalSources,
+    onCopy,
     /** The same page given a new bird and new options, as a push would. */
     push: (next: Bird, given: PageOptions) => rerender(view(next, given)),
   };
@@ -329,6 +335,126 @@ describe("the detail view", () => {
     const { container } = page(mockBird("dev/perch"));
 
     expect(container.querySelector('[data-part="notices"]')).toBeNull();
+  });
+
+  describe("a bird with no clone here", () => {
+    const pergolaNotes = () => mockBird("forgejo:finch/field-notes");
+    const slipOf = (container: HTMLElement) =>
+      container.querySelector(
+        '[data-part="paper"] [data-part="no-clone-slip"]',
+      );
+
+    it("lays the slip where the key files would be: stamped, the fact, the route naming the repository, and Open Sources", () => {
+      const { container, onLocalSources } = page(pergolaNotes());
+      const slip = screen.getByRole("region", {
+        name: "No clone on this machine",
+      });
+
+      expect(slipOf(container)).toBe(slip);
+      expect(within(slip).getByRole("heading", { level: 3 }).textContent).toBe(
+        "No clone on this machine",
+      );
+      expect(
+        [...slip.querySelectorAll("p")].map((line) => line.textContent),
+      ).toEqual([
+        "This repository is on Forgejo. No local clone was found.",
+        "Add a directory to search, or the clone's folder itself, in Sources. A clone whose remote points at finch/field-notes joins this bird on the next scan.",
+      ]);
+      fireEvent.click(
+        within(slip).getByRole("button", { name: "Open Sources" }),
+      );
+
+      expect(onLocalSources).toHaveBeenCalledOnce();
+    });
+
+    it("copies the clone address through the caller and says so in place, then reads Copy again", async () => {
+      vi.useFakeTimers();
+      try {
+        const { onCopy } = page(pergolaNotes());
+        const slip = screen.getByRole("region", {
+          name: "No clone on this machine",
+        });
+        const address = "ssh://git@forgejo:2222/finch/field-notes.git";
+
+        expect(within(slip).getByText(address)).toBeDefined();
+        await act(async () => {
+          fireEvent.click(within(slip).getByRole("button", { name: "Copy" }));
+        });
+
+        expect(onCopy).toHaveBeenCalledWith(address);
+        expect(
+          within(slip).getByRole("button", { name: "Copied" }),
+        ).toBeDefined();
+        act(() => vi.advanceTimersByTime(1600));
+
+        expect(
+          within(slip).getByRole("button", { name: "Copy" }),
+        ).toBeDefined();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("says it couldn't copy when the clipboard refuses", async () => {
+      const { onCopy } = page(pergolaNotes());
+      onCopy.mockRejectedValueOnce(new Error("not allowed"));
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+      });
+
+      expect(
+        screen.getByRole("button", { name: "Couldn't copy" }),
+      ).toBeDefined();
+    });
+
+    it("leaves the address row out while the address is unknown", () => {
+      const bird = pergolaNotes();
+      const noClone = bird.detail.noClone;
+      if (noClone === null) throw new Error("pergola notes has its slip");
+      const { container } = page({
+        ...bird,
+        detail: { ...bird.detail, noClone: { ...noClone, cloneAddress: null } },
+      });
+
+      expect(slipOf(container)).not.toBeNull();
+      expect(container.querySelector('[data-part="clone-address"]')).toBeNull();
+      expect(screen.queryByRole("button", { name: "Copy" })).toBeNull();
+    });
+
+    it("lays the same slip for a fence bird", () => {
+      const { container } = page(mockBird("github:finch/obsidian-tidy"));
+
+      expect(slipOf(container)?.textContent).toContain(
+        "This repository is on GitHub. No local clone was found.",
+      );
+    });
+
+    it("says no local clone on the meta line where the actions would be, only while config holds an action", () => {
+      const bird = pergolaNotes();
+      const noClone = bird.detail.noClone;
+      if (noClone === null) throw new Error("pergola notes has its slip");
+      const clause = (container: HTMLElement) =>
+        container.querySelector('[data-part="actions"] [data-part="no-clone"]');
+
+      const { container } = page(bird);
+      expect(clause(container)?.textContent).toBe("no local clone");
+
+      cleanup();
+      const silent = page({
+        ...bird,
+        detail: { ...bird.detail, noClone: { ...noClone, onMetaLine: false } },
+      });
+      expect(clause(silent.container)).toBeNull();
+      expect(slipOf(silent.container)).not.toBeNull();
+    });
+
+    it("draws neither the slip nor the clause for a bird with a clone, even with no key files read", () => {
+      const { container } = page(mockBird("dev/odin/hello"));
+
+      expect(slipOf(container)).toBeNull();
+      expect(container.querySelector('[data-part="no-clone"]')).toBeNull();
+    });
   });
 
   it("lands the chip's row in the same paint as the press", () => {
@@ -772,9 +898,11 @@ describe("the detail view", () => {
   });
 
   it("offers nothing to launch for a bird with no clone here", () => {
-    page(mockBird("github:finch/obsidian-tidy"));
+    const { container } = page(mockBird("github:finch/obsidian-tidy"));
+    const actions = container.querySelector('[data-part="actions"]');
+    if (!(actions instanceof HTMLElement)) throw new Error("no action row");
 
-    expect(screen.queryByRole("button", { name: /^Open/ })).toBeNull();
+    expect(within(actions).queryByRole("button", { name: /^Open/ })).toBeNull();
     expect(
       screen.getByRole("link", { name: /obsidian-tidy on GitHub/ }),
     ).toBeDefined();

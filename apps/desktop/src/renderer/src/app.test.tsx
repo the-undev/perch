@@ -396,6 +396,31 @@ describe("the window", () => {
     expect(fake.rescans).toBe(1);
   });
 
+  it("puts a no-clone slip's address on the clipboard in the window, which stays on the bird", async () => {
+    const copied: string[] = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (text: string) => {
+          copied.push(text);
+        },
+      },
+    });
+    const { router } = renderApp(
+      idle(mockAviary),
+      "/bird/forgejo:finch/field-notes",
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Copy" }));
+
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeDefined();
+    expect(copied).toEqual([
+      "ssh://git@forgejo:2222/finch/field-notes.git",
+    ]);
+    expect(pathOf(router)).toBe("/bird/forgejo:finch/field-notes");
+    Reflect.deleteProperty(navigator, "clipboard");
+  });
+
   it("follows the clock while the window stays open", async () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
     vi.setSystemTime(new Date(2026, 9, 22, 20, 59, 30));

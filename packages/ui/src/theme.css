@@ -82,6 +82,8 @@
   --color-paper-green: #2c7a4b;
   --color-paper-amber: #8f6d14;
   --color-paper-red: #b23325;
+  /* A rubber stamp's dusty blue, far from the judgement colours. */
+  --color-paper-stamp: #5c6d8e;
 
   /* Chips on paper, by severity. */
   --color-chip: #ddd7c9;
@@ -433,5 +435,32 @@
   .perch-prose th {
     color: var(--color-paper-head);
     font-weight: 600;
+  }
+}
+
+/* The no-clone slip: a docket cut short, its bottom edge in small teeth, and
+   its stamp's ink worn at the edges. */
+@layer components {
+  .perch-slip::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 6px;
+    background:
+      linear-gradient(135deg, var(--color-paper) 4px, transparent 0) 0 0 / 12px
+      6px repeat-x,
+      linear-gradient(225deg, var(--color-paper) 4px, transparent 0) 6px 0 /
+      12px 6px repeat-x;
+  }
+  .perch-stamp {
+    transform: rotate(-3.5deg);
+    transform-origin: left center;
+    mask-image: radial-gradient(
+      ellipse at 42% 58%,
+      black 62%,
+      rgb(0 0 0 / 0.72)
+    );
   }
 }

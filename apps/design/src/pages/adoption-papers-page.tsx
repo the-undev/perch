@@ -106,6 +106,8 @@ export function AdoptionPapersPage() {
               openPapers={false}
               arrivalChip={null}
               onSettings={() => {}}
+              onLocalSources={() => {}}
+              onCopy={async () => {}}
               panning={false}
             />
           </Stage>
@@ -130,6 +132,8 @@ export function AdoptionPapersPage() {
               openPapers={true}
               arrivalChip={null}
               onSettings={() => {}}
+              onLocalSources={() => {}}
+              onCopy={async () => {}}
               panning={false}
             />
           </Stage>

@@ -175,6 +175,8 @@ export function AppView({ api }: { api: PerchApi }) {
       scanning={state.scanning}
       onRescan={() => void api.rescan()}
       onSettings={() => void navigate({ to: "/settings" })}
+      onLocalSources={() => void navigate({ to: "/settings" })}
+      onCopy={(text) => navigator.clipboard.writeText(text)}
       entry={entry}
       problems={state.problems}
     />

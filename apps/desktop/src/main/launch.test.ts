@@ -77,7 +77,7 @@ describe("launch actions", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("open a vault in Obsidian by its name, encoded for the URI", async () => {
+  it("open a vault in Obsidian by its name, encoded for the URI, its {path} raw", async () => {
     const { deps, spawnDetached } = recorder({});
 
     await launch(
@@ -85,15 +85,67 @@ describe("launch actions", () => {
         kind: "obsidian",
         verb: "Open in Obsidian",
         command: ["xdg-open", "obsidian://open?vault={obsidian}"],
-        path: "/home/owner/obsidian/Home Notes",
-        vault: "Home Notes",
+        path: "/home/owner/obsidian/Home & Notes",
+        vault: "Home & Notes",
+      },
+      deps,
+    );
+    await launch(
+      {
+        kind: "obsidian",
+        verb: "Note the vault",
+        command: ["notify-send", "{obsidian}", "{path}"],
+        path: "/home/owner/obsidian/Home & Notes",
+        vault: "Home & Notes",
       },
       deps,
     );
 
+    expect(spawnDetached.mock.calls).toEqual([
+      [["xdg-open", "obsidian://open?vault=Home%20%26%20Notes"]],
+      [
+        [
+          "notify-send",
+          "Home%20%26%20Notes",
+          "/home/owner/obsidian/Home & Notes",
+        ],
+      ],
+    ]);
+  });
+
+  it("ask the zellij action's own zellij, and open its own terminal", async () => {
+    const { deps, run, spawnDetached } = recorder({
+      "/opt/zellij list-sessions --no-formatting": "",
+    });
+
+    await launch(
+      {
+        ...zellijTab,
+        zellij: ["/opt/zellij"],
+        terminal: [
+          "kitty",
+          "--directory",
+          "{cwd}",
+          "zellij",
+          "-s",
+          "{session}",
+        ],
+      },
+      deps,
+    );
+
+    expect(run).toHaveBeenCalledWith([
+      "/opt/zellij",
+      "list-sessions",
+      "--no-formatting",
+    ]);
     expect(spawnDetached).toHaveBeenCalledWith([
-      "xdg-open",
-      "obsidian://open?vault=Home%20Notes",
+      "kitty",
+      "--directory",
+      "/home/owner/dev/perch",
+      "zellij",
+      "-s",
+      "home",
     ]);
   });
 

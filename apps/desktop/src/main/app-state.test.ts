@@ -63,7 +63,7 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
     readCached: async () => mockSnapshot,
     gather: vi.fn(async (_config: Config) => {}),
     aggregate: vi.fn(async (_loaded: LoadedConfig) => mockSnapshot),
-    launch: vi.fn(async (_action: LaunchAction, _config: Config) => {}),
+    launch: vi.fn(async (_action: LaunchAction) => {}),
     readText: async (path) => {
       if (path.endsWith("README.md")) return "# Perch";
       throw new Error("ENOENT");
@@ -254,15 +254,27 @@ describe("the app state", () => {
     expect(published.at(-1)?.scanning).toBe(true);
   });
 
-  it("launches only an action a bird offers, with the config's commands", async () => {
+  it("launches only an action a bird offers, its commands and directory included", async () => {
     const { app, deps } = appState();
     await app.start();
 
     await app.launch(perchInCode);
     await app.launch({ ...perchInCode, path: "/etc" });
+    await app.launch({ ...perchInCode, command: ["rm", "-rf", "{path}"] });
 
     expect(deps.launch).toHaveBeenCalledTimes(1);
-    expect(deps.launch).toHaveBeenCalledWith(perchInCode, mockConfig);
+    expect(deps.launch).toHaveBeenCalledWith(perchInCode);
+  });
+
+  it("launches nothing before a config is read", async () => {
+    const { app, deps, config } = appState();
+    await app.start();
+    config.nextRead({ loaded: null, error: null, missing: true });
+    await app.recheck();
+
+    await app.launch(perchInCode);
+
+    expect(deps.launch).not.toHaveBeenCalled();
   });
 
   it("says when a launch fails, until the next scan", async () => {

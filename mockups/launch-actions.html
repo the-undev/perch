@@ -228,7 +228,8 @@ pre.toml .c { color: var(--faint); }
   <div class="rule"><h3>Two kinds only</h3>
     <p>Nearly every action is a verb and a command run detached, no shell, placeholders filled.
     The zellij tab keeps its find-or-open behaviour and carries its session fields. Obsidian
-    becomes a plain command using <code>{vault}</code>, which also marks it as for vaults.</p></div>
+    becomes a plain command using <code>{obsidian}</code>, which also marks it as for Obsidian
+    birds.</p></div>
 </div>
 
 <div class="flow">
@@ -266,8 +267,8 @@ pre.toml .c { color: var(--faint); }
         <div class="content">
           <h1>Launching</h1>
           <p class="lead">What a bird's page can open. Each action appears on every bird with a
-          folder on this machine, in this order; one using <code>{vault}</code> appears on vaults
-          only.</p>
+          folder on this machine, in this order; one using <code>{obsidian}</code> appears on
+          Obsidian birds only.</p>
           <div class="shelf">
             <div class="kind"><span class="name">VS Code</span>
               <span class="what">Opens the project folder in VS Code.</span>
@@ -282,8 +283,8 @@ pre.toml .c { color: var(--faint); }
               <span class="what">Opens the folder in the file manager.</span>
               <span class="needs">filled in</span><button class="add" type="button">Add</button></div>
             <div class="kind"><span class="name">Obsidian</span>
-              <span class="what">Opens the vault in Obsidian.</span>
-              <span class="needs">vaults only</span><button class="add" type="button">Add</button></div>
+              <span class="what">Opens the item in Obsidian.</span>
+              <span class="needs">Obsidian only</span><button class="add" type="button">Add</button></div>
             <div class="kind"><span class="name">Custom command</span>
               <span class="what">A verb and a command of your own.</span>
               <span class="needs">you write it</span><button class="add" type="button">Add</button></div>
@@ -324,8 +325,8 @@ pre.toml .c { color: var(--faint); }
         <div class="content">
           <h1>Launching</h1>
           <p class="lead">What a bird's page can open. Each action appears on every bird with a
-          folder on this machine, in this order; one using <code>{vault}</code> appears on vaults
-          only.</p>
+          folder on this machine, in this order; one using <code>{obsidian}</code> appears on
+          Obsidian birds only.</p>
           <div id="cards"></div>
           <div class="shelf" id="shelf"></div>
         </div>
@@ -402,7 +403,7 @@ command = ["xdg-open", "{path}"]</pre>
               <span class="input" style="font-family: var(--body);">Open the worktree</span></div></div>
             <div class="row single"><div class="field"><label>Command · runs detached, no shell</label>
               <span class="input">["code", "{worktree}"]</span></div></div>
-            <p class="bad">The command has no placeholder {worktree}; it may use {path} and {vault}.</p>
+            <p class="bad">The command has no placeholder {worktree}; it may use {path} and {obsidian}.</p>
           </div>
         </div>
       </div>
@@ -420,9 +421,9 @@ command = ["xdg-open", "{path}"]</pre>
 
 <section>
   <h2>5 · Where the verbs land</h2>
-  <p class="why">The bird's page offers the verbs in page order, exactly as typed. A vault bird
-  adds the <code>{vault}</code> actions; a bird with no folder on this machine offers none, as
-  now.</p>
+  <p class="why">The bird's page offers the verbs in page order, exactly as typed. An Obsidian
+  bird adds the <code>{obsidian}</code> actions; a bird with no folder on this machine offers
+  none, as now.</p>
   <div class="pair">
     <div class="screen">
       <div class="birdbar">
@@ -469,10 +470,13 @@ command = ["xdg-open", "{path}"]</pre>
       one file once; a config that no longer parses leaves the old one in force and says so in
       the sky.</p>
       <p class="agreed">1 November 2026, in the planning conversation.</p></div>
-    <div class="decision"><h3>{vault} is the vault marker</h3>
-      <p>An action whose command uses <code>{vault}</code> is offered on vault birds only;
-      everything else goes to any bird with a folder. The alternative is a separate scope field,
-      a second way of saying what the command already says.</p>
+    <div class="decision"><h3>{obsidian} is the Obsidian marker</h3>
+      <p>An action whose command uses <code>{obsidian}</code> (the Obsidian folder's name,
+      encoded for a URI) is offered on Obsidian birds only; everything else goes to any bird with
+      a folder. The alternative is a separate scope field, a second way of saying what the
+      command already says. The item kind named <code>vault</code> in core renames to
+      <code>obsidian</code> in the same round; <code>vault=</code> inside the
+      <code>obsidian://</code> URI is Obsidian's own parameter and stays.</p>
       <p class="rec">the placeholder decides.</p></div>
     <div class="decision"><h3>The zellij sessions move into the zellij action</h3>
       <p>The session default and the roots become fields of the zellij table
@@ -508,9 +512,9 @@ const presets = [
     command: '["alacritty", "--working-directory", "{path}", "-e", "nvim", "."]' },
   { id: "folder", name: "Folder", what: "Opens the folder in the file manager.",
     needs: "filled in", verb: "Open the folder", command: '["xdg-open", "{path}"]' },
-  { id: "obsidian", name: "Obsidian", what: "Opens the vault in Obsidian.",
-    needs: "vaults only", verb: "Open in Obsidian",
-    command: '["xdg-open", "obsidian://open?vault={vault}"]' },
+  { id: "obsidian", name: "Obsidian", what: "Opens the item in Obsidian.",
+    needs: "Obsidian only", verb: "Open in Obsidian",
+    command: '["xdg-open", "obsidian://open?vault={obsidian}"]' },
   { id: "custom", name: "Custom command", what: "A verb and a command of your own.",
     needs: "you write it", verb: "", command: "" },
 ];
@@ -611,12 +615,12 @@ function card(action, at) {
     const quiet = document.createElement("p");
     quiet.className = "quiet";
     const say = () => {
-      quiet.textContent = action.command.includes("{vault}")
-        ? "Uses {vault}, so it is offered on vault birds only."
+      quiet.textContent = action.command.includes("{obsidian}")
+        ? "Uses {obsidian}, so it is offered on Obsidian birds only."
         : "Offered on every bird with a folder on this machine.";
     };
     say();
-    body.append(singleRow(field("Command · runs detached, no shell · {path}, {vault}",
+    body.append(singleRow(field("Command · runs detached, no shell · {path}, {obsidian}",
       action.command, true, (value) => { action.command = value; say(); })));
     body.append(quiet);
   }

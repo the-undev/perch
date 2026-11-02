@@ -337,10 +337,10 @@ vocabulary (entries, keys) stays in the config file and these docs.
 `~/.config/perch/config.toml`, stowed from the dotfiles so backup is a
 dotfiles push. It holds: the wires as an ordered named list, the
 sources, the health windows, the scan interval and the finalised commit
-count, the zellij session defaults, the launch commands (an action whose
-command is left out is not offered), per-project assertions (joins,
-wire, display names, thresholds, key file
-lists, zellij session names). An entry for an item adopts it. No
+count, the launch actions in the order a bird offers them (none until one
+is added, the zellij action carrying the session defaults), per-project
+assertions (joins, wire, display names, thresholds, key file lists, zellij
+session names). An entry for an item adopts it. No
 secrets, ever. Every field is shown, with placeholder values, in
 `config.example.toml`.
 
@@ -466,13 +466,21 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   and `?chip=<kind>` to land on a chip's ledger row, an unknown kind read
   as none. `/settings` is the settings page in
   the camera's place; Escape goes home from it as from a bird.
-- Launch actions run their commands from config, detached, and only
-  ones some bird offers. Links open in the browser; the window never
-  navigates. Key files are read by the main process when a detail opens
-  and again after every scan.
-- The zellij tab action goes to the project's tab in its session, or
-  opens one in the project's directory; a session that is not running
-  opens in the configured terminal. It does not raise the terminal's
+- Launch actions are `[[launch.actions]]` tables, added from the
+  Launching page's shelf of presets and offered on a bird's page in
+  their order. A command action runs its command from config, detached
+  and without a shell, `{path}` filled with the item's directory and
+  `{obsidian}` with the vault's folder name encoded for a URI. One using
+  `{obsidian}` is offered on Obsidian birds only; every other action on
+  every bird with a folder on this machine. The main process runs only
+  an action some bird offers, its commands included. Links open in the
+  browser; the window never navigates. Key files are read by the main
+  process when a detail opens and again after every scan.
+- The zellij action, at most one, goes to the project's tab in its
+  session, or opens one in the project's directory; a session that is
+  not running opens in the action's terminal command. The session is
+  the item's own, else that of the action's longest root holding the
+  item, else the action's default. It does not raise the terminal's
   window.
 
 ## Standing decisions

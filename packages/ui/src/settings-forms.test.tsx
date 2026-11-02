@@ -38,6 +38,7 @@ const editorOn = (
     cards={null}
     now={now}
     keyring={keyring}
+    unfold={null}
     onSave={onSave}
   />
 );
@@ -719,6 +720,7 @@ describe("the settings page", () => {
         problems={[
           "The config was not changed: Wires: two wires are named Projects; each name may appear once",
         ]}
+        unfold={null}
         onSave={() => {}}
         onHome={onHome}
       />,
@@ -748,6 +750,7 @@ describe("the settings page", () => {
         now={now}
         keyring={keyring}
         problems={[]}
+        unfold={null}
         onSave={onSave}
         onHome={() => {}}
       />,
@@ -805,6 +808,7 @@ describe("the settings page", () => {
         now={now}
         keyring={keyring}
         problems={[]}
+        unfold={null}
         onSave={() => {}}
         onHome={() => {}}
       />,

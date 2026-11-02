@@ -5,7 +5,7 @@ import type {
   SourceTested,
   TokenStored,
 } from "@perch/core/sources-form.ts";
-import type { SourceCard } from "@perch/core/viewmodel.ts";
+import type { SourceCard, SourceCardKind } from "@perch/core/viewmodel.ts";
 import {
   act,
   cleanup,
@@ -40,6 +40,7 @@ function sourcesPage(
   form: SettingsForm = mockSettingsForm(),
   cards: SourceCard[] | null = mockSnapshot.sourceCards,
   keyring: KeyringCalls = fakeKeyring().keyring,
+  unfold: SourceCardKind | null = null,
 ) {
   const onSave = vi.fn();
   render(
@@ -49,6 +50,7 @@ function sourcesPage(
       cards={cards}
       now={now}
       keyring={keyring}
+      unfold={unfold}
       onSave={onSave}
     />,
   );
@@ -147,6 +149,28 @@ describe("the sources page", () => {
         }) as HTMLInputElement
       ).value,
     ).toBe("~/dev/archived");
+  });
+
+  it("starts the cards of the kind a link asks for unfolded, the rest folded", () => {
+    sourcesPage(
+      mockSettingsForm(),
+      mockSnapshot.sourceCards,
+      fakeKeyring().keyring,
+      "local",
+    );
+
+    expect(
+      (
+        within(card("Local folders")).getByRole("textbox", {
+          name: "folder 1",
+        }) as HTMLInputElement
+      ).value,
+    ).toBe("~/dev");
+    expect(
+      within(card("GitHub · finch"))
+        .getByRole("button", { name: "GitHub · finch" })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
   });
 
   it("shows the keyring key's manual command beside it", () => {

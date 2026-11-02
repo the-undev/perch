@@ -717,6 +717,45 @@ describe("the window", () => {
       await waitFor(() => expect(pathOf(router)).toBe("/settings"));
     });
 
+    it("opens on Sources from a no-clone slip with the local cards unfolded", async () => {
+      const { router } = renderApp(
+        idle(mockAviary),
+        "/bird/forgejo:finch/field-notes",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Open Sources" }),
+      );
+
+      await waitFor(() => expect(pathOf(router)).toBe("/settings"));
+      expect(router.state.location.search).toEqual({ unfold: "local" });
+      const local = within(
+        await screen.findByRole("region", { name: "Local folders" }),
+      );
+      expect(
+        (local.getByRole("textbox", { name: "folder 1" }) as HTMLInputElement)
+          .value,
+      ).toBe("~/dev");
+    });
+
+    it("reads an unfold the URL names that is no card kind as none", async () => {
+      renderApp(
+        idle(mockAviary),
+        "/settings?unfold=nowhere",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+
+      const local = within(
+        await screen.findByRole("region", { name: "Local folders" }),
+      );
+      expect(local.queryByRole("textbox", { name: "folder 1" })).toBeNull();
+    });
+
     it("saves an edit through the main process, and shows a refusal among the problems", async () => {
       const form = mockSettingsForm();
       const { fake } = renderApp(

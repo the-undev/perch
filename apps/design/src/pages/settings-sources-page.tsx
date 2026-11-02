@@ -84,6 +84,7 @@ function PageSpecimen({
           cards={cards}
           now={afterScan}
           keyring={stubKeyring(answers, setPressed)}
+          unfold={null}
           onChange={setValue}
         />
       </div>
@@ -237,6 +238,11 @@ export function SettingsSourcesPage() {
             name: "keyring",
             type: "KeyringCalls",
             what: "storeToken(key, token) writes a pasted token into the keyring; testSource(values) lists a forge card's repositories with the token its key holds. Each resolves ok or with a problem sentence, never with the token.",
+          },
+          {
+            name: "unfold",
+            type: "SourceCardKind | null",
+            what: "The cards of this kind start unfolded, as a link to the page asks: a no-clone slip's Open Sources asks for local. Null for none.",
           },
           {
             name: "onChange",

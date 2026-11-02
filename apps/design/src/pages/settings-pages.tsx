@@ -443,6 +443,7 @@ export function SettingsScenePage() {
                 ]
               : []
           }
+          unfold={null}
           onSave={(values) => {
             setPressed("onSave(values)");
             setForm({ ...form, values });
@@ -478,6 +479,11 @@ export function SettingsScenePage() {
             name: "problems",
             type: "string[]",
             what: "The main process's problems, a refused save among them, listed above the form.",
+          },
+          {
+            name: "unfold",
+            type: "SourceCardKind | null",
+            what: "The Sources page's cards of this kind start unfolded: /settings?unfold=local, from a no-clone slip's Open Sources. Null for none.",
           },
           {
             name: "onSave",

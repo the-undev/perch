@@ -1,4 +1,8 @@
-import { type ChipKind, chipKinds } from "@perch/core/viewmodel.ts";
+import {
+  type ChipKind,
+  chipKinds,
+  type SourceCardKind,
+} from "@perch/core/viewmodel.ts";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -59,10 +63,32 @@ const birdRoute = createRoute({
   validateSearch: birdSearch,
 });
 
-/** The settings page, in the camera's place. */
+/** Every kind of source card, which the settings URL can ask to unfold. */
+const sourceCardKinds: readonly SourceCardKind[] = [
+  "local",
+  "github",
+  "forgejo",
+  "kuma",
+];
+
+/** What the settings URL can carry: unfold=<kind> opens the Sources page with those cards unfolded. */
+export interface SettingsSearch {
+  /** Undefined for a kind the URL names that is no card kind. */
+  unfold?: SourceCardKind | undefined;
+}
+
+/** The settings search as read from its URL: unfold only when a known kind. */
+export function settingsSearch(
+  search: Record<string, unknown>,
+): SettingsSearch {
+  return { unfold: sourceCardKinds.find((kind) => kind === search.unfold) };
+}
+
+/** The settings page, in the camera's place; the search says which Sources cards start unfolded. */
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "settings",
+  validateSearch: settingsSearch,
 });
 
 const routeTree = rootRoute.addChildren([

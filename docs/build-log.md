@@ -1381,3 +1381,24 @@ build-time calls so they can be revisited.
   and docs, in favour of "Obsidian vault" in full or "Obsidian bird";
   identifiers follow, as `obsidianVault`. The `vault=` parameter of the
   `obsidian://` URI is Obsidian's own and stays.
+
+## 2 November 2026 (the forge-only round)
+
+- The forge-only round is agreed on `mockups/forge-only.html`. A bird
+  holding at least one forge presence and no local path explains itself
+  in the docs pane with a paper slip, stamped "No clone on this
+  machine" in a dusty blue far from the judgement colours: the fact in
+  short sentences, the two ways to give the app the clone (a directory
+  to search, or the clone's folder itself, both edits made in Sources),
+  an Open Sources button deep-linking to the local folders card, and
+  the clone address with Copy. Cloning stays in the owner's hands.
+- The meta line says "no local clone" in the faint voice, exactly when
+  the slip shows and config holds at least one launch action. The
+  ledger gains no row; one cause, said once. Nothing is configurable;
+  the slip derives from the snapshot and leaves when a clone is found.
+- The clone address is one new field the gather keeps from the forge's
+  repository record, which it already fetches.
+- UI copy follows the plain register agreed the same day: technical
+  terms kept in short sentences, no anthropomorphising, and the app's
+  name never the acting subject of UI text. The bird's speech in the
+  bubble stays the one place for whimsy.

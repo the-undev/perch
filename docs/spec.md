@@ -132,6 +132,24 @@ branches, the commit river, flags, and beside it the paper pane holds
 a configurable list of key files rendered as paper, the bubble's
 material, with folder tabs. A long file keeps its full height; its pane
 scrolls, the folder tabs held at the pane's top.
+A bird held by at least one forge with no clone on this machine has no
+key files. In their place the paper pane holds a slip of the same paper,
+cut short with a toothed bottom edge and capped at its reading width,
+where the folder tabs would start. Its stamp, "No clone on this
+machine", is a dusty blue far from the judgement colours. The fact
+follows, "This repository is on Forgejo. No local clone was found.",
+naming each forge that holds it, "GitHub and Forgejo" for both. A quieter
+sentence gives the routes: a directory to search, or the clone's folder
+itself, added in Sources, and the repository a clone's remote points at
+to join the bird on the next scan. Open Sources opens the settings page
+on Sources with the local cards unfolded, `/settings?unfold=local`.
+Beside it sits the SSH clone address, the first one a forge gives, with
+Copy, which puts it on the clipboard and says Copied in place; a snapshot cached before the address was kept shows the slip
+without it. The slip shows for
+adopted and fence birds alike and goes the scan after a clone is found.
+While it shows and config holds at least one launch action, the meta
+line says "no local clone" in the faint voice where the actions would
+sit.
 Each chip's number sits on one ledger row, marked with a dot, its
 working spelled out beneath in mono, source by source: each forge's
 newest CI run with its state, branch, name, link and age, under a CI

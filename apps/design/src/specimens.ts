@@ -1,7 +1,13 @@
 // Values the usage pages render: the mock dataset's birds, the moment its scan was taken, and
 // hand-built variants for states the mock does not hold.
 
-import { mockAviary } from "@perch/core/mock.ts";
+import {
+  mockAviary,
+  mockConfig,
+  mockHome,
+  mockSnapshot,
+} from "@perch/core/mock.ts";
+import type { ForgePresence, Item } from "@perch/core/snapshot.ts";
 import type {
   KeyringCalls,
   SourceTested,
@@ -11,6 +17,7 @@ import {
   type Aviary,
   type Bird,
   compareOnWire,
+  deriveAviary,
   type Wire,
 } from "@perch/core/viewmodel.ts";
 import { mockBird } from "@perch/ui/mock-birds.ts";
@@ -107,6 +114,54 @@ export function withHelloAdopted(): Aviary {
         .map((bird, position) => ({ ...bird, position })),
     },
   };
+}
+
+const pergolaNotesId = "forgejo:finch/field-notes";
+
+/** Pergola Notes derived again from the mock snapshot with its forge presences changed, so its words are the view model's. */
+function pergolaNotesWith(
+  presences: (forges: ForgePresence[]) => ForgePresence[],
+): Bird {
+  const items = mockSnapshot.items.map(
+    (item): Item =>
+      item.id === pergolaNotesId
+        ? {
+            ...item,
+            presences: {
+              ...item.presences,
+              forges: presences(item.presences.forges),
+            },
+          }
+        : item,
+  );
+  const aviary = deriveAviary({ ...mockSnapshot, items }, mockConfig, mockHome);
+  const bird = aviary.wires
+    .flatMap((wire) => wire.birds)
+    .find((candidate) => candidate.id === pergolaNotesId);
+  if (bird === undefined) throw new Error("the mock has no Pergola Notes");
+  return bird;
+}
+
+/** Pergola Notes read from a snapshot cached before the scanner kept clone addresses. */
+export function pergolaNotesCached(): Bird {
+  return pergolaNotesWith((forges) =>
+    forges.map(({ sshUrl: _, ...presence }) => presence),
+  );
+}
+
+/** Pergola Notes held on GitHub as well as Forgejo, GitHub found second. */
+export function pergolaNotesOnBothForges(): Bird {
+  return pergolaNotesWith((forges) => [
+    ...forges,
+    {
+      forge: "github",
+      ref: "github:finch/field-notes",
+      fullName: "finch/field-notes",
+      url: "https://github.com/finch/field-notes",
+      sshUrl: "git@github.com:finch/field-notes.git",
+      foundBy: "account-listing",
+    },
+  ]);
 }
 
 /** What stub keyring calls answer; never leaves the call running. */

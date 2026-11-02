@@ -28,7 +28,7 @@ const birds = [
   {
     id: "github:finch/obsidian-tidy",
     label: "obsidian-tidy",
-    rule: "On a forge, never cloned here: no local facts, nothing to launch, no key files; only the link out.",
+    rule: "On a forge, never cloned here, on the fence: no local facts and nothing to launch, so the meta line says no local clone, and the paper pane holds the slip saying why, with Open Sources and the address to copy.",
   },
 ] as const;
 

@@ -213,7 +213,8 @@ export const pages: DesignPage[] = [
     slug: "paper",
     group: "components",
     title: "Key-file paper",
-    summary: "Markdown on paper behind folder tabs.",
+    summary:
+      "Markdown on paper behind folder tabs, and the slip a bird with no clone here shows in their place.",
     component: PaperPage,
   },
   {

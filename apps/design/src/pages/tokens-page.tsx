@@ -173,6 +173,12 @@ export function TokensPage() {
           />
         </Specimen>
         <Specimen
+          label="Stamp"
+          rule="The no-clone slip's stamp: a dusty blue far from the judgement colours, since a bird with no clone here may be perfectly healthy."
+        >
+          <Swatches tokens={["paper-stamp"]} />
+        </Specimen>
+        <Specimen
           label="Mood on paper"
           rule="The bubble's state word, darker so it reads on the light sheet."
         >

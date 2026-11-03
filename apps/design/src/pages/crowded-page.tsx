@@ -134,6 +134,8 @@ export function CrowdedPage() {
               scanning={false}
               onRescan={() => {}}
               onSettings={() => {}}
+              onLocalSources={() => {}}
+              onCopy={async () => {}}
               entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
               problems={[]}
             />

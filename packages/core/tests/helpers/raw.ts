@@ -89,6 +89,10 @@ export function forgeRepo(
       fork: false,
       private: false,
       url: `https://example.invalid/${fullName}`,
+      sshUrl: {
+        state: "observed",
+        value: `git@example.invalid:${fullName}.git`,
+      },
     },
     foundBy: options.foundBy ?? "account-listing",
     account: owner,

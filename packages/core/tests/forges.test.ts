@@ -489,6 +489,7 @@ const apiRepo = (fullName: string, extra: object) => ({
   fork: false,
   private: true,
   html_url: `https://github.com/${fullName}`,
+  ssh_url: `git@github.com:${fullName}.git`,
   ...extra,
 });
 
@@ -513,6 +514,20 @@ describe("github client", () => {
       ["finch/old", true, true],
     ]);
     expect(calls[0]?.headers.Authorization).toBe("Bearer finch-token");
+  });
+
+  it("keeps the SSH clone address GitHub gives a repository it looks up", async () => {
+    const { fetchJson } = fakeFetch({
+      [`${api}/repos/the-undev/harbour`]: apiRepo("the-undev/harbour", {}),
+    });
+    const client = createGithubClient({ fetchJson, finalisedCommits: 2 });
+
+    const repo = await client.getRepo("the-undev", "harbour", "t");
+
+    expect(repo.sshUrl).toEqual({
+      state: "observed",
+      value: "git@github.com:the-undev/harbour.git",
+    });
   });
 
   it("reads pull requests and the latest default-branch run, with reasons for what is missing", async () => {
@@ -633,6 +648,32 @@ describe("github client", () => {
 });
 
 describe("forgejo client", () => {
+  it("lists repositories with the SSH clone address Forgejo gives, absent where it gives none", async () => {
+    const { fetchJson } = fakeFetch({
+      "http://forgejo.test/api/v1/user/repos?limit=50&page=1": [
+        apiRepo("finch/Pocket", {
+          ssh_url: "ssh://git@forgejo:2222/finch/Pocket.git",
+        }),
+        apiRepo("finch/Hothouse", { ssh_url: "" }),
+      ],
+    });
+    const client = createForgejoClient({
+      fetchJson,
+      baseUrl: "http://forgejo.test",
+      finalisedCommits: 2,
+    });
+
+    const repos = await client.listRepos("t");
+
+    expect(repos.map((repo) => repo.sshUrl)).toEqual([
+      {
+        state: "observed",
+        value: "ssh://git@forgejo:2222/finch/Pocket.git",
+      },
+      { state: "absent", reason: "not-reported" },
+    ]);
+  });
+
   it("reads the default branch's combined status as CI", async () => {
     const base = "http://forgejo.test/api/v1/repos/finch/Hothouse";
     const { fetchJson, calls } = fakeFetch({

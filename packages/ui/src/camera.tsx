@@ -612,6 +612,10 @@ export interface CameraViewProps {
   onRescan: () => void;
   /** The header's settings control was pressed. */
   onSettings: () => void;
+  /** The no-clone slip's Open Sources was pressed: open the settings page on Sources, the local cards unfolded. */
+  onLocalSources: () => void;
+  /** Puts the no-clone slip's clone address on the clipboard, settling once it is there. */
+  onCopy: (text: string) => Promise<void>;
   /** Adopting the open bird or amending its papers, from its detail page. */
   entry: EntryControls;
   /** The main process's problems, which the open bird's papers show. */
@@ -632,6 +636,8 @@ export function CameraView({
   scanning,
   onRescan,
   onSettings,
+  onLocalSources,
+  onCopy,
   entry,
   problems,
 }: CameraViewProps) {
@@ -917,6 +923,8 @@ export function CameraView({
                           now={now}
                           onLaunch={onLaunch}
                           onSettings={onSettings}
+                          onLocalSources={onLocalSources}
+                          onCopy={onCopy}
                           panning={pan !== null}
                         />
                       </div>

@@ -72,6 +72,11 @@ in the detail strip alike. Birds crossing a painted name is by design.
 The fix is a vertical-budget round for the aviary, giving crowded rows
 more height, or a minimum window size.
 
+A tenth bird on one wire fails the layout test "keeps a crowded wire's
+birds apart" at 1290px: the mock hit it when the forge-only round added
+a bird to Projects, and sidestepped it by placing the bird on Machine &
+Home. The same budget work covers it; until then wires carry nine.
+
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the

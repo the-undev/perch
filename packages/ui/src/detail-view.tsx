@@ -2,13 +2,14 @@
 // the meta line with the launch actions, links out and papers' verb beside it, then a notice for
 // each remote no card can read and the main process's problems), the roost's bubble at its reading
 // width, and the bird sitting on its perch at the right. It never scrolls. Beneath it the ground holds two panes that each scroll their own contents: the
-// record (the ledger and its sections) and the key files on paper; in a narrow page they join into
-// one pane, the key files at the end. The adoption papers rise as a sheet over both panes, which
+// record (the ledger and its sections) and the key files on paper, or for a bird with no clone here
+// the slip saying so; in a narrow page they join into one pane, the paper at the end. The
+// adoption papers rise as a sheet over both panes, which
 // dim and go inert while the band stays live. A chip pressed in the roost's
 // bubble lands on the ledger row holding its working, or the can't-read chip on the notice, as does
 // the chip pressed in the aviary's bubble that brought the camera here. Only what exists is shown.
-// The view fetches nothing: key-file contents, launching and the entry's form and writes are the
-// caller's.
+// The view fetches nothing: key-file contents, launching, the clipboard and the entry's form and
+// writes are the caller's.
 
 import {
   type EntryForm,
@@ -44,6 +45,7 @@ import {
   PullRequestLines,
   SourceProblems,
 } from "./ledger.tsx";
+import { NoCloneClause, NoCloneSlip } from "./no-clone-slip.tsx";
 import { KeyFilePaper, type KeyFileSheet } from "./paper.tsx";
 import { RisingSheet } from "./rising-sheet.tsx";
 import { Roost } from "./roost.tsx";
@@ -76,6 +78,10 @@ export interface DetailViewProps {
   arrivalChip: ChipKind | null;
   /** A notice's Sources was pressed: open the settings page. */
   onSettings: () => void;
+  /** The no-clone slip's Open Sources was pressed: open the settings page on Sources, the local cards unfolded. */
+  onLocalSources: () => void;
+  /** Puts the slip's clone address on the clipboard, settling once it is there. */
+  onCopy: (text: string) => Promise<void>;
   /** The camera is panning the ground between birds' pages: a page mounted during it skips its swap, and every landing waits until it settles. */
   panning: boolean;
 }
@@ -202,6 +208,8 @@ export function DetailView({
   openPapers,
   arrivalChip,
   onSettings,
+  onLocalSources,
+  onCopy,
   panning,
 }: DetailViewProps) {
   const { detail } = bird;
@@ -294,6 +302,7 @@ export function DetailView({
                 data-part="actions"
                 className="flex flex-wrap items-center gap-1"
               >
+                {detail.noClone?.onMetaLine && <NoCloneClause />}
                 <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
                 <LinksOut links={detail.links} />
                 {agreed !== null && (
@@ -375,6 +384,13 @@ export function DetailView({
           )}
         </div>
         <div data-part="paper" className={paneClass}>
+          {detail.noClone !== null && (
+            <NoCloneSlip
+              slip={detail.noClone}
+              onLocalSources={onLocalSources}
+              onCopy={onCopy}
+            />
+          )}
           <KeyFilePaper sheets={sheets} />
         </div>
       </div>

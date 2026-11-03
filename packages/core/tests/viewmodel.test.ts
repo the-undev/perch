@@ -1376,6 +1376,105 @@ describe("the detail", () => {
     expect([detail.actions, detail.keyFiles]).toEqual([[], []]);
   });
 
+  describe("the no-clone slip", () => {
+    const presence = (
+      forge: ForgeName,
+      fullName: string,
+      sshUrl: string | null,
+    ): ForgePresence => ({
+      forge,
+      ref: `${forge}:${fullName.toLowerCase()}`,
+      fullName,
+      url: `https://${forge}.example/${fullName}`,
+      sshUrl,
+      foundBy: "account-listing",
+    });
+    const forgeOnly = (id: string, forges: ForgePresence[]) =>
+      item(id, { path: null, presences: { local: null, forges } });
+
+    it("names the forge, the repository and the clone address for a bird held by a forge and cloned nowhere here", async () => {
+      const pocket = forgeOnly("forgejo:finch/pocket", [
+        presence(
+          "forgejo",
+          "finch/Pocket",
+          "ssh://git@forgejo:2222/finch/Pocket.git",
+        ),
+      ]);
+      const config = await adoptAll([pocket.id]);
+
+      expect(birdIn([pocket], config, pocket.id).detail.noClone).toEqual({
+        forges: "Forgejo",
+        reference: "finch/pocket",
+        cloneAddress: "ssh://git@forgejo:2222/finch/Pocket.git",
+        onMetaLine: true,
+      });
+    });
+
+    it("names both forges, GitHub first, the first presence's repository and the first address a forge gave", async () => {
+      const notes = forgeOnly("forgejo:finch/notes", [
+        presence("forgejo", "finch/notes", null),
+        presence(
+          "github",
+          "finch/notes",
+          "git@github.com:finch/notes.git",
+        ),
+      ]);
+      const config = await adoptAll([notes.id]);
+
+      expect(birdIn([notes], config, notes.id).detail.noClone).toEqual({
+        forges: "GitHub and Forgejo",
+        reference: "finch/notes",
+        cloneAddress: "git@github.com:finch/notes.git",
+        onMetaLine: true,
+      });
+    });
+
+    it("leaves the address unknown for a snapshot cached before the scanner kept it", async () => {
+      const cached: ForgePresence = {
+        forge: "github",
+        ref: "github:finch/obsidian-tidy",
+        fullName: "finch/obsidian-tidy",
+        url: "https://github.com/finch/obsidian-tidy",
+        foundBy: "account-listing",
+      };
+      const tidy = forgeOnly("github:finch/obsidian-tidy", [cached]);
+
+      expect(
+        birdIn([tidy], await testConfig(""), tidy.id).detail.noClone,
+      ).toMatchObject({ forges: "GitHub", cloneAddress: null });
+    });
+
+    it("shows on the fence as on a wire", async () => {
+      const tidy = forgeOnly("github:finch/obsidian-tidy", [
+        presence("github", "finch/obsidian-tidy", null),
+      ]);
+      const bird = birdIn([tidy], await testConfig(""), tidy.id);
+
+      expect(bird.adopted).toBe(false);
+      expect(bird.detail.noClone).not.toBeNull();
+    });
+
+    it("never shows for a bird with a clone here, nor for one on no forge", async () => {
+      const oneDisk = item("dev/odin/hello");
+      const config = await adoptAll(["dev/perch", oneDisk.id]);
+
+      expect(birdIn([perch], config, "dev/perch").detail.noClone).toBeNull();
+      expect(birdIn([oneDisk], config, oneDisk.id).detail.noClone).toBeNull();
+    });
+
+    it("puts no local clone on the meta line only while config holds a launch action", async () => {
+      const tidy = forgeOnly("github:finch/obsidian-tidy", [
+        presence("github", "finch/obsidian-tidy", null),
+      ]);
+      const config = await adoptAll([tidy.id]);
+      config.launch.actions = [];
+
+      expect(birdIn([tidy], config, tidy.id).detail.noClone?.onMetaLine).toBe(
+        false,
+      );
+    });
+  });
+
   it("lists the README and roadmaps as key files, unless config names its own", async () => {
     const defaults = await adoptAll(["dev/perch"]);
     const own = await testConfig(

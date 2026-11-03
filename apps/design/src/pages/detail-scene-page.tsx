@@ -28,7 +28,7 @@ const birds = [
   {
     id: "github:finch/obsidian-tidy",
     label: "obsidian-tidy",
-    rule: "On a forge, never cloned here: no local facts, nothing to launch, no key files; only the link out.",
+    rule: "On a forge, never cloned here, on the fence: no local facts and nothing to launch, so the meta line says no local clone, and the paper pane holds the slip saying why, with Open Sources and the address to copy.",
   },
 ] as const;
 
@@ -78,6 +78,8 @@ export function DetailScenePage() {
             openPapers={false}
             arrivalChip={null}
             onSettings={() => setPressed("onSettings()")}
+            onLocalSources={() => setPressed("onLocalSources()")}
+            onCopy={async (text) => setPressed(`onCopy(${text})`)}
             panning={false}
           />
         </Stage>
@@ -127,6 +129,16 @@ export function DetailScenePage() {
             name: "onSettings",
             type: "() => void",
             what: "A notice's Sources was pressed; the app opens the settings page.",
+          },
+          {
+            name: "onLocalSources",
+            type: "() => void",
+            what: "The no-clone slip's Open Sources was pressed; the app opens the settings page on Sources, the local cards unfolded.",
+          },
+          {
+            name: "onCopy",
+            type: "(text: string) => Promise<void>",
+            what: "The no-clone slip's Copy was pressed; the app puts the clone address on the clipboard, and the control says Copied once it settles.",
           },
           {
             name: "panning",

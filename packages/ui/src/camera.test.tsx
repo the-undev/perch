@@ -165,6 +165,8 @@ function camera(
   const onNavigate = vi.fn();
   const onRescan = vi.fn();
   const onSettings = vi.fn();
+  const onLocalSources = vi.fn();
+  const onCopy = vi.fn<(text: string) => Promise<void>>(async () => undefined);
   const view = (at: CameraPlace) => (
     <CameraView
       aviary={aviary}
@@ -176,6 +178,8 @@ function camera(
       scanning={scanning}
       onRescan={onRescan}
       onSettings={onSettings}
+      onLocalSources={onLocalSources}
+      onCopy={onCopy}
       entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
       problems={[]}
     />
@@ -186,6 +190,8 @@ function camera(
     onNavigate,
     onRescan,
     onSettings,
+    onLocalSources,
+    onCopy,
     moveTo: (at: CameraPlace) => rerender(view(at)),
   };
 }
@@ -722,6 +728,24 @@ describe("the camera", () => {
     fireEvent.click(screen.getByRole("button", { name: "settings" }));
 
     expect(onSettings).toHaveBeenCalledTimes(1);
+    expect(onNavigate).not.toHaveBeenCalled();
+  });
+
+  it("hands a no-clone slip's Open Sources and Copy to the caller, the camera staying put", async () => {
+    const { onLocalSources, onCopy, onSettings, onNavigate } = camera(
+      detailOf("forgejo:finch/field-notes"),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Sources" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+    });
+
+    expect(onLocalSources).toHaveBeenCalledTimes(1);
+    expect(onCopy).toHaveBeenCalledWith(
+      "ssh://git@forgejo:2222/finch/field-notes.git",
+    );
+    expect(onSettings).not.toHaveBeenCalled();
     expect(onNavigate).not.toHaveBeenCalled();
   });
 

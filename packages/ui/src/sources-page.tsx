@@ -543,6 +543,7 @@ function SourceCardView({
   now,
   keyring,
   problems,
+  unfolded,
   onChange,
   onRemove,
 }: {
@@ -552,11 +553,13 @@ function SourceCardView({
   now: Date;
   keyring: KeyringCalls;
   problems: SourceProblem[];
+  /** The page was opened asking for this card unfolded. */
+  unfolded: boolean;
   onChange: (card: SourceCardValues) => void;
   onRemove: () => void;
 }) {
-  // A card that cannot be written yet, a new one among them, starts open.
-  const [open, setOpen] = useState(problems.length > 0);
+  // A card that cannot be written yet, a new one among them, starts open, as does one asked for.
+  const [open, setOpen] = useState(problems.length > 0 || unfolded);
   const [confirming, setConfirming] = useState(false);
   const headingId = useId();
   const bodyId = useId();
@@ -745,6 +748,8 @@ export interface SourcesPageProps {
   now: Date;
   /** Stores a forge card's pasted token and tests its connection. */
   keyring: KeyringCalls;
+  /** The cards of this kind start unfolded, as a link to the page asks; null for none. */
+  unfold: SourceCardKind | null;
   onChange: (value: SourcesConfig) => void;
 }
 
@@ -754,6 +759,7 @@ export function SourcesPage({
   cards,
   now,
   keyring,
+  unfold,
   onChange,
 }: SourcesPageProps) {
   const drafts = sourceCardsOf(value);
@@ -779,6 +785,7 @@ export function SourcesPage({
             (problem) =>
               problem.kind === card.kind && problem.index === card.index,
           )}
+          unfolded={card.kind === unfold}
           onChange={(next) => onChange(withSourceCard(value, next))}
           onRemove={() =>
             onChange(withSourceRemoved(value, card.kind, card.index))

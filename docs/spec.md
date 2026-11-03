@@ -132,6 +132,24 @@ branches, the commit river, flags, and beside it the paper pane holds
 a configurable list of key files rendered as paper, the bubble's
 material, with folder tabs. A long file keeps its full height; its pane
 scrolls, the folder tabs held at the pane's top.
+A bird held by at least one forge with no clone on this machine has no
+key files. In their place the paper pane holds a slip of the same paper,
+cut short with a toothed bottom edge and capped at its reading width,
+where the folder tabs would start. Its stamp, "No clone on this
+machine", is a dusty blue far from the judgement colours. The fact
+follows, "This repository is on Forgejo. No local clone was found.",
+naming each forge that holds it, "GitHub and Forgejo" for both. A quieter
+sentence gives the routes: a directory to search, or the clone's folder
+itself, added in Sources, and the repository a clone's remote points at
+to join the bird on the next scan. Open Sources opens the settings page
+on Sources with the local cards unfolded, `/settings?unfold=local`.
+Beside it sits the SSH clone address, the first one a forge gives, with
+Copy, which puts it on the clipboard and says Copied in place; a snapshot cached before the address was kept shows the slip
+without it. The slip shows for
+adopted and fence birds alike and goes the scan after a clone is found.
+While it shows and config holds at least one launch action, the meta
+line says "no local clone" in the faint voice where the actions would
+sit.
 Each chip's number sits on one ledger row, marked with a dot, its
 working spelled out beneath in mono, source by source: each forge's
 newest CI run with its state, branch, name, link and age, under a CI
@@ -481,7 +499,9 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   `/bird/<id>` for a bird's detail, `?papers=true` to unfold its papers
   and `?chip=<kind>` to land on a chip's ledger row, an unknown kind read
   as none. `/settings` is the settings page in
-  the camera's place; Escape goes home from it as from a bird.
+  the camera's place, `?unfold=<kind>` starting that kind's source cards
+  open, an unknown kind read as none; Escape goes home from it as from a
+  bird.
 - Launch actions are `[[launch.actions]]` tables, each naming its kind
   and only what differs from the kind's defaults, offered on a bird's
   page in their order. An action other than zellij runs its command

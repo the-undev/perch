@@ -97,6 +97,8 @@ export function CameraScenePage() {
           scanning={scanning === "scanning"}
           onRescan={() => setPressed("onRescan()")}
           onSettings={() => setPressed("onSettings()")}
+          onLocalSources={() => setPressed("onLocalSources()")}
+          onCopy={async (text) => setPressed(`onCopy(${text})`)}
           entry={{
             form: place.at === "detail" ? mockEntryForm(place.birdId) : null,
             onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
@@ -154,6 +156,16 @@ export function CameraScenePage() {
             name: "onSettings",
             type: "() => void",
             what: "The header's last word, settings, was pressed: the app leaves for its settings page.",
+          },
+          {
+            name: "onLocalSources",
+            type: "() => void",
+            what: "A no-clone slip's Open Sources was pressed: the app opens the settings page on Sources, the local cards unfolded.",
+          },
+          {
+            name: "onCopy",
+            type: "(text: string) => Promise<void>",
+            what: "A no-clone slip's Copy was pressed: the app puts the clone address on the clipboard.",
           },
           {
             name: "entry",

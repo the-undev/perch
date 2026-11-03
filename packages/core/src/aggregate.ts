@@ -296,6 +296,11 @@ function itemFor(
           presence.repo.state === "observed"
             ? presence.repo.value.info.url
             : null,
+        sshUrl:
+          presence.repo.state === "observed" &&
+          presence.repo.value.info.sshUrl.state === "observed"
+            ? presence.repo.value.info.sshUrl.value
+            : null,
         foundBy:
           presence.repo.state === "observed"
             ? presence.repo.value.foundBy

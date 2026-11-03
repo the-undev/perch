@@ -7,7 +7,7 @@ import type {
   SettingsValues,
 } from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
-import type { SourceCard } from "@perch/core/viewmodel.ts";
+import type { SourceCard, SourceCardKind } from "@perch/core/viewmodel.ts";
 import { useEffect, useState } from "react";
 import {
   SettingsEditor,
@@ -26,6 +26,8 @@ export interface SettingsViewProps {
   problems: string[];
   /** Stores a forge card's pasted token and tests its connection. */
   keyring: KeyringCalls;
+  /** The Sources page's cards of this kind start unfolded, as the link that opened the page asks; null for none. */
+  unfold: SourceCardKind | null;
   onSave: (values: SettingsValues) => void;
   /** The brand, the way back or Escape was pressed. */
   onHome: () => void;
@@ -69,6 +71,7 @@ export function SettingsView({
   now,
   problems,
   keyring,
+  unfold,
   onSave,
   onHome,
 }: SettingsViewProps) {
@@ -125,6 +128,7 @@ export function SettingsView({
                 cards={cards}
                 now={now}
                 keyring={keyring}
+                unfold={unfold}
                 onSave={onSave}
               />
             )}

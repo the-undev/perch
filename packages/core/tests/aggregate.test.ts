@@ -275,6 +275,7 @@ describe("aggregate", () => {
         ref: "github:skiff-app/skiff",
         fullName: "skiff-app/skiff",
         url: null,
+        sshUrl: null,
         foundBy: "local-remote",
       },
     ]);
@@ -285,6 +286,37 @@ describe("aggregate", () => {
     expect(item("undev/fork")?.presences.forges).toEqual([]);
     expect(item("undev/fork")?.sources.github).toBeUndefined();
     expect(snapshot.forges.github.active).toEqual([]);
+  });
+
+  it("carries the SSH clone address each forge gives onto its presence, null when it gives none", () => {
+    const silent = forgeRepo("finch/silent", {});
+    silent.info.sshUrl = { state: "absent", reason: "not-reported" };
+    const forgeOnly = rawFiles({
+      includes: {},
+      locals: {},
+      forges: {
+        github: [forgeRepo("finch/notes", {})],
+        forgejo: [silent],
+      },
+    });
+
+    const snapshot = aggregate(
+      { ...bundle, files: forgeOnly },
+      input,
+      new Date(),
+    );
+
+    expect(
+      snapshot.items.flatMap((item) =>
+        item.presences.forges.map((presence) => [
+          presence.ref,
+          presence.sshUrl,
+        ]),
+      ),
+    ).toEqual([
+      ["github:finch/notes", "git@example.invalid:finch/notes.git"],
+      ["forgejo:finch/silent", null],
+    ]);
   });
 });
 

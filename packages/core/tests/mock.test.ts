@@ -40,12 +40,12 @@ describe("the mock dataset", () => {
     }
   });
 
-  it("holds every mood and every activity among its adopted birds", () => {
+  it("holds every mood and every activity among its adopted birds, and one with no clone and so no activity", () => {
     expect(new Set(adopted.map((bird) => bird.mood))).toEqual(
       new Set(["content", "restless", "distressed"]),
     );
     expect(new Set(adopted.map((bird) => bird.activity))).toEqual(
-      new Set(["editing", "in-flight", "settled"]),
+      new Set(["editing", "in-flight", "settled", null]),
     );
   });
 
@@ -288,6 +288,31 @@ describe("the mock dataset", () => {
         ({ detail }) =>
           detail.clonePath === null || detail.clonePath.startsWith("~/"),
       ),
+    ).toBe(true);
+  });
+
+  it("holds the no-clone slip on a wire and on the fence, its clause on the meta line, and on no bird with a clone", () => {
+    const slipped = birds.filter((bird) => bird.detail.noClone !== null);
+
+    expect(
+      slipped.map((bird) => [bird.adopted, bird.detail.noClone?.forges]),
+    ).toEqual(
+      expect.arrayContaining([
+        [true, "Forgejo"],
+        [false, "GitHub"],
+      ]),
+    );
+    expect(
+      slipped.every(
+        (bird) =>
+          bird.detail.noClone?.cloneAddress !== null &&
+          bird.detail.noClone?.onMetaLine,
+      ),
+    ).toBe(true);
+    expect(
+      birds
+        .filter((bird) => bird.detail.clonePath !== null)
+        .every((bird) => bird.detail.noClone === null),
     ).toBe(true);
   });
 

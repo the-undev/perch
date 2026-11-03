@@ -79,6 +79,7 @@ export function AppView({ api }: { api: PerchApi }) {
   const search = useSearch({ strict: false });
   const papers = search.papers === true;
   const chip = search.chip ?? null;
+  const unfold = search.unfold ?? null;
   const atSettings = useLocation({
     select: (location) => location.pathname === "/settings",
   });
@@ -149,6 +150,7 @@ export function AppView({ api }: { api: PerchApi }) {
         now={now}
         problems={state.problems}
         keyring={{ storeToken: api.storeToken, testSource: api.testSource }}
+        unfold={unfold}
         onSave={(values) =>
           void api
             .saveSettings(values)
@@ -175,6 +177,10 @@ export function AppView({ api }: { api: PerchApi }) {
       scanning={state.scanning}
       onRescan={() => void api.rescan()}
       onSettings={() => void navigate({ to: "/settings" })}
+      onLocalSources={() =>
+        void navigate({ to: "/settings", search: { unfold: "local" } })
+      }
+      onCopy={(text) => navigator.clipboard.writeText(text)}
       entry={entry}
       problems={state.problems}
     />

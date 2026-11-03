@@ -38,6 +38,7 @@ const editorOn = (
     cards={null}
     now={now}
     keyring={keyring}
+    unfold={null}
     onSave={onSave}
   />
 );
@@ -200,7 +201,7 @@ describe("the settings editor", () => {
         .value,
     ).toBe("Machine & Home");
     expect(
-      wires.getByText("3 birds name this wire; they move to Projects."),
+      wires.getByText("4 birds name this wire; they move to Projects."),
     ).toBeDefined();
     expect(remove().getAttribute("aria-describedby")).not.toBeNull();
     expect(saveButton().disabled).toBe(true);
@@ -211,7 +212,7 @@ describe("the settings editor", () => {
     ).toBeNull();
     expect(
       wires.getByText(
-        ".dotfiles, obsidian/Hothouse and obsidian/Pocket sit on Machine & Home, which is removed: saving moves them to the default wire, Projects.",
+        ".dotfiles, obsidian/Hothouse, obsidian/Pocket and forgejo:finch/field-notes sit on Machine & Home, which is removed: saving moves them to the default wire, Projects.",
       ),
     ).toBeDefined();
     fireEvent.click(saveButton());
@@ -228,7 +229,7 @@ describe("the settings editor", () => {
     type(wires.getByRole("textbox", { name: "wire 1" }), "Home");
     fireEvent.click(wires.getByRole("button", { name: "Remove wire Home" }));
     expect(
-      wires.getByText("3 birds name this wire; they move to Projects."),
+      wires.getByText("4 birds name this wire; they move to Projects."),
     ).toBeDefined();
     fireEvent.click(wires.getByRole("button", { name: "Move wire Home down" }));
     expect(
@@ -719,6 +720,7 @@ describe("the settings page", () => {
         problems={[
           "The config was not changed: Wires: two wires are named Projects; each name may appear once",
         ]}
+        unfold={null}
         onSave={() => {}}
         onHome={onHome}
       />,
@@ -748,6 +750,7 @@ describe("the settings page", () => {
         now={now}
         keyring={keyring}
         problems={[]}
+        unfold={null}
         onSave={onSave}
         onHome={() => {}}
       />,
@@ -805,6 +808,7 @@ describe("the settings page", () => {
         now={now}
         keyring={keyring}
         problems={[]}
+        unfold={null}
         onSave={() => {}}
         onHome={() => {}}
       />,

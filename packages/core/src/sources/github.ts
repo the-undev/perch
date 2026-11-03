@@ -29,6 +29,7 @@ export interface GithubClientDeps {
 export function readRepoInfo(value: unknown): RawForgeRepoInfo {
   const record = asRecord(value, "repository");
   const owner = asRecord(record.owner, "owner") as JsonRecord;
+  const sshUrl = optionalString(record, "ssh_url");
   return {
     fullName: stringField(record, "full_name"),
     owner: stringField(owner, "login"),
@@ -38,6 +39,10 @@ export function readRepoInfo(value: unknown): RawForgeRepoInfo {
     fork: record.fork === true,
     private: record.private === true,
     url: stringField(record, "html_url"),
+    sshUrl:
+      sshUrl === null
+        ? { state: "absent", reason: "not-reported" }
+        : { state: "observed", value: sshUrl },
   };
 }
 

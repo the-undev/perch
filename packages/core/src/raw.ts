@@ -157,6 +157,8 @@ export interface RawForgeRepoInfo {
   fork: boolean;
   private: boolean;
   url: string;
+  /** The SSH address the forge gives for cloning, such as git@github.com:owner/name.git. */
+  sshUrl: Observed<string, "not-reported">;
 }
 
 /** One account's listing: its own repositories, with untracked forks left out by name. */

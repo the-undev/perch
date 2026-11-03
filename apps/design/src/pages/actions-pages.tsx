@@ -3,6 +3,7 @@
 import type { Bird, LaunchAction } from "@perch/core/viewmodel.ts";
 import { LaunchActions, LinksOut } from "@perch/ui/actions.tsx";
 import { DetailHeading } from "@perch/ui/detail-heading.tsx";
+import { NoCloneClause } from "@perch/ui/no-clone-slip.tsx";
 import { useState } from "react";
 import { mockBird } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
@@ -122,6 +123,7 @@ export function LinksPage() {
 function HeadingActions({ bird }: { bird: Bird }) {
   return (
     <div className="flex flex-wrap items-center gap-1">
+      {bird.detail.noClone?.onMetaLine && <NoCloneClause />}
       <LaunchActions actions={bird.detail.actions} onLaunch={() => {}} />
       <LinksOut links={bird.detail.links} />
     </div>
@@ -178,8 +180,23 @@ export function HeadingPage() {
           </Ground>
         </Specimen>
         <Specimen
+          label="adopted, no clone"
+          rule="Pergola Notes: adopted while only on Forgejo. Where the launch actions would sit, the meta line says no local clone in the faint voice, the cause in three words that the slip in the paper pane spells out. It shows exactly when the slip does and config holds at least one launch action; a config with none stays silent."
+        >
+          <Ground>
+            <DetailHeading
+              bird={mockBird("forgejo:finch/field-notes")}
+              actions={
+                <HeadingActions
+                  bird={mockBird("forgejo:finch/field-notes")}
+                />
+              }
+            />
+          </Ground>
+        </Specimen>
+        <Specimen
           label="on the fence, no clone"
-          rule="obsidian-tidy: on a forge, never cloned here, so the meta line starts with the forge and the heading has no activity."
+          rule="obsidian-tidy: on a forge, never cloned here, so the meta line starts with the forge, the heading has no activity, and no local clone stands where the launch actions would."
         >
           <Ground>
             <DetailHeading

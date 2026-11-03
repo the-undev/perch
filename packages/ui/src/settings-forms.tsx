@@ -36,7 +36,7 @@ import {
   wireWarnings,
 } from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
-import type { SourceCard } from "@perch/core/viewmodel.ts";
+import type { SourceCard, SourceCardKind } from "@perch/core/viewmodel.ts";
 import { type ReactNode, useId, useState } from "react";
 import {
   FormNotes,
@@ -941,6 +941,8 @@ export interface SettingsEditorProps {
   now: Date;
   /** Stores a forge card's pasted token and tests its connection. */
   keyring: KeyringCalls;
+  /** The Sources page's cards of this kind start unfolded, as a link to the page asks; null for none. */
+  unfold: SourceCardKind | null;
   /** Save was pressed with values that changed and can be written. */
   onSave: (values: SettingsValues) => void;
 }
@@ -956,6 +958,7 @@ export function SettingsEditor({
   cards,
   now,
   keyring,
+  unfold,
   onSave,
 }: SettingsEditorProps) {
   const [base, setBase] = useState(form.values);
@@ -994,6 +997,7 @@ export function SettingsEditor({
           cards={cards}
           now={now}
           keyring={keyring}
+          unfold={unfold}
           onChange={(sources) => update({ sources })}
         />
       )}

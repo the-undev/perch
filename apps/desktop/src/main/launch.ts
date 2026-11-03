@@ -1,7 +1,14 @@
 // Launch actions open things and change nothing perch reads. Each runs the commands it carries
-// from config, its placeholders filled in with the action's own values, without a shell.
+// from config, its placeholders filled in with the action's own values, without a shell. The
+// config file opens the same way, by an action chosen here from config's own.
 
 import type { ChildProcess, SpawnOptions } from "node:child_process";
+import { dirname } from "node:path";
+import type {
+  KindActionConfig,
+  LaunchActionConfig,
+} from "@perch/core/config.ts";
+import { commandKinds } from "@perch/core/launch-kinds.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 
 export interface LaunchDeps {
@@ -90,6 +97,38 @@ export async function launch(
         }),
       );
   }
+}
+
+/** The words a failure to open the config file is reported under. */
+export const configFileVerb = "Open the config file";
+
+/**
+ * The action that opens the config file: the first VS Code action with the file filling {path},
+ * else the first folder action's command, or the folder kind's default, on the file's directory.
+ */
+export function configFileAction(
+  actions: readonly LaunchActionConfig[],
+  configPath: string,
+): LaunchAction {
+  const kindAction = (kind: "vscode" | "folder") =>
+    actions.find((action): action is KindActionConfig => action.kind === kind);
+  const vscode = kindAction("vscode");
+  if (vscode !== undefined) {
+    return {
+      kind: "command",
+      verb: configFileVerb,
+      icon: commandKinds.vscode.icon,
+      command: vscode.command,
+      path: configPath,
+    };
+  }
+  return {
+    kind: "command",
+    verb: configFileVerb,
+    icon: commandKinds.folder.icon,
+    command: kindAction("folder")?.command ?? [...commandKinds.folder.command],
+    path: dirname(configPath),
+  };
 }
 
 /** Node's spawn, as far as starting a detached program needs it. */

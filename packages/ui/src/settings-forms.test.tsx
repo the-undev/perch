@@ -721,6 +721,7 @@ describe("the settings page", () => {
         aviary={mockAviary}
         scanning={false}
         onRescan={() => {}}
+        onOpenConfig={() => {}}
         keyring={keyring}
         problems={[
           "The config was not changed: Wires: two wires are named Projects; each name may appear once",
@@ -756,6 +757,7 @@ describe("the settings page", () => {
         aviary={mockAviary}
         scanning={false}
         onRescan={() => {}}
+        onOpenConfig={() => {}}
         keyring={keyring}
         problems={[]}
         unfold={null}
@@ -818,6 +820,7 @@ describe("the settings page", () => {
         aviary={mockAviary}
         scanning={false}
         onRescan={onRescan}
+        onOpenConfig={() => {}}
         keyring={keyring}
         problems={[]}
         unfold={null}
@@ -847,6 +850,7 @@ describe("the settings page", () => {
         aviary={mockAviary}
         scanning
         onRescan={onRescan}
+        onOpenConfig={() => {}}
         keyring={keyring}
         problems={[]}
         unfold={null}
@@ -870,6 +874,7 @@ describe("the settings page", () => {
         aviary={null}
         scanning={false}
         onRescan={() => {}}
+        onOpenConfig={() => {}}
         keyring={keyring}
         problems={[]}
         unfold={null}
@@ -884,6 +889,32 @@ describe("the settings page", () => {
     expect(screen.queryByText(/couldn't read/)).toBeNull();
   });
 
+  it("opens the config file from the path in its header", () => {
+    const onOpenConfig = vi.fn();
+    render(
+      <SettingsView
+        form={mockSettingsForm()}
+        cards={null}
+        now={now}
+        aviary={mockAviary}
+        scanning={false}
+        onRescan={() => {}}
+        onOpenConfig={onOpenConfig}
+        keyring={keyring}
+        problems={[]}
+        unfold={null}
+        onSave={() => {}}
+        onHome={() => {}}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "~/.config/perch/config.toml" }),
+    );
+
+    expect(onOpenConfig).toHaveBeenCalledTimes(1);
+  });
+
   it("says it is reading the config until the form arrives", () => {
     render(
       <SettingsView
@@ -893,6 +924,7 @@ describe("the settings page", () => {
         aviary={mockAviary}
         scanning={false}
         onRescan={() => {}}
+        onOpenConfig={() => {}}
         keyring={keyring}
         problems={[]}
         unfold={null}

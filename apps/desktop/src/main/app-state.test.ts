@@ -61,6 +61,7 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
   const deps: AppStateDeps = {
     home: "/home/owner",
     config: config.store,
+    configPath: "/home/owner/.config/perch/config.toml",
     readCached: async () => mockSnapshot,
     gather: vi.fn(async (_config: Config) => {}),
     aggregate: vi.fn(async (_loaded: LoadedConfig) => mockSnapshot),
@@ -293,6 +294,47 @@ describe("the app state", () => {
 
     await app.scan();
     expect(published.at(-1)?.problems).toEqual([]);
+  });
+
+  it("opens the config file by config's launch actions, through no bird, and says when that fails", async () => {
+    const { app, deps, published } = appState();
+    await app.start();
+    vi.mocked(deps.launch).mockRejectedValueOnce(
+      new Error("spawn code ENOENT"),
+    );
+
+    await app.openConfig();
+
+    expect(deps.launch).toHaveBeenCalledWith({
+      kind: "command",
+      verb: "Open the config file",
+      icon: "code",
+      command: ["code", "{path}"],
+      path: "/home/owner/.config/perch/config.toml",
+    });
+    expect(published.at(-1)?.problems).toEqual([
+      "Open the config file failed: spawn code ENOENT",
+    ]);
+  });
+
+  it("opens the config file's directory when no config has ever parsed", async () => {
+    const { app, deps, config } = appState();
+    config.nextRead({
+      loaded: null,
+      error: "config: wires must be a table",
+      missing: false,
+    });
+    await app.start();
+
+    await app.openConfig();
+
+    expect(deps.launch).toHaveBeenCalledWith({
+      kind: "command",
+      verb: "Open the config file",
+      icon: "folder",
+      command: ["xdg-open", "{path}"],
+      path: "/home/owner/.config/perch",
+    });
   });
 
   it("writes the starter config, saying so", async () => {

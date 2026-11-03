@@ -12,6 +12,7 @@ const api: PerchApi = {
   rescan: () => ipcRenderer.invoke(channels.rescan),
   keyFiles: (birdId) => ipcRenderer.invoke(channels.keyFiles, birdId),
   launch: (action) => ipcRenderer.invoke(channels.launch, action),
+  openConfig: () => ipcRenderer.invoke(channels.openConfig),
   writeStarterConfig: () => ipcRenderer.invoke(channels.writeStarterConfig),
   entryForm: (birdId) => ipcRenderer.invoke(channels.entryForm, birdId),
   saveEntry: (birdId, values) =>

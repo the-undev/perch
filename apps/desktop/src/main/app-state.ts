@@ -28,11 +28,14 @@ import {
 import type { KeyFileSheet, PerchState } from "../shared/ipc.ts";
 import type { ConfigEdit } from "./config-edit.ts";
 import type { ConfigStore } from "./config-store.ts";
+import { configFileAction } from "./launch.ts";
 
 export interface AppStateDeps {
   /** The home directory, against which the settings page shows paths with ~. */
   home: string;
   config: ConfigStore;
+  /** The owner's config file, which the settings page's path opens. */
+  configPath: string;
   /** The snapshot cached by the last scan, or null. */
   readCached: () => Promise<Snapshot | null>;
   /** Gathers every source into the raw directory. */
@@ -67,6 +70,11 @@ export interface AppState {
    * nothing; a failure becomes a problem until the next scan.
    */
   launch(action: LaunchAction): Promise<void>;
+  /**
+   * Opens the config file by the action configFileAction picks from config's launch actions; a
+   * failure becomes a problem until the next scan.
+   */
+  openConfig(): Promise<void>;
   /** A bird's key files with what was read from each; none for a bird the aviary does not hold. */
   keyFiles(birdId: string): Promise<KeyFileSheet[]>;
   /**
@@ -170,6 +178,16 @@ export function createAppState(deps: AppStateDeps): AppState {
 
   const publish = () => deps.publish(state());
 
+  /** Performs a launch action; a failure is a problem until the next scan. */
+  async function perform(action: LaunchAction): Promise<void> {
+    try {
+      await deps.launch(action);
+    } catch (error) {
+      launchError = `${action.verb} failed: ${errorMessage(error)}`;
+      publish();
+    }
+  }
+
   /** Writes an edit, then rereads the config, publishes and asks for a scan; a failure is a problem. */
   async function edit(change: ConfigEdit): Promise<void> {
     try {
@@ -232,12 +250,11 @@ export function createAppState(deps: AppStateDeps): AppState {
         .flatMap((candidate) => candidate.detail.actions)
         .find((candidate) => sameAction(candidate, requested));
       if (action === undefined) return;
-      try {
-        await deps.launch(action);
-      } catch (error) {
-        launchError = `${action.verb} failed: ${errorMessage(error)}`;
-        publish();
-      }
+      await perform(action);
+    },
+    openConfig() {
+      const actions = deps.config.current().loaded?.config.launch.actions ?? [];
+      return perform(configFileAction(actions, deps.configPath));
     },
     async keyFiles(birdId) {
       const files = bird(birdId)?.detail.keyFiles ?? [];

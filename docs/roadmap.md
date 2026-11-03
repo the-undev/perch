@@ -280,14 +280,6 @@ paper shows its alt text instead. To show the image, the main process
 would read the file from the clone behind a custom protocol, with the
 paper resolving the path against the key file's folder.
 
-## Opening the config file from its path
-
-The settings header names the config file but the path is plain text.
-It should open: the file through the launch commands the config
-already holds (`vscode` with the path, or `folder` on its directory as
-the fallback), through the main process like every other launch.
-Asked for at first setup.
-
 ## Seeding a forge card from the clones
 
 The scan already holds every clone's remote URLs, so the sources page

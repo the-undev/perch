@@ -109,6 +109,7 @@ function start(): void {
   const state = createAppState({
     home,
     config,
+    configPath: paths.userConfigPath,
     // The cache is only a head start: one that cannot be read is no cache.
     readCached: () => readSnapshot(paths.snapshotPath).catch(() => null),
     gather: async (current) => {
@@ -206,6 +207,7 @@ function start(): void {
       rescan: () => scheduler.request(),
       keyFiles: (birdId) => state.keyFiles(birdId),
       launch: (action) => state.launch(action),
+      openConfig: () => state.openConfig(),
       writeStarterConfig: () => state.writeStarterConfig(),
       entryForm: async (birdId) => state.entryForm(birdId),
       saveEntry: (birdId, values) => state.saveEntry(birdId, values),

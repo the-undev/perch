@@ -20,6 +20,7 @@ export interface FakeApi {
   push(state: PerchState): void;
   rescans: number;
   launches: LaunchAction[];
+  configOpens: number;
   keyFileReads: string[];
   starterWrites: number;
   /** What the next starter write resolves: whether it wrote. */
@@ -63,6 +64,9 @@ export function fakeApi(
       launch: async (action) => {
         fake.launches.push(action);
       },
+      openConfig: async () => {
+        fake.configOpens += 1;
+      },
       writeStarterConfig: async () => {
         fake.starterWrites += 1;
         return fake.starterWritten;
@@ -93,6 +97,7 @@ export function fakeApi(
     },
     rescans: 0,
     launches: [],
+    configOpens: 0,
     keyFileReads: [],
     starterWrites: 0,
     starterWritten: true,

@@ -51,6 +51,11 @@ export interface PerchApi {
   /** Performs a launch action a bird offers, commands and all; a failure arrives as a problem in the state. */
   launch(action: LaunchAction): Promise<void>;
   /**
+   * Opens the config file by an action the main process picks from config's launch actions; a
+   * failure arrives as a problem in the state.
+   */
+  openConfig(): Promise<void>;
+  /**
    * Writes the default config (one wire, the default thresholds, no sources) to the
    * config path and starts a scan, resolving true once written; refuses, writing nothing, when
    * the file exists, resolving false, and the refusal arrives as a problem in the state.
@@ -91,6 +96,7 @@ export const channels = {
   rescan: "scan:request",
   keyFiles: "bird:key-files",
   launch: "bird:launch",
+  openConfig: "config:open",
   writeStarterConfig: "config:write-starter",
   entryForm: "bird:entry-form",
   saveEntry: "bird:save-entry",

@@ -1,9 +1,11 @@
 import type { ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
+import type { KindActionConfig } from "@perch/core/config.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import { describe, expect, it, vi } from "vitest";
 import { isWebUrl } from "./external-links.ts";
 import {
+  configFileAction,
   createSpawnDetached,
   fillCommand,
   type LaunchDeps,
@@ -221,6 +223,58 @@ describe("launch actions", () => {
         "home [Created 1h ago] (current)\nold [Created 3d ago] (EXITED - attach to resurrect)\n\n",
       ),
     ).toEqual(["home"]);
+  });
+});
+
+describe("opening the config file", () => {
+  const configPath = "/home/owner/.config/perch/config.toml";
+  const vscode: KindActionConfig = {
+    kind: "vscode",
+    verb: "Open in VS Code",
+    command: ["code", "--new-window", "{path}"],
+  };
+  const dolphin: KindActionConfig = {
+    kind: "folder",
+    verb: "Open the folder",
+    command: ["dolphin", "{path}"],
+  };
+
+  it("opens the file in config's first VS Code action, the file filling {path}", () => {
+    expect(configFileAction([dolphin, vscode], configPath)).toEqual({
+      kind: "command",
+      verb: "Open the config file",
+      icon: "code",
+      command: ["code", "--new-window", "{path}"],
+      path: configPath,
+    });
+  });
+
+  it("opens the file's directory with config's folder action when it holds no VS Code action", () => {
+    expect(
+      configFileAction(
+        [
+          { kind: "nvim", verb: "Open in nvim", command: ["nvim", "{path}"] },
+          dolphin,
+        ],
+        configPath,
+      ),
+    ).toEqual({
+      kind: "command",
+      verb: "Open the config file",
+      icon: "folder",
+      command: ["dolphin", "{path}"],
+      path: "/home/owner/.config/perch",
+    });
+  });
+
+  it("opens the file's directory with the folder kind's default when config holds neither", () => {
+    expect(configFileAction([], configPath)).toEqual({
+      kind: "command",
+      verb: "Open the config file",
+      icon: "folder",
+      command: ["xdg-open", "{path}"],
+      path: "/home/owner/.config/perch",
+    });
   });
 });
 

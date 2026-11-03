@@ -898,6 +898,25 @@ describe("the window", () => {
       expect(screen.getByRole("form", { name: "Settings" })).toBeDefined();
     });
 
+    it("asks the main process to open the config file from the header's path", async () => {
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/settings",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "~/.config/perch/config.toml",
+        }),
+      );
+
+      expect(fake.configOpens).toBe(1);
+      expect(fake.launches).toEqual([]);
+    });
+
     it("shows the file's new values when it changes on disk", async () => {
       const { fake } = renderApp(
         idle(mockAviary),

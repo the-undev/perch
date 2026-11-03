@@ -34,6 +34,8 @@ export interface SettingsViewProps {
   scanning: boolean;
   /** The header's scan line was pressed: scan now. */
   onRescan: () => void;
+  /** The header's config path was pressed: open the config file. */
+  onOpenConfig: () => void;
   /** What went wrong outside any one source, a refused save among them. */
   problems: string[];
   /** Stores a forge card's pasted token and tests its connection. */
@@ -84,6 +86,7 @@ export function SettingsView({
   aviary,
   scanning,
   onRescan,
+  onOpenConfig,
   problems,
   keyring,
   unfold,
@@ -119,7 +122,14 @@ export function SettingsView({
           onRescan={onRescan}
         />
         <div className="flex items-baseline gap-3 text-[12px] text-ink-faint">
-          <code className="font-mono">~/.config/perch/config.toml</code>
+          <button
+            type="button"
+            title="Open the config file"
+            onClick={onOpenConfig}
+            className="cursor-pointer font-mono hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-ink-accent"
+          >
+            ~/.config/perch/config.toml
+          </button>
           <button
             type="button"
             onClick={onHome}

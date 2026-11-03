@@ -376,8 +376,11 @@ the item entries, which each bird's adoption papers edit. A rail names its
 pages beside one reading-width column: Sources, with Joining up beneath
 it, then Wires, Judgement, Scanning and Launching. It opens on
 Sources and shows one page at a time. Its header carries the camera's
-scan line. An edit is kept while another page is open, and Save writes
-every page's edits. The page caps near
+scan line and names the config file. Pressing the path opens the file
+in config's first VS Code action, the file filling `{path}`; without
+one, the first folder action's command, or the folder kind's default
+`xdg-open`, opens the file's directory. An edit is kept while another
+page is open, and Save writes every page's edits. The page caps near
 1400px and centres; below about 900px the rail folds to a row of words
 above the column.
 
@@ -513,9 +516,11 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   encoded for a URI. The Obsidian kind, and a custom command using
   `{obsidian}`, are offered on Obsidian birds only; every other action
   on every bird with a folder on this machine. The main process runs only
-  an action some bird offers, its commands included. Links open in the
-  browser; the window never navigates. Key files are read by the main
-  process when a detail opens and again after every scan.
+  an action some bird offers, its commands included, and the one that
+  opens the config file, which it picks itself on the renderer's
+  request. Links open in the browser; the window never navigates. Key
+  files are read by the main process when a detail opens and again after
+  every scan.
 - The zellij action, at most one, goes to the project's tab in its
   session, or opens one in the project's directory; a session that is
   not running opens in the action's terminal command. The session is

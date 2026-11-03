@@ -403,7 +403,7 @@ export function SettingsScenePage() {
     <>
       <Section
         title="The settings page, end to end"
-        rule="The camera header's settings word leads here, in the camera's place, open on Sources. The header carries the camera's scan line; pressing it scans now. The rail names every page beside one reading-width column, capped near 1400px and centred; below about 900px it folds to a row of words above the column. The brand, back to the aviary and Escape go home. Edit a field, then change the file on disk: the draft is kept across pages and the page says the file moved. Leave the form untouched and the change shows."
+        rule="The camera header's settings word leads here, in the camera's place, open on Sources. The header carries the camera's scan line; pressing it scans now. Pressing the config path opens the file. The rail names every page beside one reading-width column, capped near 1400px and centred; below about 900px it folds to a row of words above the column. The brand, back to the aviary and Escape go home. Edit a field, then change the file on disk: the draft is kept across pages and the page says the file moved. Leave the form untouched and the change shows."
         min={600}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -453,6 +453,7 @@ export function SettingsScenePage() {
           aviary={scan === "first" ? null : mockAviary}
           scanning={scan !== "idle"}
           onRescan={() => setPressed("onRescan()")}
+          onOpenConfig={() => setPressed("onOpenConfig()")}
           keyring={keyring}
           problems={
             problems === "refused"
@@ -502,6 +503,11 @@ export function SettingsScenePage() {
             name: "onRescan",
             type: "() => void",
             what: "The scan line was pressed: scan now.",
+          },
+          {
+            name: "onOpenConfig",
+            type: "() => void",
+            what: "The config path in the header was pressed: the main process opens the file in the first VS Code action, else its directory with the folder action or the folder kind's default.",
           },
           {
             name: "keyring",

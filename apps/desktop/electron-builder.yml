@@ -1,4 +1,4 @@
-appId: com.github.finch.perch
+appId: com.github.the-undev.perch
 productName: perch
 directories:
   output: dist

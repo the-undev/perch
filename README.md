@@ -1,6 +1,6 @@
 # perch
 
-[![CI](https://github.com/finch/perch/actions/workflows/ci.yml/badge.svg)](https://github.com/finch/perch/actions/workflows/ci.yml)
+[![CI](https://github.com/the-undev/perch/actions/workflows/ci.yml/badge.svg)](https://github.com/the-undev/perch/actions/workflows/ci.yml)
 
 A tray app for one PC that shows the state of everything its owner is
 working on as birds on wires: git repositories, their remotes and CI,

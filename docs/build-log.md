@@ -1415,3 +1415,19 @@ build-time calls so they can be revisited.
   position not restored. Wayland has no app-side positioning; accepted.
 - Roadmap files stay read from the working copy, whatever branch is
   checked out; accepted as is, with no read from the default branch.
+
+## 3 November 2026 (the move to undev)
+
+- perch moves home: the clone to `~/undev/perch`, the repositories to
+  `the-undev/perch` on GitHub and Forgejo, both private. The old
+  `finch` repositories are deleted once the new homes are verified.
+- The whole history is rewritten to the undev identity, `TheUndev`
+  with the GitHub noreply address, before anything is pushed to the new
+  homes. Done now because it is impossible to do cleanly after the
+  first public push; the pre-rewrite history survives nowhere.
+- The appId becomes `com.github.the-undev.perch`. Pre-release is the
+  one cheap moment to change it.
+- The `finch` names in mock data, test fixtures and the spec's
+  environment table stay: they describe perch's sources, not the
+  repository's home. The full scrub remains the public undev release
+  roadmap item.

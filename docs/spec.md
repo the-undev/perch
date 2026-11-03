@@ -304,7 +304,8 @@ default branch's newest commits, Obsidian markers), the GitHub and
 Forgejo account listings and per-repository detail (PRs, CI, newest
 default-branch commits, each its own request, so a failed request fails
 only its part; a missing token fails the whole detail), roadmap files,
-Claude Code session times. A repository a clone's remote names that
+Claude Code session times. Roadmap files are read from the working
+copy, whatever branch is checked out. A repository a clone's remote names that
 could not be looked up is still a presence, carrying its error and
 whether no card covers its owner. Uptime Kuma exists and runs only for a
 `[[sources.kuma]]` table, which config leaves out until server
@@ -464,7 +465,9 @@ read at run time, its CLI prompts. Creation and replacement runbook:
 
 - A normal window and an icon in the tray. Closing the window hides it.
   The tray menu shows it, rescans and quits; activating the icon toggles
-  the window.
+  the window. The compositor places a hidden window when it shows
+  again, and its earlier position is not restored: Wayland gives an app
+  no way to place its own window.
 - Starts at login from an XDG autostart entry running `perch --hidden`:
   the window hidden, the icon in the tray. See
   [decisions/window-presentation.md](decisions/window-presentation.md).

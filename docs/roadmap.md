@@ -85,15 +85,6 @@ instance and show the window. Not observed yet; if it happens, exclude
 perch in Plasma's session settings or have the restored launch pass
 `--hidden`.
 
-## Focus on show under Wayland
-
-`--toggle` hides the window only when it is in front, which needs KWin
-to give it focus when shown. Whether KWin's focus stealing prevention
-lets a window shown from the tray or a second launch take focus is not
-checked yet. If it does not, a second toggle shows the window again
-instead of hiding it, and the show would need the launch's activation
-token.
-
 ## Archived scan lane
 
 Gather reads every forge repository, archived or not, on the one interval.
@@ -142,16 +133,6 @@ already.
 Push the branch, commit and push an Obsidian vault, open in the editor. Each one changes
 something the scanner reads, so each needs a rescan after and an undo story.
 Parked until the read-only app has proved itself.
-
-## Roadmap items and branches
-
-The scanner reads roadmap files from the working copy, so the items shown
-are whatever branch is checked out, including a work-in-progress edit of the
-roadmap itself. Decide whether that is acceptable or whether the stable read
-should come from the default branch without touching the checkout, via
-`git show main:docs/roadmap.md`, with the working-copy version shown as a
-divergence when the two differ. Obsidian vaults are unaffected; they live on
-one branch.
 
 ## Tray icon status
 

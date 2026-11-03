@@ -288,14 +288,6 @@ already holds (`vscode` with the path, or `folder` on its directory as
 the fallback), through the main process like every other launch.
 Asked for at first setup.
 
-## The scan line on the settings page
-
-The settings header has only the path and the way back; the camera
-header's scan line (when the last scan ran, scan now) is missing. A
-save requests a scan, and watching that scan run and finish from the
-settings page would show the save took. Reuse the camera's scan line
-in the settings header. Asked for at first setup.
-
 ## Seeding a forge card from the clones
 
 The scan already holds every clone's remote URLs, so the sources page

@@ -878,6 +878,26 @@ describe("the window", () => {
       ]);
     });
 
+    it("carries the scan line, scanning when it is pressed and saying so until the scan ends", async () => {
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/settings",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+
+      fireEvent.click(await screen.findByTitle("Scan now"));
+      expect(fake.rescans).toBe(1);
+      act(() => fake.push({ ...idle(mockAviary), scanning: true }));
+
+      expect((await screen.findByRole("status")).textContent).toBe("scanning");
+      act(() => fake.push(idle(mockAviary)));
+
+      await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+      expect(screen.getByRole("form", { name: "Settings" })).toBeDefined();
+    });
+
     it("shows the file's new values when it changes on disk", async () => {
       const { fake } = renderApp(
         idle(mockAviary),

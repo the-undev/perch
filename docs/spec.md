@@ -375,8 +375,9 @@ The settings page, reached from the camera header, edits everything but
 the item entries, which each bird's adoption papers edit. A rail names its
 pages beside one reading-width column: Sources, with Joining up beneath
 it, then Wires, Judgement, Scanning and Launching. It opens on
-Sources and shows one page at a time. An edit is kept while another
-page is open, and Save writes every page's edits. The page caps near
+Sources and shows one page at a time. Its header carries the camera's
+scan line. An edit is kept while another page is open, and Save writes
+every page's edits. The page caps near
 1400px and centres; below about 900px the rail folds to a row of words
 above the column.
 
@@ -474,7 +475,7 @@ read at run time, its CLI prompts. Creation and replacement runbook:
 - The scan runs in the Electron main process: at start, then
   `[scan] interval_minutes` after each scan finishes, on window focus
   once a minute has passed since the last scan, and on request: the
-  header's scan line, Rescan in the tray, `perch --scan`. One scan at a
+  scan line, Rescan in the tray, `perch --scan`. One scan at a
   time; a request during a scan joins it. The config is read again
   before every scan. Archived repositories are read on the same
   interval; a slower lane is parked, see the roadmap.
@@ -490,8 +491,10 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   leaves the previous one in force, and a failed scan leaves the
   previous snapshot; either says so in the sky's notices, as does a
   failed launch until the next scan.
-- The header's scan line says the sky's phase, the scan's time and its
-  age ("just now", then by the minute, then by the hour), and "scanning" while a scan runs.
+- The scan line, in the camera's header and the settings page's, says
+  the sky's phase, the scan's time and its age ("just now", then by the
+  minute, then by the hour), or "no scan yet" before the first scan has
+  finished, and "scanning" while a scan runs. Pressing it scans now.
   Beside it, in amber, "couldn't read 1 source" when sources failed,
   each named on hover. The sky follows the clock,
   read again every minute.

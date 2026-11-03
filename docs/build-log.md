@@ -1402,3 +1402,10 @@ build-time calls so they can be revisited.
   terms kept in short sentences, no anthropomorphising, and the app's
   name never the acting subject of UI text. The bird's speech in the
   bubble stays the one place for whimsy.
+
+## 3 November 2026
+
+- The scan line moves to its own component, shared by the camera's
+  header and the settings page's. The settings page can open before the
+  first scan has finished, so the line takes a null aviary and then says
+  "<phase>, no scan yet".

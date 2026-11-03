@@ -2,7 +2,7 @@
 // would say of it, and the whole page as the app shows it, rail and all.
 
 import { defaultConfig } from "@perch/core/config-default.ts";
-import { mockSnapshot } from "@perch/core/mock.ts";
+import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   type SettingsValues,
@@ -353,6 +353,14 @@ export function SettingsGroupsPage() {
 
 type Problems = "none" | "refused";
 
+type ScanState = "idle" | "scanning" | "first";
+
+const scanOptions: { value: ScanState; label: string }[] = [
+  { value: "idle", label: "Scanned" },
+  { value: "scanning", label: "Scanning" },
+  { value: "first", label: "No scan yet" },
+];
+
 type Start = "mock" | "starter";
 
 const startOptions: { value: Start; label: string }[] = [
@@ -385,6 +393,7 @@ export function SettingsScenePage() {
   const [start, setStart] = useState<Start>("mock");
   const [form, setForm] = useState(mockForm);
   const [problems, setProblems] = useState<Problems>("none");
+  const [scan, setScan] = useState<ScanState>("idle");
   const [pressed, setPressed] = useState("nothing yet");
   const keyring = stubKeyring(
     { stored: { ok: true }, tested: { ok: true, count: 5 } },
@@ -394,7 +403,7 @@ export function SettingsScenePage() {
     <>
       <Section
         title="The settings page, end to end"
-        rule="The camera header's settings word leads here, in the camera's place, open on Sources. The rail names every page beside one reading-width column, capped near 1400px and centred; below about 900px it folds to a row of words above the column. The brand, back to the aviary and Escape go home. Edit a field, then change the file on disk: the draft is kept across pages and the page says the file moved. Leave the form untouched and the change shows."
+        rule="The camera header's settings word leads here, in the camera's place, open on Sources. The header carries the camera's scan line; pressing it scans now. Pressing the config path opens the file. The rail names every page beside one reading-width column, capped near 1400px and centred; below about 900px it folds to a row of words above the column. The brand, back to the aviary and Escape go home. Edit a field, then change the file on disk: the draft is kept across pages and the page says the file moved. Leave the form untouched and the change shows."
         min={600}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -412,6 +421,12 @@ export function SettingsScenePage() {
             options={problemOptions}
             value={problems}
             onChange={setProblems}
+          />
+          <Choice
+            label="Scan"
+            options={scanOptions}
+            value={scan}
+            onChange={setScan}
           />
           <button
             type="button"
@@ -435,6 +450,10 @@ export function SettingsScenePage() {
           form={form}
           cards={mockSnapshot.sourceCards}
           now={afterScan}
+          aviary={scan === "first" ? null : mockAviary}
+          scanning={scan !== "idle"}
+          onRescan={() => setPressed("onRescan()")}
+          onOpenConfig={() => setPressed("onOpenConfig()")}
           keyring={keyring}
           problems={
             problems === "refused"
@@ -468,7 +487,27 @@ export function SettingsScenePage() {
           {
             name: "now",
             type: "Date",
-            what: "The moment the source cards' scan times are measured to.",
+            what: "The render's clock: the scan line's phase and age, and the source cards' scan times.",
+          },
+          {
+            name: "aviary",
+            type: "Aviary | null",
+            what: "The latest scan's aviary, whose time and unread sources the header's scan line says; null until the first scan has finished, when the line says no scan yet.",
+          },
+          {
+            name: "scanning",
+            type: "boolean",
+            what: "A scan is running; the scan line says so and holds its press.",
+          },
+          {
+            name: "onRescan",
+            type: "() => void",
+            what: "The scan line was pressed: scan now.",
+          },
+          {
+            name: "onOpenConfig",
+            type: "() => void",
+            what: "The config path in the header was pressed: the main process opens the file in the first VS Code action, else its directory with the folder action or the folder kind's default.",
           },
           {
             name: "keyring",

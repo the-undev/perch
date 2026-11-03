@@ -1,4 +1,5 @@
 import { defaultConfig } from "@perch/core/config-default.ts";
+import { mockAviary } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   settingsFormFor,
@@ -15,6 +16,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockHome, mockSettingsForm } from "./mock-birds.ts";
 import { SettingsEditor, type SettingsPageName } from "./settings-forms.tsx";
 import { SettingsView } from "./settings-view.tsx";
+import { skyPhase } from "./sky.ts";
 
 afterEach(cleanup);
 
@@ -716,6 +718,10 @@ describe("the settings page", () => {
         form={mockSettingsForm()}
         cards={null}
         now={now}
+        aviary={mockAviary}
+        scanning={false}
+        onRescan={() => {}}
+        onOpenConfig={() => {}}
         keyring={keyring}
         problems={[
           "The config was not changed: Wires: two wires are named Projects; each name may appear once",
@@ -748,6 +754,10 @@ describe("the settings page", () => {
         form={form}
         cards={null}
         now={now}
+        aviary={mockAviary}
+        scanning={false}
+        onRescan={() => {}}
+        onOpenConfig={() => {}}
         keyring={keyring}
         problems={[]}
         unfold={null}
@@ -800,12 +810,121 @@ describe("the settings page", () => {
     });
   });
 
+  it("carries the camera's scan line in its header, and scans again when it is pressed", () => {
+    const onRescan = vi.fn();
+    render(
+      <SettingsView
+        form={mockSettingsForm()}
+        cards={null}
+        now={now}
+        aviary={mockAviary}
+        scanning={false}
+        onRescan={onRescan}
+        onOpenConfig={() => {}}
+        keyring={keyring}
+        problems={[]}
+        unfold={null}
+        onSave={() => {}}
+        onHome={() => {}}
+      />,
+    );
+
+    const line = screen.getByTitle("Scan now");
+    expect(line.textContent).toMatch(
+      new RegExp(`^${skyPhase(now)}, scanned \\d\\d:\\d\\d, 4 min ago$`),
+    );
+    expect(screen.getByText("couldn't read 1 source")).toBeDefined();
+    expect(screen.queryByRole("status")).toBeNull();
+    fireEvent.click(line);
+
+    expect(onRescan).toHaveBeenCalledTimes(1);
+  });
+
+  it("says quietly in its header while a scan runs, and waits for it", () => {
+    const onRescan = vi.fn();
+    render(
+      <SettingsView
+        form={mockSettingsForm()}
+        cards={null}
+        now={now}
+        aviary={mockAviary}
+        scanning
+        onRescan={onRescan}
+        onOpenConfig={() => {}}
+        keyring={keyring}
+        problems={[]}
+        unfold={null}
+        onSave={() => {}}
+        onHome={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("status").textContent).toBe("scanning");
+    fireEvent.click(screen.getByTitle("Scan now"));
+
+    expect(onRescan).not.toHaveBeenCalled();
+  });
+
+  it("says in its header that no scan has finished before the first one does", () => {
+    render(
+      <SettingsView
+        form={mockSettingsForm()}
+        cards={null}
+        now={now}
+        aviary={null}
+        scanning={false}
+        onRescan={() => {}}
+        onOpenConfig={() => {}}
+        keyring={keyring}
+        problems={[]}
+        unfold={null}
+        onSave={() => {}}
+        onHome={() => {}}
+      />,
+    );
+
+    expect(screen.getByTitle("Scan now").textContent).toBe(
+      `${skyPhase(now)}, no scan yet`,
+    );
+    expect(screen.queryByText(/couldn't read/)).toBeNull();
+  });
+
+  it("opens the config file from the path in its header", () => {
+    const onOpenConfig = vi.fn();
+    render(
+      <SettingsView
+        form={mockSettingsForm()}
+        cards={null}
+        now={now}
+        aviary={mockAviary}
+        scanning={false}
+        onRescan={() => {}}
+        onOpenConfig={onOpenConfig}
+        keyring={keyring}
+        problems={[]}
+        unfold={null}
+        onSave={() => {}}
+        onHome={() => {}}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "~/.config/perch/config.toml" }),
+    );
+
+    expect(onOpenConfig).toHaveBeenCalledTimes(1);
+  });
+
   it("says it is reading the config until the form arrives", () => {
     render(
       <SettingsView
         form={null}
         cards={null}
         now={now}
+        aviary={mockAviary}
+        scanning={false}
+        onRescan={() => {}}
+        onOpenConfig={() => {}}
         keyring={keyring}
         problems={[]}
         unfold={null}

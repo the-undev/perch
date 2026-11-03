@@ -1,14 +1,20 @@
-// The settings page: the camera's header voice with the brand riding home, a rail naming the
-// pages beside one reading-width column, the main process's problems at the column's top, and
-// the editor showing the page the rail has open. Escape rides home, as it does from a bird's page.
+// The settings page: the camera's header voice with the brand riding home and the camera's scan
+// line, a rail naming the pages beside one reading-width column, the main process's problems at
+// the column's top, and the editor showing the page the rail has open. Escape rides home, as it
+// does from a bird's page.
 
 import type {
   SettingsForm,
   SettingsValues,
 } from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
-import type { SourceCard, SourceCardKind } from "@perch/core/viewmodel.ts";
+import type {
+  Aviary,
+  SourceCard,
+  SourceCardKind,
+} from "@perch/core/viewmodel.ts";
 import { useEffect, useState } from "react";
+import { ScanLine } from "./scan-line.tsx";
 import {
   SettingsEditor,
   type SettingsPageName,
@@ -20,8 +26,16 @@ export interface SettingsViewProps {
   form: SettingsForm | null;
   /** Each configured source card's last scan; null until a snapshot holds them. */
   cards: SourceCard[] | null;
-  /** The moment the source cards' scan times are measured to. */
+  /** The render's clock: the scan line's phase and age and the source cards' scan times are read from it. */
   now: Date;
+  /** The latest scan's aviary, which the header's scan line tells of; null until the first scan has finished. */
+  aviary: Aviary | null;
+  /** A scan is running; the header's scan line says so quietly. */
+  scanning: boolean;
+  /** The header's scan line was pressed: scan now. */
+  onRescan: () => void;
+  /** The header's config path was pressed: open the config file. */
+  onOpenConfig: () => void;
   /** What went wrong outside any one source, a refused save among them. */
   problems: string[];
   /** Stores a forge card's pasted token and tests its connection. */
@@ -69,6 +83,10 @@ export function SettingsView({
   form,
   cards,
   now,
+  aviary,
+  scanning,
+  onRescan,
+  onOpenConfig,
   problems,
   keyring,
   unfold,
@@ -97,8 +115,21 @@ export function SettingsView({
         <h1 className="m-0 font-semibold text-[13.5px] text-ink-muted">
           Settings
         </h1>
-        <div className="ml-auto flex items-baseline gap-3 text-[12px] text-ink-faint">
-          <code className="font-mono">~/.config/perch/config.toml</code>
+        <ScanLine
+          aviary={aviary}
+          now={now}
+          scanning={scanning}
+          onRescan={onRescan}
+        />
+        <div className="flex items-baseline gap-3 text-[12px] text-ink-faint">
+          <button
+            type="button"
+            title="Open the config file"
+            onClick={onOpenConfig}
+            className="cursor-pointer font-mono hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-ink-accent"
+          >
+            ~/.config/perch/config.toml
+          </button>
           <button
             type="button"
             onClick={onHome}

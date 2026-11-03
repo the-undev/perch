@@ -148,6 +148,10 @@ export function AppView({ api }: { api: PerchApi }) {
         form={settings}
         cards={state.sourceCards}
         now={now}
+        aviary={state.aviary}
+        scanning={state.scanning}
+        onRescan={() => void api.rescan()}
+        onOpenConfig={() => void api.openConfig()}
         problems={state.problems}
         keyring={{ storeToken: api.storeToken, testSource: api.testSource }}
         unfold={unfold}

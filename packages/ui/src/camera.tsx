@@ -31,7 +31,7 @@ import {
   placedBirds,
   toPixels,
 } from "./aviary-layout.ts";
-import { AviaryScene, sourceErrorWords } from "./aviary-view.tsx";
+import { AviaryScene } from "./aviary-view.tsx";
 import { BirdFigure, birdLook, type Facing } from "./bird.tsx";
 import { DetailView, type EntryControls } from "./detail-view.tsx";
 import {
@@ -40,9 +40,9 @@ import {
   usePrefersReducedMotion,
 } from "./hooks.ts";
 import type { KeyFileSheet } from "./paper.tsx";
+import { ScanLine } from "./scan-line.tsx";
 import { sceneWidthFor, skyBackground } from "./scene.tsx";
-import { isNight, type SkyPhase, skyPhase } from "./sky.ts";
-import { recentWords } from "./time.ts";
+import { isNight, skyPhase } from "./sky.ts";
 import {
   byPosition,
   columnEdge,
@@ -543,58 +543,6 @@ function Totals({ aviary }: { aviary: Aviary }) {
   );
 }
 
-/**
- * The phase and the scan's moment and age at the header's right, quietly saying when a scan is
- * running, with any sources the scan could not read. Pressing the scan line scans now.
- */
-function ScanLine({
-  aviary,
-  now,
-  phase,
-  scanning,
-  onRescan,
-}: {
-  aviary: Aviary;
-  now: Date;
-  phase: SkyPhase;
-  scanning: boolean;
-  onRescan: () => void;
-}) {
-  const time = new Date(aviary.scannedAt).toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const failing = aviary.sourceErrors.length;
-  return (
-    <div className="ml-auto flex items-baseline gap-2 text-[12px] text-ink-faint">
-      {scanning && (
-        <span role="status" className="motion-safe:animate-pulse">
-          scanning
-        </span>
-      )}
-      <button
-        type="button"
-        title="Scan now"
-        disabled={scanning}
-        onClick={onRescan}
-        className="cursor-pointer hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-ink-accent disabled:cursor-default disabled:hover:text-ink-faint"
-      >
-        {phase}, scanned {time}, {recentWords(aviary.scannedAt, now)}
-      </button>
-      {failing > 0 && (
-        <span
-          className="text-amber"
-          title={aviary.sourceErrors
-            .map((error) => sourceErrorWords(error, now))
-            .join("\n")}
-        >
-          couldn't read {failing} {failing === 1 ? "source" : "sources"}
-        </span>
-      )}
-    </div>
-  );
-}
-
 export interface CameraViewProps {
   aviary: Aviary;
   /** The render's clock: the sky's phase and every age are read from it. */
@@ -798,7 +746,6 @@ export function CameraView({
         <ScanLine
           aviary={aviary}
           now={now}
-          phase={phase}
           scanning={scanning}
           onRescan={onRescan}
         />

@@ -15,6 +15,7 @@ export function registerIpc(handlers: PerchCalls): void {
   ipcMain.handle(channels.launch, (_event, action: LaunchAction) =>
     handlers.launch(action),
   );
+  ipcMain.handle(channels.openConfig, () => handlers.openConfig());
   ipcMain.handle(channels.writeStarterConfig, () =>
     handlers.writeStarterConfig(),
   );

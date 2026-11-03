@@ -1402,3 +1402,16 @@ build-time calls so they can be revisited.
   terms kept in short sentences, no anthropomorphising, and the app's
   name never the acting subject of UI text. The bird's speech in the
   bubble stays the one place for whimsy.
+
+## 3 November 2026
+
+- The scan line moves to its own component, shared by the camera's
+  header and the settings page's. The settings page can open before the
+  first scan has finished, so the line takes a null aviary and then says
+  "<phase>, no scan yet".
+- The toggle's focus check passed on KWin: the window shown from the
+  tray icon takes focus, and the second press hides it.
+- A hidden window shown again is placed by the compositor, its earlier
+  position not restored. Wayland has no app-side positioning; accepted.
+- Roadmap files stay read from the working copy, whatever branch is
+  checked out; accepted as is, with no read from the default branch.

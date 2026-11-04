@@ -1,6 +1,6 @@
 // Where everything in the aviary goes, as pure functions of the view model and the window's size:
 // the scene's height, each wire's rows, the fence, each bird's perch and beak, the arrival order,
-// and the bubble's place against a beak. Proportions are the board's (design/perch.html).
+// and the bubble's place against a beak. Proportions are the board's.
 
 import type { Aviary, Bird, Mood, Wire } from "@perch/core/viewmodel.ts";
 import { birdScale, type Facing, type NamePlace, roomyName } from "./bird.tsx";

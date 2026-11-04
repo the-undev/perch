@@ -70,6 +70,4 @@ GitHub release.
 ## More
 
 What it shows and why: [docs/spec.md](docs/spec.md). The design site
-(`pnpm design`) shows the real components; the approved board pages it
-grew from are in [design/index.html](design/index.html), opened in a
-browser.
+(`pnpm design`) shows the real components.

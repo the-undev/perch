@@ -26,8 +26,7 @@ A pnpm workspace. The code is the reference; this is only a map.
 - `apps/desktop`: the Electron app, split into `src/main`, `src/renderer`
   and the sandboxed `src/preload`.
 
-`design/index.html` holds the old board pages; `apps/design` is the living
-design site.
+`apps/design` is the living design site.
 
 ## Commands
 

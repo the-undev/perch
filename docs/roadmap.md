@@ -3,13 +3,6 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
-## Design site on real components
-
-The design-site phase of 0.2.0. `apps/design` renders every component,
-the composed scenes and the reference pages. The field guide's plates of
-the bird and the bubble, `design/anatomy.html`, are rebuilt on the real
-components, and then the `design/` board pages are retired.
-
 ## Crowding at very narrow widths
 
 Below about 500px wide, nine birds share about 200 units of room, on a
@@ -185,7 +178,7 @@ beside every field would need the design site to read `.scan/`.
 
 ## Scene details from the board
 
-What `design/perch.html` draws that the composed views do not yet:
+Details the retired board pages drew that the composed views do not yet:
 
 - The ledger's "Roadmap headings" section, each heading with its item
   count or progress. `Detail` carries no roadmap groups; it needs a field

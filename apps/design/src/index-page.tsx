@@ -14,9 +14,7 @@ export function IndexPage() {
         The real components of the perch design, rendered from the mock dataset
         in every state the view model allows. Each page labels a state with the
         rule behind it and ends with a usage note. Design and theming are
-        reviewed here; the board pages in{" "}
-        <code className="font-mono text-[13px]">design/</code> stay as the
-        approved record.
+        reviewed here.
       </p>
       {groups.map((group) => {
         const groupPages = pagesIn(group.id);

@@ -1,6 +1,7 @@
-// What a bird says, by the phrasebook (design/phrasebook.html): first person, present tense, three
-// sentences at most, the worst cause first and at most one secondary, calm punctuation. Times are
-// durations measured at the scan, so the words need no clock and no time zone.
+// What a bird says, by the phrasebook (the design site's Phrasebook page): first person, present
+// tense, three sentences at most, the worst cause first and at most one secondary, calm
+// punctuation. Times are durations measured at the scan, so the words need no clock and no time
+// zone.
 
 import type { ForgeName } from "./snapshot.ts";
 import type { Activity, HealthCause } from "./viewmodel.ts";

@@ -213,8 +213,8 @@ into one pane, the key files at the record's end.
 The palette is ink: warm dark, crisp edges, red rare enough to mean
 something. The design site (`apps/design`, served by `pnpm design`)
 shows the real components from `packages/ui` in every state the view
-model allows, each labelled with its rule. The field guide
-(`design/anatomy.html`) annotates every trait with its rule.
+model allows, each labelled with its rule. Its Field guide page
+annotates every trait of the bird and the bubble with its rule.
 
 ## Health
 
@@ -291,8 +291,8 @@ could not be looked up is still a presence, carrying its error and
 whether no card covers its owner. Uptime Kuma exists and runs only for a
 `[[sources.kuma]]` table, which config leaves out until server
 monitoring is picked up. Forge tickets are a wanted
-source, see the roadmap. The field inventory, with declared types
-beside live values, is the atlas (`design/atlas.html`).
+source, see the roadmap. The field inventory, each source's declared
+types beside the mock's values, is on the design site's Spec pages.
 
 ## Projects, joining and adoption
 

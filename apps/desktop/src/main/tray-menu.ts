@@ -1,4 +1,5 @@
-// The tray icon's menu. Electron builds it from this template; the actions are the main process's.
+// The tray icon and its menu. Electron builds the menu from this template; the actions are the
+// main process's. The icon exists only while config keeps the window in the tray.
 
 /** What the tray menu's items do. */
 export interface TrayActions {
@@ -20,4 +21,22 @@ export function trayMenu(actions: TrayActions): TrayMenuItem[] {
     { type: "separator" },
     { label: "Quit", click: () => actions.quit() },
   ];
+}
+
+/** The part of a tray icon that taking it away uses. */
+export interface TrayIcon {
+  destroy(): void;
+}
+
+/** The icon held once the tray setting is applied: made while wanted and missing, destroyed once not wanted. */
+export function syncTray<Icon extends TrayIcon>(
+  held: Icon | null,
+  wanted: boolean,
+  create: () => Icon,
+): Icon | null {
+  if (!wanted) {
+    held?.destroy();
+    return null;
+  }
+  return held ?? create();
 }

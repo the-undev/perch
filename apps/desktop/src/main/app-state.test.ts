@@ -11,13 +11,14 @@ import { writeConfig } from "@perch/core/config-write.ts";
 import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
 import type { LaunchActionValues } from "@perch/core/launch-form.ts";
-import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
+import { mockConfig, mockLogin, mockSnapshot } from "@perch/core/mock.ts";
 import type { Snapshot } from "@perch/core/snapshot.ts";
 import type { Aviary, LaunchAction } from "@perch/core/viewmodel.ts";
 import { parse } from "smol-toml";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PerchState } from "../shared/ipc.ts";
 import { type AppStateDeps, createAppState } from "./app-state.ts";
+import type { Autostart } from "./autostart.ts";
 import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
 import {
   type ConfigState,
@@ -35,6 +36,15 @@ const perchInCode: LaunchAction = {
   command: ["code", "{path}"],
   path: "/home/owner/dev/perch",
 };
+
+/** An autostart entry that reads as the mock's and records every save. */
+function fakeAutostart(): Autostart {
+  return {
+    read: vi.fn(async () => mockLogin),
+    save: vi.fn(async () => {}),
+    repoint: vi.fn(async () => {}),
+  };
+}
 
 /** A config store whose next read is whatever the test sets. */
 function configStore(first: ConfigState) {
@@ -73,6 +83,7 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
     publish: (state) => published.push(state),
     writeStarter: vi.fn(async () => {}),
     editConfig: vi.fn(async () => {}),
+    autostart: fakeAutostart(),
     requestScan: vi.fn(async () => {}),
     ...overrides,
   };
@@ -547,10 +558,11 @@ describe("the settings", () => {
   const starter = () => writeConfig(defaultConfig(), home);
 
   /** The app state on a real config file in the temp directory holding the text. */
-  async function onText(text: string) {
+  async function onText(text: string, autostart: Autostart) {
     await writeFile(configPath, text);
     const file = { home, path: configPath, readText: readTextIfExists };
     const app = appState({
+      autostart,
       config: createConfigStore(file),
       editConfig: (edit) =>
         editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
@@ -561,26 +573,26 @@ describe("the settings", () => {
 
   const written = async () => readFile(configPath, "utf8");
 
-  function formOf(app: ReturnType<typeof appState>["app"]) {
-    const form = app.settingsForm();
+  async function formOf(app: ReturnType<typeof appState>["app"]) {
+    const form = await app.settingsForm();
     if (form === null) throw new Error("no settings form");
     return form;
   }
 
   it("saves the starter unchanged, the same bytes every time", async () => {
-    const { app } = await onText(starter());
+    const { app } = await onText(starter(), fakeAutostart());
 
-    await app.saveSettings(formOf(app).values);
+    await app.saveSettings((await formOf(app)).values);
     const first = await written();
-    await app.saveSettings(formOf(app).values);
+    await app.saveSettings((await formOf(app)).values);
 
     expect(first).toBe(starter());
     expect(await written()).toBe(first);
   });
 
   it("adds a zellij action writing only what differs, a session root under ~, rereads the config and asks for a scan", async () => {
-    const { app, deps, published } = await onText(starter());
-    const { values } = formOf(app);
+    const { app, deps, published } = await onText(starter(), fakeAutostart());
+    const { values } = await formOf(app);
     const zellij: LaunchActionValues = {
       kind: "zellij",
       verb: "",
@@ -601,7 +613,7 @@ describe("the settings", () => {
         },
       ],
     });
-    expect(formOf(app).values.launch.actions).toEqual([zellij]);
+    expect((await formOf(app)).values.launch.actions).toEqual([zellij]);
     expect(published.at(-1)?.problems).toEqual([]);
     expect(deps.requestScan).toHaveBeenCalledTimes(1);
   });
@@ -609,12 +621,14 @@ describe("the settings", () => {
   it("says why nothing was written, without scanning", async () => {
     const { app, deps, published } = await onText(
       writeConfig(mockConfig, home),
+      fakeAutostart(),
     );
     const before = await written();
-    const { values } = formOf(app);
+    const { values } = await formOf(app);
 
     await app.saveSettings({
       ...values,
+      window: { tray: false, login: true },
       wires: { rows: [{ from: "Projects", name: "Projects" }], defaultRow: 1 },
     });
 
@@ -623,6 +637,56 @@ describe("the settings", () => {
       "The config was not changed: Wires: the default wire must be one of the wires",
     ]);
     expect(deps.requestScan).not.toHaveBeenCalled();
+    expect(deps.autostart.save).not.toHaveBeenCalled();
+  });
+
+  it("reads the login row from the autostart entry", async () => {
+    const autostart = fakeAutostart();
+    vi.mocked(autostart.read).mockResolvedValue({
+      ...mockLogin,
+      on: true,
+      target: "/home/owner/Applications/perch.AppImage",
+    });
+    const { app } = await onText(starter(), autostart);
+    const form = await formOf(app);
+
+    expect(form.values.window).toEqual({ tray: true, login: true });
+    expect(form.login).toEqual({
+      held: null,
+      path: "~/.config/autostart/perch.desktop",
+      target: "~/Applications/perch.AppImage",
+    });
+  });
+
+  it("saves the tray to config and the login toggle to the autostart entry, then rereads both", async () => {
+    const { app, deps, published } = await onText(starter(), fakeAutostart());
+    const { values } = await formOf(app);
+
+    await app.saveSettings({ ...values, window: { tray: false, login: true } });
+
+    expect(parse(await written()).window).toEqual({ tray: false });
+    expect(deps.autostart.save).toHaveBeenCalledExactlyOnceWith({
+      tray: false,
+      login: true,
+    });
+    expect(published.at(-1)?.problems).toEqual([]);
+    expect(deps.requestScan).toHaveBeenCalledTimes(1);
+  });
+
+  it("says why the login entry was not changed, the config still written", async () => {
+    const autostart = fakeAutostart();
+    vi.mocked(autostart.save).mockRejectedValue(
+      new Error("EACCES: permission denied"),
+    );
+    const { app, published } = await onText(starter(), autostart);
+    const { values } = await formOf(app);
+
+    await app.saveSettings({ ...values, window: { tray: false, login: true } });
+
+    expect(parse(await written()).window).toEqual({ tray: false });
+    expect(published.at(-1)?.problems).toEqual([
+      "The login entry was not changed: EACCES: permission denied",
+    ]);
   });
 
   it("has no settings form without a config", async () => {
@@ -632,6 +696,6 @@ describe("the settings", () => {
 
     await app.start();
 
-    expect(app.settingsForm()).toBeNull();
+    expect(await app.settingsForm()).toBeNull();
   });
 });

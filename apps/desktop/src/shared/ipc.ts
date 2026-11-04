@@ -70,11 +70,15 @@ export interface PerchApi {
   saveEntry(birdId: string, values: EntryValues): Promise<void>;
   /** Removes every config entry naming a bird, returning it to the fence, as saveEntry writes. */
   removeEntry(birdId: string): Promise<void>;
-  /** Everything in config but the item entries, as the settings page edits it; null without config. */
+  /**
+   * Everything in config but the item entries, and the autostart entry, as the settings page edits
+   * them; null without config.
+   */
   settingsForm(): Promise<SettingsForm | null>;
   /**
-   * Sets everything in config but the item entries, then scans; a failure writes nothing and
-   * arrives as a problem in the state.
+   * Sets everything in config but the item entries, then writes or removes the autostart entry,
+   * then scans; a config that cannot be written writes nothing, and either failure arrives as a
+   * problem in the state.
    */
   saveSettings(values: SettingsValues): Promise<void>;
   /**

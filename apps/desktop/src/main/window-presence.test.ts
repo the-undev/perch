@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  hideOnClose,
   inFront,
+  onClose,
   type PresentableWindow,
   present,
 } from "./window-presence.ts";
@@ -90,19 +90,35 @@ describe("the window's presence", () => {
     }
   });
 
-  it("hides on close instead of closing", () => {
+  it("hides on close instead of closing while it lives in the tray", () => {
     const stub = stubWindow(front);
     const event = { preventDefault: vi.fn() };
-    hideOnClose(event, stub.window, false);
+    const quit = vi.fn();
+    onClose(event, stub.window, { quitting: false, tray: true }, quit);
     expect(event.preventDefault).toHaveBeenCalled();
     expect(stub.calls).toEqual(["hide"]);
+    expect(quit).not.toHaveBeenCalled();
+  });
+
+  it("quits on close without the tray", () => {
+    const stub = stubWindow(front);
+    const event = { preventDefault: vi.fn() };
+    const quit = vi.fn();
+    onClose(event, stub.window, { quitting: false, tray: false }, quit);
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(stub.calls).toEqual([]);
+    expect(quit).toHaveBeenCalledOnce();
   });
 
   it("lets the window close when the app is quitting", () => {
-    const stub = stubWindow(front);
-    const event = { preventDefault: vi.fn() };
-    hideOnClose(event, stub.window, true);
-    expect(event.preventDefault).not.toHaveBeenCalled();
-    expect(stub.calls).toEqual([]);
+    for (const tray of [true, false]) {
+      const stub = stubWindow(front);
+      const event = { preventDefault: vi.fn() };
+      const quit = vi.fn();
+      onClose(event, stub.window, { quitting: true, tray }, quit);
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(stub.calls).toEqual([]);
+      expect(quit).not.toHaveBeenCalled();
+    }
   });
 });

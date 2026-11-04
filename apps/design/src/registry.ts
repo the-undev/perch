@@ -33,6 +33,7 @@ import { TokensPage } from "./pages/tokens-page.tsx";
 import { WirePage } from "./pages/wire-page.tsx";
 import { ChainPage } from "./spec/chain-page.tsx";
 import { ConfigPage } from "./spec/config-page.tsx";
+import { FieldGuidePage } from "./spec/field-guide-page.tsx";
 import { PhrasebookPage } from "./spec/phrasebook-page.tsx";
 import {
   ClaudeSessionsPage,
@@ -82,7 +83,7 @@ export const groups: Group[] = [
     id: "spec",
     title: "Spec",
     blurb:
-      "Reference pages that run the real code: the sources and their types, the model chain, the config, and what the birds say.",
+      "Reference pages that run the real code: the field guide, the sources and their types, the model chain, the config, and what the birds say.",
   },
 ];
 
@@ -288,6 +289,14 @@ export const pages: DesignPage[] = [
     summary:
       "A wire holding more birds than one row fits splits over two rows, or more; a crowded fence alternates its names between two baselines.",
     component: CrowdedPage,
+  },
+  {
+    slug: "field-guide",
+    group: "spec",
+    title: "Field guide",
+    summary:
+      "The bird and the bubble as annotated plates: what every part carries and the rule behind it.",
+    component: FieldGuidePage,
   },
   {
     slug: "model-chain",

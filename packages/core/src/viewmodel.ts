@@ -905,16 +905,12 @@ function ledgerFor(item: Item, chips: Chip[]): LedgerEntry[] {
   return ledger;
 }
 
-/** The ledger's opening sentence: only for a readable clone with nothing uncommitted, unpushed or toned amber or red. */
-function quietFor(item: Item, ledger: LedgerEntry[]): string | null {
+/** The ledger's opening sentence: only for a green bird's readable clone with nothing uncommitted or unpushed. */
+function quietFor(item: Item, health: Health): string | null {
+  if (health.level !== "green") return null;
   const git = readable<GitData>(item.sources.git);
   if (git === null) return null;
   if (git.uncommittedCount > 0 || git.unpushedCount > 0) return null;
-  const waiting = ledger.some(
-    (entry) =>
-      entry.kind !== "time" && (entry.tone === "amber" || entry.tone === "red"),
-  );
-  if (waiting) return null;
   return git.backup === "local-only"
     ? "The working tree is clean; no remote holds a copy."
     : "The working tree is clean and everything is pushed.";
@@ -1344,7 +1340,6 @@ export function deriveBird(
   const sleepsAtNight =
     !adopted || (mood === "content" && activity !== "editing");
   const chips = adopted ? chipsFor(item, health) : [];
-  const ledger = ledgerFor(item, chips);
   return {
     id: item.id,
     name,
@@ -1374,8 +1369,8 @@ export function deriveBird(
         ...new Set(item.presences.forges.map((presence) => presence.forge)),
       ],
       notices: noticesFor(health),
-      quiet: quietFor(item, ledger),
-      ledger,
+      quiet: quietFor(item, health),
+      ledger: ledgerFor(item, chips),
       branches: branchesFor(item, config),
       river: riverFor(item, config.scan.finalisedCommits),
       pullRequests: pullRequestsFor(item),

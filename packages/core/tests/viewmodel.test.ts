@@ -747,6 +747,7 @@ describe("the ledger's quiet sentence", () => {
       "dev/prism",
       "dev/fresh",
       "dev/unread",
+      "dev/parked",
       "github:finch/river",
     ]);
     const fresh = item("dev/fresh", {
@@ -755,16 +756,30 @@ describe("the ledger's quiet sentence", () => {
     const unread = item("dev/unread", {
       sources: { git: { error: "not a git repository" } },
     });
+    // Clean and pushed, but parked: the stall lives in health, never on a ledger row.
+    const parked = item("dev/parked", {
+      sources: {
+        git: gitData({
+          stall: {
+            branch: "wip",
+            since: hoursBefore(21 * 24),
+            days: 21,
+            level: "amber",
+            thresholds: { amberDays: 14, redDays: 45 },
+          },
+        }),
+      },
+    });
     const forgeOnly = item("github:finch/river", {
       path: null,
       presences: { local: null, forges: [] },
       sources: { github: forgeData({}) },
     });
-    const items = [restless, distressed, fresh, unread, forgeOnly];
+    const items = [restless, distressed, fresh, unread, parked, forgeOnly];
 
     expect(
       items.map((entry) => birdIn(items, config, entry.id).detail.quiet),
-    ).toEqual([null, null, null, null, null]);
+    ).toEqual([null, null, null, null, null, null]);
   });
 });
 

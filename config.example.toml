@@ -144,6 +144,14 @@ kind = "folder"
 # command = ["alacritty", "-e", "lnav", "{path}/logs"]
 # icon = "terminal"
 
+# How the window lives on this machine. With the tray, the default, closing
+# the window hides it, and the tray icon shows it, rescans and quits. With
+# the tray off there is no icon and closing the window quits; --hidden is
+# ignored and a second launch always shows the window. Starting at login is
+# not config: the settings page writes the autostart entry itself.
+# [window]
+# tray = false
+
 # Item entries. An entry adopts the bird and puts it on a wire. Its key names
 # any presence of the item: a local id, or a forge presence such as
 # "forgejo:owner/name", which still applies once a local clone joins it. When

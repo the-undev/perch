@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { handOver, parseArguments } from "./command-line.ts";
+import { handOver, parseArguments, startsHidden } from "./command-line.ts";
 
 const exe = "/tmp/.mount_perchX/perch";
 
@@ -51,22 +51,44 @@ describe("the command line", () => {
 
   it("hands a second launch's window request and scan to the running instance", () => {
     const actions = { present: vi.fn(), rescan: vi.fn() };
-    handOver(parseArguments([exe, "--toggle", "--scan"]), actions);
+    handOver(parseArguments([exe, "--toggle", "--scan"]), true, actions);
     expect(actions.present).toHaveBeenCalledExactlyOnceWith("toggle");
     expect(actions.rescan).toHaveBeenCalledOnce();
   });
 
   it("hands a plain second launch over as a show", () => {
     const actions = { present: vi.fn(), rescan: vi.fn() };
-    handOver(parseArguments([exe]), actions);
+    handOver(parseArguments([exe]), true, actions);
     expect(actions.present).toHaveBeenCalledExactlyOnceWith("show");
     expect(actions.rescan).not.toHaveBeenCalled();
   });
 
   it("leaves the window alone for a second launch that only scans", () => {
     const actions = { present: vi.fn(), rescan: vi.fn() };
-    handOver(parseArguments([exe, "--scan"]), actions);
+    handOver(parseArguments([exe, "--scan"]), true, actions);
     expect(actions.present).not.toHaveBeenCalled();
     expect(actions.rescan).toHaveBeenCalledOnce();
+  });
+
+  it("starts hidden with --hidden only with the tray, and shown without it", () => {
+    expect(startsHidden(parseArguments([exe, "--hidden"]), true)).toBe(true);
+    expect(startsHidden(parseArguments([exe, "--hidden"]), false)).toBe(false);
+    expect(startsHidden(parseArguments([exe]), true)).toBe(false);
+  });
+
+  it("shows the window for every second launch without the tray, a toggle and a scan among them", () => {
+    for (const argv of [
+      [exe],
+      [exe, "--toggle"],
+      [exe, "--scan"],
+      [exe, "--hidden"],
+    ]) {
+      const actions = { present: vi.fn(), rescan: vi.fn() };
+      handOver(parseArguments(argv), false, actions);
+      expect(actions.present).toHaveBeenCalledExactlyOnceWith("show");
+    }
+    const scan = { present: vi.fn(), rescan: vi.fn() };
+    handOver(parseArguments([exe, "--toggle", "--scan"]), false, scan);
+    expect(scan.rescan).toHaveBeenCalledOnce();
   });
 });

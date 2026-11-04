@@ -2,12 +2,18 @@
 // would say of it, and the whole page as the app shows it, rail and all.
 
 import { defaultConfig } from "@perch/core/config-default.ts";
-import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
+import {
+  mockAviary,
+  mockConfig,
+  mockLogin,
+  mockSnapshot,
+} from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   type SettingsValues,
   settingsFormFor,
   settingsProblems,
+  sourceRunHeld,
 } from "@perch/core/settings-form.ts";
 import { FormNotes } from "@perch/ui/form-parts.tsx";
 import { mockHome, mockSettingsForm } from "@perch/ui/mock-birds.ts";
@@ -16,6 +22,7 @@ import {
   PresencesGroup,
   ScanGroup,
   ThresholdsGroup,
+  WindowGroup,
   WiresGroup,
 } from "@perch/ui/settings-forms.tsx";
 import { SettingsView } from "@perch/ui/settings-view.tsx";
@@ -111,6 +118,30 @@ const presences = (
     onChange={(next) => change(next)}
   />
 );
+
+/** The mock's autostart entry once written by an earlier image. */
+const loginOn = settingsFormFor(mockConfig, mockHome, {
+  ...mockLogin,
+  on: true,
+  target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
+}).login;
+
+/** The mock run from source, with no entry. */
+const fromSource = settingsFormFor(mockConfig, mockHome, {
+  ...mockLogin,
+  held: sourceRunHeld,
+}).login;
+
+/** The Window page with the login row's hold and entry as given. */
+const windowWith =
+  (login: SettingsForm["login"]) =>
+  (values: SettingsValues, change: (c: Partial<SettingsValues>) => void) => (
+    <WindowGroup
+      value={values.window}
+      login={login}
+      onChange={(next) => change({ window: next })}
+    />
+  );
 
 export function SettingsGroupsPage() {
   return (
@@ -293,13 +324,43 @@ export function SettingsGroupsPage() {
           group={presences}
         />
       </Section>
+      <Section
+        title="Window"
+        rule="Two switch rows. Stay in the tray is config's [window] tray, true unless the file says false. Start at login reads whether ~/.config/autostart/perch.desktop exists, and Save writes or removes that entry, never config. Each row's sentence says what its state does, and the login sentence follows the tray switch: hidden in the tray, or with the window open. An entry that exists is named in mono beneath, with the image its Exec runs. Run from source the login switch is held, in amber, while the tray switch stays editable."
+        min={560}
+      >
+        <GroupSpecimen
+          label="The defaults"
+          rule="Tray on, no autostart entry: Save writes nothing. The login sentence already says what turning it on does."
+          start={mock}
+          group={windowWith(mockForm.login)}
+        />
+        <GroupSpecimen
+          label="Start at login, on"
+          rule="The entry exists: the sentence says what is true, and the line beneath names the entry and the image it runs."
+          start={withMock({ window: { tray: true, login: true } })}
+          group={windowWith(loginOn)}
+        />
+        <GroupSpecimen
+          label="The tray, off"
+          rule="Closing quits, and the login row starts the window open: Save writes tray = false and the entry without --hidden."
+          start={withMock({ window: { tray: false, login: true } })}
+          group={windowWith(loginOn)}
+        />
+        <GroupSpecimen
+          label="Run from source"
+          rule="No APPIMAGE, so no image to point the entry at: the login switch is held at what the entry says, and pressing it does nothing."
+          start={mock}
+          group={windowWith(fromSource)}
+        />
+      </Section>
       <Usage
         component="<SettingsEditor>"
         props={[
           {
             name: "form",
             type: "SettingsForm",
-            what: "The values as the file holds them, and the entries naming each wire. The draft starts here and follows it while untouched.",
+            what: "The values as the file and the autostart entry hold them, the entries naming each wire, and the login row's hold and entry. The draft starts here and follows it while untouched.",
           },
           {
             name: "page",
@@ -331,20 +392,22 @@ export function SettingsGroupsPage() {
         <p>
           Each page (<Code>WiresGroup</Code>, <Code>ThresholdsGroup</Code>,{" "}
           <Code>ScanGroup</Code>, <Code>LaunchGroup</Code>,{" "}
-          <Code>PresencesGroup</Code>, and <Code>SourcesPage</Code> on a page of
-          its own) takes its slice of <Code>SettingsValues</Code> as{" "}
-          <Code>value</Code> and every change as <Code>onChange</Code>; the
-          wires page takes <Code>named</Code> for its warnings. The editor shows
-          the page the rail has open, holds the draft across every page, and
-          lists <Code>settingsProblems(values)</Code> beside Save, as this page
-          does beneath each specimen.
+          <Code>PresencesGroup</Code>, <Code>WindowGroup</Code>, and{" "}
+          <Code>SourcesPage</Code> on a page of its own) takes its slice of{" "}
+          <Code>SettingsValues</Code> as <Code>value</Code> and every change as{" "}
+          <Code>onChange</Code>; the wires page takes <Code>named</Code> for its
+          warnings, and the window page <Code>login</Code> for the login row.
+          The editor shows the page the rail has open, holds the draft across
+          every page, and lists <Code>settingsProblems(values)</Code> beside
+          Save, as this page does beneath each specimen.
         </p>
         <p>
-          The form comes from <Code>settingsFormFor(config, home)</Code> in{" "}
-          <Code>@perch/core/settings-form.ts</Code>, which the main process
-          answers <Code>settingsForm()</Code> with; saving goes back as{" "}
-          <Code>saveSettings(values)</Code>, written by{" "}
-          <Code>withSettings(config, values, home)</Code>.
+          The form comes from <Code>settingsFormFor(config, home, login)</Code>{" "}
+          in <Code>@perch/core/settings-form.ts</Code>, which the main process
+          answers <Code>settingsForm()</Code> with, the login entry read from
+          the machine; saving goes back as <Code>saveSettings(values)</Code>,
+          written by <Code>withSettings(config, values, home)</Code>, and the
+          main process writes or removes the autostart entry.
         </p>
       </Usage>
     </>
@@ -370,7 +433,7 @@ const startOptions: { value: Start; label: string }[] = [
 
 const startForms: Record<Start, SettingsForm> = {
   mock: mockForm,
-  starter: settingsFormFor(defaultConfig(), mockHome),
+  starter: settingsFormFor(defaultConfig(), mockHome, mockLogin),
 };
 
 const problemOptions: { value: Problems; label: string }[] = [

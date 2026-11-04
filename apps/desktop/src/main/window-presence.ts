@@ -1,5 +1,5 @@
-// Showing, hiding and toggling the one window, and hiding it when closed. Electron stays outside:
-// the window is anything that answers these few calls.
+// Showing, hiding and toggling the one window, and hiding it or quitting when it is closed.
+// Electron stays outside: the window is anything that answers these few calls.
 
 /** The calls on a BrowserWindow that showing and hiding use. */
 export interface PresentableWindow {
@@ -39,13 +39,27 @@ export interface CloseEvent {
   preventDefault(): void;
 }
 
-/** Hides the window instead of letting it close, unless the app is quitting. */
-export function hideOnClose(
+/** Whether the app is already quitting, and whether the window lives in the tray. */
+export interface CloseState {
+  quitting: boolean;
+  tray: boolean;
+}
+
+/**
+ * Closing hides the window while it lives in the tray, and quits the app without the tray; a
+ * quit already under way lets it close.
+ */
+export function onClose(
   event: CloseEvent,
   window: PresentableWindow,
-  quitting: boolean,
+  state: CloseState,
+  quit: () => void,
 ): void {
-  if (quitting) return;
+  if (state.quitting) return;
+  if (!state.tray) {
+    quit();
+    return;
+  }
   event.preventDefault();
   window.hide();
 }

@@ -1,6 +1,7 @@
 // The main process's one source of truth: the config, the latest snapshot and the aviary derived
 // from them, what went wrong outside any one source, and the scan, launch, key-file reads, config
-// entry edits and settings that act on them. Electron stays outside: every effect is a dependency.
+// entry edits and settings that act on them, the autostart entry among the settings. Electron
+// stays outside: every effect is a dependency.
 
 import type { Config, LoadedConfig } from "@perch/core/config.ts";
 import {
@@ -26,6 +27,7 @@ import {
   type SourceCard,
 } from "@perch/core/viewmodel.ts";
 import type { KeyFileSheet, PerchState } from "../shared/ipc.ts";
+import type { Autostart } from "./autostart.ts";
 import type { ConfigEdit } from "./config-edit.ts";
 import type { ConfigStore } from "./config-store.ts";
 import { configFileAction } from "./launch.ts";
@@ -50,6 +52,8 @@ export interface AppStateDeps {
   writeStarter: () => Promise<void>;
   /** Applies an edit to a fresh read of the config file; rejects, writing nothing, on failure. */
   editConfig: (edit: ConfigEdit) => Promise<void>;
+  /** The autostart entry the settings page's login toggle reads and saving writes. */
+  autostart: Autostart;
   /** Asks for a scan now, or joins the one running, and settles when it has finished. */
   requestScan: () => Promise<void>;
   /** Told every change to the state. */
@@ -91,11 +95,15 @@ export interface AppState {
   saveEntry(birdId: string, values: EntryValues): Promise<void>;
   /** Removes every config entry naming a bird, returning it to the fence, as saveEntry writes. */
   removeEntry(birdId: string): Promise<void>;
-  /** Everything in config but the item entries, as the settings page edits it; null without config. */
-  settingsForm(): SettingsForm | null;
   /**
-   * Sets everything in config but the item entries, then rereads the config and asks for a scan;
-   * a failure writes nothing and becomes a problem until the next scan.
+   * Everything in config but the item entries, and the autostart entry, as the settings page edits
+   * them; null without config.
+   */
+  settingsForm(): Promise<SettingsForm | null>;
+  /**
+   * Sets everything in config but the item entries, then the autostart entry, then rereads the
+   * config and asks for a scan. A config that cannot be written writes nothing; either failure
+   * becomes a problem until the next scan.
    */
   saveSettings(values: SettingsValues): Promise<void>;
 }
@@ -188,8 +196,14 @@ export function createAppState(deps: AppStateDeps): AppState {
     }
   }
 
-  /** Writes an edit, then rereads the config, publishes and asks for a scan; a failure is a problem. */
-  async function edit(change: ConfigEdit): Promise<void> {
+  /**
+   * Writes an edit and then the step after it, then rereads the config, publishes and asks for a
+   * scan. A failed edit is a problem and stops there; a failed step after is a problem too.
+   */
+  async function edit(
+    change: ConfigEdit,
+    after: () => Promise<string | null>,
+  ): Promise<void> {
     try {
       await deps.editConfig(change);
       writeError = null;
@@ -198,9 +212,23 @@ export function createAppState(deps: AppStateDeps): AppState {
       publish();
       return;
     }
+    writeError = await after();
     await deps.config.reload();
     publish();
     await deps.requestScan();
+  }
+
+  /** Nothing follows an entry's edit. */
+  const nothingAfter = async () => null;
+
+  /** Writes or removes the autostart entry as the login toggle says; why it was not, or null. */
+  async function saveLogin(window: SettingsValues["window"]) {
+    try {
+      await deps.autostart.save(window);
+      return null;
+    } catch (error) {
+      return `The login entry was not changed: ${errorMessage(error)}`;
+    }
   }
 
   async function editEntry(
@@ -209,7 +237,7 @@ export function createAppState(deps: AppStateDeps): AppState {
   ): Promise<void> {
     const item = birdItem(birdId);
     if (item === undefined) return;
-    await edit((config) => change(config, item));
+    await edit((config) => change(config, item), nothingAfter);
   }
 
   return {
@@ -289,12 +317,15 @@ export function createAppState(deps: AppStateDeps): AppState {
       editEntry(birdId, (config, item) => withEntry(config, item, values)),
     removeEntry: (birdId) =>
       editEntry(birdId, (config, item) => withoutEntry(config, item)),
-    settingsForm() {
+    async settingsForm() {
       const config = deps.config.current().loaded?.config;
       if (config === undefined) return null;
-      return settingsFormFor(config, deps.home);
+      return settingsFormFor(config, deps.home, await deps.autostart.read());
     },
     saveSettings: (values) =>
-      edit((config) => withSettings(config, values, deps.home)),
+      edit(
+        (config) => withSettings(config, values, deps.home),
+        () => saveLogin(values.window),
+      ),
   };
 }

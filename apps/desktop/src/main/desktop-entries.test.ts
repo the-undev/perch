@@ -24,16 +24,6 @@ function execArguments(file: string): string[] {
 }
 
 describe("the desktop entries", () => {
-  it("start perch at login hidden, asking nothing of a window already running", () => {
-    const argv = execArguments("perch-autostart.desktop");
-    expect(argv[0]).toBe("perch");
-    expect(parseArguments(argv)).toEqual({
-      window: null,
-      scan: false,
-      hidden: true,
-    });
-  });
-
   it("show the window from the launcher", () => {
     const argv = execArguments("perch.desktop");
     expect(argv).toEqual(["perch"]);
@@ -42,6 +32,5 @@ describe("the desktop entries", () => {
 
   it("name the icon the README links into the icon theme", () => {
     expect(entry("perch.desktop").Icon).toBe("perch");
-    expect(entry("perch-autostart.desktop").Icon).toBe("perch");
   });
 });

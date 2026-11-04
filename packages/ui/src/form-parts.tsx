@@ -1,6 +1,6 @@
 // The pieces the config forms are made of, the adoption papers' fold and the settings page
-// alike: page headings, ruled rows, pill choices, editable lists and threshold fields, in one set
-// of styles.
+// alike: page headings, ruled rows, pill choices, switches, editable lists and threshold fields,
+// in one set of styles.
 
 import type { thresholdWindows } from "@perch/core/entry-form.ts";
 import { type ReactNode, useId, useState } from "react";
@@ -118,6 +118,45 @@ export function PillChoice({
         </label>
       ))}
     </fieldset>
+  );
+}
+
+/**
+ * An on and off switch: a button with the switch role. A held switch stays focusable and says it
+ * is disabled, but a press does nothing.
+ */
+export function Switch({
+  label,
+  checked,
+  held,
+  describedBy,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  held: boolean;
+  /** The ids of the lines that say what the switch does. */
+  describedBy: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-disabled={held}
+      aria-label={label}
+      aria-describedby={describedBy}
+      onClick={() => {
+        if (!held) onChange(!checked);
+      }}
+      className={`relative h-5 w-9.5 flex-none rounded-full border focus-visible:outline-2 focus-visible:outline-ink-accent focus-visible:outline-offset-2 ${checked ? "border-ink-accent bg-ink-accent" : "border-edge-hi bg-edge"} ${held ? "cursor-default opacity-45" : "cursor-pointer"}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`absolute top-0.5 size-3.5 rounded-full transition-[left,background-color] duration-120 ease-out motion-reduce:transition-none ${checked ? "left-5 bg-bg" : "left-0.5 bg-ink-faint"}`}
+      />
+    </button>
   );
 }
 

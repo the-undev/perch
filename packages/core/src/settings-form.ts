@@ -51,13 +51,37 @@ export interface SettingsValues {
   joins: string[];
   /** Presence references left off the main view. */
   ignore: string[];
+  window: {
+    /** Config's [window] tray. */
+    tray: boolean;
+    /** The autostart entry exists; saving writes or removes it, never config. */
+    login: boolean;
+  };
 }
 
-/** What the settings page needs: the values, and which item entries name each wire. */
+/** The app's autostart entry as the caller read it from the machine. */
+export interface LoginEntry {
+  /** The entry exists. */
+  on: boolean;
+  /** Why the toggle cannot be changed, as a clause after "Held: "; null when it can. */
+  held: string | null;
+  /** Where the entry lives, absolute. */
+  path: string;
+  /** The program the entry's Exec runs, absolute; null without an entry. */
+  target: string | null;
+}
+
+/** The login toggle's hold when the app runs from source. */
+export const sourceRunHeld =
+  "perch is running from source, so there is no AppImage to point the login entry at.";
+
+/** What the settings page needs: the values, which item entries name each wire, and the login row. */
 export interface SettingsForm {
   values: SettingsValues;
   /** The keys of the entries naming each config wire, which removing it moves to the default. */
   named: { wires: Record<string, string[]> };
+  /** The login row beyond its toggle: its hold, and the entry's path and target shown with ~. */
+  login: Pick<LoginEntry, "held" | "path" | "target">;
 }
 
 function namedBy(
@@ -73,8 +97,12 @@ function namedBy(
   return named;
 }
 
-/** The settings form for a config, paths under the home directory shown with ~. */
-export function settingsFormFor(config: Config, home: string): SettingsForm {
+/** The settings form for a config and the autostart entry, paths under the home directory shown with ~. */
+export function settingsFormFor(
+  config: Config,
+  home: string,
+  login: LoginEntry,
+): SettingsForm {
   const path = (stored: string) => collapseHome(stored, home);
   return {
     values: {
@@ -95,11 +123,38 @@ export function settingsFormFor(config: Config, home: string): SettingsForm {
       },
       joins: config.joins.map(listLine),
       ignore: [...config.ignore],
+      window: { tray: config.window.tray, login: login.on },
     },
     named: {
       wires: namedBy(config.items, (entry) => entry.wire),
     },
+    login: {
+      held: login.held,
+      path: path(login.path),
+      target: login.target === null ? null : path(login.target),
+    },
   };
+}
+
+/** What the tray setting does, in words. */
+export function traySentence(tray: boolean): string {
+  if (!tray) return "Off. No tray icon; closing the window quits perch.";
+  return "Closing the window hides it. The tray icon shows it, rescans and quits; clicking the icon toggles the window.";
+}
+
+/** What starting at login does with the tray setting beside it, in words. */
+export function loginSentence(login: boolean, tray: boolean): string {
+  const start = `perch starts when you log in, ${tray ? "hidden in the tray" : "with the window open"}.`;
+  return login ? start : `Off. Turned on, ${start}`;
+}
+
+/** The entry's path and the program it runs, while the toggle is on and the entry exists; else null. */
+export function loginEntryLine(
+  login: SettingsForm["login"],
+  on: boolean,
+): string | null {
+  if (!on || login.target === null) return null;
+  return `${login.path} → ${login.target}`;
 }
 
 /** The sources with every local path mapped, each list a copy. */
@@ -221,7 +276,7 @@ export function wireWarnings(
 
 /**
  * Config with everything but its item entries set to the values, paths expanded against the home
- * directory. An entry's wire follows the row that starts as it to that row's name, all in one
+ * directory; the login toggle is the caller's to write. An entry's wire follows the row that starts as it to that row's name, all in one
  * pass; an entry naming a wire no row starts as falls to the default. Throws when
  * settingsProblems finds any.
  */
@@ -261,5 +316,6 @@ export function withSettings(
         launchConfigOf(action, path),
       ),
     },
+    window: { tray: values.window.tray },
   };
 }

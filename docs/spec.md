@@ -333,9 +333,10 @@ vocabulary (entries, keys) stays in the config file and these docs.
 dotfiles push. It holds: the wires as an ordered named list, the
 sources, the health windows, the scan interval and the finalised commit
 count, the launch actions in the order a bird offers them (none until one
-is added, the zellij action carrying the session defaults), per-project
-assertions (joins, wire, display names, thresholds, key file lists, zellij
-session names). An entry for an item adopts it. No
+is added, the zellij action carrying the session defaults), whether the
+window stays in the tray (`[window] tray`, true unless the file says
+false), per-project assertions (joins, wire, display names, thresholds,
+key file lists, zellij session names). An entry for an item adopts it. No
 secrets, ever. Every field is shown, with placeholder values, in
 `config.example.toml`.
 
@@ -351,7 +352,7 @@ scans nothing.
 The settings page, reached from the camera header, edits everything but
 the item entries, which each bird's adoption papers edit. A rail names its
 pages beside one reading-width column: Sources, with Joining up beneath
-it, then Wires, Judgement, Scanning and Launching. It opens on
+it, then Wires, Judgement, Scanning, Launching and Window. It opens on
 Sources and shows one page at a time. Its header carries the camera's
 scan line and names the config file. Pressing the path opens the file
 in config's first VS Code action, the file filling `{path}`; without
@@ -416,6 +417,17 @@ zellij is held back once one exists. A refusal shows in red on its card
 and holds Save: a custom command without words or a command, a command
 not naming a program first, a placeholder its kind may not use.
 
+The Window page holds two switch rows, each with a sentence saying what
+its state does. Stay in the tray is `[window] tray`, written only when
+false. Start at login is not config: the switch reads whether the
+autostart entry `perch.desktop` exists under `$XDG_CONFIG_HOME/autostart/`
+(`~/.config/autostart/` without it), and Save writes or removes the
+entry. The login sentence follows the tray switch: hidden in the tray, or
+with the window open. While the entry exists, its path and the program
+its `Exec` runs are named beneath in mono. Run from source, with no
+`APPIMAGE`, the login switch is held at what the entry says and its row
+says why in amber; Save never writes or removes the entry then.
+
 The app writes the file without comments, paths under the home
 directory with `~`. An edit to the file by hand is read as soon as it is
 saved, and the open page or papers show it, and a scan follows; the last write wins.
@@ -441,16 +453,22 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   The tray menu shows it, rescans and quits; activating the icon toggles
   the window. The compositor places a hidden window when it shows
   again, and its earlier position is not restored: Wayland gives an app
-  no way to place its own window.
-- Starts at login from an XDG autostart entry running `perch --hidden`:
-  the window hidden, the icon in the tray. The entry,
-  `apps/desktop/resources/perch-autostart.desktop`, is linked into
-  `~/.config/autostart/`; systemd's xdg-autostart generator runs it as a
-  user unit, its output in the journal.
+  no way to place its own window. With `[window] tray = false` there is
+  no icon and closing the window quits. The setting applies whenever the
+  config is read.
+- Starts at login from the XDG autostart entry the settings page's Window
+  page writes: `Type=Application`, `Name=perch`, and `Exec` running the
+  AppImage `APPIMAGE` names, with `--hidden` while the window stays in
+  the tray. Every start rewrites an existing entry to run the image then
+  running, with the tray setting's `--hidden`, so updating is running the
+  new version once; a symlink there is replaced, never written through.
+  systemd's xdg-autostart generator runs the entry as a user unit, its
+  output in the journal.
 - One instance. A second launch hands its arguments to the running one
   and quits: `--toggle` shows and focuses, or hides when already in
   front; `--show` only shows; `--scan` rescans. With none of them it
-  shows.
+  shows. Without the tray, `--hidden` is ignored and every second launch
+  shows the window, `--toggle` and `--scan` included.
 - The global shortcut is a Plasma custom shortcut bound to
   `perch --toggle`. In-app global shortcuts on Wayland are parked, see
   the roadmap.
@@ -526,9 +544,8 @@ The stack is in [decisions/tech-stack.md](decisions/tech-stack.md). CI
 runs `pnpm check` on every push and pull request. electron-builder
 packages a Linux AppImage; a `v*` tag releases it on GitHub. The app and
 tray icons are drawn in `apps/desktop/resources/icon.svg` and
-`tray.svg`; `pnpm icons` renders their PNGs. The desktop entries for the
-launcher and autostart sit beside them, and the README says how to link
-them.
+`tray.svg`; `pnpm icons` renders their PNGs. The launcher's desktop entry
+sits beside them, and the README says how to link it.
 
 ## Environment, as of 22 October 2026
 

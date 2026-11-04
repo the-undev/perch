@@ -90,6 +90,9 @@ verb = "Note the Obsidian vault"
 command = ["notify-send", "{obsidian}"]
 icon = "obsidian"
 
+[window]
+tray = false
+
 [items."dev/perch"]
 wire = "Projects"
 name = "Perch"
@@ -280,6 +283,15 @@ describe("writeConfig", () => {
     expect(roundTrip(noSessions)).toEqual(noSessions);
     expect(writeConfig(noActions, home)).not.toContain("launch");
     expect(roundTrip(noActions)).toEqual(noActions);
+  });
+
+  it("writes the [window] table only while the tray is off", () => {
+    const trayOff = parseConfig(maximalText, home);
+    const trayOn: Config = { ...trayOff, window: { tray: true } };
+
+    expect(parse(writeConfig(trayOff, home)).window).toEqual({ tray: false });
+    expect(writeConfig(trayOn, home)).not.toContain("window");
+    expect(roundTrip(trayOn)).toEqual(trayOn);
   });
 
   it("writes one table per launch action in order, each naming its kind", () => {

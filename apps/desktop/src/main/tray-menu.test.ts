@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { trayMenu } from "./tray-menu.ts";
+import { syncTray, trayMenu } from "./tray-menu.ts";
 
 describe("the tray menu", () => {
   it("offers show, rescan and quit, each doing its own thing", () => {
@@ -31,5 +31,29 @@ describe("the tray menu", () => {
     expect(actions.rescan).toHaveBeenCalledOnce();
     expect(actions.show).not.toHaveBeenCalled();
     expect(actions.quit).not.toHaveBeenCalled();
+  });
+});
+
+describe("the tray icon", () => {
+  it("is never made while the tray setting is off, and one held is destroyed", () => {
+    const create = vi.fn(() => ({ destroy: vi.fn() }));
+    const held = { destroy: vi.fn() };
+
+    expect(syncTray(null, false, create)).toBeNull();
+    expect(syncTray(held, false, create)).toBeNull();
+    expect(create).not.toHaveBeenCalled();
+    expect(held.destroy).toHaveBeenCalledOnce();
+  });
+
+  it("is made once while the tray setting is on, and kept after", () => {
+    const made = { destroy: vi.fn() };
+    const create = vi.fn(() => made);
+
+    const first = syncTray(null, true, create);
+    const again = syncTray(first, true, create);
+
+    expect(again).toBe(made);
+    expect(create).toHaveBeenCalledOnce();
+    expect(made.destroy).not.toHaveBeenCalled();
   });
 });

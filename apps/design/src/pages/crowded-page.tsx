@@ -1,5 +1,10 @@
 import { mockAviary } from "@perch/core/mock.ts";
-import { crowdedGap, rowCapacity, rowsFor } from "@perch/ui/aviary-layout.ts";
+import {
+  crowdedGap,
+  rowCapacity,
+  rowsFor,
+  wholeStepBelow,
+} from "@perch/ui/aviary-layout.ts";
 import { AviaryView } from "@perch/ui/aviary-view.tsx";
 import { CameraView } from "@perch/ui/camera.tsx";
 import { sceneWidth } from "@perch/ui/scene.tsx";
@@ -163,7 +168,8 @@ export function CrowdedPage() {
           <Code>rowCapacity</Code> are exported so pages like this one can say
           what it does. The vertical space between the top wire and the fence is
           shared out in steps: a whole step between wires, 0.6 of one between
-          rows of the same wire.
+          rows of the same wire, and a whole step between its rows once its
+          birds sit closer than {wholeStepBelow} units across.
         </p>
       </Usage>
     </>

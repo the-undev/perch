@@ -51,17 +51,6 @@ tall still shrinks below the floor. Holding the floor there needs a
 smaller vertical budget first: less room above the top wire, rows
 closer, or the fence nearer the wires.
 
-## Crowding at the edges
-
-From 9 birds on a wire in an 1100px window, consecutive birds sit under
-120 units apart and only 0.6 of a step lower, so they crowd again. Below
-about 500px nine birds share about 200 units, on a wire and in the
-detail strip alike. A tenth bird on one wire fails the layout test
-"keeps a crowded wire's birds apart" at 1290px, so the mock's wires
-carry nine. The fix is a vertical-budget round giving crowded rows more
-height, or a minimum window size. Birds crossing a painted name is by
-design.
-
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the

@@ -83,8 +83,18 @@ export function rowsFor(count: number, width: number): number {
 /** The vertical spacing between wires, in steps. */
 export const wireStep = 1;
 
-/** The vertical spacing between rows of one wire, in steps. */
+/** The vertical spacing between rows of one wire, in steps, while its birds sit far enough apart across. */
 export const rowStep = 0.6;
+
+/** A wire whose consecutive birds sit closer than this across spreads its rows a whole step apart. */
+export const wholeStepBelow = 120;
+
+/** The vertical spacing between rows of a wire of this many birds in a scene this wide, in steps. */
+export function rowStepFor(count: number, width: number): number {
+  return placeSpacing(count, wireGap, width) < wholeStepBelow
+    ? wireStep
+    : rowStep;
+}
 
 function perched(
   bird: Bird,
@@ -155,18 +165,21 @@ export function layoutAviary(aviary: Aviary, size: PixelSize): AviaryLayout {
   const top = Math.max(height * skyBand, units(26) + 165);
   const fenceY = height - units(100);
   const bottom = Math.max(top, Math.min(height * 0.63, fenceY - 120));
-  const rowCounts = aviary.wires.map((wire) =>
-    rowsFor(wire.birds.length, width),
-  );
-  const steps = rowCounts.reduce(
-    (total, rows) => total + wireStep + (rows - 1) * rowStep,
+  const stacks = aviary.wires.map((wire) => ({
+    wire,
+    rowCount: rowsFor(wire.birds.length, width),
+    wireRowStep: rowStepFor(wire.birds.length, width),
+  }));
+  const steps = stacks.reduce(
+    (total, stack) =>
+      total + wireStep + (stack.rowCount - 1) * stack.wireRowStep,
     -wireStep,
   );
   const step = Math.min(height * 0.23, (bottom - top) / Math.max(steps, 1));
   let y = top - wireStep * step;
-  const rows = aviary.wires.flatMap((wire, i) => {
-    const ys = Array.from({ length: rowCounts[i] ?? 1 }, (_, row) => {
-      y += (row === 0 ? wireStep : rowStep) * step;
+  const rows = stacks.flatMap(({ wire, rowCount, wireRowStep }) => {
+    const ys = Array.from({ length: rowCount }, (_, row) => {
+      y += (row === 0 ? wireStep : wireRowStep) * step;
       return y;
     });
     return wireRows(wire, ys, width);

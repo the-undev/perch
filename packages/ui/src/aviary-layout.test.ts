@@ -10,10 +10,11 @@ import {
   placeBubble,
   placedBirds,
   rowCapacity,
-  rowStep,
+  rowStepFor,
   rowsFor,
   sceneHeightFor,
   toPixels,
+  wholeStepBelow,
   wireStep,
 } from "./aviary-layout.ts";
 import { roomyName } from "./bird.tsx";
@@ -180,17 +181,20 @@ describe("the aviary's layout", () => {
     );
   });
 
-  it("keeps a crowded wire's birds apart: none within 120 units across unless a whole wire step down", () => {
+  it(`keeps a crowded wire's birds apart: none within ${wholeStepBelow} units across unless a whole wire step down`, () => {
     for (const [aviary, size] of [
       [aviaryOf([wireOf(8)]), { width: 1290, height: 800 }],
+      [aviaryOf([wireOf(10)]), { width: 1290, height: 800 }],
+      [aviaryOf([wireOf(13)]), { width: 1100, height: 800 }],
       [mockAviary, { width: 1290, height: 800 }],
       [mockAviary, { width: 1400, height: 800 }],
     ] as const) {
       const layout = layoutAviary(aviary, size);
       const second = layout.rows.findIndex((row) => row.index === 1);
+      const crowded = layout.rows[second];
       const step =
-        ((layout.rows[second]?.y ?? 0) - (layout.rows[second - 1]?.y ?? 0)) /
-        rowStep;
+        ((crowded?.y ?? 0) - (layout.rows[second - 1]?.y ?? 0)) /
+        rowStepFor(crowded?.wire.birds.length ?? 0, layout.width);
 
       expect(second).toBeGreaterThan(0);
       for (const wire of aviary.wires) {
@@ -199,7 +203,7 @@ describe("the aviary's layout", () => {
           .flatMap((row) => row.birds.map((entry) => ({ x: entry.x, row })));
         for (const [i, one] of perches.entries()) {
           for (const other of perches.slice(i + 1)) {
-            if (Math.abs(one.x - other.x) >= 120) continue;
+            if (Math.abs(one.x - other.x) >= wholeStepBelow) continue;
             expect(Math.abs(one.row.y - other.row.y)).toBeGreaterThanOrEqual(
               wireStep * step - 1e-9,
             );

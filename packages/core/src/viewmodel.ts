@@ -162,6 +162,8 @@ export interface Bird {
   plumpness: Plumpness;
   /** At night a content bird not being edited sleeps, as does every fence bird. */
   sleepsAtNight: boolean;
+  /** Where a fence bird lives, for its hover tip; null on a wire or while undecided. */
+  lives: string | null;
   bubble: Bubble;
   detail: Detail;
 }
@@ -383,6 +385,8 @@ export interface Detail {
   forges: ForgeName[];
   /** One per remote no card can read; where the can't-read chip lands. */
   notices: RemoteNotice[];
+  /** The sentence that opens the ledger when nothing waits; null when something does. */
+  quiet: string | null;
   ledger: LedgerEntry[];
   branches: BranchLine[];
   river: River;
@@ -901,6 +905,17 @@ function ledgerFor(item: Item, chips: Chip[]): LedgerEntry[] {
   return ledger;
 }
 
+/** The ledger's opening sentence: only for a green bird's readable clone with nothing uncommitted or unpushed. */
+function quietFor(item: Item, health: Health): string | null {
+  if (health.level !== "green") return null;
+  const git = readable<GitData>(item.sources.git);
+  if (git === null) return null;
+  if (git.uncommittedCount > 0 || git.unpushedCount > 0) return null;
+  return git.backup === "local-only"
+    ? "The working tree is clean; no remote holds a copy."
+    : "The working tree is clean and everything is pushed.";
+}
+
 function branchesFor(item: Item, config: Config): BranchLine[] {
   const git = readable<GitData>(item.sources.git);
   if (git === null) return [];
@@ -1247,6 +1262,18 @@ function fenceSituation(item: Item): FenceSituation {
     : { kind: "undecided" };
 }
 
+/** Where a fence bird lives, in the tip's lower-case words: its forge, or the one disk; null while undecided. */
+function livesFor(situation: FenceSituation): string | null {
+  switch (situation.kind) {
+    case "forge-only":
+      return `only on ${situation.forge}`;
+    case "one-disk":
+      return "one disk only";
+    case "undecided":
+      return null;
+  }
+}
+
 /** Hours from the newest commit, local or on a forge's default branch, to the scan. */
 function lastTouchedHours(item: Item, scannedAt: Date): number | null {
   const git = readable<GitData>(item.sources.git);
@@ -1328,6 +1355,7 @@ export function deriveBird(
       fullness: Math.min(outstanding, plumpnessCap) / plumpnessCap,
     },
     sleepsAtNight,
+    lives: adopted ? null : livesFor(fenceSituation(item)),
     bubble: {
       name,
       stateWord: adopted ? mood : "not adopted",
@@ -1341,6 +1369,7 @@ export function deriveBird(
         ...new Set(item.presences.forges.map((presence) => presence.forge)),
       ],
       notices: noticesFor(health),
+      quiet: quietFor(item, health),
       ledger: ledgerFor(item, chips),
       branches: branchesFor(item, config),
       river: riverFor(item, config.scan.finalisedCommits),

@@ -672,6 +672,117 @@ describe("the ledger", () => {
   });
 });
 
+describe("where a fence bird lives", () => {
+  const forgeOnly = item("github:finch/river", {
+    path: null,
+    presences: {
+      local: null,
+      forges: [
+        {
+          forge: "github",
+          ref: "github:finch/river",
+          fullName: "finch/river",
+          url: null,
+          foundBy: "account-listing",
+        },
+      ],
+    },
+  });
+  const oneDisk = item("dev/hello", {
+    sources: { git: gitData({ backup: "local-only" }) },
+  });
+  const undecided = item("dev/spool", { sources: { git: gitData({}) } });
+  const items = [forgeOnly, oneDisk, undecided];
+  const livesOf = (config: Config) =>
+    items.map((entry) => birdIn(items, config, entry.id).lives);
+
+  it("names the forge, the one disk, or nothing while undecided", async () => {
+    expect(livesOf(await adoptAll([]))).toEqual([
+      "only on github",
+      "one disk only",
+      null,
+    ]);
+  });
+
+  it("says nothing for an adopted bird", async () => {
+    expect(livesOf(await adoptAll(items.map((entry) => entry.id)))).toEqual([
+      null,
+      null,
+      null,
+    ]);
+  });
+});
+
+describe("the ledger's quiet sentence", () => {
+  it("says the tree is clean and everything is pushed when nothing waits", async () => {
+    const config = await adoptAll(["dev/spool"]);
+    const spool = item("dev/spool", {
+      sources: {
+        git: gitData({ lastCommitAt: hoursBefore(3) }),
+        github: forgeData({
+          latestCi: { ...failingRun, state: "success" },
+        }),
+      },
+    });
+
+    expect(birdIn([spool], config, "dev/spool").detail.quiet).toBe(
+      "The working tree is clean and everything is pushed.",
+    );
+  });
+
+  it("says no remote holds a copy of a clean clone on one disk only", async () => {
+    const config = await adoptAll(["dev/hello"]);
+    const hello = item("dev/hello", {
+      sources: { git: gitData({ backup: "local-only" }) },
+    });
+
+    expect(birdIn([hello], config, "dev/hello").detail.quiet).toBe(
+      "The working tree is clean; no remote holds a copy.",
+    );
+  });
+
+  it("stays silent when something waits, and for a bird with no readable clone", async () => {
+    const config = await adoptAll([
+      "dev/harbour",
+      "dev/prism",
+      "dev/fresh",
+      "dev/unread",
+      "dev/parked",
+      "github:finch/river",
+    ]);
+    const fresh = item("dev/fresh", {
+      sources: { git: gitData({ uncommittedCount: 3 }) },
+    });
+    const unread = item("dev/unread", {
+      sources: { git: { error: "not a git repository" } },
+    });
+    // Clean and pushed, but parked: the stall lives in health, never on a ledger row.
+    const parked = item("dev/parked", {
+      sources: {
+        git: gitData({
+          stall: {
+            branch: "wip",
+            since: hoursBefore(21 * 24),
+            days: 21,
+            level: "amber",
+            thresholds: { amberDays: 14, redDays: 45 },
+          },
+        }),
+      },
+    });
+    const forgeOnly = item("github:finch/river", {
+      path: null,
+      presences: { local: null, forges: [] },
+      sources: { github: forgeData({}) },
+    });
+    const items = [restless, distressed, fresh, unread, parked, forgeOnly];
+
+    expect(
+      items.map((entry) => birdIn(items, config, entry.id).detail.quiet),
+    ).toEqual([null, null, null, null, null, null]);
+  });
+});
+
 describe("the ledger's workings", () => {
   /** A ledger row by its label, failing when the bird has none. */
   function row(bird: Bird, label: string) {

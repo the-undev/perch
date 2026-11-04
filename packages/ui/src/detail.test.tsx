@@ -104,7 +104,11 @@ describe("the detail page's pieces", () => {
     const { container } = render(
       <DetailHeading
         bird={perch}
-        actions={<LinksOut links={perch.detail.links} />}
+        actions={
+          <div data-part="actions">
+            <LinksOut links={perch.detail.links} />
+          </div>
+        }
       />,
     );
     const row = container.querySelector('[data-part="meta-row"]');

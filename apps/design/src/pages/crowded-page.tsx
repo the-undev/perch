@@ -1,12 +1,19 @@
 import { mockAviary } from "@perch/core/mock.ts";
-import { crowdedGap, rowCapacity, rowsFor } from "@perch/ui/aviary-layout.ts";
+import {
+  crowdedGap,
+  rowCapacity,
+  rowsFor,
+  wholeStepBelow,
+  wireRowsCap,
+} from "@perch/ui/aviary-layout.ts";
 import { AviaryView } from "@perch/ui/aviary-view.tsx";
 import { CameraView } from "@perch/ui/camera.tsx";
 import { sceneWidth } from "@perch/ui/scene.tsx";
 import {
   alternateBelow,
-  columnEdge,
-  edgeMargin,
+  birdRoom,
+  columnEdgeFor,
+  edgeMarginFor,
   fenceGap,
   placeSpacing,
   smallerBelow,
@@ -22,7 +29,7 @@ import { Code, SceneFrame, Section, Specimen, Usage } from "../usage.tsx";
 
 /** The fewest fence birds whose neighbours sit closer than a limit. */
 function fenceCountBelow(limit: number): number {
-  return Math.floor((sceneWidth - columnEdge - edgeMargin) / limit) + 2;
+  return Math.floor(birdRoom(sceneWidth) / limit) + 2;
 }
 
 /** The live machine's fence on first look: 21 birds. */
@@ -37,8 +44,8 @@ export function CrowdedPage() {
   return (
     <>
       <Section
-        title="A wire over more than one row"
-        rule={`A row holds as many birds as fit ${crowdedGap} units apart between the margins: ${fullRow} at full width, fewer in a window too narrow for the full width at the floor. A wire with more takes another row for each row's worth. Its birds spread left to right in order across the birds' room, which starts ${columnEdge} units in on every wire whatever its name or tally says, and are dealt over the rows in turn, so they step down a diagonal and left to right still reads as who needs you first. Only the first row carries the wire's name and tally.`}
+        title="A wire over two rows"
+        rule={`A row holds as many birds as fit ${crowdedGap} units apart in the birds' room: ${fullRow} at full width, fewer in a window too narrow for the full width at the floor. A wire with more takes a second row, and never more than ${wireRowsCap}: past two rows' worth its rows pack tighter, shingling as the fence does. Its birds read like text: the first row left to right in order, then the next, the earlier rows taking any extra, so the top left bird needs you first. Each row is centred in the birds' room, which at full width starts ${columnEdgeFor(sceneWidth)} units in on every wire whatever its name or tally says and ends ${edgeMarginFor(sceneWidth)} units short of the right edge. A narrower scene shrinks both margins in proportion, to no less than ${columnEdgeFor(0)} and ${edgeMarginFor(0)} units. A row that would stack on the row above shifts right by up to half its spacing, so the rows lie like brickwork. Only the first row carries the wire's name and tally.`}
         min={900}
       >
         {counts.map((count) => (
@@ -149,7 +156,7 @@ export function CrowdedPage() {
           {
             name: "count",
             type: "number",
-            what: "How many birds the wire holds; the result is the rows it takes, at least one.",
+            what: `How many birds the wire holds; the result is the rows it takes, at least one and at most ${wireRowsCap}.`,
           },
           {
             name: "width",
@@ -163,7 +170,9 @@ export function CrowdedPage() {
           <Code>rowCapacity</Code> are exported so pages like this one can say
           what it does. The vertical space between the top wire and the fence is
           shared out in steps: a whole step between wires, 0.6 of one between
-          rows of the same wire.
+          rows of the same wire, and a whole step between its rows once a bird
+          sits closer than {wholeStepBelow} units across to a bird of the row
+          above.
         </p>
       </Usage>
     </>

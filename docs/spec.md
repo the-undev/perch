@@ -60,9 +60,9 @@ its scene, 2000 units across, scales with the window, past a pixel a
 unit on the ultrawide. Below 1800px a unit keeps 0.9px and the scene
 narrows instead: the names, the wires' names and the tallies hold their
 size, and the birds bunch by the crowding rules, closer together and a
-crowded wire over more rows. The tab row holds the same floor. The floor
-holds by width only: the scene keeps at least 600 units of height, so
-an aviary under 540px tall still shrinks.
+crowded wire over more rows. The tab row holds the same floor. The scene
+keeps at least 480 units of height, so the floor holds down to 432px
+tall and a shorter aviary shrinks.
 
 Perch deals in three tiers above the project itself, each answering a
 share of the glance questions (which thing needs me first; is anything
@@ -114,7 +114,8 @@ and the state word, with what the bird is doing. A meta line in mono beneath say
 where the bird lives: the clone's path with `~`, the forges that hold
 it, and its wire, "on the fence" for a fence bird. The launch actions as
 verbs, the links out and the papers' verb share the meta line's row
-where they fit and drop beneath it where not. Beneath them, for each
+where they fit and drop beneath it where not, every verb wrapping alone so
+many pack tight lines rather than stacked groups. Beneath them, for each
 remote the clone pushes to that no card can read, one amber sentence
 in the sky's notice voice says what perch knows and the fix: "The clone
 pushes to skiff-app/skiff on github, which no GitHub card reads.
@@ -145,6 +146,10 @@ The slip shows for adopted and fence birds alike and goes the scan after
 a clone is found. While it shows and config holds at least one launch
 action, the meta line says "no local clone" in the faint voice where
 the actions would sit.
+A readable clone with nothing uncommitted or unpushed and no row in
+amber or red opens its ledger with one faint sentence, "The working
+tree is clean and everything is pushed.", or "The working tree is
+clean; no remote holds a copy." for one disk only.
 Each chip's number sits on one ledger row, marked with a dot, its
 working spelled out beneath in mono, source by source: each forge's
 newest CI run with its state, branch, name, link and age, under a CI
@@ -208,8 +213,8 @@ into one pane, the key files at the record's end.
 The palette is ink: warm dark, crisp edges, red rare enough to mean
 something. The design site (`apps/design`, served by `pnpm design`)
 shows the real components from `packages/ui` in every state the view
-model allows, each labelled with its rule. The field guide
-(`design/anatomy.html`) annotates every trait with its rule.
+model allows, each labelled with its rule. Its Field guide page
+annotates every trait of the bird and the bubble with its rule.
 
 ## Health
 
@@ -286,8 +291,8 @@ could not be looked up is still a presence, carrying its error and
 whether no card covers its owner. Uptime Kuma exists and runs only for a
 `[[sources.kuma]]` table, which config leaves out until server
 monitoring is picked up. Forge tickets are a wanted
-source, see the roadmap. The field inventory, with declared types
-beside live values, is the atlas (`design/atlas.html`).
+source, see the roadmap. The field inventory, each source's declared
+types beside the mock's values, is on the design site's Spec pages.
 
 ## Projects, joining and adoption
 
@@ -400,6 +405,11 @@ wire takes a second press on its remove, after the row says how many
 birds name it and that they move to the default. The default cannot be
 removed until another wire is picked. Save is held while a wire has no
 name or two wires share one.
+
+The Judgement page holds the two health windows. Each row has an amber
+and a red field with the unit after it, a line saying what the number
+counts and the defaults, and "the defaults" when both sit on them or a
+clear that puts them back.
 
 The Launching page holds one card per launch action, in the order birds
 offer them. A card's head wears the action's icon, its kind's name (VS

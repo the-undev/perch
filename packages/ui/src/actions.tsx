@@ -17,10 +17,10 @@ export interface LaunchActionsProps {
   onLaunch: (action: LaunchAction) => void;
 }
 
-/** The launch actions as verbs, each with its icon; pressing one hands it back to the caller. */
+/** The launch actions as verbs, each with its icon; pressing one hands it back to the caller. The caller lays the buttons out. */
 export function LaunchActions({ actions, onLaunch }: LaunchActionsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <>
       {actions.map((action, index) => (
         <button
           // biome-ignore lint/suspicious/noArrayIndexKey: a bird's actions are a fixed list in config order, and two may share a kind or a verb.
@@ -34,14 +34,14 @@ export function LaunchActions({ actions, onLaunch }: LaunchActionsProps) {
           <Away />
         </button>
       ))}
-    </div>
+    </>
   );
 }
 
-/** The bird's repositories on its forges, as links that leave the app. */
+/** The bird's repositories on its forges, as links that leave the app. The caller lays the links out. */
 export function LinksOut({ links }: { links: LinkOut[] }) {
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <>
       {links.map((link) => (
         <a
           key={link.url}
@@ -55,6 +55,6 @@ export function LinksOut({ links }: { links: LinkOut[] }) {
           <Away />
         </a>
       ))}
-    </div>
+    </>
   );
 }

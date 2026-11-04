@@ -174,7 +174,7 @@ function EntryRow({
     <div
       data-part="ledger-entry"
       data-chip={chip ?? undefined}
-      className="relative isolate border-edge border-t px-0.5 first:border-t-0"
+      className="relative isolate border-edge border-t px-0.5 first-of-type:border-t-0"
     >
       {landed && <LandingMark key={`mark-${landing.press}`} />}
       <div className="flex items-baseline justify-between gap-4 py-2.25">
@@ -205,6 +205,8 @@ function EntryRow({
 }
 
 export interface LedgerProps {
+  /** The sentence that opens the ledger when nothing waits; null when something does. */
+  quiet: string | null;
   entries: LedgerEntry[];
   /** The moment times are measured to: the render's clock, passed in. */
   now: Date;
@@ -213,9 +215,17 @@ export interface LedgerProps {
 }
 
 /** The facts that exist for a bird, in full words, each chip's working spelled out on its row. */
-export function Ledger({ entries, now, landing }: LedgerProps) {
+export function Ledger({ quiet, entries, now, landing }: LedgerProps) {
   return (
     <div data-part="ledger">
+      {quiet !== null && (
+        <p
+          data-part="quiet"
+          className="m-0 pb-1.5 text-[12.5px] text-ink-faint"
+        >
+          {quiet}
+        </p>
+      )}
       {entries.map((entry) => (
         <EntryRow key={entry.label} entry={entry} now={now} landing={landing} />
       ))}

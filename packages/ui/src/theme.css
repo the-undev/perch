@@ -1,6 +1,6 @@
-/* The perch theme: the ink palette, mood colours, sky phases and paper from
-   design/perch.html, as Tailwind v4 theme tokens. Each app imports this after
-   tailwindcss; it is the one place a colour, font or keyframe is defined. */
+/* The perch theme: the ink palette, mood colours, sky phases and paper, as
+   Tailwind v4 theme tokens. Each app imports this after tailwindcss; it is
+   the one place a colour, font or keyframe is defined. */
 
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";

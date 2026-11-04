@@ -3,7 +3,12 @@
 // Each page is presentational, its value in and every change out; the editor holds the draft
 // across them and shows the page the rail has open.
 
-import { thresholdWindows } from "@perch/core/entry-form.ts";
+import { defaultConfig } from "@perch/core/config-default.ts";
+import {
+  flatThresholds,
+  type ThresholdKey,
+  thresholdWindows,
+} from "@perch/core/entry-form.ts";
 import {
   cardIcon,
   cardObsidianOnly,
@@ -339,31 +344,62 @@ export function ThresholdsGroup({
   value,
   onChange,
 }: GroupProps<SettingsValues["thresholds"]>) {
+  const defaults = flatThresholds(defaultConfig().thresholds) as Record<
+    ThresholdKey,
+    number
+  >;
   return (
     <SettingsGroup
       title="Judgement"
       table="[thresholds]"
-      lead="Amber at the first, red at the second, each a whole number above zero. A bird's entry may override any of them."
+      lead="At the amber number the bird turns restless, at the red one distressed. Whole numbers above zero; a bird's papers may override either window."
     >
-      {thresholdWindows.map((window) => (
-        <FormRow key={window.label} label={window.label} sub={window.unit}>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-            {(["amber", "red"] as const).map((level) => {
-              const key = window[level];
-              return (
-                <ThresholdField
-                  key={level}
-                  window={window}
-                  level={level}
-                  value={value[key]}
-                  placeholder=""
-                  onChange={(next) => onChange({ ...value, [key]: next })}
-                />
-              );
-            })}
-          </div>
-        </FormRow>
-      ))}
+      {thresholdWindows.map((window) => {
+        const atDefaults =
+          value[window.amber] === defaults[window.amber] &&
+          value[window.red] === defaults[window.red];
+        return (
+          <FormRow key={window.label} label={window.label} sub="">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              {(["amber", "red"] as const).map((level) => {
+                const key = window[level];
+                return (
+                  <ThresholdField
+                    key={level}
+                    window={window}
+                    level={level}
+                    value={value[key]}
+                    placeholder=""
+                    onChange={(next) => onChange({ ...value, [key]: next })}
+                  />
+                );
+              })}
+              {atDefaults ? (
+                <span className="text-[12px] text-ink-faint">the defaults</span>
+              ) : (
+                <button
+                  type="button"
+                  aria-label={`Clear ${window.label}`}
+                  onClick={() =>
+                    onChange({
+                      ...value,
+                      [window.amber]: defaults[window.amber],
+                      [window.red]: defaults[window.red],
+                    })
+                  }
+                  className={quietClass}
+                >
+                  clear
+                </button>
+              )}
+            </div>
+            <p className="m-0 max-w-[52ch] text-[12.5px] text-ink-faint">
+              {window.counts}; the defaults are {defaults[window.amber]} and{" "}
+              {defaults[window.red]}.
+            </p>
+          </FormRow>
+        );
+      })}
     </SettingsGroup>
   );
 }

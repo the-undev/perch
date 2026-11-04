@@ -44,9 +44,9 @@ import { ScanLine } from "./scan-line.tsx";
 import { sceneWidthFor, skyBackground } from "./scene.tsx";
 import { isNight, skyPhase } from "./sky.ts";
 import {
+  birdRoom,
   byPosition,
-  columnEdge,
-  edgeMargin,
+  columnEdgeFor,
   labelX,
   namePlace,
   PaintedName,
@@ -190,7 +190,7 @@ export interface StripLayout {
  */
 export function stripLayout(tab: BirdTab, width: number): StripLayout {
   const count = tab.birds.length;
-  const middle = columnEdge + Math.max(0, width - edgeMargin - columnEdge) / 2;
+  const middle = columnEdgeFor(width) + birdRoom(width) / 2;
   return {
     middle,
     spacing: placeSpacing(count, stripGap, width),

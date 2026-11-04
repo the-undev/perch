@@ -84,7 +84,7 @@ export function sourceErrorWords(error: SourceError, now: Date): string {
   return `Couldn't read ${sourceLabel[error.source]}, ${age}`;
 }
 
-/** The hover tip's second line: the numbers the bird carries, else when it last moved. */
+/** The hover tip's second line: the numbers the bird carries, else where it lives and when it last moved. */
 export function tipLine(bird: BirdModel, now: Date): string | null {
   if (bird.bubble.chips.length > 0) {
     return bird.bubble.chips.map((chip) => chip.label).join(" · ");
@@ -92,9 +92,13 @@ export function tipLine(bird: BirdModel, now: Date): string | null {
   const lastCommit = bird.detail.ledger.find(
     (entry) => entry.kind === "time" && entry.label === "last commit",
   );
-  return lastCommit?.kind === "time"
-    ? `last commit ${agoWords(lastCommit.at, now)}`
-    : null;
+  const parts = [
+    bird.lives,
+    lastCommit?.kind === "time"
+      ? `last commit ${agoWords(lastCommit.at, now)}`
+      : null,
+  ].filter((part): part is string => part !== null);
+  return parts.length === 0 ? null : parts.join(" · ");
 }
 
 interface PerchedBirdProps {

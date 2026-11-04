@@ -130,6 +130,16 @@ describe("the mock dataset", () => {
     expect(mockAviary.warnings).toHaveLength(1);
   });
 
+  it("opens a ledger with each quiet sentence, and another with none", () => {
+    expect(new Set(birds.map((bird) => bird.detail.quiet))).toEqual(
+      new Set([
+        "The working tree is clean and everything is pushed.",
+        "The working tree is clean; no remote holds a copy.",
+        null,
+      ]),
+    );
+  });
+
   it("offers every kind of launch action, the Obsidian one on Obsidian birds alone, and none without a clone", () => {
     const kinds = (bird: (typeof birds)[number]) =>
       bird.detail.actions.map((action) => action.kind);

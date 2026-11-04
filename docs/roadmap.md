@@ -3,18 +3,15 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
-## The band gap under the bird
+## Crowding at very narrow widths
 
-Many launch actions wrap below the detail band's meta line and leave a
-hole under the bird. The band's layout needs a rule for many actions.
-Part of 0.2.0.
-
-## Design site on real components
-
-The design-site phase of 0.2.0. `apps/design` renders every component,
-the composed scenes and the reference pages. The field guide's plates of
-the bird and the bubble, `design/anatomy.html`, are rebuilt on the real
-components, and then the `design/` board pages are retired.
+At a 500px window the scene is 556 units wide and the birds' room,
+inside the 130 and 60 unit margin floors, is about 365. Nine birds on a
+wire sit five on the top row, about 91 units apart, and the detail strip
+puts all nine on one row about 46 apart. Below about 530px a top row of
+five falls under 100 units apart and the shingle gets heavy. Nothing
+widens the room further; the fix is a minimum window width or a narrower
+bird at the floor.
 
 ## Reintroducing importance
 
@@ -47,26 +44,6 @@ The chosen bird's flyer would cross the strip overhead while the ground
 pans, from the open bird's place to the chosen one's, which the strip's
 layout already gives. A bird on another tab, whose strip replaces the
 one drawn, needs its own answer.
-
-## Short windows
-
-The aviary holds its 0.9px floor by the window's width only. Its scene
-keeps at least 600 units of height, for a bubble above the top wire, the
-wires and the fence's distance from the bottom, so an aviary under 540px
-tall still shrinks below the floor. Holding the floor there needs a
-smaller vertical budget first: less room above the top wire, rows
-closer, or the fence nearer the wires.
-
-## Crowding at the edges
-
-From 9 birds on a wire in an 1100px window, consecutive birds sit under
-120 units apart and only 0.6 of a step lower, so they crowd again. Below
-about 500px nine birds share about 200 units, on a wire and in the
-detail strip alike. A tenth bird on one wire fails the layout test
-"keeps a crowded wire's birds apart" at 1290px, so the mock's wires
-carry nine. The fix is a vertical-budget round giving crowded rows more
-height, or a minimum window size. Birds crossing a painted name is by
-design.
 
 ## Session restore beside autostart
 
@@ -204,26 +181,15 @@ beside every field would need the design site to read `.scan/`.
 
 ## Scene details from the board
 
-What `design/perch.html` draws that the composed views do not yet:
+Details the retired board pages drew that the composed views do not yet:
 
 - The ledger's "Roadmap headings" section, each heading with its item
   count or progress. `Detail` carries no roadmap groups; it needs a field
   first.
-- The hover tip's summary of where a fence bird lives ("only on GitHub",
-  "one disk only"). The view model says so only in the speech, so a fence
-  bird's tip shows its name, its word and, when it has one, its last
-  commit.
 - The top wire drawn thicker than the rest.
 - A bubble with no room above its bird keeps to the scene's top edge and
   its tail no longer meets the beak. Opening it beside or below the bird
   is undesigned.
-
-## Ledger summary line
-
-A quiet sentence opening the ledger when nothing waits ("the working
-tree is clean and everything is pushed"). It needs a view model field
-first, since deriving it in the renderer would mean matching ledger
-labels.
 
 ## Relative images on the key-file paper
 
@@ -242,14 +208,6 @@ probed for self-hosted Forgejo (`/api/v1/version` answers
 unauthenticated), and the account guessed from the owners in the URL
 paths. The seeded card is a suggestion the owner confirms and gives a
 key and token. Asked for at first setup.
-
-## The threshold fields
-
-A threshold row is a pair of bare number inputs labelled amber and red.
-The form never says what the number counts, its unit, or what crossing
-it looks like on the bird. The rows need a design round: the unit and
-the consequence beside the field, and the default shown as more than a
-placeholder.
 
 ## Picking paths and sessions from what the scan knows
 

@@ -1,7 +1,7 @@
 import { mockAviary } from "@perch/core/mock.ts";
 import type { Wire as WireModel } from "@perch/core/viewmodel.ts";
 import { Scene, sceneWidth } from "@perch/ui/scene.tsx";
-import { columnEdge, Fence, Wire } from "@perch/ui/wire.tsx";
+import { columnEdgeFor, Fence, Wire } from "@perch/ui/wire.tsx";
 import { mockBird, mockWire } from "../specimens.ts";
 import { Code, Section, Specimen, Usage } from "../usage.tsx";
 
@@ -37,7 +37,7 @@ export function WirePage() {
     <>
       <Section
         title="The wire · your priority"
-        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the bird places itself: leftmost needs you first. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who needs attention, who drifts. The birds start ${columnEdge} units in whatever the name or tally says.`}
+        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the bird places itself: leftmost needs you first. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who needs attention, who drifts. The birds start ${columnEdgeFor(sceneWidth)} units in at full width whatever the name or tally says.`}
         min={900}
       >
         <Specimen
@@ -164,15 +164,16 @@ export function WirePage() {
           Both draw into a <Code>Scene</Code>, in scene units. The wires come
           from <Code>aviary.wires</Code> in config order, the fence from{" "}
           <Code>aviary.fence</Code>. Birds are spread evenly from the column
-          edge, {columnEdge} units in, to the right margin, at most 340 units
-          apart on a wire and 205 on the fence, and turned to face the middle.
-          Where each name sits comes from <Code>namePlace</Code>, by its index
-          and how far apart its neighbours are. Splitting a crowded wire over
-          two rows, the arrival and hover tips belong to <Code>AviaryView</Code>
-          , which draws the same pieces: <Code>PaintedName</Code> behind
-          everything, cut round the birds it is given, then{" "}
-          <Code>WireLine</Code> and <Code>FenceRail</Code>, the birds, and{" "}
-          <Code>WireTally</Code> and <Code>FenceCount</Code> in front.
+          edge, {columnEdgeFor(sceneWidth)} units in at full width, to the right
+          margin, at most 340 units apart on a wire and 205 on the fence, and
+          turned to face the middle. Where each name sits comes from{" "}
+          <Code>namePlace</Code>, by its index and how far apart its neighbours
+          are. Splitting a crowded wire over two rows, the arrival and hover
+          tips belong to <Code>AviaryView</Code>, which draws the same pieces:{" "}
+          <Code>PaintedName</Code> behind everything, cut round the birds it is
+          given, then <Code>WireLine</Code> and <Code>FenceRail</Code>, the
+          birds, and <Code>WireTally</Code> and <Code>FenceCount</Code> in
+          front.
         </p>
       </Usage>
     </>

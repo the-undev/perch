@@ -29,8 +29,8 @@ import {
 import { mockBird } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth, sceneWidthFor } from "./scene.tsx";
 import {
-  columnEdge,
-  edgeMargin,
+  columnEdgeFor,
+  edgeMarginFor,
   labelX,
   paintedInk,
   paintedSize,
@@ -400,8 +400,10 @@ describe("the camera", () => {
     expect(birds.every((bird) => drawnAfter(bird, tally))).toBe(true);
     // The birds keep their size and centre in the room right of the column.
     expect(xs).toEqual(layout.places.map((place) => place.x));
-    expect(Math.min(...xs)).toBeGreaterThanOrEqual(columnEdge);
-    expect(Math.max(...xs)).toBeLessThanOrEqual(stripUnits - edgeMargin);
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(columnEdgeFor(stripUnits));
+    expect(Math.max(...xs)).toBeLessThanOrEqual(
+      stripUnits - edgeMarginFor(stripUnits),
+    );
     expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(layout.middle);
     expect(
       container
@@ -417,7 +419,7 @@ describe("the camera", () => {
         const renamed = { ...tab, label: "A tab with a very long name indeed" };
 
         for (const place of stripLayout(tab, width).places) {
-          expect(place.x).toBeGreaterThanOrEqual(columnEdge);
+          expect(place.x).toBeGreaterThanOrEqual(columnEdgeFor(width));
         }
         expect(stripLayout(renamed, width)).toEqual(stripLayout(tab, width));
       }
@@ -475,8 +477,8 @@ describe("the camera", () => {
     ).toBe(true);
     expect(strip.querySelectorAll("[data-cut]")).toHaveLength(21);
     expect(layout.spacing).toBeLessThan(175);
-    expect(Math.min(...xs)).toBeCloseTo(columnEdge);
-    expect(Math.max(...xs)).toBeCloseTo(stripUnits - edgeMargin);
+    expect(Math.min(...xs)).toBeCloseTo(columnEdgeFor(stripUnits));
+    expect(Math.max(...xs)).toBeCloseTo(stripUnits - edgeMarginFor(stripUnits));
   });
 
   it("holds the strip at the floor in a window narrower than the floor's width, its birds bunching right of the column", () => {
@@ -493,10 +495,11 @@ describe("the camera", () => {
     expect(full.spacing).toBe(175);
     expect(narrow.spacing).toBeLessThan(full.spacing);
     expect(narrow.spacing).toBeCloseTo(
-      (unitsWide - edgeMargin - columnEdge) / (projects.birds.length - 1),
+      (unitsWide - edgeMarginFor(unitsWide) - columnEdgeFor(unitsWide)) /
+        (projects.birds.length - 1),
     );
-    expect(Math.min(...xs)).toBeCloseTo(columnEdge);
-    expect(Math.max(...xs)).toBeCloseTo(unitsWide - edgeMargin);
+    expect(Math.min(...xs)).toBeCloseTo(columnEdgeFor(unitsWide));
+    expect(Math.max(...xs)).toBeCloseTo(unitsWide - edgeMarginFor(unitsWide));
   });
 
   it("draws the strip at full size in a wide window, shrinking with the window only down to the floor", () => {

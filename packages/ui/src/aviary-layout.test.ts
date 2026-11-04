@@ -2,6 +2,7 @@ import { mockAviary } from "@perch/core/mock.ts";
 import type { Aviary, Bird, Wire } from "@perch/core/viewmodel.ts";
 import { describe, expect, it } from "vitest";
 import {
+  type AviaryLayout,
   arrangementKey,
   arrivalOrder,
   bubbleTailDrop,
@@ -10,10 +11,15 @@ import {
   placeBubble,
   placedBirds,
   rowCapacity,
+  rowPlaces,
   rowStep,
+  rowStepFor,
   rowsFor,
   sceneHeightFor,
+  staggerFor,
   toPixels,
+  wholeStepBelow,
+  wireRowsCap,
   wireStep,
 } from "./aviary-layout.ts";
 import { roomyName } from "./bird.tsx";
@@ -27,8 +33,9 @@ import {
 } from "./scene.tsx";
 import {
   alternateBelow,
-  columnEdge,
-  edgeMargin,
+  byPosition,
+  columnEdgeFor,
+  edgeMarginFor,
   fenceGap,
   lowerRowDrop,
   namePlace,
@@ -69,10 +76,19 @@ function fenceOf(count: number): Aviary {
   return { ...mockAviary, fence: { birds } };
 }
 
+/** A value to two places. */
+const round = (value: number) => Math.round(value * 100) / 100;
+
+/** The x of each bird on the named wire, one list per row. */
+function acrossOf(layout: AviaryLayout, name: string): number[][] {
+  return layout.rows
+    .filter((row) => row.wire.name === name)
+    .map((row) => row.birds.map((entry) => entry.x));
+}
+
 /** Each row's height, then each bird's perch, then the fence's height and its birds' x, to two places. */
 function pinned(aviary: Aviary, size: { width: number; height: number }) {
   const layout = layoutAviary(aviary, size);
-  const round = (value: number) => Math.round(value * 100) / 100;
   return {
     width: layout.width,
     height: layout.height,
@@ -91,7 +107,7 @@ describe("the aviary's layout", () => {
   it("keeps the window's aspect at the scene's width within bounds", () => {
     expect(sceneHeightFor({ width: 1920, height: 1000 })).toBe(1042);
     expect(sceneHeightFor({ width: 1400, height: 800 })).toBe(889);
-    expect(sceneHeightFor({ width: 3440, height: 500 })).toBe(600);
+    expect(sceneHeightFor({ width: 3440, height: 500 })).toBe(480);
     expect(sceneHeightFor({ width: 400, height: 3000 })).toBe(3000);
   });
 
@@ -103,13 +119,13 @@ describe("the aviary's layout", () => {
         [208.4, [550, 210.09], [890, 213.2], [1230, 212.54], [1570, 208.09]],
         [
           448.06,
-          [240, 443.62],
-          [650, 451.06],
+          [380, 446.78],
+          [720, 451.78],
           [1060, 453],
-          [1470, 449.45],
-          [1880, 440.41],
+          [1400, 450.45],
+          [1740, 444.11],
         ],
-        [591.86, [445, 591.82], [855, 596.51], [1265, 595.71], [1675, 589.41]],
+        [591.86, [550, 593.55], [890, 596.66], [1230, 595.99], [1570, 591.55]],
       ],
       fence: [937.8, 855, 1060, 1265],
     });
@@ -120,13 +136,13 @@ describe("the aviary's layout", () => {
         [180.11, [550, 181.8], [890, 184.91], [1230, 184.25], [1570, 179.8]],
         [
           364.57,
-          [240, 360.13],
-          [650, 367.57],
+          [380, 363.29],
+          [720, 368.29],
           [1060, 369.51],
-          [1470, 365.96],
-          [1880, 356.92],
+          [1400, 366.96],
+          [1740, 360.62],
         ],
-        [475.25, [445, 475.21], [855, 479.9], [1265, 479.1], [1675, 472.8]],
+        [475.25, [550, 476.94], [890, 480.05], [1230, 479.38], [1570, 474.94]],
       ],
       fence: [743.88, 855, 1060, 1265],
     });
@@ -143,6 +159,21 @@ describe("the aviary's layout", () => {
     expect(sceneWidth * minPixelsPerUnit).toBe(1800);
   });
 
+  it("holds a unit at the floor in a short window, down to 432 pixels tall", () => {
+    for (const [size, unit] of [
+      [{ width: 1100, height: 450 }, minPixelsPerUnit],
+      [{ width: 3440, height: 450 }, 450 / 480],
+      [{ width: 3440, height: 432 }, minPixelsPerUnit],
+    ] as const) {
+      const layout = layoutAviary(mockAviary, size);
+
+      expect(pixelsPerUnit(layout, size)).toBeCloseTo(unit);
+      expect(pixelsPerUnit(layout, size)).toBeGreaterThanOrEqual(
+        minPixelsPerUnit - 1e-9,
+      );
+    }
+  });
+
   it("holds a unit at the floor below the floor's width while the scene's units narrow", () => {
     for (const width of [1799, 1400, 900, 600, 320]) {
       const size = { width, height: 1000 };
@@ -154,7 +185,7 @@ describe("the aviary's layout", () => {
     }
   });
 
-  it("bunches a narrow window's wire, closing its gaps and wrapping it to more rows", () => {
+  it("bunches a narrow window's wire, closing its gaps and wrapping it to a second row", () => {
     const perRow = (birds: number, width: number) =>
       layoutAviary(aviaryOf([wireOf(birds)]), { width, height: 1000 }).rows.map(
         (row) => row.birds.length,
@@ -170,27 +201,33 @@ describe("the aviary's layout", () => {
 
     expect(perRow(6, 1920)).toEqual([6]);
     expect(perRow(6, 1400)).toEqual([3, 3]);
-    expect(perRow(6, 700)).toEqual([2, 2, 2]);
+    expect(perRow(6, 700)).toEqual([3, 3]);
     expect(perRow(9, 1920)).toEqual([5, 4]);
-    expect(perRow(9, 900)).toEqual([3, 3, 3]);
+    expect(perRow(9, 900)).toEqual([5, 4]);
     expect(gap(1920)).toBe(wireGap);
     expect(gap(1400)).toBeLessThan(wireGap);
+    const narrow = sceneWidthFor(1400);
     expect(gap(1400)).toBeCloseTo(
-      (sceneWidthFor(1400) - columnEdge - edgeMargin) / 4,
+      (narrow - columnEdgeFor(narrow) - edgeMarginFor(narrow)) / 4,
     );
   });
 
-  it("keeps a crowded wire's birds apart: none within 120 units across unless a whole wire step down", () => {
+  it(`keeps a crowded wire's birds apart: none within ${wholeStepBelow} units across unless a whole wire step down`, () => {
     for (const [aviary, size] of [
       [aviaryOf([wireOf(8)]), { width: 1290, height: 800 }],
+      [aviaryOf([wireOf(10)]), { width: 1290, height: 800 }],
+      [aviaryOf([wireOf(13)]), { width: 1100, height: 800 }],
+      [aviaryOf([wireOf(13)]), { width: 1920, height: 1000 }],
       [mockAviary, { width: 1290, height: 800 }],
       [mockAviary, { width: 1400, height: 800 }],
+      [mockAviary, { width: 1920, height: 1000 }],
     ] as const) {
       const layout = layoutAviary(aviary, size);
       const second = layout.rows.findIndex((row) => row.index === 1);
+      const crowded = layout.rows[second];
       const step =
-        ((layout.rows[second]?.y ?? 0) - (layout.rows[second - 1]?.y ?? 0)) /
-        rowStep;
+        ((crowded?.y ?? 0) - (layout.rows[second - 1]?.y ?? 0)) /
+        rowStepFor(acrossOf(layout, crowded?.wire.name ?? ""));
 
       expect(second).toBeGreaterThan(0);
       for (const wire of aviary.wires) {
@@ -199,7 +236,7 @@ describe("the aviary's layout", () => {
           .flatMap((row) => row.birds.map((entry) => ({ x: entry.x, row })));
         for (const [i, one] of perches.entries()) {
           for (const other of perches.slice(i + 1)) {
-            if (Math.abs(one.x - other.x) >= 120) continue;
+            if (Math.abs(one.x - other.x) >= wholeStepBelow) continue;
             expect(Math.abs(one.row.y - other.row.y)).toBeGreaterThanOrEqual(
               wireStep * step - 1e-9,
             );
@@ -211,7 +248,7 @@ describe("the aviary's layout", () => {
 
   it("spreads a one-row wire at the full gap, centred in the birds' room", () => {
     for (const [count, size, xs] of [
-      [3, { width: 1100, height: 800 }, [331.11, 671.11, 1011.11]],
+      [3, { width: 1100, height: 800 }, [307.78, 647.78, 987.78]],
       [4, { width: 1920, height: 1000 }, [550, 890, 1230, 1570]],
     ] as const) {
       const layout = layoutAviary(aviaryOf([wireOf(count)]), size);
@@ -231,11 +268,10 @@ describe("the aviary's layout", () => {
         const layout = layoutAviary(aviary, { width, height: 800 });
 
         for (const entry of placedBirds(layout)) {
-          expect(entry.x).toBeGreaterThanOrEqual(columnEdge);
+          expect(entry.x).toBeGreaterThanOrEqual(columnEdgeFor(layout.width));
         }
       }
     }
-    expect(columnEdge).toBe(240);
   });
 
   it("never moves a bird for its wire's name or tally", () => {
@@ -254,28 +290,117 @@ describe("the aviary's layout", () => {
     expect(xs(aviaryOf([settled]))).toEqual(xs(aviaryOf([wire])));
   });
 
-  it("spreads a crowded wire left to right in its order, inside the birds' room", () => {
-    for (const [count, size] of [
-      [13, { width: 1100, height: 800 }],
-      [24, { width: 1920, height: 1000 }],
-      [13, { width: 640, height: 900 }],
+  it("reads a crowded wire like text: blocks in its order, top row first, each left to right", () => {
+    for (const [count, size, sizes] of [
+      [9, { width: 1290, height: 800 }, [5, 4]],
+      [7, { width: 1920, height: 1000 }, [4, 3]],
+      [13, { width: 1100, height: 800 }, [7, 6]],
+      [24, { width: 1920, height: 1000 }, [12, 12]],
     ] as const) {
       const wire = wireOf(count);
       const layout = layoutAviary(
         aviaryOf([{ ...wire, birds: [...wire.birds].reverse() }]),
         size,
       );
-      const xs = layout.rows
-        .flatMap((row) => row.birds)
-        .sort((a, b) => a.bird.position - b.bird.position)
-        .map((entry) => entry.x);
 
-      expect(layout.rows.length).toBeGreaterThan(1);
-      expect(xs.slice(1).every((x, i) => x > (xs[i] ?? 0))).toBe(true);
-      expect(Math.min(...xs)).toBeGreaterThanOrEqual(columnEdge);
-      expect(Math.max(...xs)).toBeLessThanOrEqual(
-        layout.width - edgeMargin + 1e-9,
+      expect(layout.rows.map((row) => row.birds.length)).toEqual(sizes);
+      expect(
+        layout.rows.flatMap((row) =>
+          row.birds.map((entry) => entry.bird.position),
+        ),
+      ).toEqual(Array.from({ length: count }, (_, position) => position));
+      for (const row of layout.rows) {
+        const xs = row.birds.map((entry) => entry.x);
+        expect(xs.slice(1).every((x, i) => x > (xs[i] ?? 0))).toBe(true);
+      }
+    }
+  });
+
+  it("centres each row on its own, at most the wire gap apart", () => {
+    expect(rowPlaces(9, 2000).map((xs) => xs.map(round))).toEqual([
+      [380, 720, 1060, 1400, 1740],
+      [550, 890, 1230, 1570],
+    ]);
+  });
+
+  it("keeps an uneven row centred, which already sits half a spacing across from the row above", () => {
+    expect(rowPlaces(7, 2000).map((xs) => xs.map(round))).toEqual([
+      [550, 890, 1230, 1570],
+      [720, 1060, 1400],
+    ]);
+    expect(rowPlaces(7, sceneWidthFor(1290))[1]?.map(round)).toEqual([
+      419.67, 759.67, 1099.67,
+    ]);
+  });
+
+  it("shifts a row right by its stagger where centring would stack it on the row above", () => {
+    const width = sceneWidthFor(1290);
+    const [first, second] = rowPlaces(6, width);
+
+    expect(staggerFor(3, width)).toBe(wireGap / 2);
+    expect(second).toEqual(first?.map((x) => x + staggerFor(3, width)));
+    expect(rowPlaces(8, 2000).map((xs) => xs.map(round))).toEqual([
+      [550, 890, 1230, 1570],
+      [720, 1060, 1400, 1740],
+    ]);
+  });
+
+  it("takes its stagger only out of a row's slack, so a full row stays put", () => {
+    const [first, second] = rowPlaces(12, 2000);
+
+    expect(staggerFor(6, 2000)).toBe(0);
+    expect(second).toEqual(first);
+  });
+
+  it("spreads a wire's rows 0.6 of a step apart while they sit apart across, and a whole step once any two come close", () => {
+    for (const [count, width, wanted] of [
+      [9, 2000, rowStep],
+      [7, 2000, rowStep],
+      [8, 2000, rowStep],
+      [6, sceneWidthFor(1290), rowStep],
+      [7, sceneWidthFor(1290), rowStep],
+      [12, 2000, wireStep],
+      [13, 2000, wireStep],
+      [8, sceneWidthFor(1290), wireStep],
+      [9, sceneWidthFor(1290), wireStep],
+    ] as const) {
+      expect(rowStepFor(rowPlaces(count, width))).toBe(wanted);
+    }
+    for (const [count, share] of [
+      [9, rowStep],
+      [12, wireStep],
+    ] as const) {
+      const layout = layoutAviary(
+        aviaryOf([
+          { ...wireOf(4), name: "Above" },
+          { ...wireOf(count), name: "Crowded" },
+        ]),
+        { width: 1920, height: 1000 },
       );
+      const [above, first, second] = layout.rows.map((row) => row.y);
+
+      expect((second ?? 0) - (first ?? 0)).toBeCloseTo(
+        share * ((first ?? 0) - (above ?? 0)),
+      );
+    }
+  });
+
+  it("keeps every bird of a crowded wire inside the birds' room, in any window with room for one", () => {
+    for (const width of [500, 760, 1100, 1290, 1400, 1920, 3440]) {
+      for (let count = 1; count <= 30; count++) {
+        const layout = layoutAviary(aviaryOf([wireOf(count)]), {
+          width,
+          height: 800,
+        });
+
+        for (const entry of placedBirds(layout)) {
+          expect(entry.x).toBeGreaterThanOrEqual(columnEdgeFor(layout.width));
+          expect(entry.x).toBeLessThanOrEqual(
+            layout.width - edgeMarginFor(layout.width) + 1e-9,
+          );
+        }
+        expect(layout.rows.length).toBeLessThanOrEqual(wireRowsCap);
+      }
     }
   });
 
@@ -302,17 +427,23 @@ describe("the aviary's layout", () => {
     expect(layout.fence.y).toBeGreaterThan(Math.max(...ys));
   });
 
-  it("keeps a fifth of the scene above the top wire, or the bubble's room where that is more", () => {
+  it("keeps a fifth of the scene above the top wire, or the bubble's room where that is more, up to 0.3 of the scene", () => {
     const tall = { width: 1920, height: 1200 };
     const short = { width: 3440, height: 1380 };
+    const shorter = { width: 1100, height: 450 };
     const tallLayout = layoutAviary(mockAviary, tall);
     const shortLayout = layoutAviary(mockAviary, short);
+    const shorterLayout = layoutAviary(mockAviary, shorter);
 
     expect(tallLayout.rows[0]?.y).toBeCloseTo(tallLayout.height * 0.2);
     expect(shortLayout.rows[0]?.y).toBeCloseTo(
       (26 * shortLayout.height) / short.height + 165,
     );
     expect(shortLayout.rows[0]?.y).toBeGreaterThan(shortLayout.height * 0.2);
+    expect(shorterLayout.rows[0]?.y).toBeCloseTo(shorterLayout.height * 0.3);
+    expect(shorterLayout.rows[0]?.y).toBeLessThan(
+      (26 * shorterLayout.height) / shorter.height + 165,
+    );
   });
 
   it("hangs the sun 0.09 down the scene, its disc at least 50 units clear of the top wire beneath it", () => {
@@ -335,47 +466,99 @@ describe("the aviary's layout", () => {
     }
   });
 
-  it("keeps 100 window pixels below the fence", () => {
-    for (const size of [
-      { width: 1100, height: 800 },
-      { width: 1920, height: 1000 },
-      { width: 3440, height: 1380 },
-      { width: 3440, height: 500 },
-    ]) {
+  it("keeps 100 window pixels below the fence, or an eighth of a shorter window", () => {
+    for (const [size, pixels] of [
+      [{ width: 1100, height: 800 }, 100],
+      [{ width: 1920, height: 1000 }, 100],
+      [{ width: 3440, height: 1380 }, 100],
+      [{ width: 3440, height: 500 }, 62.5],
+      [{ width: 1100, height: 450 }, 56.25],
+    ] as const) {
       const layout = layoutAviary(mockAviary, size);
       const rail = toPixels({ x: 0, y: layout.fence.y }, layout, size);
       const foot = toPixels({ x: 0, y: layout.height }, layout, size);
 
-      expect(foot.y - rail.y).toBeCloseTo(100, 0);
+      expect(foot.y - rail.y).toBeCloseTo(pixels, 0);
     }
   });
 
-  it("splits a crowded wire over two rows, dealing its birds in turn", () => {
+  it("splits a crowded wire over two rows, the first five on top and the rest beneath", () => {
     const layout = layoutAviary(mockAviary, window);
     const projects = layout.rows.filter((row) => row.wire.name === "Projects");
     const machine = layout.rows.filter(
       (row) => row.wire.name === "Machine & Home",
     );
-    const order = projects[0]?.wire.birds.map((bird) => bird.id) ?? [];
+    const order = byPosition(projects[0]?.wire.birds ?? []).map(
+      (bird) => bird.id,
+    );
 
     expect(machine).toHaveLength(1);
     expect(projects).toHaveLength(2);
     expect(projects[0]?.birds.map((entry) => entry.bird.id)).toEqual(
-      order.filter((_, i) => i % 2 === 0),
+      order.slice(0, 5),
     );
     expect(projects[1]?.birds.map((entry) => entry.bird.id)).toEqual(
-      order.filter((_, i) => i % 2 === 1),
+      order.slice(5),
     );
   });
 
-  it("takes another row for each row's worth of birds", () => {
+  it("takes a second row past a row's worth of birds, and never a third", () => {
     expect(rowCapacity(sceneWidth)).toBe(6);
+    expect(wireRowsCap).toBe(2);
     expect(
-      [0, 1, 6, 7, 12, 13].map((count) => rowsFor(count, sceneWidth)),
-    ).toEqual([1, 1, 1, 2, 2, 3]);
+      [0, 1, 6, 7, 12, 13, 30].map((count) => rowsFor(count, sceneWidth)),
+    ).toEqual([1, 1, 1, 2, 2, 2, 2]);
+    for (const width of [300, 555.6, 791.1, 1000, 1433.3, 2000]) {
+      for (let count = 0; count <= 40; count++) {
+        expect(rowsFor(count, width)).toBeLessThanOrEqual(wireRowsCap);
+      }
+    }
     const layout = layoutAviary(aviaryOf([wireOf(13)]), window);
 
-    expect(layout.rows.map((row) => row.birds.length)).toEqual([5, 4, 4]);
+    expect(layout.rows.map((row) => row.birds.length)).toEqual([7, 6]);
+  });
+
+  it("scales the margins with the scene, today's 240 and 120 at full width and floored at 130 and 60", () => {
+    expect(columnEdgeFor(2000)).toBe(240);
+    expect(edgeMarginFor(2000)).toBe(120);
+    expect(columnEdgeFor(1433.33)).toBeCloseTo(172);
+    expect(edgeMarginFor(1433.33)).toBeCloseTo(86);
+    expect(columnEdgeFor(1000)).toBe(130);
+    expect(edgeMarginFor(1000)).toBe(60);
+    expect(columnEdgeFor(500)).toBe(130);
+    expect(edgeMarginFor(500)).toBe(60);
+  });
+
+  it("lays a 712 by 623 window's wires of five and nine out in two rows each, a step about 93 units", () => {
+    const layout = layoutAviary(
+      aviaryOf([
+        { ...wireOf(5), name: "Important" },
+        { ...wireOf(9), name: "Projects" },
+      ]),
+      { width: 712, height: 623 },
+    );
+    const width = layout.width;
+    const [important, importantBelow, projects, projectsBelow] =
+      layout.rows.map((row) => row.y);
+    const step = (projects ?? 0) - (importantBelow ?? 0);
+
+    expect(width).toBeCloseTo(791.11);
+    expect(columnEdgeFor(width)).toBe(130);
+    expect(edgeMarginFor(width)).toBe(60);
+    expect(width - columnEdgeFor(width) - edgeMarginFor(width)).toBeCloseTo(
+      601.11,
+    );
+    expect(rowCapacity(width)).toBe(3);
+    expect(layout.rows.map((row) => row.birds.length)).toEqual([3, 2, 5, 4]);
+    expect(acrossOf(layout, "Projects").map((xs) => xs.map(round))).toEqual([
+      [130, 280.28, 430.56, 580.83, 731.11],
+      [130, 330.37, 530.74, 731.11],
+    ]);
+    expect(step).toBeCloseTo(93.11, 2);
+    expect((importantBelow ?? 0) - (important ?? 0)).toBeCloseTo(
+      rowStep * step,
+    );
+    expect((projectsBelow ?? 0) - (projects ?? 0)).toBeCloseTo(wireStep * step);
   });
 
   it("keeps every wire, an empty one included", () => {
@@ -400,12 +583,11 @@ describe("the aviary's layout", () => {
   it("maps scene units onto the window, the scene centred when the aspect is bounded", () => {
     const wide = { width: 3440, height: 500 };
     const layout = layoutAviary(mockAviary, wide);
-    const k = 500 / 600;
+    const k = 500 / 480;
+    const corner = toPixels({ x: 0, y: 0 }, layout, wide);
 
-    expect(toPixels({ x: 0, y: 0 }, layout, wide)).toEqual({
-      x: (3440 - 2000 * k) / 2,
-      y: 0,
-    });
+    expect(corner.x).toBeCloseTo((3440 - 2000 * k) / 2);
+    expect(corner.y).toBeCloseTo(0);
   });
 
   it("maps a narrowed scene edge to edge across its window", () => {

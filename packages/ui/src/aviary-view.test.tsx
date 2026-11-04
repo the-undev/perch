@@ -15,7 +15,7 @@ import {
   placedBirds,
   toPixels,
 } from "./aviary-layout.ts";
-import { AviaryScene, AviaryView } from "./aviary-view.tsx";
+import { AviaryScene, AviaryView, tipLine } from "./aviary-view.tsx";
 import type { PixelSize } from "./hooks.ts";
 import { mockBird, mockBirds } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth } from "./scene.tsx";
@@ -234,6 +234,21 @@ describe("the aviary view", () => {
 
     expect(screen.getByRole("tooltip").textContent).toBe(
       "Prism · distressedci failure · 4 uncommitted · 2 open PRs · 78 open items",
+    );
+  });
+
+  it("tells in a fence bird's tip where it lives, then its last commit when it has one", () => {
+    expect(tipLine(mockBird("dev/odin/hello"), morning)).toBe(
+      "one disk only · last commit twelve months ago",
+    );
+    expect(tipLine(mockBird("github:finch/obsidian-tidy"), morning)).toBe(
+      "only on github",
+    );
+    expect(tipLine(mockBird("dev/hearth-config"), morning)).toBe(
+      "last commit ten days ago",
+    );
+    expect(tipLine(mockBird("undev/prism"), morning)).toBe(
+      "ci failure · 4 uncommitted · 2 open PRs · 78 open items",
     );
   });
 

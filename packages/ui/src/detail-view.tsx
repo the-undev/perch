@@ -359,7 +359,12 @@ export function DetailView({
         className={`pane-scroll col-start-1 row-start-2 -mx-2.5 grid min-h-0 content-start gap-x-5 gap-y-10 overflow-x-hidden overflow-y-auto pb-11 @min-[960px]:grid-cols-[minmax(350px,450px)_minmax(0,1fr)] @min-[960px]:grid-rows-[minmax(0,1fr)] @min-[960px]:overflow-hidden @min-[960px]:pb-0 motion-safe:transition-opacity motion-safe:duration-420 motion-safe:ease-[ease] ${papersShown ? "opacity-25" : ""}`}
       >
         <div data-part="record" className={paneClass}>
-          <Ledger entries={detail.ledger} now={now} landing={landing} />
+          <Ledger
+            quiet={detail.quiet}
+            entries={detail.ledger}
+            now={now}
+            landing={landing}
+          />
           {detail.branches.length > 0 && (
             <BranchLines
               branches={detail.branches}

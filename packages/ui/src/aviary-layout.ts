@@ -1,6 +1,6 @@
 // Where everything in the aviary goes, as pure functions of the view model and the window's size:
 // the scene's height, each wire's rows, the fence, each bird's perch and beak, the arrival order,
-// and the bubble's place against a beak. Proportions are the board's (design/perch.html).
+// and the bubble's place against a beak. Proportions are the board's.
 
 import type { Aviary, Bird, Mood, Wire } from "@perch/core/viewmodel.ts";
 import { birdScale, type Facing, type NamePlace, roomyName } from "./bird.tsx";
@@ -8,8 +8,8 @@ import type { BubbleTail } from "./bubble.tsx";
 import type { PixelSize } from "./hooks.ts";
 import { sceneWidthFor } from "./scene.tsx";
 import {
+  birdRoom,
   byPosition,
-  edgeMargin,
   facingAt,
   fenceGap,
   namePlace,
@@ -39,7 +39,7 @@ export interface PlacedBird {
   beak: ScenePoint;
 }
 
-/** One row of a wire: a crowded wire spreads its birds over more than one. */
+/** One row of a wire: a crowded wire spreads its birds over two. */
 export interface WireRow {
   wire: Wire;
   /** 0 for the wire's first row, which carries its name and tally. */
@@ -62,7 +62,7 @@ export interface AviaryLayout {
 export function sceneHeightFor(size: PixelSize): number {
   const width = sceneWidthFor(size.width);
   return Math.max(
-    600,
+    480,
     Math.min(3000, Math.round((width * size.height) / size.width)),
   );
 }
@@ -70,21 +70,89 @@ export function sceneHeightFor(size: PixelSize): number {
 /** The closest birds sit on one row; a wire holding more than fit at this gap takes another row. */
 export const crowdedGap = 300;
 
-/** How many birds one row of a scene this wide holds: as many as fit at the crowded gap between the margins, at least one. */
+/** How many birds one row of a scene this wide holds: as many as fit at the crowded gap in the birds' room, at least one. */
 export function rowCapacity(width: number): number {
-  return Math.max(1, Math.floor((width - 2 * edgeMargin) / crowdedGap) + 1);
+  return Math.max(1, Math.floor(birdRoom(width) / crowdedGap) + 1);
 }
 
-/** The rows a wire needs for its birds in a scene this wide; an empty wire still has its one. */
+/** The most rows a wire takes: past two rows' worth its rows pack tighter instead. */
+export const wireRowsCap = 2;
+
+/** The rows a wire needs for its birds in a scene this wide, at most the cap; an empty wire still has its one. */
 export function rowsFor(count: number, width: number): number {
-  return Math.max(1, Math.ceil(count / rowCapacity(width)));
+  return Math.min(
+    wireRowsCap,
+    Math.max(1, Math.ceil(count / rowCapacity(width))),
+  );
 }
 
 /** The vertical spacing between wires, in steps. */
 export const wireStep = 1;
 
-/** The vertical spacing between rows of one wire, in steps. */
+/** The vertical spacing between rows of one wire, in steps, while its rows sit far enough apart across. */
 export const rowStep = 0.6;
+
+/** A wire with a bird closer than this across to a bird of the row above spreads its rows a whole step apart. */
+export const wholeStepBelow = 120;
+
+/** How many birds each of a wire's rows holds: the count split as evenly as it goes, the earlier rows taking the extras. */
+function rowSizes(count: number, rows: number): number[] {
+  return Array.from(
+    { length: rows },
+    (_, row) => Math.floor(count / rows) + (row < count % rows ? 1 : 0),
+  );
+}
+
+/** How far right a row of this many birds can shift against the row above: half its spacing, at most its slack inside the birds' room. */
+export function staggerFor(count: number, width: number): number {
+  const spacing = placeSpacing(count, wireGap, width);
+  const slack = (birdRoom(width) - (count - 1) * spacing) / 2;
+  return Math.max(0, Math.min(spacing / 2, slack));
+}
+
+/** The nearest distance across between a place on one row and a place on another; an empty row is infinitely far. */
+function nearestAcross(one: number[], other: number[]): number {
+  return Math.min(
+    Number.POSITIVE_INFINITY,
+    ...one.flatMap((a) => other.map((b) => Math.abs(a - b))),
+  );
+}
+
+/**
+ * Where a wire of this many birds puts them across, one list per row. The birds split into blocks
+ * in reading order, the earlier rows taking the extras, and each row is centred in the birds' room.
+ * Every row after the first then takes its centred place or that place shifted right by its
+ * stagger, whichever sits farther across from the row above, so the rows lie like brickwork.
+ */
+export function rowPlaces(count: number, width: number): number[][] {
+  const places: number[][] = [];
+  for (const [row, size] of rowSizes(count, rowsFor(count, width)).entries()) {
+    const centred = Array.from({ length: size }, (_, j) =>
+      placeAt(j, size, wireGap, width),
+    );
+    const above = places[row - 1];
+    if (above === undefined) {
+      places.push(centred);
+      continue;
+    }
+    const stagger = staggerFor(size, width);
+    const shifted = centred.map((x) => x + stagger);
+    places.push(
+      nearestAcross(shifted, above) > nearestAcross(centred, above)
+        ? shifted
+        : centred,
+    );
+  }
+  return places;
+}
+
+/** The vertical spacing between a wire's rows, in steps, from their places across: a whole step once any row comes within wholeStepBelow of the row above. */
+export function rowStepFor(places: number[][]): number {
+  const close = places
+    .slice(1)
+    .some((xs, row) => nearestAcross(xs, places[row] ?? []) < wholeStepBelow);
+  return close ? wireStep : rowStep;
+}
 
 function perched(
   bird: Bird,
@@ -109,41 +177,52 @@ function perched(
 }
 
 /**
- * The birds of one wire spread left to right in order as one sequence across the birds' room,
- * each dealt to the next row in turn, so they step down the rows on a diagonal and the leftmost
- * needs you first.
+ * The birds of one wire perched at their places, read like text: the first row left to right, then
+ * the next, so the top left bird needs you first. Names alternate by the spacing on their own row.
  */
-function wireRows(wire: Wire, ys: number[], width: number): WireRow[] {
+function wireRows(
+  wire: Wire,
+  places: number[][],
+  ys: number[],
+  width: number,
+): WireRow[] {
   const birds = byPosition(wire.birds);
-  const rows = ys.length;
-  const count = birds.length;
-  const rowSpacing = rows * placeSpacing(count, wireGap, width);
-  return ys.map((y, index) => ({
-    wire,
-    index,
-    y,
-    birds: birds.flatMap((bird, i) => {
-      if (i % rows !== index) return [];
-      const x = placeAt(i, count, wireGap, width);
-      return [
-        perched(
+  return places.map((xs, index) => {
+    const start = places
+      .slice(0, index)
+      .reduce((total, row) => total + row.length, 0);
+    const spacing = placeSpacing(xs.length, wireGap, width);
+    const y = ys[index] ?? 0;
+    return {
+      wire,
+      index,
+      y,
+      birds: birds.slice(start, start + xs.length).map((bird, j) => {
+        const x = xs[j] ?? 0;
+        return perched(
           bird,
           x,
           wireHeight(y, x, width),
-          namePlace(Math.floor(i / rows), rowSpacing, roomyName.drop),
+          namePlace(j, spacing, roomyName.drop),
           width,
-        ),
-      ];
-    }),
-  }));
+        );
+      }),
+    };
+  });
 }
 
 /** The share of the scene's height kept above the top wire for a bubble, unless the bubble needs more. */
 const skyBand = 0.2;
 
+/** The most of the scene's height the bubble's room above the top wire takes, so a short scene keeps room for its wires. */
+const bubbleRoomShare = 0.3;
+
+/** The window pixels kept below the fence, at most an eighth of the window's height. */
+const footPixels = 100;
+
 /**
  * The aviary laid out for a window of the given size in pixels. A window too narrow for the full
- * width at the floor gets a narrower scene, its birds bunching and its wires taking more rows. The
+ * width at the floor gets a narrower scene, its margins shrinking and its birds bunching. The
  * top wire leaves room above it for a bubble, the fence sits a fixed distance from the bottom, and
  * the wires and their rows share the space between, a whole step apart at most a quarter of the
  * scene.
@@ -152,24 +231,29 @@ export function layoutAviary(aviary: Aviary, size: PixelSize): AviaryLayout {
   const width = sceneWidthFor(size.width);
   const height = sceneHeightFor(size);
   const units = (pixels: number) => (pixels * height) / size.height;
-  const top = Math.max(height * skyBand, units(26) + 165);
-  const fenceY = height - units(100);
-  const bottom = Math.max(top, Math.min(height * 0.63, fenceY - 120));
-  const rowCounts = aviary.wires.map((wire) =>
-    rowsFor(wire.birds.length, width),
+  const top = Math.max(
+    height * skyBand,
+    Math.min(units(26) + 165, height * bubbleRoomShare),
   );
-  const steps = rowCounts.reduce(
-    (total, rows) => total + wireStep + (rows - 1) * rowStep,
+  const fenceY = height - units(Math.min(footPixels, size.height / 8));
+  const bottom = Math.max(top, Math.min(height * 0.63, fenceY - 120));
+  const stacks = aviary.wires.map((wire) => {
+    const places = rowPlaces(wire.birds.length, width);
+    return { wire, places, wireRowStep: rowStepFor(places) };
+  });
+  const steps = stacks.reduce(
+    (total, stack) =>
+      total + wireStep + (stack.places.length - 1) * stack.wireRowStep,
     -wireStep,
   );
   const step = Math.min(height * 0.23, (bottom - top) / Math.max(steps, 1));
   let y = top - wireStep * step;
-  const rows = aviary.wires.flatMap((wire, i) => {
-    const ys = Array.from({ length: rowCounts[i] ?? 1 }, (_, row) => {
-      y += (row === 0 ? wireStep : rowStep) * step;
+  const rows = stacks.flatMap(({ wire, places, wireRowStep }) => {
+    const ys = places.map((_, row) => {
+      y += (row === 0 ? wireStep : wireRowStep) * step;
       return y;
     });
-    return wireRows(wire, ys, width);
+    return wireRows(wire, places, ys, width);
   });
   const fenceBirds = byPosition(aviary.fence.birds);
   const fenceSpacing = placeSpacing(fenceBirds.length, fenceGap, width);

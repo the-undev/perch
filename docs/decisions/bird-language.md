@@ -1,9 +1,8 @@
 # Bird language
 
 How a bird's look and behaviour carry a project's state. The aviary is the
-overview, so every trait must derive from scanned facts, see
-[scan-model](scan-model.md); the axes themselves are defined in
-[daily-glance](daily-glance.md).
+overview, so every trait must derive from scanned facts; the axes
+themselves are defined in the spec's Health section.
 
 Status: open
 
@@ -17,7 +16,7 @@ Status: open
   singing while being edited, energy level, a flutter on arrival.
 - A trait without a derivable fact behind it is not a trait.
 - What counts as bad is per bird: the thresholds in config, with
-  per-project overrides as decided in [daily-glance](daily-glance.md),
+  per-project overrides,
   drive each bird's reactions. Introduced slowly; some facts will be hard
   to judge well.
 - The app starts by gathering all the data but aggregating and displaying

@@ -1,9 +1,8 @@
 # Project model
 
-What a project is and how its data is collected. Supersedes the explicit
-project list in [config](config.md) and the repo-discovery model in
-[sources-and-priority](sources-and-priority.md), both decided a day before
-this file; the join answer below also settles the no-remote question from
+What a project is and how its data is collected. Supersedes an explicit
+project list and a repo-discovery model, both decided a day before this
+file; the join answer below also settles the no-remote question from
 the first scanner review.
 
 Status: decided, 21 October 2026
@@ -55,8 +54,7 @@ Detect what leaves a trace; config asserts only what does not.
 - Asserted in config: importance, ignores, joins the URLs cannot prove,
   per-item overrides (thresholds, zellij session, roadmap paths beyond the
   defaults), and expectations (this project should have CI, a ticket
-  source): an unmet expectation surfaces as a fact, see
-  [data-placement](data-placement.md).
+  source): an unmet expectation surfaces as a fact.
 - On conflict the observation wins and the conflict is flagged; stale
   config must be visible, never silently trusted.
 

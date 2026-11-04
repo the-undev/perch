@@ -38,7 +38,7 @@ Decided 20 October 2026.
 Decided 20 October 2026. Basic markdown extraction, no bespoke syntax:
 
 - Headings are the groups, and the detail view's structured list groups by
-  them, see [project-detail](project-detail.md).
+  them.
 - The rule is per heading, decided 21 October 2026 against the gathered
   structure of every real roadmap file. A heading with direct bullets is a
   group and its bullets are the items. A heading with no bullets and no
@@ -78,5 +78,4 @@ under the general rule above; nothing forces a migration.
   before the parser is written.
 - How much of the item list the drill-down shows: all, or the first few per
   area.
-- Whether the glance level carries anything from roadmaps, see
-  [daily-glance](daily-glance.md).
+- Whether the glance level carries anything from roadmaps.

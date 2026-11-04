@@ -71,7 +71,9 @@ export function FormRow({
     <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 border-edge border-t px-0.5 py-2.75 first:border-t-0">
       <div className="w-44 flex-none pt-1">
         <span className="block font-body text-[13.5px] text-ink">{label}</span>
-        <span className="block text-[12px] text-ink-faint">{sub}</span>
+        {sub !== "" && (
+          <span className="block text-[12px] text-ink-faint">{sub}</span>
+        )}
       </div>
       <div className="flex min-w-0 flex-[1_1_18rem] flex-col items-start gap-1.5">
         {children}

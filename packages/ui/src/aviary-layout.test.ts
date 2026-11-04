@@ -92,7 +92,7 @@ describe("the aviary's layout", () => {
   it("keeps the window's aspect at the scene's width within bounds", () => {
     expect(sceneHeightFor({ width: 1920, height: 1000 })).toBe(1042);
     expect(sceneHeightFor({ width: 1400, height: 800 })).toBe(889);
-    expect(sceneHeightFor({ width: 3440, height: 500 })).toBe(600);
+    expect(sceneHeightFor({ width: 3440, height: 500 })).toBe(480);
     expect(sceneHeightFor({ width: 400, height: 3000 })).toBe(3000);
   });
 
@@ -142,6 +142,21 @@ describe("the aviary's layout", () => {
       expect(pixelsPerUnit(layout, size)).toBeCloseTo(width / sceneWidth);
     }
     expect(sceneWidth * minPixelsPerUnit).toBe(1800);
+  });
+
+  it("holds a unit at the floor in a short window, down to 432 pixels tall", () => {
+    for (const [size, unit] of [
+      [{ width: 1100, height: 450 }, minPixelsPerUnit],
+      [{ width: 3440, height: 450 }, 450 / 480],
+      [{ width: 3440, height: 432 }, minPixelsPerUnit],
+    ] as const) {
+      const layout = layoutAviary(mockAviary, size);
+
+      expect(pixelsPerUnit(layout, size)).toBeCloseTo(unit);
+      expect(pixelsPerUnit(layout, size)).toBeGreaterThanOrEqual(
+        minPixelsPerUnit - 1e-9,
+      );
+    }
   });
 
   it("holds a unit at the floor below the floor's width while the scene's units narrow", () => {
@@ -306,17 +321,23 @@ describe("the aviary's layout", () => {
     expect(layout.fence.y).toBeGreaterThan(Math.max(...ys));
   });
 
-  it("keeps a fifth of the scene above the top wire, or the bubble's room where that is more", () => {
+  it("keeps a fifth of the scene above the top wire, or the bubble's room where that is more, up to 0.3 of the scene", () => {
     const tall = { width: 1920, height: 1200 };
     const short = { width: 3440, height: 1380 };
+    const shorter = { width: 1100, height: 450 };
     const tallLayout = layoutAviary(mockAviary, tall);
     const shortLayout = layoutAviary(mockAviary, short);
+    const shorterLayout = layoutAviary(mockAviary, shorter);
 
     expect(tallLayout.rows[0]?.y).toBeCloseTo(tallLayout.height * 0.2);
     expect(shortLayout.rows[0]?.y).toBeCloseTo(
       (26 * shortLayout.height) / short.height + 165,
     );
     expect(shortLayout.rows[0]?.y).toBeGreaterThan(shortLayout.height * 0.2);
+    expect(shorterLayout.rows[0]?.y).toBeCloseTo(shorterLayout.height * 0.3);
+    expect(shorterLayout.rows[0]?.y).toBeLessThan(
+      (26 * shorterLayout.height) / shorter.height + 165,
+    );
   });
 
   it("hangs the sun 0.09 down the scene, its disc at least 50 units clear of the top wire beneath it", () => {
@@ -339,18 +360,19 @@ describe("the aviary's layout", () => {
     }
   });
 
-  it("keeps 100 window pixels below the fence", () => {
-    for (const size of [
-      { width: 1100, height: 800 },
-      { width: 1920, height: 1000 },
-      { width: 3440, height: 1380 },
-      { width: 3440, height: 500 },
-    ]) {
+  it("keeps 100 window pixels below the fence, or an eighth of a shorter window", () => {
+    for (const [size, pixels] of [
+      [{ width: 1100, height: 800 }, 100],
+      [{ width: 1920, height: 1000 }, 100],
+      [{ width: 3440, height: 1380 }, 100],
+      [{ width: 3440, height: 500 }, 62.5],
+      [{ width: 1100, height: 450 }, 56.25],
+    ] as const) {
       const layout = layoutAviary(mockAviary, size);
       const rail = toPixels({ x: 0, y: layout.fence.y }, layout, size);
       const foot = toPixels({ x: 0, y: layout.height }, layout, size);
 
-      expect(foot.y - rail.y).toBeCloseTo(100, 0);
+      expect(foot.y - rail.y).toBeCloseTo(pixels, 0);
     }
   });
 
@@ -404,12 +426,11 @@ describe("the aviary's layout", () => {
   it("maps scene units onto the window, the scene centred when the aspect is bounded", () => {
     const wide = { width: 3440, height: 500 };
     const layout = layoutAviary(mockAviary, wide);
-    const k = 500 / 600;
+    const k = 500 / 480;
+    const corner = toPixels({ x: 0, y: 0 }, layout, wide);
 
-    expect(toPixels({ x: 0, y: 0 }, layout, wide)).toEqual({
-      x: (3440 - 2000 * k) / 2,
-      y: 0,
-    });
+    expect(corner.x).toBeCloseTo((3440 - 2000 * k) / 2);
+    expect(corner.y).toBeCloseTo(0);
   });
 
   it("maps a narrowed scene edge to edge across its window", () => {

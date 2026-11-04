@@ -60,9 +60,9 @@ its scene, 2000 units across, scales with the window, past a pixel a
 unit on the ultrawide. Below 1800px a unit keeps 0.9px and the scene
 narrows instead: the names, the wires' names and the tallies hold their
 size, and the birds bunch by the crowding rules, closer together and a
-crowded wire over more rows. The tab row holds the same floor. The floor
-holds by width only: the scene keeps at least 600 units of height, so
-an aviary under 540px tall still shrinks.
+crowded wire over more rows. The tab row holds the same floor. The scene
+keeps at least 480 units of height, so the floor holds down to 432px
+tall and a shorter aviary shrinks.
 
 Perch deals in three tiers above the project itself, each answering a
 share of the glance questions (which thing needs me first; is anything

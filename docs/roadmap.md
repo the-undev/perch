@@ -42,15 +42,6 @@ pans, from the open bird's place to the chosen one's, which the strip's
 layout already gives. A bird on another tab, whose strip replaces the
 one drawn, needs its own answer.
 
-## Short windows
-
-The aviary holds its 0.9px floor by the window's width only. Its scene
-keeps at least 600 units of height, for a bubble above the top wire, the
-wires and the fence's distance from the bottom, so an aviary under 540px
-tall still shrinks below the floor. Holding the floor there needs a
-smaller vertical budget first: less room above the top wire, rows
-closer, or the fence nearer the wires.
-
 ## Session restore beside autostart
 
 Plasma's session restore may relaunch perch at login as well as the

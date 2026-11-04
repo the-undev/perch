@@ -199,13 +199,6 @@ What `design/perch.html` draws that the composed views do not yet:
   its tail no longer meets the beak. Opening it beside or below the bird
   is undesigned.
 
-## Ledger summary line
-
-A quiet sentence opening the ledger when nothing waits ("the working
-tree is clean and everything is pushed"). It needs a view model field
-first, since deriving it in the renderer would mean matching ledger
-labels.
-
 ## Relative images on the key-file paper
 
 Remote images render, since the window's policy allows `https:`. A

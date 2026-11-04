@@ -36,6 +36,7 @@ describe("the ledger", () => {
   it("renders clean zeros as a green none and counts in their severity's tone", () => {
     const { container } = render(
       <Ledger
+        quiet={null}
         entries={mockBird("undev/prism").detail.ledger}
         now={now}
         landing={null}
@@ -54,6 +55,7 @@ describe("the ledger", () => {
     const gramophone = rows(
       render(
         <Ledger
+          quiet={null}
           entries={mockBird("undev/gramophone").detail.ledger}
           now={now}
           landing={null}
@@ -64,6 +66,7 @@ describe("the ledger", () => {
     const prism = rows(
       render(
         <Ledger
+          quiet={null}
           entries={mockBird("undev/prism").detail.ledger}
           now={now}
           landing={null}
@@ -89,7 +92,7 @@ describe("the ledger", () => {
       { kind: "time", label: "last commit", at: "2026-10-21T03:00:00.000Z" },
     ];
     const { container } = render(
-      <Ledger entries={entries} now={now} landing={null} />,
+      <Ledger quiet={null} entries={entries} now={now} landing={null} />,
     );
 
     expect(
@@ -98,6 +101,28 @@ describe("the ledger", () => {
         .getAttribute("href"),
     ).toBe("https://example.test/run");
     expect(rows(container)[1]).toEqual(["last commit", "30 hours ago", "none"]);
+  });
+
+  it("opens with the quiet sentence when given one, and without it when null", () => {
+    const spool = mockBird("undev/spool").detail;
+    const quiet = render(
+      <Ledger
+        quiet={spool.quiet}
+        entries={spool.ledger}
+        now={now}
+        landing={null}
+      />,
+    ).container.querySelector('[data-part="ledger"]');
+
+    expect(quiet?.firstElementChild?.getAttribute("data-part")).toBe("quiet");
+    expect(quiet?.firstElementChild?.textContent).toBe(
+      "The working tree is clean and everything is pushed.",
+    );
+    cleanup();
+    const { container } = render(
+      <Ledger quiet={null} entries={spool.ledger} now={now} landing={null} />,
+    );
+    expect(container.querySelector('[data-part="quiet"]')).toBeNull();
   });
 });
 
@@ -119,6 +144,7 @@ describe("the ledger's workings", () => {
   it("names each forge's newest run under the CI row, toned and linked to the run", () => {
     const { container } = render(
       <Ledger
+        quiet={null}
         entries={mockBird("dev/perch").detail.ledger}
         now={now}
         landing={null}
@@ -145,6 +171,7 @@ describe("the ledger's workings", () => {
   it("says in amber which part of a forge couldn't be read, beside the forge that was", () => {
     const { container } = render(
       <Ledger
+        quiet={null}
         entries={mockBird("undev/prism").detail.ledger}
         now={now}
         landing={null}
@@ -167,6 +194,7 @@ describe("the ledger's workings", () => {
   it("spells out open items per roadmap file and unsafe work by its oldest", () => {
     const { container } = render(
       <Ledger
+        quiet={null}
         entries={mockBird("obsidian/Hothouse").detail.ledger}
         now={now}
         landing={null}
@@ -185,7 +213,12 @@ describe("the ledger's workings", () => {
   it("marks with a dot each row holding one of the bubble's chips, and only those", () => {
     const perch = mockBird("dev/perch");
     const { container } = render(
-      <Ledger entries={perch.detail.ledger} now={now} landing={null} />,
+      <Ledger
+        quiet={null}
+        entries={perch.detail.ledger}
+        now={now}
+        landing={null}
+      />,
     );
     const marked = [...container.querySelectorAll("[data-chip]")];
 
@@ -205,7 +238,12 @@ describe("a chip's landing", () => {
   it("marks the row holding the pressed chip's working, only that row, and afresh on each press, its working lines lit with the mark", () => {
     const entries = mockBird("dev/perch").detail.ledger;
     const { container, rerender } = render(
-      <Ledger entries={entries} now={now} landing={{ chip: "ci", press: 1 }} />,
+      <Ledger
+        quiet={null}
+        entries={entries}
+        now={now}
+        landing={{ chip: "ci", press: 1 }}
+      />,
     );
     const first = container.querySelector('[data-part="landing"]');
     /** The rows whose working lines are lit, by the chip each holds. */
@@ -228,7 +266,12 @@ describe("a chip's landing", () => {
     ).toBeGreaterThan(1);
 
     rerender(
-      <Ledger entries={entries} now={now} landing={{ chip: "ci", press: 2 }} />,
+      <Ledger
+        quiet={null}
+        entries={entries}
+        now={now}
+        landing={{ chip: "ci", press: 2 }}
+      />,
     );
     const again = container.querySelector('[data-part="landing"]');
     expect(again).not.toBeNull();
@@ -241,6 +284,7 @@ describe("a chip's landing", () => {
 
     rerender(
       <Ledger
+        quiet={null}
         entries={entries}
         now={now}
         landing={{ chip: "open-items", press: 3 }}
@@ -253,7 +297,9 @@ describe("a chip's landing", () => {
     ).toBe("open-items");
     expect(lit()).toEqual(["open-items"]);
 
-    rerender(<Ledger entries={entries} now={now} landing={null} />);
+    rerender(
+      <Ledger quiet={null} entries={entries} now={now} landing={null} />,
+    );
     expect(container.querySelector('[data-part="landing"]')).toBeNull();
     expect(lit()).toEqual([]);
   });

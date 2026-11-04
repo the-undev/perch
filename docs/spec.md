@@ -146,6 +146,10 @@ The slip shows for adopted and fence birds alike and goes the scan after
 a clone is found. While it shows and config holds at least one launch
 action, the meta line says "no local clone" in the faint voice where
 the actions would sit.
+A readable clone with nothing uncommitted or unpushed and no row in
+amber or red opens its ledger with one faint sentence, "The working
+tree is clean and everything is pushed.", or "The working tree is
+clean; no remote holds a copy." for one disk only.
 Each chip's number sits on one ledger row, marked with a dot, its
 working spelled out beneath in mono, source by source: each forge's
 newest CI run with its state, branch, name, link and age, under a CI

@@ -32,6 +32,11 @@ const specimens: LedgerSpecimen[] = [
     rule: "Perch: nothing unpushed and no bugs read a quiet green none; three uncommitted changes younger than a day take no tone. CI reads pending, the worse of GitHub's success and Forgejo's pending, and takes no tone.",
   },
   {
+    id: "undev/spool",
+    label: "Nothing waits",
+    rule: "Spool: a clean, pushed clone with nothing amber or red opens its ledger with one faint sentence.",
+  },
+  {
     id: "undev/prism",
     label: "An amber count, a failing state",
     rule: "Prism: four uncommitted changes past a day; CI failing on Forgejo and passing on GitHub, each linked to its run.",
@@ -49,7 +54,7 @@ const specimens: LedgerSpecimen[] = [
   {
     id: "dev/odin/hello",
     label: "One disk only",
-    rule: "hello: a clone with no remote shows the remote row instead of unpushed commits.",
+    rule: "hello: a clone with no remote shows the remote row instead of unpushed commits, and its opening sentence says no remote holds a copy.",
   },
   {
     id: "github:finch/obsidian-tidy",
@@ -111,6 +116,7 @@ function LandingDemo() {
         />
       </div>
       <Ledger
+        quiet={perch.detail.quiet}
         entries={perch.detail.ledger}
         now={scanMoment}
         landing={landing}
@@ -135,6 +141,7 @@ export function LedgerPage() {
           >
             <Ground>
               <Ledger
+                quiet={mockBird(specimen.id).detail.quiet}
                 entries={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}
                 landing={null}
@@ -147,7 +154,12 @@ export function LedgerPage() {
           rule="Hand-built: a session three weeks back reads in weeks."
         >
           <Ground>
-            <Ledger entries={handBuilt} now={scanMoment} landing={null} />
+            <Ledger
+              quiet={null}
+              entries={handBuilt}
+              now={scanMoment}
+              landing={null}
+            />
           </Ground>
         </Specimen>
       </Section>
@@ -165,6 +177,7 @@ export function LedgerPage() {
           >
             <Ground>
               <Ledger
+                quiet={mockBird(specimen.id).detail.quiet}
                 entries={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}
                 landing={null}
@@ -190,6 +203,11 @@ export function LedgerPage() {
       <Usage
         component="<Ledger>"
         props={[
+          {
+            name: "quiet",
+            type: "string | null",
+            what: "bird.detail.quiet: the sentence that opens the ledger when nothing waits; null when something does.",
+          },
           {
             name: "entries",
             type: "LedgerEntry[]",

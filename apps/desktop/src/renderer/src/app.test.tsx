@@ -951,6 +951,50 @@ describe("the window", () => {
       await waitFor(async () => expect(await interval()).toBe("20"));
     });
 
+    it("saves the Window page's switches and shows the entry the main process wrote", async () => {
+      const form = mockSettingsForm();
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/settings",
+        undefined,
+        undefined,
+        form,
+      );
+      fireEvent.click(await screen.findByRole("button", { name: "Window" }));
+      const windowPage = within(screen.getByRole("region", { name: "Window" }));
+
+      fireEvent.click(
+        windowPage.getByRole("switch", { name: "Start at login" }),
+      );
+      fireEvent.click(
+        windowPage.getByRole("switch", { name: "Stay in the tray" }),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      expect(fake.settingsSaves).toEqual([
+        { ...form.values, window: { tray: false, login: true } },
+      ]);
+      fake.setSettings(
+        settingsFormFor({ ...mockConfig, window: { tray: false } }, mockHome, {
+          ...mockLogin,
+          on: true,
+          target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
+        }),
+      );
+      act(() => fake.push(idle(mockAviary)));
+
+      expect(
+        await windowPage.findByText(
+          "~/.config/autostart/perch.desktop → ~/Applications/perch-0.2.0-x86_64.AppImage",
+        ),
+      ).toBeDefined();
+      expect(
+        windowPage.getByText(
+          "perch starts when you log in, with the window open.",
+        ),
+      ).toBeDefined();
+    });
+
     it("gives open papers the wires the file now has", async () => {
       let config: Config = mockConfig;
       const formFor = (birdId: string) => {

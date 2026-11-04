@@ -1,8 +1,9 @@
 import { defaultConfig } from "@perch/core/config-default.ts";
-import { mockAviary, mockLogin } from "@perch/core/mock.ts";
+import { mockAviary, mockConfig, mockLogin } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   settingsFormFor,
+  sourceRunHeld,
 } from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
 import {
@@ -710,6 +711,114 @@ describe("the Launching page", () => {
   });
 });
 
+describe("the Window page", () => {
+  /** The mock's settings with an autostart entry running an older image. */
+  const loginOn = () =>
+    settingsFormFor(mockConfig, mockHome, {
+      ...mockLogin,
+      on: true,
+      target: `${mockHome}/Applications/perch-0.1.0-x86_64.AppImage`,
+    });
+
+  /** The mock's settings run from source, no entry written. */
+  const fromSource = () =>
+    settingsFormFor(mockConfig, mockHome, {
+      ...mockLogin,
+      held: sourceRunHeld,
+    });
+
+  const page = () => group("Window");
+  const toggle = (name: string) =>
+    page().getByRole("switch", { name }) as HTMLButtonElement;
+
+  it("says what each row's state does, the login row following the tray switch", () => {
+    editor("window");
+
+    expect(toggle("Stay in the tray").getAttribute("aria-checked")).toBe(
+      "true",
+    );
+    expect(toggle("Start at login").getAttribute("aria-checked")).toBe("false");
+    expect(
+      page().getByText(
+        "Closing the window hides it. The tray icon shows it, rescans and quits; clicking the icon toggles the window.",
+      ),
+    ).toBeDefined();
+    expect(
+      page().getByText(
+        "Off. Turned on, perch starts when you log in, hidden in the tray.",
+      ),
+    ).toBeDefined();
+
+    fireEvent.click(toggle("Stay in the tray"));
+
+    expect(
+      page().getByText("Off. No tray icon; closing the window quits perch."),
+    ).toBeDefined();
+    expect(
+      page().getByText(
+        "Off. Turned on, perch starts when you log in, with the window open.",
+      ),
+    ).toBeDefined();
+  });
+
+  it("names the entry and the image it runs beneath a login row that is on", () => {
+    editor("window", loginOn());
+
+    expect(
+      page().getByText("perch starts when you log in, hidden in the tray."),
+    ).toBeDefined();
+    expect(
+      page().getByText(
+        "~/.config/autostart/perch.desktop → ~/Applications/perch-0.1.0-x86_64.AppImage",
+      ),
+    ).toBeDefined();
+
+    fireEvent.click(toggle("Stay in the tray"));
+
+    expect(
+      page().getByText("perch starts when you log in, with the window open."),
+    ).toBeDefined();
+    fireEvent.click(toggle("Start at login"));
+    expect(page().queryByText(/→/)).toBeNull();
+  });
+
+  it("marks the form edited when a switch is toggled, and saves both values", () => {
+    const { onSave, form } = editor("window");
+
+    expect(saveButton().disabled).toBe(true);
+    fireEvent.click(toggle("Start at login"));
+    expect(screen.getByText("Unsaved changes")).toBeDefined();
+    fireEvent.click(toggle("Stay in the tray"));
+    fireEvent.click(saveButton());
+
+    expect(onSave).toHaveBeenCalledExactlyOnceWith({
+      ...form.values,
+      window: { tray: false, login: true },
+    });
+  });
+
+  it("holds the login switch from source, saying why in amber, the tray switch still editable", () => {
+    editor("window", fromSource());
+    const login = toggle("Start at login");
+
+    expect(login.getAttribute("aria-disabled")).toBe("true");
+    expect(
+      page().getByText(
+        "Held: perch is running from source, so there is no AppImage to point the login entry at.",
+      ).className,
+    ).toContain("text-amber");
+    fireEvent.click(login);
+    expect(login.getAttribute("aria-checked")).toBe("false");
+    expect(saveButton().disabled).toBe(true);
+
+    fireEvent.click(toggle("Stay in the tray"));
+    expect(toggle("Stay in the tray").getAttribute("aria-checked")).toBe(
+      "false",
+    );
+    expect(saveButton().disabled).toBe(false);
+  });
+});
+
 describe("the settings page", () => {
   it("shows the main process's problems, and rides home on Escape and from the brand", () => {
     const onHome = vi.fn();
@@ -778,6 +887,7 @@ describe("the settings page", () => {
       "Judgement",
       "Scanning",
       "Launching",
+      "Window",
     ]);
     expect(
       rail

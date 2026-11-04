@@ -1,5 +1,5 @@
 // The settings page's pages, one per part of config, and the editor that holds them: sources,
-// joining up, wires, judgement, scanning and launching.
+// joining up, wires, judgement, scanning, launching and the window.
 // Each page is presentational, its value in and every change out; the editor holds the draft
 // across them and shows the page the rail has open.
 
@@ -29,9 +29,12 @@ import {
 } from "@perch/core/launch-kinds.ts";
 import {
   defaultName,
+  loginEntryLine,
+  loginSentence,
   type SettingsForm,
   type SettingsValues,
   settingsProblems,
+  traySentence,
   type WireRow,
   wireWarnings,
 } from "@perch/core/settings-form.ts";
@@ -53,6 +56,7 @@ import {
   quietClass,
   SettingsPageHead,
   StringList,
+  Switch,
   secondaryClass,
   ThresholdField,
 } from "./form-parts.tsx";
@@ -66,7 +70,8 @@ export type SettingsPageName =
   | "wires"
   | "judgement"
   | "scanning"
-  | "launching";
+  | "launching"
+  | "window";
 
 /** The rail's pages in order; Joining up sits under Sources, since joins act on what it finds. */
 export const settingsPages: readonly {
@@ -81,6 +86,7 @@ export const settingsPages: readonly {
   { page: "judgement", label: "Judgement", sub: false },
   { page: "scanning", label: "Scanning", sub: false },
   { page: "launching", label: "Launching", sub: false },
+  { page: "window", label: "Window", sub: false },
 ];
 
 /** One page of config: its title, the table it writes, a lead beneath the title, and its rows. */
@@ -925,6 +931,101 @@ export function PresencesGroup({
   );
 }
 
+/** One setting as a switch: its name, the sentence saying what its state does, lines beneath, and the switch. */
+function SwitchRow({
+  label,
+  sentence,
+  entry,
+  held,
+  checked,
+  onChange,
+}: {
+  label: string;
+  sentence: string;
+  /** A path in mono beneath the sentence, or null. */
+  entry: string | null;
+  /** Why the switch cannot change, in amber beneath, or null when it can. */
+  held: string | null;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const sentenceId = useId();
+  const heldId = useId();
+  return (
+    <div className="flex items-center gap-6.5 border-edge border-t px-0.5 py-3.5 first:border-t-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="font-body font-semibold text-[14px] text-ink">
+          {label}
+        </span>
+        <p
+          id={sentenceId}
+          className="m-0 max-w-[52ch] text-[13px] text-ink-muted leading-normal"
+        >
+          {sentence}
+        </p>
+        {entry !== null && (
+          <p className="m-0 break-all font-mono text-[12px] text-ink-faint">
+            {entry}
+          </p>
+        )}
+        {held !== null && (
+          <p
+            id={heldId}
+            className="m-0 max-w-[52ch] text-[13px] text-amber leading-normal"
+          >
+            Held: {held}
+          </p>
+        )}
+      </div>
+      <Switch
+        label={label}
+        checked={checked}
+        held={held !== null}
+        describedBy={held === null ? sentenceId : `${sentenceId} ${heldId}`}
+        onChange={onChange}
+      />
+    </div>
+  );
+}
+
+/**
+ * The Window page: whether the window stays in the tray, from config, and whether the app starts
+ * at login, from its autostart entry. Each row's sentence follows both switches.
+ */
+export function WindowGroup({
+  value,
+  login,
+  onChange,
+}: GroupProps<SettingsValues["window"]> & {
+  /** The login row's hold, and the entry's path and target. */
+  login: SettingsForm["login"];
+}) {
+  return (
+    <SettingsGroup
+      title="Window"
+      table="[window]"
+      lead="How the window lives on this machine."
+    >
+      <SwitchRow
+        label="Stay in the tray"
+        sentence={traySentence(value.tray)}
+        entry={null}
+        held={null}
+        checked={value.tray}
+        onChange={(tray) => onChange({ ...value, tray })}
+      />
+      <SwitchRow
+        label="Start at login"
+        sentence={loginSentence(value.login, value.tray)}
+        entry={loginEntryLine(login, value.login)}
+        held={login.held}
+        checked={value.login}
+        onChange={(on) => onChange({ ...value, login: on })}
+      />
+    </SettingsGroup>
+  );
+}
+
 /** Two values are the same when they serialise alike: they are plain data. */
 function same(a: SettingsValues, b: SettingsValues): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -1027,6 +1128,13 @@ export function SettingsEditor({
         <LaunchGroup
           value={draft.launch}
           onChange={(launch) => update({ launch })}
+        />
+      )}
+      {page === "window" && (
+        <WindowGroup
+          value={draft.window}
+          login={form.login}
+          onChange={(next) => update({ window: next })}
         />
       )}
       <div className="sticky bottom-0 -mx-4 border-edge border-t bg-rail px-4 py-3 @min-[900px]:-mx-6.5 @min-[900px]:px-6.5">

@@ -6,7 +6,12 @@ import {
   entryFormFor,
   withEntry,
 } from "@perch/core/entry-form.ts";
-import { mockAviary, mockConfig, mockSnapshot } from "@perch/core/mock.ts";
+import {
+  mockAviary,
+  mockConfig,
+  mockLogin,
+  mockSnapshot,
+} from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   settingsFormFor,
@@ -133,7 +138,7 @@ describe("the window", () => {
       "/",
       undefined,
       undefined,
-      settingsFormFor(defaultConfig(), mockHome),
+      settingsFormFor(defaultConfig(), mockHome, mockLogin),
     );
 
     fireEvent.click(
@@ -938,6 +943,7 @@ describe("the window", () => {
         settingsFormFor(
           { ...mockConfig, scan: { ...mockConfig.scan, intervalMinutes: 20 } },
           mockHome,
+          mockLogin,
         ),
       );
       act(() => fake.push(idle(mockAviary)));

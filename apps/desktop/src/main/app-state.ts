@@ -12,6 +12,7 @@ import {
 } from "@perch/core/entry-form.ts";
 import { errorMessage } from "@perch/core/fs.ts";
 import {
+  type LoginEntry,
   type SettingsForm,
   type SettingsValues,
   settingsFormFor,
@@ -99,6 +100,14 @@ export interface AppState {
    */
   saveSettings(values: SettingsValues): Promise<void>;
 }
+
+/** The login row until the autostart entry is read: off, its toggle held. */
+const loginNotRead: LoginEntry = {
+  on: false,
+  held: "the autostart entry is not read yet.",
+  path: "",
+  target: null,
+};
 
 /** Two launch actions are the same when they serialise alike: they are plain data, commands and all. */
 function sameAction(a: LaunchAction, b: LaunchAction): boolean {
@@ -292,7 +301,7 @@ export function createAppState(deps: AppStateDeps): AppState {
     settingsForm() {
       const config = deps.config.current().loaded?.config;
       if (config === undefined) return null;
-      return settingsFormFor(config, deps.home);
+      return settingsFormFor(config, deps.home, loginNotRead);
     },
     saveSettings: (values) =>
       edit((config) => withSettings(config, values, deps.home)),

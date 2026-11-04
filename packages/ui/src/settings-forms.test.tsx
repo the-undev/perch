@@ -1,5 +1,5 @@
 import { defaultConfig } from "@perch/core/config-default.ts";
-import { mockAviary } from "@perch/core/mock.ts";
+import { mockAviary, mockLogin } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   settingsFormFor,
@@ -644,7 +644,7 @@ describe("the Launching page", () => {
   });
 
   it("starts with the shelf alone, offers zellij until one is added, and holds a custom card until it is written", () => {
-    editor("launching", settingsFormFor(defaultConfig(), mockHome));
+    editor("launching", settingsFormFor(defaultConfig(), mockHome, mockLogin));
 
     expect(actionCards()).toEqual([]);
     fireEvent.click(shelfAdd("zellij tab"));

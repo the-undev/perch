@@ -18,11 +18,16 @@ import {
 } from "../src/launch-form.ts";
 import { launchKinds } from "../src/launch-kinds.ts";
 import { listLine, parseListLine } from "../src/list-line.ts";
-import { mockConfig } from "../src/mock.ts";
+import { mockConfig, mockLogin } from "../src/mock.ts";
 import {
+  type LoginEntry,
+  loginEntryLine,
+  loginSentence,
   type SettingsValues,
   settingsFormFor,
   settingsProblems,
+  sourceRunHeld,
+  traySentence,
   wireWarnings,
   withSettings,
 } from "../src/settings-form.ts";
@@ -39,7 +44,7 @@ async function exampleText(): Promise<string> {
   );
 }
 
-const mockValues = () => settingsFormFor(mockConfig, home).values;
+const mockValues = () => settingsFormFor(mockConfig, home, mockLogin).values;
 
 /** The mock's values with a change; the change replaces whole groups. */
 const changed = (change: Partial<SettingsValues>): SettingsValues => ({
@@ -69,7 +74,7 @@ describe("the settings form", () => {
     const example = parseConfig(await exampleText(), home);
 
     for (const config of [mockConfig, starter, example]) {
-      const { values } = settingsFormFor(config, home);
+      const { values } = settingsFormFor(config, home, mockLogin);
       expect(settingsProblems(values)).toEqual([]);
       expect(withSettings(config, values, home)).toEqual(config);
     }
@@ -79,7 +84,11 @@ describe("the settings form", () => {
     const save = (text: string) => {
       const config = parseConfig(text, home);
       return writeConfig(
-        withSettings(config, settingsFormFor(config, home).values, home),
+        withSettings(
+          config,
+          settingsFormFor(config, home, mockLogin).values,
+          home,
+        ),
         home,
       );
     };
@@ -106,9 +115,8 @@ describe("the settings form", () => {
     const written = writeConfig(next, home);
     expect(written).toContain('"~/work" = "work"');
     expect(
-      settingsFormFor(parseConfig(written, home), home).values.launch.actions[
-        index
-      ],
+      settingsFormFor(parseConfig(written, home), home, mockLogin).values.launch
+        .actions[index],
     ).toMatchObject({
       sessions: [
         { root: "~/undev", session: "undev" },
@@ -127,6 +135,92 @@ describe("the settings form", () => {
 
     expect(next.scan.finalisedCommits).toBe(4);
     expect(next.sources).toEqual(mockConfig.sources);
+  });
+});
+
+describe("the Window page", () => {
+  /** An autostart entry that exists and runs an image under the home directory. */
+  const loginOn: LoginEntry = {
+    on: true,
+    held: null,
+    path: `${home}/.config/autostart/perch.desktop`,
+    target: `${home}/Applications/perch-0.2.0-x86_64.AppImage`,
+  };
+
+  it("reads the tray from config and the login toggle from the entry, paths shown with ~", () => {
+    const off = settingsFormFor(mockConfig, home, mockLogin);
+    const on = settingsFormFor(
+      { ...mockConfig, window: { tray: false } },
+      home,
+      { ...loginOn, held: sourceRunHeld },
+    );
+
+    expect(off.values.window).toEqual({ tray: true, login: false });
+    expect(off.login).toEqual({
+      held: null,
+      path: "~/.config/autostart/perch.desktop",
+      target: null,
+    });
+    expect(on.values.window).toEqual({ tray: false, login: true });
+    expect(on.login).toEqual({
+      held: sourceRunHeld,
+      path: "~/.config/autostart/perch.desktop",
+      target: "~/Applications/perch-0.2.0-x86_64.AppImage",
+    });
+  });
+
+  it("saves the tray to config, written only when off, and leaves the login toggle to the caller", () => {
+    const values = mockValues();
+
+    const off = withSettings(
+      mockConfig,
+      { ...values, window: { tray: false, login: true } },
+      home,
+    );
+    const on = withSettings(
+      mockConfig,
+      { ...values, window: { tray: true, login: true } },
+      home,
+    );
+
+    expect(off.window).toEqual({ tray: false });
+    expect(parse(writeConfig(off, home)).window).toEqual({ tray: false });
+    expect(on).toEqual(mockConfig);
+  });
+
+  it("says what the tray does, on and off", () => {
+    expect(traySentence(true)).toBe(
+      "Closing the window hides it. The tray icon shows it, rescans and quits; clicking the icon toggles the window.",
+    );
+    expect(traySentence(false)).toBe(
+      "Off. No tray icon; closing the window quits perch.",
+    );
+  });
+
+  it("says what starting at login does, following the tray beside it", () => {
+    expect(loginSentence(false, true)).toBe(
+      "Off. Turned on, perch starts when you log in, hidden in the tray.",
+    );
+    expect(loginSentence(true, true)).toBe(
+      "perch starts when you log in, hidden in the tray.",
+    );
+    expect(loginSentence(true, false)).toBe(
+      "perch starts when you log in, with the window open.",
+    );
+    expect(loginSentence(false, false)).toBe(
+      "Off. Turned on, perch starts when you log in, with the window open.",
+    );
+  });
+
+  it("names the entry and the program it runs only while on and the entry exists", () => {
+    const on = settingsFormFor(mockConfig, home, loginOn).login;
+    const none = settingsFormFor(mockConfig, home, mockLogin).login;
+
+    expect(loginEntryLine(on, true)).toBe(
+      "~/.config/autostart/perch.desktop → ~/Applications/perch-0.2.0-x86_64.AppImage",
+    );
+    expect(loginEntryLine(on, false)).toBeNull();
+    expect(loginEntryLine(none, true)).toBeNull();
   });
 });
 
@@ -221,7 +315,7 @@ describe("launch actions on the settings page", () => {
     const saved = withSettings(
       defaultConfig(),
       {
-        ...settingsFormFor(defaultConfig(), home).values,
+        ...settingsFormFor(defaultConfig(), home, mockLogin).values,
         launch: { actions: actions.slice(0, -1) },
       },
       home,
@@ -562,7 +656,7 @@ const wiresOf = (
   rows: SettingsValues["wires"]["rows"],
   defaultRow: number,
 ): SettingsValues => ({
-  ...settingsFormFor(config, home).values,
+  ...settingsFormFor(config, home, mockLogin).values,
   wires: { rows, defaultRow },
 });
 
@@ -589,13 +683,13 @@ function saved(config: Config, values: SettingsValues): Config {
 
 describe("renaming, removing and adding wires", () => {
   it("names the entries on each wire", () => {
-    const { named } = settingsFormFor(mockConfig, home);
+    const { named } = settingsFormFor(mockConfig, home, mockLogin);
 
     expect(named).toEqual({ wires: { "Machine & Home": homeEntries } });
   });
 
   it("starts each row as the config wire it is", () => {
-    expect(settingsFormFor(mockConfig, home).values.wires).toEqual({
+    expect(settingsFormFor(mockConfig, home, mockLogin).values.wires).toEqual({
       rows: [
         { from: "Machine & Home", name: "Machine & Home" },
         { from: "Projects", name: "Projects" },
@@ -615,7 +709,10 @@ describe("renaming, removing and adding wires", () => {
     );
 
     expect(
-      wireWarnings(settingsFormFor(mockConfig, home).named.wires, values.wires),
+      wireWarnings(
+        settingsFormFor(mockConfig, home, mockLogin).named.wires,
+        values.wires,
+      ),
     ).toEqual([]);
     const next = saved(mockConfig, values);
 
@@ -673,7 +770,7 @@ describe("renaming, removing and adding wires", () => {
   });
 
   it("moves a removed wire's entries to the default, warning first", () => {
-    const form = settingsFormFor(mockConfig, home);
+    const form = settingsFormFor(mockConfig, home, mockLogin);
     const values = wiresOf(
       mockConfig,
       [{ from: "Projects", name: "Projects" }],
@@ -704,7 +801,7 @@ describe("renaming, removing and adding wires", () => {
       1,
     );
     const withSomeday = saved(mockConfig, values);
-    const form = settingsFormFor(withSomeday, home);
+    const form = settingsFormFor(withSomeday, home, mockLogin);
     const removed = {
       ...form.values,
       wires: { ...form.values.wires, rows: form.values.wires.rows.slice(0, 2) },

@@ -106,7 +106,14 @@ export interface Config {
     /** The launch actions in the order a bird offers them; none is offered until one is added. */
     actions: LaunchActionConfig[];
   };
+  window: {
+    /** The window lives in the tray: closing hides it, and the tray icon shows it. */
+    tray: boolean;
+  };
 }
+
+/** The window stays in the tray unless config says otherwise. */
+export const defaultTray = true;
 
 /**
  * An action of a kind that runs one command detached, without a shell, its placeholders filled in:
@@ -223,6 +230,19 @@ function optionalString(
 ): string | null {
   if (parent[key] === undefined) return null;
   return string(parent, key, where);
+}
+
+function optionalBoolean(
+  parent: Table,
+  key: string,
+  where: string,
+  fallback: boolean,
+): boolean {
+  const value = parent[key];
+  if (value === undefined) return fallback;
+  if (typeof value !== "boolean")
+    throw new Error(`config: ${where}${key} must be true or false`);
+  return value;
 }
 
 function positiveInteger(value: unknown, name: string): number {
@@ -618,6 +638,7 @@ const topLevelKeys = [
   "items",
   "scan",
   "launch",
+  "window",
 ] as const;
 
 /** Parses and validates config TOML, expanding a leading ~ in paths against the home directory. */
@@ -640,6 +661,8 @@ export function parseConfig(text: string, home: string): Config {
   const items = optionalTable(document, "items", "");
   const scan = table(document, "scan", "");
   onlyKeys(scan, ["interval_minutes", "finalised_commits"], "scan.");
+  const windowTable = optionalTable(document, "window", "");
+  onlyKeys(windowTable, ["tray"], "window.");
 
   return {
     wires: { names: wireNames, default: defaultWire },
@@ -664,6 +687,9 @@ export function parseConfig(text: string, home: string): Config {
       ),
     },
     launch: parseLaunch(document, home),
+    window: {
+      tray: optionalBoolean(windowTable, "tray", "window.", defaultTray),
+    },
   };
 }
 

@@ -5,6 +5,7 @@ import { stringify } from "smol-toml";
 import {
   type Config,
   collapseHome,
+  defaultTray,
   type GithubSourceConfig,
   type ItemEntry,
   type LaunchActionConfig,
@@ -139,7 +140,7 @@ function actionTable(
  * item entries and zellij session roots are sorted by key and every list, sources and launch
  * actions among them, keeps its order. Paths at or under the home directory are written with a
  * leading ~, empty optional tables, source kinds and launch actions are left out, and so is a
- * launch action's field that holds its kind's default.
+ * launch action's field that holds its kind's default and a window setting that holds its own.
  */
 export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);
@@ -161,6 +162,9 @@ export function writeConfig(config: Config, home: string): string {
               actionTable(action, path),
             ),
           },
+    window: unlessEmpty(
+      config.window.tray === defaultTray ? {} : { tray: config.window.tray },
+    ),
     items: unlessEmpty(
       Object.fromEntries(
         Object.entries(sortedByKey(config.items)).map(([key, entry]) => [

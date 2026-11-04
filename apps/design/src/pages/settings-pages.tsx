@@ -2,7 +2,7 @@
 // would say of it, and the whole page as the app shows it, rail and all.
 
 import { defaultConfig } from "@perch/core/config-default.ts";
-import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
+import { mockAviary, mockLogin, mockSnapshot } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   type SettingsValues,
@@ -340,8 +340,8 @@ export function SettingsGroupsPage() {
           does beneath each specimen.
         </p>
         <p>
-          The form comes from <Code>settingsFormFor(config, home)</Code> in{" "}
-          <Code>@perch/core/settings-form.ts</Code>, which the main process
+          The form comes from <Code>settingsFormFor(config, home, login)</Code>{" "}
+          in <Code>@perch/core/settings-form.ts</Code>, which the main process
           answers <Code>settingsForm()</Code> with; saving goes back as{" "}
           <Code>saveSettings(values)</Code>, written by{" "}
           <Code>withSettings(config, values, home)</Code>.
@@ -370,7 +370,7 @@ const startOptions: { value: Start; label: string }[] = [
 
 const startForms: Record<Start, SettingsForm> = {
   mock: mockForm,
-  starter: settingsFormFor(defaultConfig(), mockHome),
+  starter: settingsFormFor(defaultConfig(), mockHome, mockLogin),
 };
 
 const problemOptions: { value: Problems; label: string }[] = [

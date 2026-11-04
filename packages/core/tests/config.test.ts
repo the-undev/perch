@@ -111,6 +111,16 @@ describe("example config", () => {
       },
     ]);
     expect(config.sources.kuma).toEqual([]);
+    expect(config.window).toEqual({ tray: true });
+  });
+
+  it("parses its commented window table once uncommented", async () => {
+    const text = (await exampleText()).replace(
+      /^# (\[window\]|tray = )/gm,
+      "$1",
+    );
+
+    expect(parseConfig(text, home).window).toEqual({ tray: false });
   });
 
   it("parses its commented kuma source once uncommented", async () => {
@@ -365,6 +375,31 @@ describe("thresholds", () => {
 
     expect(() => parseConfig(text, home)).toThrow(
       "config: thresholds.stalled_amber_hours is not a config key",
+    );
+  });
+});
+
+describe("the window", () => {
+  it("stays in the tray without a [window] table, and leaves it when tray is false", async () => {
+    const absent = parseConfig(await fixtureConfigText(""), home);
+    const off = parseConfig(
+      await fixtureConfigText("[window]\ntray = false\n"),
+      home,
+    );
+
+    expect(absent.window).toEqual({ tray: true });
+    expect(off.window).toEqual({ tray: false });
+  });
+
+  it("names a key the [window] table may not hold, and wants tray true or false", async () => {
+    const stray = await fixtureConfigText("[window]\nhidden = true\n");
+    const word = await fixtureConfigText('[window]\ntray = "no"\n');
+
+    expect(() => parseConfig(stray, home)).toThrow(
+      "config: window.hidden is not a config key",
+    );
+    expect(() => parseConfig(word, home)).toThrow(
+      "config: window.tray must be true or false",
     );
   });
 });

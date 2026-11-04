@@ -10,6 +10,7 @@
 // numbered placeholder items, as many as each file's open counts.
 
 import type { Config, ItemEntry } from "./config.ts";
+import type { LoginEntry } from "./settings-form.ts";
 import type {
   CiRun,
   FinalisedCommit,
@@ -189,6 +190,15 @@ export const mockConfig: Config = {
       },
     ],
   },
+  window: { tray: true },
+};
+
+/** The mock machine's autostart entry: none yet, and the app running from its AppImage. */
+export const mockLogin: LoginEntry = {
+  on: false,
+  held: null,
+  path: `${home}/.config/autostart/perch.desktop`,
+  target: null,
 };
 
 // Snapshot builders: shape only, every value is written out per item below.

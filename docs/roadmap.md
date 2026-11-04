@@ -10,6 +10,13 @@ the composed scenes and the reference pages. The field guide's plates of
 the bird and the bubble, `design/anatomy.html`, are rebuilt on the real
 components, and then the `design/` board pages are retired.
 
+## Crowding at very narrow widths
+
+Below about 500px wide, nine birds share about 200 units of room, on a
+wire and in the detail strip alike. The whole-step row rule keeps rows
+apart but nothing widens the room; the fix is a minimum window width or
+a narrower bird at the floor.
+
 ## Reintroducing importance
 
 An importance tier per item would set the bird's size and its place

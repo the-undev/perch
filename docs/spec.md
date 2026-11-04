@@ -402,6 +402,11 @@ birds name it and that they move to the default. The default cannot be
 removed until another wire is picked. Save is held while a wire has no
 name or two wires share one.
 
+The Judgement page holds the two health windows. Each row has an amber
+and a red field with the unit after it, a line saying what the number
+counts and the defaults, and "the defaults" when both sit on them or a
+clear that puts them back.
+
 The Launching page holds one card per launch action, in the order birds
 offer them. A card's head wears the action's icon, its kind's name (VS
 Code, nvim, Folder, Obsidian, zellij tab or Custom command) and its

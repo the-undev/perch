@@ -73,22 +73,26 @@ export interface EntryForm {
   options: EntryOptions;
 }
 
-/** The two health windows, each an amber key and a red key, with the unit they count in. */
+/** The two health windows, each an amber key and a red key, with the unit they count in and a fragment saying what the number counts. */
 export const thresholdWindows: readonly {
   label: string;
   unit: "hours" | "days";
+  counts: string;
   amber: ThresholdKey;
   red: ThresholdKey;
 }[] = [
   {
     label: "Unsafe work",
     unit: "hours",
+    counts: "Hours since the oldest uncommitted change or unpushed commit",
     amber: "unsafe_amber_hours",
     red: "unsafe_red_hours",
   },
   {
     label: "Stalled flight",
     unit: "days",
+    counts:
+      "Days a non-default branch has sat without a commit, even with everything pushed",
     amber: "stalled_amber_days",
     red: "stalled_red_days",
   },

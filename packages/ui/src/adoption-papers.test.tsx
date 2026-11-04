@@ -166,6 +166,24 @@ describe("the adoption papers", () => {
     });
   });
 
+  it("say what each window counts, ending in where an empty field looks", () => {
+    papers("undev/spool");
+    openFold();
+
+    expect(
+      screen.getByText(
+        "Hours since the oldest uncommitted change or unpushed commit; empty follows the Judgement page.",
+      ),
+    ).toBeDefined();
+    expect(
+      screen.getByText(
+        "Days a non-default branch has sat without a commit, even with everything pushed; empty follows the Judgement page.",
+      ),
+    ).toBeDefined();
+    expect(screen.getAllByText("hours")).toHaveLength(2);
+    expect(screen.getAllByText("days")).toHaveLength(2);
+  });
+
   it("hold the signature while a threshold cannot be written, and say why", () => {
     const { onSign } = papers("undev/spool");
     openFold();

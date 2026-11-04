@@ -285,6 +285,7 @@ export function ThresholdField({
         placeholder={placeholder}
         onChange={onChange}
       />
+      {window.unit}
     </span>
   );
 }

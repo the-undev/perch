@@ -224,14 +224,6 @@ unauthenticated), and the account guessed from the owners in the URL
 paths. The seeded card is a suggestion the owner confirms and gives a
 key and token. Asked for at first setup.
 
-## The threshold fields
-
-A threshold row is a pair of bare number inputs labelled amber and red.
-The form never says what the number counts, its unit, or what crossing
-it looks like on the bird. The rows need a design round: the unit and
-the consequence beside the field, and the default shown as more than a
-placeholder.
-
 ## Picking paths and sessions from what the scan knows
 
 Key files, roadmaps and the zellij session are typed into bare text

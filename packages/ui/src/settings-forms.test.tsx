@@ -286,6 +286,54 @@ describe("the settings editor", () => {
     ]);
   });
 
+  it("puts the unit word beside each threshold field", () => {
+    editor("judgement");
+    const thresholds = group("Judgement");
+
+    expect(thresholds.getAllByText("hours")).toHaveLength(2);
+    expect(thresholds.getAllByText("days")).toHaveLength(2);
+  });
+
+  it("says what each window counts and what the defaults are", () => {
+    editor("judgement");
+    const thresholds = group("Judgement");
+
+    expect(
+      thresholds.getByText(
+        "Hours since the oldest uncommitted change or unpushed commit; the defaults are 24 and 72.",
+      ),
+    ).toBeDefined();
+    expect(
+      thresholds.getByText(
+        "Days a non-default branch has sat without a commit, even with everything pushed; the defaults are 7 and 30.",
+      ),
+    ).toBeDefined();
+  });
+
+  it("shows the defaults word at the defaults and a clear button once edited, clear restoring them", () => {
+    editor("judgement", settingsFormFor(defaultConfig(), mockHome, mockLogin));
+    const thresholds = group("Judgement");
+    const amber = () =>
+      thresholds.getByRole("spinbutton", {
+        name: "Unsafe work, amber after hours",
+      }) as HTMLInputElement;
+
+    expect(thresholds.getAllByText("the defaults")).toHaveLength(2);
+    expect(
+      thresholds.queryByRole("button", { name: "Clear Unsafe work" }),
+    ).toBeNull();
+
+    type(amber(), "12");
+
+    expect(thresholds.getAllByText("the defaults")).toHaveLength(1);
+    fireEvent.click(
+      thresholds.getByRole("button", { name: "Clear Unsafe work" }),
+    );
+
+    expect(amber().value).toBe("24");
+    expect(thresholds.getAllByText("the defaults")).toHaveLength(2);
+  });
+
   it("holds the global thresholds to amber before red, in whole numbers", () => {
     editor("judgement");
     const thresholds = group("Judgement");

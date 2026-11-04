@@ -268,6 +268,9 @@ function ThresholdPair({
       ) : (
         <span className="text-[12px] text-ink-faint">default</span>
       )}
+      <p className="m-0 basis-full max-w-[52ch] text-[12.5px] text-paper-quiet">
+        {window.counts}; empty follows the Judgement page.
+      </p>
     </div>
   );
 }
@@ -477,11 +480,7 @@ export function AdoptionPapers({
               </span>
             </p>
             {thresholdWindows.map((window) => (
-              <FormRow
-                key={window.label}
-                label={window.label}
-                sub={window.unit}
-              >
+              <FormRow key={window.label} label={window.label} sub="">
                 <ThresholdPair
                   window={window}
                   defaults={options.thresholds}

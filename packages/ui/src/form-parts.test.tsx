@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { StringList } from "./form-parts.tsx";
+import { NumberInput, StringList } from "./form-parts.tsx";
 
 afterEach(cleanup);
 
@@ -43,5 +43,22 @@ describe("the string list", () => {
     ).toHaveLength(1);
     expect(classesOf(valueRow)).toContain("gap-1");
     expect(classesOf(addLine)).toContain("gap-1");
+  });
+});
+
+describe("the number field", () => {
+  it("takes its own narrow width and no full width to fight it", () => {
+    render(
+      <NumberInput
+        label="Amber after"
+        value={7}
+        placeholder="7"
+        onChange={vi.fn()}
+      />,
+    );
+    const field = screen.getByRole("spinbutton", { name: "Amber after" });
+
+    expect(classesOf(field)).toContain("w-18");
+    expect(classesOf(field)).not.toContain("w-full");
   });
 });

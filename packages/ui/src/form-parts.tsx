@@ -8,8 +8,11 @@ import { type ReactNode, useId, useState } from "react";
 export const panelClass =
   "rounded-xl border border-edge bg-band px-5 pt-3 pb-4";
 
-export const inputClass =
-  "w-full min-w-0 rounded-lg border border-edge bg-panel px-2.75 py-1.5 font-body text-[13px] text-ink placeholder:text-ink-faint focus-visible:outline-2 focus-visible:outline-ink-accent";
+/** An input's look without a width, for a field that sets its own. */
+export const inputBaseClass =
+  "min-w-0 rounded-lg border border-edge bg-panel px-2.75 py-1.5 font-body text-[13px] text-ink placeholder:text-ink-faint focus-visible:outline-2 focus-visible:outline-ink-accent";
+
+export const inputClass = `${inputBaseClass} w-full`;
 
 export const monoInputClass = `${inputClass} font-mono text-[12.5px]`;
 
@@ -318,7 +321,7 @@ export function NumberInput({
           event.target.value === "" ? Number.NaN : Number(event.target.value),
         )
       }
-      className={`${inputClass} w-18 tabular-nums`}
+      className={`${inputBaseClass} w-18 tabular-nums`}
     />
   );
 }

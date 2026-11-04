@@ -1,9 +1,7 @@
 # Specification
 
 What perch is, what each level shows, and how it behaves. The reasons
-behind each decision live in [decisions/](decisions/), one file per
-topic; this document says how things are now. The settled designs are
-working pages on the design board, `design/index.html`.
+worth keeping are in [decisions/](decisions/).
 
 ## Purpose
 
@@ -74,11 +72,9 @@ at risk of loss; is the rest quietly fine):
   outstanding work, song while being edited.
 - **B. The bubble**: click a bird and it speaks. The speech carries how
   it feels and why, in the first person; the chips beneath carry real
-  numbers (CI, PRs, tickets, open items). Each chip leads to the bird's
-  page, landing on the ledger row that holds its working. Tier B is a
-  strict subset of what tier C knows. A fence bird's bubble has one key, Adopt, beside
-  "Tell me the full story": it leads to the bird's page with its
-  adoption papers unfolded.
+  numbers (CI, PRs, tickets, open items). A fence bird's bubble has one
+  key, Adopt, beside "Tell me the full story": it leads to the bird's
+  page with its adoption papers unfolded.
 - **C. The detail**: everything, see below.
 
 Navigation is the camera. The aviary is the zoomed-in view; opening a
@@ -98,9 +94,9 @@ along the row or on a later tab, the fence last, and from the left
 otherwise. The bright bird in the tab row moves at once. The new page
 opens at the top of its panes with its papers folded, and a chip the
 move carries lands once the pan settles. With reduced motion the page
-is replaced at once. The
-Aviary tab, the brand and Escape ride the camera home. Large state
-changes between scans re-run the arrival: birds fly in, never crossfade.
+is replaced at once. The Aviary tab, the brand and Escape ride the
+camera home. Large state changes between scans re-run the arrival:
+birds fly in, never crossfade.
 
 The detail is a strict superset of tiers A and B. The bird leaves the
 wire for the roost, a T-stand perch in the post's colour at the page's
@@ -108,13 +104,13 @@ top right. It sits on the crossbar, breast settled and no legs showing;
 on the wires and in the tab row birds stand. It is drawn larger than on
 any wire, idle, and always faces left toward its record. Its bubble sits
 beside it as paper, the tail on the beak, with the speech and chips as
-the aviary bubble says them but no name, state word or keys. Here each chip is a handle: pressing it
-scrolls the ledger row holding its working to the middle of the record
-pane and marks it briefly. A chip pressed in the aviary's bubble closes it
-and rides the camera to the bird's page, which lands on that row the
-same way as it opens. The band opens with the
-heading, the one place on the page that carries the name and the state
-word, with what the bird is doing. A meta line in mono beneath says
+the aviary bubble says them but no name, state word or keys. Here each
+chip is a handle: pressing it scrolls the ledger row holding its
+working to the middle of the record pane and marks it briefly. A chip
+pressed in the aviary's bubble closes it and rides the camera to the
+bird's page, which lands on that row the same way as it opens. The band
+opens with the heading, the one place on the page that carries the name
+and the state word, with what the bird is doing. A meta line in mono beneath says
 where the bird lives: the clone's path with `~`, the forges that hold
 it, and its wire, "on the fence" for a fence bird. The launch actions as
 verbs, the links out and the papers' verb share the meta line's row
@@ -143,12 +139,12 @@ itself, added in Sources, and the repository a clone's remote points at
 to join the bird on the next scan. Open Sources opens the settings page
 on Sources with the local cards unfolded, `/settings?unfold=local`.
 Beside it sits the SSH clone address, the first one a forge gives, with
-Copy, which puts it on the clipboard and says Copied in place; a snapshot cached before the address was kept shows the slip
-without it. The slip shows for
-adopted and fence birds alike and goes the scan after a clone is found.
-While it shows and config holds at least one launch action, the meta
-line says "no local clone" in the faint voice where the actions would
-sit.
+Copy, which puts it on the clipboard and says Copied in place; a
+snapshot cached before the address was kept shows the slip without it.
+The slip shows for adopted and fence birds alike and goes the scan after
+a clone is found. While it shows and config holds at least one launch
+action, the meta line says "no local clone" in the faint voice where
+the actions would sit.
 Each chip's number sits on one ledger row, marked with a dot, its
 working spelled out beneath in mono, source by source: each forge's
 newest CI run with its state, branch, name, link and age, under a CI
@@ -209,14 +205,11 @@ The record and paper panes sit
 side by side while the page is at least 960px wide; narrower, they join
 into one pane, the key files at the record's end.
 
-The visual language is specified on the board: the field guide
-(`design/anatomy.html`) annotates every trait with its rule, and the
-app page (`design/perch.html`) is the working structure. The palette is
-ink: warm dark, crisp edges, red rare enough to mean something.
-The design site (`apps/design`, served by `pnpm design`) is the board's
-living successor: the real components from `packages/ui` in every state
-the view model allows, each labelled with its rule. The board pages stay
-as the approved record.
+The palette is ink: warm dark, crisp edges, red rare enough to mean
+something. The design site (`apps/design`, served by `pnpm design`)
+shows the real components from `packages/ui` in every state the view
+model allows, each labelled with its rule. The field guide
+(`design/anatomy.html`) annotates every trait with its rule.
 
 ## Health
 
@@ -242,26 +235,18 @@ overrides:
 - The one-disk-only accelerant (shorter windows when no copy exists
   anywhere) is `TBD`.
 
-A bird whose config loosens the windows can be made never to redden
-from work alone, leaving red to CI and bugs.
-
 ## The scanner
 
-The scanner is the `@perch/core` package in `packages/core`, and the
-paths below are inside it. `src/scan.ts` composes it with its
-directories and config path as parameters: the app scans into
+The scanner is `packages/core`. The app scans into
 `~/.local/share/perch/scan/`, the command line into the gitignored
 `.scan/` at the repository root. Two stages:
 
-- Gather (`pnpm gather`) reads this machine and the forge accounts in
-  rounds (root collectors, then enrichers) and writes raw facts, one
-  JSON file per source, to `raw/`. Types in `src/raw.ts`. Nothing
-  judged; every absent value states why.
-- Aggregate (`pnpm aggregate`) reads only those files and the config,
-  joins presences into projects (`src/join.ts`), and writes
-  `snapshot.json`. Types in `src/snapshot.ts`; every derivation rule
-  lives in `src/derivations.ts`. It reads the previous snapshot first,
-  for each source card's last read.
+- Gather reads this machine and the forge accounts and writes raw facts,
+  one JSON file per source. Nothing judged; every absent value states
+  why.
+- Aggregate reads only those files, the config and the previous
+  snapshot, joins presences into projects, and writes `snapshot.json`.
+  Every derivation rule lives in `src/derivations.ts`.
 
 The snapshot holds one scan record per configured source table, in
 config order, for the settings page's source cards. Each has an
@@ -272,31 +257,23 @@ scan: never scanned, ok with when it was read and what it counted
 paths that do not exist), or failed with the message and when it last
 read. A table the raw files hold nothing for, such as one added since
 the last gather, is never scanned. A source that fails as a whole fails
-every table it holds. When a table last read is carried from the
-previous snapshot. The coarse status per polled source stays beside
+every table it holds. The coarse status per polled source stays beside
 it for the sky's notices. The app pushes the records to the renderer
 with the aviary.
 
 `pnpm scan` runs both, with the default config when the owner has
-none; `pnpm check` runs Biome, tsc and vitest. A full
-scan of this machine took about 4 to 7 seconds on 22 October 2026.
+none. A full scan of this machine took about 4 to 7 seconds on 22
+October 2026.
 
 The renderer consumes only the view model, never the raw or snapshot
 types. `src/viewmodel.ts` derives it from a snapshot, the config and
-the home directory by pure functions, in the design's words: the
-aviary's wires and fence, each bird's mood, activity and plumpness, its
-bubble (the speech from `src/speech.ts`, which follows the phrasebook,
-and the chips) and its detail (the clone's path with `~` and the
-forges, ledger, branches, commit river, pull requests, flags, launch
-actions, links, key files). The sky follows the clock at render
-and is not part of the model. `src/mock.ts` holds a hand-curated
-snapshot and config pair covering every view model state, for the
-design site and the app. Neither module imports Node, so the renderer
-can import both.
-Scanners are tested against fixtures under `tests/fixtures/`, never the
-live machine. The scan feeds the glance unattended: no prompting
-routes, no SSH. Detail views may use live sources; the window never
-blocks on aggregation and renders from the cached snapshot.
+the home directory by pure functions, with the speech from
+`src/speech.ts`, which follows the phrasebook. The sky follows the
+clock at render and is not part of the model. `src/mock.ts` holds a
+hand-curated snapshot and config pair covering every view model state.
+The scan feeds the glance unattended: no prompting routes, no SSH.
+Detail views may use live sources; the window never blocks on
+aggregation.
 
 Sources today: local repositories and Obsidian vaults (git state with the
 default branch's newest commits, Obsidian markers), the GitHub and
@@ -366,9 +343,9 @@ Sources are declared, never assumed: one `[[sources.<kind>]]` table per
 connection. `local` holds include and exclude paths; `github` an
 account, its keyring key, its hosts and its tracked forks; `forgejo`
 the same and the instance's base URL; `kuma` a server's name and its
-Uptime Kuma status page. Each GitHub account appears once, each Forgejo
-account once per instance, each keyring key once among one kind's
-tables, each kuma name once. A config with no sources is valid and
+Uptime Kuma status page. Each GitHub account appears once in any case,
+each Forgejo account once per instance, each keyring key once among one
+kind's tables, each kuma name once. A config with no sources is valid and
 scans nothing.
 
 The settings page, reached from the camera header, edits everything but
@@ -411,9 +388,7 @@ in the config keeps its card.
 Picking a kind adds an empty card of it. Removing a card asks twice.
 Save is held while any field has a problem, named beside the field: an
 empty required field, a folder not starting with `/` or `~`, an address
-without `http://` or `https://`, or a repeat the config parser refuses
-(a GitHub account in any case, a Forgejo account at one base URL, a
-keyring key within one kind, a kuma name).
+without `http://` or `https://`, or a repeat the config parser refuses.
 
 The Wires page lists the wires top to bottom, each a text field edited
 in place and moved up and down, and the default picked from them. A row
@@ -507,11 +482,10 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   read again every minute.
 - The URL holds where the camera points: `/` for the aviary,
   `/bird/<id>` for a bird's detail, `?papers=true` to unfold its papers
-  and `?chip=<kind>` to land on a chip's ledger row, an unknown kind read
-  as none. `/settings` is the settings page in
-  the camera's place, `?unfold=<kind>` starting that kind's source cards
-  open, an unknown kind read as none; Escape goes home from it as from a
-  bird.
+  and `?chip=<kind>` to land on a chip's ledger row. `/settings` is the
+  settings page in the camera's place, `?unfold=<kind>` starting that
+  kind's source cards open. An unknown kind in either is read as none.
+  Escape goes home from the settings page as from a bird.
 - Launch actions are `[[launch.actions]]` tables, each naming its kind
   and only what differs from the kind's defaults, offered on a bird's
   page in their order. An action other than zellij runs its command
@@ -548,16 +522,13 @@ read at run time, its CLI prompts. Creation and replacement runbook:
 
 ## Tooling
 
-A pnpm workspace: the scanner in `packages/core`, the components and
-theme in `packages/ui`, the design site in `apps/design`, the Electron app
-in `apps/desktop` with electron-vite, React, TypeScript strict, Tailwind
-v4, TanStack Router and Query, shadcn for basics, Biome and vitest.
-`pnpm check` covers lint, types and tests, and CI runs it on every push
-and pull request. electron-builder packages a Linux AppImage; a `v*` tag
-releases it on GitHub. The app icon and the tray icon are drawn in
-`apps/desktop/resources/icon.svg` and `tray.svg`; `pnpm icons` renders
-their PNGs. The desktop entries for the launcher and autostart sit
-beside them, and the README says how to link them.
+The stack is in [decisions/tech-stack.md](decisions/tech-stack.md). CI
+runs `pnpm check` on every push and pull request. electron-builder
+packages a Linux AppImage; a `v*` tag releases it on GitHub. The app and
+tray icons are drawn in `apps/desktop/resources/icon.svg` and
+`tray.svg`; `pnpm icons` renders their PNGs. The desktop entries for the
+launcher and autostart sit beside them, and the README says how to link
+them.
 
 ## Environment, as of 22 October 2026
 

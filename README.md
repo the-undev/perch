@@ -35,15 +35,13 @@ perch is one AppImage on the PATH as `perch`. From the repository root:
 pnpm dist
 cp apps/desktop/dist/perch-*-x86_64.AppImage ~/.local/bin/perch
 ln -s "$PWD/apps/desktop/resources/perch.desktop" ~/.local/share/applications/perch.desktop
-ln -s "$PWD/apps/desktop/resources/perch-autostart.desktop" ~/.config/autostart/perch.desktop
 mkdir -p ~/.local/share/icons/hicolor/256x256/apps
 ln -s "$PWD/apps/desktop/resources/icons/256x256.png" ~/.local/share/icons/hicolor/256x256/apps/perch.png
 ```
 
-The first link puts perch in the launcher. The second starts it at login
-with the window hidden and its icon in the tray; systemd runs it as the
-user unit `app-perch@autostart.service`. The third gives both entries the
-icon.
+The first link puts perch in the launcher. The second gives it the icon.
+Start at login, on the settings page's Window page, writes the autostart
+entry; systemd runs it as the user unit `app-perch@autostart.service`.
 
 The shortcut is a Plasma custom shortcut: System Settings, Keyboard,
 Shortcuts, Add New, Command or Script, with the command `perch --toggle`,
@@ -56,10 +54,12 @@ A second launch hands its arguments to the running perch and quits:
 | `--toggle` | Shows and focuses the window, or hides it when it is already in front. |
 | `--show` | Shows and focuses the window. A launch with no arguments does the same. |
 | `--scan` | Scans now. |
-| `--hidden` | On the first launch, starts with the window hidden. |
+| `--hidden` | On the first launch, starts with the window hidden; ignored without the tray. |
 
 Closing the window hides it. The tray menu shows it, rescans and quits;
-clicking the tray icon toggles the window.
+clicking the tray icon toggles the window. With Stay in the tray off,
+there is no tray icon, closing the window quits, and every second launch
+shows the window.
 
 ## Releases
 

@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Window behaviour round</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* The window behaviour round: a Window page on the settings rail carrying the
+   tray toggle and start at login. Drawn on the approved ink palette. */
+:root {
+  --bg: #101214;
+  --rail: #121517;
+  --band: #15181b;
+  --panel: #1a1e22;
+  --panel-hi: #20252a;
+  --edge: #2b3036;
+  --edge-hi: #3e454d;
+  --ink: #ece7db;
+  --muted: #aaa396;
+  --faint: #837d70;
+  --accent: #b9b2a2;
+  --green: #66bb86;
+  --amber: #d8a845;
+  --red: #e25d4f;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --body: "Figtree", system-ui, sans-serif;
+  --mono: ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/1.55 var(--body);
+  padding: 0 max(16px, env(safe-area-inset-left)) 90px;
+}
+main { max-width: 1240px; margin: 0 auto; }
+
+/* Masthead */
+.mast { padding: 42px 0 10px; border-bottom: 1px solid var(--edge); }
+.mast h1 { font: 700 34px/1.1 var(--display); margin: 0 0 10px; }
+.mast .brief { max-width: 72ch; color: var(--muted); margin: 0 0 6px; }
+.mast .brief b { color: var(--ink); font-weight: 600; }
+.mast .meta { color: var(--faint); font-size: 12.5px; margin: 10px 0 18px; }
+
+/* The rules strip */
+.rules { display: flex; flex-wrap: wrap; gap: 12px; padding: 22px 0 8px; }
+.rule {
+  flex: 1 1 260px; background: var(--band); border: 1px solid var(--edge);
+  border-radius: 10px; padding: 14px 16px;
+}
+.rule h3 { font: 600 14.5px/1.3 var(--display); margin: 0 0 5px; }
+.rule p { margin: 0; color: var(--muted); font-size: 13px; }
+.rule code { font: 12px var(--mono); color: var(--ink); }
+
+/* Sections */
+section { padding: 34px 0 6px; }
+section > h2 { font: 650 21px/1.2 var(--display); margin: 0 0 8px; }
+section > .why { max-width: 76ch; color: var(--muted); margin: 0 0 18px; }
+section > .why code { font: 12.5px var(--mono); color: var(--ink); }
+
+/* Settings shell: rail plus column */
+.frame { background: var(--band); border: 1px solid var(--edge); border-radius: 12px; overflow: hidden; }
+.shell { display: grid; grid-template-columns: 168px minmax(0, 1fr); min-height: 300px; }
+.sidenav { background: var(--rail); border-right: 1px solid var(--edge); padding: 18px 0; }
+.sidenav a {
+  display: block; padding: 7px 18px; color: var(--muted);
+  text-decoration: none; font-size: 13.5px;
+}
+.sidenav a.on { color: var(--ink); background: var(--panel); border-right: 2px solid var(--accent); }
+.col { padding: 26px 30px 34px; max-width: 640px; }
+.col h1 { font: 650 20px/1.2 var(--display); margin: 0 0 6px; }
+.col .lead { color: var(--muted); margin: 0 0 20px; max-width: 58ch; }
+
+/* Setting rows */
+.setting {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 26px;
+  align-items: start; padding: 16px 0; border-top: 1px solid var(--edge);
+}
+.setting .name { font-weight: 600; font-size: 14.5px; }
+.setting .says { grid-column: 1; color: var(--muted); font-size: 13px; max-width: 52ch; margin: 0; }
+.setting .says code { font: 12px var(--mono); color: var(--faint); }
+.setting .entry { grid-column: 1; font: 12px var(--mono); color: var(--faint); margin: 4px 0 0; }
+.setting .held { grid-column: 1; color: var(--amber); font-size: 13px; margin: 4px 0 0; max-width: 52ch; }
+
+/* The switch */
+.sw {
+  grid-column: 2; grid-row: 1 / span 3; align-self: center;
+  width: 38px; height: 20px; border-radius: 10px; position: relative;
+  background: var(--edge); border: 1px solid var(--edge-hi); cursor: pointer;
+}
+.sw::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--faint); transition: left .12s ease, background .12s ease;
+}
+.sw.on { background: var(--accent); border-color: var(--accent); }
+.sw.on::after { left: 20px; background: var(--bg); }
+.sw.held { opacity: .45; cursor: default; }
+.sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .sw::after { transition: none; } }
+
+/* The save line */
+.saveline { display: flex; align-items: baseline; gap: 14px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--edge); }
+.saveline .save {
+  background: var(--accent); color: var(--bg); border: 0; border-radius: 8px;
+  font: 600 13.5px var(--body); padding: 8px 18px; cursor: pointer;
+}
+.saveline .quiet { color: var(--faint); font-size: 12.5px; }
+
+/* What Save writes, beside the shell */
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: start; }
+@media (max-width: 980px) { .pair { grid-template-columns: 1fr; } }
+.aside { background: var(--panel); border: 1px solid var(--edge); border-radius: 10px; padding: 14px 16px; }
+.aside h4 { font: 600 13px/1.3 var(--display); margin: 0 0 8px; color: var(--muted); }
+.aside pre { margin: 0 0 10px; font: 12px/1.6 var(--mono); color: var(--ink); white-space: pre-wrap; }
+.aside p { margin: 0 0 8px; color: var(--muted); font-size: 12.5px; }
+.aside p:last-child, .aside pre:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="mast">
+  <h1>Window behaviour</h1>
+  <p class="brief">A <b>Window</b> page joins the settings rail, last, carrying the two facts
+  about how the app lives on this machine: whether it <b>stays in the tray</b>, and whether it
+  <b>starts at login</b>. Two rows, not cards; each row's sentence says what its state does, and
+  the sentences change with each other.</p>
+  <p class="meta">Round of 3 November 2026 · drawn on the approved ink palette · for 0.2.0</p>
+</header>
+
+<div class="rules">
+  <div class="rule">
+    <h3>The tray is config</h3>
+    <p><code>[window] tray</code>, default true. On: closing hides, the icon shows, rescans and
+    quits. Off: no icon, closing quits. Only a deviation is written.</p>
+  </div>
+  <div class="rule">
+    <h3>Login is the file</h3>
+    <p>The toggle reads whether <code>~/.config/autostart/perch.desktop</code> exists; Save
+    writes or removes the entry itself. Nothing is stored twice.</p>
+  </div>
+  <div class="rule">
+    <h3>Each start repoints the entry</h3>
+    <p>The app knows its own image from <code>APPIMAGE</code>. When the entry exists, every
+    start rewrites it to point at the running image, so updating is running the new version
+    once.</p>
+  </div>
+  <div class="rule">
+    <h3>Source runs hold the toggle</h3>
+    <p>Run from source there is no image to point the entry at, so the login toggle is held and
+    its row says why. The tray row stays editable.</p>
+  </div>
+  <div class="rule">
+    <h3>The command line follows the tray</h3>
+    <p>With the tray off, <code>--hidden</code> is ignored and a second launch always shows:
+    nothing may start unreachable.</p>
+  </div>
+</div>
+
+<section>
+  <h2>1 · The Window page, defaults</h2>
+  <p class="why">Tray on, start at login off: the state after 0.1.0, and Save writes nothing.
+  The login row's sentence already says what turning it on will do, derived from the tray
+  setting beside it.</p>
+  <div class="pair">
+    <div class="frame"><div class="shell">
+      <nav class="sidenav">
+        <a href="#">Sources</a>
+        <a href="#">Joining up</a>
+        <a href="#">Wires</a>
+        <a href="#">Judgement</a>
+        <a href="#">Scanning</a>
+        <a href="#">Launching</a>
+        <a class="on" href="#">Window</a>
+      </nav>
+      <div class="col">
+        <h1>Window</h1>
+        <p class="lead">How the window lives on this machine.</p>
+        <div class="setting">
+          <div class="name">Stay in the tray</div>
+          <p class="says">Closing the window hides it. The tray icon shows it, rescans and
+          quits; clicking the icon toggles the window.</p>
+          <button class="sw on" role="switch" aria-checked="true" aria-label="Stay in the tray"></button>
+        </div>
+        <div class="setting">
+          <div class="name">Start at login</div>
+          <p class="says">Off. Turned on, perch starts when you log in, hidden in the tray.</p>
+          <button class="sw" role="switch" aria-checked="false" aria-label="Start at login"></button>
+        </div>
+        <div class="saveline">
+          <button class="save">Save</button>
+          <span class="quiet">Save writes every page's edits</span>
+        </div>
+      </div>
+    </div></div>
+    <div class="aside">
+      <h4>What Save writes</h4>
+      <p>Nothing: both rows sit on their defaults, and a default is written as nothing, as
+      everywhere in config.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>2 · Start at login, on</h2>
+  <p class="why">The row's sentence becomes the present tense of what is true, and the entry's
+  path appears beneath it in mono, the register every real path on the settings pages uses.</p>
+  <div class="pair">
+    <div class="frame"><div class="shell">
+      <nav class="sidenav">
+        <a href="#">Sources</a>
+        <a href="#">Joining up</a>
+        <a href="#">Wires</a>
+        <a href="#">Judgement</a>
+        <a href="#">Scanning</a>
+        <a href="#">Launching</a>
+        <a class="on" href="#">Window</a>
+      </nav>
+      <div class="col">
+        <h1>Window</h1>
+        <p class="lead">How the window lives on this machine.</p>
+        <div class="setting">
+          <div class="name">Stay in the tray</div>
+          <p class="says">Closing the window hides it. The tray icon shows it, rescans and
+          quits; clicking the icon toggles the window.</p>
+          <button class="sw on" role="switch" aria-checked="true" aria-label="Stay in the tray"></button>
+        </div>
+        <div class="setting">
+          <div class="name">Start at login</div>
+          <p class="says">perch starts when you log in, hidden in the tray.</p>
+          <p class="entry">~/.config/autostart/perch.desktop → ~/Applications/perch-0.2.0-x86_64.AppImage</p>
+          <button class="sw on" role="switch" aria-checked="true" aria-label="Start at login"></button>
+        </div>
+        <div class="saveline">
+          <button class="save">Save</button>
+          <span class="quiet">Save writes every page's edits</span>
+        </div>
+      </div>
+    </div></div>
+    <div class="aside">
+      <h4>What Save writes</h4>
+      <p>No config: the autostart entry itself, Exec pointing at the running image with
+      <code style="font: 12px var(--mono)">--hidden</code>.</p>
+      <pre>[Desktop Entry]
+Type=Application
+Name=perch
+Exec=/home/owner/Applications/perch-0.2.0-x86_64.AppImage --hidden</pre>
+      <p>Every later start rewrites the Exec line to the image then running.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>3 · The tray, off</h2>
+  <p class="why">One edit, two sentences change: closing now quits, and the login row stops
+  saying "hidden in the tray" because nothing may start unreachable. The autostart entry loses
+  <code>--hidden</code> on the same Save.</p>
+  <div class="pair">
+    <div class="frame"><div class="shell">
+      <nav class="sidenav">
+        <a href="#">Sources</a>
+        <a href="#">Joining up</a>
+        <a href="#">Wires</a>
+        <a href="#">Judgement</a>
+        <a href="#">Scanning</a>
+        <a href="#">Launching</a>
+        <a class="on" href="#">Window</a>
+      </nav>
+      <div class="col">
+        <h1>Window</h1>
+        <p class="lead">How the window lives on this machine.</p>
+        <div class="setting">
+          <div class="name">Stay in the tray</div>
+          <p class="says">Off. No tray icon; closing the window quits perch.</p>
+          <button class="sw" role="switch" aria-checked="false" aria-label="Stay in the tray"></button>
+        </div>
+        <div class="setting">
+          <div class="name">Start at login</div>
+          <p class="says">perch starts when you log in, with the window open.</p>
+          <p class="entry">~/.config/autostart/perch.desktop → ~/Applications/perch-0.2.0-x86_64.AppImage</p>
+          <button class="sw on" role="switch" aria-checked="true" aria-label="Start at login"></button>
+        </div>
+        <div class="saveline">
+          <button class="save">Save</button>
+          <span class="quiet">Save writes every page's edits</span>
+        </div>
+      </div>
+    </div></div>
+    <div class="aside">
+      <h4>What Save writes</h4>
+      <pre>[window]
+tray = false</pre>
+      <p>And the autostart entry again, now without <code style="font: 12px var(--mono)">--hidden</code>:
+      a login start with no tray opens the window.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>4 · Run from source</h2>
+  <p class="why">Under <code>pnpm dev</code> there is no <code>APPIMAGE</code>, so there is no
+  file to point the login entry at. The toggle is held at whatever the entry says and the row
+  explains, in the amber the settings pages already use for a held control. An entry written by
+  an earlier installed run is left alone.</p>
+  <div class="pair">
+    <div class="frame"><div class="shell">
+      <nav class="sidenav">
+        <a href="#">Sources</a>
+        <a href="#">Joining up</a>
+        <a href="#">Wires</a>
+        <a href="#">Judgement</a>
+        <a href="#">Scanning</a>
+        <a href="#">Launching</a>
+        <a class="on" href="#">Window</a>
+      </nav>
+      <div class="col">
+        <h1>Window</h1>
+        <p class="lead">How the window lives on this machine.</p>
+        <div class="setting">
+          <div class="name">Stay in the tray</div>
+          <p class="says">Closing the window hides it. The tray icon shows it, rescans and
+          quits; clicking the icon toggles the window.</p>
+          <button class="sw on" role="switch" aria-checked="true" aria-label="Stay in the tray"></button>
+        </div>
+        <div class="setting">
+          <div class="name">Start at login</div>
+          <p class="says">Off. Turned on, perch starts when you log in, hidden in the tray.</p>
+          <p class="held">Held: perch is running from source, so there is no AppImage to point
+          the login entry at.</p>
+          <button class="sw held" role="switch" aria-checked="false" aria-disabled="true" aria-label="Start at login"></button>
+        </div>
+        <div class="saveline">
+          <button class="save">Save</button>
+          <span class="quiet">Save writes every page's edits</span>
+        </div>
+      </div>
+    </div></div>
+    <div class="aside">
+      <h4>What Save writes</h4>
+      <p>The tray row still writes config as usual. The held login row writes nothing, and never
+      removes an entry an installed run wrote.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

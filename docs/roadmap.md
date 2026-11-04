@@ -3,6 +3,22 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
+## Window behaviour settings
+
+The round was agreed on `mockups/window-behaviour.html` on 3 November
+2026. A Window page joins the settings rail, last, with two rows.
+
+- Stay in the tray: config `[window] tray`, default true. Off means no
+  tray icon and closing quits; `--hidden` is ignored and a second launch
+  always shows.
+- Start at login: no config. The toggle derives from whether
+  `~/.config/autostart/perch.desktop` exists, and Save writes or removes
+  the entry. Every start repoints its `Exec` at the running image from
+  `APPIMAGE`. The toggle is held, with a reason, when perch runs from
+  source.
+
+The first implementation item of 0.2.0.
+
 ## Reintroducing importance
 
 Config held an importance tier per item: an `[importance]` table of

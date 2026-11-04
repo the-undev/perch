@@ -162,6 +162,8 @@ export interface Bird {
   plumpness: Plumpness;
   /** At night a content bird not being edited sleeps, as does every fence bird. */
   sleepsAtNight: boolean;
+  /** Where a fence bird lives, for its hover tip; null on a wire or while undecided. */
+  lives: string | null;
   bubble: Bubble;
   detail: Detail;
 }
@@ -1264,6 +1266,18 @@ function fenceSituation(item: Item): FenceSituation {
     : { kind: "undecided" };
 }
 
+/** Where a fence bird lives, in the tip's lower-case words: its forge, or the one disk; null while undecided. */
+function livesFor(situation: FenceSituation): string | null {
+  switch (situation.kind) {
+    case "forge-only":
+      return `only on ${situation.forge}`;
+    case "one-disk":
+      return "one disk only";
+    case "undecided":
+      return null;
+  }
+}
+
 /** Hours from the newest commit, local or on a forge's default branch, to the scan. */
 function lastTouchedHours(item: Item, scannedAt: Date): number | null {
   const git = readable<GitData>(item.sources.git);
@@ -1346,6 +1360,7 @@ export function deriveBird(
       fullness: Math.min(outstanding, plumpnessCap) / plumpnessCap,
     },
     sleepsAtNight,
+    lives: adopted ? null : livesFor(fenceSituation(item)),
     bubble: {
       name,
       stateWord: adopted ? mood : "not adopted",

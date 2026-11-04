@@ -672,6 +672,47 @@ describe("the ledger", () => {
   });
 });
 
+describe("where a fence bird lives", () => {
+  const forgeOnly = item("github:finch/river", {
+    path: null,
+    presences: {
+      local: null,
+      forges: [
+        {
+          forge: "github",
+          ref: "github:finch/river",
+          fullName: "finch/river",
+          url: null,
+          foundBy: "account-listing",
+        },
+      ],
+    },
+  });
+  const oneDisk = item("dev/hello", {
+    sources: { git: gitData({ backup: "local-only" }) },
+  });
+  const undecided = item("dev/spool", { sources: { git: gitData({}) } });
+  const items = [forgeOnly, oneDisk, undecided];
+  const livesOf = (config: Config) =>
+    items.map((entry) => birdIn(items, config, entry.id).lives);
+
+  it("names the forge, the one disk, or nothing while undecided", async () => {
+    expect(livesOf(await adoptAll([]))).toEqual([
+      "only on github",
+      "one disk only",
+      null,
+    ]);
+  });
+
+  it("says nothing for an adopted bird", async () => {
+    expect(livesOf(await adoptAll(items.map((entry) => entry.id)))).toEqual([
+      null,
+      null,
+      null,
+    ]);
+  });
+});
+
 describe("the ledger's quiet sentence", () => {
   it("says the tree is clean and everything is pushed when nothing waits", async () => {
     const config = await adoptAll(["dev/spool"]);

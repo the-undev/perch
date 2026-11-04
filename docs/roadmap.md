@@ -190,10 +190,6 @@ What `design/perch.html` draws that the composed views do not yet:
 - The ledger's "Roadmap headings" section, each heading with its item
   count or progress. `Detail` carries no roadmap groups; it needs a field
   first.
-- The hover tip's summary of where a fence bird lives ("only on GitHub",
-  "one disk only"). The view model says so only in the speech, so a fence
-  bird's tip shows its name, its word and, when it has one, its last
-  commit.
 - The top wire drawn thicker than the rest.
 - A bubble with no room above its bird keeps to the scene's top edge and
   its tail no longer meets the beak. Opening it beside or below the bird

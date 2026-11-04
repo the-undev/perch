@@ -43,7 +43,7 @@ export function CrowdedPage() {
     <>
       <Section
         title="A wire over more than one row"
-        rule={`A row holds as many birds as fit ${crowdedGap} units apart between the margins: ${fullRow} at full width, fewer in a window too narrow for the full width at the floor. A wire with more takes another row for each row's worth. Its birds spread left to right in order across the birds' room, which starts ${columnEdge} units in on every wire whatever its name or tally says, and are dealt over the rows in turn, so they step down a diagonal and left to right still reads as who needs you first. Only the first row carries the wire's name and tally.`}
+        rule={`A row holds as many birds as fit ${crowdedGap} units apart between the margins: ${fullRow} at full width, fewer in a window too narrow for the full width at the floor. A wire with more takes another row for each row's worth. Its birds read like text: the first row left to right in order, then the next, the earlier rows taking any extra, so the top left bird needs you first. Each row is centred in the birds' room, which starts ${columnEdge} units in on every wire whatever its name or tally says. A row that would stack on the row above shifts right by up to half its spacing, so the rows lie like brickwork. Only the first row carries the wire's name and tally.`}
         min={900}
       >
         {counts.map((count) => (
@@ -168,8 +168,9 @@ export function CrowdedPage() {
           <Code>rowCapacity</Code> are exported so pages like this one can say
           what it does. The vertical space between the top wire and the fence is
           shared out in steps: a whole step between wires, 0.6 of one between
-          rows of the same wire, and a whole step between its rows once its
-          birds sit closer than {wholeStepBelow} units across.
+          rows of the same wire, and a whole step between its rows once a bird
+          sits closer than {wholeStepBelow} units across to a bird of the row
+          above.
         </p>
       </Usage>
     </>

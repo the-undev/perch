@@ -16,11 +16,20 @@ import {
   roomyName,
 } from "./bird.tsx";
 
-/** The margin no bird is placed inside, at the scene's right end and past the strip's label. */
-export const edgeMargin = 120;
+/** The margin no bird is placed inside at the scene's right end: 0.06 of the scene, at least 60 units, so 120 at full width. */
+export function edgeMarginFor(width: number): number {
+  return Math.max(60, 0.06 * width);
+}
 
-/** Where the birds' room starts on every wire and the fence: the left end keeps one bird's room for the tally and the painted name. */
-export const columnEdge = 240;
+/** Where the birds' room starts on every wire and the fence: 0.12 of the scene, so 240 at full width, and at least 130 units to clear the tally. */
+export function columnEdgeFor(width: number): number {
+  return Math.max(130, 0.12 * width);
+}
+
+/** The birds' room across a scene this wide: from the column edge to the right margin, never less than none. */
+export function birdRoom(width: number): number {
+  return Math.max(0, width - columnEdgeFor(width) - edgeMarginFor(width));
+}
 
 /** How far a wire dips at its middle below its ends' line. */
 const sag = 22;
@@ -45,7 +54,13 @@ export function placeAt(
   gap: number,
   width: number,
 ): number {
-  return placeBetween(index, count, gap, columnEdge, width - edgeMargin);
+  return placeBetween(
+    index,
+    count,
+    gap,
+    columnEdgeFor(width),
+    width - edgeMarginFor(width),
+  );
 }
 
 /** How far apart neighbours sit among count places at most `gap` apart in the birds' room: the room shared out. */
@@ -54,8 +69,7 @@ export function placeSpacing(
   gap: number,
   width: number,
 ): number {
-  const room = Math.max(0, width - edgeMargin - columnEdge);
-  return Math.min(gap, room / Math.max(count - 1, 1));
+  return Math.min(gap, birdRoom(width) / Math.max(count - 1, 1));
 }
 
 /** Neighbours closer than this alternate their names between a near and a lower baseline. */

@@ -157,7 +157,7 @@ export function AviaryScenePage() {
         <SmallWindow
           pixels={760}
           label="760px: bunched"
-          rule={`${Math.round(sceneWidthFor(760))} units, still at ${minPixelsPerUnit}px each. A row holds ${rowCapacity(sceneWidthFor(760))} birds, so the ${projects.birds.length} on Projects take ${rowsFor(projects.birds.length, sceneWidthFor(760))} rows.`}
+          rule={`${Math.round(sceneWidthFor(760))} units, still at ${minPixelsPerUnit}px each. A row holds ${rowCapacity(sceneWidthFor(760))} birds at the crowded gap, so the ${projects.birds.length} on Projects take ${rowsFor(projects.birds.length, sceneWidthFor(760))} rows, the most a wire takes, packed closer.`}
         />
       </Section>
 

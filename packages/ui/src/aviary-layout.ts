@@ -8,9 +8,8 @@ import type { BubbleTail } from "./bubble.tsx";
 import type { PixelSize } from "./hooks.ts";
 import { sceneWidthFor } from "./scene.tsx";
 import {
+  birdRoom,
   byPosition,
-  columnEdge,
-  edgeMargin,
   facingAt,
   fenceGap,
   namePlace,
@@ -40,7 +39,7 @@ export interface PlacedBird {
   beak: ScenePoint;
 }
 
-/** One row of a wire: a crowded wire spreads its birds over more than one. */
+/** One row of a wire: a crowded wire spreads its birds over two. */
 export interface WireRow {
   wire: Wire;
   /** 0 for the wire's first row, which carries its name and tally. */
@@ -71,14 +70,20 @@ export function sceneHeightFor(size: PixelSize): number {
 /** The closest birds sit on one row; a wire holding more than fit at this gap takes another row. */
 export const crowdedGap = 300;
 
-/** How many birds one row of a scene this wide holds: as many as fit at the crowded gap between the margins, at least one. */
+/** How many birds one row of a scene this wide holds: as many as fit at the crowded gap in the birds' room, at least one. */
 export function rowCapacity(width: number): number {
-  return Math.max(1, Math.floor((width - 2 * edgeMargin) / crowdedGap) + 1);
+  return Math.max(1, Math.floor(birdRoom(width) / crowdedGap) + 1);
 }
 
-/** The rows a wire needs for its birds in a scene this wide; an empty wire still has its one. */
+/** The most rows a wire takes: past two rows' worth its rows pack tighter instead. */
+export const wireRowsCap = 2;
+
+/** The rows a wire needs for its birds in a scene this wide, at most the cap; an empty wire still has its one. */
 export function rowsFor(count: number, width: number): number {
-  return Math.max(1, Math.ceil(count / rowCapacity(width)));
+  return Math.min(
+    wireRowsCap,
+    Math.max(1, Math.ceil(count / rowCapacity(width))),
+  );
 }
 
 /** The vertical spacing between wires, in steps. */
@@ -101,8 +106,7 @@ function rowSizes(count: number, rows: number): number[] {
 /** How far right a row of this many birds can shift against the row above: half its spacing, at most its slack inside the birds' room. */
 export function staggerFor(count: number, width: number): number {
   const spacing = placeSpacing(count, wireGap, width);
-  const room = Math.max(0, width - columnEdge - edgeMargin);
-  const slack = (room - (count - 1) * spacing) / 2;
+  const slack = (birdRoom(width) - (count - 1) * spacing) / 2;
   return Math.max(0, Math.min(spacing / 2, slack));
 }
 
@@ -218,7 +222,7 @@ const footPixels = 100;
 
 /**
  * The aviary laid out for a window of the given size in pixels. A window too narrow for the full
- * width at the floor gets a narrower scene, its birds bunching and its wires taking more rows. The
+ * width at the floor gets a narrower scene, its margins shrinking and its birds bunching. The
  * top wire leaves room above it for a bubble, the fence sits a fixed distance from the bottom, and
  * the wires and their rows share the space between, a whole step apart at most a quarter of the
  * scene.

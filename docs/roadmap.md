@@ -5,10 +5,13 @@ they land.
 
 ## Crowding at very narrow widths
 
-Below about 500px wide, nine birds share about 200 units of room, on a
-wire and in the detail strip alike. The whole-step row rule keeps rows
-apart but nothing widens the room; the fix is a minimum window width or
-a narrower bird at the floor.
+At a 500px window the scene is 556 units wide and the birds' room,
+inside the 130 and 60 unit margin floors, is about 365. Nine birds on a
+wire sit five on the top row, about 91 units apart, and the detail strip
+puts all nine on one row about 46 apart. Below about 530px a top row of
+five falls under 100 units apart and the shingle gets heavy. Nothing
+widens the room further; the fix is a minimum window width or a narrower
+bird at the floor.
 
 ## Reintroducing importance
 

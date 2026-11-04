@@ -13,7 +13,7 @@ import {
 import { mockBird } from "./mock-birds.ts";
 import { Scene } from "./scene.tsx";
 import {
-  columnEdge,
+  columnEdgeFor,
   Fence,
   fenceName,
   labelX,
@@ -251,7 +251,7 @@ describe("the wire and the fence", () => {
       ),
     );
 
-    expect(Math.min(...xs)).toBe(columnEdge);
+    expect(Math.min(...xs)).toBe(columnEdgeFor(2000));
   });
 
   it("dims every fence bird, paints its name behind them and counts them beneath the rail", () => {
@@ -298,7 +298,7 @@ describe("the wire and the fence", () => {
     expect(Number(count.getAttribute("y"))).toBeGreaterThan(300);
     expect(count.getAttribute("class")).toContain("fill-ink-faint");
     expect(birds.every((bird) => drawnAfter(bird, count))).toBe(true);
-    expect(Math.min(...xs)).toBeGreaterThanOrEqual(columnEdge);
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(columnEdgeFor(2000));
     expect(container.textContent).not.toContain("·");
   });
 

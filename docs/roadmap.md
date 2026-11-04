@@ -112,16 +112,16 @@ config refuses it; it returns with the lane.
 ## Raising the zellij window
 
 The zellij tab action selects or opens the tab but does not raise the
-terminal attached to the session, the fallback in
-`docs/decisions/launch-actions.md`. Raising another app's window on Plasma
+terminal window attached to the session, which is the fallback. Raising another app's window on Plasma
 Wayland needs a KWin script or `kdotool` (not installed on 22 October 2026).
 A session that is not running opens in the terminal on its default tab,
 not one named after the project.
 
 ## TUI tiles
 
-`docs/decisions/launch-actions.md` decides run or focus for the TUIs in
-`~/undev` (oxbow, spool) in tagged alacritty windows. The view model has
+The TUIs in `~/undev` (oxbow, spool) run in tagged alacritty windows,
+`alacritty --class perch-<name> -e <name>`: a running one is focused, else
+it is launched. The view model has
 no TUI action yet; it needs a config marker for which items are TUIs and the
 window raising above.
 
@@ -184,8 +184,8 @@ card.
 Stop, restart and update a container from the server detail page.
 Parked with the other mutations until the read-only app proves itself.
 Routes when unparked: SSH to Silo for stop and restart, the server's own
-API for update, capabilities verified then. The container list itself is
-already in, as a live read, see `docs/decisions/scan-model.md`.
+API for update, capabilities verified then. The container list is a live
+read from a Docker socket proxy on Silo over HTTP, a typed stub today.
 
 ## Server service tiles
 

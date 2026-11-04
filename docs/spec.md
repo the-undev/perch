@@ -30,9 +30,8 @@ this machine alongside.
   a project shows nothing. A goal such as setting up CI belongs on the
   project's roadmap, not in perch's config.
 - **Gather everything, display what is earned.** The scanner collects
-  all it can from day one; what surfaces, and at which level, is decided
-  deliberately in [decisions/data-placement.md](decisions/data-placement.md),
-  never by default.
+  all it can from day one; what surfaces, and at which tier, is decided
+  field by field, never by default.
 - **Almost no history.** Only the latest scan is kept, cached to disk so
   the window opens with content. One exception: a failing source card
   carries when it last read from the previous snapshot, and losing that
@@ -469,8 +468,10 @@ read at run time, its CLI prompts. Creation and replacement runbook:
   again, and its earlier position is not restored: Wayland gives an app
   no way to place its own window.
 - Starts at login from an XDG autostart entry running `perch --hidden`:
-  the window hidden, the icon in the tray. See
-  [decisions/window-presentation.md](decisions/window-presentation.md).
+  the window hidden, the icon in the tray. The entry,
+  `apps/desktop/resources/perch-autostart.desktop`, is linked into
+  `~/.config/autostart/`; systemd's xdg-autostart generator runs it as a
+  user unit, its output in the journal.
 - One instance. A second launch hands its arguments to the running one
   and quits: `--toggle` shows and focuses, or hides when already in
   front; `--show` only shows; `--scan` rescans. With none of them it

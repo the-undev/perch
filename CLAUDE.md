@@ -12,9 +12,6 @@ in by hand.
   decision with the reason behind it. Read before proposing anything.
 - [docs/roadmap.md](docs/roadmap.md): parked work. Anything worth returning to
   goes there, in a commit, never in chat.
-- [docs/build-log.md](docs/build-log.md): dated record of the build-time
-  calls Claude made. Append a line whenever a decision is taken that the
-  decision docs do not carry.
 - [design/index.html](design/index.html): the design board, the approved
   design pages, opened in a browser, kept as the approved record. The design
   site (`pnpm design`) is its living successor on the real components.

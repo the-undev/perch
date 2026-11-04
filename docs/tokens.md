@@ -1,9 +1,8 @@
 # Tokens
 
 How perch's read-only forge tokens are created, stored and replaced. The
-decision behind the scheme is in
-[decisions/config.md](decisions/config.md): keyring only, read-only
-everywhere, no `gh`, no password manager at run time.
+scheme: keyring only, read-only everywhere, no `gh`, no password manager at run
+time, as the spec's Secrets section sets out.
 
 ## GitHub
 

@@ -114,7 +114,8 @@ and the state word, with what the bird is doing. A meta line in mono beneath say
 where the bird lives: the clone's path with `~`, the forges that hold
 it, and its wire, "on the fence" for a fence bird. The launch actions as
 verbs, the links out and the papers' verb share the meta line's row
-where they fit and drop beneath it where not. Beneath them, for each
+where they fit and drop beneath it where not, every verb wrapping alone so
+many pack tight lines rather than stacked groups. Beneath them, for each
 remote the clone pushes to that no card can read, one amber sentence
 in the sky's notice voice says what perch knows and the fix: "The clone
 pushes to skiff-app/skiff on github, which no GitHub card reads.

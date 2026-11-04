@@ -687,6 +687,23 @@ describe("the detail view", () => {
     );
   });
 
+  it("packs every verb of the band into one wrapping row", () => {
+    const perch = mockBird("dev/perch");
+    const { container } = page(perch, { form: mockEntryForm(perch.id) });
+    const actions = container.querySelector('[data-part="actions"]');
+    const verbs = [...(actions?.querySelectorAll("button, a") ?? [])];
+
+    expect(perch.detail.actions.length).toBeGreaterThanOrEqual(2);
+    expect(perch.detail.links.length).toBeGreaterThanOrEqual(2);
+    expect(verbs).toHaveLength(
+      perch.detail.actions.length + perch.detail.links.length + 1,
+    );
+    expect(verbs.map((verb) => verb.textContent).at(-1)).toBe("The papers");
+    for (const verb of verbs) {
+      expect(verb.parentElement).toBe(actions);
+    }
+  });
+
   it("keeps the heading to tight rows: name, then the meta with the actions, links and verb beside it", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch, { form: mockEntryForm(perch.id) });

@@ -38,10 +38,12 @@ export function ActionsPage() {
           rule="Perch: the zellij tab, VS Code, the folder, nvim, and a custom command wearing the terminal."
         >
           <Ground>
-            <LaunchActions
-              actions={mockBird("dev/perch").detail.actions}
-              onLaunch={launch}
-            />
+            <div className="flex flex-wrap items-center gap-1">
+              <LaunchActions
+                actions={mockBird("dev/perch").detail.actions}
+                onLaunch={launch}
+              />
+            </div>
           </Ground>
         </Specimen>
         <Specimen
@@ -49,10 +51,12 @@ export function ActionsPage() {
           rule="The Hothouse Obsidian vault: Open in Obsidian, first in the mock's config, a kind offered on Obsidian birds only."
         >
           <Ground>
-            <LaunchActions
-              actions={mockBird("obsidian/Hothouse").detail.actions}
-              onLaunch={launch}
-            />
+            <div className="flex flex-wrap items-center gap-1">
+              <LaunchActions
+                actions={mockBird("obsidian/Hothouse").detail.actions}
+                onLaunch={launch}
+              />
+            </div>
           </Ground>
         </Specimen>
       </Section>
@@ -90,7 +94,9 @@ export function LinksPage() {
       >
         <Specimen label="Two forges" rule="Perch lives on GitHub and Forgejo.">
           <Ground>
-            <LinksOut links={mockBird("dev/perch").detail.links} />
+            <div className="flex flex-wrap items-center gap-1">
+              <LinksOut links={mockBird("dev/perch").detail.links} />
+            </div>
           </Ground>
         </Specimen>
         <Specimen
@@ -98,9 +104,11 @@ export function LinksPage() {
           rule="obsidian-tidy: the forge is all there is."
         >
           <Ground>
-            <LinksOut
-              links={mockBird("github:finch/obsidian-tidy").detail.links}
-            />
+            <div className="flex flex-wrap items-center gap-1">
+              <LinksOut
+                links={mockBird("github:finch/obsidian-tidy").detail.links}
+              />
+            </div>
           </Ground>
         </Specimen>
       </Section>

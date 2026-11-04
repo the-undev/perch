@@ -3,12 +3,6 @@
 Work identified and not done. Each item has its own heading. Remove items as
 they land.
 
-## The band gap under the bird
-
-Many launch actions wrap below the detail band's meta line and leave a
-hole under the bird. The band's layout needs a rule for many actions.
-Part of 0.2.0.
-
 ## Design site on real components
 
 The design-site phase of 0.2.0. `apps/design` renders every component,

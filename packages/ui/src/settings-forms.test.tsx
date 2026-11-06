@@ -4,6 +4,7 @@ import {
   mockConfig,
   mockImage,
   mockLogin,
+  mockUpdates,
 } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
@@ -11,6 +12,7 @@ import {
   sourceRunHeld,
 } from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
+import type { UpdateState } from "@perch/core/update.ts";
 import {
   cleanup,
   fireEvent,
@@ -18,10 +20,15 @@ import {
   screen,
   within,
 } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockHome, mockSettingsForm } from "./mock-birds.ts";
-import { SettingsEditor, type SettingsPageName } from "./settings-forms.tsx";
-import { SettingsView } from "./settings-view.tsx";
+import {
+  SettingsEditor,
+  type SettingsPageName,
+  type UpdateCalls,
+} from "./settings-forms.tsx";
+import { SettingsView, type SettingsViewProps } from "./settings-view.tsx";
 import { skyPhase } from "./sky.ts";
 
 afterEach(cleanup);
@@ -34,11 +41,20 @@ const keyring: KeyringCalls = {
   testSource: async () => ({ ok: true, count: 0 }),
 };
 
+/** Update calls as spies. */
+const updateSpies = (): UpdateCalls => ({
+  onCheck: vi.fn(),
+  onInstall: vi.fn(),
+  onRestart: vi.fn(),
+});
+
 /** The editor on one page, with no scan records. */
 const editorOn = (
   page: SettingsPageName,
   form: SettingsForm,
   onSave: () => void,
+  update: UpdateState = mockUpdates.upToDate,
+  updateCalls: UpdateCalls = updateSpies(),
 ) => (
   <SettingsEditor
     form={form}
@@ -47,6 +63,8 @@ const editorOn = (
     now={now}
     keyring={keyring}
     unfold={null}
+    update={update}
+    updateCalls={updateCalls}
     onSave={onSave}
   />
 );
@@ -55,6 +73,22 @@ function editor(page: SettingsPageName, form = mockSettingsForm()) {
   const onSave = vi.fn();
   const view = render(editorOn(page, form, onSave));
   return { onSave, form, view };
+}
+
+/** The settings page with the rail's page held as the app's URL holds it, the mock up to date. */
+function Railed(
+  props: Omit<SettingsViewProps, "page" | "onPage" | "update" | "updateCalls">,
+) {
+  const [page, setPage] = useState<SettingsPageName>("sources");
+  return (
+    <SettingsView
+      {...props}
+      page={page}
+      onPage={setPage}
+      update={mockUpdates.upToDate}
+      updateCalls={updateSpies()}
+    />
+  );
 }
 
 const group = (name: string) => within(screen.getByRole("region", { name }));
@@ -888,11 +922,205 @@ describe("the Window page", () => {
   });
 });
 
+describe("the Updates page", () => {
+  const page = () => group("Updates");
+  const toggle = (name: string) =>
+    page().getByRole("switch", { name }) as HTMLButtonElement;
+
+  /** The editor on the Updates page in an update state, with the calls it makes. */
+  function updates(
+    update: UpdateState,
+    form: SettingsForm = mockSettingsForm(),
+  ) {
+    const onSave = vi.fn();
+    const calls = updateSpies();
+    render(editorOn("updates", form, onSave, update, calls));
+    return { onSave, calls, form };
+  }
+
+  const status = () => page().getByRole("status");
+  const slot = (name: string) =>
+    page().getByRole("button", { name }) as HTMLButtonElement;
+  const releasesLink = () =>
+    page().getByRole("link", { name: "github.com/the-undev/perch/releases" });
+
+  it("sits last on the rail's pages, writing [update]", () => {
+    updates(mockUpdates.upToDate);
+
+    expect(page().getByText("[update]")).toBeDefined();
+    expect(
+      page().getByText(
+        "How perch learns of new releases, and whether it installs them.",
+      ),
+    ).toBeDefined();
+  });
+
+  it("says the running version is the latest, links the releases page, and checks now quietly", () => {
+    const { calls } = updates(mockUpdates.upToDate);
+
+    expect(status().textContent).toBe(
+      "Running 0.2.0, the latest release. Checked 8 minutes ago.",
+    );
+    expect(releasesLink().getAttribute("href")).toBe(
+      "https://github.com/the-undev/perch/releases",
+    );
+    expect(slot("Check now").className).toContain("border-edge");
+    fireEvent.click(slot("Check now"));
+    expect(calls.onCheck).toHaveBeenCalledOnce();
+  });
+
+  it("says no check has run yet, and that checking is off when it is", () => {
+    updates(mockUpdates.noCheck);
+    expect(status().textContent).toBe("Running 0.2.0. No check yet.");
+    cleanup();
+
+    updates(mockUpdates.checkOff);
+    expect(status().textContent).toBe(
+      "Running 0.2.0. Checking is off; press to check once.",
+    );
+    expect(slot("Check now").disabled).toBe(false);
+  });
+
+  it("quiets the button while a check runs", () => {
+    updates(mockUpdates.checking);
+
+    expect(status().textContent).toBe("Checking…");
+    expect(slot("Check now").disabled).toBe(true);
+  });
+
+  it("opens the release's page in the browser with install off, as the primary action", () => {
+    updates(mockUpdates.found);
+
+    expect(status().textContent).toBe(
+      "0.3.0 is out. This is 0.2.0. Checked 16 minutes ago.",
+    );
+    const open = page().getByRole("link", { name: "Open the releases page" });
+    expect(open.getAttribute("href")).toBe(
+      "https://github.com/the-undev/perch/releases/tag/v0.3.0",
+    );
+    expect(open.getAttribute("target")).toBe("_blank");
+    expect(open.className).toContain("bg-paper");
+    expect(page().queryByRole("button", { name: "Check now" })).toBeNull();
+  });
+
+  it("offers the install with install on, and holds it with the bar while downloading", () => {
+    const { calls } = updates(mockUpdates.foundInstall);
+    fireEvent.click(slot("Install 0.3.0"));
+    expect(calls.onInstall).toHaveBeenCalledOnce();
+    cleanup();
+
+    updates(mockUpdates.downloading);
+    expect(status().textContent).toBe("Downloading 0.3.0: 41 of 89 MB.");
+    expect(
+      page()
+        .getByRole("progressbar", { name: "Download" })
+        .getAttribute("aria-valuenow"),
+    ).toBe("46");
+    expect(slot("Install 0.3.0").disabled).toBe(true);
+    expect(page().queryByRole("link", { name: /releases/ })).toBeNull();
+  });
+
+  it("offers the restart once downloaded, saying when the image is replaced", () => {
+    const { calls } = updates(mockUpdates.ready);
+
+    expect(status().textContent).toBe(
+      "0.3.0 is downloaded. It runs from the next start.",
+    );
+    expect(
+      page().getByText(
+        "The image at ~/AppImages/perch.appimage is replaced when perch quits.",
+      ),
+    ).toBeDefined();
+    fireEvent.click(slot("Restart now"));
+    expect(calls.onRestart).toHaveBeenCalledOnce();
+  });
+
+  it("puts a failed download or check in amber, the last answer above and the button returned", () => {
+    updates(mockUpdates.downloadFailed);
+    expect(
+      page().getByText("The download failed: the connection was reset.")
+        .className,
+    ).toContain("text-amber");
+    expect(slot("Install 0.3.0").disabled).toBe(false);
+    cleanup();
+
+    updates(mockUpdates.checkFailed);
+    expect(status().textContent).toBe(
+      "Running 0.2.0. Last known: 0.3.0 is out.",
+    );
+    expect(
+      page().getByText("The check failed: api.github.com did not answer.")
+        .className,
+    ).toContain("text-amber");
+  });
+
+  it("says what each switch does, and saves both, the image named beneath install", () => {
+    const { onSave, form } = updates(mockUpdates.upToDate);
+
+    expect(toggle("Check for updates").getAttribute("aria-checked")).toBe(
+      "true",
+    );
+    expect(toggle("Install updates").getAttribute("aria-checked")).toBe(
+      "false",
+    );
+    expect(
+      page().getByText(
+        "Each scan, at most hourly, perch reads the latest release from GitHub and says here and in the tray when it is newer.",
+      ),
+    ).toBeDefined();
+    expect(page().getByText("~/AppImages/perch.appimage")).toBeDefined();
+    expect(saveButton().disabled).toBe(true);
+
+    fireEvent.click(toggle("Check for updates"));
+    fireEvent.click(toggle("Install updates"));
+
+    expect(
+      page().getByText(
+        "Off. perch never calls GitHub by itself. Check now, above, still does.",
+      ),
+    ).toBeDefined();
+    expect(
+      page().getByText(
+        "A newer release, however learned of, is downloaded and the image replaced in place. The new version runs from the next start.",
+      ),
+    ).toBeDefined();
+    fireEvent.click(saveButton());
+    expect(onSave).toHaveBeenCalledExactlyOnceWith({
+      ...form.values,
+      update: { check: false, install: true },
+    });
+  });
+
+  it("holds the install switch from source, saying why in amber, the check switch still editable", () => {
+    updates(
+      mockUpdates.sourceRun,
+      settingsFormFor(mockConfig, mockHome, mockLogin, null),
+    );
+    const install = toggle("Install updates");
+
+    expect(install.getAttribute("aria-disabled")).toBe("true");
+    expect(
+      page().getByText("Held: run from source there is no image to replace.")
+        .className,
+    ).toContain("text-amber");
+    expect(
+      page().getByText("Off. A newer release is only pointed at."),
+    ).toBeDefined();
+    fireEvent.click(install);
+    expect(install.getAttribute("aria-checked")).toBe("false");
+    expect(saveButton().disabled).toBe(true);
+
+    fireEvent.click(toggle("Check for updates"));
+    expect(saveButton().disabled).toBe(false);
+    expect(status().textContent).toBe("Running 0.3.0-dev. No check yet.");
+  });
+});
+
 describe("the settings page", () => {
   it("shows the main process's problems, and rides home on Escape and from the brand", () => {
     const onHome = vi.fn();
     render(
-      <SettingsView
+      <Railed
         form={mockSettingsForm()}
         cards={null}
         now={now}
@@ -928,7 +1156,7 @@ describe("the settings page", () => {
     const onSave = vi.fn();
     const form = mockSettingsForm();
     render(
-      <SettingsView
+      <Railed
         form={form}
         cards={null}
         now={now}
@@ -957,6 +1185,7 @@ describe("the settings page", () => {
       "Scanning",
       "Launching",
       "Window",
+      "Updates",
     ]);
     expect(
       rail
@@ -992,7 +1221,7 @@ describe("the settings page", () => {
   it("carries the camera's scan line in its header, and scans again when it is pressed", () => {
     const onRescan = vi.fn();
     render(
-      <SettingsView
+      <Railed
         form={mockSettingsForm()}
         cards={null}
         now={now}
@@ -1022,7 +1251,7 @@ describe("the settings page", () => {
   it("says quietly in its header while a scan runs, and waits for it", () => {
     const onRescan = vi.fn();
     render(
-      <SettingsView
+      <Railed
         form={mockSettingsForm()}
         cards={null}
         now={now}
@@ -1046,7 +1275,7 @@ describe("the settings page", () => {
 
   it("says in its header that no scan has finished before the first one does", () => {
     render(
-      <SettingsView
+      <Railed
         form={mockSettingsForm()}
         cards={null}
         now={now}
@@ -1071,7 +1300,7 @@ describe("the settings page", () => {
   it("opens the config file from the path in its header", () => {
     const onOpenConfig = vi.fn();
     render(
-      <SettingsView
+      <Railed
         form={mockSettingsForm()}
         cards={null}
         now={now}
@@ -1096,7 +1325,7 @@ describe("the settings page", () => {
 
   it("says it is reading the config until the form arrives", () => {
     render(
-      <SettingsView
+      <Railed
         form={null}
         cards={null}
         now={now}

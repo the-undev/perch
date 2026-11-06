@@ -8,17 +8,19 @@ import type {
   SettingsValues,
 } from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
+import type { UpdateState } from "@perch/core/update.ts";
 import type {
   Aviary,
   SourceCard,
   SourceCardKind,
 } from "@perch/core/viewmodel.ts";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ScanLine } from "./scan-line.tsx";
 import {
   SettingsEditor,
   type SettingsPageName,
   settingsPages,
+  type UpdateCalls,
 } from "./settings-forms.tsx";
 
 export interface SettingsViewProps {
@@ -42,6 +44,14 @@ export interface SettingsViewProps {
   keyring: KeyringCalls;
   /** The Sources page's cards of this kind start unfolded, as the link that opened the page asks; null for none. */
   unfold: SourceCardKind | null;
+  /** The page the rail has open. */
+  page: SettingsPageName;
+  /** The rail asked for a page. */
+  onPage: (page: SettingsPageName) => void;
+  /** The update state the Updates page's status row shows. */
+  update: UpdateState;
+  /** What the Updates page's status row asks of the main process. */
+  updateCalls: UpdateCalls;
   onSave: (values: SettingsValues) => void;
   /** The brand, the way back or Escape was pressed. */
   onHome: () => void;
@@ -90,10 +100,13 @@ export function SettingsView({
   problems,
   keyring,
   unfold,
+  page,
+  onPage,
+  update,
+  updateCalls,
   onSave,
   onHome,
 }: SettingsViewProps) {
-  const [page, setPage] = useState<SettingsPageName>("sources");
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onHome();
@@ -141,7 +154,7 @@ export function SettingsView({
       </header>
       <main className="@container min-h-0 flex-1 overflow-y-auto bg-ground">
         <div className="mx-auto grid min-h-full max-w-350 content-start @min-[900px]:grid-cols-[168px_minmax(0,1fr)]">
-          <SettingsRail page={page} onPage={setPage} />
+          <SettingsRail page={page} onPage={onPage} />
           <div className="flex min-w-0 max-w-190 flex-col px-4 pt-5.5 @min-[900px]:px-6.5">
             {problems.map((problem) => (
               <p key={problem} className="mt-0 mb-2 text-[12.5px] text-amber">
@@ -160,6 +173,8 @@ export function SettingsView({
                 now={now}
                 keyring={keyring}
                 unfold={unfold}
+                update={update}
+                updateCalls={updateCalls}
                 onSave={onSave}
               />
             )}

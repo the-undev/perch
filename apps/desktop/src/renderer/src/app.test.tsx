@@ -761,6 +761,76 @@ describe("the window", () => {
       expect(local.queryByRole("textbox", { name: "folder 1" })).toBeNull();
     });
 
+    it("opens the Updates page when the tray asks, from wherever the window is", async () => {
+      const { fake, router } = renderApp(
+        idle(mockAviary),
+        "/",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+      await birdButton("undev/skiff");
+
+      act(() => fake.openUpdates());
+
+      await waitFor(() => expect(pathOf(router)).toBe("/settings"));
+      expect(router.state.location.search).toEqual({ page: "updates" });
+      expect(
+        await screen.findByRole("region", { name: "Updates" }),
+      ).toBeDefined();
+    });
+
+    it("keeps the rail's page in the URL, and reads a page it does not know as Sources", async () => {
+      const { router } = renderApp(
+        idle(mockAviary),
+        "/settings?page=nowhere",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+
+      expect(
+        await screen.findByRole("region", { name: "Sources" }),
+      ).toBeDefined();
+      fireEvent.click(screen.getByRole("button", { name: "Updates" }));
+
+      await waitFor(() =>
+        expect(router.state.location.search).toEqual({ page: "updates" }),
+      );
+    });
+
+    it("asks the main process to check, install and restart from the status row", async () => {
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/settings?page=updates",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+      const updates = () =>
+        within(screen.getByRole("region", { name: "Updates" }));
+
+      fireEvent.click(await screen.findByRole("button", { name: "Check now" }));
+      expect(fake.updateChecks).toBe(1);
+
+      act(() =>
+        fake.push({ ...idle(mockAviary), update: mockUpdates.foundInstall }),
+      );
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Install 0.3.0" }),
+      );
+      expect(fake.updateInstalls).toBe(1);
+
+      act(() => fake.push({ ...idle(mockAviary), update: mockUpdates.ready }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Restart now" }),
+      );
+      expect(fake.updateRestarts).toBe(1);
+      expect(updates().getByRole("status").textContent).toBe(
+        "0.3.0 is downloaded. It runs from the next start.",
+      );
+    });
+
     it("saves an edit through the main process, and shows a refusal among the problems", async () => {
       const form = mockSettingsForm();
       const { fake } = renderApp(
@@ -960,7 +1030,9 @@ describe("the window", () => {
         form,
       );
       fireEvent.click(await screen.findByRole("button", { name: "Window" }));
-      const windowPage = within(screen.getByRole("region", { name: "Window" }));
+      const windowPage = within(
+        await screen.findByRole("region", { name: "Window" }),
+      );
 
       fireEvent.click(
         windowPage.getByRole("switch", { name: "Start at login" }),

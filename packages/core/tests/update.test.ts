@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { type FetchJson, HttpStatusError, NoAnswerError } from "../src/http.ts";
+import { mockSnapshot, mockUpdates } from "../src/mock.ts";
 import {
   checkGapMs,
   createReleaseChecker,
@@ -9,6 +10,8 @@ import {
   newerVersion,
   type ReleaseCheck,
   readLatestRelease,
+  type UpdateStatus,
+  updateStatus,
 } from "../src/update.ts";
 
 const fixturePath = join(
@@ -230,6 +233,159 @@ describe("the release checker", () => {
 
     expect(made.state().failure).toBe(
       "the latest release's tag nightly is not a version",
+    );
+  });
+});
+
+describe("the Updates page's status row", () => {
+  const scannedAt = new Date(mockSnapshot.scannedAt);
+  const status = (name: keyof typeof mockUpdates) =>
+    updateStatus(mockUpdates[name], scannedAt);
+  const link = { kind: "link" } as const;
+  const checkNow = {
+    action: "check",
+    label: "Check now",
+    primary: false,
+    held: false,
+  } as const;
+  const install = {
+    action: "install",
+    label: "Install 0.3.0",
+    primary: true,
+    held: false,
+  } as const;
+
+  it("offers Check now, quietly, until something newer is known", () => {
+    expect(status("noCheck")).toEqual({
+      sentence: "Running 0.2.0. No check yet.",
+      detail: link,
+      button: checkNow,
+    });
+    expect(status("upToDate")).toEqual({
+      sentence: "Running 0.2.0, the latest release. Checked 4 minutes ago.",
+      detail: link,
+      button: checkNow,
+    });
+    expect(status("checkOff")).toEqual({
+      sentence: "Running 0.2.0. Checking is off; press to check once.",
+      detail: link,
+      button: checkNow,
+    });
+    expect(status("sourceRun")).toEqual({
+      sentence: "Running 0.3.0-dev. No check yet.",
+      detail: link,
+      button: checkNow,
+    });
+  });
+
+  it("says it is checking and holds the button while a check runs", () => {
+    expect(status("checking")).toEqual({
+      sentence: "Checking…",
+      detail: link,
+      button: { ...checkNow, held: true },
+    });
+  });
+
+  it("points at the releases page with install off, and offers the install with it on", () => {
+    expect(status("found")).toEqual({
+      sentence: "0.3.0 is out. This is 0.2.0. Checked 12 minutes ago.",
+      detail: link,
+      button: {
+        action: "open",
+        label: "Open the releases page",
+        primary: true,
+        held: false,
+      },
+    });
+    expect(status("foundInstall")).toEqual({
+      sentence: "0.3.0 is out. This is 0.2.0. Checked just now.",
+      detail: link,
+      button: install,
+    });
+  });
+
+  it("shows the download's bar with the install held, then offers the restart", () => {
+    expect(status("downloading")).toEqual({
+      sentence: "Downloading 0.3.0: 41 of 89 MB.",
+      detail: { kind: "progress", fraction: 41 / 89 },
+      button: { ...install, held: true },
+    });
+    expect(
+      updateStatus(
+        {
+          ...mockUpdates.downloading,
+          download: {
+            state: "downloading",
+            version: "0.3.0",
+            transferred: 0,
+            total: 0,
+          },
+        },
+        scannedAt,
+      ).sentence,
+    ).toBe("Downloading 0.3.0.");
+    expect(status("ready")).toEqual({
+      sentence: "0.3.0 is downloaded. It runs from the next start.",
+      detail: {
+        kind: "note",
+        text: "The image at ~/AppImages/perch.appimage is replaced when perch quits.",
+      },
+      button: {
+        action: "restart",
+        label: "Restart now",
+        primary: true,
+        held: false,
+      },
+    });
+  });
+
+  it("puts a failure in amber beneath the last answer, the button returned", () => {
+    expect(status("downloadFailed")).toEqual({
+      sentence: "0.3.0 is out. This is 0.2.0. Checked 2 minutes ago.",
+      detail: {
+        kind: "failure",
+        text: "The download failed: the connection was reset.",
+      },
+      button: install,
+    });
+    expect(status("checkFailed")).toEqual({
+      sentence: "Running 0.2.0. Last known: 0.3.0 is out.",
+      detail: {
+        kind: "failure",
+        text: "The check failed: api.github.com did not answer.",
+      },
+      button: install,
+    });
+  });
+
+  it("says how old the last answer is when a later check failed", () => {
+    const failed = {
+      ...mockUpdates.upToDate,
+      failure: "api.github.com answered HTTP 503",
+    };
+    const never = {
+      ...mockUpdates.noCheck,
+      failure: "api.github.com did not answer",
+    };
+
+    expect(updateStatus(failed, scannedAt).sentence).toBe(
+      "Running 0.2.0, the latest release when checked 4 minutes ago.",
+    );
+    expect(updateStatus(never, scannedAt).sentence).toBe(
+      "Running 0.2.0. No check has answered yet.",
+    );
+  });
+
+  it("is covered by the mock: every button and every kind of detail line", () => {
+    const shown: UpdateStatus[] = Object.values(mockUpdates).map((update) =>
+      updateStatus(update, scannedAt),
+    );
+
+    expect(new Set(shown.map((row) => row.button.action))).toEqual(
+      new Set(["check", "open", "install", "restart"]),
+    );
+    expect(new Set(shown.map((row) => row.detail.kind))).toEqual(
+      new Set(["link", "failure", "progress", "note"]),
     );
   });
 });

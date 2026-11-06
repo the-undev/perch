@@ -36,6 +36,9 @@ export interface FakeApi {
   sourceTests: SourceTestValues[];
   /** What the next connection test answers. */
   sourceTested: SourceTested;
+  updateChecks: number;
+  /** Asks for the Updates page, as the tray's update entry does. */
+  openUpdates(): void;
 }
 
 export function fakeApi(
@@ -45,6 +48,7 @@ export function fakeApi(
   settings: SettingsForm | null = null,
 ): FakeApi {
   const listeners = new Set<(state: PerchState) => void>();
+  const pageListeners = new Set<() => void>();
   let current = initial;
   let settingsForm = settings;
   const fake: FakeApi = {
@@ -90,6 +94,13 @@ export function fakeApi(
         fake.sourceTests.push(values);
         return fake.sourceTested;
       },
+      checkForUpdate: async () => {
+        fake.updateChecks += 1;
+      },
+      onOpenUpdates(listener) {
+        pageListeners.add(listener);
+        return () => pageListeners.delete(listener);
+      },
     },
     push(state) {
       current = state;
@@ -111,6 +122,10 @@ export function fakeApi(
     tokenStored: { ok: true },
     sourceTests: [],
     sourceTested: { ok: true, count: 0 },
+    updateChecks: 0,
+    openUpdates() {
+      for (const listener of pageListeners) listener();
+    },
   };
   return fake;
 }

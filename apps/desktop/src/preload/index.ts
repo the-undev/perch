@@ -23,6 +23,12 @@ const api: PerchApi = {
   storeToken: (key, token) =>
     ipcRenderer.invoke(channels.storeToken, key, token),
   testSource: (values) => ipcRenderer.invoke(channels.testSource, values),
+  checkForUpdate: () => ipcRenderer.invoke(channels.checkForUpdate),
+  onOpenUpdates(listener) {
+    const handler = () => listener();
+    ipcRenderer.on(channels.onOpenUpdates, handler);
+    return () => ipcRenderer.removeListener(channels.onOpenUpdates, handler);
+  },
 };
 
 contextBridge.exposeInMainWorld("perch", api);

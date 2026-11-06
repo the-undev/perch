@@ -12,6 +12,7 @@ import {
   mockImage,
   mockLogin,
   mockSnapshot,
+  mockUpdates,
 } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
@@ -58,6 +59,7 @@ const idle = (aviary: Aviary | null): PerchState => ({
   sourceCards: null,
   scanning: false,
   problems: [],
+  update: mockUpdates.noCheck,
 });
 
 function renderApp(
@@ -101,6 +103,7 @@ describe("the window", () => {
       sourceCards: null,
       scanning: true,
       problems: [],
+      update: mockUpdates.noCheck,
     });
 
     expect((await screen.findByRole("status")).textContent).toBe(
@@ -195,6 +198,7 @@ describe("the window", () => {
         sourceCards: null,
         scanning: true,
         problems: [],
+        update: mockUpdates.noCheck,
       }),
     );
 
@@ -211,6 +215,7 @@ describe("the window", () => {
       problems: [
         "config: wires must be a table; the config read before stands",
       ],
+      update: mockUpdates.noCheck,
     });
 
     expect(

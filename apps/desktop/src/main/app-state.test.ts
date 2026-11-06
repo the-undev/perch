@@ -10,6 +10,7 @@ import { defaultConfig } from "@perch/core/config-default.ts";
 import { writeConfig } from "@perch/core/config-write.ts";
 import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
+import { HttpStatusError } from "@perch/core/http.ts";
 import type { LaunchActionValues } from "@perch/core/launch-form.ts";
 import {
   mockConfig,
@@ -32,6 +33,29 @@ import {
 } from "./config-store.ts";
 
 const loaded: LoadedConfig = { config: mockConfig, path: "/config.toml" };
+
+/** GitHub's latest release of the-undev/perch, 0.3.0, as the core tests' fixture holds it. */
+const releaseFixture = join(
+  import.meta.dirname,
+  "../../../../packages/core/tests/fixtures/releases/latest.json",
+);
+
+/** A release fetch that answers with the fixture and counts its calls. */
+const fakeReleaseFetch = () =>
+  vi.fn(async (_url: string, _headers: Record<string, string>) =>
+    JSON.parse(await readFile(releaseFixture, "utf8")),
+  );
+
+/** A clock the test moves by hand. */
+function fakeClock() {
+  let at = Date.parse("2026-11-06T09:00:00.000Z");
+  return {
+    now: () => new Date(at),
+    pass: (ms: number) => {
+      at += ms;
+    },
+  };
+}
 
 /** A launch action the mock's Perch bird offers. */
 const perchInCode: LaunchAction = {
@@ -90,6 +114,9 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
     editConfig: vi.fn(async () => {}),
     autostart: fakeAutostart(),
     image: mockImage,
+    running: "0.2.0",
+    fetchRelease: fakeReleaseFetch(),
+    now: fakeClock().now,
     requestScan: vi.fn(async () => {}),
     ...overrides,
   };
@@ -211,6 +238,7 @@ describe("the app state", () => {
       sourceCards: null,
       scanning: false,
       problems: ["config: wires must be a table"],
+      update: expect.objectContaining({ running: "0.2.0" }),
     });
   });
 
@@ -228,6 +256,7 @@ describe("the app state", () => {
       sourceCards: null,
       scanning: false,
       problems: [],
+      update: expect.objectContaining({ running: "0.2.0" }),
     });
   });
 
@@ -703,5 +732,153 @@ describe("the settings", () => {
     await app.start();
 
     expect(await app.settingsForm()).toBeNull();
+  });
+});
+
+describe("the release check", () => {
+  /** Config with the [update] table as given, as the next read. */
+  const withUpdate = (update: Config["update"]) => ({
+    loaded: { config: { ...mockConfig, update }, path: "/config.toml" },
+    error: null,
+    missing: false,
+  });
+
+  it("checks on a scan and publishes the newer release with the running version", async () => {
+    const { app, deps, published } = appState();
+    await app.start();
+
+    await app.scan();
+
+    await vi.waitFor(() =>
+      expect(published.at(-1)?.update.release).toEqual({
+        version: "0.3.0",
+        url: "https://github.com/the-undev/perch/releases/tag/v0.3.0",
+      }),
+    );
+    expect(deps.fetchRelease).toHaveBeenCalledExactlyOnceWith(
+      "https://api.github.com/repos/the-undev/perch/releases/latest",
+      expect.not.objectContaining({ Authorization: expect.anything() }),
+    );
+    expect(app.state().update).toMatchObject({
+      running: "0.2.0",
+      checkOn: true,
+      checkedAt: "2026-11-06T09:00:00.000Z",
+      failure: null,
+      checking: false,
+      download: { state: "none" },
+    });
+  });
+
+  it("checks at most hourly however often it scans", async () => {
+    const clock = fakeClock();
+    const fetchRelease = fakeReleaseFetch();
+    const { app } = appState({ fetchRelease, now: clock.now });
+    await app.start();
+
+    await app.scan();
+    await vi.waitFor(() => expect(app.state().update.checking).toBe(false));
+    clock.pass(15 * 60_000);
+    await app.scan();
+    expect(fetchRelease).toHaveBeenCalledOnce();
+
+    clock.pass(45 * 60_000);
+    await app.scan();
+    await vi.waitFor(() => expect(fetchRelease).toHaveBeenCalledTimes(2));
+  });
+
+  it("never checks on a scan with check off, and Check now still does", async () => {
+    const fetchRelease = fakeReleaseFetch();
+    const { app, config } = appState({ fetchRelease });
+    config.nextRead(withUpdate({ check: false, install: false }));
+    await app.start();
+
+    await app.scan();
+    expect(fetchRelease).not.toHaveBeenCalled();
+    expect(app.state().update.checkOn).toBe(false);
+
+    await app.checkForUpdate();
+    expect(fetchRelease).toHaveBeenCalledOnce();
+    expect(app.state().update.release?.version).toBe("0.3.0");
+  });
+
+  it("has Check now bypass the hour but join a check already running", async () => {
+    let answer: (value: unknown) => void = () => {};
+    const fetchRelease = vi.fn(
+      () =>
+        new Promise<unknown>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const { app } = appState({ fetchRelease });
+    await app.start();
+
+    await app.scan();
+    const joined = app.checkForUpdate();
+    expect(app.state().update.checking).toBe(true);
+    answer(JSON.parse(await readFile(releaseFixture, "utf8")));
+    await joined;
+    expect(fetchRelease).toHaveBeenCalledOnce();
+
+    const again = app.checkForUpdate();
+    answer(JSON.parse(await readFile(releaseFixture, "utf8")));
+    await again;
+    expect(fetchRelease).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the last answer through a failed check and says why", async () => {
+    const clock = fakeClock();
+    const fetchRelease = fakeReleaseFetch();
+    const { app } = appState({ fetchRelease, now: clock.now });
+    await app.start();
+    await app.checkForUpdate();
+
+    fetchRelease.mockRejectedValueOnce(
+      new HttpStatusError(
+        "https://api.github.com/repos/the-undev/perch/releases/latest",
+        503,
+      ),
+    );
+    clock.pass(60 * 60_000);
+    await app.checkForUpdate();
+
+    expect(app.state().update).toMatchObject({
+      release: { version: "0.3.0" },
+      checkedAt: "2026-11-06T09:00:00.000Z",
+      failure: "api.github.com answered HTTP 503",
+    });
+  });
+
+  it("installs only with install on and an image to replace, shown with ~", async () => {
+    const onImage = appState();
+    onImage.config.nextRead(withUpdate({ check: true, install: true }));
+    await onImage.app.start();
+    const fromSource = appState({ image: null });
+    fromSource.config.nextRead(withUpdate({ check: true, install: true }));
+    await fromSource.app.start();
+    const off = appState();
+    await off.app.start();
+
+    expect(onImage.app.state().update).toMatchObject({
+      installs: true,
+      image: "~/AppImages/perch.appimage",
+    });
+    expect(fromSource.app.state().update).toMatchObject({
+      installs: false,
+      image: null,
+    });
+    expect(off.app.state().update.installs).toBe(false);
+  });
+
+  it("reads the install row's hold and image into the settings form", async () => {
+    const onImage = appState();
+    const fromSource = appState({ image: null });
+    await onImage.app.start();
+    await fromSource.app.start();
+
+    expect((await onImage.app.settingsForm())?.install).toEqual({
+      held: null,
+      image: "~/AppImages/perch.appimage",
+    });
+    expect((await fromSource.app.settingsForm())?.install.held).not.toBeNull();
   });
 });

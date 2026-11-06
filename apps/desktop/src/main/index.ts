@@ -8,6 +8,7 @@ import { errorMessage, readTextIfExists } from "@perch/core/fs.ts";
 import { createFetchJson } from "@perch/core/http.ts";
 import { readSnapshot, runAggregate, runGather } from "@perch/core/scan.ts";
 import { createKeyringTokenLookup } from "@perch/core/secrets.ts";
+import type { UpdateState } from "@perch/core/update.ts";
 import { app, BrowserWindow, Menu, shell, Tray } from "electron";
 import { channels, type PerchState } from "../shared/ipc.ts";
 import { appPaths } from "./app-paths.ts";
@@ -29,7 +30,12 @@ import { createStoreToken, testSource } from "./keyring.ts";
 import { createSpawnDetached, launch } from "./launch.ts";
 import { createScanScheduler } from "./scan-scheduler.ts";
 import { writeStarterConfig } from "./starter-config.ts";
-import { syncTray, trayMenu } from "./tray-menu.ts";
+import {
+  syncTray,
+  type TrayActions,
+  trayMenu,
+  trayUpdateLabel,
+} from "./tray-menu.ts";
 import { onClose, present } from "./window-presence.ts";
 
 /** A focus scans only once this long has passed since the last scan finished. */
@@ -40,27 +46,18 @@ const noConfigRetryMs = 60_000;
 const configQuietMs = 300;
 /** A connection test gives up on a forge that has not answered in this long, as a scan does. */
 const testTimeoutMs = 10_000;
+/** The release check gives up on GitHub after this long. */
+const releaseTimeoutMs = 10_000;
 
 /** Held while the tray setting is on: a tray icon that is collected leaves the tray. */
 let tray: Tray | null = null;
+/** The update entry the tray's menu was last built with; undefined before it was built. */
+let trayMenuLabel: string | null | undefined;
 
-/** The tray icon on the window, its menu showing it, rescanning and quitting. */
-function createTray(
-  icon: string,
-  window: BrowserWindow,
-  rescan: () => void,
-): Tray {
+/** The tray icon on the window; activating it toggles the window. */
+function createTray(icon: string, window: BrowserWindow): Tray {
   const made = new Tray(icon);
   made.setToolTip("perch");
-  made.setContextMenu(
-    Menu.buildFromTemplate(
-      trayMenu({
-        show: () => present(window, "show"),
-        rescan,
-        quit: () => app.quit(),
-      }),
-    ),
-  );
   // On Plasma a left click activates the icon, which Electron reports as a click.
   made.on("click", () => present(window, "toggle"));
   return made;
@@ -147,10 +144,29 @@ function start(): void {
   /** Whether the window lives in the tray: config's setting, its default without a config. */
   const trayOn = () =>
     config.current().loaded?.config.window.tray ?? defaultTray;
-  /** Makes the tray icon on the window while the setting wants one, and takes it away once not. */
-  function applyTray(window: BrowserWindow): void {
-    tray = syncTray(tray, trayOn(), () =>
-      createTray(icons.tray, window, () => void scheduler.request()),
+  /** What the tray menu's items do on the window. */
+  const trayActions = (window: BrowserWindow): TrayActions => ({
+    show: () => present(window, "show"),
+    rescan: () => void scheduler.request(),
+    openUpdates: () => {
+      present(window, "show");
+      window.webContents.send(channels.onOpenUpdates);
+    },
+    quit: () => app.quit(),
+  });
+  /**
+   * Makes the tray icon on the window while the setting wants one, and takes it away once not; its
+   * menu is built again when the update entry changes.
+   */
+  function applyTray(window: BrowserWindow, update: UpdateState): void {
+    const held = tray;
+    tray = syncTray(tray, trayOn(), () => createTray(icons.tray, window));
+    if (tray === null) return;
+    const label = trayUpdateLabel(update);
+    if (tray === held && label === trayMenuLabel) return;
+    trayMenuLabel = label;
+    tray.setContextMenu(
+      Menu.buildFromTemplate(trayMenu(trayActions(window), update)),
     );
   }
   const state = createAppState({
@@ -196,12 +212,15 @@ function start(): void {
       ),
     autostart,
     image,
+    running: app.getVersion(),
+    fetchRelease: createFetchJson(releaseTimeoutMs),
+    now,
     // The scheduler is made below; nothing asks for a scan before then.
     requestScan: () => scheduler.request(),
     // Every config read is published, so the tray icon follows the setting from here.
     publish: (next: PerchState) => {
       if (mainWindow === undefined || mainWindow.isDestroyed()) return;
-      applyTray(mainWindow);
+      applyTray(mainWindow, next.update);
       mainWindow.webContents.send(channels.onState, next);
     },
   });
@@ -267,6 +286,7 @@ function start(): void {
       saveSettings: (values) => state.saveSettings(values),
       storeToken,
       testSource: (values) => testSource(values, testDeps),
+      checkForUpdate: () => state.checkForUpdate(),
     });
     // The tray setting is config's, so the window waits for the first read.
     await ready;
@@ -280,7 +300,7 @@ function start(): void {
     );
     window.on("focus", () => void ready.then(() => scheduler.focused()));
 
-    applyTray(window);
+    applyTray(window, state.state().update);
     // An existing entry follows the image now running, so updating is running the new one once.
     void autostart
       .repoint(trayOn())

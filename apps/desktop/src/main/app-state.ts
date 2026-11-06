@@ -1,9 +1,15 @@
 // The main process's one source of truth: the config, the latest snapshot and the aviary derived
-// from them, what went wrong outside any one source, and the scan, launch, key-file reads, config
-// entry edits and settings that act on them, the autostart entry among the settings. Electron
-// stays outside: every effect is a dependency.
+// from them, what went wrong outside any one source, the release check, and the scan, launch,
+// key-file reads, config entry edits and settings that act on them, the autostart entry among the
+// settings. Electron stays outside: every effect is a dependency.
 
-import type { Config, LoadedConfig } from "@perch/core/config.ts";
+import {
+  type Config,
+  collapseHome,
+  defaultUpdateCheck,
+  defaultUpdateInstall,
+  type LoadedConfig,
+} from "@perch/core/config.ts";
 import {
   type EntryForm,
   type EntryValues,
@@ -12,6 +18,7 @@ import {
   withoutEntry,
 } from "@perch/core/entry-form.ts";
 import { errorMessage } from "@perch/core/fs.ts";
+import type { FetchJson } from "@perch/core/http.ts";
 import {
   type SettingsForm,
   type SettingsValues,
@@ -19,6 +26,7 @@ import {
   withSettings,
 } from "@perch/core/settings-form.ts";
 import type { Item, Snapshot } from "@perch/core/snapshot.ts";
+import { createReleaseChecker, type UpdateState } from "@perch/core/update.ts";
 import {
   type Aviary,
   type Bird,
@@ -56,6 +64,12 @@ export interface AppStateDeps {
   autostart: Autostart;
   /** The running AppImage, from APPIMAGE, which an install replaces; null when run from source. */
   image: string | null;
+  /** The running version. */
+  running: string;
+  /** Answers the release check's request. */
+  fetchRelease: FetchJson;
+  /** The clock the release check's hour and answers are read from. */
+  now: () => Date;
   /** Asks for a scan now, or joins the one running, and settles when it has finished. */
   requestScan: () => Promise<void>;
   /** Told every change to the state. */
@@ -108,6 +122,8 @@ export interface AppState {
    * becomes a problem until the next scan.
    */
   saveSettings(values: SettingsValues): Promise<void>;
+  /** Checks for a newer release now, whatever config's switch and the hour say; joins one running. */
+  checkForUpdate(): Promise<void>;
 }
 
 /** Two launch actions are the same when they serialise alike: they are plain data, commands and all. */
@@ -164,6 +180,28 @@ export function createAppState(deps: AppStateDeps): AppState {
     return list;
   }
 
+  /** Config's [update] table, its defaults without a config. */
+  function updateConfig(): Config["update"] {
+    return (
+      deps.config.current().loaded?.config.update ?? {
+        check: defaultUpdateCheck,
+        install: defaultUpdateInstall,
+      }
+    );
+  }
+
+  function updateState(): UpdateState {
+    const update = updateConfig();
+    return {
+      ...releases.state(),
+      running: deps.running,
+      checkOn: update.check,
+      installs: update.install && deps.image !== null,
+      image: deps.image === null ? null : collapseHome(deps.image, deps.home),
+      download: { state: "none" },
+    };
+  }
+
   function state(): PerchState {
     return {
       noConfig: deps.config.current().missing,
@@ -171,6 +209,7 @@ export function createAppState(deps: AppStateDeps): AppState {
       sourceCards: sourceCards(),
       scanning,
       problems: problems(),
+      update: updateState(),
     };
   }
 
@@ -187,6 +226,13 @@ export function createAppState(deps: AppStateDeps): AppState {
   }
 
   const publish = () => deps.publish(state());
+
+  const releases = createReleaseChecker({
+    fetchJson: deps.fetchRelease,
+    running: deps.running,
+    now: deps.now,
+    onChange: publish,
+  });
 
   /** Performs a launch action; a failure is a problem until the next scan. */
   async function perform(action: LaunchAction): Promise<void> {
@@ -257,6 +303,8 @@ export function createAppState(deps: AppStateDeps): AppState {
         publish();
         return;
       }
+      // The check rides the scan cycle but never holds the scan up.
+      if (loaded.config.update.check) void releases.checkIfDue();
       try {
         await deps.gather(loaded.config);
         snapshot = await deps.aggregate(loaded);
@@ -334,5 +382,6 @@ export function createAppState(deps: AppStateDeps): AppState {
         (config) => withSettings(config, values, deps.home),
         () => saveLogin(values.window),
       ),
+    checkForUpdate: () => releases.checkNow(),
   };
 }

@@ -347,7 +347,8 @@ sources, the health windows, the scan interval and the finalised commit
 count, the launch actions in the order a bird offers them (none until one
 is added, the zellij action carrying the session defaults), whether the
 window stays in the tray (`[window] tray`, true unless the file says
-false), per-project assertions (joins, wire, display names, thresholds,
+false), whether perch checks for and installs updates (`[update] check`
+and `install`, see Updates), per-project assertions (joins, wire, display names, thresholds,
 key file lists, zellij session names). An entry for an item adopts it. No
 secrets, ever. Every field is shown, with placeholder values, in
 `config.example.toml`.
@@ -364,8 +365,8 @@ scans nothing.
 The settings page, reached from the camera header, edits everything but
 the item entries, which each bird's adoption papers edit. A rail names its
 pages beside one reading-width column: Sources, with Joining up beneath
-it, then Wires, Judgement, Scanning, Launching and Window. It opens on
-Sources and shows one page at a time. Its header carries the camera's
+it, then Wires, Judgement, Scanning, Launching, Window and Updates. It
+opens on Sources and shows one page at a time. Its header carries the camera's
 scan line and names the config file. Pressing the path opens the file
 in config's first VS Code action, the file filling `{path}`; without
 one, the first folder action's command, or the folder kind's default
@@ -445,6 +446,10 @@ its `Exec` runs are named beneath in mono. Run from source, with no
 `APPIMAGE`, the login switch is held at what the entry says and its row
 says why in amber; Save never writes or removes the entry then.
 
+The Updates page's first row is the status row, then two switch rows,
+each with a sentence saying what its state does. The status row is state,
+never saved; see Updates.
+
 The app writes the file without comments, paths under the home
 directory with `~`. An edit to the file by hand is read as soon as it is
 saved, and the open page or papers show it, and a scan follows; the last write wins.
@@ -463,10 +468,51 @@ interactive use. A password manager may hold the human backups, and is
 never read at run time. Creation and replacement runbook:
 [tokens.md](tokens.md).
 
+## Updates
+
+The check is one unauthenticated read of the latest GitHub release of
+the-undev/perch, compared with the running version. With `[update] check`,
+true unless the file says false, it rides the scan cycle at most once an
+hour, whatever the scan interval; a failed check counts toward the hour.
+Check now, on the status row, checks once whatever the switch and the
+hour say, joining a check already running. A check downloads nothing and
+keeps what it learned in memory only. A failed check keeps the last
+answer and says why in amber.
+
+With `[update] install`, false unless the file says true, perch downloads
+a newer release through electron-updater from the release's
+`latest-linux.yml`. A check on the scan cycle that finds one downloads it
+at once; one found by Check now waits for Install. The download is
+verified against the feed's checksum, and a mismatch discards it. A
+finished download replaces the image `APPIMAGE` names when perch quits
+normally, or on Restart now, which then starts the new image hidden in
+the tray when the window was, else shown. Run from source, with no
+`APPIMAGE`, the install switch is held and its row says why in amber; the
+check still runs. Another manager of the image, such as Gear Lever, is
+left to it by leaving install off.
+
+The status row keeps one shape in every state: a sentence saying what is
+known, a detail line, and one button. The detail line holds the releases
+page link, an amber failure ("The check failed: …", "The download
+failed: …"), the download's bar, or once downloaded where the image is
+replaced. The button holds Check now, quiet, until a newer release is
+known, then the next step in the primary weight: Open the releases page
+with install off, Install with it on, held while downloading, and Restart
+now once downloaded.
+
+The tray menu gains one entry above Quit while there is something to
+say: "0.3.0 is out…" opens the window on the Updates page, and after a
+finished download "Restart into 0.3.0" restarts into it.
+
+The release asset name `perch-<version>-x86_64.AppImage` is a
+compatibility contract: `latest-linux.yml` names it, and every running
+perch reads the feed by it.
+
 ## Behaviour
 
 - A normal window and an icon in the tray. Closing the window hides it.
-  The tray menu shows it, rescans and quits; activating the icon toggles
+  The tray menu shows it, rescans and quits, with an update entry while a
+  newer release is known, see Updates; activating the icon toggles
   the window. The compositor places a hidden window when it shows
   again, and its earlier position is not restored: Wayland gives an app
   no way to place its own window. With `[window] tray = false` there is
@@ -517,8 +563,10 @@ never read at run time. Creation and replacement runbook:
 - The URL holds where the camera points: `/` for the aviary,
   `/bird/<id>` for a bird's detail, `?papers=true` to unfold its papers
   and `?chip=<kind>` to land on a chip's ledger row. `/settings` is the
-  settings page in the camera's place, `?unfold=<kind>` starting that
-  kind's source cards open. An unknown kind in either is read as none.
+  settings page in the camera's place, `?page=<page>` naming the page the
+  rail has open and `?unfold=<kind>` starting that kind's source cards
+  open. An unknown kind in either is read as none, an unknown page as
+  Sources.
   Escape goes home from the settings page as from a bird.
 - Launch actions are `[[launch.actions]]` tables, each naming its kind
   and only what differs from the kind's defaults, offered on a bird's
@@ -550,6 +598,10 @@ never read at run time. Creation and replacement runbook:
   end with the house frontend stack.
 - **No database**: see Principles; the previous snapshot is a file, not
   a store.
+- **perch replaces only its own image, and never restarts itself**: it
+  downloads and installs an update only while `[update] install` is on,
+  and the new version runs from the next start, a normal quit or Restart
+  now. Every other launch action stays read-only.
 - **Not hosted on the server**: the state the owner loses track of
   lives in working copies this machine holds. The phone view hybrid is
   parked.
@@ -558,7 +610,8 @@ never read at run time. Creation and replacement runbook:
 
 The stack is in [decisions/tech-stack.md](decisions/tech-stack.md). CI
 runs `pnpm check` on every push and pull request. electron-builder
-packages a Linux AppImage; a `v*` tag releases it on GitHub. The app and
+packages a Linux AppImage; a `v*` tag releases it on GitHub with its
+update feed, `latest-linux.yml`. The AppImage carries its own block map. The app and
 tray icons are drawn in `apps/desktop/resources/icon.svg` and
 `tray.svg`; `pnpm icons` renders their PNGs. The launcher's desktop entry
 sits beside them, and the README says how to link it.

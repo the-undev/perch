@@ -65,7 +65,11 @@ shows the window.
 
 Versions are semver, set in `apps/desktop/package.json`. Pushing a tag
 `v<version>` that matches it builds the AppImage in CI and attaches it to a
-GitHub release.
+GitHub release, with `latest-linux.yml`, the update feed.
+
+The settings page's Updates page says when a newer release is out. With
+Install updates on, perch replaces its own AppImage from the next start;
+otherwise copy the new release over it as above.
 
 ## More
 

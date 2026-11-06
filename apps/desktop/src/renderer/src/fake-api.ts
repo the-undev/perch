@@ -37,6 +37,8 @@ export interface FakeApi {
   /** What the next connection test answers. */
   sourceTested: SourceTested;
   updateChecks: number;
+  updateInstalls: number;
+  updateRestarts: number;
   /** Asks for the Updates page, as the tray's update entry does. */
   openUpdates(): void;
 }
@@ -97,6 +99,12 @@ export function fakeApi(
       checkForUpdate: async () => {
         fake.updateChecks += 1;
       },
+      installUpdate: async () => {
+        fake.updateInstalls += 1;
+      },
+      restartIntoUpdate: async () => {
+        fake.updateRestarts += 1;
+      },
       onOpenUpdates(listener) {
         pageListeners.add(listener);
         return () => pageListeners.delete(listener);
@@ -123,6 +131,8 @@ export function fakeApi(
     sourceTests: [],
     sourceTested: { ok: true, count: 0 },
     updateChecks: 0,
+    updateInstalls: 0,
+    updateRestarts: 0,
     openUpdates() {
       for (const listener of pageListeners) listener();
     },

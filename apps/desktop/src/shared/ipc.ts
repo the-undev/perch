@@ -93,6 +93,10 @@ export interface PerchApi {
   testSource(values: SourceTestValues): Promise<SourceTested>;
   /** Checks for a newer release now, whatever config says; the answer arrives in the state. */
   checkForUpdate(): Promise<void>;
+  /** Downloads the newer release while perch installs updates; progress and failure arrive in the state. */
+  installUpdate(): Promise<void>;
+  /** Replaces the image with the finished download and restarts into it with the window shown. */
+  restartIntoUpdate(): Promise<void>;
   /** Calls back each time the main process asks for the Updates page, and returns the call that stops it. */
   onOpenUpdates(listener: () => void): () => void;
 }
@@ -117,5 +121,7 @@ export const channels = {
   storeToken: "keyring:store-token",
   testSource: "keyring:test-source",
   checkForUpdate: "update:check",
+  installUpdate: "update:install",
+  restartIntoUpdate: "update:restart",
   onOpenUpdates: "update:open-page",
 } as const satisfies Record<keyof PerchApi, string>;

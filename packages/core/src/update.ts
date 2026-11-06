@@ -46,7 +46,7 @@ export type DownloadState =
   | {
       state: "failed";
       version: string;
-      /** A clause after "The download failed: ". */
+      /** The amber sentence: what failed and why. */
       failure: string;
     };
 

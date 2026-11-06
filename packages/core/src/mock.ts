@@ -272,7 +272,7 @@ export const mockUpdates = {
     download: {
       state: "failed",
       version: "0.3.0",
-      failure: "the connection was reset",
+      failure: "The download failed: the connection was reset.",
     },
   },
   checkFailed: {

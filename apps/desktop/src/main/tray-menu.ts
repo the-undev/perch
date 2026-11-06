@@ -9,6 +9,8 @@ export interface TrayActions {
   rescan(): void;
   /** Shows the window on the Updates settings page. */
   openUpdates(): void;
+  /** Restarts into the downloaded release. */
+  restart(): void;
   quit(): void;
 }
 
@@ -19,6 +21,9 @@ export type TrayMenuItem =
 
 /** The update entry's words while there is something to say, else null. */
 export function trayUpdateLabel(update: UpdateState): string | null {
+  if (update.download.state === "ready") {
+    return `Restart into ${update.download.version}`;
+  }
   if (update.release === null) return null;
   return `${update.release.version} is out…`;
 }
@@ -32,7 +37,16 @@ export function trayMenu(
   const entry: TrayMenuItem[] =
     label === null
       ? []
-      : [{ label, click: () => actions.openUpdates() }, { type: "separator" }];
+      : [
+          {
+            label,
+            click: () =>
+              update.download.state === "ready"
+                ? actions.restart()
+                : actions.openUpdates(),
+          },
+          { type: "separator" },
+        ];
   return [
     { label: "Show", click: () => actions.show() },
     { label: "Rescan", click: () => actions.rescan() },

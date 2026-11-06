@@ -7,6 +7,7 @@ const trayActions = () => ({
   show: vi.fn(),
   rescan: vi.fn(),
   openUpdates: vi.fn(),
+  restart: vi.fn(),
   quit: vi.fn(),
 });
 
@@ -74,6 +75,32 @@ describe("the tray's update entry", () => {
     entry.click();
     expect(actions.openUpdates).toHaveBeenCalledOnce();
     expect(actions.show).not.toHaveBeenCalled();
+  });
+});
+
+describe("the tray's restart entry", () => {
+  it("reads Restart into the downloaded version and restarts, rather than opening the page", () => {
+    const actions = trayActions();
+    const menu = trayMenu(actions, mockUpdates.ready);
+
+    expect(labels(menu)).toEqual([
+      "Show",
+      "Rescan",
+      "---",
+      "Restart into 0.3.0",
+      "---",
+      "Quit",
+    ]);
+    const entry = menu[3];
+    if (entry === undefined || !("click" in entry)) throw new Error("no entry");
+    entry.click();
+    expect(actions.restart).toHaveBeenCalledOnce();
+    expect(actions.openUpdates).not.toHaveBeenCalled();
+  });
+
+  it("keeps saying the release is out while it downloads or after a failed download", () => {
+    expect(trayUpdateLabel(mockUpdates.downloading)).toBe("0.3.0 is out…");
+    expect(trayUpdateLabel(mockUpdates.downloadFailed)).toBe("0.3.0 is out…");
   });
 });
 

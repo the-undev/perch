@@ -41,4 +41,8 @@ export function registerIpc(handlers: PerchCalls): void {
     handlers.testSource(values),
   );
   ipcMain.handle(channels.checkForUpdate, () => handlers.checkForUpdate());
+  ipcMain.handle(channels.installUpdate, () => handlers.installUpdate());
+  ipcMain.handle(channels.restartIntoUpdate, () =>
+    handlers.restartIntoUpdate(),
+  );
 }

@@ -19,3 +19,9 @@ linux:
   syncDesktopName: true
   icon: resources/icons
 artifactName: ${productName}-${version}-${arch}.${ext}
+# The update feed electron-updater reads: latest-linux.yml beside the AppImage on each GitHub
+# release. The build never publishes; CI uploads the files.
+publish:
+  provider: github
+  owner: the-undev
+  repo: perch

@@ -24,6 +24,8 @@ const api: PerchApi = {
     ipcRenderer.invoke(channels.storeToken, key, token),
   testSource: (values) => ipcRenderer.invoke(channels.testSource, values),
   checkForUpdate: () => ipcRenderer.invoke(channels.checkForUpdate),
+  installUpdate: () => ipcRenderer.invoke(channels.installUpdate),
+  restartIntoUpdate: () => ipcRenderer.invoke(channels.restartIntoUpdate),
   onOpenUpdates(listener) {
     const handler = () => listener();
     ipcRenderer.on(channels.onOpenUpdates, handler);

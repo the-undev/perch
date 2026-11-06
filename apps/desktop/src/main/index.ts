@@ -36,6 +36,7 @@ import {
   trayMenu,
   trayUpdateLabel,
 } from "./tray-menu.ts";
+import { createElectronUpdater } from "./updater.ts";
 import { onClose, present } from "./window-presence.ts";
 
 /** A focus scans only once this long has passed since the last scan finished. */
@@ -152,6 +153,7 @@ function start(): void {
       present(window, "show");
       window.webContents.send(channels.onOpenUpdates);
     },
+    restart: () => state.restartIntoUpdate(restartArguments(window)),
     quit: () => app.quit(),
   });
   /**
@@ -169,6 +171,9 @@ function start(): void {
       Menu.buildFromTemplate(trayMenu(trayActions(window), update)),
     );
   }
+  /** The new image starts as this one stands: hidden in the tray when it is, else shown. */
+  const restartArguments = (window: BrowserWindow) =>
+    trayOn() && !window.isVisible() ? ["--hidden"] : [];
   const state = createAppState({
     home,
     config,
@@ -215,6 +220,11 @@ function start(): void {
     running: app.getVersion(),
     fetchRelease: createFetchJson(releaseTimeoutMs),
     now,
+    updater: createElectronUpdater({
+      image,
+      relaunch: (execPath, args) => app.relaunch({ execPath, args }),
+      warn: (message) => console.warn(`The update failed: ${message}`),
+    }),
     // The scheduler is made below; nothing asks for a scan before then.
     requestScan: () => scheduler.request(),
     // Every config read is published, so the tray icon follows the setting from here.
@@ -287,6 +297,9 @@ function start(): void {
       storeToken,
       testSource: (values) => testSource(values, testDeps),
       checkForUpdate: () => state.checkForUpdate(),
+      installUpdate: () => state.installUpdate(),
+      // Pressed in the window, so the window is shown and the new image starts with it shown.
+      restartIntoUpdate: async () => state.restartIntoUpdate([]),
     });
     // The tray setting is config's, so the window waits for the first read.
     await ready;

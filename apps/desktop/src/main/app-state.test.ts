@@ -31,6 +31,7 @@ import {
   type ConfigStore,
   createConfigStore,
 } from "./config-store.ts";
+import type { Updater } from "./updater.ts";
 
 const loaded: LoadedConfig = { config: mockConfig, path: "/config.toml" };
 
@@ -45,6 +46,20 @@ const fakeReleaseFetch = () =>
   vi.fn(async (_url: string, _headers: Record<string, string>) =>
     JSON.parse(await readFile(releaseFixture, "utf8")),
   );
+
+/** An updater whose download tells half its progress and finishes with 0.3.0; restart records its arguments. */
+function fakeUpdater() {
+  return {
+    download: vi.fn(
+      async (onProgress: (transferred: number, total: number) => void) => {
+        onProgress(41_000_000, 89_000_000);
+        return { version: "0.3.0" };
+      },
+    ),
+    installOnQuit: vi.fn((_on: boolean) => {}),
+    restart: vi.fn((_args: string[]) => {}),
+  } satisfies Updater;
+}
 
 /** A clock the test moves by hand. */
 function fakeClock() {
@@ -117,6 +132,7 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
     running: "0.2.0",
     fetchRelease: fakeReleaseFetch(),
     now: fakeClock().now,
+    updater: fakeUpdater(),
     requestScan: vi.fn(async () => {}),
     ...overrides,
   };
@@ -880,5 +896,164 @@ describe("the release check", () => {
       image: "~/AppImages/perch.appimage",
     });
     expect((await fromSource.app.settingsForm())?.install.held).not.toBeNull();
+  });
+});
+
+describe("installing an update", () => {
+  /** An app state whose config sets [update] as given, started. */
+  async function installing(
+    update: Config["update"],
+    overrides: Partial<AppStateDeps> = {},
+  ) {
+    const made = appState({ updater: fakeUpdater(), ...overrides });
+    made.config.nextRead({
+      loaded: { config: { ...mockConfig, update }, path: "/config.toml" },
+      error: null,
+      missing: false,
+    });
+    await made.app.start();
+    return made;
+  }
+  const updaterOf = (deps: AppStateDeps) =>
+    deps.updater as ReturnType<typeof fakeUpdater>;
+
+  it("downloads what the scan cycle's check finds while install is on, telling progress, then is ready", async () => {
+    const { app, published } = await installing({ check: true, install: true });
+
+    await app.scan();
+
+    await vi.waitFor(() =>
+      expect(app.state().update.download).toEqual({
+        state: "ready",
+        version: "0.3.0",
+      }),
+    );
+    expect(published.map((state) => state.update.download)).toContainEqual({
+      state: "downloading",
+      version: "0.3.0",
+      transferred: 41_000_000,
+      total: 89_000_000,
+    });
+  });
+
+  it("leaves Install to a press after Check now, and the press downloads", async () => {
+    const { app, deps } = await installing({ check: false, install: true });
+
+    await app.checkForUpdate();
+    expect(app.state().update.download).toEqual({ state: "none" });
+    expect(updaterOf(deps).download).not.toHaveBeenCalled();
+
+    await app.installUpdate();
+    expect(app.state().update.download).toEqual({
+      state: "ready",
+      version: "0.3.0",
+    });
+  });
+
+  it("never downloads while install is off, or run from source with install on", async () => {
+    const off = await installing({ check: true, install: false });
+    const fromSource = await installing(
+      { check: true, install: true },
+      { image: null },
+    );
+
+    for (const { app, deps } of [off, fromSource]) {
+      await app.scan();
+      await vi.waitFor(() =>
+        expect(app.state().update.release?.version).toBe("0.3.0"),
+      );
+      await app.installUpdate();
+      expect(updaterOf(deps).download).not.toHaveBeenCalled();
+      expect(app.state().update.download).toEqual({ state: "none" });
+    }
+  });
+
+  it("downloads once, however often Install is pressed meanwhile", async () => {
+    const { app, deps } = await installing({ check: false, install: true });
+    await app.checkForUpdate();
+
+    await Promise.all([app.installUpdate(), app.installUpdate()]);
+    await app.installUpdate();
+
+    expect(updaterOf(deps).download).toHaveBeenCalledOnce();
+  });
+
+  it("says why a download failed and returns the button, which downloads again", async () => {
+    const { app, deps } = await installing({ check: false, install: true });
+    await app.checkForUpdate();
+    updaterOf(deps).download.mockRejectedValueOnce(
+      new Error("the connection was reset"),
+    );
+
+    await app.installUpdate();
+    expect(app.state().update.download).toEqual({
+      state: "failed",
+      version: "0.3.0",
+      failure: "The download failed: the connection was reset.",
+    });
+
+    await app.installUpdate();
+    expect(app.state().update.download.state).toBe("ready");
+  });
+
+  it("says a download whose checksum did not match was discarded", async () => {
+    const { app, deps } = await installing({ check: false, install: true });
+    await app.checkForUpdate();
+    updaterOf(deps).download.mockRejectedValueOnce(
+      Object.assign(new Error("sha512 checksum mismatch"), {
+        code: "ERR_CHECKSUM_MISMATCH",
+      }),
+    );
+
+    await app.installUpdate();
+
+    expect(app.state().update.download).toEqual({
+      state: "failed",
+      version: "0.3.0",
+      failure:
+        "The download failed: its checksum did not match, so it was discarded.",
+    });
+  });
+
+  it("restarts only into a finished download, with the arguments given", async () => {
+    const { app, deps } = await installing({ check: false, install: true });
+    await app.checkForUpdate();
+
+    app.restartIntoUpdate([]);
+    expect(updaterOf(deps).restart).not.toHaveBeenCalled();
+
+    await app.installUpdate();
+    app.restartIntoUpdate(["--hidden"]);
+    expect(updaterOf(deps).restart).toHaveBeenCalledExactlyOnceWith([
+      "--hidden",
+    ]);
+  });
+
+  it("says why the image was not replaced on a restart", async () => {
+    const { app, deps } = await installing({ check: false, install: true });
+    await app.checkForUpdate();
+    await app.installUpdate();
+    updaterOf(deps).restart.mockImplementationOnce(() => {
+      throw new Error("EACCES: permission denied");
+    });
+
+    app.restartIntoUpdate([]);
+
+    expect(app.state().update.download).toEqual({
+      state: "failed",
+      version: "0.3.0",
+      failure: "The install failed: EACCES: permission denied.",
+    });
+  });
+
+  it("lets quitting install a finished download only while install is on", async () => {
+    const on = await installing({ check: false, install: true });
+    const off = await installing({ check: false, install: false });
+
+    await on.app.recheck();
+    await off.app.recheck();
+
+    expect(updaterOf(on.deps).installOnQuit).toHaveBeenLastCalledWith(true);
+    expect(updaterOf(off.deps).installOnQuit).toHaveBeenLastCalledWith(false);
   });
 });

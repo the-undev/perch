@@ -26,7 +26,11 @@ import {
   withSettings,
 } from "@perch/core/settings-form.ts";
 import type { Item, Snapshot } from "@perch/core/snapshot.ts";
-import { createReleaseChecker, type UpdateState } from "@perch/core/update.ts";
+import {
+  createReleaseChecker,
+  type DownloadState,
+  type UpdateState,
+} from "@perch/core/update.ts";
 import {
   type Aviary,
   type Bird,
@@ -39,6 +43,7 @@ import type { Autostart } from "./autostart.ts";
 import type { ConfigEdit } from "./config-edit.ts";
 import type { ConfigStore } from "./config-store.ts";
 import { configFileAction } from "./launch.ts";
+import type { Updater } from "./updater.ts";
 
 export interface AppStateDeps {
   /** The home directory, against which the settings page shows paths with ~. */
@@ -70,6 +75,8 @@ export interface AppStateDeps {
   fetchRelease: FetchJson;
   /** The clock the release check's hour and answers are read from. */
   now: () => Date;
+  /** Downloads a newer release and replaces the image with it; used only while perch installs. */
+  updater: Updater;
   /** Asks for a scan now, or joins the one running, and settles when it has finished. */
   requestScan: () => Promise<void>;
   /** Told every change to the state. */
@@ -124,6 +131,21 @@ export interface AppState {
   saveSettings(values: SettingsValues): Promise<void>;
   /** Checks for a newer release now, whatever config's switch and the hour say; joins one running. */
   checkForUpdate(): Promise<void>;
+  /**
+   * Downloads the newer release while perch installs, one is known and none is downloading or
+   * downloaded; a failure keeps nothing and becomes the download's failure.
+   */
+  installUpdate(): Promise<void>;
+  /** Replaces the image with a finished download and starts it with the arguments as the app quits. */
+  restartIntoUpdate(args: string[]): void;
+}
+
+/** Why a download failed, as the status row's amber sentence. */
+export function downloadFailureWords(error: unknown): string {
+  if ((error as { code?: unknown } | null)?.code === "ERR_CHECKSUM_MISMATCH") {
+    return "The download failed: its checksum did not match, so it was discarded.";
+  }
+  return `The download failed: ${errorMessage(error)}.`;
 }
 
 /** Two launch actions are the same when they serialise alike: they are plain data, commands and all. */
@@ -180,6 +202,8 @@ export function createAppState(deps: AppStateDeps): AppState {
     return list;
   }
 
+  let download: DownloadState = { state: "none" };
+
   /** Config's [update] table, its defaults without a config. */
   function updateConfig(): Config["update"] {
     return (
@@ -190,15 +214,17 @@ export function createAppState(deps: AppStateDeps): AppState {
     );
   }
 
+  /** perch installs updates: config says so and there is an image to replace. */
+  const installs = () => updateConfig().install && deps.image !== null;
+
   function updateState(): UpdateState {
-    const update = updateConfig();
     return {
       ...releases.state(),
       running: deps.running,
-      checkOn: update.check,
-      installs: update.install && deps.image !== null,
+      checkOn: updateConfig().check,
+      installs: installs(),
       image: deps.image === null ? null : collapseHome(deps.image, deps.home),
-      download: { state: "none" },
+      download,
     };
   }
 
@@ -225,7 +251,41 @@ export function createAppState(deps: AppStateDeps): AppState {
     return snapshot?.items.find((item) => item.id === birdId);
   }
 
-  const publish = () => deps.publish(state());
+  /** Every config read is published, so quitting installs a finished download only while install is on. */
+  const publish = () => {
+    deps.updater.installOnQuit(installs());
+    deps.publish(state());
+  };
+
+  async function installUpdate(): Promise<void> {
+    const { release } = releases.state();
+    if (!installs() || release === null) return;
+    if (download.state === "downloading" || download.state === "ready") return;
+    const { version } = release;
+    download = { state: "downloading", version, transferred: 0, total: 0 };
+    publish();
+    try {
+      const downloaded = await deps.updater.download((transferred, total) => {
+        download = { state: "downloading", version, transferred, total };
+        publish();
+      });
+      download = { state: "ready", version: downloaded.version };
+    } catch (error) {
+      download = {
+        state: "failed",
+        version,
+        failure: downloadFailureWords(error),
+      };
+    }
+    publish();
+  }
+
+  /** The scan cycle's check; one that answers while perch installs downloads what it found. */
+  async function scheduledCheck(): Promise<void> {
+    const before = releases.state().checkedAt;
+    await releases.checkIfDue();
+    if (releases.state().checkedAt !== before) await installUpdate();
+  }
 
   const releases = createReleaseChecker({
     fetchJson: deps.fetchRelease,
@@ -304,7 +364,7 @@ export function createAppState(deps: AppStateDeps): AppState {
         return;
       }
       // The check rides the scan cycle but never holds the scan up.
-      if (loaded.config.update.check) void releases.checkIfDue();
+      if (loaded.config.update.check) void scheduledCheck();
       try {
         await deps.gather(loaded.config);
         snapshot = await deps.aggregate(loaded);
@@ -383,5 +443,19 @@ export function createAppState(deps: AppStateDeps): AppState {
         () => saveLogin(values.window),
       ),
     checkForUpdate: () => releases.checkNow(),
+    installUpdate,
+    restartIntoUpdate(args) {
+      if (download.state !== "ready") return;
+      try {
+        deps.updater.restart(args);
+      } catch (error) {
+        download = {
+          state: "failed",
+          version: download.version,
+          failure: `The install failed: ${errorMessage(error)}.`,
+        };
+        publish();
+      }
+    },
   };
 }

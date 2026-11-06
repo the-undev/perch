@@ -452,16 +452,15 @@ saved, and the open page or papers show it, and a scan follows; the last write w
 ## Secrets
 
 Tokens live in the desktop keyring, read at run time with
-`secret-tool lookup`, service `perch`: `github-finch`,
-`github-the-undev`, `github-skiff-app`, `forgejo-finch`,
-`forgejo-the-undev`. All read-only. perch writes a token into the
+`secret-tool lookup`, service `perch`, one key per source table, such
+as `github-<account>` or `forgejo-<account>`. All read-only. perch writes a token into the
 keyring only from a forge card's token field, with `secret-tool store`
 and the token on its stdin; it never reads one back for display, and
 neither the store nor the test answers, logs or writes the token. `gh`
 is not used at run time; its
 tokens carry write scopes and its account state is shared with
-interactive use. A password manager holds the human backups only and is never
-read at run time, its CLI prompts. Creation and replacement runbook:
+interactive use. A password manager may hold the human backups, and is
+never read at run time. Creation and replacement runbook:
 [tokens.md](tokens.md).
 
 ## Behaviour
@@ -573,7 +572,6 @@ Facts the design relies on. Verify before relying on them later.
 | Desktop | KDE Plasma 6.7.5, Wayland |
 | GPU | NVIDIA RTX 5070 Ti, nvidia-open 615 |
 | Node, pnpm | 26, 11 |
-| Forgejo | `http://forge.example.lan:3000`, SSH alias `forgejo` on port 2222, documented in the Hothouse Obsidian vault at `Tech/Server/Forgejo.md` |
-| Keyring tokens | service `perch`, the five keys under Secrets |
+| Forgejo | `http://forge.example.lan:3000`, SSH alias `forgejo` on port 2222 |
+| Keyring tokens | service `perch`, one key per source table, see Secrets |
 | Claude Code sessions | `~/.claude/projects/`, one directory per working directory, non-alphanumerics encoded as `-` |
-| Git identities | `~/dev` and `~/.dotfiles` are `finch`, `~/undev` is `the-undev`; see the Pocket Obsidian vault, `Code/Git Identities.md` |

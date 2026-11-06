@@ -144,10 +144,7 @@ describe("forge accounts source", () => {
         info("finch/someone-elses", { fork: true }),
         info("finch/kept-fork", { fork: true }),
       ],
-      "org-token": [
-        info("skiff-app/skiff", {}),
-        info("the-undev/harbour", {}),
-      ],
+      "org-token": [info("skiff-app/skiff", {}), info("the-undev/harbour", {})],
     });
     const { tokenFor, asked } = fakeKeyring({
       "github-finch": "finch-token",
@@ -712,10 +709,7 @@ describe("forgejo client", () => {
       finalisedCommits: 2,
     });
 
-    const details = await client.readDetails(
-      info("finch/Hothouse", {}),
-      "t",
-    );
+    const details = await client.readDetails(info("finch/Hothouse", {}), "t");
 
     expect(calls[0]?.headers.Authorization).toBe("token t");
     expect(details.finalisedCommits).toEqual({
@@ -756,10 +750,7 @@ describe("forgejo client", () => {
       finalisedCommits: 2,
     });
 
-    const details = await client.readDetails(
-      info("finch/Hothouse", {}),
-      "t",
-    );
+    const details = await client.readDetails(info("finch/Hothouse", {}), "t");
 
     expect(details).toEqual({
       openPullRequests: { state: "observed", value: [] },
@@ -789,10 +780,7 @@ describe("forgejo client", () => {
       finalisedCommits: 2,
     });
 
-    const details = await client.readDetails(
-      info("finch/Pocket", {}),
-      "t",
-    );
+    const details = await client.readDetails(info("finch/Pocket", {}), "t");
 
     expect(details.ci).toEqual({
       state: "observed",

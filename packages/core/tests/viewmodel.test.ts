@@ -226,12 +226,9 @@ describe("mood", () => {
     const items = [settled, restless, editing, forgeOnly];
 
     expect(
-      [
-        "dev/spool",
-        "dev/harbour",
-        "dev/perch",
-        "github:finch/obsidian-tidy",
-      ].map((id) => birdIn(items, config, id).activity),
+      ["dev/spool", "dev/harbour", "dev/perch", "github:finch/obsidian-tidy"].map(
+        (id) => birdIn(items, config, id).activity,
+      ),
     ).toEqual(["settled", "in-flight", "editing", null]);
   });
 
@@ -1658,11 +1655,7 @@ describe("the detail", () => {
     it("names both forges, GitHub first, the first presence's repository and the first address a forge gave", async () => {
       const notes = forgeOnly("forgejo:finch/notes", [
         presence("forgejo", "finch/notes", null),
-        presence(
-          "github",
-          "finch/notes",
-          "git@github.com:finch/notes.git",
-        ),
+        presence("github", "finch/notes", "git@github.com:finch/notes.git"),
       ]);
       const config = await adoptAll([notes.id]);
 
@@ -2013,9 +2006,7 @@ describe("the commit river", () => {
       ["c1", "amber", "no remote could be read"],
     ]);
     expect(transient.notes).toEqual(["couldn't read github"]);
-    expect(gap.notes).toEqual([
-      "couldn't read github · no card covers finch",
-    ]);
+    expect(gap.notes).toEqual(["couldn't read github · no card covers finch"]);
   });
 
   it("keeps the quiet speck for a clone with no forge at all", async () => {

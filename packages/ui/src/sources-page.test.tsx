@@ -287,9 +287,7 @@ describe("the sources page", () => {
       }),
     );
 
-    expect(
-      screen.queryByRole("region", { name: "GitHub · finch" }),
-    ).toBeNull();
+    expect(screen.queryByRole("region", { name: "GitHub · finch" })).toBeNull();
     expect(
       within(card("GitHub · the-undev")).queryByRole("button", {
         name: "Stop looking here",

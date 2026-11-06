@@ -210,9 +210,7 @@ export function HeadingPage() {
             <DetailHeading
               bird={mockBird("github:finch/obsidian-tidy")}
               actions={
-                <HeadingActions
-                  bird={mockBird("github:finch/obsidian-tidy")}
-                />
+                <HeadingActions bird={mockBird("github:finch/obsidian-tidy")} />
               }
             />
           </Ground>

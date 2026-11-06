@@ -85,11 +85,7 @@ describe("joining by remote URL", () => {
     });
 
     expect(refsOf(result)).toEqual([
-      [
-        "local:dev/dotfiles",
-        "github:finch/dotfiles",
-        "forgejo:finch/dotfiles",
-      ],
+      ["local:dev/dotfiles", "github:finch/dotfiles", "forgejo:finch/dotfiles"],
       ["local:undev/Hollow-legacy", "github:the-undev/hollow"],
     ]);
   });
@@ -266,11 +262,7 @@ describe("asserted joins", () => {
         forge("github", forgeRepo("finch/old", { archived: true })),
       ],
       joins: [
-        [
-          "github:finch/notes",
-          "forgejo:finch/notes",
-          "github:finch/old",
-        ],
+        ["github:finch/notes", "forgejo:finch/notes", "github:finch/old"],
       ],
     });
 
@@ -296,9 +288,7 @@ describe("ignores", () => {
       ],
     });
 
-    expect(refsOf(result)).toEqual([
-      ["local:dev/perch", "github:finch/perch"],
-    ]);
+    expect(refsOf(result)).toEqual([["local:dev/perch", "github:finch/perch"]]);
     expect([...result.ignored]).toEqual(["github:finch/scratch"]);
     expect(result.conflicts.map((entry) => entry.detail)).toEqual([
       "local:dev/perch uses it, so it stays",
@@ -451,9 +441,9 @@ describe("aggregating joined projects", () => {
         },
       ],
     });
-    expect(
-      snapshot.items.some((item) => item.id === "github:finch/old"),
-    ).toBe(false);
+    expect(snapshot.items.some((item) => item.id === "github:finch/old")).toBe(
+      false,
+    );
   });
 
   function aggregated(snapshotFiles: Partial<RawFiles>, configured: Config) {

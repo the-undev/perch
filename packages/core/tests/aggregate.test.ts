@@ -355,11 +355,7 @@ describe("source cards", () => {
       source: "githubAccounts",
       gatheredAt,
       data: {
-        "github-finch": listing(
-          "finch/perch",
-          "finch/harbour",
-          "finch/toy",
-        ),
+        "github-finch": listing("finch/perch", "finch/harbour", "finch/toy"),
         "github-the-undev": listing(),
         "github-skiff-app": { state: "error", error: "HTTP 401" },
       },
@@ -420,11 +416,7 @@ describe("source cards", () => {
       ["github:finch", "github", "finch"],
       ["github:the-undev", "github", "the-undev"],
       ["github:skiff-app", "github", "skiff-app"],
-      [
-        "forgejo:finch@forge.example.lan:3000",
-        "forgejo",
-        "finch@forge.example.lan:3000",
-      ],
+      ["forgejo:finch@forge.example.lan:3000", "forgejo", "finch@forge.example.lan:3000"],
       [
         "forgejo:the-undev@forge.example.lan:3000",
         "forgejo",

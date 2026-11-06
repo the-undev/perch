@@ -419,9 +419,7 @@ describe("the window", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Copy" }));
 
     expect(await screen.findByRole("button", { name: "Copied" })).toBeDefined();
-    expect(copied).toEqual([
-      "ssh://git@forgejo:2222/finch/field-notes.git",
-    ]);
+    expect(copied).toEqual(["ssh://git@forgejo:2222/finch/field-notes.git"]);
     expect(pathOf(router)).toBe("/bird/forgejo:finch/field-notes");
     Reflect.deleteProperty(navigator, "clipboard");
   });
@@ -853,9 +851,7 @@ describe("the window", () => {
       const github = within(
         await screen.findByRole("region", { name: "GitHub · finch" }),
       );
-      fireEvent.click(
-        github.getByRole("button", { name: "GitHub · finch" }),
-      );
+      fireEvent.click(github.getByRole("button", { name: "GitHub · finch" }));
 
       fireEvent.change(github.getByLabelText("Token"), {
         target: { value: "github_pat_11ABC" },

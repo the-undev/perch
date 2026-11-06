@@ -54,6 +54,8 @@ export interface AppStateDeps {
   editConfig: (edit: ConfigEdit) => Promise<void>;
   /** The autostart entry the settings page's login toggle reads and saving writes. */
   autostart: Autostart;
+  /** The running AppImage, from APPIMAGE, which an install replaces; null when run from source. */
+  image: string | null;
   /** Asks for a scan now, or joins the one running, and settles when it has finished. */
   requestScan: () => Promise<void>;
   /** Told every change to the state. */
@@ -320,7 +322,12 @@ export function createAppState(deps: AppStateDeps): AppState {
     async settingsForm() {
       const config = deps.config.current().loaded?.config;
       if (config === undefined) return null;
-      return settingsFormFor(config, deps.home, await deps.autostart.read());
+      return settingsFormFor(
+        config,
+        deps.home,
+        await deps.autostart.read(),
+        deps.image,
+      );
     },
     saveSettings: (values) =>
       edit(

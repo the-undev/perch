@@ -152,6 +152,14 @@ kind = "folder"
 # [window]
 # tray = false
 
+# Updates. With check, the default, each scan reads the latest GitHub
+# release at most hourly and says when it is newer. With install, a newer
+# release is downloaded and replaces the running AppImage from the next
+# start; perch never restarts itself. Run from source, install is held.
+# [update]
+# check = false
+# install = true
+
 # Item entries. An entry adopts the bird and puts it on a wire. Its key names
 # any presence of the item: a local id, or a forge presence such as
 # "forgejo:owner/name", which still applies once a local clone joins it. When

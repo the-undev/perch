@@ -6,6 +6,8 @@ import {
   type Config,
   collapseHome,
   defaultTray,
+  defaultUpdateCheck,
+  defaultUpdateInstall,
   type GithubSourceConfig,
   type ItemEntry,
   type LaunchActionConfig,
@@ -140,7 +142,7 @@ function actionTable(
  * item entries and zellij session roots are sorted by key and every list, sources and launch
  * actions among them, keeps its order. Paths at or under the home directory are written with a
  * leading ~, empty optional tables, source kinds and launch actions are left out, and so is a
- * launch action's field that holds its kind's default and a window setting that holds its own.
+ * launch action's field that holds its kind's default and a window or update setting that holds its own.
  */
 export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);
@@ -165,6 +167,14 @@ export function writeConfig(config: Config, home: string): string {
     window: unlessEmpty(
       config.window.tray === defaultTray ? {} : { tray: config.window.tray },
     ),
+    update: unlessEmpty({
+      ...(config.update.check === defaultUpdateCheck
+        ? {}
+        : { check: config.update.check }),
+      ...(config.update.install === defaultUpdateInstall
+        ? {}
+        : { install: config.update.install }),
+    }),
     items: unlessEmpty(
       Object.fromEntries(
         Object.entries(sortedByKey(config.items)).map(([key, entry]) => [

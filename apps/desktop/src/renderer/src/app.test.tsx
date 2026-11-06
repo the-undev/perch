@@ -9,6 +9,7 @@ import {
 import {
   mockAviary,
   mockConfig,
+  mockImage,
   mockLogin,
   mockSnapshot,
 } from "@perch/core/mock.ts";
@@ -138,7 +139,7 @@ describe("the window", () => {
       "/",
       undefined,
       undefined,
-      settingsFormFor(defaultConfig(), mockHome, mockLogin),
+      settingsFormFor(defaultConfig(), mockHome, mockLogin, mockImage),
     );
 
     fireEvent.click(
@@ -936,6 +937,7 @@ describe("the window", () => {
           { ...mockConfig, scan: { ...mockConfig.scan, intervalMinutes: 20 } },
           mockHome,
           mockLogin,
+          mockImage,
         ),
       );
       act(() => fake.push(idle(mockAviary)));
@@ -967,11 +969,16 @@ describe("the window", () => {
         { ...form.values, window: { tray: false, login: true } },
       ]);
       fake.setSettings(
-        settingsFormFor({ ...mockConfig, window: { tray: false } }, mockHome, {
-          ...mockLogin,
-          on: true,
-          target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
-        }),
+        settingsFormFor(
+          { ...mockConfig, window: { tray: false } },
+          mockHome,
+          {
+            ...mockLogin,
+            on: true,
+            target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
+          },
+          mockImage,
+        ),
       );
       act(() => fake.push(idle(mockAviary)));
 

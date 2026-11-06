@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseConfig } from "../src/config.ts";
 import { defaultConfig } from "../src/config-default.ts";
 import { writeConfig } from "../src/config-write.ts";
-import { mockLogin } from "../src/mock.ts";
+import { mockImage, mockLogin } from "../src/mock.ts";
 import { settingsFormFor, settingsProblems } from "../src/settings-form.ts";
 
 const home = "/home/test";
@@ -38,7 +38,7 @@ describe("the default config", () => {
   it("holds settings the settings page can save as they are", () => {
     expect(
       settingsProblems(
-        settingsFormFor(defaultConfig(), home, mockLogin).values,
+        settingsFormFor(defaultConfig(), home, mockLogin, mockImage).values,
       ),
     ).toEqual([]);
   });

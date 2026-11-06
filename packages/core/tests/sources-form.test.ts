@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { type Config, parseConfig, type SourcesConfig } from "../src/config.ts";
 import { writeConfig } from "../src/config-write.ts";
 import { configuredCards } from "../src/derivations.ts";
-import { mockConfig, mockLogin } from "../src/mock.ts";
+import { mockConfig, mockImage, mockLogin } from "../src/mock.ts";
 import {
   type SettingsValues,
   settingsFormFor,
@@ -24,7 +24,8 @@ import {
 
 const home = "/home/owner";
 
-const mockValues = () => settingsFormFor(mockConfig, home, mockLogin).values;
+const mockValues = () =>
+  settingsFormFor(mockConfig, home, mockLogin, mockImage).values;
 
 const withSources = (sources: SourcesConfig): SettingsValues => ({
   ...mockValues(),
@@ -95,7 +96,8 @@ describe("the sources in the settings form", () => {
     ]);
     expect(reread(config)).toEqual(config);
     expect(
-      settingsFormFor(reread(config), home, mockLogin).values.sources,
+      settingsFormFor(reread(config), home, mockLogin, mockImage).values
+        .sources,
     ).toEqual(sources);
   });
 

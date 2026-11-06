@@ -5,6 +5,7 @@ import { defaultConfig } from "@perch/core/config-default.ts";
 import {
   mockAviary,
   mockConfig,
+  mockImage,
   mockLogin,
   mockSnapshot,
 } from "@perch/core/mock.ts";
@@ -120,17 +121,27 @@ const presences = (
 );
 
 /** The mock's autostart entry once written by an earlier image. */
-const loginOn = settingsFormFor(mockConfig, mockHome, {
-  ...mockLogin,
-  on: true,
-  target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
-}).login;
+const loginOn = settingsFormFor(
+  mockConfig,
+  mockHome,
+  {
+    ...mockLogin,
+    on: true,
+    target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
+  },
+  mockImage,
+).login;
 
 /** The mock run from source, with no entry. */
-const fromSource = settingsFormFor(mockConfig, mockHome, {
-  ...mockLogin,
-  held: sourceRunHeld,
-}).login;
+const fromSource = settingsFormFor(
+  mockConfig,
+  mockHome,
+  {
+    ...mockLogin,
+    held: sourceRunHeld,
+  },
+  null,
+).login;
 
 /** The Window page with the login row's hold and entry as given. */
 const windowWith =
@@ -433,7 +444,7 @@ const startOptions: { value: Start; label: string }[] = [
 
 const startForms: Record<Start, SettingsForm> = {
   mock: mockForm,
-  starter: settingsFormFor(defaultConfig(), mockHome, mockLogin),
+  starter: settingsFormFor(defaultConfig(), mockHome, mockLogin, mockImage),
 };
 
 const problemOptions: { value: Problems; label: string }[] = [

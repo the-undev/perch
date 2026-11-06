@@ -11,7 +11,12 @@ import { writeConfig } from "@perch/core/config-write.ts";
 import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
 import type { LaunchActionValues } from "@perch/core/launch-form.ts";
-import { mockConfig, mockLogin, mockSnapshot } from "@perch/core/mock.ts";
+import {
+  mockConfig,
+  mockImage,
+  mockLogin,
+  mockSnapshot,
+} from "@perch/core/mock.ts";
 import type { Snapshot } from "@perch/core/snapshot.ts";
 import type { Aviary, LaunchAction } from "@perch/core/viewmodel.ts";
 import { parse } from "smol-toml";
@@ -84,6 +89,7 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
     writeStarter: vi.fn(async () => {}),
     editConfig: vi.fn(async () => {}),
     autostart: fakeAutostart(),
+    image: mockImage,
     requestScan: vi.fn(async () => {}),
     ...overrides,
   };

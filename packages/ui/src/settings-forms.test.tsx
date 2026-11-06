@@ -1,5 +1,10 @@
 import { defaultConfig } from "@perch/core/config-default.ts";
-import { mockAviary, mockConfig, mockLogin } from "@perch/core/mock.ts";
+import {
+  mockAviary,
+  mockConfig,
+  mockImage,
+  mockLogin,
+} from "@perch/core/mock.ts";
 import {
   type SettingsForm,
   settingsFormFor,
@@ -311,7 +316,10 @@ describe("the settings editor", () => {
   });
 
   it("shows the defaults word at the defaults and a clear button once edited, clear restoring them", () => {
-    editor("judgement", settingsFormFor(defaultConfig(), mockHome, mockLogin));
+    editor(
+      "judgement",
+      settingsFormFor(defaultConfig(), mockHome, mockLogin, mockImage),
+    );
     const thresholds = group("Judgement");
     const amber = () =>
       thresholds.getByRole("spinbutton", {
@@ -693,7 +701,10 @@ describe("the Launching page", () => {
   });
 
   it("starts with the shelf alone, offers zellij until one is added, and holds a custom card until it is written", () => {
-    editor("launching", settingsFormFor(defaultConfig(), mockHome, mockLogin));
+    editor(
+      "launching",
+      settingsFormFor(defaultConfig(), mockHome, mockLogin, mockImage),
+    );
 
     expect(actionCards()).toEqual([]);
     fireEvent.click(shelfAdd("zellij tab"));
@@ -762,18 +773,28 @@ describe("the Launching page", () => {
 describe("the Window page", () => {
   /** The mock's settings with an autostart entry running an older image. */
   const loginOn = () =>
-    settingsFormFor(mockConfig, mockHome, {
-      ...mockLogin,
-      on: true,
-      target: `${mockHome}/Applications/perch-0.1.0-x86_64.AppImage`,
-    });
+    settingsFormFor(
+      mockConfig,
+      mockHome,
+      {
+        ...mockLogin,
+        on: true,
+        target: `${mockHome}/Applications/perch-0.1.0-x86_64.AppImage`,
+      },
+      mockImage,
+    );
 
   /** The mock's settings run from source, no entry written. */
   const fromSource = () =>
-    settingsFormFor(mockConfig, mockHome, {
-      ...mockLogin,
-      held: sourceRunHeld,
-    });
+    settingsFormFor(
+      mockConfig,
+      mockHome,
+      {
+        ...mockLogin,
+        held: sourceRunHeld,
+      },
+      null,
+    );
 
   const page = () => group("Window");
   const toggle = (name: string) =>

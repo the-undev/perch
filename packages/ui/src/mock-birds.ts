@@ -6,6 +6,7 @@ import {
   mockAviary,
   mockConfig,
   mockHome,
+  mockImage,
   mockLogin,
   mockSnapshot,
 } from "@perch/core/mock.ts";
@@ -40,5 +41,5 @@ export { mockHome };
 
 /** The settings form for the mock config. */
 export function mockSettingsForm(): SettingsForm {
-  return settingsFormFor(mockConfig, mockHome, mockLogin);
+  return settingsFormFor(mockConfig, mockHome, mockLogin, mockImage);
 }

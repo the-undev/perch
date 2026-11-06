@@ -57,6 +57,11 @@ export interface SettingsValues {
     /** The autostart entry exists; saving writes or removes it, never config. */
     login: boolean;
   };
+  /** Config's [update] table. */
+  update: {
+    check: boolean;
+    install: boolean;
+  };
 }
 
 /** The app's autostart entry as the caller read it from the machine. */
@@ -75,13 +80,19 @@ export interface LoginEntry {
 export const sourceRunHeld =
   "perch is running from source, so there is no AppImage to point the login entry at.";
 
-/** What the settings page needs: the values, which item entries name each wire, and the login row. */
+/** The install switch's hold when the app runs from source. */
+export const installSourceRunHeld =
+  "run from source there is no image to replace.";
+
+/** What the settings page needs: the values, which item entries name each wire, and two rows' machine facts. */
 export interface SettingsForm {
   values: SettingsValues;
   /** The keys of the entries naming each config wire, which removing it moves to the default. */
   named: { wires: Record<string, string[]> };
   /** The login row beyond its toggle: its hold, and the entry's path and target shown with ~. */
   login: Pick<LoginEntry, "held" | "path" | "target">;
+  /** The install row beyond its switch: its hold, and the image it replaces shown with ~. */
+  install: { held: string | null; image: string | null };
 }
 
 function namedBy(
@@ -97,11 +108,15 @@ function namedBy(
   return named;
 }
 
-/** The settings form for a config and the autostart entry, paths under the home directory shown with ~. */
+/**
+ * The settings form for a config, the autostart entry and the running AppImage (null when run from
+ * source), paths under the home directory shown with ~.
+ */
 export function settingsFormFor(
   config: Config,
   home: string,
   login: LoginEntry,
+  image: string | null,
 ): SettingsForm {
   const path = (stored: string) => collapseHome(stored, home);
   return {
@@ -124,6 +139,7 @@ export function settingsFormFor(
       joins: config.joins.map(listLine),
       ignore: [...config.ignore],
       window: { tray: config.window.tray, login: login.on },
+      update: { ...config.update },
     },
     named: {
       wires: namedBy(config.items, (entry) => entry.wire),
@@ -132,6 +148,10 @@ export function settingsFormFor(
       held: login.held,
       path: path(login.path),
       target: login.target === null ? null : path(login.target),
+    },
+    install: {
+      held: image === null ? installSourceRunHeld : null,
+      image: image === null ? null : path(image),
     },
   };
 }
@@ -146,6 +166,24 @@ export function traySentence(tray: boolean): string {
 export function loginSentence(login: boolean, tray: boolean): string {
   const start = `perch starts when you log in, ${tray ? "hidden in the tray" : "with the window open"}.`;
   return login ? start : `Off. Turned on, ${start}`;
+}
+
+/** What the release check does, in words. */
+export function checkSentence(check: boolean): string {
+  if (!check) {
+    return "Off. perch never calls GitHub by itself. Check now, above, still does.";
+  }
+  return "Each scan, at most hourly, perch reads the latest release from GitHub and says here and in the tray when it is newer.";
+}
+
+/** What installing updates does, in words; held, a newer release is only pointed at whatever the switch says. */
+export function installSentence(install: boolean, held: boolean): string {
+  if (held)
+    return `${install ? "" : "Off. "}A newer release is only pointed at.`;
+  if (!install) {
+    return "Off. A newer release is only pointed at: the releases page opens in the browser, and whatever manages the image does the rest.";
+  }
+  return "A newer release, however learned of, is downloaded and the image replaced in place. The new version runs from the next start.";
 }
 
 /** The entry's path and the program it runs, while the toggle is on and the entry exists; else null. */
@@ -317,5 +355,6 @@ export function withSettings(
       ),
     },
     window: { tray: values.window.tray },
+    update: { ...values.update },
   };
 }

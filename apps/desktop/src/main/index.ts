@@ -135,9 +135,11 @@ function start(): void {
     fetchJson: createFetchJson(testTimeoutMs),
   };
   const now = () => new Date();
+  /** The running AppImage; null when run from source. */
+  const image = env.APPIMAGE || null;
   const autostart = createAutostart({
     path: autostartPath(home, env.XDG_CONFIG_HOME),
-    image: env.APPIMAGE || null,
+    image,
     readText: readTextIfExists,
     writeText: replaceFile,
     remove: removeFile,
@@ -193,6 +195,7 @@ function start(): void {
         edit,
       ),
     autostart,
+    image,
     // The scheduler is made below; nothing asks for a scan before then.
     requestScan: () => scheduler.request(),
     // Every config read is published, so the tray icon follows the setting from here.

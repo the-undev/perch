@@ -195,9 +195,7 @@ export function HeadingPage() {
             <DetailHeading
               bird={mockBird("forgejo:finch/field-notes")}
               actions={
-                <HeadingActions
-                  bird={mockBird("forgejo:finch/field-notes")}
-                />
+                <HeadingActions bird={mockBird("forgejo:finch/field-notes")} />
               }
             />
           </Ground>

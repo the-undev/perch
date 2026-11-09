@@ -332,7 +332,7 @@ function notSetUp(include: string): Item["flags"] {
 
 // The birds
 
-/** Restless: three commits on main local only for 50 hours, both forges in step. */
+/** Restless: three commits on main local only for 50 hours, a fresh branch with no upstream, both forges in step. */
 const dotfiles = localItem(".dotfiles", {
   forges: [
     presence("github", "finch/dotfiles"),
@@ -347,15 +347,43 @@ const dotfiles = localItem(".dotfiles", {
       uncommittedCount: 0,
       ahead: 3,
       behind: 0,
-      unpushedCount: 3,
+      unpushedCount: 4,
       lastCommitAt: "2026-10-21T22:15:00.000Z",
       oldestUncommittedAt: null,
       oldestUnpushedAt: "2026-10-20T07:00:00.000Z",
+      unpushedBranches: [
+        {
+          name: "main",
+          upstream: "origin/main",
+          count: 3,
+          work: {
+            since: "2026-10-20T07:00:00.000Z",
+            hours: 50,
+            level: "amber",
+          },
+        },
+        {
+          name: "split-layout",
+          upstream: null,
+          count: 1,
+          work: {
+            since: "2026-10-22T07:00:00.000Z",
+            hours: 2,
+            level: "green",
+          },
+        },
+      ],
       branches: [
         branch(
           "main",
           "2026-10-21T22:15:00.000Z",
           "Open Alacritty at 140 by 40",
+        ),
+        branch(
+          "split-layout",
+          "2026-10-22T07:00:00.000Z",
+          "Try a two-row split layout",
+          null,
         ),
       ],
       defaultBranchCommits: [
@@ -1305,6 +1333,18 @@ const glyphDocs = localItem("undev/glyph-docs", {
       lastCommitAt: "2026-10-22T04:00:00.000Z",
       oldestUncommittedAt: null,
       oldestUnpushedAt: "2026-10-22T04:00:00.000Z",
+      unpushedBranches: [
+        {
+          name: "render-scale-fix",
+          upstream: "origin/render-scale-fix",
+          count: 1,
+          work: {
+            since: "2026-10-22T04:00:00.000Z",
+            hours: 5,
+            level: "green",
+          },
+        },
+      ],
       branches: [
         branch(
           "render-scale-fix",

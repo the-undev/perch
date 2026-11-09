@@ -507,6 +507,72 @@ describe("deriving git data by backup state", () => {
   });
 });
 
+describe("deriving unpushed branches", () => {
+  const older = commitAt("Older", daysBefore(5));
+  const newer = commitAt("Newer", daysBefore(2));
+  const branches = rawGit({
+    unpushedCommits: [newer, older],
+    branches: [
+      {
+        name: "main",
+        lastCommit: newer,
+        tracking: {
+          state: "tracking",
+          upstream: "origin/main",
+          ahead: 2,
+          behind: 0,
+        },
+        unpushedCommits: [newer, older],
+      },
+      {
+        name: "gone",
+        lastCommit: older,
+        tracking: {
+          state: "absent",
+          reason: "upstream-gone",
+          upstream: "origin/gone",
+        },
+        unpushedCommits: [older],
+      },
+      {
+        name: "pushed",
+        lastCommit: commitAt("Pushed", daysBefore(9)),
+        tracking: { state: "absent", reason: "no-tracking-branch" },
+        unpushedCommits: [],
+      },
+    ],
+  });
+
+  it("ages each branch holding unpushed commits from its oldest, against a joined remote", () => {
+    const data = deriveGit(branches, thresholds, now, "joined");
+
+    expect(data.unpushedCount).toBe(2);
+    expect(data.unpushedBranches).toEqual([
+      {
+        name: "main",
+        upstream: "origin/main",
+        count: 2,
+        work: { since: older.committedAt, hours: 120, level: "green" },
+      },
+      {
+        name: "gone",
+        upstream: null,
+        count: 1,
+        work: { since: older.committedAt, hours: 120, level: "green" },
+      },
+    ]);
+  });
+
+  it("gives no unpushed branches to an unjoined remote or a local-only clone", () => {
+    expect(
+      [
+        deriveGit(branches, thresholds, now, "unjoined-remote"),
+        deriveGit(branches, thresholds, now, "local-only"),
+      ].map((data) => data.unpushedBranches),
+    ).toEqual([[], []]);
+  });
+});
+
 describe("stalled flight", () => {
   const feature = (days: number) => ({
     name: "extension-popup-ia",

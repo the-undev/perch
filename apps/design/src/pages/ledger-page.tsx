@@ -80,6 +80,11 @@ const workingSpecimens: LedgerSpecimen[] = [
     rule: "Hothouse Vault: the open items row counts per file; the uncommitted row names the oldest change and its age, amber past a day.",
   },
   {
+    id: ".dotfiles",
+    label: "Unpushed commits by branch",
+    rule: "Dotfiles: one line per local branch holding commits no remote has, oldest first, each with the age of its oldest such commit. main is 3 ahead of origin/main, amber past a day and linked to the branch on its forge; split-layout has no upstream, so no link, and its one commit is too fresh for a tone.",
+  },
+  {
     id: "obsidian/Pocket",
     label: "A roadmap file with none open",
     rule: "Pocket Vault: a source with nothing to say is silent, so the roadmap file with no open items is left out.",

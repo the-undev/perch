@@ -698,6 +698,33 @@ function agedWorkings(work: AgedWork | null, text: string): Working[] {
   ];
 }
 
+/** Each branch's unpushed commits, oldest first, toned by age and linked to its upstream branch. */
+function unpushedBranchWorkings(
+  item: Item,
+  git: GitData,
+  config: Config,
+): Working[] {
+  return [...(git.unpushedBranches ?? [])]
+    .sort(
+      (a, b) =>
+        a.work.since.localeCompare(b.work.since) ||
+        a.name.localeCompare(b.name),
+    )
+    .map((branch) => ({
+      source: "git",
+      text:
+        branch.upstream === null
+          ? `${branch.name}, no upstream, ${plural(branch.count, "commit", "commits")}`
+          : `${branch.name}, ${branch.count} ahead of ${branch.upstream}`,
+      tone: severity(branch.work.level),
+      url:
+        branch.upstream === null
+          ? null
+          : upstreamUrl(item, git, branch.upstream, config),
+      at: branch.work.since,
+    }));
+}
+
 /** The forge page for an upstream branch, found through its remote's URL; null when none matches. */
 function upstreamUrl(
   item: Item,
@@ -816,7 +843,7 @@ function chipsFor(item: Item, health: Health): Chip[] {
 }
 
 /** The facts in full words, each chip's working on the row whose number it carries. */
-function ledgerFor(item: Item, chips: Chip[]): LedgerEntry[] {
+function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
   const handle = (kind: ChipKind) =>
     chips.some((chip) => chip.kind === kind) ? kind : null;
   const ledger: LedgerEntry[] = [];
@@ -848,7 +875,7 @@ function ledgerFor(item: Item, chips: Chip[]): LedgerEntry[] {
           git.unpushedCount,
           git.drift.unpushed ? severity(git.drift.unpushed.level) : null,
           handle("unpushed"),
-          agedWorkings(git.drift.unpushed, "oldest commit"),
+          unpushedBranchWorkings(item, git, config),
         ),
       );
     }
@@ -1370,7 +1397,7 @@ export function deriveBird(
       ],
       notices: noticesFor(health),
       quiet: quietFor(item, health),
-      ledger: ledgerFor(item, chips),
+      ledger: ledgerFor(item, chips, config),
       branches: branchesFor(item, config),
       river: riverFor(item, config.scan.finalisedCommits),
       pullRequests: pullRequestsFor(item),

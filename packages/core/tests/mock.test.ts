@@ -88,6 +88,26 @@ describe("the mock dataset", () => {
     expect(adopted.some((bird) => bird.health.causes.length > 1)).toBe(true);
   });
 
+  it("splits unpushed commits over several branches, one ahead of its upstream and one with none", () => {
+    const dotfiles = birds.find((bird) => bird.id === ".dotfiles");
+    const row = dotfiles?.detail.ledger.find(
+      (entry) => entry.label === "unpushed commits",
+    );
+
+    expect(row).toMatchObject({
+      count: 4,
+      tone: "amber",
+      workings: [
+        {
+          text: "main, 3 ahead of origin/main",
+          tone: "amber",
+          url: "https://github.com/finch/dotfiles/tree/main",
+        },
+        { text: "split-layout, no upstream, 1 commit", tone: null, url: null },
+      ],
+    });
+  });
+
   it("carries every kind of chip, a clean ledger, a source problem and a scene error", () => {
     const chips = adopted.flatMap((bird) => bird.bubble.chips);
 
@@ -403,6 +423,12 @@ describe("the mock dataset", () => {
           scannedAt,
         ),
       );
+      const unpushedSince = (git.unpushedBranches ?? []).map(
+        (branch) => branch.work.since,
+      );
+      if (unpushedSince.length > 0) {
+        expect(unpushedSince.sort()[0], item.id).toBe(git.oldestUnpushedAt);
+      }
       expect(git.stall, item.id).toEqual(
         deriveStall(
           {

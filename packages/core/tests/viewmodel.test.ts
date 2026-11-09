@@ -10,6 +10,7 @@ import {
   type Bird,
   chipKinds,
   deriveAviary,
+  type LedgerEntry,
   type River,
 } from "../src/viewmodel.ts";
 import { testConfig } from "./helpers/config.ts";
@@ -537,6 +538,14 @@ describe("the ledger", () => {
         git: gitData({
           unpushedCount: 2,
           lastCommitAt: hoursBefore(40),
+          unpushedBranches: [
+            {
+              name: "data-guard",
+              upstream: null,
+              count: 2,
+              work: aged(40, "amber"),
+            },
+          ],
           drift: {
             uncommitted: null,
             unpushed: aged(40, "amber"),
@@ -577,7 +586,7 @@ describe("the ledger", () => {
         workings: [
           {
             source: "git",
-            text: "oldest commit",
+            text: "data-guard, no upstream, 2 commits",
             tone: "amber",
             url: null,
             at: hoursBefore(40),
@@ -668,6 +677,131 @@ describe("the ledger", () => {
     );
     expect(ledger.some((entry) => entry.label === "unpushed commits")).toBe(
       false,
+    );
+  });
+});
+
+describe("the unpushed commits row", () => {
+  const github: ForgePresence = {
+    forge: "github",
+    ref: "github:finch/perch",
+    fullName: "finch/perch",
+    url: "https://github.com/finch/perch",
+    foundBy: "local-remote",
+  };
+  const perch = item("dev/perch", {
+    presences: {
+      local: { ref: "local:dev/perch", path: "/home/test/dev/perch" },
+      forges: [github],
+    },
+    sources: {
+      git: gitData({
+        unpushedCount: 5,
+        activity: "in-progress",
+        unpushedBranches: [
+          {
+            name: "updates",
+            upstream: "origin/updates",
+            count: 3,
+            work: aged(50, "amber"),
+          },
+          {
+            name: "spike",
+            upstream: null,
+            count: 1,
+            work: aged(2, "green"),
+          },
+          {
+            name: "data-guard",
+            upstream: null,
+            count: 2,
+            work: aged(500, "red"),
+          },
+          {
+            name: "part-two",
+            upstream: null,
+            count: 3,
+            work: aged(500, "red"),
+          },
+        ],
+        drift: {
+          uncommitted: null,
+          unpushed: aged(500, "red"),
+          level: "red",
+          thresholds: { amberHours: 24, redHours: 72 },
+        },
+      }),
+    },
+  });
+  const unpushedRow = (bird: Bird) =>
+    bird.detail.ledger.find(
+      (entry): entry is Extract<LedgerEntry, { kind: "count" }> =>
+        entry.kind === "count" && entry.label === "unpushed commits",
+    );
+
+  it("gives one line per branch, oldest first, each toned by its own age, a fresh one untoned", async () => {
+    const config = await adoptAll(["dev/perch"]);
+
+    expect(unpushedRow(birdIn([perch], config, "dev/perch"))).toMatchObject({
+      count: 5,
+      text: "5",
+      tone: "red",
+      chip: "unpushed",
+      workings: [
+        {
+          source: "git",
+          text: "data-guard, no upstream, 2 commits",
+          tone: "red",
+          url: null,
+          at: hoursBefore(500),
+        },
+        {
+          source: "git",
+          text: "part-two, no upstream, 3 commits",
+          tone: "red",
+          url: null,
+          at: hoursBefore(500),
+        },
+        {
+          source: "git",
+          text: "updates, 3 ahead of origin/updates",
+          tone: "amber",
+          url: "https://github.com/finch/perch/tree/updates",
+          at: hoursBefore(50),
+        },
+        {
+          source: "git",
+          text: "spike, no upstream, 1 commit",
+          tone: null,
+          url: null,
+          at: hoursBefore(2),
+        },
+      ],
+    });
+  });
+
+  it("leaves an upstream unlinked when no forge presence matches its remote", async () => {
+    const config = await adoptAll(["dev/perch"]);
+    const unlinked = {
+      ...perch,
+      presences: { ...perch.presences, forges: [] },
+    };
+
+    expect(
+      unpushedRow(birdIn([unlinked], config, "dev/perch"))?.workings,
+    ).toContainEqual(
+      expect.objectContaining({
+        text: "updates, 3 ahead of origin/updates",
+        url: null,
+      }),
+    );
+  });
+
+  it("gives no branch lines to a snapshot cached before branches were read", async () => {
+    const config = await adoptAll(["dev/harbour"]);
+
+    expect(unpushedRow(birdIn([restless], config, "dev/harbour"))).toMatchObject(
+      { count: 2, tone: "amber", workings: [] },
     );
   });
 });

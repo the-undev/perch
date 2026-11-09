@@ -43,6 +43,7 @@ import type {
   SourceCardKind,
   SourceCardResult,
   Stall,
+  UnpushedBranch,
   WorkItem,
   WorkItemCounts,
   WorkItemGroup,
@@ -389,6 +390,30 @@ export function deriveGit(
         : null,
     oldestUncommittedAt,
     oldestUnpushedAt,
+    unpushedBranches:
+      backup === "joined"
+        ? raw.branches.flatMap((entry): UnpushedBranch[] => {
+            const work = agedWork(
+              earliest(
+                entry.unpushedCommits.map((commit) => commit.committedAt),
+              ),
+              thresholds.unsafe,
+              observedAt,
+            );
+            if (work === null) return [];
+            return [
+              {
+                name: entry.name,
+                upstream:
+                  entry.tracking.state === "tracking"
+                    ? entry.tracking.upstream
+                    : null,
+                count: entry.unpushedCommits.length,
+                work,
+              },
+            ];
+          })
+        : [],
     branches: raw.branches.map((entry) => ({
       name: entry.name,
       lastCommitAt: entry.lastCommit.committedAt,

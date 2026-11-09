@@ -129,6 +129,51 @@ describe("gathering branches and tracking", () => {
     });
   });
 
+  it("lists each local branch's commits no remote-tracking ref holds", async () => {
+    const { clone } = clonedRepo(base, daysBefore(10));
+    commit(clone, "main.txt", "Main one", daysBefore(6));
+    git(clone, ["switch", "--quiet", "-c", "data-guard"]);
+    commit(clone, "a.txt", "Safety one", daysBefore(5));
+    commit(clone, "b.txt", "Safety two", daysBefore(4));
+    git(clone, ["switch", "--quiet", "-c", "part-two"]);
+    commit(clone, "c.txt", "Part two", daysBefore(3));
+    git(clone, ["switch", "--quiet", "main"]);
+
+    const raw = await readRepository(clone, deps);
+    const unpushed = Object.fromEntries(
+      raw.branches.map((branch) => [
+        branch.name,
+        [
+          branch.tracking.state === "tracking"
+            ? branch.tracking.upstream
+            : null,
+          branch.unpushedCommits.map((entry) => entry.subject),
+        ],
+      ]),
+    );
+
+    expect(unpushed).toEqual({
+      main: ["origin/main", ["Main one"]],
+      "data-guard": [null, ["Safety two", "Safety one", "Main one"]],
+      "part-two": [null, ["Part two", "Safety two", "Safety one", "Main one"]],
+    });
+    expect(raw.unpushedCommits).toHaveLength(4);
+  });
+
+  it("lists no unpushed commits on a branch a remote holds", async () => {
+    const { clone } = clonedRepo(base, daysBefore(10));
+    git(clone, ["switch", "--quiet", "-c", "pushed"]);
+    commit(clone, "a.txt", "Pushed one", daysBefore(2));
+    git(clone, ["push", "--quiet", "-u", "origin", "pushed"]);
+
+    const raw = await readRepository(clone, deps);
+
+    expect(raw.branches.map((branch) => branch.unpushedCommits)).toEqual([
+      [],
+      [],
+    ]);
+  });
+
   it("states no remote, no origin head, and lists every commit as unpushed", async () => {
     const repo = initRepo(join(base, "local"));
     commit(repo, "a.txt", "First", daysBefore(3));
@@ -229,6 +274,7 @@ function rawGit(overrides: Partial<RawGit>): RawGit {
           ahead: 0,
           behind: 0,
         },
+        unpushedCommits: [],
       },
     ],
     remotes: {
@@ -267,6 +313,7 @@ describe("deriving git data", () => {
       name: "feature",
       lastCommit: commitAt("Work", daysBefore(1)),
       tracking: { state: "absent", reason: "no-tracking-branch" } as const,
+      unpushedCommits: [],
     };
     const main = rawGit({}).branches;
 
@@ -470,6 +517,7 @@ describe("stalled flight", () => {
       ahead: 0,
       behind: 0,
     } as const,
+    unpushedCommits: [],
   });
 
   it("ages HEAD on a non-default branch from that branch's newest commit", () => {

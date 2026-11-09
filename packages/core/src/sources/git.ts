@@ -102,7 +102,7 @@ function parseCommits(output: string): RawCommit[] {
     });
 }
 
-function parseBranches(output: string): RawBranch[] {
+function parseBranches(output: string): Omit<RawBranch, "unpushedCommits">[] {
   return output
     .split("\n")
     .filter((line) => line !== "")
@@ -170,7 +170,28 @@ export async function readRepository(
   ]);
   const status = parseStatus(statusOutput);
   const remotes = parseRemotes(remoteOutput);
-  const branches = parseBranches(branchOutput);
+  const unpushedCommits = parseCommits(unpushedOutput);
+  const unpushedShas = new Set(unpushedCommits.map((entry) => entry.sha));
+  // A branch whose tip a remote holds has no unpushed commits, so only the others are read.
+  const branches = await Promise.all(
+    parseBranches(branchOutput).map(
+      async (branch): Promise<RawBranch> => ({
+        ...branch,
+        unpushedCommits: unpushedShas.has(branch.lastCommit.sha)
+          ? parseCommits(
+              await git([
+                "log",
+                commitFormat,
+                `refs/heads/${branch.name}`,
+                "--not",
+                "--remotes",
+                "--",
+              ]),
+            )
+          : [],
+      }),
+    ),
+  );
   const originHeadValue = originHeadOutput.trim();
   const originHead: RawGit["originHead"] =
     originHeadValue === ""
@@ -224,7 +245,7 @@ export async function readRepository(
         ? { state: "absent", reason: "no-remote" }
         : { state: "observed", value: remotes },
     originHead,
-    unpushedCommits: parseCommits(unpushedOutput),
+    unpushedCommits,
     defaultBranchCommits:
       defaultBranchOutput === null
         ? { state: "absent", reason: "no-default-branch" }

@@ -39,6 +39,8 @@ export interface RawBranch {
   name: string;
   lastCommit: RawCommit;
   tracking: Tracking;
+  /** Commits on this branch that no remote-tracking ref contains, newest first. */
+  unpushedCommits: RawCommit[];
 }
 
 export interface RawDirtyFile {

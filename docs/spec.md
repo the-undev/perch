@@ -155,14 +155,19 @@ working spelled out beneath in mono, source by source: each forge's
 newest CI run with its state, branch, name, link and age, under a CI
 row that says the worst state as the chip does; open pull requests per
 forge, linked to the forge's list; open items and bugs per roadmap
-file; the age of the oldest uncommitted change or unpushed commit. A
-source with nothing to say is silent. A forge that couldn't be read,
-or the part of it a row spells out, says so in amber, naming the part:
-"couldn't read pull requests" or "couldn't read CI"; a CI or pull
-request row that no forge could fill says "couldn't read" itself. The
-problems at the foot, "What couldn't be read", give the scanner's full
-sentence per source. A failure always says "couldn't read", never "not
-read", which would mean perch had not yet looked.
+file; the age of the oldest uncommitted change; and each local branch
+holding unpushed commits, oldest first, as "main, 3 ahead of
+origin/main" linked to the upstream branch, or "spike, no upstream, 1
+commit", with the age of its oldest unpushed commit. A branch counts
+every unpushed commit it holds, so branches sharing commits add up to
+more than the row. A source with nothing to say is silent. A forge
+that couldn't be read, or the part of it a row spells out, says so in
+amber, naming the part: "couldn't read pull requests" or "couldn't
+read CI"; a CI or pull request row that no forge could fill says
+"couldn't read" itself. The problems at the foot, "What couldn't be
+read", give the scanner's full sentence per source. A failure always
+says "couldn't read", never "not read", which would mean perch had not
+yet looked.
 Concrete nouns link wherever a page exists for them. Headings name the
 actual thing, never a concept.
 

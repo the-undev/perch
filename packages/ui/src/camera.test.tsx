@@ -858,7 +858,7 @@ describe("the pan between birds", () => {
     }
   });
 
-  it("lands an arrival chip only after the pan settles", async () => {
+  it("lands an arrival chip as the arriving page mounts, while the pan still runs", () => {
     const { container, moveTo } = camera(detailOf("undev/skiff"));
 
     moveTo({
@@ -867,16 +867,11 @@ describe("the pan between birds", () => {
       papers: false,
       chip: "ci",
     });
-    const arriving = groundPage(container, "undev/prism");
-
-    expect(scrolled).toEqual([]);
-    expect(container.querySelector('[data-part="landing"]')).toBeNull();
-
-    await settlePan();
-
-    const ciRow = arriving.querySelector(
+    const ciRow = groundPage(container, "undev/prism").querySelector(
       '[data-part="record"] [data-chip="ci"]',
     );
+
+    expect(pans).toHaveLength(1);
     expect(scrolled).toEqual([ciRow]);
     expect(ciRow?.querySelector('[data-part="landing"]')).not.toBeNull();
   });
@@ -923,6 +918,77 @@ describe("the pan between birds", () => {
     expect(record).not.toBe(leavingRecord);
     expect(record.scrollTop).toBe(0);
     expect(screen.getByRole("article").className).not.toContain("animate-swap");
+  });
+
+  it("lays the ground out at its final size beneath the strip whatever the zoom, the sky shrinking over it", () => {
+    const { container, moveTo } = camera(aviaryPlace);
+    const ground = () => {
+      const element = container.querySelector('[data-part="ground"]');
+      if (element === null) throw new Error("the camera has no ground");
+      return element as HTMLElement;
+    };
+    const geometry = () => ({
+      classes: ground()
+        .className.split(" ")
+        .filter((token) =>
+          ["absolute", "inset-x-0", "bottom-0", "flex-1"].includes(token),
+        ),
+      top: ground().style.top,
+    });
+    const final = {
+      classes: ["absolute", "inset-x-0", "bottom-0"],
+      top: `${stripHeight}px`,
+    };
+
+    expect(geometry()).toEqual(final);
+    moveTo(detailOf("undev/skiff"));
+    expect(geometry()).toEqual(final);
+    expect(
+      container
+        .querySelector('[data-part="sky"]')
+        ?.className.split(" ")
+        .includes("z-10"),
+    ).toBe(true);
+  });
+
+  it("mounts a fresh page on every zoom back to the bird last open", () => {
+    const { moveTo } = camera(aviaryPlace);
+
+    moveTo(detailOf("undev/skiff"));
+    const first = screen.getByRole("article", { name: "Skiff in full" });
+    moveTo(aviaryPlace);
+    expect(screen.getByRole("article", { name: "Skiff in full" })).toBe(
+      first,
+    );
+    moveTo(detailOf("undev/skiff"));
+
+    expect(pans).toEqual([]);
+    expect(screen.getByRole("article", { name: "Skiff in full" })).not.toBe(
+      first,
+    );
+  });
+
+  it("lands a chip again on a zoom back to the same bird, in its fresh page", () => {
+    const { container, moveTo } = camera(aviaryPlace);
+    const prismCi: CameraPlace = {
+      at: "detail",
+      birdId: "undev/prism",
+      papers: false,
+      chip: "ci",
+    };
+    const ciRow = () =>
+      container.querySelector('[data-part="record"] [data-chip="ci"]');
+
+    moveTo(prismCi);
+    const firstRow = ciRow();
+    moveTo(aviaryPlace);
+    moveTo(prismCi);
+
+    expect(scrolled).toHaveLength(2);
+    expect(scrolled[0]).toBe(firstRow);
+    expect(scrolled[1]).toBe(ciRow());
+    expect(scrolled[1]).not.toBe(firstRow);
+    expect(ciRow()?.querySelector('[data-part="landing"]')).not.toBeNull();
   });
 
   it("keeps the swap for the first arrival from the aviary, with no pan", () => {

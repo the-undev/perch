@@ -22,14 +22,7 @@ import type {
   LaunchAction,
   RemoteNotice,
 } from "@perch/core/viewmodel.ts";
-import {
-  type AnimationEvent,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { actionClass, LaunchActions, LinksOut } from "./actions.tsx";
 import { AdoptionPapers } from "./adoption-papers.tsx";
@@ -74,7 +67,7 @@ export interface DetailViewProps {
   problems: string[];
   /** The papers unfold as the page opens, and again whenever this turns true. */
   openPapers: boolean;
-  /** The chip pressed in the aviary's bubble that brought the camera here: landed on as the page opens and whenever it changes; null for none. */
+  /** The chip pressed in the aviary's bubble that brought the camera here: landed on as the page mounts and whenever it changes; null for none. */
   arrivalChip: ChipKind | null;
   /** A notice's Sources was pressed: open the settings page. */
   onSettings: () => void;
@@ -82,12 +75,19 @@ export interface DetailViewProps {
   onLocalSources: () => void;
   /** Puts the slip's clone address on the clipboard, settling once it is there. */
   onCopy: (text: string) => Promise<void>;
-  /** The camera is panning the ground between birds' pages: a page mounted during it skips its swap, and every landing waits until it settles. */
+  /** The camera is panning the ground between birds' pages: a page mounted during it skips its swap. */
   panning: boolean;
 }
 
 /** What was signed and is not yet in the entry read back: the values written, or the return. */
 type Signed = { kind: "values"; values: EntryValues } | { kind: "return" };
+
+/** The landing scroll; the DOM lib's options lack `container`, which Chromium 156 supports. */
+const landingScroll: ScrollIntoViewOptions & { container: "nearest" } = {
+  block: "center",
+  behavior: "instant",
+  container: "nearest",
+};
 
 /** Whether the entry read back shows what was signed. */
 function landed(signed: Signed, form: EntryForm): boolean {
@@ -179,12 +179,11 @@ function RemoteNotices({
   );
 }
 
-/** Whether the page's arrival is still animating: false where the platform cannot say, or motion is reduced and nothing runs. */
-function swapRunning(article: HTMLElement | null): boolean {
-  if (article === null || typeof article.getAnimations !== "function") {
-    return false;
-  }
-  return article.getAnimations().length > 0;
+/** Scrolls the element holding a chip's working to the middle of its own pane. */
+function scrollToChip(article: HTMLElement | null, chip: ChipKind) {
+  article
+    ?.querySelector(`[data-chip="${chip}"]`)
+    ?.scrollIntoView(landingScroll);
 }
 
 /** The panes' shared grain: each scrolls its own contents, keeping room at its sides for a landing mark. */
@@ -236,56 +235,42 @@ export function DetailView({
     setOpen(false);
   };
   const night = isNight(skyPhase(now));
-  const [landing, setLanding] = useState<Landing | null>(null);
   const articleRef = useRef<HTMLElement>(null);
-  // The mark is committed before the scroll, so the row never paints unlit; both callers, a press
-  // and the arrival effect, run outside render, where flushSync is allowed. The row's pane scrolls.
-  const landOn = useCallback((chip: ChipKind) => {
+  // The chip that brought the camera here is marked in the page's first commit, and again whenever
+  // another arrives.
+  const [landing, setLanding] = useState<Landing | null>(
+    arrivalChip === null ? null : { chip: arrivalChip, press: 1 },
+  );
+  const [arrived, setArrived] = useState(arrivalChip);
+  if (arrivalChip !== arrived) {
+    setArrived(arrivalChip);
+    if (arrivalChip !== null) {
+      setLanding((last) => ({
+        chip: arrivalChip,
+        press: (last?.press ?? 0) + 1,
+      }));
+    }
+  }
+  // The ground gives the page its final size as it mounts, so the arrival's row scrolls once the
+  // page commits, before it paints.
+  useLayoutEffect(() => {
+    if (arrivalChip === null) return;
+    scrollToChip(articleRef.current, arrivalChip);
+  }, [arrivalChip]);
+  // A press commits its mark before the scroll, so the row never paints unlit; flushSync is allowed
+  // in the press's handler.
+  const pressChip = (chip: ChipKind) => {
     flushSync(() => {
       setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
     });
-    articleRef.current
-      ?.querySelector(`[data-chip="${chip}"]`)
-      ?.scrollIntoView({ block: "center", behavior: "instant" });
-  }, []);
-  // The arrival lands once the page's own swap is over, or the camera's pan, since a scroll and a
-  // mark during either flicker, and a scroll during a pan would drag the ground sideways. A page
-  // panned in arrives by the pan alone.
+    scrollToChip(articleRef.current, chip);
+  };
   const [swaps] = useState(!panning);
-  const [swapOver, setSwapOver] = useState(false);
-  useLayoutEffect(() => {
-    if (!swaps || !swapRunning(articleRef.current)) setSwapOver(true);
-  }, [swaps]);
-  const settleOnSwap = (event: AnimationEvent<HTMLElement>) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.animationName !== "swap") return;
-    setSwapOver(true);
-  };
-  const settled = swapOver && !panning;
-  useEffect(() => {
-    if (!settled || arrivalChip === null) return;
-    landOn(arrivalChip);
-  }, [settled, arrivalChip, landOn]);
-  // A roost chip pressed while the ground pans is held until it settles.
-  const [heldChip, setHeldChip] = useState<ChipKind | null>(null);
-  useEffect(() => {
-    if (!settled || heldChip === null) return;
-    setHeldChip(null);
-    landOn(heldChip);
-  }, [settled, heldChip, landOn]);
-  const pressChip = (chip: ChipKind) => {
-    if (panning) {
-      setHeldChip(chip);
-      return;
-    }
-    landOn(chip);
-  };
   return (
     <article
       ref={articleRef}
       aria-label={`${bird.name} in full`}
       className={`@container mx-auto grid min-h-0 w-full max-w-480 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-y-4 overflow-y-clip ${swaps ? "motion-safe:animate-swap" : ""}`}
-      onAnimationEnd={settleOnSwap}
     >
       <div
         data-part="band"

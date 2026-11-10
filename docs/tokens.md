@@ -1,34 +1,37 @@
 # Tokens
 
 How perch's read-only forge tokens are created, stored and replaced. The
-scheme: keyring only, read-only everywhere, no `gh`, no password manager at run
-time, as the spec's Secrets section sets out.
+scheme: keyring only, read-only everywhere, no `gh`, no password manager
+at run time, as the spec's Secrets section sets out.
+
+Each source card names an account and a keyring key. The key is
+conventionally `<kind>-<account>`, such as `github-<account>` or
+`forgejo-<account>`; any name works as long as each is used once per kind.
 
 ## GitHub
 
-One fine-grained personal access token per account, `finch` and
-`the-undev`. Create at Settings, Developer settings, Personal access
+One fine-grained personal access token per account or organisation a
+card reads. Create at Settings, Developer settings, Personal access
 tokens, Fine-grained tokens:
 
 - Resource owner: the account itself.
 - Repository access: All repositories.
-- Expiry: GitHub caps at one year; record the renewal date in the
-  password manager entry.
+- Expiry: GitHub caps at one year; record the renewal date beside the
+  token's backup copy.
 - Repository permissions, all Read-only: Metadata (added automatically),
   Contents, Pull requests, Actions. Everything else No access.
 
-`skiff` lives under the `skiff-app` organisation, whose repos are
-private (verified 21 October 2026: the-undev's token gets 404 there), so a
-fine-grained token scoped to `the-undev` does not cover them. Create one
-more token with `skiff-app` as resource owner and the same permissions,
-stored under `github-skiff-app`.
+A fine-grained token covers one resource owner. Private repositories
+under an organisation are not readable with a token scoped to a personal
+account, so an organisation's card needs its own token with the
+organisation as resource owner and the same permissions.
 
 ## Forgejo
 
-One token per account, `finch` and `the-undev`, because a token reads
-only its own account's private repos. Create each at Settings,
-Applications, Generate New Token, with scopes `read:repository`,
-`read:issue` (pull requests sit under it) and `read:user`.
+One token per account, because a token reads only its own account's
+private repos. Create each at Settings, Applications, Generate New
+Token, with scopes `read:repository`, `read:issue` (pull requests sit
+under it) and `read:user`.
 
 ## Storing
 
@@ -38,20 +41,16 @@ under the card's keyring key, and Test then lists the account's
 repositories with it. The field is write-only: perch never shows a
 stored token.
 
-From a terminal, each command prompts for the token, so it never enters
+From a terminal, the command prompts for the token, so it never enters
 shell history:
 
 ```bash
-secret-tool store --label "perch github finch" service perch key github-finch
-secret-tool store --label "perch github the-undev" service perch key github-the-undev
-secret-tool store --label "perch github skiff-app" service perch key github-skiff-app
-secret-tool store --label "perch forgejo finch" service perch key forgejo-finch
-secret-tool store --label "perch forgejo the-undev" service perch key forgejo-the-undev
+secret-tool store --label "perch github <account>" service perch key github-<account>
 ```
 
 Verify one with `secret-tool lookup service perch key <name>`, which
-prints the token. The human backup copy of each token lives in a password manager
-under Tech.
+prints the token. Keep a human backup copy of each token outside the
+keyring.
 
 ## Replacing
 

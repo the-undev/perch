@@ -1,12 +1,15 @@
 // The settings page: each page of config but the sources in its states, with what the editor
-// would say of it, and the whole page as the app shows it, rail and all.
+// would say of it, the Updates page's status row in every update state, and the whole page as the
+// app shows it, rail and all.
 
 import { defaultConfig } from "@perch/core/config-default.ts";
 import {
   mockAviary,
   mockConfig,
+  mockImage,
   mockLogin,
   mockSnapshot,
+  mockUpdates,
 } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
@@ -15,13 +18,17 @@ import {
   settingsProblems,
   sourceRunHeld,
 } from "@perch/core/settings-form.ts";
+import type { UpdateState } from "@perch/core/update.ts";
 import { FormNotes } from "@perch/ui/form-parts.tsx";
 import { mockHome, mockSettingsForm } from "@perch/ui/mock-birds.ts";
 import {
   LaunchGroup,
   PresencesGroup,
   ScanGroup,
+  type SettingsPageName,
   ThresholdsGroup,
+  type UpdateCalls,
+  UpdatesGroup,
   WindowGroup,
   WiresGroup,
 } from "@perch/ui/settings-forms.tsx";
@@ -120,17 +127,27 @@ const presences = (
 );
 
 /** The mock's autostart entry once written by an earlier image. */
-const loginOn = settingsFormFor(mockConfig, mockHome, {
-  ...mockLogin,
-  on: true,
-  target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
-}).login;
+const loginOn = settingsFormFor(
+  mockConfig,
+  mockHome,
+  {
+    ...mockLogin,
+    on: true,
+    target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
+  },
+  mockImage,
+).login;
 
 /** The mock run from source, with no entry. */
-const fromSource = settingsFormFor(mockConfig, mockHome, {
-  ...mockLogin,
-  held: sourceRunHeld,
-}).login;
+const fromSource = settingsFormFor(
+  mockConfig,
+  mockHome,
+  {
+    ...mockLogin,
+    held: sourceRunHeld,
+  },
+  null,
+).login;
 
 /** The Window page with the login row's hold and entry as given. */
 const windowWith =
@@ -142,6 +159,44 @@ const windowWith =
       onChange={(next) => change({ window: next })}
     />
   );
+
+/** The moment the mock's update states are measured to: the mock's scan. */
+const atScan = new Date(mockSnapshot.scannedAt);
+
+/** Update calls that only say they were made. */
+const quietUpdateCalls: UpdateCalls = {
+  onCheck: () => {},
+  onInstall: () => {},
+  onRestart: () => {},
+};
+
+/** The mock's install row run from its AppImage. */
+const onImage = mockForm.install;
+
+/** The install row run from source. */
+const sourceInstall = settingsFormFor(
+  mockConfig,
+  mockHome,
+  mockLogin,
+  null,
+).install;
+
+/** The Updates page in an update state, with the install row as given. */
+const updatesWith =
+  (update: UpdateState, install: SettingsForm["install"]) =>
+  (values: SettingsValues, change: (c: Partial<SettingsValues>) => void) => (
+    <UpdatesGroup
+      value={values.update}
+      install={install}
+      update={update}
+      now={atScan}
+      calls={quietUpdateCalls}
+      onChange={(next) => change({ update: next })}
+    />
+  );
+
+/** Install on in config, as the install flow's specimens start. */
+const installOn = withMock({ update: { check: true, install: true } });
 
 export function SettingsGroupsPage() {
   return (
@@ -354,6 +409,78 @@ export function SettingsGroupsPage() {
           group={windowWith(fromSource)}
         />
       </Section>
+      <Section
+        title="Updates"
+        rule="The status row first, one shape in every state: a sentence saying what is known, a detail line, and one button slot. The slot holds Check now, quiet, until something newer is known, then the next step: Open the releases page with install off, Install with it on, Restart now once downloaded; its weight says whether perch itself can act. The detail line holds the releases link, an amber failure, the download's bar or a quiet note. Two switch rows follow: Check for updates is [update] check, true unless the file says false; Install updates is [update] install, false unless it says true, its row naming the image it replaces. Run from source the install switch is held, in amber. The status row is state, never saved."
+        min={560}
+      >
+        <GroupSpecimen
+          label="The defaults, up to date"
+          rule="Check on, install off: Save writes nothing. The last check's answer and its age."
+          start={mock}
+          group={updatesWith(mockUpdates.upToDate, onImage)}
+        />
+        <GroupSpecimen
+          label="Before the first check"
+          rule="Nothing learned yet; Check now checks once."
+          start={mock}
+          group={updatesWith(mockUpdates.noCheck, onImage)}
+        />
+        <GroupSpecimen
+          label="Checking"
+          rule="The sentence says so and the button quiets."
+          start={mock}
+          group={updatesWith(mockUpdates.checking, onImage)}
+        />
+        <GroupSpecimen
+          label="A release is out, install off"
+          rule="Both versions named; the button opens the release's page in the browser and perch touches nothing."
+          start={mock}
+          group={updatesWith(mockUpdates.found, onImage)}
+        />
+        <GroupSpecimen
+          label="A release is out, install on"
+          rule="The button is the install itself, waiting for the press."
+          start={installOn}
+          group={updatesWith(mockUpdates.foundInstall, onImage)}
+        />
+        <GroupSpecimen
+          label="Downloading"
+          rule="The bar in the detail line, the install held."
+          start={installOn}
+          group={updatesWith(mockUpdates.downloading, onImage)}
+        />
+        <GroupSpecimen
+          label="Downloaded"
+          rule="Restart now replaces the image and starts it as the window stands; quitting normally also installs it. Nothing restarts by itself."
+          start={installOn}
+          group={updatesWith(mockUpdates.ready, onImage)}
+        />
+        <GroupSpecimen
+          label="A failed download"
+          rule="One amber sentence, mechanism first; Install returns. A checksum mismatch discards the download and says so."
+          start={installOn}
+          group={updatesWith(mockUpdates.downloadFailed, onImage)}
+        />
+        <GroupSpecimen
+          label="A failed check"
+          rule="The last answer stays above the amber line saying why it is old."
+          start={installOn}
+          group={updatesWith(mockUpdates.checkFailed, onImage)}
+        />
+        <GroupSpecimen
+          label="Checking by hand"
+          rule="Check off and install on: perch never calls GitHub by itself, and Check now still does. Save writes both switches."
+          start={withMock({ update: { check: false, install: true } })}
+          group={updatesWith(mockUpdates.checkOff, onImage)}
+        />
+        <GroupSpecimen
+          label="Run from source"
+          rule="No APPIMAGE, so no image to replace: the install switch is held and its row says why. The check still works."
+          start={mock}
+          group={updatesWith(mockUpdates.sourceRun, sourceInstall)}
+        />
+      </Section>
       <Usage
         component="<SettingsEditor>"
         props={[
@@ -383,6 +510,16 @@ export function SettingsGroupsPage() {
             what: "Stores a forge card's pasted token and tests its connection, each resolving to a result the card puts in a sentence.",
           },
           {
+            name: "update",
+            type: "UpdateState",
+            what: "The update state the Updates page's status row shows.",
+          },
+          {
+            name: "updateCalls",
+            type: "UpdateCalls",
+            what: "What the status row asks of the main process: check, install, restart.",
+          },
+          {
             name: "onSave",
             type: "(values: SettingsValues) => void",
             what: "Save was pressed with values that changed and can be written.",
@@ -392,18 +529,22 @@ export function SettingsGroupsPage() {
         <p>
           Each page (<Code>WiresGroup</Code>, <Code>ThresholdsGroup</Code>,{" "}
           <Code>ScanGroup</Code>, <Code>LaunchGroup</Code>,{" "}
-          <Code>PresencesGroup</Code>, <Code>WindowGroup</Code>, and{" "}
-          <Code>SourcesPage</Code> on a page of its own) takes its slice of{" "}
-          <Code>SettingsValues</Code> as <Code>value</Code> and every change as{" "}
-          <Code>onChange</Code>; the wires page takes <Code>named</Code> for its
-          warnings, and the window page <Code>login</Code> for the login row.
-          The editor shows the page the rail has open, holds the draft across
-          every page, and lists <Code>settingsProblems(values)</Code> beside
-          Save, as this page does beneath each specimen.
+          <Code>PresencesGroup</Code>, <Code>WindowGroup</Code>,{" "}
+          <Code>UpdatesGroup</Code>, and <Code>SourcesPage</Code> on a page of
+          its own) takes its slice of <Code>SettingsValues</Code> as{" "}
+          <Code>value</Code> and every change as <Code>onChange</Code>; the
+          wires page takes <Code>named</Code> for its warnings, the window page{" "}
+          <Code>login</Code> for the login row, and the updates page{" "}
+          <Code>install</Code>, <Code>update</Code> and <Code>calls</Code> for
+          the install row and the status row. The editor shows the page the rail
+          has open, holds the draft across every page, and lists{" "}
+          <Code>settingsProblems(values)</Code> beside Save, as this page does
+          beneath each specimen.
         </p>
         <p>
-          The form comes from <Code>settingsFormFor(config, home, login)</Code>{" "}
-          in <Code>@perch/core/settings-form.ts</Code>, which the main process
+          The form comes from{" "}
+          <Code>settingsFormFor(config, home, login, image)</Code> in{" "}
+          <Code>@perch/core/settings-form.ts</Code>, which the main process
           answers <Code>settingsForm()</Code> with, the login entry read from
           the machine; saving goes back as <Code>saveSettings(values)</Code>,
           written by <Code>withSettings(config, values, home)</Code>, and the
@@ -433,7 +574,7 @@ const startOptions: { value: Start; label: string }[] = [
 
 const startForms: Record<Start, SettingsForm> = {
   mock: mockForm,
-  starter: settingsFormFor(defaultConfig(), mockHome, mockLogin),
+  starter: settingsFormFor(defaultConfig(), mockHome, mockLogin, mockImage),
 };
 
 const problemOptions: { value: Problems; label: string }[] = [
@@ -458,6 +599,7 @@ export function SettingsScenePage() {
   const [problems, setProblems] = useState<Problems>("none");
   const [scan, setScan] = useState<ScanState>("idle");
   const [pressed, setPressed] = useState("nothing yet");
+  const [page, setPage] = useState<SettingsPageName>("sources");
   const keyring = stubKeyring(
     { stored: { ok: true }, tested: { ok: true, count: 5 } },
     setPressed,
@@ -526,6 +668,14 @@ export function SettingsScenePage() {
               : []
           }
           unfold={null}
+          page={page}
+          onPage={setPage}
+          update={mockUpdates.upToDate}
+          updateCalls={{
+            onCheck: () => setPressed("updateCalls.onCheck()"),
+            onInstall: () => setPressed("updateCalls.onInstall()"),
+            onRestart: () => setPressed("updateCalls.onRestart()"),
+          }}
           onSave={(values) => {
             setPressed("onSave(values)");
             setForm({ ...form, values });
@@ -588,6 +738,26 @@ export function SettingsScenePage() {
             what: "The Sources page's cards of this kind start unfolded: /settings?unfold=local, from a no-clone slip's Open Sources. Null for none.",
           },
           {
+            name: "page",
+            type: "SettingsPageName",
+            what: "The page the rail has open: /settings?page=updates, from the tray's update entry. Sources without one.",
+          },
+          {
+            name: "onPage",
+            type: "(page: SettingsPageName) => void",
+            what: "The rail asked for a page.",
+          },
+          {
+            name: "update",
+            type: "UpdateState",
+            what: "The running version, the release checks' answers and the download, from the pushed state, for the Updates page's status row.",
+          },
+          {
+            name: "updateCalls",
+            type: "UpdateCalls",
+            what: "Check now, Install and Restart now from the status row; Open the releases page is a link.",
+          },
+          {
             name: "onSave",
             type: "(values: SettingsValues) => void",
             what: "Save was pressed.",
@@ -602,10 +772,10 @@ export function SettingsScenePage() {
         <p>
           The desktop app renders it at <Code>/settings</Code> in place of the
           camera, and goes there once the welcome creates the config file. The
-          open page is the view's own state, Sources each time it opens. Every
-          pushed state reads the form again, so an edit to the file by hand,
-          which the main process watches for, reaches an open page; an equal
-          answer keeps the same object and the draft.
+          open page is the URL's, Sources without one. Every pushed state reads
+          the form again, so an edit to the file by hand, which the main process
+          watches for, reaches an open page; an equal answer keeps the same
+          object and the draft.
         </p>
       </Usage>
     </>

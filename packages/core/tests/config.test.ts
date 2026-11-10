@@ -123,6 +123,18 @@ describe("example config", () => {
     expect(parseConfig(text, home).window).toEqual({ tray: false });
   });
 
+  it("parses its commented update table once uncommented", async () => {
+    const text = (await exampleText()).replace(
+      /^# (\[update\]|check = |install = )/gm,
+      "$1",
+    );
+
+    expect(parseConfig(text, home).update).toEqual({
+      check: false,
+      install: true,
+    });
+  });
+
   it("parses its commented kuma source once uncommented", async () => {
     const text = (await exampleText()).replace(
       /^# (\[\[sources\.kuma\]\]|name = "Server"|base_url = |status_page = )/gm,
@@ -400,6 +412,40 @@ describe("the window", () => {
     );
     expect(() => parseConfig(word, home)).toThrow(
       "config: window.tray must be true or false",
+    );
+  });
+});
+
+describe("the update table", () => {
+  it("checks and does not install without an [update] table", async () => {
+    const absent = parseConfig(await fixtureConfigText(""), home);
+
+    expect(absent.update).toEqual({ check: true, install: false });
+  });
+
+  it("reads check and install from an [update] table", async () => {
+    const both = parseConfig(
+      await fixtureConfigText("[update]\ncheck = false\ninstall = true\n"),
+      home,
+    );
+    const one = parseConfig(
+      await fixtureConfigText("[update]\ninstall = true\n"),
+      home,
+    );
+
+    expect(both.update).toEqual({ check: false, install: true });
+    expect(one.update).toEqual({ check: true, install: true });
+  });
+
+  it("names a key the [update] table may not hold, and wants each switch true or false", async () => {
+    const stray = await fixtureConfigText('[update]\nchannel = "beta"\n');
+    const word = await fixtureConfigText('[update]\ninstall = "yes"\n');
+
+    expect(() => parseConfig(stray, home)).toThrow(
+      "config: update.channel is not a config key",
+    );
+    expect(() => parseConfig(word, home)).toThrow(
+      "config: update.install must be true or false",
     );
   });
 });

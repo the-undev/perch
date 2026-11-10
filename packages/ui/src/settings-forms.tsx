@@ -1,5 +1,5 @@
 // The settings page's pages, one per part of config, and the editor that holds them: sources,
-// joining up, wires, judgement, scanning, launching and the window.
+// joining up, wires, judgement, scanning, launching, the window and updates.
 // Each page is presentational, its value in and every change out; the editor holds the draft
 // across them and shows the page the rail has open.
 
@@ -33,7 +33,9 @@ import {
   lineIcons,
 } from "@perch/core/launch-kinds.ts";
 import {
+  checkSentence,
   defaultName,
+  installSentence,
   loginEntryLine,
   loginSentence,
   type SettingsForm,
@@ -44,6 +46,12 @@ import {
   wireWarnings,
 } from "@perch/core/settings-form.ts";
 import type { KeyringCalls } from "@perch/core/sources-form.ts";
+import {
+  releasesPage,
+  type UpdateAction,
+  type UpdateState,
+  updateStatus,
+} from "@perch/core/update.ts";
 import type { SourceCard, SourceCardKind } from "@perch/core/viewmodel.ts";
 import { type ReactNode, useId, useState } from "react";
 import {
@@ -76,7 +84,8 @@ export type SettingsPageName =
   | "judgement"
   | "scanning"
   | "launching"
-  | "window";
+  | "window"
+  | "updates";
 
 /** The rail's pages in order; Joining up sits under Sources, since joins act on what it finds. */
 export const settingsPages: readonly {
@@ -92,6 +101,7 @@ export const settingsPages: readonly {
   { page: "scanning", label: "Scanning", sub: false },
   { page: "launching", label: "Launching", sub: false },
   { page: "window", label: "Window", sub: false },
+  { page: "updates", label: "Updates", sub: false },
 ];
 
 /** One page of config: its title, the table it writes, a lead beneath the title, and its rows. */
@@ -1062,6 +1072,156 @@ export function WindowGroup({
   );
 }
 
+/** What the Updates page's status row asks of the main process. */
+export interface UpdateCalls {
+  /** Check now: read the latest release whatever config says. */
+  onCheck: () => void;
+  /** Download the newer release and replace the image with it. */
+  onInstall: () => void;
+  /** Quit and start the downloaded release. */
+  onRestart: () => void;
+}
+
+/** A quiet link to a web page, which the main process opens in the browser. */
+const quietLinkClass =
+  "text-inherit underline decoration-dotted decoration-edge-hi underline-offset-3 hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-ink-accent";
+
+/**
+ * The Updates page's first row, one shape in every state: a sentence saying what is known, a
+ * detail line, and one button whose label and weight name the next step.
+ */
+function UpdateStatusRow({
+  update,
+  now,
+  calls,
+}: {
+  update: UpdateState;
+  now: Date;
+  calls: UpdateCalls;
+}) {
+  const { sentence, detail, button } = updateStatus(update, now);
+  const buttonLook = button.primary ? primaryClass : secondaryClass;
+  // Open the releases page is a link, which the main process opens in the browser.
+  const press: Record<Exclude<UpdateAction, "open">, () => void> = {
+    check: calls.onCheck,
+    install: calls.onInstall,
+    restart: calls.onRestart,
+  };
+  return (
+    <div className="flex items-center gap-6.5 px-0.5 pt-0.5 pb-3.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.75">
+        <p
+          role="status"
+          className="m-0 max-w-[52ch] text-[13.5px] text-ink leading-normal"
+        >
+          {sentence}
+        </p>
+        {detail.kind === "link" && (
+          <p className="m-0 text-[12.5px] text-ink-faint">
+            <a
+              href={releasesPage}
+              target="_blank"
+              rel="noreferrer"
+              className={quietLinkClass}
+            >
+              github.com/the-undev/perch/releases
+            </a>
+          </p>
+        )}
+        {detail.kind === "failure" && (
+          <p className="m-0 max-w-[52ch] text-[13px] text-amber leading-normal">
+            {detail.text}
+          </p>
+        )}
+        {detail.kind === "progress" && (
+          <div
+            role="progressbar"
+            aria-label="Download"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(detail.fraction * 100)}
+            className="mt-2 mb-0.5 h-1 max-w-[52ch] overflow-hidden rounded-sm bg-edge"
+          >
+            <div
+              className="h-full rounded-sm bg-ink-accent"
+              style={{ width: `${detail.fraction * 100}%` }}
+            />
+          </div>
+        )}
+        {detail.kind === "note" && (
+          <p className="m-0 text-[12.5px] text-ink-faint">{detail.text}</p>
+        )}
+      </div>
+      {button.action === "open" ? (
+        <a
+          href={update.release?.url ?? releasesPage}
+          target="_blank"
+          rel="noreferrer"
+          className={`${buttonLook} whitespace-nowrap no-underline`}
+        >
+          {button.label}
+        </a>
+      ) : (
+        <button
+          type="button"
+          disabled={button.held}
+          onClick={press[button.action]}
+          className={`${buttonLook} whitespace-nowrap`}
+        >
+          {button.label}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The Updates page: the status row, then whether perch checks for releases by itself and whether
+ * it installs them. The install row names the image it replaces, and is held run from source.
+ */
+export function UpdatesGroup({
+  value,
+  install,
+  update,
+  now,
+  calls,
+  onChange,
+}: GroupProps<SettingsValues["update"]> & {
+  /** The install row's hold, and the image it replaces. */
+  install: SettingsForm["install"];
+  /** The running version, the checks' answers and the download, as the main process last pushed them. */
+  update: UpdateState;
+  /** The moment the last check's age is measured to. */
+  now: Date;
+  calls: UpdateCalls;
+}) {
+  return (
+    <SettingsGroup
+      title="Updates"
+      table="[update]"
+      lead="How perch learns of new releases, and whether it installs them."
+    >
+      <UpdateStatusRow update={update} now={now} calls={calls} />
+      <SwitchRow
+        label="Check for updates"
+        sentence={checkSentence(value.check)}
+        entry={null}
+        held={null}
+        checked={value.check}
+        onChange={(check) => onChange({ ...value, check })}
+      />
+      <SwitchRow
+        label="Install updates"
+        sentence={installSentence(value.install, install.held !== null)}
+        entry={install.image}
+        held={install.held}
+        checked={value.install}
+        onChange={(on) => onChange({ ...value, install: on })}
+      />
+    </SettingsGroup>
+  );
+}
+
 /** Two values are the same when they serialise alike: they are plain data. */
 function same(a: SettingsValues, b: SettingsValues): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -1080,6 +1240,10 @@ export interface SettingsEditorProps {
   keyring: KeyringCalls;
   /** The Sources page's cards of this kind start unfolded, as a link to the page asks; null for none. */
   unfold: SourceCardKind | null;
+  /** The update state the Updates page's status row shows. */
+  update: UpdateState;
+  /** What the Updates page's status row asks of the main process. */
+  updateCalls: UpdateCalls;
   /** Save was pressed with values that changed and can be written. */
   onSave: (values: SettingsValues) => void;
 }
@@ -1096,6 +1260,8 @@ export function SettingsEditor({
   now,
   keyring,
   unfold,
+  update: updateNow,
+  updateCalls,
   onSave,
 }: SettingsEditorProps) {
   const [base, setBase] = useState(form.values);
@@ -1171,6 +1337,16 @@ export function SettingsEditor({
           value={draft.window}
           login={form.login}
           onChange={(next) => update({ window: next })}
+        />
+      )}
+      {page === "updates" && (
+        <UpdatesGroup
+          value={draft.update}
+          install={form.install}
+          update={updateNow}
+          now={now}
+          calls={updateCalls}
+          onChange={(next) => update({ update: next })}
         />
       )}
       <div className="sticky bottom-0 -mx-4 border-edge border-t bg-rail px-4 py-3 @min-[900px]:-mx-6.5 @min-[900px]:px-6.5">

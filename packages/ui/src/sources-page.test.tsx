@@ -1,4 +1,4 @@
-import { mockSnapshot } from "@perch/core/mock.ts";
+import { mockSnapshot, mockUpdates } from "@perch/core/mock.ts";
 import type { SettingsForm } from "@perch/core/settings-form.ts";
 import type {
   KeyringCalls,
@@ -51,6 +51,12 @@ function sourcesPage(
       now={now}
       keyring={keyring}
       unfold={unfold}
+      update={mockUpdates.upToDate}
+      updateCalls={{
+        onCheck: () => {},
+        onInstall: () => {},
+        onRestart: () => {},
+      }}
       onSave={onSave}
     />,
   );
@@ -287,9 +293,7 @@ describe("the sources page", () => {
       }),
     );
 
-    expect(
-      screen.queryByRole("region", { name: "GitHub · finch" }),
-    ).toBeNull();
+    expect(screen.queryByRole("region", { name: "GitHub · finch" })).toBeNull();
     expect(
       within(card("GitHub · the-undev")).queryByRole("button", {
         name: "Stop looking here",

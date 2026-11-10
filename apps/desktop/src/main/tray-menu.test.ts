@@ -1,17 +1,26 @@
+import { mockUpdates } from "@perch/core/mock.ts";
 import { describe, expect, it, vi } from "vitest";
-import { syncTray, trayMenu } from "./tray-menu.ts";
+import { syncTray, trayMenu, trayUpdateLabel } from "./tray-menu.ts";
+
+/** Every tray action as a spy. */
+const trayActions = () => ({
+  show: vi.fn(),
+  rescan: vi.fn(),
+  openUpdates: vi.fn(),
+  restart: vi.fn(),
+  quit: vi.fn(),
+});
+
+/** The menu's labels, a separator as ---. */
+const labels = (menu: ReturnType<typeof trayMenu>) =>
+  menu.map((item) => ("label" in item ? item.label : "---"));
 
 describe("the tray menu", () => {
   it("offers show, rescan and quit, each doing its own thing", () => {
-    const actions = { show: vi.fn(), rescan: vi.fn(), quit: vi.fn() };
-    const menu = trayMenu(actions);
+    const actions = trayActions();
+    const menu = trayMenu(actions, mockUpdates.upToDate);
 
-    expect(menu.map((item) => ("label" in item ? item.label : "---"))).toEqual([
-      "Show",
-      "Rescan",
-      "---",
-      "Quit",
-    ]);
+    expect(labels(menu)).toEqual(["Show", "Rescan", "---", "Quit"]);
     for (const item of menu) {
       if ("click" in item) item.click();
     }
@@ -21,8 +30,8 @@ describe("the tray menu", () => {
   });
 
   it("calls only the action of the item clicked", () => {
-    const actions = { show: vi.fn(), rescan: vi.fn(), quit: vi.fn() };
-    const rescan = trayMenu(actions).find(
+    const actions = trayActions();
+    const rescan = trayMenu(actions, mockUpdates.upToDate).find(
       (item) => "label" in item && item.label === "Rescan",
     );
     if (rescan === undefined || !("click" in rescan))
@@ -31,6 +40,67 @@ describe("the tray menu", () => {
     expect(actions.rescan).toHaveBeenCalledOnce();
     expect(actions.show).not.toHaveBeenCalled();
     expect(actions.quit).not.toHaveBeenCalled();
+  });
+});
+
+describe("the tray's update entry", () => {
+  it("is there only while a newer release is known", () => {
+    for (const quiet of [
+      mockUpdates.noCheck,
+      mockUpdates.checking,
+      mockUpdates.upToDate,
+      mockUpdates.checkOff,
+      mockUpdates.sourceRun,
+    ]) {
+      expect(trayUpdateLabel(quiet)).toBeNull();
+    }
+    expect(trayUpdateLabel(mockUpdates.found)).toBe("0.3.0 is out…");
+    expect(trayUpdateLabel(mockUpdates.foundInstall)).toBe("0.3.0 is out…");
+  });
+
+  it("sits above Quit, set apart, and opens the Updates page", () => {
+    const actions = trayActions();
+    const menu = trayMenu(actions, mockUpdates.found);
+
+    expect(labels(menu)).toEqual([
+      "Show",
+      "Rescan",
+      "---",
+      "0.3.0 is out…",
+      "---",
+      "Quit",
+    ]);
+    const entry = menu[3];
+    if (entry === undefined || !("click" in entry)) throw new Error("no entry");
+    entry.click();
+    expect(actions.openUpdates).toHaveBeenCalledOnce();
+    expect(actions.show).not.toHaveBeenCalled();
+  });
+});
+
+describe("the tray's restart entry", () => {
+  it("reads Restart into the downloaded version and restarts, rather than opening the page", () => {
+    const actions = trayActions();
+    const menu = trayMenu(actions, mockUpdates.ready);
+
+    expect(labels(menu)).toEqual([
+      "Show",
+      "Rescan",
+      "---",
+      "Restart into 0.3.0",
+      "---",
+      "Quit",
+    ]);
+    const entry = menu[3];
+    if (entry === undefined || !("click" in entry)) throw new Error("no entry");
+    entry.click();
+    expect(actions.restart).toHaveBeenCalledOnce();
+    expect(actions.openUpdates).not.toHaveBeenCalled();
+  });
+
+  it("keeps saying the release is out while it downloads or after a failed download", () => {
+    expect(trayUpdateLabel(mockUpdates.downloading)).toBe("0.3.0 is out…");
+    expect(trayUpdateLabel(mockUpdates.downloadFailed)).toBe("0.3.0 is out…");
   });
 });
 

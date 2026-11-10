@@ -195,9 +195,7 @@ export function HeadingPage() {
             <DetailHeading
               bird={mockBird("forgejo:finch/field-notes")}
               actions={
-                <HeadingActions
-                  bird={mockBird("forgejo:finch/field-notes")}
-                />
+                <HeadingActions bird={mockBird("forgejo:finch/field-notes")} />
               }
             />
           </Ground>
@@ -210,9 +208,7 @@ export function HeadingPage() {
             <DetailHeading
               bird={mockBird("github:finch/obsidian-tidy")}
               actions={
-                <HeadingActions
-                  bird={mockBird("github:finch/obsidian-tidy")}
-                />
+                <HeadingActions bird={mockBird("github:finch/obsidian-tidy")} />
               }
             />
           </Ground>

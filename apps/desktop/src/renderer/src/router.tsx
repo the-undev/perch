@@ -3,6 +3,10 @@ import {
   chipKinds,
   type SourceCardKind,
 } from "@perch/core/viewmodel.ts";
+import {
+  type SettingsPageName,
+  settingsPages,
+} from "@perch/ui/settings-forms.tsx";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -71,20 +75,28 @@ const sourceCardKinds: readonly SourceCardKind[] = [
   "kuma",
 ];
 
-/** What the settings URL can carry: unfold=<kind> opens the Sources page with those cards unfolded. */
+/**
+ * What the settings URL can carry: page=<page> names the page the rail has open, and
+ * unfold=<kind> starts the Sources page's cards of that kind unfolded.
+ */
 export interface SettingsSearch {
+  /** Undefined for a page the URL names that is no settings page. */
+  page?: SettingsPageName | undefined;
   /** Undefined for a kind the URL names that is no card kind. */
   unfold?: SourceCardKind | undefined;
 }
 
-/** The settings search as read from its URL: unfold only when a known kind. */
+/** The settings search as read from its URL: page and unfold only when known. */
 export function settingsSearch(
   search: Record<string, unknown>,
 ): SettingsSearch {
-  return { unfold: sourceCardKinds.find((kind) => kind === search.unfold) };
+  return {
+    page: settingsPages.find((entry) => entry.page === search.page)?.page,
+    unfold: sourceCardKinds.find((kind) => kind === search.unfold),
+  };
 }
 
-/** The settings page, in the camera's place; the search says which Sources cards start unfolded. */
+/** The settings page, in the camera's place; the search says which page is open and which Sources cards start unfolded. */
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "settings",

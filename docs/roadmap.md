@@ -145,12 +145,16 @@ own API: download queues and Plex watch history.
 Replace the Plasma custom shortcut with an in-app one once Electron's
 global shortcuts work under Wayland through the GlobalShortcuts portal.
 
-## AppImage auto-update
+## AppImage embedded update information
 
-electron-updater can replace the running AppImage with the latest one
-from the GitHub releases that CI publishes. Parked until updating by
-hand becomes a chore. It also waits for the public undev release,
-because a private repository needs a run-time token to read releases.
+AppImage update tools such as AppImageUpdate read update information
+embedded in the image and a `.zsync` file beside it. electron-builder
+writes neither. CI could repack the AppImage with
+appimagetool, embedding `gh-releases-zsync|the-undev|perch|latest|perch-*-x86_64.AppImage.zsync`,
+and upload the `.zsync` with the release. Parked as experimental: the
+repack must keep electron-updater's embedded block map and checksum in
+`latest-linux.yml` valid, and one failure report in the electron-builder
+ecosystem is documented in teams-for-linux ADR 011.
 
 ## Forge issues source
 

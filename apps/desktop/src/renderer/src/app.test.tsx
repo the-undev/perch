@@ -9,8 +9,10 @@ import {
 import {
   mockAviary,
   mockConfig,
+  mockImage,
   mockLogin,
   mockSnapshot,
+  mockUpdates,
 } from "@perch/core/mock.ts";
 import {
   type SettingsForm,
@@ -57,6 +59,7 @@ const idle = (aviary: Aviary | null): PerchState => ({
   sourceCards: null,
   scanning: false,
   problems: [],
+  update: mockUpdates.noCheck,
 });
 
 function renderApp(
@@ -100,6 +103,7 @@ describe("the window", () => {
       sourceCards: null,
       scanning: true,
       problems: [],
+      update: mockUpdates.noCheck,
     });
 
     expect((await screen.findByRole("status")).textContent).toBe(
@@ -138,7 +142,7 @@ describe("the window", () => {
       "/",
       undefined,
       undefined,
-      settingsFormFor(defaultConfig(), mockHome, mockLogin),
+      settingsFormFor(defaultConfig(), mockHome, mockLogin, mockImage),
     );
 
     fireEvent.click(
@@ -194,6 +198,7 @@ describe("the window", () => {
         sourceCards: null,
         scanning: true,
         problems: [],
+        update: mockUpdates.noCheck,
       }),
     );
 
@@ -210,6 +215,7 @@ describe("the window", () => {
       problems: [
         "config: wires must be a table; the config read before stands",
       ],
+      update: mockUpdates.noCheck,
     });
 
     expect(
@@ -419,9 +425,7 @@ describe("the window", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Copy" }));
 
     expect(await screen.findByRole("button", { name: "Copied" })).toBeDefined();
-    expect(copied).toEqual([
-      "ssh://git@forgejo:2222/finch/field-notes.git",
-    ]);
+    expect(copied).toEqual(["ssh://git@forgejo:2222/finch/field-notes.git"]);
     expect(pathOf(router)).toBe("/bird/forgejo:finch/field-notes");
     Reflect.deleteProperty(navigator, "clipboard");
   });
@@ -757,6 +761,76 @@ describe("the window", () => {
       expect(local.queryByRole("textbox", { name: "folder 1" })).toBeNull();
     });
 
+    it("opens the Updates page when the tray asks, from wherever the window is", async () => {
+      const { fake, router } = renderApp(
+        idle(mockAviary),
+        "/",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+      await birdButton("undev/skiff");
+
+      act(() => fake.openUpdates());
+
+      await waitFor(() => expect(pathOf(router)).toBe("/settings"));
+      expect(router.state.location.search).toEqual({ page: "updates" });
+      expect(
+        await screen.findByRole("region", { name: "Updates" }),
+      ).toBeDefined();
+    });
+
+    it("keeps the rail's page in the URL, and reads a page it does not know as Sources", async () => {
+      const { router } = renderApp(
+        idle(mockAviary),
+        "/settings?page=nowhere",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+
+      expect(
+        await screen.findByRole("region", { name: "Sources" }),
+      ).toBeDefined();
+      fireEvent.click(screen.getByRole("button", { name: "Updates" }));
+
+      await waitFor(() =>
+        expect(router.state.location.search).toEqual({ page: "updates" }),
+      );
+    });
+
+    it("asks the main process to check, install and restart from the status row", async () => {
+      const { fake } = renderApp(
+        idle(mockAviary),
+        "/settings?page=updates",
+        undefined,
+        undefined,
+        mockSettingsForm(),
+      );
+      const updates = () =>
+        within(screen.getByRole("region", { name: "Updates" }));
+
+      fireEvent.click(await screen.findByRole("button", { name: "Check now" }));
+      expect(fake.updateChecks).toBe(1);
+
+      act(() =>
+        fake.push({ ...idle(mockAviary), update: mockUpdates.foundInstall }),
+      );
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Install 0.3.0" }),
+      );
+      expect(fake.updateInstalls).toBe(1);
+
+      act(() => fake.push({ ...idle(mockAviary), update: mockUpdates.ready }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Restart now" }),
+      );
+      expect(fake.updateRestarts).toBe(1);
+      expect(updates().getByRole("status").textContent).toBe(
+        "0.3.0 is downloaded. It runs from the next start.",
+      );
+    });
+
     it("saves an edit through the main process, and shows a refusal among the problems", async () => {
       const form = mockSettingsForm();
       const { fake } = renderApp(
@@ -853,9 +927,7 @@ describe("the window", () => {
       const github = within(
         await screen.findByRole("region", { name: "GitHub · finch" }),
       );
-      fireEvent.click(
-        github.getByRole("button", { name: "GitHub · finch" }),
-      );
+      fireEvent.click(github.getByRole("button", { name: "GitHub · finch" }));
 
       fireEvent.change(github.getByLabelText("Token"), {
         target: { value: "github_pat_11ABC" },
@@ -940,6 +1012,7 @@ describe("the window", () => {
           { ...mockConfig, scan: { ...mockConfig.scan, intervalMinutes: 20 } },
           mockHome,
           mockLogin,
+          mockImage,
         ),
       );
       act(() => fake.push(idle(mockAviary)));
@@ -957,7 +1030,9 @@ describe("the window", () => {
         form,
       );
       fireEvent.click(await screen.findByRole("button", { name: "Window" }));
-      const windowPage = within(screen.getByRole("region", { name: "Window" }));
+      const windowPage = within(
+        await screen.findByRole("region", { name: "Window" }),
+      );
 
       fireEvent.click(
         windowPage.getByRole("switch", { name: "Start at login" }),
@@ -971,11 +1046,16 @@ describe("the window", () => {
         { ...form.values, window: { tray: false, login: true } },
       ]);
       fake.setSettings(
-        settingsFormFor({ ...mockConfig, window: { tray: false } }, mockHome, {
-          ...mockLogin,
-          on: true,
-          target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
-        }),
+        settingsFormFor(
+          { ...mockConfig, window: { tray: false } },
+          mockHome,
+          {
+            ...mockLogin,
+            on: true,
+            target: `${mockHome}/Applications/perch-0.2.0-x86_64.AppImage`,
+          },
+          mockImage,
+        ),
       );
       act(() => fake.push(idle(mockAviary)));
 

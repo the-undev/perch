@@ -38,6 +38,7 @@ jobs:
         run: test "$GITHUB_REF_NAME" = "v$(node -p 'require("./apps/desktop/package.json").version')"
       - run: pnpm dist
       - name: Publish the release
-        run: gh release create "$GITHUB_REF_NAME" apps/desktop/dist/*.AppImage --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+        # latest-linux.yml is the update feed; the AppImage carries its own block map.
+        run: gh release create "$GITHUB_REF_NAME" apps/desktop/dist/*.AppImage apps/desktop/dist/latest-linux.yml --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
         env:
           GH_TOKEN: ${{ github.token }}

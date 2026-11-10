@@ -1,9 +1,15 @@
 // The main process's one source of truth: the config, the latest snapshot and the aviary derived
-// from them, what went wrong outside any one source, and the scan, launch, key-file reads, config
-// entry edits and settings that act on them, the autostart entry among the settings. Electron
-// stays outside: every effect is a dependency.
+// from them, what went wrong outside any one source, the release check, and the scan, launch,
+// key-file reads, config entry edits and settings that act on them, the autostart entry among the
+// settings. Electron stays outside: every effect is a dependency.
 
-import type { Config, LoadedConfig } from "@perch/core/config.ts";
+import {
+  type Config,
+  collapseHome,
+  defaultUpdateCheck,
+  defaultUpdateInstall,
+  type LoadedConfig,
+} from "@perch/core/config.ts";
 import {
   type EntryForm,
   type EntryValues,
@@ -12,6 +18,7 @@ import {
   withoutEntry,
 } from "@perch/core/entry-form.ts";
 import { errorMessage } from "@perch/core/fs.ts";
+import type { FetchJson } from "@perch/core/http.ts";
 import {
   type SettingsForm,
   type SettingsValues,
@@ -19,6 +26,11 @@ import {
   withSettings,
 } from "@perch/core/settings-form.ts";
 import type { Item, Snapshot } from "@perch/core/snapshot.ts";
+import {
+  createReleaseChecker,
+  type DownloadState,
+  type UpdateState,
+} from "@perch/core/update.ts";
 import {
   type Aviary,
   type Bird,
@@ -31,6 +43,7 @@ import type { Autostart } from "./autostart.ts";
 import type { ConfigEdit } from "./config-edit.ts";
 import type { ConfigStore } from "./config-store.ts";
 import { configFileAction } from "./launch.ts";
+import type { Updater } from "./updater.ts";
 
 export interface AppStateDeps {
   /** The home directory, against which the settings page shows paths with ~. */
@@ -54,6 +67,16 @@ export interface AppStateDeps {
   editConfig: (edit: ConfigEdit) => Promise<void>;
   /** The autostart entry the settings page's login toggle reads and saving writes. */
   autostart: Autostart;
+  /** The running AppImage, from APPIMAGE, which an install replaces; null when run from source. */
+  image: string | null;
+  /** The running version. */
+  running: string;
+  /** Answers the release check's request. */
+  fetchRelease: FetchJson;
+  /** The clock the release check's hour and answers are read from. */
+  now: () => Date;
+  /** Downloads a newer release and replaces the image with it; used only while perch installs. */
+  updater: Updater;
   /** Asks for a scan now, or joins the one running, and settles when it has finished. */
   requestScan: () => Promise<void>;
   /** Told every change to the state. */
@@ -106,6 +129,23 @@ export interface AppState {
    * becomes a problem until the next scan.
    */
   saveSettings(values: SettingsValues): Promise<void>;
+  /** Checks for a newer release now, whatever config's switch and the hour say; joins one running. */
+  checkForUpdate(): Promise<void>;
+  /**
+   * Downloads the newer release while perch installs, one is known and none is downloading or
+   * downloaded; a failure keeps nothing and becomes the download's failure.
+   */
+  installUpdate(): Promise<void>;
+  /** Replaces the image with a finished download and starts it with the arguments as the app quits. */
+  restartIntoUpdate(args: string[]): void;
+}
+
+/** Why a download failed, as the status row's amber sentence. */
+export function downloadFailureWords(error: unknown): string {
+  if ((error as { code?: unknown } | null)?.code === "ERR_CHECKSUM_MISMATCH") {
+    return "The download failed: its checksum did not match, so it was discarded.";
+  }
+  return `The download failed: ${errorMessage(error)}.`;
 }
 
 /** Two launch actions are the same when they serialise alike: they are plain data, commands and all. */
@@ -162,6 +202,32 @@ export function createAppState(deps: AppStateDeps): AppState {
     return list;
   }
 
+  let download: DownloadState = { state: "none" };
+
+  /** Config's [update] table, its defaults without a config. */
+  function updateConfig(): Config["update"] {
+    return (
+      deps.config.current().loaded?.config.update ?? {
+        check: defaultUpdateCheck,
+        install: defaultUpdateInstall,
+      }
+    );
+  }
+
+  /** perch installs updates: config says so and there is an image to replace. */
+  const installs = () => updateConfig().install && deps.image !== null;
+
+  function updateState(): UpdateState {
+    return {
+      ...releases.state(),
+      running: deps.running,
+      checkOn: updateConfig().check,
+      installs: installs(),
+      image: deps.image === null ? null : collapseHome(deps.image, deps.home),
+      download,
+    };
+  }
+
   function state(): PerchState {
     return {
       noConfig: deps.config.current().missing,
@@ -169,6 +235,7 @@ export function createAppState(deps: AppStateDeps): AppState {
       sourceCards: sourceCards(),
       scanning,
       problems: problems(),
+      update: updateState(),
     };
   }
 
@@ -184,7 +251,48 @@ export function createAppState(deps: AppStateDeps): AppState {
     return snapshot?.items.find((item) => item.id === birdId);
   }
 
-  const publish = () => deps.publish(state());
+  /** Every config read is published, so quitting installs a finished download only while install is on. */
+  const publish = () => {
+    deps.updater.installOnQuit(installs());
+    deps.publish(state());
+  };
+
+  async function installUpdate(): Promise<void> {
+    const { release } = releases.state();
+    if (!installs() || release === null) return;
+    if (download.state === "downloading" || download.state === "ready") return;
+    const { version } = release;
+    download = { state: "downloading", version, transferred: 0, total: 0 };
+    publish();
+    try {
+      const downloaded = await deps.updater.download((transferred, total) => {
+        download = { state: "downloading", version, transferred, total };
+        publish();
+      });
+      download = { state: "ready", version: downloaded.version };
+    } catch (error) {
+      download = {
+        state: "failed",
+        version,
+        failure: downloadFailureWords(error),
+      };
+    }
+    publish();
+  }
+
+  /** The scan cycle's check; one that answers while perch installs downloads what it found. */
+  async function scheduledCheck(): Promise<void> {
+    const before = releases.state().checkedAt;
+    await releases.checkIfDue();
+    if (releases.state().checkedAt !== before) await installUpdate();
+  }
+
+  const releases = createReleaseChecker({
+    fetchJson: deps.fetchRelease,
+    running: deps.running,
+    now: deps.now,
+    onChange: publish,
+  });
 
   /** Performs a launch action; a failure is a problem until the next scan. */
   async function perform(action: LaunchAction): Promise<void> {
@@ -255,6 +363,8 @@ export function createAppState(deps: AppStateDeps): AppState {
         publish();
         return;
       }
+      // The check rides the scan cycle but never holds the scan up.
+      if (loaded.config.update.check) void scheduledCheck();
       try {
         await deps.gather(loaded.config);
         snapshot = await deps.aggregate(loaded);
@@ -320,12 +430,32 @@ export function createAppState(deps: AppStateDeps): AppState {
     async settingsForm() {
       const config = deps.config.current().loaded?.config;
       if (config === undefined) return null;
-      return settingsFormFor(config, deps.home, await deps.autostart.read());
+      return settingsFormFor(
+        config,
+        deps.home,
+        await deps.autostart.read(),
+        deps.image,
+      );
     },
     saveSettings: (values) =>
       edit(
         (config) => withSettings(config, values, deps.home),
         () => saveLogin(values.window),
       ),
+    checkForUpdate: () => releases.checkNow(),
+    installUpdate,
+    restartIntoUpdate(args) {
+      if (download.state !== "ready") return;
+      try {
+        deps.updater.restart(args);
+      } catch (error) {
+        download = {
+          state: "failed",
+          version: download.version,
+          failure: `The install failed: ${errorMessage(error)}.`,
+        };
+        publish();
+      }
+    },
   };
 }

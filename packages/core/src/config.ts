@@ -110,10 +110,22 @@ export interface Config {
     /** The window lives in the tray: closing hides it, and the tray icon shows it. */
     tray: boolean;
   };
+  update: {
+    /** Each scan, at most hourly, reads the latest release and says when it is newer. */
+    check: boolean;
+    /** A newer release is downloaded and replaces the running AppImage. */
+    install: boolean;
+  };
 }
 
 /** The window stays in the tray unless config says otherwise. */
 export const defaultTray = true;
+
+/** The release check runs unless config says otherwise. */
+export const defaultUpdateCheck = true;
+
+/** Updates are only pointed at unless config says otherwise. */
+export const defaultUpdateInstall = false;
 
 /**
  * An action of a kind that runs one command detached, without a shell, its placeholders filled in:
@@ -639,6 +651,7 @@ const topLevelKeys = [
   "scan",
   "launch",
   "window",
+  "update",
 ] as const;
 
 /** Parses and validates config TOML, expanding a leading ~ in paths against the home directory. */
@@ -663,6 +676,8 @@ export function parseConfig(text: string, home: string): Config {
   onlyKeys(scan, ["interval_minutes", "finalised_commits"], "scan.");
   const windowTable = optionalTable(document, "window", "");
   onlyKeys(windowTable, ["tray"], "window.");
+  const updateTable = optionalTable(document, "update", "");
+  onlyKeys(updateTable, ["check", "install"], "update.");
 
   return {
     wires: { names: wireNames, default: defaultWire },
@@ -689,6 +704,20 @@ export function parseConfig(text: string, home: string): Config {
     launch: parseLaunch(document, home),
     window: {
       tray: optionalBoolean(windowTable, "tray", "window.", defaultTray),
+    },
+    update: {
+      check: optionalBoolean(
+        updateTable,
+        "check",
+        "update.",
+        defaultUpdateCheck,
+      ),
+      install: optionalBoolean(
+        updateTable,
+        "install",
+        "update.",
+        defaultUpdateInstall,
+      ),
     },
   };
 }

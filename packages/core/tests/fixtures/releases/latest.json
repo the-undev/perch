@@ -1,0 +1,27 @@
+{
+  "url": "https://api.github.com/repos/the-undev/perch/releases/260000003",
+  "html_url": "https://github.com/the-undev/perch/releases/tag/v0.3.0",
+  "id": 260000003,
+  "tag_name": "v0.3.0",
+  "target_commitish": "main",
+  "name": "v0.3.0",
+  "draft": false,
+  "prerelease": false,
+  "created_at": "2026-11-10T09:12:00Z",
+  "published_at": "2026-11-10T09:20:00Z",
+  "assets": [
+    {
+      "name": "perch-0.3.0-x86_64.AppImage",
+      "content_type": "application/octet-stream",
+      "size": 89000000,
+      "browser_download_url": "https://github.com/the-undev/perch/releases/download/v0.3.0/perch-0.3.0-x86_64.AppImage"
+    },
+    {
+      "name": "latest-linux.yml",
+      "content_type": "application/x-yaml",
+      "size": 412,
+      "browser_download_url": "https://github.com/the-undev/perch/releases/download/v0.3.0/latest-linux.yml"
+    }
+  ],
+  "body": "Updates page."
+}

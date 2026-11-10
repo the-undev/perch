@@ -18,8 +18,11 @@ import {
 } from "../src/launch-form.ts";
 import { launchKinds } from "../src/launch-kinds.ts";
 import { listLine, parseListLine } from "../src/list-line.ts";
-import { mockConfig, mockLogin } from "../src/mock.ts";
+import { mockConfig, mockImage, mockLogin } from "../src/mock.ts";
 import {
+  checkSentence,
+  installSentence,
+  installSourceRunHeld,
   type LoginEntry,
   loginEntryLine,
   loginSentence,
@@ -44,7 +47,8 @@ async function exampleText(): Promise<string> {
   );
 }
 
-const mockValues = () => settingsFormFor(mockConfig, home, mockLogin).values;
+const mockValues = () =>
+  settingsFormFor(mockConfig, home, mockLogin, mockImage).values;
 
 /** The mock's values with a change; the change replaces whole groups. */
 const changed = (change: Partial<SettingsValues>): SettingsValues => ({
@@ -74,7 +78,7 @@ describe("the settings form", () => {
     const example = parseConfig(await exampleText(), home);
 
     for (const config of [mockConfig, starter, example]) {
-      const { values } = settingsFormFor(config, home, mockLogin);
+      const { values } = settingsFormFor(config, home, mockLogin, mockImage);
       expect(settingsProblems(values)).toEqual([]);
       expect(withSettings(config, values, home)).toEqual(config);
     }
@@ -86,7 +90,7 @@ describe("the settings form", () => {
       return writeConfig(
         withSettings(
           config,
-          settingsFormFor(config, home, mockLogin).values,
+          settingsFormFor(config, home, mockLogin, mockImage).values,
           home,
         ),
         home,
@@ -115,8 +119,8 @@ describe("the settings form", () => {
     const written = writeConfig(next, home);
     expect(written).toContain('"~/work" = "work"');
     expect(
-      settingsFormFor(parseConfig(written, home), home, mockLogin).values.launch
-        .actions[index],
+      settingsFormFor(parseConfig(written, home), home, mockLogin, mockImage)
+        .values.launch.actions[index],
     ).toMatchObject({
       sessions: [
         { root: "~/undev", session: "undev" },
@@ -148,11 +152,12 @@ describe("the Window page", () => {
   };
 
   it("reads the tray from config and the login toggle from the entry, paths shown with ~", () => {
-    const off = settingsFormFor(mockConfig, home, mockLogin);
+    const off = settingsFormFor(mockConfig, home, mockLogin, mockImage);
     const on = settingsFormFor(
       { ...mockConfig, window: { tray: false } },
       home,
       { ...loginOn, held: sourceRunHeld },
+      null,
     );
 
     expect(off.values.window).toEqual({ tray: true, login: false });
@@ -213,14 +218,84 @@ describe("the Window page", () => {
   });
 
   it("names the entry and the program it runs only while on and the entry exists", () => {
-    const on = settingsFormFor(mockConfig, home, loginOn).login;
-    const none = settingsFormFor(mockConfig, home, mockLogin).login;
+    const on = settingsFormFor(mockConfig, home, loginOn, mockImage).login;
+    const none = settingsFormFor(mockConfig, home, mockLogin, mockImage).login;
 
     expect(loginEntryLine(on, true)).toBe(
       "~/.config/autostart/perch.desktop → ~/Applications/perch-0.2.0-x86_64.AppImage",
     );
     expect(loginEntryLine(on, false)).toBeNull();
     expect(loginEntryLine(none, true)).toBeNull();
+  });
+});
+
+describe("the Updates page", () => {
+  it("reads both switches from config and the image the install replaces, shown with ~", () => {
+    const form = settingsFormFor(
+      { ...mockConfig, update: { check: false, install: true } },
+      home,
+      mockLogin,
+      mockImage,
+    );
+
+    expect(form.values.update).toEqual({ check: false, install: true });
+    expect(form.install).toEqual({
+      held: null,
+      image: "~/AppImages/perch.appimage",
+    });
+  });
+
+  it("holds the install switch run from source, with no image to name", () => {
+    expect(settingsFormFor(mockConfig, home, mockLogin, null).install).toEqual({
+      held: installSourceRunHeld,
+      image: null,
+    });
+    expect(installSourceRunHeld).toBe(
+      "run from source there is no image to replace.",
+    );
+  });
+
+  it("saves both switches to config, written only off their defaults", () => {
+    const values = mockValues();
+
+    const changed = withSettings(
+      mockConfig,
+      { ...values, update: { check: false, install: true } },
+      home,
+    );
+    const unchanged = withSettings(mockConfig, values, home);
+
+    expect(changed.update).toEqual({ check: false, install: true });
+    expect(parse(writeConfig(changed, home)).update).toEqual({
+      check: false,
+      install: true,
+    });
+    expect(unchanged).toEqual(mockConfig);
+    expect(writeConfig(unchanged, home)).not.toContain("[update]");
+  });
+
+  it("says what checking does, on and off", () => {
+    expect(checkSentence(true)).toBe(
+      "Each scan, at most hourly, perch reads the latest release from GitHub and says here and in the tray when it is newer.",
+    );
+    expect(checkSentence(false)).toBe(
+      "Off. perch never calls GitHub by itself. Check now, above, still does.",
+    );
+  });
+
+  it("says what installing does, on, off and held", () => {
+    expect(installSentence(false, false)).toBe(
+      "Off. A newer release is only pointed at: the releases page opens in the browser, and whatever manages the image does the rest.",
+    );
+    expect(installSentence(true, false)).toBe(
+      "A newer release, however learned of, is downloaded and the image replaced in place. The new version runs from the next start.",
+    );
+    expect(installSentence(false, true)).toBe(
+      "Off. A newer release is only pointed at.",
+    );
+    expect(installSentence(true, true)).toBe(
+      "A newer release is only pointed at.",
+    );
   });
 });
 
@@ -315,7 +390,7 @@ describe("launch actions on the settings page", () => {
     const saved = withSettings(
       defaultConfig(),
       {
-        ...settingsFormFor(defaultConfig(), home, mockLogin).values,
+        ...settingsFormFor(defaultConfig(), home, mockLogin, mockImage).values,
         launch: { actions: actions.slice(0, -1) },
       },
       home,
@@ -656,7 +731,7 @@ const wiresOf = (
   rows: SettingsValues["wires"]["rows"],
   defaultRow: number,
 ): SettingsValues => ({
-  ...settingsFormFor(config, home, mockLogin).values,
+  ...settingsFormFor(config, home, mockLogin, mockImage).values,
   wires: { rows, defaultRow },
 });
 
@@ -683,13 +758,15 @@ function saved(config: Config, values: SettingsValues): Config {
 
 describe("renaming, removing and adding wires", () => {
   it("names the entries on each wire", () => {
-    const { named } = settingsFormFor(mockConfig, home, mockLogin);
+    const { named } = settingsFormFor(mockConfig, home, mockLogin, mockImage);
 
     expect(named).toEqual({ wires: { "Machine & Home": homeEntries } });
   });
 
   it("starts each row as the config wire it is", () => {
-    expect(settingsFormFor(mockConfig, home, mockLogin).values.wires).toEqual({
+    expect(
+      settingsFormFor(mockConfig, home, mockLogin, mockImage).values.wires,
+    ).toEqual({
       rows: [
         { from: "Machine & Home", name: "Machine & Home" },
         { from: "Projects", name: "Projects" },
@@ -710,7 +787,7 @@ describe("renaming, removing and adding wires", () => {
 
     expect(
       wireWarnings(
-        settingsFormFor(mockConfig, home, mockLogin).named.wires,
+        settingsFormFor(mockConfig, home, mockLogin, mockImage).named.wires,
         values.wires,
       ),
     ).toEqual([]);
@@ -770,7 +847,7 @@ describe("renaming, removing and adding wires", () => {
   });
 
   it("moves a removed wire's entries to the default, warning first", () => {
-    const form = settingsFormFor(mockConfig, home, mockLogin);
+    const form = settingsFormFor(mockConfig, home, mockLogin, mockImage);
     const values = wiresOf(
       mockConfig,
       [{ from: "Projects", name: "Projects" }],
@@ -801,7 +878,7 @@ describe("renaming, removing and adding wires", () => {
       1,
     );
     const withSomeday = saved(mockConfig, values);
-    const form = settingsFormFor(withSomeday, home, mockLogin);
+    const form = settingsFormFor(withSomeday, home, mockLogin, mockImage);
     const removed = {
       ...form.values,
       wires: { ...form.values.wires, rows: form.values.wires.rows.slice(0, 2) },

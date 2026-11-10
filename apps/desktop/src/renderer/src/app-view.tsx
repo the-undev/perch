@@ -12,7 +12,7 @@ import {
   useParams,
   useSearch,
 } from "@tanstack/react-router";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import type { PerchApi } from "../../shared/ipc.ts";
 import {
   useEntryForm,
@@ -80,6 +80,7 @@ export function AppView({ api }: { api: PerchApi }) {
   const papers = search.papers === true;
   const chip = search.chip ?? null;
   const unfold = search.unfold ?? null;
+  const settingsPage = search.page ?? "sources";
   const atSettings = useLocation({
     select: (location) => location.pathname === "/settings",
   });
@@ -109,6 +110,14 @@ export function AppView({ api }: { api: PerchApi }) {
     [state],
   );
   const home = useCallback(() => void navigate({ to: "/" }), [navigate]);
+  // The tray's update entry asks for the Updates page.
+  useEffect(
+    () =>
+      api.onOpenUpdates(
+        () => void navigate({ to: "/settings", search: { page: "updates" } }),
+      ),
+    [api, navigate],
+  );
   const onNavigate = useCallback(
     (next: CameraPlace) => {
       if (next.at === "aviary") {
@@ -155,6 +164,14 @@ export function AppView({ api }: { api: PerchApi }) {
         problems={state.problems}
         keyring={{ storeToken: api.storeToken, testSource: api.testSource }}
         unfold={unfold}
+        page={settingsPage}
+        onPage={(page) => void navigate({ to: "/settings", search: { page } })}
+        update={state.update}
+        updateCalls={{
+          onCheck: () => void api.checkForUpdate(),
+          onInstall: () => void api.installUpdate(),
+          onRestart: () => void api.restartIntoUpdate(),
+        }}
         onSave={(values) =>
           void api
             .saveSettings(values)

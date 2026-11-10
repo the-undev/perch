@@ -957,9 +957,7 @@ describe("the pan between birds", () => {
     moveTo(detailOf("undev/skiff"));
     const first = screen.getByRole("article", { name: "Skiff in full" });
     moveTo(aviaryPlace);
-    expect(screen.getByRole("article", { name: "Skiff in full" })).toBe(
-      first,
-    );
+    expect(screen.getByRole("article", { name: "Skiff in full" })).toBe(first);
     moveTo(detailOf("undev/skiff"));
 
     expect(pans).toEqual([]);

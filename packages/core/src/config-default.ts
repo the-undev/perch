@@ -2,7 +2,12 @@
 // default thresholds and scan interval. The starter config file is this written out; the CLI scans
 // with it when the owner has no config. No Node modules, so the renderer may import it.
 
-import { type Config, defaultTray } from "./config.ts";
+import {
+  type Config,
+  defaultTray,
+  defaultUpdateCheck,
+  defaultUpdateInstall,
+} from "./config.ts";
 
 /** A fresh default config, nothing in it specific to any machine. */
 export function defaultConfig(): Config {
@@ -22,5 +27,6 @@ export function defaultConfig(): Config {
     },
     launch: { actions: [] },
     window: { tray: defaultTray },
+    update: { check: defaultUpdateCheck, install: defaultUpdateInstall },
   };
 }

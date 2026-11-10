@@ -8,6 +8,7 @@ import type {
   SourceTestValues,
   TokenStored,
 } from "@perch/core/sources-form.ts";
+import type { UpdateState } from "@perch/core/update.ts";
 import type {
   Aviary,
   KeyFile,
@@ -30,6 +31,8 @@ export interface PerchState {
    * config entry or settings that were not written.
    */
   problems: string[];
+  /** The running version, the release check's answers and the download, for the Updates page. */
+  update: UpdateState;
 }
 
 /** One key file and what was read from it; null when it could not be read. */
@@ -88,10 +91,18 @@ export interface PerchApi {
   storeToken(key: string, token: string): Promise<TokenStored>;
   /** Lists a forge card's repositories with the token its key holds, as its draft values say. */
   testSource(values: SourceTestValues): Promise<SourceTested>;
+  /** Checks for a newer release now, whatever config says; the answer arrives in the state. */
+  checkForUpdate(): Promise<void>;
+  /** Downloads the newer release while perch installs updates; progress and failure arrive in the state. */
+  installUpdate(): Promise<void>;
+  /** Replaces the image with the finished download and restarts into it with the window shown. */
+  restartIntoUpdate(): Promise<void>;
+  /** Calls back each time the main process asks for the Updates page, and returns the call that stops it. */
+  onOpenUpdates(listener: () => void): () => void;
 }
 
-/** The calls the main process answers: everything but the pushed state. */
-export type PerchCalls = Omit<PerchApi, "onState">;
+/** The calls the main process answers: everything but what it pushes. */
+export type PerchCalls = Omit<PerchApi, "onState" | "onOpenUpdates">;
 
 /** The IPC channel that carries each call, and the one the state is pushed on. */
 export const channels = {
@@ -109,4 +120,8 @@ export const channels = {
   saveSettings: "config:save-settings",
   storeToken: "keyring:store-token",
   testSource: "keyring:test-source",
+  checkForUpdate: "update:check",
+  installUpdate: "update:install",
+  restartIntoUpdate: "update:restart",
+  onOpenUpdates: "update:open-page",
 } as const satisfies Record<keyof PerchApi, string>;

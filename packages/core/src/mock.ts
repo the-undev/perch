@@ -5,7 +5,7 @@
 // branch and clean zeros, a bird with no clone here on a wire and one on the fence, each with its
 // no-clone slip, and one on no forge, a remote no card can
 // read, forges that couldn't be read at all and one whose pull requests alone couldn't be read,
-// the source cards every scan state, and every kind of launch action, some overridden, the
+// the source cards every scan state, the Updates page every update state, and every kind of launch action, some overridden, the
 // Obsidian one on Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
 // numbered placeholder items, as many as each file's open counts.
 
@@ -28,6 +28,7 @@ import type {
   WorkItem,
   WorkItemKind,
 } from "./snapshot.ts";
+import type { UpdateState } from "./update.ts";
 import { type Aviary, deriveAviary } from "./viewmodel.ts";
 
 /** The home directory the mock's paths sit under. */
@@ -191,6 +192,7 @@ export const mockConfig: Config = {
     ],
   },
   window: { tray: true },
+  update: { check: true, install: false },
 };
 
 /** The mock machine's autostart entry: none yet, and the app running from its AppImage. */
@@ -200,6 +202,88 @@ export const mockLogin: LoginEntry = {
   path: `${home}/.config/autostart/perch.desktop`,
   target: null,
 };
+
+/** The AppImage the mock machine runs, which an install replaces. */
+export const mockImage = `${home}/AppImages/perch.appimage`;
+
+/** Minutes before the mock scan, as an ISO time. */
+const minutesBefore = (minutes: number) =>
+  new Date(Date.parse(scannedAt) - minutes * 60_000).toISOString();
+
+const mockRelease = {
+  version: "0.3.0",
+  url: "https://github.com/the-undev/perch/releases/tag/v0.3.0",
+};
+
+/** The update state before any check, with the defaults: check on, install off. */
+const updateBase: UpdateState = {
+  running: "0.2.0",
+  checkOn: true,
+  installs: false,
+  image: "~/AppImages/perch.appimage",
+  release: null,
+  checkedAt: null,
+  failure: null,
+  checking: false,
+  download: { state: "none" },
+};
+
+/**
+ * The update states the Updates page's status row and the tray entry show, measured to the mock
+ * scan: before a check, checking, up to date, checking off, a newer release with install off and
+ * on, downloading, downloaded, a failed download and a failed check, and the source run.
+ */
+export const mockUpdates = {
+  noCheck: updateBase,
+  checking: { ...updateBase, checking: true },
+  upToDate: { ...updateBase, checkedAt: minutesBefore(4) },
+  checkOff: { ...updateBase, checkOn: false },
+  found: { ...updateBase, release: mockRelease, checkedAt: minutesBefore(12) },
+  foundInstall: {
+    ...updateBase,
+    installs: true,
+    release: mockRelease,
+    checkedAt: minutesBefore(0),
+  },
+  downloading: {
+    ...updateBase,
+    installs: true,
+    release: mockRelease,
+    checkedAt: minutesBefore(1),
+    download: {
+      state: "downloading",
+      version: "0.3.0",
+      transferred: 41_000_000,
+      total: 89_000_000,
+    },
+  },
+  ready: {
+    ...updateBase,
+    installs: true,
+    release: mockRelease,
+    checkedAt: minutesBefore(3),
+    download: { state: "ready", version: "0.3.0" },
+  },
+  downloadFailed: {
+    ...updateBase,
+    installs: true,
+    release: mockRelease,
+    checkedAt: minutesBefore(2),
+    download: {
+      state: "failed",
+      version: "0.3.0",
+      failure: "The download failed: the connection was reset.",
+    },
+  },
+  checkFailed: {
+    ...updateBase,
+    installs: true,
+    release: mockRelease,
+    checkedAt: minutesBefore(130),
+    failure: "api.github.com did not answer",
+  },
+  sourceRun: { ...updateBase, running: "0.3.0-dev", image: null },
+} satisfies Record<string, UpdateState>;
 
 // Snapshot builders: shape only, every value is written out per item below.
 

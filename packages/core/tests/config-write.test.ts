@@ -294,6 +294,34 @@ describe("writeConfig", () => {
     expect(roundTrip(trayOn)).toEqual(trayOn);
   });
 
+  it("writes the [update] table with only the switches off their defaults", () => {
+    const config = parseConfig(maximalText, home);
+    const defaults: Config = {
+      ...config,
+      update: { check: true, install: false },
+    };
+    const installs: Config = {
+      ...config,
+      update: { check: true, install: true },
+    };
+    const both: Config = {
+      ...config,
+      update: { check: false, install: true },
+    };
+
+    expect(writeConfig(defaults, home)).not.toContain("update");
+    expect(parse(writeConfig(installs, home)).update).toEqual({
+      install: true,
+    });
+    expect(parse(writeConfig(both, home)).update).toEqual({
+      check: false,
+      install: true,
+    });
+    for (const each of [defaults, installs, both]) {
+      expect(roundTrip(each)).toEqual(each);
+    }
+  });
+
   it("writes one table per launch action in order, each naming its kind", () => {
     const config = parseConfig(maximalText, home);
     const reversed: Config = {

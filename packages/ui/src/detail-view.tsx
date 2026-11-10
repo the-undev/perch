@@ -89,6 +89,13 @@ export interface DetailViewProps {
 /** What was signed and is not yet in the entry read back: the values written, or the return. */
 type Signed = { kind: "values"; values: EntryValues } | { kind: "return" };
 
+/** The landing scroll; the DOM lib's options lack `container`, which Chromium 156 supports. */
+const landingScroll: ScrollIntoViewOptions & { container: "nearest" } = {
+  block: "center",
+  behavior: "instant",
+  container: "nearest",
+};
+
 /** Whether the entry read back shows what was signed. */
 function landed(signed: Signed, form: EntryForm): boolean {
   if (signed.kind === "return") return form.values === null;
@@ -239,14 +246,15 @@ export function DetailView({
   const [landing, setLanding] = useState<Landing | null>(null);
   const articleRef = useRef<HTMLElement>(null);
   // The mark is committed before the scroll, so the row never paints unlit; both callers, a press
-  // and the arrival effect, run outside render, where flushSync is allowed. The row's pane scrolls.
+  // and the arrival effect, run outside render, where flushSync is allowed. Only the row's nearest
+  // scrolling ancestor moves, so the heading above the panes stays put.
   const landOn = useCallback((chip: ChipKind) => {
     flushSync(() => {
       setLanding((last) => ({ chip, press: (last?.press ?? 0) + 1 }));
     });
     articleRef.current
       ?.querySelector(`[data-chip="${chip}"]`)
-      ?.scrollIntoView({ block: "center", behavior: "instant" });
+      ?.scrollIntoView(landingScroll);
   }, []);
   // The arrival lands once the page's own swap is over, or the camera's pan, since a scroll and a
   // mark during either flicker, and a scroll during a pan would drag the ground sideways. A page

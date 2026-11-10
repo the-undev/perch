@@ -25,6 +25,12 @@ afterEach(cleanup);
 
 /** The elements scrolled into view and how, since jsdom does no scrolling. */
 const scrolled: { element: Element; options: unknown }[] = [];
+/** How a landing scrolls: the row to the middle of its nearest scrolling ancestor only. */
+const landingOptions = {
+  block: "center",
+  behavior: "instant",
+  container: "nearest",
+};
 /** Whether the scrolled row already held its landing mark when the scroll ran. */
 const markedAtScroll: boolean[] = [];
 Element.prototype.scrollIntoView = function (
@@ -266,9 +272,7 @@ describe("the detail view", () => {
     expect(container.querySelector('[data-part="landing"]')).toBeNull();
     fireEvent.click(within(bubble).getByRole("button", { name: ci.label }));
 
-    expect(scrolled).toEqual([
-      { element: row("ci"), options: { block: "center", behavior: "instant" } },
-    ]);
+    expect(scrolled).toEqual([{ element: row("ci"), options: landingOptions }]);
     expect(markedRow()).toBe("ci");
     expect(row("ci")?.textContent).toContain("forgejo · pending on main");
 
@@ -278,6 +282,20 @@ describe("the detail view", () => {
     expect(scrolled.at(-1)?.element).toBe(row("pull-requests"));
     expect(container.querySelectorAll('[data-part="landing"]')).toHaveLength(1);
     expect(markedRow()).toBe("pull-requests");
+  });
+
+  it("scrolls only the row's own pane when landing on a chip", () => {
+    const perch = mockBird("dev/perch");
+    page(perch);
+    const bubble = screen.getByRole("region", { name: "Perch says" });
+    const [ci] = perch.bubble.chips;
+    if (ci === undefined) throw new Error("perch carries a CI chip");
+
+    fireEvent.click(within(bubble).getByRole("button", { name: ci.label }));
+
+    expect(scrolled.map(({ options }) => options)).toEqual([
+      { block: "center", behavior: "instant", container: "nearest" },
+    ]);
   });
 
   it("lands the parked chip on the branches section, marked with a dot, and gives a bird without it no handle", () => {
@@ -489,7 +507,7 @@ describe("the detail view", () => {
     expect(scrolled).toEqual([
       {
         element: row("open-items"),
-        options: { block: "center", behavior: "instant" },
+        options: landingOptions,
       },
     ]);
     expect(markedRow()).toBe("open-items");
@@ -507,9 +525,7 @@ describe("the detail view", () => {
       '[data-part="record"] [data-chip="pull-requests"]',
     );
 
-    expect(scrolled).toEqual([
-      { element: row, options: { block: "center", behavior: "instant" } },
-    ]);
+    expect(scrolled).toEqual([{ element: row, options: landingOptions }]);
     expect(row?.querySelector('[data-part="landing"]')).not.toBeNull();
   });
 
@@ -536,9 +552,7 @@ describe("the detail view", () => {
     expect(container.querySelector('[data-part="landing"]')).toBeNull();
 
     endAnimation(article, "swap");
-    expect(scrolled).toEqual([
-      { element: ciRow, options: { block: "center", behavior: "instant" } },
-    ]);
+    expect(scrolled).toEqual([{ element: ciRow, options: landingOptions }]);
     expect(ciRow.querySelector('[data-part="landing"]')).not.toBeNull();
   });
 

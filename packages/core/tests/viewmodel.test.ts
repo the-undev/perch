@@ -226,9 +226,12 @@ describe("mood", () => {
     const items = [settled, restless, editing, forgeOnly];
 
     expect(
-      ["dev/spool", "dev/harbour", "dev/perch", "github:finch/obsidian-tidy"].map(
-        (id) => birdIn(items, config, id).activity,
-      ),
+      [
+        "dev/spool",
+        "dev/harbour",
+        "dev/perch",
+        "github:finch/obsidian-tidy",
+      ].map((id) => birdIn(items, config, id).activity),
     ).toEqual(["settled", "in-flight", "editing", null]);
   });
 
@@ -345,12 +348,10 @@ describe("the wires", () => {
       sources: { roadmap: { counts: { bug: 0, feature: 194 }, files: [] } },
     });
 
-    expect(birdIn([hothouse], config, "obsidian/Hothouse").plumpness).toEqual(
-      {
-        outstanding: 194,
-        fullness: 1,
-      },
-    );
+    expect(birdIn([hothouse], config, "obsidian/Hothouse").plumpness).toEqual({
+      outstanding: 194,
+      fullness: 1,
+    });
   });
 
   it("carries failing sources and warnings to the scene", async () => {
@@ -428,9 +429,7 @@ describe("chips", () => {
     ]);
     // Every kind but the unreadable remote's, which needs a forge no card reads.
     expect(
-      birdIn([busy], config, "dev/prism").bubble.chips.map(
-        (chip) => chip.kind,
-      ),
+      birdIn([busy], config, "dev/prism").bubble.chips.map((chip) => chip.kind),
     ).toEqual(
       chipKinds.filter((kind) => kind !== "unreadable" && kind !== "stalled"),
     );
@@ -797,9 +796,9 @@ describe("the unpushed commits row", () => {
   it("gives no branch lines to a snapshot cached before branches were read", async () => {
     const config = await adoptAll(["dev/harbour"]);
 
-    expect(unpushedRow(birdIn([restless], config, "dev/harbour"))).toMatchObject(
-      { count: 2, tone: "amber", workings: [] },
-    );
+    expect(
+      unpushedRow(birdIn([restless], config, "dev/harbour")),
+    ).toMatchObject({ count: 2, tone: "amber", workings: [] });
   });
 });
 

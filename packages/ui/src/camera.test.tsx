@@ -282,9 +282,7 @@ describe("the camera", () => {
   it("rides to a bird's page from a chip in its bubble, carrying the chip", () => {
     const { onNavigate } = camera(aviaryPlace);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /^Prism, distressed/ }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /^Prism, distressed/ }));
     fireEvent.click(screen.getByRole("button", { name: "ci failure" }));
 
     expect(onNavigate).toHaveBeenCalledWith({

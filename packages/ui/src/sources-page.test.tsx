@@ -462,7 +462,9 @@ describe("a forge card's token", () => {
     }) as HTMLElement[];
     const forgejoCard = within(forgejo as HTMLElement);
     fireEvent.click(
-      forgejoCard.getByRole("button", { name: "Forgejo · forge.example.lan:3000" }),
+      forgejoCard.getByRole("button", {
+        name: "Forgejo · forge.example.lan:3000",
+      }),
     );
 
     fireEvent.click(forgejoCard.getByRole("button", { name: "Test" }));

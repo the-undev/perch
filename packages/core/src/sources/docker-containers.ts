@@ -6,7 +6,7 @@ export interface ContainerSummary {
 }
 
 /**
- * The server page's container list, to be read from a Docker socket proxy on Silo over HTTP.
+ * The server page's container list, to be read from a Docker socket proxy on the server over HTTP.
  * A typed stub: it marks where live sources plug in and returns not-implemented.
  */
 export const dockerContainersSource: LiveSource<

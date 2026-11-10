@@ -424,9 +424,7 @@ describe("forge source", () => {
     const data = await createForgeSource("github", "githubAccounts", {
       cards: cardsOf(client, github),
       tokenFor,
-    }).gather(
-      earlier(["https://github.com/finch/camera-mover.git"], {}),
-    );
+    }).gather(earlier(["https://github.com/finch/camera-mover.git"], {}));
 
     expect(data["finch/photomover"]).toMatchObject({
       value: { aliases: ["finch/camera-mover"] },
@@ -563,7 +561,10 @@ describe("github client", () => {
     });
     const client = createGithubClient({ fetchJson, finalisedCommits: 2 });
 
-    const details = await client.readDetails(info("the-undev/harbour", {}), "t");
+    const details = await client.readDetails(
+      info("the-undev/harbour", {}),
+      "t",
+    );
 
     expect(details.finalisedCommits).toEqual({
       state: "observed",
@@ -613,10 +614,7 @@ describe("github client", () => {
     });
     const client = createGithubClient({ fetchJson, finalisedCommits: 2 });
 
-    const details = await client.readDetails(
-      info("the-undev/prism", {}),
-      "t",
-    );
+    const details = await client.readDetails(info("the-undev/prism", {}), "t");
 
     expect(details).toEqual({
       openPullRequests: {

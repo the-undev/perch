@@ -219,9 +219,7 @@ describe("the detail view", () => {
     const { container } = page(prism);
     const bubble = screen.getByRole("region", { name: "Prism says" });
 
-    expect(screen.getAllByRole("heading", { name: "Prism" })).toHaveLength(
-      1,
-    );
+    expect(screen.getAllByRole("heading", { name: "Prism" })).toHaveLength(1);
     expect(
       [...container.querySelectorAll('[data-part="state-word"]')].map(
         (word) => word.textContent,

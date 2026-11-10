@@ -416,7 +416,11 @@ describe("source cards", () => {
       ["github:finch", "github", "finch"],
       ["github:the-undev", "github", "the-undev"],
       ["github:skiff-app", "github", "skiff-app"],
-      ["forgejo:finch@forge.example.lan:3000", "forgejo", "finch@forge.example.lan:3000"],
+      [
+        "forgejo:finch@forge.example.lan:3000",
+        "forgejo",
+        "finch@forge.example.lan:3000",
+      ],
       [
         "forgejo:the-undev@forge.example.lan:3000",
         "forgejo",

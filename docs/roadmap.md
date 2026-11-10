@@ -128,17 +128,16 @@ then; a kuma table already in the config keeps its card.
 
 ## Server container controls
 
-Stop, restart and update a container from the server detail page,
-parked with the other mutations. Routes: SSH to Silo for stop and
-restart, the server's own API for update, capabilities verified then.
-The container list is a live read from a Docker socket proxy on Silo
+Stop, restart and update a container from the server detail page, parked
+with the other mutations. Routes: SSH to the server for stop and restart,
+the server's own API for update, capabilities verified then. The
+container list is a live read from a Docker socket proxy on the server
 over HTTP, a typed stub today.
 
-## Server service tiles
+## Integrations with other services
 
-The server runs other services. If a service's state is worth
-seeing without clicking through, a source reads that service's
-own API: download queues and Plex watch history.
+A source for another service on the server, read from that service's own
+API, if its state is worth seeing without clicking through.
 
 ## In-app global shortcut
 

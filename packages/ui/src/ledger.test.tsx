@@ -404,10 +404,7 @@ describe("the ledger's sections", () => {
       />,
     );
     const { container: hello } = render(
-      <CommitRiver
-        river={mockBird("dev/odin/hello").detail.river}
-        now={now}
-      />,
+      <CommitRiver river={mockBird("dev/odin/hello").detail.river} now={now} />,
     );
 
     expect(dots(container)).toEqual([

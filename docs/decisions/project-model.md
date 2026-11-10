@@ -17,7 +17,7 @@ presences independently, and any side may be missing:
   source (account listings, not just remotes of local clones). A forge repo
   with no local clone is still a project and still gets data.
 - An Obsidian vault's sync state, later, from LiveSync's CouchDB (metadata
-  only; the Pocket Obsidian vault is end to end encrypted and perch never reads content).
+  only; perch never reads content, and an end to end encrypted vault exposes none).
   Needs a verification spike.
 
 Forge listings, decided 21 October 2026: forks are ignored by default,

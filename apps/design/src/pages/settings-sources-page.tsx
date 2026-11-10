@@ -185,7 +185,10 @@ export function SettingsSourcesPage() {
           cards={mockSnapshot.sourceCards}
           answers={{
             stored: { ok: true },
-            tested: { ok: false, problem: "no answer from forge.example.lan:3000" },
+            tested: {
+              ok: false,
+              problem: "no answer from forge.example.lan:3000",
+            },
           }}
         />
         <PageSpecimen

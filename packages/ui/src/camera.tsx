@@ -614,7 +614,9 @@ export function CameraView({
     bird ?? (shownId === null ? undefined : findBird(aviary, shownId));
   const shownTab = shown === undefined ? undefined : tabOf(tabs, shown);
 
-  if (bird !== undefined && bird.id !== shownId) {
+  // Every arrival mounts a fresh page, a zoom back to the bird last open among them, so the page
+  // lands its chip as it opens.
+  if (bird !== undefined && (bird.id !== shownId || wasZoomed)) {
     setShownId(bird.id);
     setVisit(visit + 1);
     // Only a move from one bird's page to another pans; the zoom from the aviary keeps its swap.
@@ -761,7 +763,7 @@ export function CameraView({
         <div className="flex h-full flex-col">
           <div
             data-part="sky"
-            className="relative flex-none overflow-hidden transition-[height] duration-850 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none"
+            className="relative z-10 flex-none overflow-hidden transition-[height] duration-850 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none"
             style={{
               height: zoomed ? "100%" : stripHeight,
               background: skyBackground,
@@ -839,10 +841,13 @@ export function CameraView({
               )}
             </div>
           </div>
+          {/* The ground holds its final size whatever the zoom, the sky shrinking over it, so a
+              page is laid out as it mounts. */}
           <div
             data-part="ground"
             inert={zoomed}
-            className="flex min-h-0 flex-1 flex-col overflow-hidden border-horizon border-t-2 bg-ground"
+            className="absolute inset-x-0 bottom-0 flex min-h-0 flex-col overflow-hidden border-horizon border-t-2 bg-ground"
+            style={{ top: stripHeight }}
           >
             {page !== null && (
               <div

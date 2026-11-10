@@ -858,7 +858,7 @@ describe("the pan between birds", () => {
     }
   });
 
-  it("lands an arrival chip only after the pan settles", async () => {
+  it("lands an arrival chip as the arriving page mounts, while the pan still runs", () => {
     const { container, moveTo } = camera(detailOf("undev/skiff"));
 
     moveTo({
@@ -867,16 +867,11 @@ describe("the pan between birds", () => {
       papers: false,
       chip: "ci",
     });
-    const arriving = groundPage(container, "undev/prism");
-
-    expect(scrolled).toEqual([]);
-    expect(container.querySelector('[data-part="landing"]')).toBeNull();
-
-    await settlePan();
-
-    const ciRow = arriving.querySelector(
+    const ciRow = groundPage(container, "undev/prism").querySelector(
       '[data-part="record"] [data-chip="ci"]',
     );
+
+    expect(pans).toHaveLength(1);
     expect(scrolled).toEqual([ciRow]);
     expect(ciRow?.querySelector('[data-part="landing"]')).not.toBeNull();
   });
@@ -971,6 +966,29 @@ describe("the pan between birds", () => {
     expect(screen.getByRole("article", { name: "Skiff in full" })).not.toBe(
       first,
     );
+  });
+
+  it("lands a chip again on a zoom back to the same bird, in its fresh page", () => {
+    const { container, moveTo } = camera(aviaryPlace);
+    const prismCi: CameraPlace = {
+      at: "detail",
+      birdId: "undev/prism",
+      papers: false,
+      chip: "ci",
+    };
+    const ciRow = () =>
+      container.querySelector('[data-part="record"] [data-chip="ci"]');
+
+    moveTo(prismCi);
+    const firstRow = ciRow();
+    moveTo(aviaryPlace);
+    moveTo(prismCi);
+
+    expect(scrolled).toHaveLength(2);
+    expect(scrolled[0]).toBe(firstRow);
+    expect(scrolled[1]).toBe(ciRow());
+    expect(scrolled[1]).not.toBe(firstRow);
+    expect(ciRow()?.querySelector('[data-part="landing"]')).not.toBeNull();
   });
 
   it("keeps the swap for the first arrival from the aviary, with no pan", () => {

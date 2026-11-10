@@ -123,7 +123,7 @@ export function DetailScenePage() {
           {
             name: "arrivalChip",
             type: "ChipKind | null",
-            what: "The chip pressed in the aviary's bubble that brought the camera here, landed on as the page opens.",
+            what: "The chip pressed in the aviary's bubble that brought the camera here, marked in the page's first commit and scrolled to as it mounts.",
           },
           {
             name: "onSettings",
@@ -143,7 +143,7 @@ export function DetailScenePage() {
           {
             name: "panning",
             type: "boolean",
-            what: "The camera is panning the ground between birds: a page mounted during it skips its swap, and the arrival chip and any roost press wait until it settles.",
+            what: "The camera is panning the ground between birds: a page mounted during it skips its swap.",
           },
         ]}
       >

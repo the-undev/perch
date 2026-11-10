@@ -507,7 +507,7 @@ describe("the window", () => {
       expect(container.querySelectorAll("article")).toHaveLength(1);
     });
 
-    it("lands the chip a navigation between birds carries only after the pan settles", async () => {
+    it("lands the chip a navigation between birds carries as the new page opens, while the pan runs", async () => {
       const { router, container } = renderApp(
         idle(mockAviary),
         "/bird/undev/skiff",
@@ -526,10 +526,6 @@ describe("the window", () => {
         await screen.findByRole("article", { name: "Prism in full" }),
       ).toBeDefined();
       expect(pages(container)).toEqual(["undev/prism", "undev/skiff"]);
-      expect(markedRow(container)).toBeUndefined();
-
-      await settlePan();
-
       expect(markedRow(container)).toBe("ci");
     });
 

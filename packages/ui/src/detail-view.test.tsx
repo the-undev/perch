@@ -43,22 +43,7 @@ Element.prototype.scrollIntoView = function (
 afterEach(() => {
   scrolled.length = 0;
   markedAtScroll.length = 0;
-  Reflect.deleteProperty(Element.prototype, "getAnimations");
 });
-
-/** Has every element report one running animation, as the page's arrival swap does in a browser. */
-function swapPlaying() {
-  Element.prototype.getAnimations = () => [{} as Animation];
-}
-
-/** An animation ending on an element and bubbling up, as React hears it under jsdom. */
-function endAnimation(element: Element, animationName: string) {
-  const event = new Event("webkitAnimationEnd", { bubbles: true });
-  Object.defineProperty(event, "animationName", { value: animationName });
-  act(() => {
-    element.dispatchEvent(event);
-  });
-}
 
 const now = new Date(mockSnapshot.scannedAt);
 
@@ -518,7 +503,7 @@ describe("the detail view", () => {
     expect(markedRow()).toBe("ci");
   });
 
-  it("lands on the arrival chip's row as soon as the page mounts", () => {
+  it("marks the arrival chip's row in the page's first commit and scrolls to it once as it mounts", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch, { arrivalChip: "pull-requests" });
     const row = container.querySelector(
@@ -526,87 +511,44 @@ describe("the detail view", () => {
     );
 
     expect(scrolled).toEqual([{ element: row, options: landingOptions }]);
+    expect(markedAtScroll).toEqual([true]);
     expect(row?.querySelector('[data-part="landing"]')).not.toBeNull();
   });
 
-  it("holds an arrival chip's landing until the page's own swap ends, ignoring animations ending inside it", () => {
-    swapPlaying();
-    const perch = mockBird("dev/perch");
-    const { container } = page(perch, { arrivalChip: "ci" });
-    const article = screen.getByRole("article", { name: "Perch in full" });
-    const ciRow = container.querySelector(
-      '[data-part="record"] [data-chip="ci"]',
-    );
-    const figure = container.querySelector('[data-part="figure"]');
-    if (ciRow === null || figure === null) {
-      throw new Error("perch has a CI row and a figure");
+  it("lands an arrival chip with no flushSync warning from React", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const perch = mockBird("dev/perch");
+      const { push } = page(perch, { arrivalChip: "ci" });
+      push(perch, { arrivalChip: "open-items" });
+
+      expect(scrolled).toHaveLength(2);
+      expect(
+        errors.mock.calls.filter((call) =>
+          String(call[0]).includes("flushSync"),
+        ),
+      ).toEqual([]);
+    } finally {
+      errors.mockRestore();
     }
-
-    expect(scrolled).toEqual([]);
-    expect(container.querySelector('[data-part="landing"]')).toBeNull();
-
-    endAnimation(figure, "beak-wiggle");
-    endAnimation(ciRow, "land");
-    endAnimation(article, "bird-bob");
-    expect(scrolled).toEqual([]);
-    expect(container.querySelector('[data-part="landing"]')).toBeNull();
-
-    endAnimation(article, "swap");
-    expect(scrolled).toEqual([{ element: ciRow, options: landingOptions }]);
-    expect(ciRow.querySelector('[data-part="landing"]')).not.toBeNull();
   });
 
-  it("skips its swap when mounted during a pan, landing an arrival chip only once the pan settles", () => {
-    swapPlaying();
+  it("skips its swap when mounted during a pan, landing an arrival chip as it mounts", () => {
     const perch = mockBird("dev/perch");
-    const { container, push } = page(perch, {
-      arrivalChip: "ci",
-      panning: true,
-    });
+    const { container } = page(perch, { arrivalChip: "ci", panning: true });
     const article = screen.getByRole("article", { name: "Perch in full" });
     const ciRow = container.querySelector(
       '[data-part="record"] [data-chip="ci"]',
     );
 
     expect(article.className).not.toContain("animate-swap");
-    expect(scrolled).toEqual([]);
-
-    push(perch, { arrivalChip: "ci", panning: false });
-
     expect(scrolled.map(({ element }) => element)).toEqual([ciRow]);
     expect(ciRow?.querySelector('[data-part="landing"]')).not.toBeNull();
-    expect(article.className).not.toContain("animate-swap");
   });
 
-  it("holds a roost press while the ground pans, landing it once the pan settles", () => {
+  it("lands a roost press at once while the ground pans", () => {
     const perch = mockBird("dev/perch");
-    const { container, push } = page(perch, { panning: true });
-    const [ci] = perch.bubble.chips;
-    if (ci === undefined) throw new Error("perch carries a CI chip");
-
-    fireEvent.click(
-      within(screen.getByRole("region", { name: "Perch says" })).getByRole(
-        "button",
-        { name: ci.label },
-      ),
-    );
-    expect(scrolled).toEqual([]);
-    expect(container.querySelector('[data-part="landing"]')).toBeNull();
-
-    push(perch, { panning: false });
-
-    expect(scrolled).toHaveLength(1);
-    expect(
-      container
-        .querySelector('[data-part="landing"]')
-        ?.parentElement?.getAttribute("data-chip"),
-    ).toBe("ci");
-  });
-
-  it("lands a roost press at once, while the page's swap still plays", () => {
-    swapPlaying();
-    const perch = mockBird("dev/perch");
-    const { container } = page(perch);
+    const { container } = page(perch, { panning: true });
     const [ci] = perch.bubble.chips;
     if (ci === undefined) throw new Error("perch carries a CI chip");
 
@@ -618,6 +560,7 @@ describe("the detail view", () => {
     );
 
     expect(scrolled).toHaveLength(1);
+    expect(markedAtScroll).toEqual([true]);
     expect(
       container
         .querySelector('[data-part="landing"]')

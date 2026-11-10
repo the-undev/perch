@@ -1,0 +1,64 @@
+/* The error screen. The theme custom properties come from index.css, which
+   crash.ts loads. */
+
+.fault-screen {
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font: 400 15px / 1.45 var(--font-body);
+}
+
+.fault {
+  width: 100%;
+  max-width: 760px;
+}
+
+.fault h1 {
+  font: 700 24px / 1.15 var(--font-display);
+  margin: 0 0 6px;
+}
+
+.fault .what {
+  color: var(--color-ink-muted);
+  margin: 0 0 18px;
+}
+
+.fault .message {
+  font: 14px / 1.5 var(--font-mono);
+  color: var(--color-red);
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+}
+
+.fault pre {
+  font: 12.5px / 1.55 var(--font-mono);
+  color: var(--color-ink-faint);
+  background: var(--color-panel);
+  border: 1px solid var(--color-edge);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 0 0 20px;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre;
+  user-select: text;
+}
+
+.fault button {
+  font: 600 14px var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-panel);
+  border: 1px solid var(--color-edge-hi);
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.fault button:hover {
+  background: var(--color-panel-hi);
+}

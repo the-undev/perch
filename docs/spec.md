@@ -79,7 +79,9 @@ at risk of loss; is the rest quietly fine):
 
 Navigation is the camera. The aviary is the zoomed-in view; opening a
 project pulls the camera back, the bird's wire-mates flying into a slim
-tab row at the top while the detail rises beneath. In the tab row the
+tab row at the top while the sky draws up over the ground and the
+detail rises on it, laid out at its full size from the start. Every
+arrival opens a fresh page. In the tab row the
 wire's name is painted behind the line's left end as in the aviary, cut
 round the birds that cross it, and the tally keeps one line beneath it
 in front, at every width. The birds keep their size and centre in the
@@ -93,7 +95,7 @@ out as the chosen bird's slides in, from the right for a bird further
 along the row or on a later tab, the fence last, and from the left
 otherwise. The bright bird in the tab row moves at once. The new page
 opens at the top of its panes with its papers folded, and a chip the
-move carries lands once the pan settles. With reduced motion the page
+move carries lands as the page opens. With reduced motion the page
 is replaced at once. The Aviary tab, the brand and Escape ride the
 camera home. Large state changes between scans re-run the arrival:
 birds fly in, never crossfade.

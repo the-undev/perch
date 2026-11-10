@@ -31,6 +31,17 @@ export interface LocalBranch {
   upstream: string | null;
 }
 
+/** A local branch holding commits no remote-tracking ref contains. */
+export interface UnpushedBranch {
+  name: string;
+  /** Null when the branch has no upstream or its upstream is gone. */
+  upstream: string | null;
+  /** The branch's commits that no remote-tracking ref contains. */
+  count: number;
+  /** The branch's oldest such commit, aged against the unsafe-work windows. */
+  work: AgedWork;
+}
+
 /** Windows in hours: amber at or beyond the first, red at or beyond the second. */
 export interface HourThresholds {
   amberHours: number;
@@ -93,6 +104,11 @@ export interface GitData {
   lastCommitAt: string | null;
   oldestUncommittedAt: string | null;
   oldestUnpushedAt: string | null;
+  /**
+   * Each local branch holding unpushed commits, aged only against a joined forge presence and
+   * empty otherwise; absent from a snapshot cached before the scanner read them.
+   */
+  unpushedBranches?: UnpushedBranch[];
   branches: LocalBranch[];
   /**
    * The newest commits on the local default branch, newest first: null without that branch,

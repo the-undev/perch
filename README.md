@@ -6,6 +6,8 @@ A desktop app that shows each of your coding projects as a little bird. A
 bird's mood reflects how its project is going, so you can see at a glance
 which ones need your attention.
 
+![The aviary, with each project as a bird on its wire](docs/aviary.png)
+
 > **Early development:** expect large changes.
 
 ## Data sources

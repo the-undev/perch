@@ -1,6 +1,7 @@
 # Perch
 
 [![CI](https://github.com/the-undev/perch/actions/workflows/ci.yml/badge.svg)](https://github.com/the-undev/perch/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/the-undev/perch)](https://github.com/the-undev/perch/releases/latest)
 
 A desktop app that shows each of your coding projects as a little bird. A
 bird's mood reflects how its project is going, so you can see at a glance

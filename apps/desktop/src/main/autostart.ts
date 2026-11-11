@@ -32,7 +32,7 @@ function execArgument(argument: string): string {
 /** The entry's text: the image run hidden in the tray while the tray is on, else with the window open. */
 export function entryText(image: string, tray: boolean): string {
   const exec = [execArgument(image), ...(tray ? ["--hidden"] : [])].join(" ");
-  return `[Desktop Entry]\nType=Application\nName=perch\nExec=${exec}\n`;
+  return `[Desktop Entry]\nType=Application\nName=Perch\nExec=${exec}\n`;
 }
 
 /** The program an entry's Exec runs, its quoting undone; null when it has no Exec line. */

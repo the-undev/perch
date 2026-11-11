@@ -71,7 +71,7 @@ describe("the autostart entry", () => {
     const text = entryText(image, true);
 
     expect(text).toBe(
-      `[Desktop Entry]\nType=Application\nName=perch\nExec=${image} --hidden\n`,
+      `[Desktop Entry]\nType=Application\nName=Perch\nExec=${image} --hidden\n`,
     );
     expect(parseArguments(execWords(text)).hidden).toBe(true);
   });
@@ -80,7 +80,7 @@ describe("the autostart entry", () => {
     const text = entryText(image, false);
 
     expect(text).toBe(
-      `[Desktop Entry]\nType=Application\nName=perch\nExec=${image}\n`,
+      `[Desktop Entry]\nType=Application\nName=Perch\nExec=${image}\n`,
     );
     expect(parseArguments(execWords(text))).toMatchObject({
       window: "show",
@@ -94,7 +94,7 @@ describe("the autostart entry", () => {
     expect(execTarget(entryText(spaced, true))).toBe(spaced);
     expect(execTarget(entryText(image, true))).toBe(image);
     expect(execTarget("[Desktop Entry]\nExec=perch --hidden\n")).toBe("perch");
-    expect(execTarget("[Desktop Entry]\nName=perch\n")).toBeNull();
+    expect(execTarget("[Desktop Entry]\nName=Perch\n")).toBeNull();
   });
 
   it("reads the toggle from whether the entry exists, with the program it runs", async () => {

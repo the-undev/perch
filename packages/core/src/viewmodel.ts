@@ -412,7 +412,6 @@ const forgeLabel: Record<ForgeName, string> = {
 const sourceLabel: Record<keyof ItemSourceData, string> = {
   git: "git",
   roadmap: "roadmap",
-  claudeSessions: "Claude sessions",
   github: "GitHub",
   forgejo: "Forgejo",
   kuma: "Uptime Kuma",
@@ -920,14 +919,6 @@ function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
   if (ci !== null) ledger.push(ci);
   if (git?.lastCommitAt) {
     ledger.push({ kind: "time", label: "last commit", at: git.lastCommitAt });
-  }
-  const sessions = item.sources.claudeSessions;
-  if (sessions && !("error" in sessions) && sessions.lastSessionAt) {
-    ledger.push({
-      kind: "time",
-      label: "last Claude session",
-      at: sessions.lastSessionAt,
-    });
   }
   return ledger;
 }

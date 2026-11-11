@@ -6,7 +6,6 @@ import type {
   Entry,
   RawBullet,
   RawCi,
-  RawClaudeSessions,
   RawFiles,
   RawForgeRepo,
   RawGit,
@@ -24,7 +23,6 @@ import type {
   Backup,
   CiRun,
   CiState,
-  ClaudeSessionsData,
   DayThresholds,
   Drift,
   ForgeData,
@@ -451,28 +449,6 @@ export function deriveGit(
       observedAt,
     ),
   };
-}
-
-// Claude Code sessions
-
-/**
- * The last session is the timestamp of the last user or assistant line in the newest transcript.
- * When that cannot be read, the newest transcript's mtime stands in. No transcripts means null.
- */
-export function deriveClaudeSessions(
-  raw: RawClaudeSessions,
-): ClaudeSessionsData {
-  if (raw.newest.state === "absent" || raw.transcripts.state === "absent") {
-    return { lastSessionAt: null, basis: null };
-  }
-  const newest = raw.newest.value;
-  if (newest.lastMessageAt.state === "observed") {
-    return { lastSessionAt: newest.lastMessageAt.value, basis: "last-message" };
-  }
-  const mtime = raw.transcripts.value.find(
-    (entry) => entry.file === newest.file,
-  )?.mtime;
-  return { lastSessionAt: mtime ?? null, basis: mtime ? "file-mtime" : null };
 }
 
 // Forges

@@ -64,7 +64,6 @@ function sources(overrides: Partial<PolledSources>): PolledSources {
       },
     }),
     roadmap: returning("roadmap", {}),
-    claudeSessions: returning("claudeSessions", {}),
     github: returning("github", {}),
     forgejo: returning("forgejo", {}),
     ...overrides,
@@ -79,7 +78,7 @@ describe("gather", () => {
   it("runs root collectors before enrichers, and the roadmap reader last", () => {
     expect(gatherRounds).toEqual([
       ["local", "githubAccounts", "forgejoAccounts", "kuma"],
-      ["claudeSessions", "github", "forgejo"],
+      ["github", "forgejo"],
       ["roadmap"],
     ]);
   });

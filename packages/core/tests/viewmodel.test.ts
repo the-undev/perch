@@ -550,10 +550,6 @@ describe("the ledger", () => {
           },
         }),
         roadmap: { counts: { bug: 0, feature: 15 }, files: [] },
-        claudeSessions: {
-          lastSessionAt: hoursBefore(30),
-          basis: "last-message",
-        },
         github: forgeData({
           fullName: "the-undev/harbour",
           url: "https://github.com/the-undev/harbour",
@@ -634,7 +630,6 @@ describe("the ledger", () => {
         ],
       },
       { kind: "time", label: "last commit", at: hoursBefore(40) },
-      { kind: "time", label: "last Claude session", at: hoursBefore(30) },
     ]);
   });
 

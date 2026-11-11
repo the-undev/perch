@@ -294,8 +294,8 @@ Sources today: local repositories and Obsidian vaults (git state with the
 default branch's newest commits, Obsidian markers), the GitHub and
 Forgejo account listings and per-repository detail (PRs, CI, newest
 default-branch commits, each its own request, so a failed request fails
-only its part; a missing token fails the whole detail), roadmap files,
-Claude Code session times. Roadmap files are read from the working
+only its part; a missing token fails the whole detail), roadmap files.
+Roadmap files are read from the working
 copy, whatever branch is checked out. A repository a clone's remote names that
 could not be looked up is still a presence, carrying its error and
 whether no card covers its owner. Uptime Kuma exists and runs only for a
@@ -630,4 +630,3 @@ Facts the design relies on. Verify before relying on them later.
 | Node, pnpm | 26, 11 |
 | Forgejo | `http://forge.example.lan:3000`, SSH alias `forgejo` on port 2222 |
 | Keyring tokens | service `perch`, one key per source table, see Secrets |
-| Claude Code sessions | `~/.claude/projects/`, one directory per working directory, non-alphanumerics encoded as `-` |

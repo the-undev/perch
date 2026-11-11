@@ -125,27 +125,6 @@ export interface RawRoadmap {
   files: RawRoadmapFile[];
 }
 
-// Claude Code sessions
-
-export interface RawTranscript {
-  file: string;
-  mtime: string;
-}
-
-export interface RawNewestTranscript {
-  file: string;
-  /** Timestamp of the last user or assistant line, read backwards from the end of the file. */
-  lastMessageAt: Observed<string, "no-message-line" | "beyond-tail-limit">;
-}
-
-export interface RawClaudeSessions {
-  /** The directory under ~/.claude/projects for the item's path. */
-  directory: string;
-  transcripts: Observed<RawTranscript[], "no-project-directory">;
-  /** The transcript with the newest mtime. */
-  newest: Observed<RawNewestTranscript, "no-transcripts">;
-}
-
 // Forges
 
 export type ForgeName = "github" | "forgejo";
@@ -297,7 +276,6 @@ export interface RawData {
   /** Status pages keyed by their source's name. */
   kuma: Record<string, Entry<RawKuma, never>>;
   roadmap: Record<string, Entry<RawRoadmap, "no-roadmap-file">>;
-  claudeSessions: Record<string, Entry<RawClaudeSessions, never>>;
   /** Forge repositories keyed by lower-case owner/name. */
   github: Record<string, RawForgeEntry>;
   forgejo: Record<string, RawForgeEntry>;

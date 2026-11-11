@@ -8,7 +8,6 @@ import {
   thresholdsFor,
 } from "./config.ts";
 import {
-  deriveClaudeSessions,
   deriveForge,
   deriveGit,
   deriveKuma,
@@ -180,12 +179,6 @@ function localSources(
     () => emptyRoadmap,
   );
   if (roadmap !== undefined) sources.roadmap = roadmap;
-  const sessions = fromEntry(
-    files.claudeSessions?.data[id],
-    deriveClaudeSessions,
-    () => undefined,
-  );
-  if (sessions !== undefined) sources.claudeSessions = sessions;
   return sources;
 }
 

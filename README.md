@@ -4,7 +4,7 @@
 
 A tray app for one PC that shows the state of everything its owner is
 working on as birds on wires: git repositories, their remotes and CI,
-roadmaps, Claude Code sessions. Everything it shows is read from the machine
+roadmaps. Everything it shows is read from the machine
 or the forges. Electron, built for Arch Linux on KDE Plasma 6.
 
 ## Running

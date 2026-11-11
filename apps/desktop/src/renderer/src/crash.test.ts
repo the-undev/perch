@@ -19,7 +19,7 @@ describe("crash screen", () => {
     document.body.innerHTML = '<div id="root"></div>';
     fireError(new ReferenceError("process is not defined"));
     const root = document.getElementById("root") as HTMLElement;
-    expect(root.querySelector("h1")?.textContent).toBe("perch couldn't start");
+    expect(root.querySelector("h1")?.textContent).toBe("Perch couldn't start");
     expect(root.querySelector(".message")?.textContent).toBe(
       "ReferenceError: process is not defined",
     );

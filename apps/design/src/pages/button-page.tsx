@@ -16,7 +16,7 @@ export function ButtonPage() {
     <>
       <Section
         title="Variants"
-        rule="shadcn is used for basics and form controls (settings, dialogs). Its tokens are mapped onto the ink palette, so it sits in perch's world without carrying the dashboard's identity."
+        rule="shadcn is used for basics and form controls (settings, dialogs). Its tokens are mapped onto the ink palette, so it sits in Perch's world without carrying the dashboard's identity."
         min={220}
       >
         {variants.map((variant) => (
@@ -38,7 +38,7 @@ export function ButtonPage() {
         {sizes.map((size) => (
           <Specimen key={size} label={size} rule={`size="${size}"`}>
             <Button variant="outline" size={size}>
-              Show perch
+              Show Perch
             </Button>
           </Specimen>
         ))}

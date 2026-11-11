@@ -328,7 +328,7 @@ describe("the Updates page's status row", () => {
       sentence: "0.3.0 is downloaded. It runs from the next start.",
       detail: {
         kind: "note",
-        text: "The image at ~/AppImages/perch.appimage is replaced when perch quits.",
+        text: "The image at ~/AppImages/perch.appimage is replaced when Perch quits.",
       },
       button: {
         action: "restart",

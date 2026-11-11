@@ -117,7 +117,7 @@ describe("the window", () => {
   it("welcomes the owner without a config, naming its path, and hands both buttons to the main process", async () => {
     const { fake, router } = renderApp({ ...idle(null), noConfig: true });
 
-    expect(await screen.findByRole("main", { name: "perch" })).toBeDefined();
+    expect(await screen.findByRole("main", { name: "Perch" })).toBeDefined();
     expect(screen.getByText("~/.config/perch/config.toml")).toBeDefined();
     expect(
       screen.getByText(/one wire, the default thresholds and no sources yet/),
@@ -163,7 +163,7 @@ describe("the window", () => {
 
   it("says why the config file was not created, then leaves for the first scan once a config is found", async () => {
     const { fake } = renderApp({ ...idle(null), noConfig: true });
-    await screen.findByRole("main", { name: "perch" });
+    await screen.findByRole("main", { name: "Perch" });
 
     act(() =>
       fake.push({
@@ -1066,7 +1066,7 @@ describe("the window", () => {
       ).toBeDefined();
       expect(
         windowPage.getByText(
-          "perch starts when you log in, with the window open.",
+          "Perch starts when you log in, with the window open.",
         ),
       ).toBeDefined();
     });

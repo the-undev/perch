@@ -29,7 +29,7 @@ export class FaultBoundary extends Component<
     return (
       <div className="fault-screen">
         <div className="fault">
-          <h1>perch stopped drawing this window</h1>
+          <h1>Perch stopped drawing this window</h1>
           <p className="what">
             A component failed while drawing. The error below is from the
             renderer.

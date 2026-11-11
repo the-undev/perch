@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-59.5 -82 112 112" width="512" height="512">
-  <title>perch</title>
+  <title>Perch</title>
   <!-- The content bird from packages/ui/src/bird.tsx in its own units, on a wire, on the ink ground. -->
   <rect x="-59.5" y="-82" width="112" height="112" rx="24" fill="#101214"/>
   <line x1="-59.5" y1="3" x2="52.5" y2="3" stroke="#3a3e46" stroke-width="3"/>

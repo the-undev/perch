@@ -848,18 +848,18 @@ describe("the Window page", () => {
     ).toBeDefined();
     expect(
       page().getByText(
-        "Off. Turned on, perch starts when you log in, hidden in the tray.",
+        "Off. Turned on, Perch starts when you log in, hidden in the tray.",
       ),
     ).toBeDefined();
 
     fireEvent.click(toggle("Stay in the tray"));
 
     expect(
-      page().getByText("Off. No tray icon; closing the window quits perch."),
+      page().getByText("Off. No tray icon; closing the window quits Perch."),
     ).toBeDefined();
     expect(
       page().getByText(
-        "Off. Turned on, perch starts when you log in, with the window open.",
+        "Off. Turned on, Perch starts when you log in, with the window open.",
       ),
     ).toBeDefined();
   });
@@ -868,7 +868,7 @@ describe("the Window page", () => {
     editor("window", loginOn());
 
     expect(
-      page().getByText("perch starts when you log in, hidden in the tray."),
+      page().getByText("Perch starts when you log in, hidden in the tray."),
     ).toBeDefined();
     expect(
       page().getByText(
@@ -879,7 +879,7 @@ describe("the Window page", () => {
     fireEvent.click(toggle("Stay in the tray"));
 
     expect(
-      page().getByText("perch starts when you log in, with the window open."),
+      page().getByText("Perch starts when you log in, with the window open."),
     ).toBeDefined();
     fireEvent.click(toggle("Start at login"));
     expect(page().queryByText(/→/)).toBeNull();
@@ -907,7 +907,7 @@ describe("the Window page", () => {
     expect(login.getAttribute("aria-disabled")).toBe("true");
     expect(
       page().getByText(
-        "Held: perch is running from source, so there is no AppImage to point the login entry at.",
+        "Held: Perch is running from source, so there is no AppImage to point the login entry at.",
       ).className,
     ).toContain("text-amber");
     fireEvent.click(login);
@@ -950,7 +950,7 @@ describe("the Updates page", () => {
     expect(page().getByText("[update]")).toBeDefined();
     expect(
       page().getByText(
-        "How perch learns of new releases, and whether it installs them.",
+        "How Perch learns of new releases, and whether it installs them.",
       ),
     ).toBeDefined();
   });
@@ -1028,7 +1028,7 @@ describe("the Updates page", () => {
     );
     expect(
       page().getByText(
-        "The image at ~/AppImages/perch.appimage is replaced when perch quits.",
+        "The image at ~/AppImages/perch.appimage is replaced when Perch quits.",
       ),
     ).toBeDefined();
     fireEvent.click(slot("Restart now"));
@@ -1065,7 +1065,7 @@ describe("the Updates page", () => {
     );
     expect(
       page().getByText(
-        "Each scan, at most hourly, perch reads the latest release from GitHub and says here and in the tray when it is newer.",
+        "Each scan, at most hourly, Perch reads the latest release from GitHub and says here and in the tray when it is newer.",
       ),
     ).toBeDefined();
     expect(page().getByText("~/AppImages/perch.appimage")).toBeDefined();
@@ -1076,7 +1076,7 @@ describe("the Updates page", () => {
 
     expect(
       page().getByText(
-        "Off. perch never calls GitHub by itself. Check now, above, still does.",
+        "Off. Perch never calls GitHub by itself. Check now, above, still does.",
       ),
     ).toBeDefined();
     expect(
@@ -1147,7 +1147,7 @@ describe("the settings page", () => {
       ),
     ).toBeDefined();
     fireEvent.keyDown(window, { key: "Escape" });
-    fireEvent.click(screen.getByRole("button", { name: "perch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Perch" }));
 
     expect(onHome).toHaveBeenCalledTimes(2);
   });

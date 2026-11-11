@@ -58,7 +58,7 @@ let trayMenuLabel: string | null | undefined;
 /** The tray icon on the window; activating it toggles the window. */
 function createTray(icon: string, window: BrowserWindow): Tray {
   const made = new Tray(icon);
-  made.setToolTip("perch");
+  made.setToolTip("Perch");
   // On Plasma a left click activates the icon, which Electron reports as a click.
   made.on("click", () => present(window, "toggle"));
   return made;

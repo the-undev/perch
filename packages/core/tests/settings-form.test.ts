@@ -198,22 +198,22 @@ describe("the Window page", () => {
       "Closing the window hides it. The tray icon shows it, rescans and quits; clicking the icon toggles the window.",
     );
     expect(traySentence(false)).toBe(
-      "Off. No tray icon; closing the window quits perch.",
+      "Off. No tray icon; closing the window quits Perch.",
     );
   });
 
   it("says what starting at login does, following the tray beside it", () => {
     expect(loginSentence(false, true)).toBe(
-      "Off. Turned on, perch starts when you log in, hidden in the tray.",
+      "Off. Turned on, Perch starts when you log in, hidden in the tray.",
     );
     expect(loginSentence(true, true)).toBe(
-      "perch starts when you log in, hidden in the tray.",
+      "Perch starts when you log in, hidden in the tray.",
     );
     expect(loginSentence(true, false)).toBe(
-      "perch starts when you log in, with the window open.",
+      "Perch starts when you log in, with the window open.",
     );
     expect(loginSentence(false, false)).toBe(
-      "Off. Turned on, perch starts when you log in, with the window open.",
+      "Off. Turned on, Perch starts when you log in, with the window open.",
     );
   });
 
@@ -276,10 +276,10 @@ describe("the Updates page", () => {
 
   it("says what checking does, on and off", () => {
     expect(checkSentence(true)).toBe(
-      "Each scan, at most hourly, perch reads the latest release from GitHub and says here and in the tray when it is newer.",
+      "Each scan, at most hourly, Perch reads the latest release from GitHub and says here and in the tray when it is newer.",
     );
     expect(checkSentence(false)).toBe(
-      "Off. perch never calls GitHub by itself. Check now, above, still does.",
+      "Off. Perch never calls GitHub by itself. Check now, above, still does.",
     );
   });
 

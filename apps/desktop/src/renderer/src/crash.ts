@@ -1,7 +1,7 @@
 import "./index.css";
 import "./crash.css";
 
-const HEADING = "perch couldn't start";
+const HEADING = "Perch couldn't start";
 const LINE =
   "The window failed while loading. The error below is from the renderer.";
 

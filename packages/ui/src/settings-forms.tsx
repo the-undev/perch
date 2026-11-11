@@ -1199,7 +1199,7 @@ export function UpdatesGroup({
     <SettingsGroup
       title="Updates"
       table="[update]"
-      lead="How perch learns of new releases, and whether it installs them."
+      lead="How Perch learns of new releases, and whether it installs them."
     >
       <UpdateStatusRow update={update} now={now} calls={calls} />
       <SwitchRow

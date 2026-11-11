@@ -18,7 +18,7 @@ describe("FaultBoundary", () => {
     );
     expect(
       screen.getByRole("heading", {
-        name: "perch stopped drawing this window",
+        name: "Perch stopped drawing this window",
       }),
     ).toBeTruthy();
     expect(screen.getByText("TypeError: level is undefined")).toBeTruthy();

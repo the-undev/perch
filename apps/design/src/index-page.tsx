@@ -11,7 +11,7 @@ export function IndexPage() {
     <main className="mx-auto max-w-[2200px] px-6 pt-10 pb-16">
       <h1 className="m-0 font-bold font-display text-[32px]">Perch Design</h1>
       <p className="max-w-[72ch] text-ink-muted leading-relaxed">
-        The real components of the perch design, rendered from the mock dataset
+        The real components of the Perch design, rendered from the mock dataset
         in every state the view model allows. Each page labels a state with the
         rule behind it and ends with a usage note. Design and theming are
         reviewed here.

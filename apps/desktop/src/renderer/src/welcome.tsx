@@ -26,7 +26,7 @@ export function Welcome({
           id="welcome-title"
           className="m-0 font-bold font-display text-[26px] text-ink"
         >
-          perch
+          Perch
         </h1>
         <p className="m-0">
           The repositories, Obsidian vaults and forges you name are watched and

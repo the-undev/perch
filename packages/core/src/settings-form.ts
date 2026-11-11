@@ -78,7 +78,7 @@ export interface LoginEntry {
 
 /** The login toggle's hold when the app runs from source. */
 export const sourceRunHeld =
-  "perch is running from source, so there is no AppImage to point the login entry at.";
+  "Perch is running from source, so there is no AppImage to point the login entry at.";
 
 /** The install switch's hold when the app runs from source. */
 export const installSourceRunHeld =
@@ -158,22 +158,22 @@ export function settingsFormFor(
 
 /** What the tray setting does, in words. */
 export function traySentence(tray: boolean): string {
-  if (!tray) return "Off. No tray icon; closing the window quits perch.";
+  if (!tray) return "Off. No tray icon; closing the window quits Perch.";
   return "Closing the window hides it. The tray icon shows it, rescans and quits; clicking the icon toggles the window.";
 }
 
 /** What starting at login does with the tray setting beside it, in words. */
 export function loginSentence(login: boolean, tray: boolean): string {
-  const start = `perch starts when you log in, ${tray ? "hidden in the tray" : "with the window open"}.`;
+  const start = `Perch starts when you log in, ${tray ? "hidden in the tray" : "with the window open"}.`;
   return login ? start : `Off. Turned on, ${start}`;
 }
 
 /** What the release check does, in words. */
 export function checkSentence(check: boolean): string {
   if (!check) {
-    return "Off. perch never calls GitHub by itself. Check now, above, still does.";
+    return "Off. Perch never calls GitHub by itself. Check now, above, still does.";
   }
-  return "Each scan, at most hourly, perch reads the latest release from GitHub and says here and in the tray when it is newer.";
+  return "Each scan, at most hourly, Perch reads the latest release from GitHub and says here and in the tray when it is newer.";
 }
 
 /** What installing updates does, in words; held, a newer release is only pointed at whatever the switch says. */

@@ -327,7 +327,8 @@
 }
 
 /* Markdown on paper: the key-file sheets. The sheet fills its column; the
-   writing on it keeps a reading width. */
+   writing on it keeps a reading width, and tables and code blocks may use
+   the whole sheet. */
 @layer components {
   .perch-prose {
     color: var(--color-paper-ink);
@@ -335,7 +336,11 @@
     line-height: 1.6;
   }
   .perch-prose > * {
-    max-width: 80ch;
+    max-width: 100ch;
+  }
+  .perch-prose > table,
+  .perch-prose > pre {
+    max-width: none;
   }
   .perch-prose > :first-child {
     margin-top: 0;
@@ -435,6 +440,9 @@
   .perch-prose th {
     color: var(--color-paper-head);
     font-weight: 600;
+  }
+  .perch-prose td code {
+    white-space: nowrap;
   }
 }
 

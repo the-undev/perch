@@ -128,7 +128,10 @@ band the record pane holds a ledger of facts in full words
 (clean zeros as a quiet green "none", counts toned by severity),
 branches, the commit river, flags, and beside it the paper pane holds
 a configurable list of key files rendered as paper, the bubble's
-material, with folder tabs. A long file keeps its full height; its pane
+material, with folder tabs. Text runs up to 100 characters wide, tables
+and code blocks may use the whole sheet, and code in a table cell never
+wraps. A long file
+keeps its full height; its pane
 scrolls, the folder tabs held at the pane's top.
 A bird held by at least one forge with no clone on this machine has no
 key files. In their place the paper pane holds a slip of the same paper,

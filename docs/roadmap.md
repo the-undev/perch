@@ -19,8 +19,8 @@ transition, and closing them should bring it back.
 
 ## Session restore beside autostart
 
-Plasma's session restore may relaunch perch at login as well as the autostart
-entry, showing the window. Not observed yet. If it happens, exclude perch in
+Plasma's session restore may relaunch Perch at login as well as the autostart
+entry, showing the window. Not observed yet. If it happens, exclude Perch in
 Plasma's session settings or pass `--hidden` on the restored launch.
 
 ## Archived scan lane
@@ -118,7 +118,7 @@ paths. The owner confirms it and adds a token.
 ## Picking paths and sessions from what the scan knows
 
 Key files, roadmaps and the zellij session are typed into text fields.
-perch could offer the files in the clone and the sessions zellij reports.
+Perch could offer the files in the clone and the sessions zellij reports.
 The scan carries no file listing, so this needs a new raw field or a
 main-process read when the form opens.
 

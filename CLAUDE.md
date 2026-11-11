@@ -1,4 +1,4 @@
-# perch
+# Perch
 
 A desktop app for one machine. It shows the state of everything its owner
 works on as birds on wires: git repositories, their remotes and CI, and

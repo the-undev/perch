@@ -1,79 +1,60 @@
-# perch
+# Perch
 
 [![CI](https://github.com/the-undev/perch/actions/workflows/ci.yml/badge.svg)](https://github.com/the-undev/perch/actions/workflows/ci.yml)
 
-A tray app for one PC that shows the state of everything its owner is
-working on as birds on wires: git repositories, their remotes and CI,
-roadmaps, Claude Code sessions. Everything it shows is read from the machine
-or the forges. Electron, built for Arch Linux on KDE Plasma 6.
+A desktop app that shows each of your coding projects as a little bird. A
+bird's mood reflects how its project is going, so you can see at a glance
+which ones need your attention.
 
-## Running
+> **Early development:** expect large changes.
 
-Needs Node 26 and pnpm 11. Run `pnpm install` once, then from the root:
+## Data sources
 
-| Command | Does |
-| --- | --- |
-| `pnpm dev` | Runs the desktop app: it scans this machine and the forges and shows the aviary. Its data lives in `~/.local/share/perch`. |
-| `pnpm design` | Serves the design site at http://localhost:5174, every component in every state. |
-| `pnpm check` | Runs Biome, tsc and vitest across the workspace. |
-| `pnpm scan` | Runs the same scan from the command line, into `.scan/raw/` and `.scan/snapshot.json` in the repository. |
-| `pnpm dist` | Builds the Linux AppImage into `apps/desktop/dist/`. |
-| `pnpm icons` | Renders the app and tray icons from their SVGs in `apps/desktop/resources/`. |
+- **Local git repositories:** branches, uncommitted and unpushed work.
+- **GitHub and Forgejo:** your repositories, their pull requests and CI runs.
+- **Roadmaps:** Markdown files listing open items.
 
-The config is `~/.config/perch/config.toml`. Without it the app offers to
-create it: one wire, the standard windows, no sources. Sources
-are added on the settings page. `config.example.toml` shows every field
-with placeholder values.
-Forge tokens come from the desktop keyring, see
+## Launch actions
+
+A bird can open its project in VS Code, nvim, Obsidian (for a vault), the
+file manager or a zellij tab, or run a custom command.
+
+## Install
+
+Download the AppImage from the
+[releases page](https://github.com/the-undev/perch/releases), make it
+executable and run it. The settings page says when a newer release is out,
+and can replace the AppImage itself.
+
+## Configuration
+
+The config is `~/.config/perch/config.toml`. Without it, the app offers to
+create one: one wire, the standard windows, no sources. Add sources on the
+settings page. `config.example.toml` shows every field with placeholder
+values. Forge tokens come from the desktop keyring, see
 [docs/tokens.md](docs/tokens.md).
 
-## Installing
+## Development
 
-perch is one AppImage on the PATH as `perch`. From the repository root:
+An Electron app. It needs Node 26 and pnpm 11. Run `pnpm install` once, then
+from the root:
+
+| Command       | Does                                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`    | Runs the desktop app: it scans this machine and the forges and shows the aviary. Its data lives in `~/.local/share/perch`. |
+| `pnpm design` | Serves the design site at http://localhost:5174, every component in every state.                                           |
+| `pnpm check`  | Runs Biome, tsc and vitest across the workspace.                                                                           |
+| `pnpm scan`   | Runs the same scan from the command line, into `.scan/raw/` and `.scan/snapshot.json`.                                     |
+| `pnpm dist`   | Builds the Linux AppImage into `apps/desktop/dist/`.                                                                       |
+| `pnpm icons`  | Renders the app and tray icons from their SVGs in `apps/desktop/resources/`.                                               |
+
+### Making a release
+
+From an up-to-date `main`, run:
 
 ```sh
-pnpm dist
-cp apps/desktop/dist/perch-*-x86_64.AppImage ~/.local/bin/perch
-ln -s "$PWD/apps/desktop/resources/perch.desktop" ~/.local/share/applications/perch.desktop
-mkdir -p ~/.local/share/icons/hicolor/256x256/apps
-ln -s "$PWD/apps/desktop/resources/icons/256x256.png" ~/.local/share/icons/hicolor/256x256/apps/perch.png
+pnpm release <version>
 ```
 
-The first link puts perch in the launcher. The second gives it the icon.
-Start at login, on the settings page's Window page, writes the autostart
-entry; systemd runs it as the user unit `app-perch@autostart.service`.
-
-The shortcut is a Plasma custom shortcut: System Settings, Keyboard,
-Shortcuts, Add New, Command or Script, with the command `perch --toggle`,
-then a key.
-
-A second launch hands its arguments to the running perch and quits:
-
-| Argument | Does |
-| --- | --- |
-| `--toggle` | Shows and focuses the window, or hides it when it is already in front. |
-| `--show` | Shows and focuses the window. A launch with no arguments does the same. |
-| `--scan` | Scans now. |
-| `--hidden` | On the first launch, starts with the window hidden; ignored without the tray. |
-
-Closing the window hides it. The tray menu shows it, rescans and quits;
-clicking the tray icon toggles the window. With Stay in the tray off,
-there is no tray icon, closing the window quits, and every second launch
-shows the window.
-
-## Releases
-
-Versions are semver, set in `apps/desktop/package.json`. Run
-`pnpm release <version>` from a clean, up-to-date `main`. It bumps the version
-on a `release-<version>` branch, runs `pnpm check`, merges to `main`, pushes,
-tags `v<version>` and watches the CI run. The tag builds the AppImage and
-attaches it to a GitHub release, with `latest-linux.yml`, the update feed.
-
-The settings page's Updates page says when a newer release is out. With
-Install updates on, perch replaces its own AppImage from the next start;
-otherwise copy the new release over it as above.
-
-## More
-
-What it shows and why: [docs/spec.md](docs/spec.md). The design site
-(`pnpm design`) shows the real components.
+It bumps the version, merges, tags and pushes. CI then builds the AppImage
+and publishes the GitHub release.

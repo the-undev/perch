@@ -77,7 +77,7 @@ export function PaperPage() {
       >
         <Specimen
           label="Three files from config"
-          rule="Perch's key_files: the README, the spec and the roadmap. This repository's own files stand in for them."
+          rule="Perch's key_files: the README, the forge access guide and the roadmap. This repository's own files stand in for them."
         >
           <Ground>
             <KeyFilePaper
@@ -87,13 +87,13 @@ export function PaperPage() {
         </Specimen>
         <Specimen
           label="A long document scrolls its pane"
-          rule="Perch's spec, many screens long, in a pane of fixed height as the bird's page gives it: the pane scrolls with a thin quiet scrollbar, and the folder tabs stay at its top."
+          rule="Perch's roadmap, a long document, in a pane of fixed height as the bird's page gives it: the pane scrolls with a thin quiet scrollbar, and the folder tabs stay at its top."
         >
           <div className="pane-scroll h-[28rem] overflow-y-auto rounded-xl border border-edge bg-ground px-5 pb-4">
             <KeyFilePaper
               sheets={sheetsFor(
                 [
-                  { path: "docs/spec.md", absolutePath: "/spec.md" },
+                  { path: "docs/roadmap.md", absolutePath: "/roadmap.md" },
                   { path: "README.md", absolutePath: "/readme.md" },
                 ],
                 perchFiles,

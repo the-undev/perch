@@ -1,19 +1,22 @@
-# perch
+# Perch
 
-Desktop app for one machine, showing the state of everything its
-owner is working on as birds on wires: git repositories, their remotes and
-CI and roadmaps. It lives in the tray and derives
-everything it shows from things that already change.
+A desktop app for one machine. It shows the state of everything its owner
+works on as birds on wires: git repositories, their remotes and CI, and
+roadmaps. It lives in the tray.
 
-## Read first
+## Principles
 
-- [docs/spec.md](docs/spec.md): what it shows and how it behaves. Read it
-  before proposing anything.
-- [docs/roadmap.md](docs/roadmap.md): parked work.
+- Everything shown is derived from files, repositories or APIs. Nothing is typed in.
+- The scanner is read only. Launch actions open things and change nothing.
+- Perch shows facts, not advice.
+- Only the latest scan is kept.
+- Everything machine-specific lives in config.
+
+Parked work is in [docs/roadmap.md](docs/roadmap.md).
 
 ## Packages
 
-A pnpm workspace. The code is the reference; this is only a map.
+A pnpm workspace. The code is the reference; this is a map.
 
 - `packages/core`: the read-only scanner, pure Node. `src/scan.ts` composes
   gather and aggregate, `src/viewmodel.ts` derives what the renderer shows,
@@ -22,11 +25,10 @@ A pnpm workspace. The code is the reference; this is only a map.
   model, and `src/theme.css`, the one theme. Add shadcn primitives with
   `pnpm dlx shadcn add <name>` from `packages/ui`, then make its `@/`
   imports relative.
-- `apps/design`: the design site, a local tool, never deployed.
+- `apps/design`: the design site, a local tool, never deployed. It is the
+  living design reference.
 - `apps/desktop`: the Electron app, split into `src/main`, `src/renderer`
   and the sandboxed `src/preload`.
-
-`apps/design` is the living design site.
 
 ## Commands
 
@@ -49,7 +51,7 @@ Run from the root: `pnpm dev` runs the app, `pnpm design` the design site,
 - Design is agreed visually on a mockup page: one new file in `mockups/`
   per round, agreed before implementation, deleted once the round is
   implemented.
-- A decision worth keeping goes into the spec or a decision doc when it is
-  made. The rest is git history.
+- A decision goes in the commit message, or in a code comment where the code
+  would surprise.
 - Docs are the minimum a user or a potential dev needs. The code documents
   the code.

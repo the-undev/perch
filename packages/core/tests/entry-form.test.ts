@@ -44,7 +44,7 @@ describe("the entry form", () => {
     expect(form.values).toEqual({
       wire: null,
       name: "Perch",
-      keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
+      keyFiles: ["README.md", "docs/forge-access.md", "docs/roadmap.md"],
       roadmaps: null,
       thresholds: {},
       zellijSession: null,

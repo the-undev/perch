@@ -3,7 +3,7 @@
 // keeps them under the repository, the desktop app under its data directory.
 
 import { mkdir, rename, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { aggregate, localEntries, readRawBundle } from "./aggregate.ts";
 import type { Config } from "./config.ts";
 import { fileMtime, readTextIfExists } from "./fs.ts";
@@ -12,7 +12,6 @@ import { createFetchJson, type FetchJson } from "./http.ts";
 import type { StatusFile } from "./raw.ts";
 import { createKeyringTokenLookup, type TokenLookup } from "./secrets.ts";
 import type { Snapshot } from "./snapshot.ts";
-import { createClaudeSessionsSource } from "./sources/claude-sessions.ts";
 import { dockerContainersSource } from "./sources/docker-containers.ts";
 import {
   createForgeAccountsSource,
@@ -26,7 +25,7 @@ import { createLocalSource } from "./sources/local.ts";
 import { createRoadmapSource } from "./sources/roadmap.ts";
 
 export interface GatherRun {
-  /** The home directory: Claude Code's sessions live under it and git runs from it. */
+  /** The home directory: git runs from it. */
   home: string;
   env: NodeJS.ProcessEnv;
   config: Config;
@@ -37,7 +36,7 @@ export interface GatherRun {
 
 /** What the sources reach the outside world through. */
 export interface SourceIo {
-  /** The home directory: Claude Code's sessions live under it and git runs from it. */
+  /** The home directory: git runs from it. */
   home: string;
   env: NodeJS.ProcessEnv;
   fetchJson: FetchJson;
@@ -95,9 +94,6 @@ export function gatherSources(config: Config, io: SourceIo): PolledSources {
         return (localId) => entries.get(localId)?.roadmaps ?? null;
       },
     }),
-    claudeSessions: createClaudeSessionsSource(
-      join(home, ".claude", "projects"),
-    ),
     github: createForgeSource("github", "githubAccounts", github),
     forgejo: createForgeSource("forgejo", "forgejoAccounts", forgejo),
   };

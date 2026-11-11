@@ -75,25 +75,6 @@ The TUIs in `~/undev` (oxbow, spool) run in tagged alacritty windows,
 else it is launched. The view model has no TUI action yet; it needs a
 config marker for which items are TUIs and the window raising above.
 
-## Claude Code integration
-
-Routes in rising cost. Session times from the transcripts are already
-read.
-
-- Show the last few user messages of the newest session on the project
-  detail, so the tile says what was being discussed, not only when.
-- Launch from a tile: open a terminal in the project directory running
-  `claude --resume` on the newest session, or an editor.
-- Hooks: a session end hook writes a one-line "where this stopped" into
-  the project, a session start hook reads it back. The hook calls Claude
-  headless for the summary, once per session.
-- An MCP server inside perch, so any Claude Code session can ask for the
-  state of everything or of one project.
-- Headless Claude in the scanner to summarise a dirty diff into a
-  sentence, only on change.
-- A Claude Code status line entry showing perch's flag for the current
-  repo.
-
 ## Actions from tiles
 
 Push the branch, commit and push an Obsidian vault, open in the editor.

@@ -169,12 +169,6 @@ export interface RoadmapData {
   files: RoadmapFile[];
 }
 
-export interface ClaudeSessionsData {
-  lastSessionAt: string | null;
-  /** Whether the time came from the newest transcript's last message or, failing that, its mtime. */
-  basis: "last-message" | "file-mtime" | null;
-}
-
 export interface PullRequest {
   number: number;
   title: string;
@@ -248,7 +242,6 @@ export interface KumaData {
 export interface ItemSourceData {
   git: GitData | ItemError;
   roadmap: RoadmapData | ItemError;
-  claudeSessions: ClaudeSessionsData | ItemError;
   github: ForgeData | ForgeError;
   forgejo: ForgeData | ForgeError;
   kuma: KumaData | ItemError;

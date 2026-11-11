@@ -70,7 +70,6 @@ export const sourceLabel: Record<PolledSourceName, string> = {
   forgejoAccounts: "Forgejo accounts",
   kuma: "Uptime Kuma",
   roadmap: "Roadmaps",
-  claudeSessions: "Claude sessions",
   github: "GitHub repositories",
   forgejo: "Forgejo repositories",
 };

@@ -516,10 +516,6 @@ const dotfiles = localItem(".dotfiles", {
       stall: null,
     },
     roadmap: roadmap([{ path: "docs/roadmap.md", feature: 13, bug: 0 }]),
-    claudeSessions: {
-      lastSessionAt: "2026-10-21T22:20:00.000Z",
-      basis: "last-message",
-    },
     github: forge("github", "finch/dotfiles", {
       finalisedCommits: [
         {
@@ -595,10 +591,6 @@ const hothouse = localItem("obsidian/Hothouse", {
       { path: "Tech/Tech Plans.md", feature: 120, bug: 0 },
       { path: "Garden/Garden Plans.md", feature: 74, bug: 0 },
     ]),
-    claudeSessions: {
-      lastSessionAt: "2026-10-20T15:29:37.919Z",
-      basis: "last-message",
-    },
     forgejo: forge("forgejo", "finch/Hothouse", {
       finalisedCommits: [
         {
@@ -662,10 +654,6 @@ const pocket = localItem("obsidian/Pocket", {
       { path: "Code/Code Plans.md", feature: 12, bug: 0 },
       { path: "Pocket Plans.md", feature: 0, bug: 0 },
     ]),
-    claudeSessions: {
-      lastSessionAt: "2026-10-16T14:17:56.259Z",
-      basis: "last-message",
-    },
     forgejo: forge("forgejo", "finch/Pocket", {
       finalisedCommits: [
         {
@@ -758,10 +746,6 @@ const perch = localItem("dev/perch", {
       },
     },
     roadmap: roadmap([{ path: "docs/roadmap.md", feature: 16, bug: 0 }]),
-    claudeSessions: {
-      lastSessionAt: "2026-10-22T08:40:00.000Z",
-      basis: "last-message",
-    },
     github: forge("github", "finch/perch", {
       latestCi: {
         name: "check",
@@ -873,10 +857,6 @@ const harbour = localItem("undev/harbour", {
       stall: null,
     },
     roadmap: roadmap([{ path: "docs/roadmap.md", feature: 12, bug: 0 }]),
-    claudeSessions: {
-      lastSessionAt: "2026-10-20T21:09:35.615Z",
-      basis: "last-message",
-    },
     github: forge("github", "the-undev/harbour", {
       finalisedCommits: [
         {
@@ -973,10 +953,6 @@ const skiff = localItem("undev/skiff", {
       },
     },
     roadmap: roadmap([{ path: "docs/roadmap.md", feature: 12, bug: 0 }]),
-    claudeSessions: {
-      lastSessionAt: "2026-10-01T09:12:00.000Z",
-      basis: "last-message",
-    },
     github: {
       error: "no GitHub card is configured for owner skiff-app",
       cause: "no-card",
@@ -1080,10 +1056,6 @@ const prism = localItem("undev/prism", {
       stall: null,
     },
     roadmap: roadmap([{ path: "docs/roadmap.md", feature: 78, bug: 0 }]),
-    claudeSessions: {
-      lastSessionAt: "2026-10-17T09:43:52.559Z",
-      basis: "last-message",
-    },
     github: forge("github", "the-undev/prism", {
       latestCi: {
         name: "check",
@@ -1254,10 +1226,6 @@ const oxbow = localItem("undev/oxbow", {
       stall: null,
     },
     roadmap: roadmap([{ path: "docs/roadmap.md", feature: 96, bug: 0 }]),
-    claudeSessions: {
-      lastSessionAt: "2026-10-09T21:06:32.977Z",
-      basis: "last-message",
-    },
     github: forge("github", "the-undev/oxbow", {
       finalisedCommits: [
         {
@@ -1384,10 +1352,6 @@ const spool = localItem("undev/spool", {
       stall: null,
     },
     roadmap: roadmap([{ path: "docs/roadmap.md", feature: 0, bug: 0 }]),
-    claudeSessions: {
-      lastSessionAt: "2026-10-20T23:05:00.000Z",
-      basis: "last-message",
-    },
     forgejo: forge("forgejo", "the-undev/spool", {
       finalisedCommits: [
         {
@@ -1755,7 +1719,6 @@ export const mockSnapshot: Snapshot = {
     },
     kuma: ok(90),
     roadmap: ok(60),
-    claudeSessions: ok(130),
     github: ok(2400),
     forgejo: ok(700),
   },

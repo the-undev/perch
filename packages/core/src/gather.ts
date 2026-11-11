@@ -24,7 +24,7 @@ export type PolledSources = {
  */
 export const gatherRounds: readonly (readonly PolledSourceName[])[] = [
   ["local", "githubAccounts", "forgejoAccounts", "kuma"],
-  ["claudeSessions", "github", "forgejo"],
+  ["github", "forgejo"],
   ["roadmap"],
 ];
 

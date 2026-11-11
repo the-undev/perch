@@ -8,7 +8,6 @@ import gather from "../../../../packages/core/src/gather.ts?raw";
 import join from "../../../../packages/core/src/join.ts?raw";
 import raw from "../../../../packages/core/src/raw.ts?raw";
 import snapshot from "../../../../packages/core/src/snapshot.ts?raw";
-import claudeSessions from "../../../../packages/core/src/sources/claude-sessions.ts?raw";
 import forge from "../../../../packages/core/src/sources/forge.ts?raw";
 import forgejo from "../../../../packages/core/src/sources/forgejo.ts?raw";
 import git from "../../../../packages/core/src/sources/git.ts?raw";
@@ -37,7 +36,6 @@ export const coreFiles = {
   "src/sources/github.ts": github,
   "src/sources/forgejo.ts": forgejo,
   "src/sources/roadmap.ts": roadmap,
-  "src/sources/claude-sessions.ts": claudeSessions,
   "src/sources/kuma.ts": kuma,
 } as const;
 

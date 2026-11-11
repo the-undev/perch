@@ -82,7 +82,7 @@ describe("excerpts of the real sources", () => {
     expect(declaration(rawSource, "Tracking")).toContain("upstream-gone");
     expect(gatherRoundsFrom(gatherSource)).toEqual([
       ["local", "githubAccounts", "forgejoAccounts", "kuma"],
-      ["claudeSessions", "github", "forgejo"],
+      ["github", "forgejo"],
       ["roadmap"],
     ]);
   });

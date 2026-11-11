@@ -36,7 +36,6 @@ import { ConfigPage } from "./spec/config-page.tsx";
 import { FieldGuidePage } from "./spec/field-guide-page.tsx";
 import { PhrasebookPage } from "./spec/phrasebook-page.tsx";
 import {
-  ClaudeSessionsPage,
   ForgejoPage,
   GithubPage,
   KumaPage,
@@ -337,14 +336,6 @@ export const pages: DesignPage[] = [
     summary:
       "Data source: roadmap files parsed into headings and bullets, counted into work items.",
     component: RoadmapsPage,
-  },
-  {
-    slug: "source-claude-sessions",
-    group: "spec",
-    title: "Claude sessions",
-    summary:
-      "Data source: Claude Code transcripts, read for the time of the last session.",
-    component: ClaudeSessionsPage,
   },
   {
     slug: "source-uptime-kuma",

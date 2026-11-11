@@ -2,7 +2,7 @@
 
 Desktop app for one machine, showing the state of everything its
 owner is working on as birds on wires: git repositories, their remotes and
-CI, roadmaps, Claude Code sessions. It lives in the tray and derives
+CI and roadmaps. It lives in the tray and derives
 everything it shows from things that already change.
 
 ## Read first

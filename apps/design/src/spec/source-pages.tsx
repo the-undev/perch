@@ -283,35 +283,6 @@ const roadmaps: SourceSpec = {
   example: { itemId: "undev/Hollow-legacy", source: "roadmap" },
 };
 
-const claude: SourceSpec = {
-  polled: ["claudeSessions"],
-  reads: (
-    <p>
-      For every local presence, its directory under{" "}
-      <Code>~/.claude/projects/</Code>, named by encoding the clone&apos;s path.
-      It lists the transcripts with their mtimes and reads the newest one
-      backwards from its end for the timestamp of the last user or assistant
-      line.
-    </p>
-  ),
-  moduleNames: [
-    {
-      file: "src/sources/claude-sessions.ts",
-      names: ["encodeProjectPath", "readLastMessageAt"],
-    },
-  ],
-  rawTypes: ["RawClaudeSessions", "RawTranscript", "RawNewestTranscript"],
-  derives: (
-    <p>
-      One time per item: the newest transcript&apos;s last message, else its
-      mtime. The detail&apos;s ledger shows it as the last Claude session.
-    </p>
-  ),
-  derivations: ["deriveClaudeSessions"],
-  snapshotTypes: ["ClaudeSessionsData"],
-  example: { itemId: "dev/perch", source: "claudeSessions" },
-};
-
 const kuma: SourceSpec = {
   polled: ["kuma"],
   reads: (
@@ -352,10 +323,6 @@ export function ForgejoPage() {
 
 export function RoadmapsPage() {
   return <SourcePage spec={roadmaps} />;
-}
-
-export function ClaudeSessionsPage() {
-  return <SourcePage spec={claude} />;
 }
 
 export function KumaPage() {

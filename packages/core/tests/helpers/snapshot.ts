@@ -112,7 +112,6 @@ export function snapshotOf(items: Item[]): Snapshot {
       githubAccounts: ok,
       forgejoAccounts: ok,
       roadmap: ok,
-      claudeSessions: ok,
       github: ok,
       forgejo: ok,
       kuma: ok,

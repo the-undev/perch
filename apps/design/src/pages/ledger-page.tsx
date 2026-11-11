@@ -5,7 +5,7 @@ import { useState } from "react";
 import { mockBird, scanMoment } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 
-/** A state the mock lacks: a Claude session three weeks old. */
+/** A state the mock lacks: a last commit three weeks old. */
 const handBuilt: LedgerEntry[] = [
   {
     kind: "count",
@@ -18,7 +18,7 @@ const handBuilt: LedgerEntry[] = [
   },
   {
     kind: "time",
-    label: "last Claude session",
+    label: "last commit",
     at: "2026-09-30T12:00:00.000Z",
   },
 ];
@@ -156,7 +156,7 @@ export function LedgerPage() {
         ))}
         <Specimen
           label="An older time"
-          rule="Hand-built: a session three weeks back reads in weeks."
+          rule="Hand-built: a last commit three weeks back reads in weeks."
         >
           <Ground>
             <Ledger

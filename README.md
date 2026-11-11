@@ -32,7 +32,7 @@ The config is `~/.config/perch/config.toml`. Without it, the app offers to
 create one: one wire, the standard windows, no sources. Add sources on the
 settings page. `config.example.toml` shows every field with placeholder
 values. Forge tokens come from the desktop keyring, see
-[docs/tokens.md](docs/tokens.md).
+[docs/forge-access.md](docs/forge-access.md).
 
 ## Development
 

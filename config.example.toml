@@ -41,7 +41,7 @@ exclude = ["~/projects/archive"]
 
 # A GitHub account lists the repositories it owns, read with its own
 # read-only token from the keyring (secret-tool, service perch, the key named
-# here; see docs/tokens.md). A remote that no listing holds is looked up with
+# here; see docs/forge-access.md). A remote that no listing holds is looked up with
 # the token of the account that owns it on that host. Hosts are the remote
 # hosts and SSH aliases that reach the account. Forks to track are written
 # owner/name; every other fork is skipped. Each account and each key appears

@@ -72,7 +72,7 @@ export function PaperPage() {
     <>
       <Section
         title="Key files as paper"
-        rule="A configurable list of key files rendered as paper, the bubble's material, with folder tabs. The sheet fills its column; the writing on it keeps a reading width. A sheet keeps its full height: the pane holding it scrolls, the folder tabs held at the pane's top."
+        rule="A configurable list of key files rendered as paper, the bubble's material, with folder tabs. The sheet fills its column; text on it runs up to 100 characters wide, tables and code blocks may use the whole sheet, and code in a table cell never wraps. A sheet keeps its full height: the pane holding it scrolls, the folder tabs held at the pane's top."
         min={760}
       >
         <Specimen

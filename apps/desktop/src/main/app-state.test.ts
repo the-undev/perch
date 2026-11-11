@@ -437,7 +437,7 @@ describe("the app state", () => {
       sheets.map((sheet) => [sheet.file.absolutePath, sheet.markdown]),
     ).toEqual([
       ["/home/owner/dev/perch/README.md", "# Perch"],
-      ["/home/owner/dev/perch/docs/spec.md", null],
+      ["/home/owner/dev/perch/docs/forge-access.md", null],
       ["/home/owner/dev/perch/docs/roadmap.md", null],
     ]);
     expect(await app.keyFiles("dev/nobody")).toEqual([]);

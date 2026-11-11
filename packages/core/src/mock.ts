@@ -131,7 +131,7 @@ export const mockConfig: Config = {
     }),
     "dev/perch": entry({
       name: "Perch",
-      keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
+      keyFiles: ["README.md", "docs/forge-access.md", "docs/roadmap.md"],
     }),
     "undev/harbour": entry({ name: "Harbour" }),
     "undev/skiff": entry({ name: "Skiff" }),

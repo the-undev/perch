@@ -197,7 +197,7 @@ describe("example config", () => {
         unsafe: { amberHours: 12, redHours: 48 },
         stalled: { amberDays: 14, redDays: 60 },
       },
-      keyFiles: ["README.md", "docs/spec.md", "docs/roadmap.md"],
+      keyFiles: ["README.md", "docs/forge-access.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
       zellijSession: "main",
     });

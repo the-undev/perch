@@ -891,7 +891,7 @@ describe("the detail view", () => {
 
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
       "README.md",
-      "docs/spec.md",
+      "docs/forge-access.md",
       "docs/roadmap.md",
     ]);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(

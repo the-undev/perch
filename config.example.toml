@@ -171,7 +171,7 @@ kind = "folder"
 # [items."projects/example"]
 # wire = "Projects"                  # one of wires.names
 # name = "Example"                   # the bird's name; default the folder or repository name
-# key_files = ["README.md", "docs/spec.md", "docs/roadmap.md"]  # default the README and roadmaps
+# key_files = ["README.md", "docs/forge-access.md", "docs/roadmap.md"]  # default the README and roadmaps
 # roadmaps = ["docs/roadmap.md"]     # replaces the standard roadmap names
 # zellij_session = "main"
 # unsafe_amber_hours = 12

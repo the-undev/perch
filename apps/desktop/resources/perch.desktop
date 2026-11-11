@@ -2,7 +2,7 @@
 # Link into ~/.local/share/applications/, see the README.
 [Desktop Entry]
 Type=Application
-Name=perch
+Name=Perch
 Comment=Birds on wires: the state of everything in progress on this machine
 Exec=perch
 Icon=perch

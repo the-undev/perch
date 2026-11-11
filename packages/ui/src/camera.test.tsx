@@ -555,7 +555,7 @@ describe("the camera", () => {
     const { onNavigate } = camera(detailOf("undev/skiff"));
 
     fireEvent.keyDown(window, { key: "Escape" });
-    fireEvent.click(screen.getByRole("button", { name: "perch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Perch" }));
     fireEvent.click(tab("The Aviary"));
 
     expect(onNavigate.mock.calls).toEqual([

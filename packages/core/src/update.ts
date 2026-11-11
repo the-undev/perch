@@ -257,7 +257,7 @@ export function updateStatus(update: UpdateState, now: Date): UpdateStatus {
       sentence: `${download.version} is downloaded. It runs from the next start.`,
       detail: {
         kind: "note",
-        text: `The image at ${update.image ?? "the AppImage"} is replaced when perch quits.`,
+        text: `The image at ${update.image ?? "the AppImage"} is replaced when Perch quits.`,
       },
       button: {
         action: "restart",

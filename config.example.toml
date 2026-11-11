@@ -1,4 +1,4 @@
-# perch configuration: a reference showing every field, with placeholder
+# Perch configuration: a reference showing every field, with placeholder
 # values.
 #
 # The live copy is ~/.config/perch/config.toml. The app writes a starter
@@ -90,7 +90,7 @@ finalised_commits = 10
 #
 # Each table names its kind and only what differs from the kind's defaults:
 # its verb, the words on the bird's page, and its command, run without a
-# shell, detached from perch. The placeholders in braces are filled in at
+# shell, detached from Perch. The placeholders in braces are filled in at
 # launch: {path} is the item's directory, and {obsidian} the Obsidian vault's
 # folder name, encoded for a URI.
 #
@@ -155,7 +155,7 @@ kind = "folder"
 # Updates. With check, the default, each scan reads the latest GitHub
 # release at most hourly and says when it is newer. With install, a newer
 # release is downloaded and replaces the running AppImage from the next
-# start; perch never restarts itself. Run from source, install is held.
+# start; Perch never restarts itself. Run from source, install is held.
 # [update]
 # check = false
 # install = true

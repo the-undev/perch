@@ -30,7 +30,7 @@ export function ActionsPage() {
       </p>
       <Section
         title="Launch actions · verbs"
-        rule="Launch actions open the terminal, editor or files without perch mutating anything. Each is a verb with the icon it carries, its kind's or a custom command's pick; ↗ marks that it leaves the app."
+        rule="Launch actions open the terminal, editor or files without Perch mutating anything. Each is a verb with the icon it carries, its kind's or a custom command's pick; ↗ marks that it leaves the app."
         min={560}
       >
         <Specimen

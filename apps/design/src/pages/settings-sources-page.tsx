@@ -138,7 +138,7 @@ export function SettingsSourcesPage() {
         />
         <Specimen
           label="The picker on its own"
-          rule="Every kind can be added again; the closing line keeps the door open for kinds perch cannot read yet."
+          rule="Every kind can be added again; the closing line keeps the door open for kinds Perch cannot read yet."
         >
           <div className="max-w-190">
             <SourcePicker

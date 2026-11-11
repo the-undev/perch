@@ -411,7 +411,7 @@ export function SettingsGroupsPage() {
       </Section>
       <Section
         title="Updates"
-        rule="The status row first, one shape in every state: a sentence saying what is known, a detail line, and one button slot. The slot holds Check now, quiet, until something newer is known, then the next step: Open the releases page with install off, Install with it on, Restart now once downloaded; its weight says whether perch itself can act. The detail line holds the releases link, an amber failure, the download's bar or a quiet note. Two switch rows follow: Check for updates is [update] check, true unless the file says false; Install updates is [update] install, false unless it says true, its row naming the image it replaces. Run from source the install switch is held, in amber. The status row is state, never saved."
+        rule="The status row first, one shape in every state: a sentence saying what is known, a detail line, and one button slot. The slot holds Check now, quiet, until something newer is known, then the next step: Open the releases page with install off, Install with it on, Restart now once downloaded; its weight says whether Perch itself can act. The detail line holds the releases link, an amber failure, the download's bar or a quiet note. Two switch rows follow: Check for updates is [update] check, true unless the file says false; Install updates is [update] install, false unless it says true, its row naming the image it replaces. Run from source the install switch is held, in amber. The status row is state, never saved."
         min={560}
       >
         <GroupSpecimen
@@ -434,7 +434,7 @@ export function SettingsGroupsPage() {
         />
         <GroupSpecimen
           label="A release is out, install off"
-          rule="Both versions named; the button opens the release's page in the browser and perch touches nothing."
+          rule="Both versions named; the button opens the release's page in the browser and Perch touches nothing."
           start={mock}
           group={updatesWith(mockUpdates.found, onImage)}
         />
@@ -470,7 +470,7 @@ export function SettingsGroupsPage() {
         />
         <GroupSpecimen
           label="Checking by hand"
-          rule="Check off and install on: perch never calls GitHub by itself, and Check now still does. Save writes both switches."
+          rule="Check off and install on: Perch never calls GitHub by itself, and Check now still does. Save writes both switches."
           start={withMock({ update: { check: false, install: true } })}
           group={updatesWith(mockUpdates.checkOff, onImage)}
         />

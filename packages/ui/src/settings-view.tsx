@@ -123,7 +123,7 @@ export function SettingsView({
           onClick={onHome}
           className="cursor-pointer font-bold font-display text-[19px] text-ink hover:text-ink-accent"
         >
-          perch
+          Perch
         </button>
         <h1 className="m-0 font-semibold text-[13.5px] text-ink-muted">
           Settings

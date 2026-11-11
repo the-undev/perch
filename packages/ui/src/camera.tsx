@@ -706,7 +706,7 @@ export function CameraView({
           onClick={home}
           className="cursor-pointer font-bold font-display text-[19px] text-ink hover:text-ink-accent"
         >
-          perch
+          Perch
         </button>
         <nav
           aria-label="The camera"

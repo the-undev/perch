@@ -36,7 +36,7 @@ function FirstScan({
 }) {
   return (
     <main className="flex h-full flex-col items-center justify-center gap-2 bg-bg text-ink">
-      <h1 className="m-0 font-bold font-display text-[19px]">perch</h1>
+      <h1 className="m-0 font-bold font-display text-[19px]">Perch</h1>
       <p role="status" className="m-0 text-[12px] text-ink-faint">
         {scanning ? "First scan running" : "No scan yet"}
       </p>

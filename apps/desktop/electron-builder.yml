@@ -1,5 +1,5 @@
 appId: com.github.the-undev.perch
-productName: perch
+productName: Perch
 directories:
   output: dist
 files:

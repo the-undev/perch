@@ -55,7 +55,7 @@ export function Shell() {
         >
           <Mark />
           <span className="font-bold font-display text-[19px]">
-            perch design
+            Perch design
           </span>
         </Link>
         <nav

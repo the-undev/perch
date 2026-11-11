@@ -58,3 +58,7 @@ pnpm release <version>
 
 It bumps the version, merges, tags and pushes. CI then builds the AppImage
 and publishes the GitHub release.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).

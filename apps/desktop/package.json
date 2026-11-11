@@ -4,6 +4,7 @@
   "desktopName": "perch.desktop",
   "description": "Birds on wires: the state of everything in progress on this machine.",
   "private": true,
+  "license": "MIT",
   "version": "0.3.0",
   "type": "module",
   "main": "./out/main/index.js",

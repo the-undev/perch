@@ -3,6 +3,7 @@ import { aggregate, type RawBundle } from "../src/aggregate.ts";
 import type { Config } from "../src/config.ts";
 import { defaultConfig } from "../src/config-default.ts";
 import type { RawFiles } from "../src/raw.ts";
+import { readRoadmapStructure } from "../src/roadmap-parser.ts";
 import type {
   Snapshot,
   SourceCard,
@@ -189,8 +190,47 @@ describe("aggregate", () => {
     const perch = aggregate(bundle, input, new Date()).items[0];
 
     expect(perch?.sources.roadmap).toEqual({
-      counts: { bug: 0, feature: 0 },
+      counts: { task: 0, bug: 0, "critical-bug": 0 },
       files: [],
+    });
+  });
+
+  it("classes roadmap items by the word lists the item's entry sets, else [work]", async () => {
+    const worded = await testConfig(
+      '[work]\nbug_words = ["defect"]\n\n[items."dev/perch"]\ncritical_bug_words = ["outage"]\n',
+    );
+    const structure = readRoadmapStructure(
+      "- A defect in the export\n- An outage at night\n- A bug in the import\n",
+    );
+    const roadmapFiles: Partial<RawFiles> = {
+      ...files,
+      roadmap: {
+        source: "roadmap",
+        gatheredAt,
+        data: {
+          "dev/perch": {
+            state: "observed",
+            value: {
+              files: [
+                {
+                  path: "docs/roadmap.md",
+                  structure: { state: "observed", value: structure },
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
+
+    const perch = aggregate(
+      { ...bundle, files: roadmapFiles },
+      { ...input, config: worded },
+      new Date(),
+    ).items[0];
+
+    expect(perch?.sources.roadmap).toMatchObject({
+      counts: { task: 1, bug: 1, "critical-bug": 1 },
     });
   });
 

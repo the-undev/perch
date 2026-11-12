@@ -364,21 +364,19 @@ function openItems(kind: WorkItemKind, count: number): WorkItem[] {
   }));
 }
 
-/** Roadmap files holding the given open features and bugs each, counted as the scan counts them. */
+/** Roadmap files holding the given open tasks and bugs each, counted as the scan counts them. */
 function roadmap(
-  files: { path: string; feature: number; bug: number }[],
+  files: { path: string; task: number; bug: number }[],
 ): RoadmapData {
   return {
     counts: {
+      task: files.reduce((total, file) => total + file.task, 0),
       bug: files.reduce((total, file) => total + file.bug, 0),
-      feature: files.reduce((total, file) => total + file.feature, 0),
+      "critical-bug": 0,
     },
     files: files.map((file) => ({
       path: file.path,
-      items: [
-        ...openItems("feature", file.feature),
-        ...openItems("bug", file.bug),
-      ],
+      items: [...openItems("task", file.task), ...openItems("bug", file.bug)],
       groups: [],
     })),
   };
@@ -524,7 +522,7 @@ const dotfiles = localItem(".dotfiles", {
       },
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 13, bug: 0 }]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", task: 13, bug: 0 }]),
     github: forge("github", "finch/dotfiles", {
       finalisedCommits: [
         {
@@ -597,8 +595,8 @@ const hothouse = localItem("obsidian/Hothouse", {
       stall: null,
     },
     roadmap: roadmap([
-      { path: "Tech/Tech Plans.md", feature: 120, bug: 0 },
-      { path: "Garden/Garden Plans.md", feature: 74, bug: 0 },
+      { path: "Tech/Tech Plans.md", task: 120, bug: 0 },
+      { path: "Garden/Garden Plans.md", task: 74, bug: 0 },
     ]),
     forgejo: forge("forgejo", "finch/Hothouse", {
       finalisedCommits: [
@@ -660,8 +658,8 @@ const pocket = localItem("obsidian/Pocket", {
       stall: null,
     },
     roadmap: roadmap([
-      { path: "Code/Code Plans.md", feature: 12, bug: 0 },
-      { path: "Pocket Plans.md", feature: 0, bug: 0 },
+      { path: "Code/Code Plans.md", task: 12, bug: 0 },
+      { path: "Pocket Plans.md", task: 0, bug: 0 },
     ]),
     forgejo: forge("forgejo", "finch/Pocket", {
       finalisedCommits: [
@@ -754,7 +752,7 @@ const perch = localItem("dev/perch", {
         thresholds: dayWindows,
       },
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 16, bug: 0 }]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", task: 16, bug: 0 }]),
     github: forge("github", "finch/perch", {
       latestCi: {
         name: "check",
@@ -865,7 +863,7 @@ const harbour = localItem("undev/harbour", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 12, bug: 0 }]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", task: 12, bug: 0 }]),
     github: forge("github", "the-undev/harbour", {
       finalisedCommits: [
         {
@@ -961,7 +959,7 @@ const skiff = localItem("undev/skiff", {
         thresholds: dayWindows,
       },
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 12, bug: 0 }]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", task: 12, bug: 0 }]),
     github: {
       error: "no GitHub card is configured for owner skiff-app",
       cause: "no-card",
@@ -1064,7 +1062,7 @@ const prism = localItem("undev/prism", {
       },
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 78, bug: 0 }]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", task: 78, bug: 0 }]),
     github: forge("github", "the-undev/prism", {
       latestCi: {
         name: "check",
@@ -1166,7 +1164,7 @@ const hollow = localItem("undev/Hollow-legacy", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 7, bug: 2 }]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", task: 7, bug: 2 }]),
     github: forge("github", "the-undev/Hollow", {
       latestCi: {
         name: "CI",
@@ -1234,7 +1232,7 @@ const oxbow = localItem("undev/oxbow", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 96, bug: 0 }]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", task: 96, bug: 0 }]),
     github: forge("github", "the-undev/oxbow", {
       finalisedCommits: [
         {
@@ -1306,7 +1304,7 @@ const gramophone = localItem("undev/gramophone", {
       },
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 3, bug: 0 }]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", task: 3, bug: 0 }]),
     forgejo: forge("forgejo", "the-undev/gramophone", {
       finalisedCommits: [
         {
@@ -1360,7 +1358,7 @@ const spool = localItem("undev/spool", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", feature: 0, bug: 0 }]),
+    roadmap: roadmap([{ path: "docs/roadmap.md", task: 0, bug: 0 }]),
     forgejo: forge("forgejo", "the-undev/spool", {
       finalisedCommits: [
         {
@@ -1448,7 +1446,7 @@ const glyphDocs = localItem("undev/glyph-docs", {
         thresholds: dayWindows,
       },
     },
-    roadmap: roadmap([{ path: "Roadmap.md", feature: 11, bug: 0 }]),
+    roadmap: roadmap([{ path: "Roadmap.md", task: 11, bug: 0 }]),
     forgejo: forge("forgejo", "the-undev/glyph-docs", {
       finalisedCommits: [
         {

@@ -18,6 +18,7 @@ import {
   deriveHealth,
   hoursSince,
   latestRunOf,
+  openBugsOf,
 } from "./derivations.ts";
 import { commandKinds, type IconName, zellijKind } from "./launch-kinds.ts";
 import { itemRefs } from "./refs.ts";
@@ -475,8 +476,13 @@ function forgeData(item: Item): { forge: ForgeName; data: ForgeData }[] {
   });
 }
 
+/** Open items of every kind. */
+function openOf(counts: WorkItemCounts): number {
+  return counts.task + counts.bug + counts["critical-bug"];
+}
+
 function openItemsOf(roadmap: RoadmapData | null): number {
-  return roadmap ? roadmap.counts.bug + roadmap.counts.feature : 0;
+  return roadmap ? openOf(roadmap.counts) : 0;
 }
 
 function branchUrl(forge: ForgeName, repoUrl: string, branch: string): string {
@@ -777,7 +783,7 @@ function chipsFor(item: Item, health: Health): Chip[] {
     });
   }
   const roadmap = readable<RoadmapData>(item.sources.roadmap);
-  const bugs = roadmap?.counts.bug ?? 0;
+  const bugs = roadmap ? openBugsOf(roadmap.counts) : 0;
   if (bugs > 0) {
     chips.push({
       kind: "bugs",
@@ -884,10 +890,10 @@ function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
     ledger.push(
       countEntry(
         "open bugs",
-        roadmap.counts.bug,
+        openBugsOf(roadmap.counts),
         "red",
         handle("bugs"),
-        roadmapWorkings(roadmap, (counts) => counts.bug),
+        roadmapWorkings(roadmap, openBugsOf),
       ),
     );
     ledger.push(
@@ -896,7 +902,7 @@ function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
         openItemsOf(roadmap),
         null,
         handle("open-items"),
-        roadmapWorkings(roadmap, (counts) => counts.bug + counts.feature),
+        roadmapWorkings(roadmap, openOf),
       ),
     );
   }

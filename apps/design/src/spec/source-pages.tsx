@@ -261,17 +261,18 @@ const roadmaps: SourceSpec = {
   ],
   derives: (
     <p>
-      Work items by the per-heading rule, bugs marked by their heading or a{" "}
-      <Code>#bug</Code> tag, and the open items counted by kind. The counts feed
-      the bird&apos;s plumpness, its chips and its ledger; open bugs turn it
-      red.
+      Work items by the per-heading rule, each a task, a bug or a critical bug
+      by whole words from <Code>bug_words</Code> and{" "}
+      <Code>critical_bug_words</Code> in its text, its tags and the headings
+      above it, and the open items counted by kind. The counts feed the
+      bird&apos;s plumpness, its chips and its ledger; open bugs turn it red.
     </p>
   ),
   derivations: [
     "deriveRoadmap",
     "deriveRoadmapFile",
     "countOpenItems",
-    "mentionsBugs",
+    "kindClassifier",
   ],
   snapshotTypes: [
     "RoadmapData",

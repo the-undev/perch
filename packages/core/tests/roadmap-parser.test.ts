@@ -2,6 +2,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  builtInBugWords,
+  builtInCriticalBugWords,
+  type WorkWords,
+} from "../src/config.ts";
+import {
   countOpenItems,
   deriveRoadmap,
   deriveRoadmapFile,
@@ -18,8 +23,17 @@ function readFixture(name: string): string {
   );
 }
 
-function parseFixture(name: string): RoadmapFile {
-  return deriveRoadmapFile(name, readRoadmapStructure(readFixture(name)));
+const builtInWords: WorkWords = {
+  bug: [...builtInBugWords],
+  criticalBug: [...builtInCriticalBugWords],
+};
+
+function parseFixture(name: string, words = builtInWords): RoadmapFile {
+  return deriveRoadmapFile(
+    name,
+    readRoadmapStructure(readFixture(name)),
+    words,
+  );
 }
 
 describe("readRoadmapStructure", () => {
@@ -201,45 +215,90 @@ describe("deriveRoadmapFile, per heading", () => {
   });
 });
 
-describe("deriveRoadmapFile bug kinds", () => {
-  it("marks items under any heading mentioning bugs, at any depth, as bugs", () => {
-    const kinds = Object.fromEntries(
-      everyItem(parseFixture("bugs.md")).map((item) => [item.text, item.kind]),
-    );
+/** Each item's text against its kind. */
+function kindsIn(file: RoadmapFile): Record<string, string> {
+  return Object.fromEntries(
+    everyItem(file).map((item) => [item.text, item.kind]),
+  );
+}
 
-    expect(kinds).toEqual({
-      "The window flickers on focus": "bug",
-      "Crash on an empty repository": "bug",
-      "Show the branch name": "feature",
-      "Counts are wrong after a rebase #bug": "bug",
-      "A #bugfix tag is not a bug tag": "feature",
+describe("deriveRoadmapFile kinds", () => {
+  it("makes a bare heading a bug when its own title holds a bug word", () => {
+    expect(kindsIn(parseFixture("headings-as-tasks.md"))).toEqual({
+      "Bird Positions": "task",
+      "Tray icon status": "task",
+      "Forge issues source": "bug",
     });
   });
 
-  it("widens the heading match to any text containing the word", () => {
-    const item = everyItem(parseFixture("mixed.md")).find(
-      (entry) => entry.text === "Scan hangs on a locked index",
-    );
-
-    expect(item?.kind).toBe("bug");
+  it("makes a checklist item a bug from its own text", () => {
+    expect(kindsIn(parseFixture("checklist.md"))).toEqual({
+      "Fix crash on an empty config": "bug",
+      "Port settings to TOML": "task",
+      Changelog: "task",
+      "Tag and build": "task",
+    });
   });
 
-  it("applies the #bug tag to heading items", () => {
-    const kinds = Object.fromEntries(
-      everyItem(parseFixture("headings-only.md")).map((item) => [
-        item.text,
-        item.kind,
-      ]),
-    );
-
-    expect(kinds["Nudges #bug"]).toBe("bug");
-    expect(kinds["First build"]).toBe("feature");
+  it("makes an item a critical bug from a heading above it, with no bug word needed", () => {
+    expect(kindsIn(parseFixture("hierarchy.md"))).toEqual({
+      "Renew the signing key": "task",
+      "Data loss when two devices save at once": "critical-bug",
+      "A CSV with a byte order mark fails to parse": "bug",
+      "Dates read as US format": "bug",
+      "Cache the last sync": "task",
+      "Queue edits while offline": "task",
+    });
   });
 
-  it("counts open items by kind across nested groups", () => {
-    expect(countOpenItems([parseFixture("bugs.md")])).toEqual({
-      bug: 3,
-      feature: 2,
+  it("reads headings at any depth, #tags, and whole words only", () => {
+    expect(kindsIn(parseFixture("bugs.md"))).toEqual({
+      "The window flickers on focus": "bug",
+      "Crash on an empty repository": "bug",
+      "Show the branch name": "task",
+      "Counts are wrong after a rebase #bug": "bug",
+      "A #bugfix tag matches no word": "task",
+    });
+    expect(kindsIn(parseFixture("headings-only.md"))).toMatchObject({
+      "First build": "task",
+      "Scan hangs on a locked index": "bug",
+      "Nudges #bug": "bug",
+    });
+  });
+
+  it("lets a critical bug word win over a bug word, in any case", () => {
+    const file = deriveRoadmapFile(
+      "notes.md",
+      readRoadmapStructure(
+        "## Bugs\n\n- URGENT: the export hangs\n- The import is slow #P1\n\n## Ideas\n\n- Debugging output is noisy\n- Issues view\n- Reissue the token\n",
+      ),
+      builtInWords,
+    );
+
+    expect(kindsIn(file)).toEqual({
+      "URGENT: the export hangs": "critical-bug",
+      "The import is slow #P1": "critical-bug",
+      "Debugging output is noisy": "task",
+      "Issues view": "bug",
+      "Reissue the token": "task",
+    });
+  });
+
+  it("uses only the word lists given, an empty one matching nothing", () => {
+    const words: WorkWords = { bug: ["us format", "wart"], criticalBug: [] };
+
+    expect(kindsIn(parseFixture("hierarchy.md", words))).toMatchObject({
+      "Data loss when two devices save at once": "task",
+      "A CSV with a byte order mark fails to parse": "task",
+      "Dates read as US format": "bug",
+    });
+  });
+
+  it("counts open items by kind across nested groups, leaving done ones out", () => {
+    expect(countOpenItems([parseFixture("hierarchy.md")])).toEqual({
+      task: 2,
+      bug: 1,
+      "critical-bug": 1,
     });
   });
 });
@@ -263,8 +322,9 @@ describe("deriveRoadmapFile checkboxes", () => {
 
   it("leaves done items out of the counts", () => {
     expect(countOpenItems([parseFixture("epics.md")])).toEqual({
+      task: 4,
       bug: 0,
-      feature: 4,
+      "critical-bug": 0,
     });
   });
 });
@@ -326,14 +386,17 @@ describe("roadmap source", () => {
 
   it("derives a missing configured file as an error naming it", () => {
     expect(
-      deriveRoadmap({
-        files: [
-          {
-            path: "Missing.md",
-            structure: { state: "absent", reason: "file-not-found" },
-          },
-        ],
-      }),
+      deriveRoadmap(
+        {
+          files: [
+            {
+              path: "Missing.md",
+              structure: { state: "absent", reason: "file-not-found" },
+            },
+          ],
+        },
+        builtInWords,
+      ),
     ).toEqual({ error: "roadmap file not found: Missing.md" });
   });
 });

@@ -6,6 +6,7 @@ import {
   type ResolvedEntry,
   resolveEntry,
   thresholdsFor,
+  workWordsFor,
 } from "./config.ts";
 import {
   deriveForge,
@@ -175,7 +176,7 @@ function localSources(
   }
   const roadmap = fromEntry(
     files.roadmap?.data[id],
-    deriveRoadmap,
+    (raw) => deriveRoadmap(raw, workWordsFor(config, entry)),
     () => emptyRoadmap,
   );
   if (roadmap !== undefined) sources.roadmap = roadmap;

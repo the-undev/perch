@@ -128,7 +128,8 @@ export interface GitData {
   stall: Stall | null;
 }
 
-export type WorkItemKind = "bug" | "feature";
+/** A task, a bug or a critical bug, by the word lists. */
+export type WorkItemKind = "task" | "bug" | "critical-bug";
 
 export interface WorkItem {
   text: string;

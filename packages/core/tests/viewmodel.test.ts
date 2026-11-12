@@ -332,7 +332,7 @@ describe("the wires", () => {
     const busy = item("dev/spool", {
       sources: {
         git: gitData({}),
-        roadmap: { counts: { bug: 1, feature: 19 }, files: [] },
+        roadmap: { counts: { task: 19, bug: 1, "critical-bug": 0 }, files: [] },
       },
     });
     const bird = birdIn([busy], config, "dev/spool");
@@ -345,7 +345,12 @@ describe("the wires", () => {
     const config = await adoptAll([]);
     const hothouse = item("obsidian/Hothouse", {
       kind: "obsidian",
-      sources: { roadmap: { counts: { bug: 0, feature: 194 }, files: [] } },
+      sources: {
+        roadmap: {
+          counts: { task: 194, bug: 0, "critical-bug": 0 },
+          files: [],
+        },
+      },
     });
 
     expect(birdIn([hothouse], config, "obsidian/Hothouse").plumpness).toEqual({
@@ -395,7 +400,7 @@ describe("chips", () => {
             thresholds: { amberHours: 24, redHours: 72 },
           },
         }),
-        roadmap: { counts: { bug: 2, feature: 7 }, files: [] },
+        roadmap: { counts: { task: 7, bug: 2, "critical-bug": 0 }, files: [] },
         github: forgeData({
           latestCi: { ...failingRun, state: "success" },
           openPullRequests: [
@@ -473,7 +478,9 @@ describe("chips", () => {
     const skiff = unreadableItem(
       "undev/skiff",
       ["github", "forgejo"],
-      { roadmap: { counts: { bug: 0, feature: 3 }, files: [] } },
+      {
+        roadmap: { counts: { task: 3, bug: 0, "critical-bug": 0 }, files: [] },
+      },
       "no-card",
     );
 
@@ -518,7 +525,7 @@ describe("chips", () => {
     const found = item("dev/mixed-bag", {
       sources: {
         git: gitData({}),
-        roadmap: { counts: { bug: 1, feature: 44 }, files: [] },
+        roadmap: { counts: { task: 44, bug: 1, "critical-bug": 0 }, files: [] },
       },
     });
 
@@ -549,7 +556,7 @@ describe("the ledger", () => {
             thresholds: { amberHours: 24, redHours: 72 },
           },
         }),
-        roadmap: { counts: { bug: 0, feature: 15 }, files: [] },
+        roadmap: { counts: { task: 15, bug: 0, "critical-bug": 0 }, files: [] },
         github: forgeData({
           fullName: "the-undev/harbour",
           url: "https://github.com/the-undev/harbour",
@@ -1124,7 +1131,7 @@ describe("the ledger's workings", () => {
 
   it("counts open items and bugs per roadmap file, a file with none silent", async () => {
     const config = await adoptAll(["dev/hollow"]);
-    const open = (kind: "bug" | "feature", line: number) => ({
+    const open = (kind: "task" | "bug", line: number) => ({
       text: `${kind} ${line}`,
       kind,
       done: false,
@@ -1135,11 +1142,11 @@ describe("the ledger's workings", () => {
     const hollow = item("dev/hollow", {
       sources: {
         roadmap: {
-          counts: { bug: 2, feature: 2 },
+          counts: { task: 2, bug: 2, "critical-bug": 0 },
           files: [
             {
               path: "docs/roadmap.md",
-              items: [open("feature", 1), open("bug", 2)],
+              items: [open("task", 1), open("bug", 2)],
               groups: [
                 {
                   heading: "Bugs",
@@ -1154,7 +1161,7 @@ describe("the ledger's workings", () => {
             },
             {
               path: "docs/ideas.md",
-              items: [open("feature", 1)],
+              items: [open("task", 1)],
               groups: [],
             },
             { path: "docs/done.md", items: [], groups: [] },
@@ -1275,7 +1282,7 @@ describe("the detail", () => {
         ],
       }),
       roadmap: {
-        counts: { bug: 0, feature: 16 },
+        counts: { task: 16, bug: 0, "critical-bug": 0 },
         files: [{ path: "docs/roadmap.md", items: [], groups: [] }],
       },
       github: forgeData({

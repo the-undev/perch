@@ -12,4 +12,4 @@
 
 - Show the branch name
 - Counts are wrong after a rebase #bug
-- A #bugfix tag is not a bug tag
+- A #bugfix tag matches no word

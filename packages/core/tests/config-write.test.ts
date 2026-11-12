@@ -66,6 +66,14 @@ unsafe_amber_hours = 12
 unsafe_red_hours = 48
 stalled_amber_days = 5
 stalled_red_days = 20
+bugs_amber_count = 8
+bugs_red_count = 30
+critical_bugs_amber_count = 2
+critical_bugs_red_count = 5
+
+[work]
+bug_words = ["defect", "fault"]
+critical_bug_words = ["outage"]
 
 [scan]
 interval_minutes = 5
@@ -99,6 +107,8 @@ name = "Perch"
 key_files = ["README.md", "docs/spec.md"]
 roadmaps = ["docs/roadmap.md"]
 zellij_session = "perch"
+bug_words = ["wart"]
+critical_bug_words = []
 unsafe_amber_hours = 6
 unsafe_red_hours = 30
 stalled_amber_days = 2
@@ -106,6 +116,7 @@ stalled_red_days = 40
 
 [items."forgejo:finch/hollow"]
 stalled_red_days = 90
+bugs_red_count = 50
 key_files = []
 roadmaps = []
 
@@ -149,6 +160,8 @@ describe("writeConfig", () => {
 
     expect(config.sources.kuma).toHaveLength(2);
     expect(config.items["forgejo:finch/hollow"]?.keyFiles).toEqual([]);
+    expect(config.items["dev/perch"]?.criticalBugWords).toEqual([]);
+    expect(config.work.bugWords).toEqual(["defect", "fault"]);
     expect(config.launch.actions.map((action) => action.kind)).toEqual([
       "vscode",
       "zellij",
@@ -283,6 +296,34 @@ describe("writeConfig", () => {
     expect(roundTrip(noSessions)).toEqual(noSessions);
     expect(writeConfig(noActions, home)).not.toContain("launch");
     expect(roundTrip(noActions)).toEqual(noActions);
+  });
+
+  it("writes a bug threshold only off its default, and [work] only with a list set", async () => {
+    const config = parseConfig(await fixtureConfigText(""), home);
+    const changed: Config = {
+      ...config,
+      thresholds: {
+        ...config.thresholds,
+        criticalBugs: { amberCount: 1, redCount: 6 },
+      },
+      work: { bugWords: null, criticalBugWords: ["outage"] },
+    };
+
+    const plain = parse(writeConfig(config, home));
+    const written = parse(writeConfig(changed, home));
+
+    expect(plain.work).toBeUndefined();
+    expect(Object.keys(plain.thresholds as object)).toEqual([
+      "unsafe_amber_hours",
+      "unsafe_red_hours",
+      "stalled_amber_days",
+      "stalled_red_days",
+    ]);
+    expect(written.thresholds).toMatchObject({ critical_bugs_red_count: 6 });
+    expect(Object.keys(written.thresholds as object)).not.toContain(
+      "critical_bugs_amber_count",
+    );
+    expect(written.work).toEqual({ critical_bug_words: ["outage"] });
   });
 
   it("writes the [window] table only while the tray is off", () => {

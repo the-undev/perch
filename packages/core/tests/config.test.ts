@@ -9,6 +9,7 @@ import {
   thresholdsFor,
   userConfigPath,
   wireFor,
+  workWordsFor,
   zellijActionOf,
   zellijSessionFor,
 } from "../src/config.ts";
@@ -50,6 +51,8 @@ describe("example config", () => {
     expect(config.thresholds).toEqual({
       unsafe: { amberHours: 24, redHours: 72 },
       stalled: { amberDays: 7, redDays: 30 },
+      bugs: { amberCount: 5, redCount: 20 },
+      criticalBugs: { amberCount: 1, redCount: 3 },
     });
     expect(config.items).toEqual({});
     expect(config.scan).toEqual({
@@ -196,10 +199,14 @@ describe("example config", () => {
       thresholds: {
         unsafe: { amberHours: 12, redHours: 48 },
         stalled: { amberDays: 14, redDays: 60 },
+        bugs: {},
+        criticalBugs: {},
       },
       keyFiles: ["README.md", "docs/forge-access.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
       zellijSession: "main",
+      bugWords: null,
+      criticalBugWords: null,
     });
   });
 
@@ -227,6 +234,8 @@ describe("item overrides", () => {
     expect(thresholdsFor(config, entryOf(config, ".dotfiles"))).toEqual({
       unsafe: { amberHours: 3, redHours: 72 },
       stalled: { amberDays: 7, redDays: 60 },
+      bugs: { amberCount: 5, redCount: 20 },
+      criticalBugs: { amberCount: 1, redCount: 3 },
     });
     expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toEqual(
       config.thresholds,
@@ -387,6 +396,133 @@ describe("thresholds", () => {
 
     expect(() => parseConfig(text, home)).toThrow(
       "config: thresholds.stalled_amber_hours is not a config key",
+    );
+  });
+});
+
+describe("bug thresholds", () => {
+  it("take the defaults when [thresholds] leaves them out", async () => {
+    const config = parseConfig(await fixtureConfigText(""), home);
+
+    expect([config.thresholds.bugs, config.thresholds.criticalBugs]).toEqual([
+      { amberCount: 5, redCount: 20 },
+      { amberCount: 1, redCount: 3 },
+    ]);
+  });
+
+  it("read from [thresholds], with an item overriding either", async () => {
+    const text = (
+      await fixtureConfigText(
+        '[items."dev/perch"]\nbugs_red_count = 40\ncritical_bugs_amber_count = 2\n',
+      )
+    ).replace(
+      "[thresholds]\n",
+      "[thresholds]\nbugs_amber_count = 10\ncritical_bugs_red_count = 4\n",
+    );
+    const config = parseConfig(text, home);
+
+    expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toMatchObject({
+      bugs: { amberCount: 10, redCount: 40 },
+      criticalBugs: { amberCount: 2, redCount: 4 },
+    });
+    expect(thresholdsFor(config, entryOf(config, ".dotfiles"))).toMatchObject({
+      bugs: { amberCount: 10, redCount: 20 },
+      criticalBugs: { amberCount: 1, redCount: 4 },
+    });
+  });
+
+  it("want positive integers, amber below red", async () => {
+    const globalText = (await fixtureConfigText("")).replace(
+      "[thresholds]\n",
+      "[thresholds]\nbugs_amber_count = 0\n",
+    );
+    const entryText = await fixtureConfigText(
+      '[items."dev/perch"]\ncritical_bugs_amber_count = 3\n',
+    );
+
+    expect(() => parseConfig(globalText, home)).toThrow(
+      "config: thresholds.bugs_amber_count must be a positive integer",
+    );
+    expect(() => parseConfig(entryText, home)).toThrow(
+      'config: items."dev/perch".critical bugs amber threshold must be below its red threshold',
+    );
+  });
+});
+
+describe("work word lists", () => {
+  it("are built in when neither [work] nor the entry sets them", async () => {
+    const config = parseConfig(await fixtureConfigText(""), home);
+
+    expect(config.work).toEqual({ bugWords: null, criticalBugWords: null });
+    expect(workWordsFor(config, entryOf(config, "dev/perch"))).toEqual({
+      bug: [
+        "bug",
+        "bugs",
+        "issue",
+        "issues",
+        "problem",
+        "problems",
+        "broken",
+        "regression",
+        "crash",
+        "crashes",
+        "p2",
+        "p3",
+        "p4",
+      ],
+      criticalBug: ["critical", "urgent", "severe", "blocker", "p0", "p1"],
+    });
+  });
+
+  it("take each list whole from the entry, else [work], else built in, never merged", async () => {
+    const text = await fixtureConfigText(
+      [
+        "[work]",
+        'bug_words = ["defect"]',
+        'critical_bug_words = ["outage"]',
+        "",
+        '[items."dev/perch"]',
+        'bug_words = ["wart"]',
+        "",
+        '[items.".dotfiles"]',
+        'critical_bug_words = ["fire"]',
+        "",
+      ].join("\n"),
+    );
+    const config = parseConfig(text, home);
+
+    expect(config.items["dev/perch"]).toMatchObject({
+      bugWords: ["wart"],
+      criticalBugWords: null,
+    });
+    expect(workWordsFor(config, entryOf(config, "dev/perch"))).toEqual({
+      bug: ["wart"],
+      criticalBug: ["outage"],
+    });
+    expect(workWordsFor(config, entryOf(config, ".dotfiles"))).toEqual({
+      bug: ["defect"],
+      criticalBug: ["fire"],
+    });
+    expect(workWordsFor(config, entryOf(config, "dev/hello"))).toEqual({
+      bug: ["defect"],
+      criticalBug: ["outage"],
+    });
+  });
+
+  it("refuse a key [work] may not hold, a list that is not strings, and a blank word", async () => {
+    const parsed = async (extra: string) =>
+      parseConfig(await fixtureConfigText(extra), home);
+
+    await expect(parsed("[work]\nwords = []\n")).rejects.toThrow(
+      "config: work.words is not a config key",
+    );
+    await expect(parsed("[work]\nbug_words = 3\n")).rejects.toThrow(
+      "config: work.bug_words must be an array of strings",
+    );
+    await expect(
+      parsed('[items."dev/perch"]\ncritical_bug_words = [" "]\n'),
+    ).rejects.toThrow(
+      'config: items."dev/perch".critical_bug_words must not hold a blank word',
     );
   });
 });

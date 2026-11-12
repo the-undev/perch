@@ -313,7 +313,7 @@ export function wireWarnings(
 }
 
 /**
- * Config with everything but its item entries set to the values, paths expanded against the home
+ * Config with everything but its item entries and [work] set to the values, paths expanded against the home
  * directory; the login toggle is the caller's to write. An entry's wire follows the row that starts as it to that row's name, all in one
  * pass; an entry naming a wire no row starts as falls to the default. Throws when
  * settingsProblems finds any.
@@ -339,6 +339,7 @@ export function withSettings(
     joins: values.joins.map(listOf),
     ignore: [...values.ignore],
     thresholds: nestedThresholds(values.thresholds) as Thresholds,
+    work: config.work,
     items: Object.fromEntries(
       Object.entries(config.items).map(([key, entry]) => [
         key,

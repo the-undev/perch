@@ -48,6 +48,8 @@ describe("the entry form", () => {
       roadmaps: null,
       thresholds: {},
       zellijSession: null,
+      bugWords: null,
+      criticalBugWords: null,
     });
     expect(form.options).toEqual({
       wires: ["Machine & Home", "Projects"],
@@ -57,6 +59,10 @@ describe("the entry form", () => {
         unsafe_red_hours: 72,
         stalled_amber_days: 7,
         stalled_red_days: 30,
+        bugs_amber_count: 5,
+        bugs_red_count: 20,
+        critical_bugs_amber_count: 1,
+        critical_bugs_red_count: 3,
       },
     });
   });
@@ -125,10 +131,12 @@ describe("the entry form", () => {
     expect(config.items["dev/odin/hello"]).toEqual({
       wire: "Machine & Home",
       name: "Hello",
-      thresholds: { unsafe: {}, stalled: {} },
+      thresholds: { unsafe: {}, stalled: {}, bugs: {}, criticalBugs: {} },
       keyFiles: null,
       roadmaps: null,
       zellijSession: null,
+      bugWords: null,
+      criticalBugWords: null,
     });
     expect(Object.keys(config.items)).toHaveLength(
       Object.keys(mockConfig.items).length + 1,
@@ -183,6 +191,31 @@ describe("the entry form", () => {
     expect(Object.keys(config.items)).toEqual(
       Object.keys(mockConfig.items).filter((key) => key !== "dev/perch"),
     );
+  });
+
+  it("keeps an entry's word lists and bug thresholds, which the form does not edit", () => {
+    const entry = {
+      ...(mockConfig.items["dev/perch"] as Config["items"][string]),
+      bugWords: ["wart"],
+      criticalBugWords: [],
+      thresholds: {
+        unsafe: {},
+        stalled: {},
+        bugs: { redCount: 40 },
+        criticalBugs: { amberCount: 2 },
+      },
+    };
+    const config: Config = {
+      ...mockConfig,
+      items: { ...mockConfig.items, "dev/perch": entry },
+    };
+    const values = entryFormFor(config, perch, home).values;
+    if (values === null) throw new Error("perch has an entry");
+
+    expect(withEntry(config, perch, values).items["dev/perch"]).toEqual(entry);
+    expect(
+      sameEntryValues(values, { ...values, criticalBugWords: ["fire"] }),
+    ).toBe(false);
   });
 
   it("knows values that write the same entry, whatever order the thresholds were set in", () => {

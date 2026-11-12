@@ -54,6 +54,12 @@ export interface DayThresholds {
   redDays: number;
 }
 
+/** Windows in open items: amber at or beyond the first count, red at or beyond the second. */
+export interface CountThresholds {
+  amberCount: number;
+  redCount: number;
+}
+
 /** Unsafe work of one kind, aged from its oldest change and judged against the item's windows. */
 export interface AgedWork {
   since: string;

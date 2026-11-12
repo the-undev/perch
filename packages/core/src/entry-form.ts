@@ -6,6 +6,7 @@ import {
   type Config,
   collapseHome,
   type ItemEntry,
+  noThresholdOverrides,
   resolveEntry,
   type ThresholdOverrides,
   thresholdKeys,
@@ -32,6 +33,10 @@ export interface EntryValues {
   thresholds: Partial<Record<ThresholdKey, number>>;
   /** The zellij session holding the item's tab; null takes it from the zellij action. */
   zellijSession: string | null;
+  /** The entry's bug words, kept as config has them; the form does not edit them. */
+  bugWords: string[] | null;
+  /** The entry's critical bug words, kept as config has them; the form does not edit them. */
+  criticalBugWords: string[] | null;
 }
 
 /** The choices the entry form offers, and the defaults a value left unset takes. */
@@ -107,6 +112,8 @@ export function emptyEntryValues(): EntryValues {
     roadmaps: null,
     thresholds: {},
     zellijSession: null,
+    bugWords: null,
+    criticalBugWords: null,
   };
 }
 
@@ -128,7 +135,7 @@ export function flatThresholds(
 export function nestedThresholds(
   flat: Partial<Record<ThresholdKey, number>>,
 ): ThresholdOverrides {
-  const overrides: ThresholdOverrides = { unsafe: {}, stalled: {} };
+  const overrides = noThresholdOverrides();
   for (const [window, field, key] of thresholdKeys) {
     const value = flat[key];
     if (value !== undefined)
@@ -146,6 +153,9 @@ export function entryValues(entry: ItemEntry): EntryValues {
     roadmaps: entry.roadmaps === null ? null : [...entry.roadmaps],
     thresholds: flatThresholds(entry.thresholds),
     zellijSession: entry.zellijSession,
+    bugWords: entry.bugWords === null ? null : [...entry.bugWords],
+    criticalBugWords:
+      entry.criticalBugWords === null ? null : [...entry.criticalBugWords],
   };
 }
 
@@ -246,6 +256,9 @@ export function withEntry(
     keyFiles: values.keyFiles === null ? null : [...values.keyFiles],
     roadmaps: values.roadmaps === null ? null : [...values.roadmaps],
     zellijSession: values.zellijSession,
+    bugWords: values.bugWords === null ? null : [...values.bugWords],
+    criticalBugWords:
+      values.criticalBugWords === null ? null : [...values.criticalBugWords],
   };
   return { ...config, items: { ...config.items, [key]: next } };
 }
@@ -260,6 +273,8 @@ export function sameEntryValues(a: EntryValues, b: EntryValues): boolean {
       values.roadmaps,
       flatThresholds(nestedThresholds(values.thresholds)),
       values.zellijSession,
+      values.bugWords,
+      values.criticalBugWords,
     ]);
   return canonical(a) === canonical(b);
 }

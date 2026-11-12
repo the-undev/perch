@@ -9,7 +9,12 @@
 // Obsidian one on Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
 // numbered placeholder items, as many as each file's open counts.
 
-import type { Config, ItemEntry } from "./config.ts";
+import {
+  type Config,
+  defaultBugThresholds,
+  type ItemEntry,
+  noThresholdOverrides,
+} from "./config.ts";
 import type { LoginEntry } from "./settings-form.ts";
 import type {
   CiRun,
@@ -46,10 +51,12 @@ function entry(fields: Partial<ItemEntry>): ItemEntry {
   return {
     wire: null,
     name: null,
-    thresholds: { unsafe: {}, stalled: {} },
+    thresholds: noThresholdOverrides(),
     keyFiles: null,
     roadmaps: null,
     zellijSession: null,
+    bugWords: null,
+    criticalBugWords: null,
     ...fields,
   };
 }
@@ -113,7 +120,9 @@ export const mockConfig: Config = {
   thresholds: {
     unsafe: unsafeWindows,
     stalled: dayWindows,
+    ...defaultBugThresholds,
   },
+  work: { bugWords: null, criticalBugWords: null },
   items: {
     ".dotfiles": entry({
       wire: "Machine & Home",

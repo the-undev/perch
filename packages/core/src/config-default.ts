@@ -4,6 +4,7 @@
 
 import {
   type Config,
+  defaultBugThresholds,
   defaultTray,
   defaultUpdateCheck,
   defaultUpdateInstall,
@@ -19,7 +20,9 @@ export function defaultConfig(): Config {
     thresholds: {
       unsafe: { amberHours: 24, redHours: 72 },
       stalled: { amberDays: 7, redDays: 30 },
+      ...defaultBugThresholds,
     },
+    work: { bugWords: null, criticalBugWords: null },
     items: {},
     scan: {
       intervalMinutes: 15,

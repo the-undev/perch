@@ -66,17 +66,29 @@ function wordPattern(words: readonly string[]): RegExp {
   );
 }
 
-/** Classes a task by the texts it is read from: its own text, its #tags and every heading above it. */
+/**
+ * Classes a task by the texts it is read from: its own text and every heading above it. A #tag
+ * is part of the text it sits in, so it matches there, and is ignored inside a mention there.
+ */
 type KindOf = (texts: readonly string[]) => WorkItemKind;
+
+/** Inline code and double-quoted text, straight or curly: a term mentioned rather than used. */
+const mentionPattern = /(`+)[^`][\s\S]*?\1|"[^"]*"|“[^”]*”/g;
+
+/** The text with each mention blanked, so the words either side stay apart. */
+function withoutMentions(text: string): string {
+  return text.replace(mentionPattern, " ");
+}
 
 /**
  * A word from the critical bug list makes a critical bug on its own and wins over a bug word; a word
- * from the bug list makes a bug; anything else is a task.
+ * from the bug list makes a bug; anything else is a task. Words inside a mention do not count.
  */
 export function kindClassifier(words: WorkWords): KindOf {
   const critical = wordPattern(words.criticalBug);
   const bug = wordPattern(words.bug);
-  return (texts) => {
+  return (given) => {
+    const texts = given.map(withoutMentions);
     if (texts.some((text) => critical.test(text))) return "critical-bug";
     if (texts.some((text) => bug.test(text))) return "bug";
     return "task";
@@ -106,7 +118,7 @@ function bulletItem(
 ): WorkItem {
   return {
     text: bullet.text,
-    kind: kindOf([bullet.text, ...bullet.tags, ...headings]),
+    kind: kindOf([bullet.text, ...headings]),
     done: bullet.checkbox === "none" ? null : bullet.checkbox === "checked",
     line: bullet.line,
     source: "bullet",
@@ -117,7 +129,7 @@ function bulletItem(
 function headingItem(section: RawSection, kindOf: KindOf): WorkItem {
   return {
     text: section.heading,
-    kind: kindOf([...headingsOf(section), ...section.tags]),
+    kind: kindOf(headingsOf(section)),
     done: null,
     line: section.line,
     source: "heading",

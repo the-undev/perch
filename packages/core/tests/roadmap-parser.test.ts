@@ -295,6 +295,56 @@ describe("deriveRoadmapFile kinds", () => {
     });
   });
 
+  it("leaves out words in inline code and double quotes, straight or curly, and counts the rest of the line", () => {
+    const file = deriveRoadmapFile(
+      "notes.md",
+      readRoadmapStructure(
+        [
+          "## Ideas",
+          "",
+          "- Name the `bug` kind in the settings",
+          "- Say ``a `critical` word`` in the help",
+          '- Explain "critical bug" in the guide',
+          "- Explain “issues” in the guide",
+          '- Link "see #bug" from the help',
+          '- Spell out "bug" for the crash on save',
+          "- Name the `critical` kind, an urgent one",
+          '- An unclosed "bug quote',
+        ].join("\n"),
+      ),
+      builtInWords,
+    );
+
+    expect(kindsIn(file)).toEqual({
+      "Name the `bug` kind in the settings": "task",
+      "Say ``a `critical` word`` in the help": "task",
+      'Explain "critical bug" in the guide': "task",
+      "Explain “issues” in the guide": "task",
+      'Link "see #bug" from the help': "task",
+      'Spell out "bug" for the crash on save': "bug",
+      "Name the `critical` kind, an urgent one": "critical-bug",
+      'An unclosed "bug quote': "bug",
+    });
+  });
+
+  it("finds no bug or critical bug in the project's own roadmap", () => {
+    const roadmap = readFileSync(
+      join(import.meta.dirname, "..", "..", "..", "docs", "roadmap.md"),
+      "utf8",
+    );
+    const file = deriveRoadmapFile(
+      "docs/roadmap.md",
+      readRoadmapStructure(roadmap),
+      builtInWords,
+    );
+
+    expect(
+      everyItem(file)
+        .filter((item) => item.kind !== "task")
+        .map((item) => [item.line, item.text, item.kind]),
+    ).toEqual([]);
+  });
+
   it("counts open items by kind across nested groups, leaving done ones out", () => {
     expect(countOpenItems([parseFixture("hierarchy.md")])).toEqual({
       task: 2,

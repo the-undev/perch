@@ -70,24 +70,24 @@ electron-builder does not write. CI could repack the AppImage with
 appimagetool, but the repack must keep the block map and checksum in
 `latest-linux.yml` valid.
 
-## Forge issues source
+## Forge tickets source
 
 Open tickets from GitHub and Forgejo as a work source beside the in-repo
 roadmap. Pull requests are left out.
 
-- Each ticket is a task, a bug or a critical bug by the same `bug_words` and
+- Each ticket is a task, a `bug` or a `critical bug` by the same `bug_words` and
   `critical_bug_words` the roadmap uses, matched as whole words in any case
-  against its title and its labels. Whether GitHub issue types can set the
+  against its title and its labels. Whether GitHub `issue types` can set the
   kind is TBD.
-- Each forge's tickets are judged on their own against the bug thresholds and
-  give their own cause, as each roadmap file does, so a bug written in the
-  roadmap and filed as a ticket is not counted twice. The ledger gets a bug
-  row per forge and a critical bug row when there are any.
+- Each forge's tickets are judged on their own against the `bug` thresholds and
+  give their own cause, as each roadmap file does, so a `bug` written in the
+  roadmap and filed as a ticket is not counted twice. The ledger gets a `bug`
+  row per forge and a `critical bug` row when there are any.
 - The ticket sheet is drawn in `mockups/work-sources.html`: a tab per forge
   after the roadmaps, carrying its open count and shown even with none open.
   Each row has the number, title, labels as the forge spells them and last
-  update, with the roadmap's margin marks. Critical bugs come first, then
-  bugs, then tasks, each most recently updated first. A row opens the ticket
+  update, with the roadmap's margin marks. `Critical bugs` come first, then
+  `bugs`, then tasks, each most recently updated first. A row opens the ticket
   in the browser.
 
 ## Visual roadmap view

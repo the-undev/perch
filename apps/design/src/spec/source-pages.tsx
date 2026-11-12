@@ -264,10 +264,11 @@ const roadmaps: SourceSpec = {
       Work items by the per-heading rule, each a task, a bug or a critical bug
       by whole words from <Code>bug_words</Code> and{" "}
       <Code>critical_bug_words</Code> in its text, its tags and the headings
-      above it, and the open items counted by kind. The counts feed the
-      bird&apos;s plumpness, its chips and its ledger. Each file&apos;s open
-      bugs and critical bugs are judged against their windows, and the worse
-      level is a cause of the bird&apos;s health; tasks never are.
+      above it, leaving out inline code and double-quoted text, and the open
+      items counted by kind. The counts feed the bird&apos;s plumpness, its
+      chips and its ledger. Each file&apos;s open bugs and critical bugs are
+      judged against their windows, and the worse level is a cause of the
+      bird&apos;s health; tasks never are.
     </p>
   ),
   derivations: [

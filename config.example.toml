@@ -87,8 +87,9 @@ stalled_red_days = 30
 # Each roadmap item is a task, a bug or a critical bug. A word from
 # critical_bug_words makes a critical bug, else one from bug_words a bug,
 # matched as whole words in any case against the item's text, its #tags and
-# every heading above it. Only bugs move the bird. Each list is taken whole
-# from the item's entry, else from here, else the built-in list shown.
+# every heading above it. Words in inline code or double quotes are left out,
+# so a term can be mentioned. Only bugs move the bird. Each list is taken
+# whole from the item's entry, else from here, else the built-in list shown.
 # [work]
 # bug_words = ["bug", "bugs", "issue", "issues", "problem", "problems", "broken", "regression", "crash", "crashes", "p2", "p3", "p4"]
 # critical_bug_words = ["critical", "urgent", "severe", "blocker", "p0", "p1"]

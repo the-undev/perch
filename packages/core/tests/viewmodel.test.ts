@@ -613,6 +613,7 @@ describe("the ledger", () => {
             tone: "amber",
             url: null,
             at: hoursBefore(40),
+            reveal: null,
           },
         ],
       },
@@ -630,6 +631,7 @@ describe("the ledger", () => {
             tone: null,
             url: null,
             at: null,
+            reveal: null,
           },
         ],
       },
@@ -647,6 +649,7 @@ describe("the ledger", () => {
             tone: null,
             url: null,
             at: null,
+            reveal: null,
           },
         ],
       },
@@ -673,6 +676,7 @@ describe("the ledger", () => {
             tone: "green",
             url: null,
             at: hoursBefore(2),
+            reveal: null,
           },
         ],
       },
@@ -792,6 +796,7 @@ describe("the unpushed commits row", () => {
           tone: "red",
           url: null,
           at: hoursBefore(500),
+          reveal: null,
         },
         {
           source: "git",
@@ -799,6 +804,7 @@ describe("the unpushed commits row", () => {
           tone: "red",
           url: null,
           at: hoursBefore(500),
+          reveal: null,
         },
         {
           source: "git",
@@ -806,6 +812,7 @@ describe("the unpushed commits row", () => {
           tone: "amber",
           url: "https://github.com/finch/perch/tree/updates",
           at: hoursBefore(50),
+          reveal: null,
         },
         {
           source: "git",
@@ -813,6 +820,7 @@ describe("the unpushed commits row", () => {
           tone: null,
           url: null,
           at: hoursBefore(2),
+          reveal: null,
         },
       ],
     });
@@ -999,6 +1007,7 @@ describe("the ledger's workings", () => {
         tone: "green",
         url: failingRun.url,
         at: hoursBefore(2),
+        reveal: null,
       },
       {
         source: "forgejo",
@@ -1006,6 +1015,7 @@ describe("the ledger's workings", () => {
         tone: null,
         url: "http://forgejo.test/finch/perch/actions/runs/14",
         at: hoursBefore(5),
+        reveal: null,
       },
     ]);
   });
@@ -1045,6 +1055,7 @@ describe("the ledger's workings", () => {
           tone: null,
           url: "https://github.com/finch/perch/pulls",
           at: null,
+          reveal: null,
         },
       ],
     });
@@ -1068,6 +1079,7 @@ describe("the ledger's workings", () => {
       tone: "amber",
       url: null,
       at: null,
+      reveal: null,
     });
 
     expect(row(bird, "CI").workings).toEqual([
@@ -1102,6 +1114,7 @@ describe("the ledger's workings", () => {
         tone: "amber",
         url: null,
         at: null,
+        reveal: null,
       })),
     });
 
@@ -1238,17 +1251,61 @@ describe("the ledger's workings", () => {
       ["bugs in docs/ideas.md", "4", null, "bugs"],
     ]);
     expect(row(bird, "critical bugs in docs/sync.md").workings).toEqual([
+      ...[1, 2, 3].map((line) => ({
+        source: "docs/sync.md",
+        text: `critical bug ${line}`,
+        tone: null,
+        url: null,
+        at: null,
+        reveal: { path: "docs/sync.md", line },
+      })),
       {
         source: "docs/sync.md",
         text: "amber at 1, red at 3",
         tone: null,
         url: null,
         at: null,
+        reveal: null,
       },
     ]);
     expect(bird.bubble.speech).toBe(
       "Three critical bugs open in docs/sync.md. I've also got six bugs open in docs/roadmap.md.",
     );
+  });
+
+  it("lists each open bug of a row's kind with its line before the window, and leaves done bugs out", async () => {
+    const config = await adoptAll(["dev/tidewater"]);
+    const file = deriveRoadmapFile(
+      "docs/roadmap.md",
+      readRoadmapStructure(
+        readFileSync(
+          join(import.meta.dirname, "fixtures", "roadmaps", "hierarchy.md"),
+          "utf8",
+        ),
+      ),
+      { bug: [...builtInBugWords], criticalBug: [...builtInCriticalBugWords] },
+    );
+    const tidewater = item("dev/tidewater", {
+      sources: { roadmap: { ...mockRoadmap([]), files: [file] } },
+    });
+    const bird = birdIn([tidewater], config, "dev/tidewater");
+    const lines = (label: string) =>
+      row(bird, label).workings.map((working) => [
+        working.text,
+        working.reveal,
+      ]);
+
+    expect(lines("bugs in docs/roadmap.md")).toEqual([
+      ["Dates read as US format", { path: "docs/roadmap.md", line: 24 }],
+      ["amber at 5, red at 20", null],
+    ]);
+    expect(lines("critical bugs in docs/roadmap.md")).toEqual([
+      [
+        "Data loss when two devices save at once",
+        { path: "docs/roadmap.md", line: 15 },
+      ],
+      ["amber at 1, red at 3", null],
+    ]);
   });
 
   it("leaves tasks out of health however many there are, and judges against the windows the roadmap carries", async () => {
@@ -1375,6 +1432,7 @@ describe("the ledger's workings", () => {
           tone: "red",
           url: null,
           at: hoursBefore(123),
+          reveal: null,
         },
       ],
     });

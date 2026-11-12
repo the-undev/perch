@@ -356,7 +356,7 @@ function branch(
 /** Open placeholder items of one kind, numbered from the first line. */
 function openItems(kind: WorkItemKind, count: number): WorkItem[] {
   return Array.from({ length: count }, (_, index) => ({
-    text: `${kind} ${index + 1}`,
+    text: `${kind.replace("-", " ")} ${index + 1}`,
     kind,
     done: false,
     line: index + 1,

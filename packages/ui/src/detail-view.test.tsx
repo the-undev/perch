@@ -267,6 +267,34 @@ describe("the detail view", () => {
     expect(markedRow()).toBe("pull-requests");
   });
 
+  it("shows a pressed bug line on the paper: its file's tab open and its line scrolled to the middle and marked", () => {
+    const hothouse = mockBird("obsidian/Hothouse");
+    const { container } = page(hothouse, {
+      sheets: hothouse.detail.keyFiles.map((file) => ({
+        file,
+        markdown: "- bug 1\n- task 2\n",
+      })),
+    });
+    const record = container.querySelector('[data-part="record"]');
+    const paper = container.querySelector('[data-part="paper"]');
+    if (record === null || paper === null) {
+      throw new Error("the page has a record and a paper pane");
+    }
+
+    fireEvent.click(
+      within(record as HTMLElement).getByRole("button", { name: "bug 1" }),
+    );
+
+    expect(
+      within(paper as HTMLElement).getByRole("tab", { selected: true })
+        .textContent,
+    ).toBe("Tech/Tech Plans.md");
+    const revealed = paper.querySelector("[data-revealed]");
+    expect(revealed?.textContent).toBe("bug 1");
+    expect(scrolled).toEqual([{ element: revealed, options: landingOptions }]);
+    expect(markedAtScroll).toEqual([true]);
+  });
+
   it("scrolls only the row's own pane when landing on a chip", () => {
     const perch = mockBird("dev/perch");
     page(perch);

@@ -5,6 +5,9 @@ import { useState } from "react";
 import { mockBird, scanMoment } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 
+/** A bug line pressed on a page with no paper beside the ledger. */
+const ignoreReveal = () => {};
+
 /** A state the mock lacks: a last commit three weeks old. */
 const handBuilt: LedgerEntry[] = [
   {
@@ -121,6 +124,7 @@ function LandingDemo() {
         />
       </div>
       <Ledger
+        onReveal={ignoreReveal}
         quiet={perch.detail.quiet}
         entries={perch.detail.ledger}
         now={scanMoment}
@@ -146,6 +150,7 @@ export function LedgerPage() {
           >
             <Ground>
               <Ledger
+                onReveal={ignoreReveal}
                 quiet={mockBird(specimen.id).detail.quiet}
                 entries={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}
@@ -160,6 +165,7 @@ export function LedgerPage() {
         >
           <Ground>
             <Ledger
+              onReveal={ignoreReveal}
               quiet={null}
               entries={handBuilt}
               now={scanMoment}
@@ -182,6 +188,7 @@ export function LedgerPage() {
           >
             <Ground>
               <Ledger
+                onReveal={ignoreReveal}
                 quiet={mockBird(specimen.id).detail.quiet}
                 entries={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}

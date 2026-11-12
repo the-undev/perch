@@ -52,6 +52,7 @@ import type {
   WorkItem,
   WorkItemCounts,
   WorkItemGroup,
+  WorkItemKind,
 } from "./snapshot.ts";
 import {
   type FenceSituation,
@@ -235,6 +236,14 @@ export interface Working {
   url: string | null;
   /** When the fact dates from, shown as an age; null when it has no time. */
   at: string | null;
+  /** The line in a key file the working points at, which pressing it shows on the paper; null for none. */
+  reveal: PaperLine | null;
+}
+
+/** A source line in one of the bird's key files, counted from 1. */
+export interface PaperLine {
+  path: string;
+  line: number;
 }
 
 /**
@@ -582,6 +591,7 @@ function couldNotRead(source: string, part: ForgePart): Working {
     tone: "amber",
     url: null,
     at: null,
+    reveal: null,
   };
 }
 
@@ -669,6 +679,7 @@ function ciWorkings(item: Item): Working[] {
         tone: ciTone(run.state),
         url: run.url,
         at: run.createdAt,
+        reveal: null,
       },
     ];
   });
@@ -689,6 +700,7 @@ function pullRequestWorkings(item: Item): Working[] {
         tone: null,
         url: `${data.url}/pulls`,
         at: null,
+        reveal: null,
       },
     ];
   });
@@ -709,6 +721,7 @@ function roadmapWorkings(
         tone: null,
         url: null,
         at: null,
+        reveal: null,
       },
     ];
   });
@@ -722,12 +735,28 @@ function windowWorking(source: string, window: CountThresholds): Working {
     tone: null,
     url: null,
     at: null,
+    reveal: null,
   };
+}
+
+/** Each open item of the kind in the file, in the file's order, as a working that points at its line. */
+function openItemWorkings(file: RoadmapFile, kind: WorkItemKind): Working[] {
+  return itemsOf(file)
+    .filter((item) => item.kind === kind && item.done !== true)
+    .map((item) => ({
+      source: file.path,
+      text: item.text,
+      tone: null,
+      url: null,
+      at: null,
+      reveal: { path: file.path, line: item.line },
+    }));
 }
 
 /**
  * Each roadmap file's open bugs, then its open critical bugs when it has any, toned by their
- * windows. A row holds the bubble chip of its kind when the file has any open of that kind.
+ * windows, each row listing its open items before its window. A row holds the bubble chip of its
+ * kind when the file has any open of that kind.
  */
 function bugRows(
   roadmap: RoadmapData,
@@ -743,7 +772,10 @@ function bugRows(
         file.counts.bug,
         severity(levels.bugs),
         file.counts.bug > 0 ? bugsChip : null,
-        [windowWorking(file.path, thresholds.bugs)],
+        [
+          ...openItemWorkings(file, "bug"),
+          windowWorking(file.path, thresholds.bugs),
+        ],
       ),
     ];
     if (file.counts["critical-bug"] === 0) return rows;
@@ -754,7 +786,10 @@ function bugRows(
         file.counts["critical-bug"],
         severity(levels.criticalBugs),
         criticalBugsChip,
-        [windowWorking(file.path, thresholds.criticalBugs)],
+        [
+          ...openItemWorkings(file, "critical-bug"),
+          windowWorking(file.path, thresholds.criticalBugs),
+        ],
       ),
     ];
   });
@@ -770,6 +805,7 @@ function agedWorkings(work: AgedWork | null, text: string): Working[] {
       tone: severity(work.level),
       url: null,
       at: work.since,
+      reveal: null,
     },
   ];
 }
@@ -798,6 +834,7 @@ function unpushedBranchWorkings(
           ? null
           : upstreamUrl(item, git, branch.upstream, config),
       at: branch.work.since,
+      reveal: null,
     }));
 }
 
@@ -1280,14 +1317,21 @@ function actionsFor(
   });
 }
 
-/** The margin marks a roadmap file's bugs and critical bugs put beside their lines; tasks have none. */
-export function lineMarksOf(file: RoadmapFile): LineMarks {
+/** Every item in a roadmap file, nested groups included, in the order of their lines. */
+function itemsOf(file: RoadmapFile): WorkItem[] {
   const walk = (group: WorkItemGroup): WorkItem[] => [
     ...group.items,
     ...group.groups.flatMap(walk),
   ];
+  return [...file.items, ...file.groups.flatMap(walk)].sort(
+    (a, b) => a.line - b.line,
+  );
+}
+
+/** The margin marks a roadmap file's bugs and critical bugs put beside their lines; tasks have none. */
+export function lineMarksOf(file: RoadmapFile): LineMarks {
   const marks: LineMarks = {};
-  for (const item of [...file.items, ...file.groups.flatMap(walk)]) {
+  for (const item of itemsOf(file)) {
     if (item.kind === "task") continue;
     marks[item.line] = { kind: item.kind, done: item.done === true };
   }

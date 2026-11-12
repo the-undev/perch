@@ -9,6 +9,9 @@ afterEach(cleanup);
 
 const now = new Date(mockSnapshot.scannedAt);
 
+/** A bug line pressed where no paper listens. */
+const ignoreReveal = () => {};
+
 /** Each row's label, value and tone, as drawn. */
 function rows(container: HTMLElement): string[][] {
   return [...container.querySelectorAll("[data-tone]")].map((value) => [
@@ -36,6 +39,7 @@ describe("the ledger", () => {
   it("renders clean zeros as a green none and counts in their severity's tone", () => {
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={mockBird("undev/prism").detail.ledger}
         now={now}
@@ -55,6 +59,7 @@ describe("the ledger", () => {
     const gramophone = rows(
       render(
         <Ledger
+          onReveal={ignoreReveal}
           quiet={null}
           entries={mockBird("undev/gramophone").detail.ledger}
           now={now}
@@ -66,6 +71,7 @@ describe("the ledger", () => {
     const prism = rows(
       render(
         <Ledger
+          onReveal={ignoreReveal}
           quiet={null}
           entries={mockBird("undev/prism").detail.ledger}
           now={now}
@@ -92,7 +98,13 @@ describe("the ledger", () => {
       { kind: "time", label: "last commit", at: "2026-10-21T03:00:00.000Z" },
     ];
     const { container } = render(
-      <Ledger quiet={null} entries={entries} now={now} landing={null} />,
+      <Ledger
+        onReveal={ignoreReveal}
+        quiet={null}
+        entries={entries}
+        now={now}
+        landing={null}
+      />,
     );
 
     expect(
@@ -107,6 +119,7 @@ describe("the ledger", () => {
     const spool = mockBird("undev/spool").detail;
     const quiet = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={spool.quiet}
         entries={spool.ledger}
         now={now}
@@ -120,7 +133,13 @@ describe("the ledger", () => {
     );
     cleanup();
     const { container } = render(
-      <Ledger quiet={null} entries={spool.ledger} now={now} landing={null} />,
+      <Ledger
+        onReveal={ignoreReveal}
+        quiet={null}
+        entries={spool.ledger}
+        now={now}
+        landing={null}
+      />,
     );
     expect(container.querySelector('[data-part="quiet"]')).toBeNull();
   });
@@ -144,6 +163,7 @@ describe("the ledger's workings", () => {
   it("names each forge's newest run under the CI row, toned and linked to the run", () => {
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={mockBird("dev/perch").detail.ledger}
         now={now}
@@ -171,6 +191,7 @@ describe("the ledger's workings", () => {
   it("says in amber which part of a forge couldn't be read, beside the forge that was", () => {
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={mockBird("undev/prism").detail.ledger}
         now={now}
@@ -194,6 +215,7 @@ describe("the ledger's workings", () => {
   it("spells out open items per roadmap file and unsafe work by its oldest", () => {
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={mockBird("obsidian/Hothouse").detail.ledger}
         now={now}
@@ -206,9 +228,11 @@ describe("the ledger's workings", () => {
       ["Garden/Garden Plans.md · 75 open", "none"],
     ]);
     expect(workings(container, "bugs")).toEqual([
+      ["Tech/Tech Plans.md · bug 1", "none"],
       ["Tech/Tech Plans.md · amber at 5, red at 20", "none"],
     ]);
     expect(workings(container, "critical-bugs")).toEqual([
+      ["Garden/Garden Plans.md · critical bug 1", "none"],
       ["Garden/Garden Plans.md · amber at 1, red at 3", "none"],
     ]);
     expect(workings(container, "uncommitted")).toEqual([
@@ -220,6 +244,7 @@ describe("the ledger's workings", () => {
     const perch = mockBird("dev/perch");
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={perch.detail.ledger}
         now={now}
@@ -245,6 +270,7 @@ describe("a chip's landing", () => {
     const entries = mockBird("dev/perch").detail.ledger;
     const { container, rerender } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={entries}
         now={now}
@@ -273,6 +299,7 @@ describe("a chip's landing", () => {
 
     rerender(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={entries}
         now={now}
@@ -290,6 +317,7 @@ describe("a chip's landing", () => {
 
     rerender(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={entries}
         now={now}
@@ -304,7 +332,13 @@ describe("a chip's landing", () => {
     expect(lit()).toEqual(["open-items"]);
 
     rerender(
-      <Ledger quiet={null} entries={entries} now={now} landing={null} />,
+      <Ledger
+        onReveal={ignoreReveal}
+        quiet={null}
+        entries={entries}
+        now={now}
+        landing={null}
+      />,
     );
     expect(container.querySelector('[data-part="landing"]')).toBeNull();
     expect(lit()).toEqual([]);

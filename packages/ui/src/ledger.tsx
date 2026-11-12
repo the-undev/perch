@@ -8,6 +8,7 @@ import type {
   ChipKind,
   FlagLine,
   LedgerEntry,
+  PaperLine,
   PullRequestLine,
   River,
   RiverCommit,
@@ -107,8 +108,41 @@ const workingToneClass: Record<NonNullable<Tone> | "none", string> = {
   none: "text-ink-muted",
 };
 
+/** What a working says: a button showing its line on the paper, a link out, or plain words. */
+function WorkingText({
+  working,
+  onReveal,
+}: {
+  working: Working;
+  onReveal: (line: PaperLine) => void;
+}) {
+  const { reveal } = working;
+  if (reveal !== null) {
+    return (
+      <button
+        type="button"
+        data-part="reveal"
+        onClick={() => onReveal(reveal)}
+        className="cursor-pointer text-left text-inherit underline decoration-ink-faint decoration-dotted underline-offset-3 hover:text-ink hover:decoration-ink-accent focus-visible:outline-2 focus-visible:outline-ink-accent"
+      >
+        {working.text}
+      </button>
+    );
+  }
+  if (working.url === null) return working.text;
+  return <OutLink href={working.url}>{working.text}</OutLink>;
+}
+
 /** One source's part in a row, in mono: the source, what it says there, toned and linked, and its age. */
-function WorkingLine({ working, now }: { working: Working; now: Date }) {
+function WorkingLine({
+  working,
+  now,
+  onReveal,
+}: {
+  working: Working;
+  now: Date;
+  onReveal: (line: PaperLine) => void;
+}) {
   return (
     <li data-part="working" className="break-words">
       {working.source}
@@ -117,11 +151,7 @@ function WorkingLine({ working, now }: { working: Working; now: Date }) {
         data-working-tone={working.tone ?? "none"}
         className={workingToneClass[working.tone ?? "none"]}
       >
-        {working.url === null ? (
-          working.text
-        ) : (
-          <OutLink href={working.url}>{working.text}</OutLink>
-        )}
+        <WorkingText working={working} onReveal={onReveal} />
       </span>
       {working.at === null ? "" : ` · ${agoWords(working.at, now)}`}
     </li>
@@ -145,6 +175,13 @@ export interface Landing {
   press: number;
 }
 
+/** The landing scroll; the DOM lib's options lack `container`, which Chromium 156 supports. */
+export const landingScroll: ScrollIntoViewOptions & { container: "nearest" } = {
+  block: "center",
+  behavior: "instant",
+  container: "nearest",
+};
+
 /** The brief mark on the row a chip landed on, behind its words; drawn afresh for each press. */
 export function LandingMark() {
   return (
@@ -161,10 +198,12 @@ function EntryRow({
   entry,
   now,
   landing,
+  onReveal,
 }: {
   entry: LedgerEntry;
   now: Date;
   landing: Landing | null;
+  onReveal: (line: PaperLine) => void;
 }) {
   const tone = entry.kind === "time" ? null : entry.tone;
   const chip = entry.kind === "time" ? null : entry.chip;
@@ -196,7 +235,12 @@ function EntryRow({
           className={`m-0 -mt-1 list-none space-y-0.5 p-0 pb-2.25 font-mono text-[12px] text-ink-faint leading-normal ${landed ? "animate-land-ink" : ""}`}
         >
           {workings.map((working) => (
-            <WorkingLine key={working.source} working={working} now={now} />
+            <WorkingLine
+              key={`${working.source} ${working.reveal?.line ?? working.text}`}
+              working={working}
+              now={now}
+              onReveal={onReveal}
+            />
           ))}
         </ul>
       )}
@@ -212,10 +256,18 @@ export interface LedgerProps {
   now: Date;
   /** The chip last pressed on the roost, whose row is briefly marked; null when none has been. */
   landing: Landing | null;
+  /** A working's line in a key file was pressed: show it on the paper. */
+  onReveal: (line: PaperLine) => void;
 }
 
 /** The facts that exist for a bird, in full words, each chip's working spelled out on its row. */
-export function Ledger({ quiet, entries, now, landing }: LedgerProps) {
+export function Ledger({
+  quiet,
+  entries,
+  now,
+  landing,
+  onReveal,
+}: LedgerProps) {
   return (
     <div data-part="ledger">
       {quiet !== null && (
@@ -227,7 +279,13 @@ export function Ledger({ quiet, entries, now, landing }: LedgerProps) {
         </p>
       )}
       {entries.map((entry) => (
-        <EntryRow key={entry.label} entry={entry} now={now} landing={landing} />
+        <EntryRow
+          key={entry.label}
+          entry={entry}
+          now={now}
+          landing={landing}
+          onReveal={onReveal}
+        />
       ))}
     </div>
   );

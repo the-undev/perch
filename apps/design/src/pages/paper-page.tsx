@@ -130,6 +130,7 @@ export function PaperPage() {
         >
           <Ground>
             <KeyFilePaper
+              reveal={null}
               sheets={sheetsFor(perch.detail.keyFiles, perchFiles)}
             />
           </Ground>
@@ -140,6 +141,7 @@ export function PaperPage() {
         >
           <div className="pane-scroll h-[28rem] overflow-y-auto rounded-xl border border-edge bg-ground px-5 pb-4">
             <KeyFilePaper
+              reveal={null}
               sheets={sheetsFor(
                 [
                   {
@@ -160,6 +162,7 @@ export function PaperPage() {
         >
           <Ground>
             <KeyFilePaper
+              reveal={null}
               sheets={[
                 {
                   file: {
@@ -179,6 +182,7 @@ export function PaperPage() {
         >
           <Ground>
             <KeyFilePaper
+              reveal={null}
               sheets={[
                 {
                   file: {
@@ -197,7 +201,10 @@ export function PaperPage() {
           rule="The Hothouse Vault's defaults: the README and the roadmaps the scan found. None are read here, so each says so."
         >
           <Ground>
-            <KeyFilePaper sheets={sheetsFor(hothouse.detail.keyFiles, {})} />
+            <KeyFilePaper
+              reveal={null}
+              sheets={sheetsFor(hothouse.detail.keyFiles, {})}
+            />
           </Ground>
         </Specimen>
       </Section>

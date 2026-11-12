@@ -456,6 +456,10 @@
   .perch-prose li[data-mark] {
     --mark-indent: 22px;
   }
+  /* A revealed line holds its landing mark behind its words. */
+  .perch-prose [data-revealed] {
+    isolation: isolate;
+  }
   .perch-prose [data-mark]::before,
   .perch-prose [data-mark="critical-bug"]::after {
     content: "";

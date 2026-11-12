@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   builtInBugWords,
   builtInCriticalBugWords,
+  defaultBugThresholds,
   type WorkWords,
 } from "../src/config.ts";
 import {
@@ -396,6 +397,7 @@ describe("roadmap source", () => {
           ],
         },
         builtInWords,
+        defaultBugThresholds,
       ),
     ).toEqual({ error: "roadmap file not found: Missing.md" });
   });

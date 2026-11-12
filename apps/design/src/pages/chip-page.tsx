@@ -20,7 +20,7 @@ const kindRule: Record<ChipModel["kind"], string> = {
   unreadable:
     "A forge the clone pushes to that no card can read, named by forge. Always amber; it lands on the record's notice.",
   ci: "The worst CI state across forges on the default branch; red only when failing.",
-  bugs: "Open bugs on the roadmap. Always red.",
+  bugs: "A roadmap file past its bug or critical bug window, one chip per file, naming the kind its level comes from: amber, then red. A file within both windows has none.",
   uncommitted:
     "Uncommitted changes, toned by their age: unjudged under 24 hours, amber to 72, red beyond.",
   unpushed: "Commits on no remote, toned by their age like uncommitted work.",
@@ -61,10 +61,7 @@ export function ChipPage() {
         >
           <ChipRow list={ofSeverity("amber")} />
         </Specimen>
-        <Specimen
-          label="red"
-          rule="A fact past its red window, failing CI, or bugs."
-        >
+        <Specimen label="red" rule="A fact past its red window, or failing CI.">
           <ChipRow list={ofSeverity("red")} />
         </Specimen>
       </Section>

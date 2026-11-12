@@ -160,20 +160,29 @@ export interface WorkItemGroup {
   progress: Progress | null;
 }
 
+export type WorkItemCounts = Record<WorkItemKind, number>;
+
 export interface RoadmapFile {
   /** Path relative to the item. */
   path: string;
   /** Bullets above the first heading and bare top-level headings. */
   items: WorkItem[];
   groups: WorkItemGroup[];
+  /** Open items in this file by kind; done items are not counted. */
+  counts: WorkItemCounts;
 }
 
-export type WorkItemCounts = Record<WorkItemKind, number>;
+/** The windows each roadmap file's open bugs and critical bugs are judged against. */
+export interface BugThresholds {
+  bugs: CountThresholds;
+  criticalBugs: CountThresholds;
+}
 
 export interface RoadmapData {
   /** Open items by kind across every file; done items are not counted. */
   counts: WorkItemCounts;
   files: RoadmapFile[];
+  thresholds: BugThresholds;
 }
 
 export interface PullRequest {

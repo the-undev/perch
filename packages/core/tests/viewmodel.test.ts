@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Config } from "../src/config.ts";
+import { mockRoadmap } from "../src/mock.ts";
 import type {
   FinalisedCommit,
   ForgeName,
   ForgePresence,
   Item,
+  RoadmapData,
 } from "../src/snapshot.ts";
 import {
   type Bird,
@@ -332,7 +334,9 @@ describe("the wires", () => {
     const busy = item("dev/spool", {
       sources: {
         git: gitData({}),
-        roadmap: { counts: { task: 19, bug: 1, "critical-bug": 0 }, files: [] },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 19, bug: 1, criticalBug: 0 },
+        ]),
       },
     });
     const bird = birdIn([busy], config, "dev/spool");
@@ -346,10 +350,9 @@ describe("the wires", () => {
     const hothouse = item("obsidian/Hothouse", {
       kind: "obsidian",
       sources: {
-        roadmap: {
-          counts: { task: 194, bug: 0, "critical-bug": 0 },
-          files: [],
-        },
+        roadmap: mockRoadmap([
+          { path: "Tech/Tech Plans.md", task: 194, bug: 0, criticalBug: 0 },
+        ]),
       },
     });
 
@@ -400,7 +403,9 @@ describe("chips", () => {
             thresholds: { amberHours: 24, redHours: 72 },
           },
         }),
-        roadmap: { counts: { task: 7, bug: 2, "critical-bug": 0 }, files: [] },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 7, bug: 6, criticalBug: 0 },
+        ]),
         github: forgeData({
           latestCi: { ...failingRun, state: "success" },
           openPullRequests: [
@@ -426,11 +431,11 @@ describe("chips", () => {
       ]),
     ).toEqual([
       ["ci failure", null, "red"],
-      ["2 bugs", 2, "red"],
+      ["6 bugs in roadmap", 6, "amber"],
       ["4 uncommitted", 4, "red"],
       ["1 unpushed", 1, null],
       ["1 open PR", 1, null],
-      ["9 open items", 9, null],
+      ["13 open items", 13, null],
     ]);
     // Every kind but the unreadable remote's, which needs a forge no card reads.
     expect(
@@ -479,7 +484,9 @@ describe("chips", () => {
       "undev/skiff",
       ["github", "forgejo"],
       {
-        roadmap: { counts: { task: 3, bug: 0, "critical-bug": 0 }, files: [] },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 3, bug: 0, criticalBug: 0 },
+        ]),
       },
       "no-card",
     );
@@ -525,7 +532,9 @@ describe("chips", () => {
     const found = item("dev/mixed-bag", {
       sources: {
         git: gitData({}),
-        roadmap: { counts: { task: 44, bug: 1, "critical-bug": 0 }, files: [] },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 44, bug: 1, criticalBug: 0 },
+        ]),
       },
     });
 
@@ -556,7 +565,9 @@ describe("the ledger", () => {
             thresholds: { amberHours: 24, redHours: 72 },
           },
         }),
-        roadmap: { counts: { task: 15, bug: 0, "critical-bug": 0 }, files: [] },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 15, bug: 0, criticalBug: 0 },
+        ]),
         github: forgeData({
           fullName: "the-undev/harbour",
           url: "https://github.com/the-undev/harbour",
@@ -594,12 +605,20 @@ describe("the ledger", () => {
       },
       {
         kind: "count",
-        label: "open bugs",
+        label: "bugs in docs/roadmap.md",
         count: 0,
         text: "none",
         tone: "green",
         chip: null,
-        workings: [],
+        workings: [
+          {
+            source: "docs/roadmap.md",
+            text: "amber at 5, red at 20",
+            tone: null,
+            url: null,
+            at: null,
+          },
+        ],
       },
       {
         kind: "count",
@@ -608,7 +627,15 @@ describe("the ledger", () => {
         text: "15",
         tone: null,
         chip: "open-items",
-        workings: [],
+        workings: [
+          {
+            source: "docs/roadmap.md",
+            text: "15 open",
+            tone: null,
+            url: null,
+            at: null,
+          },
+        ],
       },
       {
         kind: "count",
@@ -1129,59 +1156,125 @@ describe("the ledger's workings", () => {
     ]);
   });
 
-  it("counts open items and bugs per roadmap file, a file with none silent", async () => {
+  it("counts open items per roadmap file, a file with none silent", async () => {
     const config = await adoptAll(["dev/hollow"]);
-    const open = (kind: "task" | "bug", line: number) => ({
-      text: `${kind} ${line}`,
-      kind,
-      done: false,
-      line,
-      source: "bullet" as const,
-      body: null,
-    });
     const hollow = item("dev/hollow", {
       sources: {
-        roadmap: {
-          counts: { task: 2, bug: 2, "critical-bug": 0 },
-          files: [
-            {
-              path: "docs/roadmap.md",
-              items: [open("task", 1), open("bug", 2)],
-              groups: [
-                {
-                  heading: "Bugs",
-                  level: 2,
-                  line: 3,
-                  role: "group",
-                  items: [open("bug", 4), { ...open("bug", 5), done: true }],
-                  groups: [],
-                  progress: { done: 1, total: 2 },
-                },
-              ],
-            },
-            {
-              path: "docs/ideas.md",
-              items: [open("task", 1)],
-              groups: [],
-            },
-            { path: "docs/done.md", items: [], groups: [] },
-          ],
-        },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 1, bug: 2, criticalBug: 0 },
+          { path: "docs/ideas.md", task: 1, bug: 0, criticalBug: 0 },
+          { path: "docs/done.md", task: 0, bug: 0, criticalBug: 0 },
+        ]),
       },
     });
     const bird = birdIn([hollow], config, "dev/hollow");
-    const sourced = (label: string) =>
-      row(bird, label).workings.map((working) => [
+
+    expect(
+      row(bird, "open roadmap items").workings.map((working) => [
         working.source,
         working.text,
-      ]);
-
-    expect(row(bird, "open bugs").chip).toBe("bugs");
-    expect(sourced("open bugs")).toEqual([["docs/roadmap.md", "2 open"]]);
-    expect(sourced("open roadmap items")).toEqual([
+      ]),
+    ).toEqual([
       ["docs/roadmap.md", "3 open"],
       ["docs/ideas.md", "1 open"],
     ]);
+  });
+
+  it("judges each roadmap file's bugs and critical bugs on its own, the bird taking the worst", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const hollow = item("dev/hollow", {
+      sources: {
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 4, bug: 6, criticalBug: 0 },
+          { path: "docs/sync.md", task: 0, bug: 2, criticalBug: 3 },
+          { path: "docs/ideas.md", task: 9, bug: 4, criticalBug: 0 },
+        ]),
+      },
+    });
+    const bird = birdIn([hollow], config, "dev/hollow");
+    const bugRows = bird.detail.ledger.flatMap((entry) =>
+      entry.kind === "count" && /bugs in/.test(entry.label)
+        ? [[entry.label, entry.text, entry.tone, entry.chip]]
+        : [],
+    );
+
+    expect(bird.health.level).toBe("red");
+    expect(
+      bird.health.causes.map((cause) =>
+        cause.kind === "bugs"
+          ? [cause.path, cause.level, cause.critical, cause.count]
+          : cause.kind,
+      ),
+    ).toEqual([
+      ["docs/sync.md", "red", true, 3],
+      ["docs/roadmap.md", "amber", false, 6],
+    ]);
+    expect(
+      bird.bubble.chips.map((chip) => [chip.label, chip.severity]),
+    ).toEqual([
+      ["3 critical bugs in docs/sync.md", "red"],
+      ["6 bugs in docs/roadmap.md", "amber"],
+      ["28 open items", null],
+    ]);
+    expect(bugRows).toEqual([
+      ["bugs in docs/roadmap.md", "6", "amber", "bugs"],
+      ["bugs in docs/sync.md", "2", null, null],
+      ["critical bugs in docs/sync.md", "3", "red", "bugs"],
+      ["bugs in docs/ideas.md", "4", null, null],
+    ]);
+    expect(row(bird, "critical bugs in docs/sync.md").workings).toEqual([
+      {
+        source: "docs/sync.md",
+        text: "amber at 1, red at 3",
+        tone: null,
+        url: null,
+        at: null,
+      },
+    ]);
+    expect(bird.bubble.speech).toBe(
+      "Three critical bugs open in docs/sync.md. I've also got six bugs open in docs/roadmap.md.",
+    );
+  });
+
+  it("leaves tasks out of health however many there are, and judges against the windows the roadmap carries", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const busy = (bug: number) =>
+      item("dev/hollow", {
+        sources: {
+          roadmap: {
+            ...mockRoadmap([
+              { path: "docs/roadmap.md", task: 300, bug, criticalBug: 0 },
+            ]),
+            thresholds: {
+              bugs: { amberCount: 2, redCount: 20 },
+              criticalBugs: { amberCount: 1, redCount: 3 },
+            },
+          },
+        },
+      });
+
+    expect(birdIn([busy(1)], config, "dev/hollow").health.causes).toEqual([]);
+    expect(birdIn([busy(2)], config, "dev/hollow").bubble.chips[0]).toEqual({
+      kind: "bugs",
+      label: "2 bugs in roadmap",
+      count: 2,
+      severity: "amber",
+    });
+  });
+
+  it("reads a roadmap cached before files were judged as not read", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const cached = item("dev/hollow", {
+      sources: {
+        roadmap: {
+          counts: { bug: 2, feature: 3 },
+          files: [{ path: "docs/roadmap.md", items: [], groups: [] }],
+        } as unknown as RoadmapData,
+      },
+    });
+    const bird = birdIn([cached], config, "dev/hollow");
+
+    expect([bird.health.causes, bird.plumpness.outstanding]).toEqual([[], 0]);
   });
 
   it("ages uncommitted changes from the oldest, toned by its window", async () => {
@@ -1281,10 +1374,9 @@ describe("the detail", () => {
           },
         ],
       }),
-      roadmap: {
-        counts: { task: 16, bug: 0, "critical-bug": 0 },
-        files: [{ path: "docs/roadmap.md", items: [], groups: [] }],
-      },
+      roadmap: mockRoadmap([
+        { path: "docs/roadmap.md", task: 16, bug: 0, criticalBug: 0 },
+      ]),
       github: forgeData({
         finalisedCommits: [
           {

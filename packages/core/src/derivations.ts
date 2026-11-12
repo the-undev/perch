@@ -21,6 +21,7 @@ import type {
   ActivityState,
   AgedWork,
   Backup,
+  BugThresholds,
   CiRun,
   CiState,
   DayThresholds,
@@ -173,15 +174,18 @@ export function deriveRoadmapFile(
     };
   };
 
+  const items = [
+    ...structure.bulletsBeforeFirstHeading.map((bullet) =>
+      bulletItem(bullet, [], kindOf),
+    ),
+    ...roots.filter(isBare).map((section) => headingItem(section, kindOf)),
+  ];
+  const groups = roots.filter((section) => !isBare(section)).map(node);
   return {
     path,
-    items: [
-      ...structure.bulletsBeforeFirstHeading.map((bullet) =>
-        bulletItem(bullet, [], kindOf),
-      ),
-      ...roots.filter(isBare).map((section) => headingItem(section, kindOf)),
-    ],
-    groups: roots.filter((section) => !isBare(section)).map(node),
+    items,
+    groups,
+    counts: openCounts([...items, ...groups.flatMap(allItems)]),
   };
 }
 
@@ -189,15 +193,19 @@ function allItems(group: WorkItemGroup): WorkItem[] {
   return [...group.items, ...group.groups.flatMap(allItems)];
 }
 
-/** Counts open items by kind across files and every nested group; done items are left out. */
-export function countOpenItems(files: readonly RoadmapFile[]): WorkItemCounts {
+function openCounts(items: readonly WorkItem[]): WorkItemCounts {
   const counts: WorkItemCounts = { task: 0, bug: 0, "critical-bug": 0 };
-  for (const file of files) {
-    for (const item of [...file.items, ...file.groups.flatMap(allItems)]) {
-      if (item.done !== true) counts[item.kind] += 1;
-    }
+  for (const item of items) {
+    if (item.done !== true) counts[item.kind] += 1;
   }
   return counts;
+}
+
+/** Counts open items by kind across files and every nested group; done items are left out. */
+export function countOpenItems(files: readonly RoadmapFile[]): WorkItemCounts {
+  return openCounts(
+    files.flatMap((file) => [...file.items, ...file.groups.flatMap(allItems)]),
+  );
 }
 
 /**
@@ -207,6 +215,7 @@ export function countOpenItems(files: readonly RoadmapFile[]): WorkItemCounts {
 export function deriveRoadmap(
   raw: RawRoadmap,
   words: WorkWords,
+  thresholds: BugThresholds,
 ): RoadmapData | ItemError {
   const files: RoadmapFile[] = [];
   for (const file of raw.files) {
@@ -215,19 +224,44 @@ export function deriveRoadmap(
     }
     files.push(deriveRoadmapFile(file.path, file.structure.value, words));
   }
-  return { counts: countOpenItems(files), files };
-}
-
-/** Open bugs of either kind. */
-export function openBugsOf(counts: WorkItemCounts): number {
-  return counts.bug + counts["critical-bug"];
+  return { counts: countOpenItems(files), files, thresholds };
 }
 
 /** An item without a roadmap file has no work items. */
-export const emptyRoadmap: RoadmapData = {
-  counts: { task: 0, bug: 0, "critical-bug": 0 },
-  files: [],
-};
+export function emptyRoadmap(thresholds: BugThresholds): RoadmapData {
+  return {
+    counts: { task: 0, bug: 0, "critical-bug": 0 },
+    files: [],
+    thresholds,
+  };
+}
+
+/** A roadmap file's open bugs and open critical bugs, each judged against its window. */
+export function bugLevelsOf(
+  counts: WorkItemCounts,
+  thresholds: BugThresholds,
+): { bugs: HealthLevel; criticalBugs: HealthLevel } {
+  return {
+    bugs: levelFor(
+      counts.bug,
+      thresholds.bugs.amberCount,
+      thresholds.bugs.redCount,
+    ),
+    criticalBugs: levelFor(
+      counts["critical-bug"],
+      thresholds.criticalBugs.amberCount,
+      thresholds.criticalBugs.redCount,
+    ),
+  };
+}
+
+/** The item's roadmap when it was read and judged; null otherwise. */
+export function roadmapOf(item: Item): RoadmapData | null {
+  const roadmap = item.sources.roadmap;
+  if (roadmap === undefined || "error" in roadmap) return null;
+  // A snapshot cached before roadmap files were judged has no thresholds field at all.
+  return roadmap.thresholds === undefined ? null : roadmap;
+}
 
 // Git
 
@@ -611,8 +645,25 @@ export function latestRunOf(data: ForgeData): CiRun | null {
 
 // Health
 
+/** A roadmap file's bug cause: the worse of its two levels, its critical bugs when they are as bad. */
+export function bugCause(
+  file: RoadmapFile,
+  thresholds: BugThresholds,
+): Extract<HealthCause, { kind: "bugs" }> {
+  const levels = bugLevelsOf(file.counts, thresholds);
+  const critical = compareLevels(levels.criticalBugs, levels.bugs) <= 0;
+  return {
+    kind: "bugs",
+    level: critical ? levels.criticalBugs : levels.bugs,
+    path: file.path,
+    critical,
+    count: critical ? file.counts["critical-bug"] : file.counts.bug,
+  };
+}
+
 /**
- * An item's health: the worst of its inputs. Failing CI and open bugs are red. A remote the clone
+ * An item's health: the worst of its inputs. Failing CI is red. Each roadmap file is judged on its
+ * own, the worse of its open bugs and open critical bugs against their windows. A remote the clone
  * pushes to that no card can read is amber; a forge whose read failed this scan is not an input.
  * Uncommitted changes, unpushed commits and stalled flight take the level already judged against
  * the item's windows. Only amber and red inputs are causes; they come worst first, ties in the
@@ -650,17 +701,11 @@ export function deriveHealth(item: Item): Health {
       fullName: presence.fullName,
     });
   }
-  const roadmap = item.sources.roadmap;
-  if (
-    roadmap !== undefined &&
-    !("error" in roadmap) &&
-    openBugsOf(roadmap.counts) > 0
-  ) {
-    candidates.push({
-      kind: "bugs",
-      level: "red",
-      count: openBugsOf(roadmap.counts),
-    });
+  const roadmap = roadmapOf(item);
+  if (roadmap !== null) {
+    candidates.push(
+      ...roadmap.files.map((file) => bugCause(file, roadmap.thresholds)),
+    );
   }
   const git = item.sources.git;
   if (git !== undefined && !("error" in git)) {

@@ -14,11 +14,12 @@ import {
   zellijSessionFor,
 } from "./config.ts";
 import {
-  countOpenItems,
+  bugCause,
+  bugLevelsOf,
   deriveHealth,
   hoursSince,
   latestRunOf,
-  openBugsOf,
+  roadmapOf,
 } from "./derivations.ts";
 import { commandKinds, type IconName, zellijKind } from "./launch-kinds.ts";
 import { itemRefs } from "./refs.ts";
@@ -27,6 +28,7 @@ import type {
   AgedWork,
   CiRun,
   CiState,
+  CountThresholds,
   FailureReason,
   FinalisedCommit,
   ForgeData,
@@ -77,7 +79,16 @@ export type HealthCause =
       /** The repository the clone pushes to, as its remote names it. */
       fullName: string;
     }
-  | { kind: "bugs"; level: HealthLevel; count: number }
+  | {
+      kind: "bugs";
+      level: HealthLevel;
+      /** The roadmap file judged. */
+      path: string;
+      /** Whether the level comes from its critical bugs, which win a tie with its bugs. */
+      critical: boolean;
+      /** The open bugs, or open critical bugs, the level comes from. */
+      count: number;
+    }
   | {
       kind: "uncommitted" | "unpushed";
       level: HealthLevel;
@@ -675,7 +686,7 @@ function roadmapWorkings(
   countOf: (counts: WorkItemCounts) => number,
 ): Working[] {
   return roadmap.files.flatMap((file): Working[] => {
-    const open = countOf(countOpenItems([file]));
+    const open = countOf(file.counts);
     if (open === 0) return [];
     return [
       {
@@ -685,6 +696,50 @@ function roadmapWorkings(
         url: null,
         at: null,
       },
+    ];
+  });
+}
+
+/** A count window as its working line, such as "amber at 5, red at 20". */
+function windowWorking(source: string, window: CountThresholds): Working {
+  return {
+    source,
+    text: `amber at ${window.amberCount}, red at ${window.redCount}`,
+    tone: null,
+    url: null,
+    at: null,
+  };
+}
+
+/**
+ * Each roadmap file's open bugs, then its open critical bugs when it has any, toned by their
+ * windows. A file past either window holds the bubble's bugs chip on the row its level comes from.
+ */
+function bugRows(roadmap: RoadmapData, chip: ChipKind | null): LedgerEntry[] {
+  const { thresholds } = roadmap;
+  return roadmap.files.flatMap((file) => {
+    const levels = bugLevelsOf(file.counts, thresholds);
+    const cause = bugCause(file, thresholds);
+    const judged = cause.level === "green" ? null : chip;
+    const rows = [
+      countEntry(
+        `bugs in ${file.path}`,
+        file.counts.bug,
+        severity(levels.bugs),
+        cause.critical ? null : judged,
+        [windowWorking(file.path, thresholds.bugs)],
+      ),
+    ];
+    if (file.counts["critical-bug"] === 0) return rows;
+    return [
+      ...rows,
+      countEntry(
+        `critical bugs in ${file.path}`,
+        file.counts["critical-bug"],
+        severity(levels.criticalBugs),
+        cause.critical ? judged : null,
+        [windowWorking(file.path, thresholds.criticalBugs)],
+      ),
     ];
   });
 }
@@ -782,14 +837,18 @@ function chipsFor(item: Item, health: Health): Chip[] {
       severity: worstCi === "failure" ? "red" : null,
     });
   }
-  const roadmap = readable<RoadmapData>(item.sources.roadmap);
-  const bugs = roadmap ? openBugsOf(roadmap.counts) : 0;
-  if (bugs > 0) {
+  const roadmap = roadmapOf(item);
+  for (const cause of health.causes) {
+    if (cause.kind !== "bugs") continue;
+    const file = roadmap?.files.length === 1 ? "roadmap" : cause.path;
+    const words = cause.critical
+      ? plural(cause.count, "critical bug", "critical bugs")
+      : plural(cause.count, "bug", "bugs");
     chips.push({
       kind: "bugs",
-      label: plural(bugs, "bug", "bugs"),
-      count: bugs,
-      severity: "red",
+      label: `${words} in ${file}`,
+      count: cause.count,
+      severity: severity(cause.level),
     });
   }
   const git = readable<GitData>(item.sources.git);
@@ -885,17 +944,9 @@ function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
       );
     }
   }
-  const roadmap = readable<RoadmapData>(item.sources.roadmap);
+  const roadmap = roadmapOf(item);
   if (roadmap) {
-    ledger.push(
-      countEntry(
-        "open bugs",
-        openBugsOf(roadmap.counts),
-        "red",
-        handle("bugs"),
-        roadmapWorkings(roadmap, openBugsOf),
-      ),
-    );
+    ledger.push(...bugRows(roadmap, handle("bugs")));
     ledger.push(
       countEntry(
         "open roadmap items",
@@ -1202,7 +1253,7 @@ function actionsFor(
 function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {
   const path = item.path;
   if (path === null) return [];
-  const roadmap = readable<RoadmapData>(item.sources.roadmap);
+  const roadmap = roadmapOf(item);
   const files = entry?.keyFiles ?? [
     "README.md",
     ...(roadmap?.files.map((file) => file.path) ?? []),
@@ -1339,7 +1390,7 @@ function speechSubject(
     branch: git?.branch ?? null,
     defaultBranch: git?.defaultBranch ?? null,
     unpushedCount: git?.unpushedCount ?? 0,
-    openItems: openItemsOf(readable<RoadmapData>(item.sources.roadmap)),
+    openItems: openItemsOf(roadmapOf(item)),
     lastTouchedHours: lastTouchedHours(item, scannedAt),
   };
 }
@@ -1359,7 +1410,7 @@ export function deriveBird(
   const wire = wireFor(config, entry);
   const adopted = wire !== null;
   const name = entry?.name ?? item.name;
-  const outstanding = openItemsOf(readable<RoadmapData>(item.sources.roadmap));
+  const outstanding = openItemsOf(roadmapOf(item));
   const speech = speak(speechSubject(item, wire, scannedAt));
   const sleepsAtNight =
     !adopted || (mood === "content" && activity !== "editing");

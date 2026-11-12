@@ -7,7 +7,8 @@
 // read, forges that couldn't be read at all and one whose pull requests alone couldn't be read,
 // the source cards every scan state, the Updates page every update state, and every kind of launch action, some overridden, the
 // Obsidian one on Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
-// numbered placeholder items, as many as each file's open counts.
+// numbered placeholder items, as many as each file's open counts, with roadmap files within
+// their bug windows, past amber on critical bugs, and past red on bugs.
 
 import {
   type Config,
@@ -364,21 +365,33 @@ function openItems(kind: WorkItemKind, count: number): WorkItem[] {
   }));
 }
 
-/** Roadmap files holding the given open tasks and bugs each, counted as the scan counts them. */
-function roadmap(
-  files: { path: string; task: number; bug: number }[],
+/** Roadmap files holding the given open tasks, bugs and critical bugs each, counted as the scan counts them. */
+export function mockRoadmap(
+  files: { path: string; task: number; bug: number; criticalBug: number }[],
 ): RoadmapData {
+  const total = (count: (file: (typeof files)[number]) => number) =>
+    files.reduce((sum, file) => sum + count(file), 0);
   return {
     counts: {
-      task: files.reduce((total, file) => total + file.task, 0),
-      bug: files.reduce((total, file) => total + file.bug, 0),
-      "critical-bug": 0,
+      task: total((file) => file.task),
+      bug: total((file) => file.bug),
+      "critical-bug": total((file) => file.criticalBug),
     },
     files: files.map((file) => ({
       path: file.path,
-      items: [...openItems("task", file.task), ...openItems("bug", file.bug)],
+      items: [
+        ...openItems("task", file.task),
+        ...openItems("bug", file.bug),
+        ...openItems("critical-bug", file.criticalBug),
+      ],
       groups: [],
+      counts: {
+        task: file.task,
+        bug: file.bug,
+        "critical-bug": file.criticalBug,
+      },
     })),
+    thresholds: defaultBugThresholds,
   };
 }
 
@@ -522,7 +535,9 @@ const dotfiles = localItem(".dotfiles", {
       },
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", task: 13, bug: 0 }]),
+    roadmap: mockRoadmap([
+      { path: "docs/roadmap.md", task: 13, bug: 0, criticalBug: 0 },
+    ]),
     github: forge("github", "finch/dotfiles", {
       finalisedCommits: [
         {
@@ -544,7 +559,10 @@ const dotfiles = localItem(".dotfiles", {
   },
 });
 
-/** Restless and being edited: six changes uncommitted for 30 hours, a full roadmap. */
+/**
+ * Restless and being edited: one critical bug in its garden plans, six changes uncommitted for
+ * 30 hours, and a full roadmap whose tech plans hold one bug, within its window.
+ */
 const hothouse = localItem("obsidian/Hothouse", {
   kind: "obsidian",
   forges: [presence("forgejo", "finch/Hothouse", "account-listing")],
@@ -594,9 +612,9 @@ const hothouse = localItem("obsidian/Hothouse", {
       },
       stall: null,
     },
-    roadmap: roadmap([
-      { path: "Tech/Tech Plans.md", task: 120, bug: 0 },
-      { path: "Garden/Garden Plans.md", task: 74, bug: 0 },
+    roadmap: mockRoadmap([
+      { path: "Tech/Tech Plans.md", task: 120, bug: 1, criticalBug: 0 },
+      { path: "Garden/Garden Plans.md", task: 74, bug: 0, criticalBug: 1 },
     ]),
     forgejo: forge("forgejo", "finch/Hothouse", {
       finalisedCommits: [
@@ -657,9 +675,9 @@ const pocket = localItem("obsidian/Pocket", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([
-      { path: "Code/Code Plans.md", task: 12, bug: 0 },
-      { path: "Pocket Plans.md", task: 0, bug: 0 },
+    roadmap: mockRoadmap([
+      { path: "Code/Code Plans.md", task: 12, bug: 0, criticalBug: 0 },
+      { path: "Pocket Plans.md", task: 0, bug: 0, criticalBug: 0 },
     ]),
     forgejo: forge("forgejo", "finch/Pocket", {
       finalisedCommits: [
@@ -752,7 +770,9 @@ const perch = localItem("dev/perch", {
         thresholds: dayWindows,
       },
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", task: 16, bug: 0 }]),
+    roadmap: mockRoadmap([
+      { path: "docs/roadmap.md", task: 16, bug: 0, criticalBug: 0 },
+    ]),
     github: forge("github", "finch/perch", {
       latestCi: {
         name: "check",
@@ -863,7 +883,9 @@ const harbour = localItem("undev/harbour", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", task: 12, bug: 0 }]),
+    roadmap: mockRoadmap([
+      { path: "docs/roadmap.md", task: 12, bug: 0, criticalBug: 0 },
+    ]),
     github: forge("github", "the-undev/harbour", {
       finalisedCommits: [
         {
@@ -959,7 +981,9 @@ const skiff = localItem("undev/skiff", {
         thresholds: dayWindows,
       },
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", task: 12, bug: 0 }]),
+    roadmap: mockRoadmap([
+      { path: "docs/roadmap.md", task: 12, bug: 0, criticalBug: 0 },
+    ]),
     github: {
       error: "no GitHub card is configured for owner skiff-app",
       cause: "no-card",
@@ -1062,7 +1086,9 @@ const prism = localItem("undev/prism", {
       },
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", task: 78, bug: 0 }]),
+    roadmap: mockRoadmap([
+      { path: "docs/roadmap.md", task: 78, bug: 0, criticalBug: 0 },
+    ]),
     github: forge("github", "the-undev/prism", {
       latestCi: {
         name: "check",
@@ -1122,7 +1148,7 @@ const prism = localItem("undev/prism", {
   },
 });
 
-/** Distressed: two bugs open on the roadmap. */
+/** Distressed: twenty-three bugs open on the roadmap, past red. */
 const hollow = localItem("undev/Hollow-legacy", {
   forges: [presence("github", "the-undev/Hollow")],
   sources: {
@@ -1164,7 +1190,9 @@ const hollow = localItem("undev/Hollow-legacy", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", task: 7, bug: 2 }]),
+    roadmap: mockRoadmap([
+      { path: "docs/roadmap.md", task: 7, bug: 23, criticalBug: 0 },
+    ]),
     github: forge("github", "the-undev/Hollow", {
       latestCi: {
         name: "CI",
@@ -1232,7 +1260,9 @@ const oxbow = localItem("undev/oxbow", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", task: 96, bug: 0 }]),
+    roadmap: mockRoadmap([
+      { path: "docs/roadmap.md", task: 96, bug: 0, criticalBug: 0 },
+    ]),
     github: forge("github", "the-undev/oxbow", {
       finalisedCommits: [
         {
@@ -1304,7 +1334,9 @@ const gramophone = localItem("undev/gramophone", {
       },
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", task: 3, bug: 0 }]),
+    roadmap: mockRoadmap([
+      { path: "docs/roadmap.md", task: 3, bug: 0, criticalBug: 0 },
+    ]),
     forgejo: forge("forgejo", "the-undev/gramophone", {
       finalisedCommits: [
         {
@@ -1358,7 +1390,9 @@ const spool = localItem("undev/spool", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([{ path: "docs/roadmap.md", task: 0, bug: 0 }]),
+    roadmap: mockRoadmap([
+      { path: "docs/roadmap.md", task: 0, bug: 0, criticalBug: 0 },
+    ]),
     forgejo: forge("forgejo", "the-undev/spool", {
       finalisedCommits: [
         {
@@ -1446,7 +1480,9 @@ const glyphDocs = localItem("undev/glyph-docs", {
         thresholds: dayWindows,
       },
     },
-    roadmap: roadmap([{ path: "Roadmap.md", task: 11, bug: 0 }]),
+    roadmap: mockRoadmap([
+      { path: "Roadmap.md", task: 11, bug: 0, criticalBug: 0 },
+    ]),
     forgejo: forge("forgejo", "the-undev/glyph-docs", {
       finalisedCommits: [
         {
@@ -1511,7 +1547,7 @@ const homeItConfig = localItem("dev/hearth-config", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([]),
+    roadmap: mockRoadmap([]),
     github: {
       error:
         'no token in the keyring under service perch key github-finch; store it with: secret-tool store --label "perch github-finch" service perch key github-finch',
@@ -1557,7 +1593,7 @@ const hello = localItem("dev/odin/hello", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: roadmap([]),
+    roadmap: mockRoadmap([]),
   },
 });
 

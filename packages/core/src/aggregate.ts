@@ -164,20 +164,25 @@ function localSources(
   const sources: ItemSources = {};
   const { id, presence } = project.local;
   const observedAt = new Date(files.local?.gatheredAt ?? 0);
+  const thresholds = thresholdsFor(config, entry);
   if (presence.git.state === "error") {
     sources.git = { error: presence.git.error };
   } else if (presence.git.state === "observed") {
     sources.git = deriveGit(
       presence.git.value,
-      thresholdsFor(config, entry),
+      thresholds,
       observedAt,
       backupOf(project),
     );
   }
+  const bugThresholds = {
+    bugs: thresholds.bugs,
+    criticalBugs: thresholds.criticalBugs,
+  };
   const roadmap = fromEntry(
     files.roadmap?.data[id],
-    (raw) => deriveRoadmap(raw, workWordsFor(config, entry)),
-    () => emptyRoadmap,
+    (raw) => deriveRoadmap(raw, workWordsFor(config, entry), bugThresholds),
+    () => emptyRoadmap(bugThresholds),
   );
   if (roadmap !== undefined) sources.roadmap = roadmap;
   return sources;

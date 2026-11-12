@@ -192,12 +192,16 @@ describe("aggregate", () => {
     expect(perch?.sources.roadmap).toEqual({
       counts: { task: 0, bug: 0, "critical-bug": 0 },
       files: [],
+      thresholds: {
+        bugs: { amberCount: 5, redCount: 20 },
+        criticalBugs: { amberCount: 1, redCount: 3 },
+      },
     });
   });
 
-  it("classes roadmap items by the word lists the item's entry sets, else [work]", async () => {
+  it("classes roadmap items by the word lists the item's entry sets, else [work], and judges them by its windows", async () => {
     const worded = await testConfig(
-      '[work]\nbug_words = ["defect"]\n\n[items."dev/perch"]\ncritical_bug_words = ["outage"]\n',
+      '[work]\nbug_words = ["defect"]\n\n[items."dev/perch"]\ncritical_bug_words = ["outage"]\nbugs_red_count = 9\n',
     );
     const structure = readRoadmapStructure(
       "- A defect in the export\n- An outage at night\n- A bug in the import\n",
@@ -231,6 +235,11 @@ describe("aggregate", () => {
 
     expect(perch?.sources.roadmap).toMatchObject({
       counts: { task: 1, bug: 1, "critical-bug": 1 },
+      files: [{ counts: { task: 1, bug: 1, "critical-bug": 1 } }],
+      thresholds: {
+        bugs: { amberCount: 5, redCount: 9 },
+        criticalBugs: { amberCount: 1, redCount: 3 },
+      },
     });
   });
 

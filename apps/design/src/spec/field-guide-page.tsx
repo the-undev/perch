@@ -13,7 +13,7 @@ import { SpeakingBird } from "../speaking-bird.tsx";
 import { mockBird, mockWire } from "../specimens.ts";
 import { Plate, Pressed, Specimen } from "../usage.tsx";
 
-const { unsafe, stalled } = defaultConfig().thresholds;
+const { unsafe, stalled, bugs, criticalBugs } = defaultConfig().thresholds;
 const largestGrowth = Math.round(
   (plumpScale({ outstanding: plumpnessCap, fullness: 1 }) - 1) * 100,
 );
@@ -31,7 +31,7 @@ interface Note {
 const birdNotes: Note[] = [
   {
     title: "Breast colour · health, worn as mood",
-    text: `Green content, amber restless, red distressed. Failing CI and open bugs are red. A remote the clone pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled flight, parked on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
+    text: `Green content, amber restless, red distressed. Failing CI is red. Each roadmap file is judged on its own: ${bugs.amberCount} open bugs turn it amber and ${bugs.redCount} red, ${criticalBugs.amberCount} open critical bug amber and ${criticalBugs.redCount} red. Tasks never count. A remote the clone pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled flight, parked on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
     rule: "Worst input wins. The windows are config defaults from the Judgement page; a bird's papers may set its own.",
   },
   {

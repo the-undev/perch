@@ -46,7 +46,7 @@ describe("the ledger", () => {
     expect(rows(container).slice(0, 4)).toEqual([
       ["uncommitted changes", "4", "amber"],
       ["unpushed commits", "none", "green"],
-      ["open bugs", "none", "green"],
+      ["bugs in docs/roadmap.md", "none", "green"],
       ["open roadmap items", "78", "none"],
     ]);
   });
@@ -202,8 +202,11 @@ describe("the ledger's workings", () => {
     );
 
     expect(workings(container, "open-items")).toEqual([
-      ["Tech/Tech Plans.md · 120 open", "none"],
-      ["Garden/Garden Plans.md · 74 open", "none"],
+      ["Tech/Tech Plans.md · 121 open", "none"],
+      ["Garden/Garden Plans.md · 75 open", "none"],
+    ]);
+    expect(workings(container, "bugs")).toEqual([
+      ["Garden/Garden Plans.md · amber at 1, red at 3", "none"],
     ]);
     expect(workings(container, "uncommitted")).toEqual([
       ["git · oldest change · 30 hours ago", "amber"],

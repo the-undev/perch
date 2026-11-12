@@ -95,6 +95,14 @@ const forgeLabel: Record<ForgeName, string> = {
   forgejo: "Forgejo",
 };
 
+/** The bugs a roadmap file's cause counts, critical or not, by its count. */
+function bugWords(cause: Extract<HealthCause, { kind: "bugs" }>): string {
+  if (cause.critical) {
+    return plural(cause.count, "critical bug", "critical bugs");
+  }
+  return plural(cause.count, "bug", "bugs");
+}
+
 /** The opening sentence a cause speaks first, and the closing remark it adds when alone. */
 function primary(cause: HealthCause): {
   opening: string[];
@@ -116,7 +124,7 @@ function primary(cause: HealthCause): {
     case "bugs":
       return {
         opening: [
-          `${capitalise(countWords(cause.count))} ${plural(cause.count, "bug", "bugs")} open against me.`,
+          `${capitalise(countWords(cause.count))} ${bugWords(cause)} open in ${cause.path}.`,
         ],
         closing: "Not thrilled about it.",
       };
@@ -170,7 +178,7 @@ function secondary(cause: HealthCause): string {
     case "unreadable-remote":
       return `I also push to ${cause.fullName} on ${cause.forge}, and no card of yours can read it.`;
     case "bugs":
-      return `I've also got ${countWords(cause.count)} ${plural(cause.count, "bug", "bugs")} open.`;
+      return `I've also got ${countWords(cause.count)} ${bugWords(cause)} open in ${cause.path}.`;
     case "uncommitted":
       return `I'm also holding ${countWords(cause.count)} uncommitted ${plural(cause.count, "change", "changes")} for ${hoursWords(cause.work.hours)}.`;
     case "unpushed":

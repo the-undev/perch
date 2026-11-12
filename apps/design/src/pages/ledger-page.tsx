@@ -92,7 +92,7 @@ const workingSpecimens: LedgerSpecimen[] = [
   {
     id: "undev/Hollow-legacy",
     label: "Bugs",
-    rule: "Hollow: the bugs row names the roadmap file the two bugs are in.",
+    rule: "Hollow: the bugs row for its roadmap file holds 23, past red, its working the window it is judged by. A critical bug row appears only for a file that has any.",
   },
   {
     id: "undev/skiff",

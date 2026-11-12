@@ -1,12 +1,14 @@
+import type { LineMarks } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { KeyFilePaper, type KeyFileSheet } from "./paper.tsx";
 
 afterEach(cleanup);
 
-const file = (path: string) => ({
+const file = (path: string, marks: LineMarks = {}) => ({
   path,
   absolutePath: `/home/owner/dev/perch/${path}`,
+  marks,
 });
 
 const sheets: KeyFileSheet[] = [
@@ -99,6 +101,58 @@ describe("the key-file paper", () => {
     expect(sheet.style.height).toBe("");
     expect(sheet.querySelectorAll("h2")).toHaveLength(200);
     expect(tabs).toEqual(expect.arrayContaining(["sticky", "top-0"]));
+  });
+
+  it("marks a roadmap's bug lines as found, a critical bug and a done bug each its own way, and leaves other lines bare", () => {
+    const markdown = [
+      "# Roadmap", // 1
+      "", // 2
+      "## Critical", // 3
+      "", // 4
+      "- [ ] Data loss when two devices save at once", // 5
+      "  - seen on Android only so far", // 6
+      "", // 7
+      "## Bugs", // 8
+      "", // 9
+      "- [x] A CSV with a byte order mark fails to parse", // 10
+      "- [ ] Dates read as US format", // 11
+      "", // 12
+      "## Forge issues source", // 13
+      "", // 14
+      "- Queue edits while offline", // 15
+    ].join("\n");
+    const { container } = render(
+      <KeyFilePaper
+        sheets={[
+          {
+            file: file("docs/roadmap.md", {
+              5: { kind: "critical-bug", done: false },
+              10: { kind: "bug", done: true },
+              11: { kind: "bug", done: false },
+              13: { kind: "bug", done: false },
+            }),
+            markdown,
+          },
+        ]}
+      />,
+    );
+    const marked = (element: Element) => [
+      element.textContent?.split("\n")[0]?.trim(),
+      element.getAttribute("data-mark"),
+      element.hasAttribute("data-mark-done"),
+    ];
+
+    expect([...container.querySelectorAll("li, h1, h2")].map(marked)).toEqual([
+      ["Roadmap", null, false],
+      ["Critical", null, false],
+      ["Data loss when two devices save at once", "critical-bug", false],
+      ["seen on Android only so far", null, false],
+      ["Bugs", null, false],
+      ["A CSV with a byte order mark fails to parse", "bug", true],
+      ["Dates read as US format", "bug", false],
+      ["Forge issues source", "bug", false],
+      ["Queue edits while offline", null, false],
+    ]);
   });
 
   it("draws nothing for a bird without key files", () => {

@@ -1,9 +1,15 @@
 // The key files as paper, the bubble's material, with a folder tab per file. The view model holds
-// the paths; the caller reads the files and passes their markdown in.
+// the paths and a roadmap file's margin marks; the caller reads the files and passes their markdown in.
 
-import type { KeyFile } from "@perch/core/viewmodel.ts";
-import { useId, useState } from "react";
-import Markdown from "react-markdown";
+import type { KeyFile, LineMarks } from "@perch/core/viewmodel.ts";
+import {
+  createElement,
+  type HTMLAttributes,
+  useId,
+  useMemo,
+  useState,
+} from "react";
+import Markdown, { type Components, type ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 /** One key file and what was read from it; null when it could not be read. */
@@ -29,11 +35,43 @@ function PaperImage({
   return <>{alt ?? ""}</>;
 }
 
-/** A sheet of paper holding one rendered markdown file. */
-export function MarkdownPaper({ markdown }: { markdown: string }) {
+/** The elements a roadmap's bug can start on: a list item, or a heading. */
+const markable = ["li", "h1", "h2", "h3", "h4", "h5", "h6"] as const;
+
+/** Each markable element carrying the mark of the source line it starts on, if that line has one. */
+function markedComponents(marks: LineMarks): Components {
+  return Object.fromEntries(
+    markable.map((Tag) => [
+      Tag,
+      ({ node, ...props }: HTMLAttributes<HTMLElement> & ExtraProps) => {
+        const line = node?.position?.start.line;
+        const mark = line === undefined ? undefined : marks[line];
+        if (mark === undefined) return createElement(Tag, props);
+        return createElement(Tag, {
+          ...props,
+          "data-mark": mark.kind,
+          "data-mark-done": mark.done ? "" : undefined,
+        });
+      },
+    ]),
+  );
+}
+
+/** A sheet of paper holding one rendered markdown file, with a mark in the margin beside each marked line. */
+export function MarkdownPaper({
+  markdown,
+  marks,
+}: {
+  markdown: string;
+  marks: LineMarks;
+}) {
+  const components = useMemo(
+    () => ({ ...markedComponents(marks), img: PaperImage }),
+    [marks],
+  );
   return (
     <div className="perch-prose">
-      <Markdown remarkPlugins={[remarkGfm]} components={{ img: PaperImage }}>
+      <Markdown remarkPlugins={[remarkGfm]} components={components}>
         {markdown}
       </Markdown>
     </div>
@@ -92,7 +130,7 @@ export function KeyFilePaper({ sheets }: { sheets: KeyFileSheet[] }) {
             read.
           </p>
         ) : (
-          <MarkdownPaper markdown={open.markdown} />
+          <MarkdownPaper markdown={open.markdown} marks={open.file.marks} />
         )}
       </div>
     </div>

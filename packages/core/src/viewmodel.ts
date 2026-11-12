@@ -44,12 +44,15 @@ import type {
   PolledSourceName,
   PullRequest,
   RoadmapData,
+  RoadmapFile,
   Snapshot,
   SourceCard,
   SourceCardKind,
   SourceCardResult,
   Stall,
+  WorkItem,
   WorkItemCounts,
+  WorkItemGroup,
 } from "./snapshot.ts";
 import {
   type FenceSituation,
@@ -354,10 +357,21 @@ export interface LinkOut {
   url: string;
 }
 
+/** The mark in the paper's margin beside a bug's line: one bar for a bug, two for a critical bug, faint once done. */
+export interface LineMark {
+  kind: "bug" | "critical-bug";
+  done: boolean;
+}
+
+/** Margin marks by the source line they sit beside, counted from 1. */
+export type LineMarks = Record<number, LineMark>;
+
 /** A file the detail page renders as paper, read at render time. */
 export interface KeyFile {
   path: string;
   absolutePath: string;
+  /** The marks beside its bugs' lines when it is one of the bird's roadmap files; empty otherwise. */
+  marks: LineMarks;
 }
 
 /** A source that could not be read for this bird. */
@@ -1250,15 +1264,36 @@ function actionsFor(
   });
 }
 
+/** The margin marks a roadmap file's bugs and critical bugs put beside their lines; tasks have none. */
+export function lineMarksOf(file: RoadmapFile): LineMarks {
+  const walk = (group: WorkItemGroup): WorkItem[] => [
+    ...group.items,
+    ...group.groups.flatMap(walk),
+  ];
+  const marks: LineMarks = {};
+  for (const item of [...file.items, ...file.groups.flatMap(walk)]) {
+    if (item.kind === "task") continue;
+    marks[item.line] = { kind: item.kind, done: item.done === true };
+  }
+  return marks;
+}
+
 function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {
   const path = item.path;
   if (path === null) return [];
-  const roadmap = roadmapOf(item);
+  const roadmapFiles = roadmapOf(item)?.files ?? [];
   const files = entry?.keyFiles ?? [
     "README.md",
-    ...(roadmap?.files.map((file) => file.path) ?? []),
+    ...roadmapFiles.map((file) => file.path),
   ];
-  return files.map((file) => ({ path: file, absolutePath: `${path}/${file}` }));
+  return files.map((file) => {
+    const roadmapFile = roadmapFiles.find((entry) => entry.path === file);
+    return {
+      path: file,
+      absolutePath: `${path}/${file}`,
+      marks: roadmapFile === undefined ? {} : lineMarksOf(roadmapFile),
+    };
+  });
 }
 
 /**

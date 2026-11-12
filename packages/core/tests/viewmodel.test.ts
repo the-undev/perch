@@ -1,6 +1,14 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { Config } from "../src/config.ts";
+import {
+  builtInBugWords,
+  builtInCriticalBugWords,
+  type Config,
+} from "../src/config.ts";
+import { deriveRoadmapFile } from "../src/derivations.ts";
 import { mockRoadmap } from "../src/mock.ts";
+import { readRoadmapStructure } from "../src/roadmap-parser.ts";
 import type {
   FinalisedCommit,
   ForgeName,
@@ -1813,17 +1821,72 @@ describe("the detail", () => {
     );
 
     expect(birdIn([perch], defaults, "dev/perch").detail.keyFiles).toEqual([
-      { path: "README.md", absolutePath: "/home/test/dev/perch/README.md" },
+      {
+        path: "README.md",
+        absolutePath: "/home/test/dev/perch/README.md",
+        marks: {},
+      },
       {
         path: "docs/roadmap.md",
         absolutePath: "/home/test/dev/perch/docs/roadmap.md",
+        marks: {},
       },
     ]);
     expect(birdIn([perch], own, "dev/perch").detail.keyFiles).toEqual([
       {
         path: "docs/spec.md",
         absolutePath: "/home/test/dev/perch/docs/spec.md",
+        marks: {},
       },
+    ]);
+  });
+
+  it("marks each bug's and critical bug's line on a roadmap file's paper, faint once done, and no other file", async () => {
+    const own = await testConfig(
+      '[items."dev/perch"]\nkey_files = ["README.md", "docs/roadmap.md", "docs/plans.md"]\n',
+    );
+    const fixture = (path: string, name: string) =>
+      deriveRoadmapFile(
+        path,
+        readRoadmapStructure(
+          readFileSync(
+            join(import.meta.dirname, "fixtures", "roadmaps", name),
+            "utf8",
+          ),
+        ),
+        {
+          bug: [...builtInBugWords],
+          criticalBug: [...builtInCriticalBugWords],
+        },
+      );
+    const marked = item("dev/perch", {
+      sources: {
+        roadmap: {
+          ...mockRoadmap([]),
+          files: [
+            fixture("docs/roadmap.md", "hierarchy.md"),
+            fixture("docs/plans.md", "headings-as-tasks.md"),
+          ],
+        },
+      },
+    });
+
+    expect(
+      birdIn([marked], own, "dev/perch").detail.keyFiles.map((keyFile) => [
+        keyFile.path,
+        keyFile.marks,
+      ]),
+    ).toEqual([
+      ["README.md", {}],
+      [
+        "docs/roadmap.md",
+        {
+          15: { kind: "critical-bug", done: false },
+          23: { kind: "bug", done: true },
+          24: { kind: "bug", done: false },
+        },
+      ],
+      ["docs/plans.md", { 13: { kind: "bug", done: false } }],
     ]);
   });
 });

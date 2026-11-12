@@ -2,8 +2,11 @@ import type { LedgerEntry } from "@perch/core/viewmodel.ts";
 import { ChipHandles } from "@perch/ui/chip.tsx";
 import { type Landing, Ledger } from "@perch/ui/ledger.tsx";
 import { useState } from "react";
-import { mockBird, scanMoment } from "../specimens.ts";
+import { bugLedgerRows, mockBird, scanMoment } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
+
+/** A bug line pressed on a page with no paper beside the ledger. */
+const ignoreReveal = () => {};
 
 /** A state the mock lacks: a last commit three weeks old. */
 const handBuilt: LedgerEntry[] = [
@@ -92,7 +95,7 @@ const workingSpecimens: LedgerSpecimen[] = [
   {
     id: "undev/Hollow-legacy",
     label: "Bugs",
-    rule: "Hollow: the bugs row names the roadmap file the two bugs are in.",
+    rule: "Hollow: the bugs row for its roadmap file holds 23, past red, its working the window it is judged by. A critical bug row appears only for a file that has any.",
   },
   {
     id: "undev/skiff",
@@ -103,6 +106,27 @@ const workingSpecimens: LedgerSpecimen[] = [
     id: "dev/hearth-config",
     label: "No forge could be read",
     rule: "hearth-config: neither forge's token was found, so the CI and pull request rows themselves say couldn't read, in amber, each forge beneath them saying so.",
+  },
+];
+
+const bugMoods = [
+  {
+    mood: "content",
+    bug: 4,
+    criticalBug: 2,
+    rule: "Content: 4 bugs against 5 and 2 critical bugs against 3. Each row lists its open lines and nothing else.",
+  },
+  {
+    mood: "restless",
+    bug: 5,
+    criticalBug: 3,
+    rule: "Restless: 5 bugs and 3 critical bugs, each at its amber count. Each row ends in a restless line naming that count, toned amber.",
+  },
+  {
+    mood: "distressed",
+    bug: 20,
+    criticalBug: 6,
+    rule: "Distressed: 20 bugs and 6 critical bugs, each at its red count. Each row ends in a distressed line naming that count, toned red.",
   },
 ];
 
@@ -121,6 +145,7 @@ function LandingDemo() {
         />
       </div>
       <Ledger
+        onReveal={ignoreReveal}
         quiet={perch.detail.quiet}
         entries={perch.detail.ledger}
         now={scanMoment}
@@ -146,6 +171,7 @@ export function LedgerPage() {
           >
             <Ground>
               <Ledger
+                onReveal={ignoreReveal}
                 quiet={mockBird(specimen.id).detail.quiet}
                 entries={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}
@@ -160,6 +186,7 @@ export function LedgerPage() {
         >
           <Ground>
             <Ledger
+              onReveal={ignoreReveal}
               quiet={null}
               entries={handBuilt}
               now={scanMoment}
@@ -182,8 +209,33 @@ export function LedgerPage() {
           >
             <Ground>
               <Ledger
+                onReveal={ignoreReveal}
                 quiet={mockBird(specimen.id).detail.quiet}
                 entries={mockBird(specimen.id).detail.ledger}
+                now={scanMoment}
+                landing={null}
+              />
+            </Ground>
+          </Specimen>
+        ))}
+      </Section>
+
+      <Section
+        title="Bug rows by mood"
+        rule="A roadmap file's bugs row and critical bugs row list their open bugs, then one line when the count has reached a window: restless at the amber count, distressed at the red count, toned like the row. Within its window a row has no such line. The windows here are 5 and 20 for bugs and 3 and 6 for critical bugs."
+        min={360}
+      >
+        {bugMoods.map((specimen) => (
+          <Specimen
+            key={specimen.mood}
+            label={specimen.mood}
+            rule={specimen.rule}
+          >
+            <Ground>
+              <Ledger
+                onReveal={ignoreReveal}
+                quiet={null}
+                entries={bugLedgerRows(specimen.bug, specimen.criticalBug)}
                 now={scanMoment}
                 landing={null}
               />

@@ -444,6 +444,45 @@
   .perch-prose td code {
     white-space: nowrap;
   }
+  /* A roadmap bug's mark, in the sheet's left margin level with its line: one
+     bar for a bug, two for a critical bug, faint once done. The gutter is the
+     sheet's left padding, px-9.5 in paper.tsx; a list item sits a list's
+     indent further in. */
+  .perch-prose [data-mark] {
+    --mark-gutter: 38px;
+    --mark-indent: 0px;
+    position: relative;
+  }
+  .perch-prose li[data-mark] {
+    --mark-indent: 22px;
+  }
+  /* A revealed line holds its landing mark behind its words. */
+  .perch-prose [data-revealed] {
+    isolation: isolate;
+  }
+  .perch-prose [data-mark]::before,
+  .perch-prose [data-mark="critical-bug"]::after {
+    content: "";
+    position: absolute;
+    top: 0.25em;
+    height: 1.1em;
+    width: 2.5px;
+    border-radius: 1px;
+    background: var(--color-paper-red);
+  }
+  .perch-prose [data-mark="bug"]::before {
+    left: calc(14px - var(--mark-gutter) - var(--mark-indent));
+  }
+  .perch-prose [data-mark="critical-bug"]::before {
+    left: calc(12px - var(--mark-gutter) - var(--mark-indent));
+  }
+  .perch-prose [data-mark="critical-bug"]::after {
+    left: calc(17px - var(--mark-gutter) - var(--mark-indent));
+  }
+  .perch-prose [data-mark-done]::before,
+  .perch-prose [data-mark-done]::after {
+    opacity: 0.35;
+  }
 }
 
 /* The no-clone slip: a docket cut short, its bottom edge in small teeth, and

@@ -1,7 +1,7 @@
 // Every derivation rule perch applies to raw facts, in one place. Gathering never judges; each
 // rule here can be read and changed without touching how the machine is read.
 
-import { collapseHome, type SourcesConfig } from "./config.ts";
+import { collapseHome, type SourcesConfig, type WorkWords } from "./config.ts";
 import type {
   Entry,
   RawBullet,
@@ -21,6 +21,7 @@ import type {
   ActivityState,
   AgedWork,
   Backup,
+  BugThresholds,
   CiRun,
   CiState,
   DayThresholds,
@@ -45,19 +46,61 @@ import type {
   WorkItem,
   WorkItemCounts,
   WorkItemGroup,
+  WorkItemKind,
 } from "./snapshot.ts";
 import type { Health, HealthCause } from "./viewmodel.ts";
 
 // Work items
 
-/** A heading whose text contains the word bug or bugs, in any case, marks the items beneath it. */
-export function mentionsBugs(heading: string): boolean {
-  return /\bbugs?\b/i.test(heading);
+const wordCharacter = "[\\p{L}\\p{N}_]";
+
+/** One pattern matching any of the words whole, in any case; an empty list matches nothing. */
+function wordPattern(words: readonly string[]): RegExp {
+  if (words.length === 0) return /(?!)/u;
+  const alternatives = words
+    .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  return new RegExp(
+    `(?<!${wordCharacter})(?:${alternatives})(?!${wordCharacter})`,
+    "iu",
+  );
 }
 
-/** A #bug tag on an item's line marks it as a bug wherever it sits. */
-function hasBugTag(tags: readonly string[]): boolean {
-  return tags.some((tag) => tag.toLowerCase() === "bug");
+/**
+ * Classes a task by the texts it is read from: its own text and every heading above it. A #tag
+ * is part of the text it sits in, so it matches there, and is ignored inside a mention there.
+ */
+type KindOf = (texts: readonly string[]) => WorkItemKind;
+
+/** Inline code and double-quoted text, straight or curly: a term mentioned rather than used. */
+const mentionPattern = /(`+)[^`][\s\S]*?\1|"[^"]*"|“[^”]*”/g;
+
+/** The text with each mention blanked, so the words either side stay apart. */
+function withoutMentions(text: string): string {
+  return text.replace(mentionPattern, " ");
+}
+
+/**
+ * A word from the critical bug list makes a critical bug on its own and wins over a bug word; a word
+ * from the bug list makes a bug; anything else is a task. Words inside a mention do not count.
+ */
+export function kindClassifier(words: WorkWords): KindOf {
+  const critical = wordPattern(words.criticalBug);
+  const bug = wordPattern(words.bug);
+  return (given) => {
+    const texts = given.map(withoutMentions);
+    if (texts.some((text) => critical.test(text))) return "critical-bug";
+    if (texts.some((text) => bug.test(text))) return "bug";
+    return "task";
+  };
+}
+
+/** A section's heading and every heading above it, nearest first. */
+function headingsOf(section: RawSection): string[] {
+  return [
+    section.heading,
+    ...section.parents.map((parent) => parent.text).reverse(),
+  ];
 }
 
 /** Progress is checked against total checkbox items; null for a group without checkboxes. */
@@ -68,10 +111,14 @@ function progressOf(items: readonly WorkItem[]): WorkItemGroup["progress"] {
   return { done, total: checkboxes.length };
 }
 
-function bulletItem(bullet: RawBullet, underBugs: boolean): WorkItem {
+function bulletItem(
+  bullet: RawBullet,
+  headings: readonly string[],
+  kindOf: KindOf,
+): WorkItem {
   return {
     text: bullet.text,
-    kind: underBugs || hasBugTag(bullet.tags) ? "bug" : "feature",
+    kind: kindOf([bullet.text, ...headings]),
     done: bullet.checkbox === "none" ? null : bullet.checkbox === "checked",
     line: bullet.line,
     source: "bullet",
@@ -79,30 +126,47 @@ function bulletItem(bullet: RawBullet, underBugs: boolean): WorkItem {
   };
 }
 
-function headingItem(section: RawSection, underBugs: boolean): WorkItem {
-  const bug =
-    underBugs || mentionsBugs(section.heading) || hasBugTag(section.tags);
+/** A section's checkbox bullets; plain bullets are notes, not tasks. */
+function taskBulletsOf(section: RawSection): RawBullet[] {
+  return section.bullets.filter((bullet) => bullet.checkbox !== "none");
+}
+
+/** A heading task's body: its prose, then its plain bullets as lines. */
+function bodyOf(section: RawSection): string | null {
+  const body = [
+    section.prose,
+    section.bullets.map((bullet) => `- ${bullet.text}`).join("\n"),
+  ]
+    .filter((part) => part !== "")
+    .join("\n\n");
+  return body === "" ? null : body;
+}
+
+function headingItem(section: RawSection, kindOf: KindOf): WorkItem {
   return {
     text: section.heading,
-    kind: bug ? "bug" : "feature",
+    kind: kindOf(headingsOf(section)),
     done: null,
     line: section.line,
     source: "heading",
-    body: section.prose === "" ? null : section.prose,
+    body: bodyOf(section),
   };
 }
 
 /**
- * Work items from one roadmap file, by the per-heading rule. A heading with direct bullets is a
- * group whose bullets are items. A heading with no bullets and no sub-headings is one item, its
- * prose the body. A heading with sub-headings and no bullets is structure; one with both is a
- * group with nested sub-groups. Bullets above the first heading are items at the top. An item is
- * a bug under any heading mentioning bugs, or with a #bug tag. Checkboxes set done.
+ * Work items from one roadmap file, by the per-heading rule. Only checkbox bullets are tasks;
+ * plain bullets are notes. A heading with checkbox bullets is a group whose checkbox bullets are
+ * items. A heading with no checkbox bullets and no sub-headings is one item, its prose and plain
+ * bullets the body. A heading with sub-headings and no checkbox bullets is structure; one with
+ * both is a group with nested sub-groups. Checkbox bullets above the first heading are items at
+ * the top. The word lists class each item as a task, a bug or a critical bug. Checkboxes set done.
  */
 export function deriveRoadmapFile(
   path: string,
   structure: RoadmapStructure,
+  words: WorkWords,
 ): RoadmapFile {
+  const kindOf = kindClassifier(words);
   const children = new Map<number, RawSection[]>();
   const roots: RawSection[] = [];
   for (const section of structure.sections) {
@@ -115,40 +179,42 @@ export function deriveRoadmapFile(
   }
   const childrenOf = (section: RawSection) => children.get(section.line) ?? [];
   const isBare = (section: RawSection) =>
-    section.bullets.length === 0 && childrenOf(section).length === 0;
+    taskBulletsOf(section).length === 0 && childrenOf(section).length === 0;
 
-  const node = (section: RawSection, ancestorsBugs: boolean): WorkItemGroup => {
-    const bugs = ancestorsBugs || mentionsBugs(section.heading);
+  const node = (section: RawSection): WorkItemGroup => {
     const items = [
-      ...section.bullets.map((bullet) => bulletItem(bullet, bugs)),
+      ...taskBulletsOf(section).map((bullet) =>
+        bulletItem(bullet, headingsOf(section), kindOf),
+      ),
       ...childrenOf(section)
         .filter(isBare)
-        .map((child) => headingItem(child, bugs)),
+        .map((child) => headingItem(child, kindOf)),
     ];
     return {
       heading: section.heading,
       level: section.level,
       line: section.line,
-      role: section.bullets.length > 0 ? "group" : "structure",
+      role: taskBulletsOf(section).length > 0 ? "group" : "structure",
       items,
       groups: childrenOf(section)
         .filter((child) => !isBare(child))
-        .map((child) => node(child, bugs)),
+        .map(node),
       progress: progressOf(items),
     };
   };
 
+  const items = [
+    ...structure.bulletsBeforeFirstHeading
+      .filter((bullet) => bullet.checkbox !== "none")
+      .map((bullet) => bulletItem(bullet, [], kindOf)),
+    ...roots.filter(isBare).map((section) => headingItem(section, kindOf)),
+  ];
+  const groups = roots.filter((section) => !isBare(section)).map(node);
   return {
     path,
-    items: [
-      ...structure.bulletsBeforeFirstHeading.map((bullet) =>
-        bulletItem(bullet, false),
-      ),
-      ...roots.filter(isBare).map((section) => headingItem(section, false)),
-    ],
-    groups: roots
-      .filter((section) => !isBare(section))
-      .map((section) => node(section, false)),
+    items,
+    groups,
+    counts: openCounts([...items, ...groups.flatMap(allItems)]),
   };
 }
 
@@ -156,37 +222,83 @@ function allItems(group: WorkItemGroup): WorkItem[] {
   return [...group.items, ...group.groups.flatMap(allItems)];
 }
 
-/** Counts open items by kind across files and every nested group; done items are left out. */
-export function countOpenItems(files: readonly RoadmapFile[]): WorkItemCounts {
-  const counts: WorkItemCounts = { bug: 0, feature: 0 };
-  for (const file of files) {
-    for (const item of [...file.items, ...file.groups.flatMap(allItems)]) {
-      if (item.done !== true) counts[item.kind] += 1;
-    }
+function openCounts(items: readonly WorkItem[]): WorkItemCounts {
+  const counts: WorkItemCounts = { task: 0, bug: 0, "critical-bug": 0 };
+  for (const item of items) {
+    if (item.done !== true) counts[item.kind] += 1;
   }
   return counts;
+}
+
+/** Counts open items by kind across files and every nested group; done items are left out. */
+export function countOpenItems(files: readonly RoadmapFile[]): WorkItemCounts {
+  return openCounts(
+    files.flatMap((file) => [...file.items, ...file.groups.flatMap(allItems)]),
+  );
 }
 
 /**
  * Roadmap data for an item. A configured file that was not found makes the whole entry an
  * error naming the file.
  */
-export function deriveRoadmap(raw: RawRoadmap): RoadmapData | ItemError {
+export function deriveRoadmap(
+  raw: RawRoadmap,
+  words: WorkWords,
+  thresholds: BugThresholds,
+): RoadmapData | ItemError {
   const files: RoadmapFile[] = [];
   for (const file of raw.files) {
     if (file.structure.state === "absent") {
       return { error: `roadmap file not found: ${file.path}` };
     }
-    files.push(deriveRoadmapFile(file.path, file.structure.value));
+    files.push(deriveRoadmapFile(file.path, file.structure.value, words));
   }
-  return { counts: countOpenItems(files), files };
+  return {
+    counts: countOpenItems(files),
+    files,
+    thresholds,
+    detectedPath: raw.detectedPath,
+  };
 }
 
 /** An item without a roadmap file has no work items. */
-export const emptyRoadmap: RoadmapData = {
-  counts: { bug: 0, feature: 0 },
-  files: [],
-};
+export function emptyRoadmap(thresholds: BugThresholds): RoadmapData {
+  return {
+    counts: { task: 0, bug: 0, "critical-bug": 0 },
+    files: [],
+    thresholds,
+    detectedPath: null,
+  };
+}
+
+/** A roadmap file's open bugs and open critical bugs, each judged against its window. */
+export function bugLevelsOf(
+  counts: WorkItemCounts,
+  thresholds: BugThresholds,
+): { bugs: HealthLevel; criticalBugs: HealthLevel } {
+  return {
+    bugs: levelFor(
+      counts.bug,
+      thresholds.bugs.amberCount,
+      thresholds.bugs.redCount,
+    ),
+    criticalBugs: levelFor(
+      counts["critical-bug"],
+      thresholds.criticalBugs.amberCount,
+      thresholds.criticalBugs.redCount,
+    ),
+  };
+}
+
+/** The item's roadmap when it was read and judged; null otherwise. */
+export function roadmapOf(item: Item): RoadmapData | null {
+  const roadmap = item.sources.roadmap;
+  if (roadmap === undefined || "error" in roadmap) return null;
+  // A snapshot cached before roadmap files were judged has no thresholds field at all, and one
+  // cached before parsing became opt-in has no detectedPath field.
+  if (roadmap.thresholds === undefined) return null;
+  return roadmap.detectedPath === undefined ? null : roadmap;
+}
 
 // Git
 
@@ -570,8 +682,25 @@ export function latestRunOf(data: ForgeData): CiRun | null {
 
 // Health
 
+/** A roadmap file's bug cause: the worse of its two levels, its critical bugs when they are as bad. */
+export function bugCause(
+  file: RoadmapFile,
+  thresholds: BugThresholds,
+): Extract<HealthCause, { kind: "bugs" }> {
+  const levels = bugLevelsOf(file.counts, thresholds);
+  const critical = compareLevels(levels.criticalBugs, levels.bugs) <= 0;
+  return {
+    kind: "bugs",
+    level: critical ? levels.criticalBugs : levels.bugs,
+    path: file.path,
+    critical,
+    count: critical ? file.counts["critical-bug"] : file.counts.bug,
+  };
+}
+
 /**
- * An item's health: the worst of its inputs. Failing CI and open bugs are red. A remote the clone
+ * An item's health: the worst of its inputs. Failing CI is red. Each roadmap file is judged on its
+ * own, the worse of its open bugs and open critical bugs against their windows. A remote the clone
  * pushes to that no card can read is amber; a forge whose read failed this scan is not an input.
  * Uncommitted changes, unpushed commits and stalled flight take the level already judged against
  * the item's windows. Only amber and red inputs are causes; they come worst first, ties in the
@@ -609,13 +738,11 @@ export function deriveHealth(item: Item): Health {
       fullName: presence.fullName,
     });
   }
-  const roadmap = item.sources.roadmap;
-  if (
-    roadmap !== undefined &&
-    !("error" in roadmap) &&
-    roadmap.counts.bug > 0
-  ) {
-    candidates.push({ kind: "bugs", level: "red", count: roadmap.counts.bug });
+  const roadmap = roadmapOf(item);
+  if (roadmap !== null) {
+    candidates.push(
+      ...roadmap.files.map((file) => bugCause(file, roadmap.thresholds)),
+    );
   }
   const git = item.sources.git;
   if (git !== undefined && !("error" in git)) {

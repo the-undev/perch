@@ -7,7 +7,8 @@
 // adoption papers rise as a sheet over both panes, which
 // dim and go inert while the band stays live. A chip pressed in the roost's
 // bubble lands on the ledger row holding its working, or the can't-read chip on the notice, as does
-// the chip pressed in the aviary's bubble that brought the camera here. Only what exists is shown.
+// the chip pressed in the aviary's bubble that brought the camera here. A bug line pressed in the
+// ledger opens its file on the paper at that line. Only what exists is shown.
 // The view fetches nothing: key-file contents, launching, the clipboard and the entry's form and
 // writes are the caller's.
 
@@ -20,6 +21,7 @@ import type {
   Bird,
   ChipKind,
   LaunchAction,
+  PaperLine,
   RemoteNotice,
 } from "@perch/core/viewmodel.ts";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -35,11 +37,12 @@ import {
   type Landing,
   LandingMark,
   Ledger,
+  landingScroll,
   PullRequestLines,
   SourceProblems,
 } from "./ledger.tsx";
 import { NoCloneClause, NoCloneSlip } from "./no-clone-slip.tsx";
-import { KeyFilePaper, type KeyFileSheet } from "./paper.tsx";
+import { KeyFilePaper, type KeyFileSheet, type Reveal } from "./paper.tsx";
 import { RisingSheet } from "./rising-sheet.tsx";
 import { Roost } from "./roost.tsx";
 import { isNight, skyPhase } from "./sky.ts";
@@ -81,13 +84,6 @@ export interface DetailViewProps {
 
 /** What was signed and is not yet in the entry read back: the values written, or the return. */
 type Signed = { kind: "values"; values: EntryValues } | { kind: "return" };
-
-/** The landing scroll; the DOM lib's options lack `container`, which Chromium 156 supports. */
-const landingScroll: ScrollIntoViewOptions & { container: "nearest" } = {
-  block: "center",
-  behavior: "instant",
-  container: "nearest",
-};
 
 /** Whether the entry read back shows what was signed. */
 function landed(signed: Signed, form: EntryForm): boolean {
@@ -265,6 +261,10 @@ export function DetailView({
     });
     scrollToChip(articleRef.current, chip);
   };
+  // A bug line pressed in the ledger shows its line on the paper.
+  const [reveal, setReveal] = useState<Reveal | null>(null);
+  const revealLine = (at: PaperLine) =>
+    setReveal((last) => ({ at, press: (last?.press ?? 0) + 1 }));
   const [swaps] = useState(!panning);
   return (
     <article
@@ -349,6 +349,7 @@ export function DetailView({
             entries={detail.ledger}
             now={now}
             landing={landing}
+            onReveal={revealLine}
           />
           {detail.branches.length > 0 && (
             <BranchLines
@@ -381,7 +382,7 @@ export function DetailView({
               onCopy={onCopy}
             />
           )}
-          <KeyFilePaper sheets={sheets} />
+          <KeyFilePaper sheets={sheets} reveal={reveal} />
         </div>
       </div>
     </article>

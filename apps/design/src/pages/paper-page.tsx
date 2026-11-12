@@ -1,4 +1,10 @@
-import type { Bird } from "@perch/core/viewmodel.ts";
+import {
+  builtInBugWords,
+  builtInCriticalBugWords,
+} from "@perch/core/config.ts";
+import { deriveRoadmapFile } from "@perch/core/derivations.ts";
+import { readRoadmapStructure } from "@perch/core/roadmap-parser.ts";
+import { type Bird, lineMarksOf } from "@perch/core/viewmodel.ts";
 import { NoCloneSlip } from "@perch/ui/no-clone-slip.tsx";
 import { KeyFilePaper } from "@perch/ui/paper.tsx";
 import { useState } from "react";
@@ -64,6 +70,49 @@ pnpm design
 The end.
 `;
 
+const markedRoadmap = `# Roadmap
+
+Planned work for tidewater. The sync design has the background.
+
+## Release
+
+### Renew the signing key
+
+The key in \`release/signing.pem\` expires on 30 November.
+
+## Critical
+
+- [ ] Data loss when two devices save at once
+  - seen on Android only so far
+- [x] Sync drops the last edit
+
+## Bugs
+
+- [x] A CSV with a byte order mark fails to parse
+- [ ] Dates read as US format
+
+### Import crashes on an empty file
+
+Seen once, on a file with no header row.
+
+## Features
+
+### Offline mode
+
+Edits made offline are queued and sent on reconnect.
+
+- [x] Cache the last sync
+- [ ] Queue edits while offline
+`;
+
+/** The marked roadmap's marks, from the parser and the built-in word lists as a scan would find them. */
+const markedRoadmapMarks = lineMarksOf(
+  deriveRoadmapFile("docs/roadmap.md", readRoadmapStructure(markedRoadmap), {
+    bug: [...builtInBugWords],
+    criticalBug: [...builtInCriticalBugWords],
+  }),
+);
+
 export function PaperPage() {
   const perch = mockBird("dev/perch");
   const hothouse = mockBird("obsidian/Hothouse");
@@ -81,6 +130,7 @@ export function PaperPage() {
         >
           <Ground>
             <KeyFilePaper
+              reveal={null}
               sheets={sheetsFor(perch.detail.keyFiles, perchFiles)}
             />
           </Ground>
@@ -91,10 +141,15 @@ export function PaperPage() {
         >
           <div className="pane-scroll h-[28rem] overflow-y-auto rounded-xl border border-edge bg-ground px-5 pb-4">
             <KeyFilePaper
+              reveal={null}
               sheets={sheetsFor(
                 [
-                  { path: "docs/roadmap.md", absolutePath: "/roadmap.md" },
-                  { path: "README.md", absolutePath: "/readme.md" },
+                  {
+                    path: "docs/roadmap.md",
+                    absolutePath: "/roadmap.md",
+                    marks: {},
+                  },
+                  { path: "README.md", absolutePath: "/readme.md", marks: {} },
                 ],
                 perchFiles,
               )}
@@ -102,14 +157,39 @@ export function PaperPage() {
           </div>
         </Specimen>
         <Specimen
+          label="A roadmap with margin marks"
+          rule="A roadmap renders as any markdown does. Beside each bug's line, in the sheet's left margin: one red bar for a bug, two for a critical bug, faint once checked. A task has no mark. The bullets under Critical are critical bugs from the heading alone, and a bare heading under Bugs is one bug."
+        >
+          <Ground>
+            <KeyFilePaper
+              reveal={null}
+              sheets={[
+                {
+                  file: {
+                    path: "docs/roadmap.md",
+                    absolutePath: "/roadmap.md",
+                    marks: markedRoadmapMarks,
+                  },
+                  markdown: markedRoadmap,
+                },
+              ]}
+            />
+          </Ground>
+        </Specimen>
+        <Specimen
           label="Every markdown element"
           rule="Headings, lists, task lists, tables, quotations, code and rules, through react-markdown with GFM."
         >
           <Ground>
             <KeyFilePaper
+              reveal={null}
               sheets={[
                 {
-                  file: { path: "ELEMENTS.md", absolutePath: "/elements.md" },
+                  file: {
+                    path: "ELEMENTS.md",
+                    absolutePath: "/elements.md",
+                    marks: {},
+                  },
                   markdown: everyElement,
                 },
               ]}
@@ -121,7 +201,10 @@ export function PaperPage() {
           rule="The Hothouse Vault's defaults: the README and the roadmaps the scan found. None are read here, so each says so."
         >
           <Ground>
-            <KeyFilePaper sheets={sheetsFor(hothouse.detail.keyFiles, {})} />
+            <KeyFilePaper
+              reveal={null}
+              sheets={sheetsFor(hothouse.detail.keyFiles, {})}
+            />
           </Ground>
         </Specimen>
       </Section>
@@ -168,7 +251,7 @@ export function PaperPage() {
           {
             name: "sheets",
             type: "KeyFileSheet[]",
-            what: "KeyFilePaper: each of bird.detail.keyFiles with the markdown read from it, or null when it could not be read.",
+            what: "KeyFilePaper: each of bird.detail.keyFiles, a roadmap file carrying its margin marks by source line, with the markdown read from it, or null when it could not be read.",
           },
           {
             name: "slip",

@@ -5,6 +5,7 @@ import { stringify } from "smol-toml";
 import {
   type Config,
   collapseHome,
+  defaultBugThresholds,
   defaultTray,
   defaultUpdateCheck,
   defaultUpdateInstall,
@@ -14,6 +15,7 @@ import {
   type ThresholdOverrides,
   type Thresholds,
   thresholdKeys,
+  type WorkWordsConfig,
 } from "./config.ts";
 import { commandKinds, customKind, zellijKind } from "./launch-kinds.ts";
 
@@ -38,6 +40,29 @@ function thresholdTable(thresholds: Thresholds | ThresholdOverrides): Table {
   return out;
 }
 
+/** The bug thresholds [thresholds] sets, left out where they hold the defaults. */
+function globalThresholdTable(thresholds: Thresholds): Table {
+  const written = thresholdTable(thresholds);
+  const defaults = thresholdTable({
+    unsafe: {},
+    stalled: {},
+    ...defaultBugThresholds,
+  });
+  for (const [key, value] of Object.entries(defaults)) {
+    if (written[key] === value) delete written[key];
+  }
+  return written;
+}
+
+/** The word lists a [work] table or an entry sets; a list left unset is left out. */
+function wordsTable(words: WorkWordsConfig): Table {
+  const out: Table = {};
+  if (words.bugWords !== null) out.bug_words = words.bugWords;
+  if (words.criticalBugWords !== null)
+    out.critical_bug_words = words.criticalBugWords;
+  return out;
+}
+
 function entryTable(entry: ItemEntry): Table {
   const out: Table = {};
   if (entry.wire !== null) out.wire = entry.wire;
@@ -45,7 +70,11 @@ function entryTable(entry: ItemEntry): Table {
   if (entry.keyFiles !== null) out.key_files = entry.keyFiles;
   if (entry.roadmaps !== null) out.roadmaps = entry.roadmaps;
   if (entry.zellijSession !== null) out.zellij_session = entry.zellijSession;
-  return { ...out, ...thresholdTable(entry.thresholds) };
+  return {
+    ...out,
+    ...wordsTable(entry),
+    ...thresholdTable(entry.thresholds),
+  };
 }
 
 function githubTable(source: GithubSourceConfig): Table {
@@ -142,7 +171,8 @@ function actionTable(
  * item entries and zellij session roots are sorted by key and every list, sources and launch
  * actions among them, keeps its order. Paths at or under the home directory are written with a
  * leading ~, empty optional tables, source kinds and launch actions are left out, and so is a
- * launch action's field that holds its kind's default and a window or update setting that holds its own.
+ * launch action's field that holds its kind's default, a window or update setting that holds its own,
+ * and a bug threshold that holds its default.
  */
 export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);
@@ -151,7 +181,8 @@ export function writeConfig(config: Config, home: string): string {
     ignore: config.ignore,
     wires: { names: config.wires.names, default: config.wires.default },
     sources: unlessEmpty(sourcesTable(config.sources, path)),
-    thresholds: thresholdTable(config.thresholds),
+    thresholds: globalThresholdTable(config.thresholds),
+    work: unlessEmpty(wordsTable(config.work)),
     scan: {
       interval_minutes: config.scan.intervalMinutes,
       finalised_commits: config.scan.finalisedCommits,

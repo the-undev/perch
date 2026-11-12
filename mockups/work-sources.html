@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Work sources round</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* The work sources round: roadmap files and forge tickets parsed, shown per
+   source on the paper, and judged per source for the bird. Drawn on the ink
+   palette from theme.css. */
+:root {
+  --bg: #101214;
+  --rail: #121517;
+  --band: #15181b;
+  --panel: #1a1e22;
+  --panel-hi: #20252a;
+  --edge: #2b3036;
+  --edge-hi: #3e454d;
+  --ground: #13161a;
+  --ink: #ece7db;
+  --muted: #aaa396;
+  --faint: #837d70;
+  --accent: #b9b2a2;
+  --green: #66bb86;
+  --amber: #d8a845;
+  --red: #e25d4f;
+  --paper: #e9e4d8;
+  --paper-dim: #ddd7c9;
+  --paper-ink: #2f3338;
+  --paper-head: #171a1e;
+  --paper-quiet: #6e695f;
+  --paper-tab: #5b564b;
+  --paper-rule: #c9c3b3;
+  --paper-code: #dcd6c8;
+  /* Red ink for paper: the screen red is too bright on it. */
+  --mark: #a8382d;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --body: "Figtree", system-ui, sans-serif;
+  --mono: ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/1.55 var(--body);
+  padding: 0 16px 90px;
+}
+main { max-width: 1240px; margin: 0 auto; }
+code { font: 12.5px var(--mono); }
+
+/* Masthead */
+.mast { padding: 42px 0 10px; border-bottom: 1px solid var(--edge); }
+.mast h1 { font: 700 34px/1.1 var(--display); margin: 0 0 10px; }
+.mast .brief { max-width: 72ch; color: var(--muted); margin: 0 0 6px; }
+.mast .brief b { color: var(--ink); font-weight: 600; }
+
+/* The agreed rules */
+.rules { display: flex; flex-wrap: wrap; gap: 12px; padding: 22px 0 8px; }
+.rule {
+  flex: 1 1 260px; background: var(--band); border: 1px solid var(--edge);
+  border-radius: 10px; padding: 14px 16px;
+}
+.rule h3 { font: 600 14.5px/1.3 var(--display); margin: 0 0 5px; }
+.rule p { margin: 0; color: var(--muted); font-size: 13px; }
+.rule code, .why code, .notes code, .q code {
+  background: var(--panel); border: 1px solid var(--edge); border-radius: 4px;
+  padding: 1px 5px; color: var(--ink); font-size: 12px;
+}
+
+/* Sections */
+section { margin-top: 54px; }
+section > h2 { font: 700 23px/1.2 var(--display); margin: 0 0 4px; }
+section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
+
+/* A drawn screen and its notes */
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 22px; align-items: start; }
+@media (max-width: 980px) { .pair { grid-template-columns: 1fr; } }
+.screen {
+  background: var(--bg); border: 1px solid var(--edge-hi); border-radius: 14px;
+  overflow: hidden; box-shadow: 0 24px 60px -18px rgb(0 0 0 / .75);
+}
+.chrome {
+  display: flex; align-items: center; gap: 18px; padding: 10px 18px;
+  background: var(--rail); border-bottom: 1px solid var(--edge);
+}
+.chrome .brand { font: 700 14px var(--display); }
+.chrome .tabs { display: flex; gap: 14px; color: var(--faint); font-size: 12.5px; }
+.chrome .tabs .on { color: var(--ink); background: var(--panel-hi); border-radius: 99px; padding: 2px 10px; }
+.notes h3 { font: 600 13.5px/1.3 var(--display); margin: 0 0 6px; color: var(--accent); }
+.notes p { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.notes p b { color: var(--ink); font-weight: 600; }
+
+/* The detail page, simplified to what the round needs */
+.detail { padding: 22px 26px 30px; }
+.detail .birdname { font: 700 21px var(--display); margin: 0 0 2px; }
+.detail .metaline { color: var(--faint); font-size: 12.5px; margin: 0 0 18px; }
+.panes { display: grid; grid-template-columns: minmax(250px, 330px) minmax(0, 1fr); gap: 22px; align-items: start; }
+.narrow .panes { grid-template-columns: 1fr; }
+
+/* The ledger: rows of label and count, workings in mono beneath */
+.ledger { font-size: 13.5px; }
+.ledger .row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 2px; border-top: 1px solid var(--edge); }
+.ledger .row:first-child { border-top: 0; }
+.ledger .v { font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ledger .working { margin: -4px 0 0; padding: 0 2px 9px; list-style: none; font: 12px/1.5 var(--mono); color: var(--faint); }
+.t-green { color: var(--green); }
+.t-amber { color: var(--amber); }
+.t-red { color: var(--red); }
+.t-none { color: var(--muted); }
+
+/* Paper with folder tabs */
+.tabsrow { display: flex; align-items: flex-end; gap: 6px; padding-left: 18px; flex-wrap: wrap; }
+.ftab {
+  border-radius: 9px 9px 0 0; background: var(--paper-dim); color: var(--paper-tab);
+  font: 600 12px var(--mono); padding: 8px 16px 7px; opacity: .75;
+}
+.ftab.on { background: var(--paper); color: var(--paper-head); opacity: 1; padding-bottom: 9px; }
+.ftab .n { font-weight: 400; margin-left: 6px; color: var(--paper-quiet); }
+.sheet {
+  background: var(--paper); color: var(--paper-ink); border-radius: 10px;
+  padding: 24px 30px 28px; box-shadow: 0 24px 60px -18px rgb(0 0 0 / .75);
+}
+.sheet.small { padding: 18px 20px 20px; }
+.sheethead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 14px; }
+.sheethead .src { font: 12px var(--mono); color: var(--paper-quiet); }
+.switch { font: 600 12px var(--body); color: var(--paper-ink); border: 1px solid var(--paper-rule); border-radius: 7px; padding: 3px 9px; white-space: nowrap; }
+
+/* The parsed roadmap: groups, tasks, and the margin marks */
+.group { margin: 0 0 16px; }
+.group:last-child { margin-bottom: 0; }
+.ghead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 4px; }
+.ghead h4 { font: 700 15.5px/1.35 var(--display); color: var(--paper-head); margin: 0; }
+.ghead.l1 h4 { font-size: 18px; }
+.ghead .prog { font-size: 12px; color: var(--paper-quiet); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar { height: 3px; background: var(--paper-rule); border-radius: 2px; margin: 0 0 8px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--paper-ink); }
+.sub { margin-left: 14px; }
+.tasks { list-style: none; margin: 0; padding: 0; }
+.task {
+  position: relative; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px; align-items: baseline; padding: 5px 0 5px 14px; font-size: 13.5px;
+  border-top: 1px solid rgb(201 195 179 / .55);
+}
+.tasks .task:first-child { border-top: 0; }
+/* A drawn checkbox; the bracket text stays in the markup for reading the source. */
+.task .box { font-size: 0; align-self: center; }
+.task .box:not(:empty) {
+  display: block; width: 12px; height: 12px; border: 1.5px solid var(--paper-quiet);
+  border-radius: 3px; position: relative;
+}
+.task.done .box:not(:empty) { background: var(--paper-quiet); }
+.task.done .box:not(:empty)::after {
+  content: ""; position: absolute; left: 3px; top: 0; width: 3px; height: 7px;
+  border: solid var(--paper); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
+}
+.task.done { color: var(--paper-quiet); }
+.task.done .title { text-decoration: line-through; text-decoration-color: var(--paper-rule); }
+.task .body { grid-column: 2 / -1; color: var(--paper-quiet); font-size: 12.5px; margin: 1px 0 0; }
+.task .tag { font-size: 11.5px; color: var(--mark); font-weight: 600; white-space: nowrap; }
+.task .num { font: 12px var(--mono); color: var(--paper-quiet); }
+.task .labels { font-size: 11.5px; color: var(--paper-quiet); white-space: nowrap; }
+.task .age { font-size: 12px; color: var(--paper-quiet); white-space: nowrap; }
+/* The marks: one bar a bug, two a critical bug, none a task. */
+.task.bug::before, .task.crit::before, .task.crit::after {
+  content: ""; position: absolute; top: 7px; bottom: 7px; width: 2.5px;
+  background: var(--mark); border-radius: 1px;
+}
+.task.bug::before { left: 2px; }
+.task.crit::before { left: 0; }
+.task.crit::after { left: 5px; }
+.task.done.bug::before { opacity: .35; }
+.task.ticket { grid-template-columns: 46px minmax(0, 1fr) auto auto; }
+
+/* Parsed against marked */
+.versus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; align-items: start; }
+@media (max-width: 1000px) { .versus { grid-template-columns: 1fr; } }
+.vs-title { font: 600 15px/1.3 var(--display); margin: 0 0 10px; }
+.lost { margin: 14px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.lost li { margin: 3px 0; }
+
+/* The paper's markdown styles, from theme.css */
+.perch-prose { font-size: 14px; line-height: 1.6; color: var(--paper-ink); }
+.perch-prose > :first-child { margin-top: 0; }
+.perch-prose h1 { font: 700 25px/1.25 var(--display); color: var(--paper-head); margin: 0 0 10px; }
+.perch-prose h2 { font: 700 19px/1.3 var(--display); color: var(--paper-head); margin: 24px 0 8px; }
+.perch-prose h3, .perch-prose h4 { font: 700 15.5px/1.35 var(--display); color: var(--paper-head); margin: 18px 0 6px; }
+.perch-prose p { margin: 0 0 11px; }
+.perch-prose ul { margin: 0 0 11px; padding-left: 22px; list-style: disc; }
+.perch-prose li { margin: 2px 0; }
+.perch-prose li > ul { margin: 2px 0 0; }
+.perch-prose a { color: inherit; text-decoration: underline dotted var(--paper-quiet); text-underline-offset: 3px; }
+.perch-prose code {
+  font: 0.9em var(--mono); background: var(--paper-code); border: 1px solid var(--paper-rule);
+  border-radius: 4px; padding: 1px 5px;
+}
+/* The marks on rendered markdown: in the sheet's left margin, level with the line. */
+.sheet { --gutter: 30px; }
+.sheet.small { --gutter: 20px; }
+.marked .m-bug, .marked .m-crit { position: relative; --indent: 0px; }
+.marked li.m-bug, .marked li.m-crit { --indent: 22px; }
+.marked .m-bug::before, .marked .m-crit::before, .marked .m-crit::after {
+  content: ""; position: absolute; top: .25em; height: 1.1em; width: 2.5px;
+  background: var(--mark); border-radius: 1px;
+}
+.marked .m-bug::before { left: calc(10px - var(--gutter) - var(--indent)); }
+.marked .m-crit::before { left: calc(8px - var(--gutter) - var(--indent)); }
+.marked .m-crit::after { left: calc(13px - var(--gutter) - var(--indent)); }
+.marked .m-done::before { opacity: .35; }
+
+/* Markdown source beside a parsed sheet */
+.shapes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+@media (max-width: 1100px) { .shapes { grid-template-columns: 1fr; } }
+.shape h3 { font: 600 15px/1.3 var(--display); margin: 0 0 4px; }
+.shape > p { color: var(--muted); font-size: 13px; margin: 0 0 10px; min-height: 3em; }
+.src-md {
+  background: var(--panel); border: 1px solid var(--edge); border-radius: 10px;
+  font: 12px/1.6 var(--mono); color: var(--muted); padding: 12px 14px; margin: 0 0 14px;
+  white-space: pre; overflow-x: auto;
+}
+.src-md .h { color: var(--ink); }
+.callout {
+  margin: 12px 0 0; padding: 10px 12px; border-left: 2px solid var(--amber);
+  background: var(--band); color: var(--muted); font-size: 12.5px; border-radius: 0 8px 8px 0;
+}
+.callout b { color: var(--ink); font-weight: 600; }
+
+/* The bubble */
+.bubbles { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
+.bubble {
+  background: var(--paper); color: var(--paper-ink); border-radius: 14px;
+  padding: 14px 16px; max-width: 360px; box-shadow: 0 10px 28px -12px rgb(0 0 0 / .7);
+}
+.bubble p { margin: 0 0 10px; font-size: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 600 12px var(--body); border-radius: 99px; padding: 3px 10px; border: 1.5px solid; }
+.chip.amber { color: #8a6516; border-color: #c9962f; }
+.chip.red { color: var(--mark); border-color: var(--mark); }
+.caption { color: var(--faint); font-size: 12.5px; margin: 8px 0 0; max-width: 360px; }
+
+/* Questions to settle */
+.qs { display: grid; gap: 12px; max-width: 880px; }
+.q { background: var(--band); border: 1px solid var(--edge); border-radius: 10px; padding: 14px 16px; }
+.q h3 { font: 600 14.5px/1.3 var(--display); margin: 0 0 5px; }
+.q p { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+.q p:last-child { margin: 0; }
+.q .rec { color: var(--ink); }
+</style>
+</head>
+<body>
+<main>
+
+<header class="mast">
+  <h1>Work sources</h1>
+  <p class="brief">Roadmap files and forge tickets, each parsed into <b>tasks</b>, <b>bugs</b> and <b>critical bugs</b>, shown as a sheet of their own on the paper, and judged one source at a time for the bird.</p>
+</header>
+
+<div class="rules">
+  <div class="rule"><h3>Bottom up, no config</h3><p>Bullets and checkboxes are tasks. A bare heading is one task with its prose as the body. Higher headings group.</p></div>
+  <div class="rule"><h3>Three kinds from words</h3><p>A task, a bug or a critical bug. Whole words in headings, titles, tags and labels set the kind, inherited downwards. A task has no priority.</p></div>
+  <div class="rule"><h3>Only bugs move the bird</h3><p>Amber at 5 and red at 20 open bugs; amber at 1 and red at 3 critical bugs. Per source, worst level wins.</p></div>
+</div>
+
+<!-- A: the detail page -->
+<section>
+  <h2>The detail page</h2>
+  <p class="why">The paper gains a tab per work source. A roadmap renders as markdown, as it does today, with marks beside its bugs. Tickets get a sheet of their own. The ledger gives each source its own bug rows, with the thresholds as workings.</p>
+  <div class="pair">
+    <div class="screen">
+      <div class="chrome"><span class="brand">Perch</span><span class="tabs"><span>Aviary</span><span class="on">tidewater</span><span>Settings</span></span></div>
+      <div class="detail">
+        <p class="birdname">tidewater</p>
+        <p class="metaline">github:finch/tidewater, on the main wire</p>
+        <div class="panes">
+          <div class="ledger">
+            <div class="row"><span>Bugs in docs/roadmap.md</span><span class="v t-none">1</span></div>
+            <ul class="working"><li>amber at 5, red at 20</li></ul>
+            <div class="row"><span>Bugs on GitHub</span><span class="v t-amber">6</span></div>
+            <ul class="working"><li>amber at 5, red at 20</li></ul>
+            <div class="row"><span>Critical bugs on GitHub</span><span class="v t-amber">1</span></div>
+            <ul class="working"><li>#209 Data loss when two devices save at once</li><li>amber at 1, red at 3</li></ul>
+            <div class="row"><span>Open tasks</span><span class="v t-none">11</span></div>
+            <ul class="working"><li>docs/roadmap.md 4, GitHub 5</li></ul>
+            <div class="row"><span>Last commit</span><span class="v t-none">2 hours ago</span></div>
+          </div>
+          <div>
+            <div class="tabsrow">
+              <span class="ftab">README.md</span>
+              <span class="ftab on">docs/roadmap.md</span>
+              <span class="ftab">GitHub issues<span class="n">12</span></span>
+            </div>
+            <div class="sheet">
+              <div class="perch-prose marked">
+                <h1>Roadmap</h1>
+                <h2>Release</h2>
+                <ul><li><input type="checkbox" disabled> Renew the signing key before 30 November</li></ul>
+                <h2>Bugs</h2>
+                <ul>
+                  <li class="m-bug m-done"><input type="checkbox" checked disabled> A CSV with a byte order mark fails to parse</li>
+                  <li class="m-bug"><input type="checkbox" disabled> Dates read as US format</li>
+                </ul>
+                <h2>Features</h2>
+                <h3>Offline mode</h3>
+                <p>Edits made offline are queued and sent on reconnect.</p>
+                <ul>
+                  <li><input type="checkbox" checked disabled> Cache the last sync</li>
+                  <li><input type="checkbox" disabled> Queue edits while offline</li>
+                  <li><input type="checkbox" disabled> A view for conflicting edits</li>
+                </ul>
+                <h3>Sharing</h3>
+                <h4>Read-only links</h4>
+                <p>A link anyone can open that shows the board without editing.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h3>One tab per source</h3>
+      <p>Documents, then roadmaps, then a ticket tab per forge. The ticket tab carries its open count. A forge with no open tickets still gets its tab, so an empty list reads as none, not unread.</p>
+      <h3>The file as written</h3>
+      <p>The roadmap renders exactly as any markdown on the paper. Knowing it is a roadmap only adds the marks.</p>
+      <h3>The margin marks</h3>
+      <p>In the sheet's left margin, level with the line: one red bar for a bug, two for a critical bug, faint once checked. A task has no mark.</p>
+      <h3>The ledger</h3>
+      <p>A bug row per source, then a critical bug row only when there are any. The thresholds sit in the workings. Open tasks stay one row, for plumpness.</p>
+    </div>
+  </div>
+</section>
+
+<!-- A2: parsed against marked -->
+<section>
+  <h2>Two ways to show a roadmap (agreed: rendered, with marks)</h2>
+  <p class="why">One file, <code>docs/roadmap.md</code>, both ways. On the left, the parsed sheet drawn above: rebuilt from what the parser keeps. On the right, the file rendered as the paper renders any markdown today, with the margin marks added on the lines the parser classed as bugs.</p>
+  <div class="versus">
+    <div>
+      <h3 class="vs-title">Parsed and redrawn</h3>
+      <div class="sheet">
+        <div class="sheethead"><span class="src">docs/roadmap.md, parsed</span><span class="switch">Show markdown</span></div>
+        <div class="group">
+          <div class="ghead l1"><h4>Release</h4></div>
+          <ul class="tasks">
+            <li class="task"><span class="box"></span><span class="title">Renew the signing key</span><span></span><p class="body">The key in release/signing.pem expires on 30 November. Renew it before the 1.4 build.</p></li>
+          </ul>
+        </div>
+        <div class="group">
+          <div class="ghead l1"><h4>Critical</h4></div>
+          <ul class="tasks">
+            <li class="task crit"><span class="box">[ ]</span><span class="title">Data loss when two devices save at once</span><span></span></li>
+          </ul>
+        </div>
+        <div class="group">
+          <div class="ghead l1"><h4>Bugs</h4><span class="prog">1 of 2 done</span></div>
+          <div class="bar"><i style="width:50%"></i></div>
+          <ul class="tasks">
+            <li class="task bug done"><span class="box">[x]</span><span class="title">A CSV with a byte order mark fails to parse</span><span></span></li>
+            <li class="task bug"><span class="box">[ ]</span><span class="title">Dates read as US format</span><span></span></li>
+          </ul>
+        </div>
+        <div class="group">
+          <div class="ghead l1"><h4>Features</h4></div>
+          <div class="sub">
+            <div class="group">
+              <div class="ghead"><h4>Offline mode</h4><span class="prog">1 of 3 done</span></div>
+              <div class="bar"><i style="width:33%"></i></div>
+              <ul class="tasks">
+                <li class="task done"><span class="box">[x]</span><span class="title">Cache the last sync</span><span></span></li>
+                <li class="task"><span class="box">[ ]</span><span class="title">Queue edits while offline</span><span></span></li>
+                <li class="task"><span class="box">[ ]</span><span class="title">A view for conflicting edits</span><span></span></li>
+              </ul>
+            </div>
+            <div class="group">
+              <div class="ghead"><h4>Sharing</h4></div>
+              <ul class="tasks">
+                <li class="task"><span class="box"></span><span class="title">Read-only links</span><span></span><p class="body">A link anyone can open that shows the board without editing.</p></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="lost">
+        <li>The title and the intro paragraph, with its link, are gone.</li>
+        <li>The two notes nested under "Data loss" are gone.</li>
+        <li>The paragraph under Offline mode is gone, since that heading has bullets.</li>
+        <li>Code spans become plain text.</li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="vs-title">Rendered, with marks</h3>
+      <div class="sheet">
+        <div class="perch-prose marked">
+          <h1>Roadmap</h1>
+          <p>Planned work for tidewater. The <a href="#">sync design</a> has the background.</p>
+          <h2>Release</h2>
+          <h3>Renew the signing key</h3>
+          <p>The key in <code>release/signing.pem</code> expires on 30 November. Renew it before the 1.4 build.</p>
+          <h2>Critical</h2>
+          <ul>
+            <li class="m-crit"><input type="checkbox" disabled> Data loss when two devices save at once
+              <ul>
+                <li>seen on Android only so far</li>
+                <li>steps to reproduce in <code>tests/sync-race.md</code></li>
+              </ul>
+            </li>
+          </ul>
+          <h2>Bugs</h2>
+          <ul>
+            <li class="m-bug m-done"><input type="checkbox" checked disabled> A CSV with a byte order mark fails to parse</li>
+            <li class="m-bug"><input type="checkbox" disabled> Dates read as US format</li>
+          </ul>
+          <h2>Features</h2>
+          <h3>Offline mode</h3>
+          <p>Edits made offline are queued and sent on reconnect.</p>
+          <ul>
+            <li><input type="checkbox" checked disabled> Cache the last sync</li>
+            <li><input type="checkbox" disabled> Queue edits while offline</li>
+            <li><input type="checkbox" disabled> A view for conflicting edits</li>
+          </ul>
+          <h3>Sharing</h3>
+          <h4>Read-only links</h4>
+          <p>A link anyone can open that shows the board without editing.</p>
+        </div>
+      </div>
+      <ul class="lost">
+        <li>Everything in the file is kept, as written.</li>
+        <li>The marks sit in the margin on the lines classed as bugs. A done bug's mark is faint.</li>
+        <li>No progress bars, no redrawn checkboxes, no switch.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- B: three roadmap shapes -->
+<section>
+  <h2>How three shapes are marked</h2>
+  <p class="why">The same rule over a flat file, a checklist and a deep hierarchy. No file needs config.</p>
+  <div class="shapes">
+
+    <div class="shape">
+      <h3>Headings as tasks</h3>
+      <p>This repository's roadmap. Every <code>##</code> is bare, so each is one task.</p>
+      <div class="src-md"><span class="h">## Bird Positions</span>
+Move to a fixed layout…
+
+<span class="h">## Tray icon status</span>
+The tray icon could show…
+
+<span class="h">## Forge issues source</span>
+Tickets from GitHub…</div>
+      <div class="sheet small">
+        <div class="perch-prose marked">
+          <h2>Bird Positions</h2>
+          <p>Move to a fixed layout for the birds so they're always in the same spots.</p>
+          <h2>Tray icon status</h2>
+          <p>The tray icon could show the worst health colour across everything.</p>
+          <h2 class="m-bug">Forge issues source</h2>
+          <p>Tickets from GitHub and Forgejo as a work source beside the in-repo roadmap.</p>
+        </div>
+      </div>
+      <p class="callout"><b>"issues" makes it a bug.</b> Titles count, as agreed. This item moves the bird until it is retitled.</p>
+    </div>
+
+    <div class="shape">
+      <h3>A checklist</h3>
+      <p>Bullets above the first heading are tasks at the top. Each bullet is a task.</p>
+      <div class="src-md">- [ ] Fix crash on an empty config
+- [x] Port settings to TOML
+
+<span class="h">## Release 1.2</span>
+- [x] Changelog
+- [ ] Tag and build</div>
+      <div class="sheet small">
+        <div class="perch-prose marked">
+          <ul>
+            <li class="m-bug"><input type="checkbox" disabled> Fix crash on an empty config</li>
+            <li><input type="checkbox" checked disabled> Port settings to TOML</li>
+          </ul>
+          <h2>Release 1.2</h2>
+          <ul>
+            <li><input type="checkbox" checked disabled> Changelog</li>
+            <li><input type="checkbox" disabled> Tag and build</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout"><b>"crash" is in <code>bug_words</code></b>, so the first task is a bug.</p>
+    </div>
+
+    <div class="shape">
+      <h3>A deep hierarchy</h3>
+      <p>Critical, Bugs and Features, each with epics beneath. The top heading sets the kind, epics group.</p>
+      <div class="src-md"><span class="h">## Critical</span>
+<span class="h">### Sync</span>
+- [ ] Data loss when two
+  devices save at once
+
+<span class="h">## Bugs</span>
+<span class="h">### Import</span>
+- [ ] Dates read as US format</div>
+      <div class="sheet small">
+        <div class="perch-prose marked">
+          <h2>Critical</h2>
+          <h3>Sync</h3>
+          <ul><li class="m-crit"><input type="checkbox" disabled> Data loss when two devices save at once</li></ul>
+          <h2>Bugs</h2>
+          <h3>Import</h3>
+          <ul><li class="m-bug"><input type="checkbox" disabled> Dates read as US format</li></ul>
+        </div>
+      </div>
+      <p class="callout"><b>A word from <code>critical_bug_words</code> alone makes a critical bug.</b> "Data loss" needs no bug word under Critical.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- C: tickets -->
+<section>
+  <h2>The ticket sheet</h2>
+  <p class="why">Open tickets from one forge, critical bugs first, then bugs, then tasks, each by last update. Titles and labels set the kind with the same word lists. Pull requests are left out.</p>
+  <div class="pair">
+    <div>
+      <div class="tabsrow">
+        <span class="ftab">README.md</span>
+        <span class="ftab">docs/roadmap.md</span>
+        <span class="ftab on">GitHub issues<span class="n">12</span></span>
+      </div>
+      <div class="sheet">
+        <div class="sheethead"><span class="src">finch/tidewater, open issues</span><span class="switch">Open on GitHub</span></div>
+        <ul class="tasks">
+          <li class="task ticket crit"><span class="num">#209</span><span class="title">Data loss when two devices save at once</span><span class="labels">bug, priority: critical</span><span class="age">4 hours</span></li>
+          <li class="task ticket bug"><span class="num">#214</span><span class="title">Dates read as US format in the import</span><span class="labels">bug</span><span class="age">3 days</span></li>
+          <li class="task ticket bug"><span class="num">#207</span><span class="title">Sidebar flickers on resize</span><span class="labels">regression</span><span class="age">6 days</span></li>
+          <li class="task ticket bug"><span class="num">#190</span><span class="title">Export ignores the time zone</span><span class="labels">bug, import/export</span><span class="age">3 weeks</span></li>
+          <li class="task ticket bug"><span class="num">#176</span><span class="title">Undo skips the first edit</span><span class="labels">bug</span><span class="age">1 month</span></li>
+          <li class="task ticket bug"><span class="num">#171</span><span class="title">Broken link in the welcome screen</span><span class="labels">docs</span><span class="age">1 month</span></li>
+          <li class="task ticket bug"><span class="num">#158</span><span class="title">Crash when the config folder is read only</span><span class="labels">needs triage</span><span class="age">2 months</span></li>
+          <li class="task ticket"><span class="num">#201</span><span class="title">Dark map tiles</span><span class="labels">enhancement</span><span class="age">1 week</span></li>
+          <li class="task ticket"><span class="num">#198</span><span class="title">Install notes for Fedora</span><span class="labels">documentation</span><span class="age">2 weeks</span></li>
+        </ul>
+        <p style="margin:12px 0 0;font-size:12.5px;color:var(--paper-quiet)">3 more open, all tasks.</p>
+      </div>
+    </div>
+    <div class="notes">
+      <h3>The same marks</h3>
+      <p>A ticket reads like a roadmap task: number, title, labels, last update. Labels are shown as the forge spells them, so it is clear which one set the mark.</p>
+      <p><b>Titles count too.</b> #171 is a bug by "Broken" and #158 by "Crash", whatever their labels say.</p>
+      <h3>Order</h3>
+      <p>Critical bugs, bugs, then tasks. Within each, the most recently updated first.</p>
+      <h3>Opening one</h3>
+      <p>A row opens the ticket in the browser. <b>Open on GitHub</b> opens the issue list.</p>
+    </div>
+  </div>
+</section>
+
+<!-- D: the bubble -->
+<section>
+  <h2>The bubble</h2>
+  <p class="why">A chip per source that is amber or red. A source within its thresholds says nothing. The speech names the worst source.</p>
+  <div class="bubbles">
+    <div>
+      <div class="bubble">
+        <p>One critical bug open against me on GitHub.</p>
+        <div class="chips"><span class="chip amber">1 critical bug on GitHub</span><span class="chip amber">6 bugs on GitHub</span></div>
+      </div>
+      <p class="caption">tidewater. The roadmap's one bug is under 5, so it has no chip.</p>
+    </div>
+    <div>
+      <div class="bubble">
+        <p>Twenty-three bugs open in docs/roadmap.md.</p>
+        <div class="chips"><span class="chip red">23 bugs in roadmap</span></div>
+      </div>
+      <p class="caption">A roadmap past red. The chip shortens the file to "roadmap" when the item has one roadmap file.</p>
+    </div>
+  </div>
+</section>
+
+<!-- E: small window -->
+<section>
+  <h2>A small window</h2>
+  <p class="why">Below 960px the panes stack: the ledger, then the paper with its tabs wrapping.</p>
+  <div class="pair">
+    <div class="screen narrow" style="max-width:520px">
+      <div class="chrome"><span class="brand">Perch</span><span class="tabs"><span class="on">tidewater</span></span></div>
+      <div class="detail">
+        <p class="birdname">tidewater</p>
+        <div class="panes">
+          <div class="ledger">
+            <div class="row"><span>Bugs in docs/roadmap.md</span><span class="v t-none">1</span></div>
+            <div class="row"><span>Bugs on GitHub</span><span class="v t-amber">6</span></div>
+            <div class="row"><span>Critical bugs on GitHub</span><span class="v t-amber">1</span></div>
+          </div>
+          <div>
+            <div class="tabsrow">
+              <span class="ftab">README.md</span>
+              <span class="ftab">docs/roadmap.md</span>
+              <span class="ftab on">GitHub issues<span class="n">12</span></span>
+            </div>
+            <div class="sheet small">
+              <ul class="tasks">
+                <li class="task ticket crit"><span class="num">#209</span><span class="title">Data loss when two devices save at once</span><span></span><span class="age">4 h</span></li>
+                <li class="task ticket bug"><span class="num">#214</span><span class="title">Dates read as US format</span><span></span><span class="age">3 d</span></li>
+                <li class="task ticket"><span class="num">#201</span><span class="title">Dark map tiles</span><span></span><span class="age">1 w</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h3>Labels drop first</h3>
+      <p>On a narrow sheet the labels column goes and the age shortens. The marks stay.</p>
+      <h3>Ultrawide</h3>
+      <p>The page is capped at 1920px and centred. At 3440px that leaves wide margins. The question below asks what a full width should hold.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Questions -->
+<section>
+  <h2>To settle</h2>
+  <p class="why">Each needs a decision before implementation.</p>
+  <div class="qs">
+    <div class="q">
+      <h3>The word lists</h3>
+      <p><code>bug_words</code>: bug, bugs, issue, issues, problem, problems, broken, regression, crash, crashes, p2, p3, p4. <code>critical_bug_words</code>: critical, urgent, severe, blocker, p0, p1.</p>
+      <p>Agreed: built in, set in <code>[work]</code> or an item's entry, a set list replacing the one below it.</p>
+    </div>
+    <div class="q">
+      <h3>Done items on the sheet</h3>
+      <p>A file that keeps months of checked items would bury the open ones.</p>
+      <p class="rec">Agreed: shown as the markdown has them, now that the roadmap renders as written. Hiding them is parked in the roadmap.</p>
+    </div>
+    <div class="q">
+      <h3>A full-width layout at 3440px</h3>
+      <p>Options: keep the 1920px cap; or let the paper pane take the width and show two sheets side by side, such as the roadmap and the ticket list.</p>
+      <p class="rec">Agreed: keep the cap. Side by side is parked in the roadmap, its pairing TBD.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

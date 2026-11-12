@@ -1,6 +1,6 @@
 import { mockSnapshot } from "@perch/core/mock.ts";
-import type { LedgerEntry } from "@perch/core/viewmodel.ts";
-import { cleanup, render, screen } from "@testing-library/react";
+import type { LedgerEntry, PaperLine } from "@perch/core/viewmodel.ts";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { BranchLines, CommitRiver, FlagLines, Ledger } from "./ledger.tsx";
 import { mockBird } from "./mock-birds.ts";
@@ -8,6 +8,9 @@ import { mockBird } from "./mock-birds.ts";
 afterEach(cleanup);
 
 const now = new Date(mockSnapshot.scannedAt);
+
+/** A bug line pressed where no paper listens. */
+const ignoreReveal = () => {};
 
 /** Each row's label, value and tone, as drawn. */
 function rows(container: HTMLElement): string[][] {
@@ -36,6 +39,7 @@ describe("the ledger", () => {
   it("renders clean zeros as a green none and counts in their severity's tone", () => {
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={mockBird("undev/prism").detail.ledger}
         now={now}
@@ -46,7 +50,7 @@ describe("the ledger", () => {
     expect(rows(container).slice(0, 4)).toEqual([
       ["uncommitted changes", "4", "amber"],
       ["unpushed commits", "none", "green"],
-      ["open bugs", "none", "green"],
+      ["bugs in docs/roadmap.md", "none", "green"],
       ["open roadmap items", "78", "none"],
     ]);
   });
@@ -55,6 +59,7 @@ describe("the ledger", () => {
     const gramophone = rows(
       render(
         <Ledger
+          onReveal={ignoreReveal}
           quiet={null}
           entries={mockBird("undev/gramophone").detail.ledger}
           now={now}
@@ -66,6 +71,7 @@ describe("the ledger", () => {
     const prism = rows(
       render(
         <Ledger
+          onReveal={ignoreReveal}
           quiet={null}
           entries={mockBird("undev/prism").detail.ledger}
           now={now}
@@ -92,7 +98,13 @@ describe("the ledger", () => {
       { kind: "time", label: "last commit", at: "2026-10-21T03:00:00.000Z" },
     ];
     const { container } = render(
-      <Ledger quiet={null} entries={entries} now={now} landing={null} />,
+      <Ledger
+        onReveal={ignoreReveal}
+        quiet={null}
+        entries={entries}
+        now={now}
+        landing={null}
+      />,
     );
 
     expect(
@@ -107,6 +119,7 @@ describe("the ledger", () => {
     const spool = mockBird("undev/spool").detail;
     const quiet = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={spool.quiet}
         entries={spool.ledger}
         now={now}
@@ -120,7 +133,13 @@ describe("the ledger", () => {
     );
     cleanup();
     const { container } = render(
-      <Ledger quiet={null} entries={spool.ledger} now={now} landing={null} />,
+      <Ledger
+        onReveal={ignoreReveal}
+        quiet={null}
+        entries={spool.ledger}
+        now={now}
+        landing={null}
+      />,
     );
     expect(container.querySelector('[data-part="quiet"]')).toBeNull();
   });
@@ -144,6 +163,7 @@ describe("the ledger's workings", () => {
   it("names each forge's newest run under the CI row, toned and linked to the run", () => {
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={mockBird("dev/perch").detail.ledger}
         now={now}
@@ -171,6 +191,7 @@ describe("the ledger's workings", () => {
   it("says in amber which part of a forge couldn't be read, beside the forge that was", () => {
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={mockBird("undev/prism").detail.ledger}
         now={now}
@@ -194,6 +215,7 @@ describe("the ledger's workings", () => {
   it("spells out open items per roadmap file and unsafe work by its oldest", () => {
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={mockBird("obsidian/Hothouse").detail.ledger}
         now={now}
@@ -202,8 +224,15 @@ describe("the ledger's workings", () => {
     );
 
     expect(workings(container, "open-items")).toEqual([
-      ["Tech/Tech Plans.md · 120 open", "none"],
-      ["Garden/Garden Plans.md · 74 open", "none"],
+      ["Tech/Tech Plans.md · 121 open", "none"],
+      ["Garden/Garden Plans.md · 75 open", "none"],
+    ]);
+    expect(workings(container, "bugs")).toEqual([
+      ["Tech/Tech Plans.md · bug 1", "none"],
+    ]);
+    expect(workings(container, "critical-bugs")).toEqual([
+      ["Garden/Garden Plans.md · critical bug 1", "none"],
+      ["Garden/Garden Plans.md · restless at 1", "amber"],
     ]);
     expect(workings(container, "uncommitted")).toEqual([
       ["git · oldest change · 30 hours ago", "amber"],
@@ -214,6 +243,7 @@ describe("the ledger's workings", () => {
     const perch = mockBird("dev/perch");
     const { container } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={perch.detail.ledger}
         now={now}
@@ -239,6 +269,7 @@ describe("a chip's landing", () => {
     const entries = mockBird("dev/perch").detail.ledger;
     const { container, rerender } = render(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={entries}
         now={now}
@@ -267,6 +298,7 @@ describe("a chip's landing", () => {
 
     rerender(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={entries}
         now={now}
@@ -284,6 +316,7 @@ describe("a chip's landing", () => {
 
     rerender(
       <Ledger
+        onReveal={ignoreReveal}
         quiet={null}
         entries={entries}
         now={now}
@@ -298,7 +331,13 @@ describe("a chip's landing", () => {
     expect(lit()).toEqual(["open-items"]);
 
     rerender(
-      <Ledger quiet={null} entries={entries} now={now} landing={null} />,
+      <Ledger
+        onReveal={ignoreReveal}
+        quiet={null}
+        entries={entries}
+        now={now}
+        landing={null}
+      />,
     );
     expect(container.querySelector('[data-part="landing"]')).toBeNull();
     expect(lit()).toEqual([]);
@@ -425,5 +464,77 @@ describe("the ledger's sections", () => {
         "red",
       ],
     ]);
+  });
+
+  describe("bug titles", () => {
+    const bugEntries = (text: string): LedgerEntry[] => [
+      {
+        kind: "count",
+        label: "bugs in docs/roadmap.md",
+        count: 1,
+        text: "1",
+        tone: "amber",
+        chip: null,
+        workings: [
+          {
+            source: "docs/roadmap.md · bug 1",
+            text,
+            tone: null,
+            url: null,
+            at: null,
+            reveal: { path: "docs/roadmap.md", line: 7 },
+          },
+        ],
+      },
+    ];
+
+    function renderTitle(
+      text: string,
+      onReveal: (line: PaperLine) => void = ignoreReveal,
+    ) {
+      const { container } = render(
+        <Ledger
+          onReveal={onReveal}
+          quiet={null}
+          entries={bugEntries(text)}
+          now={now}
+          landing={null}
+        />,
+      );
+      return container.querySelector('[data-part="reveal"]') as HTMLElement;
+    }
+
+    it("renders a code span as code without its backticks", () => {
+      const button = renderTitle("Fails with `-m=nokernelcrypto`");
+
+      expect(button.querySelector("code")?.textContent).toBe(
+        "-m=nokernelcrypto",
+      );
+      expect(button.textContent).toBe("Fails with -m=nokernelcrypto");
+    });
+
+    it("renders a link as its text, with no anchor in the button", () => {
+      const button = renderTitle("See [the report](https://example.com/r)");
+
+      expect(button.textContent).toBe("See the report");
+      expect(button.querySelector("a")).toBeNull();
+    });
+
+    it("renders emphasis and strong", () => {
+      const button = renderTitle("An *odd* and **loud** bug");
+
+      expect(button.querySelector("em")?.textContent).toBe("odd");
+      expect(button.querySelector("strong")?.textContent).toBe("loud");
+      expect(button.querySelector("p")).toBeNull();
+    });
+
+    it("still reveals its line when pressed", () => {
+      const revealed: unknown[] = [];
+      const button = renderTitle("A `bug`", (line) => revealed.push(line));
+
+      fireEvent.click(button);
+
+      expect(revealed).toEqual([{ path: "docs/roadmap.md", line: 7 }]);
+    });
   });
 });

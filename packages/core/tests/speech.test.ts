@@ -47,7 +47,20 @@ const cause = {
     forge: "github",
     fullName: "skiff-app/skiff",
   }),
-  bugs: (count: number): HealthCause => ({ kind: "bugs", level: "red", count }),
+  bugs: (count: number): HealthCause => ({
+    kind: "bugs",
+    level: "red",
+    path: "docs/roadmap.md",
+    critical: false,
+    count,
+  }),
+  criticalBugs: (count: number): HealthCause => ({
+    kind: "bugs",
+    level: "amber",
+    path: "Garden Plans.md",
+    critical: true,
+    count,
+  }),
   uncommitted: (
     count: number,
     hours: number,
@@ -166,9 +179,12 @@ describe("distressed birds are blunt and lead with the worst", () => {
     );
   });
 
-  it("open bugs", () => {
-    expect(speak(subject({ causes: [cause.bugs(2)] }))).toBe(
-      "Two bugs open against me. Not thrilled about it.",
+  it("open bugs, naming the roadmap file", () => {
+    expect(speak(subject({ causes: [cause.bugs(23)] }))).toBe(
+      "23 bugs open in docs/roadmap.md. Not thrilled about it.",
+    );
+    expect(speak(subject({ causes: [cause.criticalBugs(1)] }))).toBe(
+      "One critical bug open in Garden Plans.md. Not thrilled about it.",
     );
   });
 
@@ -201,6 +217,7 @@ describe("distressed birds are blunt and lead with the worst", () => {
       cause.ci(),
       cause.unreadable(),
       cause.bugs(1),
+      cause.criticalBugs(2),
       cause.uncommitted(2, 100, "red"),
       cause.unpushed(1, 80, "red"),
       cause.stalled(40, false),
@@ -209,7 +226,8 @@ describe("distressed birds are blunt and lead with the worst", () => {
     expect(secondaries.map((speech) => speech.split(". ")[1])).toEqual([
       "My CI is also failing on main.",
       "I also push to skiff-app/skiff on github, and no card of yours can read it.",
-      "I've also got one bug open.",
+      "I've also got one bug open in docs/roadmap.md.",
+      "I've also got two critical bugs open in Garden Plans.md.",
       "I'm also holding two uncommitted changes for four days.",
       "I'm also holding one local-only commit for three days.",
       "I've also been parked on extension-popup-ia for a month.",

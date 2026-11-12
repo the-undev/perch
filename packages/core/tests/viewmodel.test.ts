@@ -1,10 +1,20 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { Config } from "../src/config.ts";
+import {
+  builtInBugWords,
+  builtInCriticalBugWords,
+  type Config,
+} from "../src/config.ts";
+import { deriveRoadmapFile } from "../src/derivations.ts";
+import { mockDetectedRoadmap, mockRoadmap } from "../src/mock.ts";
+import { readRoadmapStructure } from "../src/roadmap-parser.ts";
 import type {
   FinalisedCommit,
   ForgeName,
   ForgePresence,
   Item,
+  RoadmapData,
 } from "../src/snapshot.ts";
 import {
   type Bird,
@@ -332,7 +342,9 @@ describe("the wires", () => {
     const busy = item("dev/spool", {
       sources: {
         git: gitData({}),
-        roadmap: { counts: { bug: 1, feature: 19 }, files: [] },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 19, bug: 1, criticalBug: 0 },
+        ]),
       },
     });
     const bird = birdIn([busy], config, "dev/spool");
@@ -345,7 +357,11 @@ describe("the wires", () => {
     const config = await adoptAll([]);
     const hothouse = item("obsidian/Hothouse", {
       kind: "obsidian",
-      sources: { roadmap: { counts: { bug: 0, feature: 194 }, files: [] } },
+      sources: {
+        roadmap: mockRoadmap([
+          { path: "Tech/Tech Plans.md", task: 194, bug: 0, criticalBug: 0 },
+        ]),
+      },
     });
 
     expect(birdIn([hothouse], config, "obsidian/Hothouse").plumpness).toEqual({
@@ -395,7 +411,9 @@ describe("chips", () => {
             thresholds: { amberHours: 24, redHours: 72 },
           },
         }),
-        roadmap: { counts: { bug: 2, feature: 7 }, files: [] },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 7, bug: 6, criticalBug: 0 },
+        ]),
         github: forgeData({
           latestCi: { ...failingRun, state: "success" },
           openPullRequests: [
@@ -421,17 +439,22 @@ describe("chips", () => {
       ]),
     ).toEqual([
       ["ci failure", null, "red"],
-      ["2 bugs", 2, "red"],
+      ["6 bugs", 6, "amber"],
       ["4 uncommitted", 4, "red"],
       ["1 unpushed", 1, null],
       ["1 open PR", 1, null],
-      ["9 open items", 9, null],
+      ["13 open items", 13, null],
     ]);
     // Every kind but the unreadable remote's, which needs a forge no card reads.
     expect(
       birdIn([busy], config, "dev/prism").bubble.chips.map((chip) => chip.kind),
     ).toEqual(
-      chipKinds.filter((kind) => kind !== "unreadable" && kind !== "stalled"),
+      chipKinds.filter(
+        (kind) =>
+          kind !== "unreadable" &&
+          kind !== "critical-bugs" &&
+          kind !== "stalled",
+      ),
     );
   });
 
@@ -473,7 +496,11 @@ describe("chips", () => {
     const skiff = unreadableItem(
       "undev/skiff",
       ["github", "forgejo"],
-      { roadmap: { counts: { bug: 0, feature: 3 }, files: [] } },
+      {
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 3, bug: 0, criticalBug: 0 },
+        ]),
+      },
       "no-card",
     );
 
@@ -518,7 +545,9 @@ describe("chips", () => {
     const found = item("dev/mixed-bag", {
       sources: {
         git: gitData({}),
-        roadmap: { counts: { bug: 1, feature: 44 }, files: [] },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 44, bug: 1, criticalBug: 0 },
+        ]),
       },
     });
 
@@ -549,7 +578,9 @@ describe("the ledger", () => {
             thresholds: { amberHours: 24, redHours: 72 },
           },
         }),
-        roadmap: { counts: { bug: 0, feature: 15 }, files: [] },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 15, bug: 0, criticalBug: 0 },
+        ]),
         github: forgeData({
           fullName: "the-undev/harbour",
           url: "https://github.com/the-undev/harbour",
@@ -582,12 +613,13 @@ describe("the ledger", () => {
             tone: "amber",
             url: null,
             at: hoursBefore(40),
+            reveal: null,
           },
         ],
       },
       {
         kind: "count",
-        label: "open bugs",
+        label: "bugs in docs/roadmap.md",
         count: 0,
         text: "none",
         tone: "green",
@@ -601,7 +633,16 @@ describe("the ledger", () => {
         text: "15",
         tone: null,
         chip: "open-items",
-        workings: [],
+        workings: [
+          {
+            source: "docs/roadmap.md",
+            text: "15 open",
+            tone: null,
+            url: null,
+            at: null,
+            reveal: null,
+          },
+        ],
       },
       {
         kind: "count",
@@ -626,6 +667,7 @@ describe("the ledger", () => {
             tone: "green",
             url: null,
             at: hoursBefore(2),
+            reveal: null,
           },
         ],
       },
@@ -745,6 +787,7 @@ describe("the unpushed commits row", () => {
           tone: "red",
           url: null,
           at: hoursBefore(500),
+          reveal: null,
         },
         {
           source: "git",
@@ -752,6 +795,7 @@ describe("the unpushed commits row", () => {
           tone: "red",
           url: null,
           at: hoursBefore(500),
+          reveal: null,
         },
         {
           source: "git",
@@ -759,6 +803,7 @@ describe("the unpushed commits row", () => {
           tone: "amber",
           url: "https://github.com/finch/perch/tree/updates",
           at: hoursBefore(50),
+          reveal: null,
         },
         {
           source: "git",
@@ -766,6 +811,7 @@ describe("the unpushed commits row", () => {
           tone: null,
           url: null,
           at: hoursBefore(2),
+          reveal: null,
         },
       ],
     });
@@ -952,6 +998,7 @@ describe("the ledger's workings", () => {
         tone: "green",
         url: failingRun.url,
         at: hoursBefore(2),
+        reveal: null,
       },
       {
         source: "forgejo",
@@ -959,6 +1006,7 @@ describe("the ledger's workings", () => {
         tone: null,
         url: "http://forgejo.test/finch/perch/actions/runs/14",
         at: hoursBefore(5),
+        reveal: null,
       },
     ]);
   });
@@ -998,6 +1046,7 @@ describe("the ledger's workings", () => {
           tone: null,
           url: "https://github.com/finch/perch/pulls",
           at: null,
+          reveal: null,
         },
       ],
     });
@@ -1021,6 +1070,7 @@ describe("the ledger's workings", () => {
       tone: "amber",
       url: null,
       at: null,
+      reveal: null,
     });
 
     expect(row(bird, "CI").workings).toEqual([
@@ -1055,6 +1105,7 @@ describe("the ledger's workings", () => {
         tone: "amber",
         url: null,
         at: null,
+        reveal: null,
       })),
     });
 
@@ -1122,59 +1173,275 @@ describe("the ledger's workings", () => {
     ]);
   });
 
-  it("counts open items and bugs per roadmap file, a file with none silent", async () => {
+  it("counts open items per roadmap file, a file with none silent", async () => {
     const config = await adoptAll(["dev/hollow"]);
-    const open = (kind: "bug" | "feature", line: number) => ({
-      text: `${kind} ${line}`,
-      kind,
-      done: false,
-      line,
-      source: "bullet" as const,
-      body: null,
-    });
     const hollow = item("dev/hollow", {
       sources: {
-        roadmap: {
-          counts: { bug: 2, feature: 2 },
-          files: [
-            {
-              path: "docs/roadmap.md",
-              items: [open("feature", 1), open("bug", 2)],
-              groups: [
-                {
-                  heading: "Bugs",
-                  level: 2,
-                  line: 3,
-                  role: "group",
-                  items: [open("bug", 4), { ...open("bug", 5), done: true }],
-                  groups: [],
-                  progress: { done: 1, total: 2 },
-                },
-              ],
-            },
-            {
-              path: "docs/ideas.md",
-              items: [open("feature", 1)],
-              groups: [],
-            },
-            { path: "docs/done.md", items: [], groups: [] },
-          ],
-        },
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 1, bug: 2, criticalBug: 0 },
+          { path: "docs/ideas.md", task: 1, bug: 0, criticalBug: 0 },
+          { path: "docs/done.md", task: 0, bug: 0, criticalBug: 0 },
+        ]),
       },
     });
     const bird = birdIn([hollow], config, "dev/hollow");
-    const sourced = (label: string) =>
-      row(bird, label).workings.map((working) => [
+
+    expect(
+      row(bird, "open roadmap items").workings.map((working) => [
         working.source,
         working.text,
-      ]);
-
-    expect(row(bird, "open bugs").chip).toBe("bugs");
-    expect(sourced("open bugs")).toEqual([["docs/roadmap.md", "2 open"]]);
-    expect(sourced("open roadmap items")).toEqual([
+      ]),
+    ).toEqual([
       ["docs/roadmap.md", "3 open"],
       ["docs/ideas.md", "1 open"],
     ]);
+  });
+
+  it("judges each roadmap file's bugs and critical bugs on its own, the bird taking the worst", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const hollow = item("dev/hollow", {
+      sources: {
+        roadmap: mockRoadmap([
+          { path: "docs/roadmap.md", task: 4, bug: 6, criticalBug: 0 },
+          { path: "docs/sync.md", task: 0, bug: 2, criticalBug: 3 },
+          { path: "docs/ideas.md", task: 9, bug: 4, criticalBug: 0 },
+        ]),
+      },
+    });
+    const bird = birdIn([hollow], config, "dev/hollow");
+    const bugRows = bird.detail.ledger.flatMap((entry) =>
+      entry.kind === "count" && /bugs in/.test(entry.label)
+        ? [[entry.label, entry.text, entry.tone, entry.chip]]
+        : [],
+    );
+
+    expect(bird.health.level).toBe("red");
+    expect(
+      bird.health.causes.map((cause) =>
+        cause.kind === "bugs"
+          ? [cause.path, cause.level, cause.critical, cause.count]
+          : cause.kind,
+      ),
+    ).toEqual([
+      ["docs/sync.md", "red", true, 3],
+      ["docs/roadmap.md", "amber", false, 6],
+    ]);
+    expect(
+      bird.bubble.chips.map((chip) => [chip.label, chip.severity]),
+    ).toEqual([
+      ["6 bugs in docs/roadmap.md", "amber"],
+      ["2 bugs in docs/sync.md", null],
+      ["3 critical bugs in docs/sync.md", "red"],
+      ["4 bugs in docs/ideas.md", null],
+      ["28 open items", null],
+    ]);
+    expect(bugRows).toEqual([
+      ["bugs in docs/roadmap.md", "6", "amber", "bugs"],
+      ["bugs in docs/sync.md", "2", null, "bugs"],
+      ["critical bugs in docs/sync.md", "3", "red", "critical-bugs"],
+      ["bugs in docs/ideas.md", "4", null, "bugs"],
+    ]);
+    expect(row(bird, "critical bugs in docs/sync.md").workings).toEqual([
+      ...[1, 2, 3].map((line) => ({
+        source: "docs/sync.md",
+        text: `critical bug ${line}`,
+        tone: null,
+        url: null,
+        at: null,
+        reveal: { path: "docs/sync.md", line },
+      })),
+      {
+        source: "docs/sync.md",
+        text: "distressed at 3",
+        tone: "red",
+        url: null,
+        at: null,
+        reveal: null,
+      },
+    ]);
+    expect(bird.bubble.speech).toBe(
+      "Three critical bugs open in docs/sync.md. I've also got six bugs open in docs/roadmap.md.",
+    );
+  });
+
+  it("lists each open bug of a row's kind with its line, and leaves done bugs out", async () => {
+    const config = await adoptAll(["dev/tidewater"]);
+    const file = deriveRoadmapFile(
+      "docs/roadmap.md",
+      readRoadmapStructure(
+        readFileSync(
+          join(import.meta.dirname, "fixtures", "roadmaps", "hierarchy.md"),
+          "utf8",
+        ),
+      ),
+      { bug: [...builtInBugWords], criticalBug: [...builtInCriticalBugWords] },
+    );
+    const tidewater = item("dev/tidewater", {
+      sources: { roadmap: { ...mockRoadmap([]), files: [file] } },
+    });
+    const bird = birdIn([tidewater], config, "dev/tidewater");
+    const lines = (label: string) =>
+      row(bird, label).workings.map((working) => [
+        working.text,
+        working.reveal,
+      ]);
+
+    expect(lines("bugs in docs/roadmap.md")).toEqual([
+      ["Dates read as US format", { path: "docs/roadmap.md", line: 24 }],
+    ]);
+    expect(lines("critical bugs in docs/roadmap.md")).toEqual([
+      [
+        "Data loss when two devices save at once",
+        { path: "docs/roadmap.md", line: 15 },
+      ],
+      ["restless at 1", null],
+    ]);
+  });
+
+  it("adds no mood line to a row within its window, and a restless or distressed one at its window's count, from per-item overrides when set", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const lineOf = (
+      counts: { bug: number; criticalBug: number },
+      label: string,
+    ) => {
+      const hollow = item("dev/hollow", {
+        sources: {
+          roadmap: {
+            ...mockRoadmap([{ path: "docs/roadmap.md", task: 0, ...counts }]),
+            thresholds: {
+              bugs: { amberCount: 3, redCount: 7 },
+              criticalBugs: { amberCount: 2, redCount: 4 },
+            },
+          },
+        },
+      });
+      const working = row(
+        birdIn([hollow], config, "dev/hollow"),
+        label,
+      ).workings.at(-1);
+      return working === undefined ? null : [working.text, working.tone];
+    };
+    const bugs = "bugs in docs/roadmap.md";
+    const criticalBugs = "critical bugs in docs/roadmap.md";
+
+    expect(lineOf({ bug: 2, criticalBug: 1 }, bugs)).toEqual(["bug 2", null]);
+    expect(lineOf({ bug: 3, criticalBug: 1 }, bugs)).toEqual([
+      "restless at 3",
+      "amber",
+    ]);
+    expect(lineOf({ bug: 9, criticalBug: 1 }, bugs)).toEqual([
+      "distressed at 7",
+      "red",
+    ]);
+    expect(lineOf({ bug: 0, criticalBug: 1 }, criticalBugs)).toEqual([
+      "critical bug 1",
+      null,
+    ]);
+    expect(lineOf({ bug: 0, criticalBug: 2 }, criticalBugs)).toEqual([
+      "restless at 2",
+      "amber",
+    ]);
+    expect(lineOf({ bug: 0, criticalBug: 5 }, criticalBugs)).toEqual([
+      "distressed at 4",
+      "red",
+    ]);
+  });
+
+  it("leaves tasks out of health however many there are, and judges against the windows the roadmap carries", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const busy = (bug: number) =>
+      item("dev/hollow", {
+        sources: {
+          roadmap: {
+            ...mockRoadmap([
+              { path: "docs/roadmap.md", task: 300, bug, criticalBug: 0 },
+            ]),
+            thresholds: {
+              bugs: { amberCount: 2, redCount: 20 },
+              criticalBugs: { amberCount: 1, redCount: 3 },
+            },
+          },
+        },
+      });
+
+    expect(birdIn([busy(1)], config, "dev/hollow").health.causes).toEqual([]);
+    expect(birdIn([busy(2)], config, "dev/hollow").bubble.chips[0]).toEqual({
+      kind: "bugs",
+      label: "2 bugs",
+      count: 2,
+      severity: "amber",
+    });
+  });
+
+  it("gives a file within its windows uncoloured chips, and none for a kind with nothing open", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const chipsOf = (files: Parameters<typeof mockRoadmap>[0]) =>
+      birdIn(
+        [item("dev/hollow", { sources: { roadmap: mockRoadmap(files) } })],
+        config,
+        "dev/hollow",
+      ).bubble.chips.filter(
+        (chip) => chip.kind === "bugs" || chip.kind === "critical-bugs",
+      );
+
+    expect(
+      chipsOf([{ path: "docs/roadmap.md", task: 2, bug: 1, criticalBug: 0 }]),
+    ).toEqual([{ kind: "bugs", label: "1 bug", count: 1, severity: null }]);
+    expect(
+      chipsOf([{ path: "docs/roadmap.md", task: 2, bug: 0, criticalBug: 0 }]),
+    ).toEqual([]);
+    expect(
+      chipsOf([{ path: "docs/roadmap.md", task: 2, bug: 0, criticalBug: 1 }]),
+    ).toEqual([
+      {
+        kind: "critical-bugs",
+        label: "1 critical bug",
+        count: 1,
+        severity: "amber",
+      },
+    ]);
+  });
+
+  it("gives a file with both kinds two chips, each with its own severity, and names the path only with several roadmap files", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const chipsOf = (files: Parameters<typeof mockRoadmap>[0]) =>
+      birdIn(
+        [item("dev/hollow", { sources: { roadmap: mockRoadmap(files) } })],
+        config,
+        "dev/hollow",
+      ).bubble.chips.filter(
+        (chip) => chip.kind === "bugs" || chip.kind === "critical-bugs",
+      );
+    const both = { path: "docs/roadmap.md", task: 0, bug: 6, criticalBug: 3 };
+
+    expect(chipsOf([both]).map((chip) => [chip.label, chip.severity])).toEqual([
+      ["6 bugs", "amber"],
+      ["3 critical bugs", "red"],
+    ]);
+    expect(
+      chipsOf([
+        both,
+        { path: "docs/ideas.md", task: 0, bug: 0, criticalBug: 0 },
+      ]).map((chip) => chip.label),
+    ).toEqual([
+      "6 bugs in docs/roadmap.md",
+      "3 critical bugs in docs/roadmap.md",
+    ]);
+  });
+
+  it("reads a roadmap cached before files were judged as not read", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const cached = item("dev/hollow", {
+      sources: {
+        roadmap: {
+          counts: { bug: 2, feature: 3 },
+          files: [{ path: "docs/roadmap.md", items: [], groups: [] }],
+        } as unknown as RoadmapData,
+      },
+    });
+    const bird = birdIn([cached], config, "dev/hollow");
+
+    expect([bird.health.causes, bird.plumpness.outstanding]).toEqual([[], 0]);
   });
 
   it("ages uncommitted changes from the oldest, toned by its window", async () => {
@@ -1204,6 +1471,7 @@ describe("the ledger's workings", () => {
           tone: "red",
           url: null,
           at: hoursBefore(123),
+          reveal: null,
         },
       ],
     });
@@ -1274,10 +1542,9 @@ describe("the detail", () => {
           },
         ],
       }),
-      roadmap: {
-        counts: { bug: 0, feature: 16 },
-        files: [{ path: "docs/roadmap.md", items: [], groups: [] }],
-      },
+      roadmap: mockRoadmap([
+        { path: "docs/roadmap.md", task: 16, bug: 0, criticalBug: 0 },
+      ]),
       github: forgeData({
         finalisedCommits: [
           {
@@ -1714,17 +1981,105 @@ describe("the detail", () => {
     );
 
     expect(birdIn([perch], defaults, "dev/perch").detail.keyFiles).toEqual([
-      { path: "README.md", absolutePath: "/home/test/dev/perch/README.md" },
+      {
+        path: "README.md",
+        absolutePath: "/home/test/dev/perch/README.md",
+        marks: {},
+      },
       {
         path: "docs/roadmap.md",
         absolutePath: "/home/test/dev/perch/docs/roadmap.md",
+        marks: {},
       },
     ]);
     expect(birdIn([perch], own, "dev/perch").detail.keyFiles).toEqual([
       {
         path: "docs/spec.md",
         absolutePath: "/home/test/dev/perch/docs/spec.md",
+        marks: {},
       },
+    ]);
+  });
+
+  it("shows a detected roadmap file as a document, with no bug rows, open items, marks or bug chips", async () => {
+    const defaults = await adoptAll(["dev/perch"]);
+    const undeclared = item("dev/perch", {
+      sources: { roadmap: mockDetectedRoadmap("docs/roadmap.md") },
+    });
+    const bird = birdIn([undeclared], defaults, "dev/perch");
+
+    expect(bird.detail.keyFiles).toEqual([
+      {
+        path: "README.md",
+        absolutePath: "/home/test/dev/perch/README.md",
+        marks: {},
+      },
+      {
+        path: "docs/roadmap.md",
+        absolutePath: "/home/test/dev/perch/docs/roadmap.md",
+        marks: {},
+      },
+    ]);
+    expect(
+      bird.detail.ledger.filter((entry) =>
+        /bugs|open roadmap/.test(entry.label),
+      ),
+    ).toEqual([]);
+    expect(bird.bubble.chips.filter((chip) => chip.kind === "bugs")).toEqual(
+      [],
+    );
+    expect(bird.health.causes.filter((cause) => cause.kind === "bugs")).toEqual(
+      [],
+    );
+    expect(bird.plumpness.outstanding).toBe(0);
+  });
+
+  it("marks each bug's and critical bug's line on a roadmap file's paper, faint once done, and no other file", async () => {
+    const own = await testConfig(
+      '[items."dev/perch"]\nkey_files = ["README.md", "docs/roadmap.md", "docs/plans.md"]\n',
+    );
+    const fixture = (path: string, name: string) =>
+      deriveRoadmapFile(
+        path,
+        readRoadmapStructure(
+          readFileSync(
+            join(import.meta.dirname, "fixtures", "roadmaps", name),
+            "utf8",
+          ),
+        ),
+        {
+          bug: [...builtInBugWords],
+          criticalBug: [...builtInCriticalBugWords],
+        },
+      );
+    const marked = item("dev/perch", {
+      sources: {
+        roadmap: {
+          ...mockRoadmap([]),
+          files: [
+            fixture("docs/roadmap.md", "hierarchy.md"),
+            fixture("docs/plans.md", "headings-as-tasks.md"),
+          ],
+        },
+      },
+    });
+
+    expect(
+      birdIn([marked], own, "dev/perch").detail.keyFiles.map((keyFile) => [
+        keyFile.path,
+        keyFile.marks,
+      ]),
+    ).toEqual([
+      ["README.md", {}],
+      [
+        "docs/roadmap.md",
+        {
+          15: { kind: "critical-bug", done: false },
+          23: { kind: "bug", done: true },
+          24: { kind: "bug", done: false },
+        },
+      ],
+      ["docs/plans.md", { 13: { kind: "bug", done: false } }],
     ]);
   });
 });

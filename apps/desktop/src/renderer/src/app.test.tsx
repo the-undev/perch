@@ -612,6 +612,8 @@ describe("the window", () => {
             roadmaps: null,
             thresholds: {},
             zellijSession: null,
+            bugWords: null,
+            criticalBugWords: null,
           },
         },
       ]);

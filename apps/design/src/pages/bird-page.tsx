@@ -14,7 +14,7 @@ export function BirdPage() {
     <>
       <Section
         title="Breast colour · health, worn as mood"
-        rule="Green content, amber restless, red distressed. From CI failures, open bugs, a remote no card can read (amber), unsafe work (24h amber, 72h red), and stalled flight (7d amber, 30d red). Worst input wins; per-bird thresholds in config."
+        rule="Green content, amber restless, red distressed. From CI failures, open bugs per roadmap file (5 amber, 20 red; critical bugs 1 amber, 3 red), a remote no card can read (amber), unsafe work (24h amber, 72h red), and stalled flight (7d amber, 30d red). Worst input wins; per-bird thresholds in config."
         min={260}
       >
         <Specimen

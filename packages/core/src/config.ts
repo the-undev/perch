@@ -13,19 +13,72 @@ import {
   zellijKind,
 } from "./launch-kinds.ts";
 import { candidateRefs } from "./refs.ts";
-import type { DayThresholds, HourThresholds } from "./snapshot.ts";
+import type {
+  CountThresholds,
+  DayThresholds,
+  HourThresholds,
+} from "./snapshot.ts";
 
-/** The two health windows: unsafe work in hours, stalled flight in days. */
+/** The health windows: unsafe work in hours, stalled flight in days, open bugs and critical bugs in counts. */
 export interface Thresholds {
   unsafe: HourThresholds;
   stalled: DayThresholds;
+  bugs: CountThresholds;
+  criticalBugs: CountThresholds;
 }
 
 /** Per-item threshold overrides; anything left out takes the global value. */
 export interface ThresholdOverrides {
   unsafe: Partial<HourThresholds>;
   stalled: Partial<DayThresholds>;
+  bugs: Partial<CountThresholds>;
+  criticalBugs: Partial<CountThresholds>;
 }
+
+/** The word lists that make a task a bug or a critical bug; null takes the list below. */
+export interface WorkWordsConfig {
+  bugWords: string[] | null;
+  criticalBugWords: string[] | null;
+}
+
+/** The word lists an item's work is classed by, each taken whole from one place. */
+export interface WorkWords {
+  bug: string[];
+  criticalBug: string[];
+}
+
+/** The words that make a bug when neither the entry nor [work] sets the list. */
+export const builtInBugWords: readonly string[] = [
+  "bug",
+  "bugs",
+  "issue",
+  "issues",
+  "problem",
+  "problems",
+  "broken",
+  "regression",
+  "crash",
+  "crashes",
+  "p2",
+  "p3",
+  "p4",
+];
+
+/** The words that make a critical bug when neither the entry nor [work] sets the list. */
+export const builtInCriticalBugWords: readonly string[] = [
+  "critical",
+  "urgent",
+  "severe",
+  "blocker",
+  "p0",
+  "p1",
+];
+
+/** The bug thresholds [thresholds] takes when it leaves them out. */
+export const defaultBugThresholds: Pick<Thresholds, "bugs" | "criticalBugs"> = {
+  bugs: { amberCount: 5, redCount: 20 },
+  criticalBugs: { amberCount: 1, redCount: 3 },
+};
 
 /** An item's entry in config. Having one adopts the bird, which puts it on a wire. */
 export interface ItemEntry {
@@ -34,12 +87,16 @@ export interface ItemEntry {
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
   thresholds: ThresholdOverrides;
-  /** Files for the detail page, relative to the item; null keeps the README and the roadmaps. */
+  /** Files for the detail page, relative to the item; null keeps the README and any roadmap. */
   keyFiles: string[] | null;
-  /** Roadmap files relative to the item, replacing the standard names; null keeps them. */
+  /** Roadmap files relative to the item, the only files parsed as roadmaps; null or empty parses none. */
   roadmaps: string[] | null;
   /** The zellij session holding the item's tab; null takes it from the zellij action. */
   zellijSession: string | null;
+  /** Words making a bug, replacing the [work] list; null keeps it. */
+  bugWords: string[] | null;
+  /** Words making a critical bug, replacing the [work] list; null keeps it. */
+  criticalBugWords: string[] | null;
 }
 
 /** A local source: repositories found at or under its include paths, home expanded. */
@@ -92,6 +149,8 @@ export interface Config {
   /** Presence references to leave off the main view. */
   ignore: string[];
   thresholds: Thresholds;
+  /** The [work] table's word lists, which an entry's own lists replace. */
+  work: WorkWordsConfig;
   /**
    * Item entries keyed by any of the item's presence references (see resolveEntry); an entry
    * adopts the item and marks a found repository set up.
@@ -305,11 +364,20 @@ export const thresholdKeys = [
   ["unsafe", "redHours", "unsafe_red_hours"],
   ["stalled", "amberDays", "stalled_amber_days"],
   ["stalled", "redDays", "stalled_red_days"],
+  ["bugs", "amberCount", "bugs_amber_count"],
+  ["bugs", "redCount", "bugs_red_count"],
+  ["criticalBugs", "amberCount", "critical_bugs_amber_count"],
+  ["criticalBugs", "redCount", "critical_bugs_red_count"],
 ] as const;
+
+/** Per-item threshold overrides that set nothing. */
+export function noThresholdOverrides(): ThresholdOverrides {
+  return { unsafe: {}, stalled: {}, bugs: {}, criticalBugs: {} };
+}
 
 /** Reads the threshold keys present in a table. */
 function thresholdOverrides(source: Table, where: string): ThresholdOverrides {
-  const overrides: ThresholdOverrides = { unsafe: {}, stalled: {} };
+  const overrides = noThresholdOverrides();
   for (const [window, field, key] of thresholdKeys) {
     if (source[key] === undefined) continue;
     Object.assign(overrides[window], {
@@ -326,6 +394,8 @@ function applyOverrides(
   return {
     unsafe: { ...base.unsafe, ...overrides.unsafe },
     stalled: { ...base.stalled, ...overrides.stalled },
+    bugs: { ...base.bugs, ...overrides.bugs },
+    criticalBugs: { ...base.criticalBugs, ...overrides.criticalBugs },
   };
 }
 
@@ -334,6 +404,12 @@ function checkOrder(thresholds: Thresholds, where: string): void {
   const pairs: [string, number, number][] = [
     ["unsafe", thresholds.unsafe.amberHours, thresholds.unsafe.redHours],
     ["stalled", thresholds.stalled.amberDays, thresholds.stalled.redDays],
+    ["bugs", thresholds.bugs.amberCount, thresholds.bugs.redCount],
+    [
+      "critical bugs",
+      thresholds.criticalBugs.amberCount,
+      thresholds.criticalBugs.redCount,
+    ],
   ];
   for (const [name, amber, red] of pairs) {
     if (amber >= red) {
@@ -352,7 +428,7 @@ function globalThresholds(source: Table): Thresholds {
   );
   const read = (key: string) =>
     positiveInteger(source[key], `thresholds.${key}`);
-  return {
+  const unsafeAndStalled = {
     unsafe: {
       amberHours: read("unsafe_amber_hours"),
       redHours: read("unsafe_red_hours"),
@@ -361,6 +437,37 @@ function globalThresholds(source: Table): Thresholds {
       amberDays: read("stalled_amber_days"),
       redDays: read("stalled_red_days"),
     },
+  };
+  // The bug thresholds came later than the rest, so a config written before them leaves them out.
+  return applyOverrides(
+    { ...unsafeAndStalled, ...defaultBugThresholds },
+    thresholdOverrides(source, "thresholds."),
+  );
+}
+
+/** Reads an optional list of words, each whole and not blank. */
+function optionalWords(
+  source: Table,
+  key: string,
+  where: string,
+): string[] | null {
+  if (source[key] === undefined) return null;
+  const words = stringArray(source[key], `${where}${key}`);
+  if (words.some((word) => word.trim() === "")) {
+    throw new Error(`config: ${where}${key} must not hold a blank word`);
+  }
+  return words;
+}
+
+/** The word list keys, the same in [work] and in an item entry. */
+const workWordKeys = ["bug_words", "critical_bug_words"] as const;
+
+function parseWork(document: Table): WorkWordsConfig {
+  const work = optionalTable(document, "work", "");
+  onlyKeys(work, workWordKeys, "work.");
+  return {
+    bugWords: optionalWords(work, "bug_words", "work."),
+    criticalBugWords: optionalWords(work, "critical_bug_words", "work."),
   };
 }
 
@@ -371,6 +478,7 @@ const entryKeys = [
   "key_files",
   "roadmaps",
   "zellij_session",
+  ...workWordKeys,
   ...thresholdKeys.map(([, , key]) => key),
 ];
 
@@ -398,6 +506,8 @@ function parseEntry(
     keyFiles: list("key_files"),
     roadmaps: list("roadmaps"),
     zellijSession: optionalString(value, "zellij_session", where),
+    bugWords: optionalWords(value, "bug_words", where),
+    criticalBugWords: optionalWords(value, "critical_bug_words", where),
   };
 }
 
@@ -647,6 +757,7 @@ const topLevelKeys = [
   "joins",
   "ignore",
   "thresholds",
+  "work",
   "items",
   "scan",
   "launch",
@@ -685,6 +796,7 @@ export function parseConfig(text: string, home: string): Config {
     joins: stringArrays(document.joins, "joins"),
     ignore: stringArray(document.ignore, "ignore"),
     thresholds,
+    work: parseWork(document),
     items: Object.fromEntries(
       Object.entries(items).map(([id, value]) => [
         id,
@@ -778,8 +890,23 @@ export function thresholdsFor(
   config: Config,
   entry: ItemEntry | null,
 ): Thresholds {
-  const overrides = entry?.thresholds ?? { unsafe: {}, stalled: {} };
+  const overrides = entry?.thresholds ?? noThresholdOverrides();
   return applyOverrides(config.thresholds, overrides);
+}
+
+/** The word lists for an item: each from its entry if set, else from [work], else built in. */
+export function workWordsFor(
+  config: Config,
+  entry: ItemEntry | null,
+): WorkWords {
+  return {
+    bug: [...(entry?.bugWords ?? config.work.bugWords ?? builtInBugWords)],
+    criticalBug: [
+      ...(entry?.criticalBugWords ??
+        config.work.criticalBugWords ??
+        builtInCriticalBugWords),
+    ],
+  };
 }
 
 /** The wire an adopted item sits on; null for an item config does not name, which is on the fence. */

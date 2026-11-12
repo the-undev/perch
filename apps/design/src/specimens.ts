@@ -5,6 +5,7 @@ import {
   mockAviary,
   mockConfig,
   mockHome,
+  mockRoadmap,
   mockSnapshot,
 } from "@perch/core/mock.ts";
 import type { ForgePresence, Item } from "@perch/core/snapshot.ts";
@@ -18,6 +19,7 @@ import {
   type Bird,
   compareOnWire,
   deriveAviary,
+  type LedgerEntry,
   type Wire,
 } from "@perch/core/viewmodel.ts";
 import { mockBird } from "@perch/ui/mock-birds.ts";
@@ -191,4 +193,38 @@ export function stubKeyring(
       return tested === "never" ? new Promise(() => {}) : later(tested);
     },
   };
+}
+
+const bugLedgerItemId = "undev/Hollow-legacy";
+
+/** Hollow's bug and critical bug ledger rows derived again with the given open counts, the windows 5 and 20 for bugs and 3 and 6 for critical bugs. */
+export function bugLedgerRows(bug: number, criticalBug: number): LedgerEntry[] {
+  const items = mockSnapshot.items.map(
+    (item): Item =>
+      item.id === bugLedgerItemId
+        ? {
+            ...item,
+            sources: {
+              ...item.sources,
+              roadmap: {
+                ...mockRoadmap([
+                  { path: "docs/roadmap.md", task: 0, bug, criticalBug },
+                ]),
+                thresholds: {
+                  bugs: { amberCount: 5, redCount: 20 },
+                  criticalBugs: { amberCount: 3, redCount: 6 },
+                },
+              },
+            },
+          }
+        : item,
+  );
+  const aviary = deriveAviary({ ...mockSnapshot, items }, mockConfig, mockHome);
+  const bird = aviary.wires
+    .flatMap((wire) => wire.birds)
+    .find((candidate) => candidate.id === bugLedgerItemId);
+  if (bird === undefined) throw new Error("the mock has no Hollow");
+  return bird.detail.ledger.filter(
+    (entry) => entry.kind === "count" && entry.label.includes("bugs in"),
+  );
 }

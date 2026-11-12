@@ -176,7 +176,7 @@ export function AdoptionPapersPage() {
         </Specimen>
         <Specimen
           label="Wire and roadmaps"
-          rule="The Hothouse Vault: on Machine & Home, two roadmap files in place of the standard names."
+          rule="The Hothouse Vault: on Machine & Home, two roadmap files listed, so both are parsed."
         >
           {specimen("obsidian/Hothouse")}
         </Specimen>

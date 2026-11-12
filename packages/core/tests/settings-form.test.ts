@@ -84,6 +84,23 @@ describe("the settings form", () => {
     }
   });
 
+  it("keeps [work] and the bug thresholds, which the page does not edit", () => {
+    const config: Config = {
+      ...mockConfig,
+      thresholds: {
+        ...mockConfig.thresholds,
+        bugs: { amberCount: 8, redCount: 30 },
+      },
+      work: { bugWords: ["defect"], criticalBugWords: null },
+    };
+    const { values } = settingsFormFor(config, home, mockLogin, mockImage);
+
+    const saved = withSettings(config, values, home);
+
+    expect(saved.work).toEqual(config.work);
+    expect(saved.thresholds.bugs).toEqual({ amberCount: 8, redCount: 30 });
+  });
+
   it("saves the starter unchanged as the same bytes, and the example as the same TOML document", async () => {
     const save = (text: string) => {
       const config = parseConfig(text, home);

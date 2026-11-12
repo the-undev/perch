@@ -80,12 +80,43 @@ describe("the mock dataset", () => {
       ]),
     );
     expect(kinds("amber")).toEqual(
-      new Set(["unreadable-remote", "uncommitted", "unpushed", "stalled"]),
+      new Set([
+        "unreadable-remote",
+        "bugs",
+        "uncommitted",
+        "unpushed",
+        "stalled",
+      ]),
     );
     expect(kinds("red")).toEqual(
       new Set(["ci-failing", "bugs", "uncommitted"]),
     );
     expect(adopted.some((bird) => bird.health.causes.length > 1)).toBe(true);
+  });
+
+  it("holds roadmap files within their bug windows, past amber on critical bugs, and past red on bugs", () => {
+    const bugCauses = adopted.flatMap((bird) =>
+      bird.health.causes.flatMap((cause) =>
+        cause.kind === "bugs" ? [[cause.level, cause.critical]] : [],
+      ),
+    );
+    const quietBugRows = adopted.flatMap((bird) =>
+      bird.detail.ledger.filter(
+        (entry) =>
+          entry.kind === "count" &&
+          entry.label.startsWith("bugs in") &&
+          entry.count > 0 &&
+          entry.tone === null,
+      ),
+    );
+
+    expect(bugCauses).toEqual(
+      expect.arrayContaining([
+        ["amber", true],
+        ["red", false],
+      ]),
+    );
+    expect(quietBugRows.length).toBeGreaterThan(0);
   });
 
   it("splits unpushed commits over several branches, one ahead of its upstream and one with none", () => {
@@ -116,6 +147,7 @@ describe("the mock dataset", () => {
         "unreadable",
         "ci",
         "bugs",
+        "critical-bugs",
         "uncommitted",
         "unpushed",
         "stalled",
@@ -400,6 +432,30 @@ describe("the mock dataset", () => {
     });
   });
 
+  it("covers a bird whose roadmap is parsed because its entry lists it, and one whose standard file is only shown", () => {
+    const rawEntry = (id: string) =>
+      mockConfig.items[id] ?? { roadmaps: undefined };
+    const roadmapOfBird = (id: string) =>
+      mockSnapshot.items.find((item) => item.id === id)?.sources.roadmap;
+    const hollow = roadmapOfBird("undev/Hollow-legacy");
+    const spool = roadmapOfBird("undev/spool");
+
+    expect(rawEntry("undev/Hollow-legacy").roadmaps).toEqual([
+      "docs/roadmap.md",
+    ]);
+    expect(hollow).toMatchObject({
+      files: [{ path: "docs/roadmap.md", counts: { bug: 23 } }],
+      detectedPath: null,
+    });
+    expect(rawEntry("undev/spool").roadmaps).toBeNull();
+    expect(spool).toMatchObject({ files: [], detectedPath: "docs/roadmap.md" });
+    expect(
+      birds
+        .find((bird) => bird.id === "undev/spool")
+        ?.detail.keyFiles.map((file) => file.path),
+    ).toEqual(["README.md", "docs/roadmap.md"]);
+  });
+
   it("agrees with the derivation rules wherever it states a judged value", () => {
     for (const item of mockSnapshot.items) {
       const entry = resolveEntry(mockConfig, item.id, [
@@ -410,6 +466,15 @@ describe("the mock dataset", () => {
       const roadmap = item.sources.roadmap;
       if (roadmap !== undefined && !("error" in roadmap)) {
         expect(roadmap.counts, item.id).toEqual(countOpenItems(roadmap.files));
+        for (const file of roadmap.files) {
+          expect(file.counts, `${item.id} ${file.path}`).toEqual(
+            countOpenItems([file]),
+          );
+        }
+        expect(roadmap.thresholds, item.id).toEqual({
+          bugs: thresholds.bugs,
+          criticalBugs: thresholds.criticalBugs,
+        });
       }
       const git = item.sources.git;
       if (git === undefined || "error" in git) continue;

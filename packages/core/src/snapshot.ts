@@ -54,6 +54,12 @@ export interface DayThresholds {
   redDays: number;
 }
 
+/** Windows in open items: amber at or beyond the first count, red at or beyond the second. */
+export interface CountThresholds {
+  amberCount: number;
+  redCount: number;
+}
+
 /** Unsafe work of one kind, aged from its oldest change and judged against the item's windows. */
 export interface AgedWork {
   since: string;
@@ -122,7 +128,8 @@ export interface GitData {
   stall: Stall | null;
 }
 
-export type WorkItemKind = "bug" | "feature";
+/** A task, a bug or a critical bug, by the word lists. */
+export type WorkItemKind = "task" | "bug" | "critical-bug";
 
 export interface WorkItem {
   text: string;
@@ -153,20 +160,31 @@ export interface WorkItemGroup {
   progress: Progress | null;
 }
 
+export type WorkItemCounts = Record<WorkItemKind, number>;
+
 export interface RoadmapFile {
   /** Path relative to the item. */
   path: string;
   /** Bullets above the first heading and bare top-level headings. */
   items: WorkItem[];
   groups: WorkItemGroup[];
+  /** Open items in this file by kind; done items are not counted. */
+  counts: WorkItemCounts;
 }
 
-export type WorkItemCounts = Record<WorkItemKind, number>;
+/** The windows each roadmap file's open bugs and critical bugs are judged against. */
+export interface BugThresholds {
+  bugs: CountThresholds;
+  criticalBugs: CountThresholds;
+}
 
 export interface RoadmapData {
   /** Open items by kind across every file; done items are not counted. */
   counts: WorkItemCounts;
   files: RoadmapFile[];
+  thresholds: BugThresholds;
+  /** A standard-named roadmap file shown as a document but not parsed; null when the entry lists files. */
+  detectedPath: string | null;
 }
 
 export interface PullRequest {

@@ -239,10 +239,12 @@ const roadmaps: SourceSpec = {
   reads: (
     <p>
       For every local presence, the roadmap files its config entry names in{" "}
-      <Code>roadmaps</Code>, else the first of the standard names that exists.
-      The entry is resolved through the project the clone joins, so it runs
-      after the forge enrichers. Each file is parsed into its headings, the
-      bullets directly under each, and the prose between.
+      <Code>roadmaps</Code>. A file is parsed as a roadmap only when listed
+      there; when the list is unset or empty, the first of the standard names
+      that exists is recorded by path and shown as a document. The entry is
+      resolved through the project the clone joins, so it runs after the forge
+      enrichers. Each file is parsed into its headings, the bullets directly
+      under each, and the prose between.
     </p>
   ),
   moduleNames: [
@@ -261,17 +263,22 @@ const roadmaps: SourceSpec = {
   ],
   derives: (
     <p>
-      Work items by the per-heading rule, bugs marked by their heading or a{" "}
-      <Code>#bug</Code> tag, and the open items counted by kind. The counts feed
-      the bird&apos;s plumpness, its chips and its ledger; open bugs turn it
-      red.
+      Work items by the per-heading rule, where only a checkbox bullet is a task
+      and a plain bullet is a note, each a task, a bug or a critical bug by
+      whole words from <Code>bug_words</Code> and{" "}
+      <Code>critical_bug_words</Code> in its text, its tags and the headings
+      above it, leaving out inline code and double-quoted text, and the open
+      items counted by kind. The counts feed the bird&apos;s plumpness, its
+      chips and its ledger. Each file&apos;s open bugs and critical bugs are
+      judged against their windows, and the worse level is a cause of the
+      bird&apos;s health; tasks never are.
     </p>
   ),
   derivations: [
     "deriveRoadmap",
     "deriveRoadmapFile",
     "countOpenItems",
-    "mentionsBugs",
+    "kindClassifier",
   ],
   snapshotTypes: [
     "RoadmapData",

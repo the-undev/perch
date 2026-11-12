@@ -2,26 +2,41 @@
 
 Work identified and not done. Remove items as they land.
 
-## Reintroducing importance
+## Bird Positions
 
-An importance tier per item would set the bird's size and its place among
-birds of one mood on a wire. It needs an effect the wires do not already give.
+Move to a fixed layout for the birds so they're always in the same spots.
 
-## Critical roadmap items drive health
+## Bird Types
 
-An open roadmap item under a heading marked critical would distress the bird.
-The marking convention is TBD.
+More types of bird, perhaps per project.
 
-## The papers as a view of their own
+## Project config in the repository
 
-Opening the adoption papers should replace the project detail with an animated
-transition, and closing them should bring it back.
+A `.perch.toml` at a repository's root, meant to be checked in, holds what is
+true of the project on any machine: `key_files`, `roadmaps`, `bug_words`,
+`critical_bug_words` and the bug thresholds, with the same keys as an item
+entry. Precedence, each set value replacing the one below: the item entry in
+the owner's config, then `.perch.toml`, then `[work]` and `[thresholds]`, then
+built in. Wires, names, sessions, launch actions and sources stay in the
+owner's config. A bird known only from a forge has no clone to read it from;
+reading it through the forge API is a later step. Perch cannot migrate a file
+in another repository, so the schema and its versioning are settled before
+anything else.
 
-## Session restore beside autostart
+## Side by side sheets on wide windows
 
-Plasma's session restore may relaunch Perch at login as well as the autostart
-entry, showing the window. Not observed yet. If it happens, exclude Perch in
-Plasma's session settings or pass `--hidden` on the restored launch.
+The detail page is capped at 1920px. A wide window could show two sheets side
+by side. What decides the pairing is TBD: by family (documents beside work) or
+chosen per bird, which needs remembered state.
+
+## Display choices as config
+
+How the work sheets show things, such as hiding done tasks, could be set in
+config. It waits until real roadmap files show which choices need it.
+
+## The papers as an overlay
+
+Opening the adoption papers should show above everything else and centered rather than within the project view
 
 ## Archived scan lane
 
@@ -34,46 +49,14 @@ The zellij action selects or opens the tab but does not raise the terminal
 window. Raising another app's window on Plasma Wayland needs a KWin script or
 `kdotool`.
 
-## TUI tiles
-
-A tile for a TUI such as oxbow or spool would focus its alacritty window, or
-launch it. It needs a config marker for which items are TUIs, and window
-raising.
-
-## Actions from tiles
-
-Push the branch, commit and push an Obsidian vault, open in the editor. Each
-changes what the scanner reads, so each needs a rescan afterwards and a way to
-undo it.
-
 ## Tray icon status
 
 The tray icon could show the worst health colour across everything.
 
-## Nudges
-
-Rules over a scan, such as an Obsidian vault unpushed for three days, shown as
-a flag on the tile or a desktop notification.
-
-## Phone view
-
-Push the latest scan as JSON to a server that serves a read-only page.
-
 ## Server monitoring
 
-The Uptime Kuma aggregate, the live container list and the server tile. The
-scanner's kuma source runs only for a `[[sources.kuma]]` table, which config
-leaves out until this is picked up.
-
-## Server container controls
-
-Stop, restart and update a container from the server detail page. The
-container list is a live read from a Docker socket proxy and is a typed stub
-today.
-
-## Integrations with other services
-
-A source for another service on the server, read from that service's own API.
+- Integrate with Uptime Kuma for status monitor.
+- Investigate other monitoring integrations
 
 ## In-app global shortcut
 
@@ -87,12 +70,25 @@ electron-builder does not write. CI could repack the AppImage with
 appimagetool, but the repack must keep the block map and checksum in
 `latest-linux.yml` valid.
 
-## Forge issues source
+## Forge tickets source
 
-Tickets from GitHub and Forgejo as a work source beside the in-repo roadmap.
-GitHub tokens need the Issues read permission added, see
-[forge-access.md](forge-access.md). GitHub's issues listing includes pull
-requests, which the gatherer must filter out.
+Open tickets from GitHub and Forgejo as a work source beside the in-repo
+roadmap. Pull requests are left out.
+
+- Each ticket is a task, a `bug` or a `critical bug` by the same `bug_words` and
+  `critical_bug_words` the roadmap uses, matched as whole words in any case
+  against its title and its labels. Whether GitHub `issue types` can set the
+  kind is TBD.
+- Each forge's tickets are judged on their own against the `bug` thresholds and
+  give their own cause, as each roadmap file does, so a `bug` written in the
+  roadmap and filed as a ticket is not counted twice. The ledger gets a `bug`
+  row per forge and a `critical bug` row when there are any.
+- The ticket sheet is drawn in `mockups/work-sources.html`: a tab per forge
+  after the roadmaps, carrying its open count and shown even with none open.
+  Each row has the number, title, labels as the forge spells them and last
+  update, with the roadmap's margin marks. `Critical bugs` come first, then
+  `bugs`, then tasks, each most recently updated first. A row opens the ticket
+  in the browser.
 
 ## Visual roadmap view
 
@@ -133,8 +129,3 @@ browser.
 Forge repositories are keyed by owner/name alone, so the same name at two
 instances is one presence. Keying by instance changes the presence reference
 that config names, and needs a rule for entries written without one.
-
-## Other sources
-
-Candidates: Obsidian vault roadmaps as tiles of their own, a setup runbook
-checklist in an Obsidian vault, a browser reading list.

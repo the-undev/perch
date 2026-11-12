@@ -42,7 +42,19 @@ and health judges those without knowing the source.
   Done bugs are not counted.
 - Each source is judged on its own and gives its own cause, so a bug written
   in the roadmap and filed as a ticket is not counted twice.
-- The UI is TBD, agreed on a mockup round.
+- Done tasks show struck through on the parsed sheet.
+- The UI is agreed on the work sources mockup round.
+
+## Side by side sheets on wide windows
+
+The detail page is capped at 1920px. A wide window could show two sheets side
+by side. What decides the pairing is TBD: by family (documents beside work) or
+chosen per bird, which needs remembered state.
+
+## Display choices as config
+
+How the work sheets show things, such as hiding done tasks, could be set in
+config. It waits until real roadmap files show which choices need it.
 
 ## The papers as an overlay
 

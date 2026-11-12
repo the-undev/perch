@@ -624,16 +624,7 @@ describe("the ledger", () => {
         text: "none",
         tone: "green",
         chip: null,
-        workings: [
-          {
-            source: "docs/roadmap.md",
-            text: "amber at 5, red at 20",
-            tone: null,
-            url: null,
-            at: null,
-            reveal: null,
-          },
-        ],
+        workings: [],
       },
       {
         kind: "count",
@@ -1261,8 +1252,8 @@ describe("the ledger's workings", () => {
       })),
       {
         source: "docs/sync.md",
-        text: "amber at 1, red at 3",
-        tone: null,
+        text: "distressed at 3",
+        tone: "red",
         url: null,
         at: null,
         reveal: null,
@@ -1273,7 +1264,7 @@ describe("the ledger's workings", () => {
     );
   });
 
-  it("lists each open bug of a row's kind with its line before the window, and leaves done bugs out", async () => {
+  it("lists each open bug of a row's kind with its line, and leaves done bugs out", async () => {
     const config = await adoptAll(["dev/tidewater"]);
     const file = deriveRoadmapFile(
       "docs/roadmap.md",
@@ -1297,14 +1288,62 @@ describe("the ledger's workings", () => {
 
     expect(lines("bugs in docs/roadmap.md")).toEqual([
       ["Dates read as US format", { path: "docs/roadmap.md", line: 24 }],
-      ["amber at 5, red at 20", null],
     ]);
     expect(lines("critical bugs in docs/roadmap.md")).toEqual([
       [
         "Data loss when two devices save at once",
         { path: "docs/roadmap.md", line: 15 },
       ],
-      ["amber at 1, red at 3", null],
+      ["restless at 1", null],
+    ]);
+  });
+
+  it("adds no mood line to a row within its window, and a restless or distressed one at its window's count, from per-item overrides when set", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const lineOf = (
+      counts: { bug: number; criticalBug: number },
+      label: string,
+    ) => {
+      const hollow = item("dev/hollow", {
+        sources: {
+          roadmap: {
+            ...mockRoadmap([{ path: "docs/roadmap.md", task: 0, ...counts }]),
+            thresholds: {
+              bugs: { amberCount: 3, redCount: 7 },
+              criticalBugs: { amberCount: 2, redCount: 4 },
+            },
+          },
+        },
+      });
+      const working = row(
+        birdIn([hollow], config, "dev/hollow"),
+        label,
+      ).workings.at(-1);
+      return working === undefined ? null : [working.text, working.tone];
+    };
+    const bugs = "bugs in docs/roadmap.md";
+    const criticalBugs = "critical bugs in docs/roadmap.md";
+
+    expect(lineOf({ bug: 2, criticalBug: 1 }, bugs)).toEqual(["bug 2", null]);
+    expect(lineOf({ bug: 3, criticalBug: 1 }, bugs)).toEqual([
+      "restless at 3",
+      "amber",
+    ]);
+    expect(lineOf({ bug: 9, criticalBug: 1 }, bugs)).toEqual([
+      "distressed at 7",
+      "red",
+    ]);
+    expect(lineOf({ bug: 0, criticalBug: 1 }, criticalBugs)).toEqual([
+      "critical bug 1",
+      null,
+    ]);
+    expect(lineOf({ bug: 0, criticalBug: 2 }, criticalBugs)).toEqual([
+      "restless at 2",
+      "amber",
+    ]);
+    expect(lineOf({ bug: 0, criticalBug: 5 }, criticalBugs)).toEqual([
+      "distressed at 4",
+      "red",
     ]);
   });
 

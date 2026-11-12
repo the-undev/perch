@@ -727,16 +727,24 @@ function roadmapWorkings(
   });
 }
 
-/** A count window as its working line, such as "amber at 5, red at 20". */
-function windowWorking(source: string, window: CountThresholds): Working {
-  return {
-    source,
-    text: `amber at ${window.amberCount}, red at ${window.redCount}`,
-    tone: null,
-    url: null,
-    at: null,
-    reveal: null,
-  };
+/** The mood line a count's level earns, such as "restless at 5", toned like the row; nothing while content. */
+function moodWorkings(
+  source: string,
+  level: HealthLevel,
+  window: CountThresholds,
+): Working[] {
+  if (level === "green") return [];
+  const atCount = level === "red" ? window.redCount : window.amberCount;
+  return [
+    {
+      source,
+      text: `${moodOf[level]} at ${atCount}`,
+      tone: severity(level),
+      url: null,
+      at: null,
+      reveal: null,
+    },
+  ];
 }
 
 /** Each open item of the kind in the file, in the file's order, as a working that points at its line. */
@@ -755,7 +763,7 @@ function openItemWorkings(file: RoadmapFile, kind: WorkItemKind): Working[] {
 
 /**
  * Each roadmap file's open bugs, then its open critical bugs when it has any, toned by their
- * windows, each row listing its open items before its window. A row holds the bubble chip of its
+ * windows, each row listing its open items before its mood line. A row holds the bubble chip of its
  * kind when the file has any open of that kind.
  */
 function bugRows(
@@ -774,7 +782,7 @@ function bugRows(
         file.counts.bug > 0 ? bugsChip : null,
         [
           ...openItemWorkings(file, "bug"),
-          windowWorking(file.path, thresholds.bugs),
+          ...moodWorkings(file.path, levels.bugs, thresholds.bugs),
         ],
       ),
     ];
@@ -788,7 +796,11 @@ function bugRows(
         criticalBugsChip,
         [
           ...openItemWorkings(file, "critical-bug"),
-          windowWorking(file.path, thresholds.criticalBugs),
+          ...moodWorkings(
+            file.path,
+            levels.criticalBugs,
+            thresholds.criticalBugs,
+          ),
         ],
       ),
     ];

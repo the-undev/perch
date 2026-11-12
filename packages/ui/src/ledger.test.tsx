@@ -229,11 +229,10 @@ describe("the ledger's workings", () => {
     ]);
     expect(workings(container, "bugs")).toEqual([
       ["Tech/Tech Plans.md · bug 1", "none"],
-      ["Tech/Tech Plans.md · amber at 5, red at 20", "none"],
     ]);
     expect(workings(container, "critical-bugs")).toEqual([
       ["Garden/Garden Plans.md · critical bug 1", "none"],
-      ["Garden/Garden Plans.md · amber at 1, red at 3", "none"],
+      ["Garden/Garden Plans.md · restless at 1", "amber"],
     ]);
     expect(workings(container, "uncommitted")).toEqual([
       ["git · oldest change · 30 hours ago", "amber"],

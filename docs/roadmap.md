@@ -16,11 +16,8 @@ Roadmap files and forge tickets are separate source types with their own data.
 Each exposes the same per-source counts of open bugs and open critical bugs,
 and health judges those without knowing the source.
 
-- Config: `key_files` becomes `documents`, a list of paths shown on the paper.
-  `roadmaps` becomes an array of tables, each with a `path`, and holds parse
-  rules if any are added later. A roadmap is shown on the paper too. The old
-  forms are rejected with an error naming the new key. With neither set, the
-  README is a document and the first standard roadmap name is a roadmap.
+- Config: `key_files` and `roadmaps` stay lists of paths. `roadmaps = []`
+  says a project has no roadmap, so an ordinary `ROADMAP.md` is not parsed.
 - Roadmap parse, bottom up and without config: bullets and checkboxes under a
   heading are its tasks, a bare heading is one task with its prose as the
   body, and higher headings group what is below them.
@@ -46,6 +43,17 @@ and health judges those without knowing the source.
   roadmap only adds a mark in the left margin beside each bug's line: one bar
   for a bug, two for a critical bug, faint once checked.
 - The UI is agreed on the work sources mockup round.
+
+## Project config in the repository
+
+A `.perch.toml` at a repository's root, meant to be checked in, holds what is
+true of the project on any machine: `key_files`, `roadmaps`, `bug_words`,
+`critical_bug_words` and the bug thresholds, with the same keys as an item
+entry. Precedence, each set value replacing the one below: the item entry in
+the owner's config, then `.perch.toml`, then `[work]` and `[thresholds]`, then
+built in. Wires, names, sessions, launch actions and sources stay in the
+owner's config. A bird known only from a forge has no clone to read it from;
+reading it through the forge API is a later step.
 
 ## Side by side sheets on wide windows
 

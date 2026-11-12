@@ -1,6 +1,6 @@
 import { mockSnapshot } from "@perch/core/mock.ts";
-import type { LedgerEntry } from "@perch/core/viewmodel.ts";
-import { cleanup, render, screen } from "@testing-library/react";
+import type { LedgerEntry, PaperLine } from "@perch/core/viewmodel.ts";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { BranchLines, CommitRiver, FlagLines, Ledger } from "./ledger.tsx";
 import { mockBird } from "./mock-birds.ts";
@@ -464,5 +464,77 @@ describe("the ledger's sections", () => {
         "red",
       ],
     ]);
+  });
+
+  describe("bug titles", () => {
+    const bugEntries = (text: string): LedgerEntry[] => [
+      {
+        kind: "count",
+        label: "bugs in docs/roadmap.md",
+        count: 1,
+        text: "1",
+        tone: "amber",
+        chip: null,
+        workings: [
+          {
+            source: "docs/roadmap.md · bug 1",
+            text,
+            tone: null,
+            url: null,
+            at: null,
+            reveal: { path: "docs/roadmap.md", line: 7 },
+          },
+        ],
+      },
+    ];
+
+    function renderTitle(
+      text: string,
+      onReveal: (line: PaperLine) => void = ignoreReveal,
+    ) {
+      const { container } = render(
+        <Ledger
+          onReveal={onReveal}
+          quiet={null}
+          entries={bugEntries(text)}
+          now={now}
+          landing={null}
+        />,
+      );
+      return container.querySelector('[data-part="reveal"]') as HTMLElement;
+    }
+
+    it("renders a code span as code without its backticks", () => {
+      const button = renderTitle("Fails with `-m=nokernelcrypto`");
+
+      expect(button.querySelector("code")?.textContent).toBe(
+        "-m=nokernelcrypto",
+      );
+      expect(button.textContent).toBe("Fails with -m=nokernelcrypto");
+    });
+
+    it("renders a link as its text, with no anchor in the button", () => {
+      const button = renderTitle("See [the report](https://example.com/r)");
+
+      expect(button.textContent).toBe("See the report");
+      expect(button.querySelector("a")).toBeNull();
+    });
+
+    it("renders emphasis and strong", () => {
+      const button = renderTitle("An *odd* and **loud** bug");
+
+      expect(button.querySelector("em")?.textContent).toBe("odd");
+      expect(button.querySelector("strong")?.textContent).toBe("loud");
+      expect(button.querySelector("p")).toBeNull();
+    });
+
+    it("still reveals its line when pressed", () => {
+      const revealed: unknown[] = [];
+      const button = renderTitle("A `bug`", (line) => revealed.push(line));
+
+      fireEvent.click(button);
+
+      expect(revealed).toEqual([{ path: "docs/roadmap.md", line: 7 }]);
+    });
   });
 });

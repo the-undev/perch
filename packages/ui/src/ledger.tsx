@@ -18,6 +18,8 @@ import type {
   Working,
 } from "@perch/core/viewmodel.ts";
 import type { ReactNode } from "react";
+import Markdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { agoWords } from "./time.ts";
 
 const forgeLabel = { github: "GitHub", forgejo: "Forgejo" } as const;
@@ -108,6 +110,30 @@ const workingToneClass: Record<NonNullable<Tone> | "none", string> = {
   none: "text-ink-muted",
 };
 
+/** Components that keep a bug title one inline run: no paragraph, and links and images as plain text. */
+const titleComponents: Components = {
+  p: ({ children }) => <>{children}</>,
+  a: ({ children }) => <span>{children}</span>,
+  img: ({ alt }) => <span>{alt}</span>,
+  code: ({ children }) => (
+    <code className="rounded-sm bg-ink-faint/15 px-1">{children}</code>
+  ),
+};
+
+/** A bug title with its inline markdown rendered. */
+function BugTitle({ title }: { title: string }) {
+  return (
+    <Markdown
+      remarkPlugins={[remarkGfm]}
+      components={titleComponents}
+      allowedElements={["p", "em", "strong", "del", "code", "a", "img"]}
+      unwrapDisallowed
+    >
+      {title}
+    </Markdown>
+  );
+}
+
 /** What a working says: a button showing its line on the paper, a link out, or plain words. */
 function WorkingText({
   working,
@@ -125,7 +151,7 @@ function WorkingText({
         onClick={() => onReveal(reveal)}
         className="cursor-pointer text-left text-inherit underline decoration-ink-faint decoration-dotted underline-offset-3 hover:text-ink hover:decoration-ink-accent focus-visible:outline-2 focus-visible:outline-ink-accent"
       >
-        {working.text}
+        <BugTitle title={working.text} />
       </button>
     );
   }

@@ -24,12 +24,18 @@ and health judges those without knowing the source.
 - Roadmap parse, bottom up and without config: bullets and checkboxes under a
   heading are its tasks, a bare heading is one task with its prose as the
   body, and higher headings group what is below them.
-- Two axes per task or ticket: kind (`bug` or `task`) and priority (`normal`
-  or `critical`). Each is set by a word list in code, matched as whole words
-  in any case against headings, task titles, `#tags` and forge labels. A task
-  inherits from the headings above it.
-- Only bugs affect the bird. Tasks of any priority are shown and change
-  nothing.
+- Each task or ticket is a task, a bug or a critical bug. Tasks have no
+  priority; their order in the file is shown and Perch does not read it.
+- Two word lists set the kind, matched as whole words in any case against
+  headings, task titles, `#tags`, ticket titles and forge labels. A word from
+  `bug_words` makes a bug, and one from `critical_bug_words` makes a critical
+  bug on its own. A task inherits from the headings above it.
+- The lists are built in, and set in a global `[work]` table or directly in
+  an item's entry. A set list replaces the one below it: item over global over
+  built in. Built-in `bug_words`: bug, bugs, issue, issues, problem, problems,
+  broken, regression, crash, crashes, p2, p3, p4. Built-in
+  `critical_bug_words`: critical, urgent, severe, blocker, p0, p1.
+- Only bugs affect the bird. Tasks are shown and change nothing.
 - Thresholds, global in `[thresholds]` and overridable per item:
   `bugs_amber_count` 5, `bugs_red_count` 20, `critical_bugs_amber_count` 1,
   `critical_bugs_red_count` 3. The bird takes the worse of the two levels.

@@ -208,12 +208,12 @@ section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
 
 <header class="mast">
   <h1>Work sources</h1>
-  <p class="brief">Roadmap files and forge tickets, each parsed into <b>bugs</b> and <b>tasks</b> with a <b>priority</b>, shown as a sheet of their own on the paper, and judged one source at a time for the bird.</p>
+  <p class="brief">Roadmap files and forge tickets, each parsed into <b>tasks</b>, <b>bugs</b> and <b>critical bugs</b>, shown as a sheet of their own on the paper, and judged one source at a time for the bird.</p>
 </header>
 
 <div class="rules">
   <div class="rule"><h3>Bottom up, no config</h3><p>Bullets and checkboxes are tasks. A bare heading is one task with its prose as the body. Higher headings group.</p></div>
-  <div class="rule"><h3>Two axes from words</h3><p>Kind is <code>bug</code> or <code>task</code>, priority <code>normal</code> or <code>critical</code>. Whole words in headings, titles, tags and labels, inherited downwards.</p></div>
+  <div class="rule"><h3>Three kinds from words</h3><p>A task, a bug or a critical bug. Whole words in headings, titles, tags and labels set the kind, inherited downwards. A task has no priority.</p></div>
   <div class="rule"><h3>Only bugs move the bird</h3><p>Amber at 5 and red at 20 open bugs; amber at 1 and red at 3 critical. Per source, worst level wins.</p></div>
 </div>
 
@@ -249,9 +249,9 @@ section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
               <div class="sheethead"><span class="src">docs/roadmap.md, parsed</span><span class="switch">Show markdown</span></div>
 
               <div class="group">
-                <div class="ghead l1"><h4>Critical</h4></div>
+                <div class="ghead l1"><h4>Release</h4></div>
                 <ul class="tasks">
-                  <li class="task"><span class="box">[ ]</span><span class="title">Signing key expires on 30 November</span><span class="tag">critical</span></li>
+                  <li class="task"><span class="box">[ ]</span><span class="title">Renew the signing key before 30 November</span><span></span></li>
                 </ul>
               </div>
               <div class="group">
@@ -293,7 +293,7 @@ section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
       <h3>Parsed first</h3>
       <p>A roadmap opens <b>parsed</b>. <b>Show markdown</b> swaps the sheet to the file as written, as today.</p>
       <h3>The margin marks</h3>
-      <p>One red bar is a bug, two a critical bug. A task has no mark. A critical task names its priority in red ink on the right, since it carries no bar.</p>
+      <p>One red bar is a bug, two a critical bug. A task has no mark.</p>
       <h3>The ledger</h3>
       <p>A bug row per source, then a critical row only when there are any. The thresholds sit in the workings. Open tasks stay one row, for plumpness.</p>
     </div>
@@ -355,7 +355,7 @@ Tickets from GitHub…</div>
 
     <div class="shape">
       <h3>A deep hierarchy</h3>
-      <p>Critical, Bugs and Features, each with epics beneath. The top heading sets the axis, epics group.</p>
+      <p>Critical, Bugs and Features, each with epics beneath. The top heading sets the kind, epics group.</p>
       <div class="src-md"><span class="h">## Critical</span>
 <span class="h">### Sync</span>
 - [ ] Data loss when two
@@ -369,7 +369,7 @@ Tickets from GitHub…</div>
           <div class="ghead l1"><h4>Critical</h4></div>
           <div class="sub"><div class="group">
             <div class="ghead"><h4>Sync</h4></div>
-            <ul class="tasks"><li class="task"><span class="box">[ ]</span><span class="title">Data loss when two devices save at once</span><span class="tag">critical</span></li></ul>
+            <ul class="tasks"><li class="task crit"><span class="box">[ ]</span><span class="title">Data loss when two devices save at once</span><span></span></li></ul>
           </div></div>
         </div>
         <div class="group">
@@ -380,7 +380,7 @@ Tickets from GitHub…</div>
           </div></div>
         </div>
       </div>
-      <p class="callout"><b>Under Critical with no bug word, it is a critical task.</b> Tasks never move the bird, so data loss leaves it green. See the first question below.</p>
+      <p class="callout"><b>A critical word alone makes a critical bug.</b> "Data loss" needs no bug word under Critical.</p>
     </div>
 
   </div>
@@ -389,7 +389,7 @@ Tickets from GitHub…</div>
 <!-- C: tickets -->
 <section>
   <h2>The ticket sheet</h2>
-  <p class="why">Open tickets from one forge, critical bugs first, then bugs, then tasks, each by last update. Labels set the axes with the same word lists. Pull requests are left out.</p>
+  <p class="why">Open tickets from one forge, critical bugs first, then bugs, then tasks, each by last update. Titles and labels set the kind with the same word lists. Pull requests are left out.</p>
   <div class="pair">
     <div>
       <div class="tabsrow">
@@ -494,14 +494,9 @@ Tickets from GitHub…</div>
   <p class="why">Each needs a decision before implementation.</p>
   <div class="qs">
     <div class="q">
-      <h3>Does a critical heading make its tasks bugs?</h3>
-      <p>Under the two axes, "Data loss" under Critical is a critical task and leaves the bird green.</p>
-      <p class="rec">Recommendation: no change. Add "loss" and similar to the bug list only if real files need it.</p>
-    </div>
-    <div class="q">
       <h3>The word lists</h3>
-      <p>Bug: bug, bugs, issue, issues, problem, problems, broken, regression, crash, crashes. Critical: critical, urgent, blocker.</p>
-      <p class="rec">Recommendation: start with these and adjust as files show misfires.</p>
+      <p><code>bug_words</code>: bug, bugs, issue, issues, problem, problems, broken, regression, crash, crashes, p2, p3, p4. <code>critical_bug_words</code>: critical, urgent, severe, blocker, p0, p1.</p>
+      <p>Agreed: built in, set in <code>[work]</code> or an item's entry, a set list replacing the one below it.</p>
     </div>
     <div class="q">
       <h3>Done items on the sheet</h3>

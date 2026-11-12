@@ -4,12 +4,12 @@ Work identified and not done.
 
 ## Claude Code integration
 
-- Show the last user messages
-- Launch from a tile
+- [ ] Show the last user messages
+- [ ] Launch from a tile
 
 ### Hooks
 
-- Session end hook
+- [ ] Session end hook
 
 ## Actions from tiles
 
@@ -27,4 +27,4 @@ Seen once.
 
 ### Sub-area
 
-- Task under a structure heading
+- [ ] Task under a structure heading

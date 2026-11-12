@@ -126,6 +126,22 @@ function bulletItem(
   };
 }
 
+/** A section's checkbox bullets; plain bullets are notes, not tasks. */
+function taskBulletsOf(section: RawSection): RawBullet[] {
+  return section.bullets.filter((bullet) => bullet.checkbox !== "none");
+}
+
+/** A heading task's body: its prose, then its plain bullets as lines. */
+function bodyOf(section: RawSection): string | null {
+  const body = [
+    section.prose,
+    section.bullets.map((bullet) => `- ${bullet.text}`).join("\n"),
+  ]
+    .filter((part) => part !== "")
+    .join("\n\n");
+  return body === "" ? null : body;
+}
+
 function headingItem(section: RawSection, kindOf: KindOf): WorkItem {
   return {
     text: section.heading,
@@ -133,16 +149,17 @@ function headingItem(section: RawSection, kindOf: KindOf): WorkItem {
     done: null,
     line: section.line,
     source: "heading",
-    body: section.prose === "" ? null : section.prose,
+    body: bodyOf(section),
   };
 }
 
 /**
- * Work items from one roadmap file, by the per-heading rule. A heading with direct bullets is a
- * group whose bullets are items. A heading with no bullets and no sub-headings is one item, its
- * prose the body. A heading with sub-headings and no bullets is structure; one with both is a
- * group with nested sub-groups. Bullets above the first heading are items at the top. The word
- * lists class each item as a task, a bug or a critical bug. Checkboxes set done.
+ * Work items from one roadmap file, by the per-heading rule. Only checkbox bullets are tasks;
+ * plain bullets are notes. A heading with checkbox bullets is a group whose checkbox bullets are
+ * items. A heading with no checkbox bullets and no sub-headings is one item, its prose and plain
+ * bullets the body. A heading with sub-headings and no checkbox bullets is structure; one with
+ * both is a group with nested sub-groups. Checkbox bullets above the first heading are items at
+ * the top. The word lists class each item as a task, a bug or a critical bug. Checkboxes set done.
  */
 export function deriveRoadmapFile(
   path: string,
@@ -162,11 +179,11 @@ export function deriveRoadmapFile(
   }
   const childrenOf = (section: RawSection) => children.get(section.line) ?? [];
   const isBare = (section: RawSection) =>
-    section.bullets.length === 0 && childrenOf(section).length === 0;
+    taskBulletsOf(section).length === 0 && childrenOf(section).length === 0;
 
   const node = (section: RawSection): WorkItemGroup => {
     const items = [
-      ...section.bullets.map((bullet) =>
+      ...taskBulletsOf(section).map((bullet) =>
         bulletItem(bullet, headingsOf(section), kindOf),
       ),
       ...childrenOf(section)
@@ -177,7 +194,7 @@ export function deriveRoadmapFile(
       heading: section.heading,
       level: section.level,
       line: section.line,
-      role: section.bullets.length > 0 ? "group" : "structure",
+      role: taskBulletsOf(section).length > 0 ? "group" : "structure",
       items,
       groups: childrenOf(section)
         .filter((child) => !isBare(child))
@@ -187,9 +204,9 @@ export function deriveRoadmapFile(
   };
 
   const items = [
-    ...structure.bulletsBeforeFirstHeading.map((bullet) =>
-      bulletItem(bullet, [], kindOf),
-    ),
+    ...structure.bulletsBeforeFirstHeading
+      .filter((bullet) => bullet.checkbox !== "none")
+      .map((bullet) => bulletItem(bullet, [], kindOf)),
     ...roots.filter(isBare).map((section) => headingItem(section, kindOf)),
   ];
   const groups = roots.filter((section) => !isBare(section)).map(node);

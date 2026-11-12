@@ -187,7 +187,7 @@ describe("deriveRoadmapFile, per heading", () => {
     });
     expect(file.groups[0]?.items[0]).toMatchObject({
       line: 7,
-      done: null,
+      done: false,
       source: "bullet",
     });
   });
@@ -213,6 +213,57 @@ describe("deriveRoadmapFile, per heading", () => {
         ],
       ],
     });
+  });
+});
+
+describe("deriveRoadmapFile, plain bullets", () => {
+  it("makes a heading with only plain bullets one task, the bullets its body", () => {
+    const monitoring = everyItem(parseFixture("plain-bullets.md")).find(
+      (item) => item.text === "Server monitoring",
+    );
+
+    expect(monitoring).toMatchObject({
+      source: "heading",
+      done: null,
+      line: 4,
+      body: "Prose before the notes.\n\n- Watch the disk\n- Crash reports from the load balancer",
+    });
+  });
+
+  it("makes a heading mixing checkbox and plain bullets a group of the checkbox tasks only", () => {
+    const mixed = parseFixture("plain-bullets.md").groups.find(
+      (group) => group.heading === "Mixed",
+    );
+
+    expect(mixed?.role).toBe("group");
+    expect(mixed?.items.map((item) => item.text)).toEqual([
+      "A task beside a note",
+    ]);
+  });
+
+  it("ignores plain bullets above the first heading and under a heading with sub-headings", () => {
+    const file = parseFixture("plain-bullets.md");
+
+    expect(file.items.map((item) => item.text)).toEqual([
+      "A loose task above the first heading",
+      "Server monitoring",
+    ]);
+    expect(
+      file.groups.find((group) => group.heading === "Structure"),
+    ).toMatchObject({ role: "structure", items: [] });
+  });
+
+  it("leaves a bug word in a plain bullet out of its heading task", () => {
+    expect(kindsIn(parseFixture("plain-bullets.md"))).toMatchObject({
+      "Server monitoring": "task",
+    });
+  });
+
+  it("counts one task per heading in a file of bare headings and two note headings", () => {
+    const file = parseFixture("reference-shape.md");
+
+    expect(everyItem(file)).toHaveLength(20);
+    expect(file.counts).toEqual({ task: 20, bug: 0, "critical-bug": 0 });
   });
 });
 
@@ -271,7 +322,7 @@ describe("deriveRoadmapFile kinds", () => {
     const file = deriveRoadmapFile(
       "notes.md",
       readRoadmapStructure(
-        "## Bugs\n\n- URGENT: the export hangs\n- The import is slow #P1\n\n## Ideas\n\n- Debugging output is noisy\n- Issues view\n- Reissue the token\n",
+        "## Bugs\n\n- [ ] URGENT: the export hangs\n- [ ] The import is slow #P1\n\n## Ideas\n\n- [ ] Debugging output is noisy\n- [ ] Issues view\n- [ ] Reissue the token\n",
       ),
       builtInWords,
     );
@@ -302,14 +353,14 @@ describe("deriveRoadmapFile kinds", () => {
         [
           "## Ideas",
           "",
-          "- Name the `bug` kind in the settings",
-          "- Say ``a `critical` word`` in the help",
-          '- Explain "critical bug" in the guide',
-          "- Explain “issues” in the guide",
-          '- Link "see #bug" from the help',
-          '- Spell out "bug" for the crash on save',
-          "- Name the `critical` kind, an urgent one",
-          '- An unclosed "bug quote',
+          "- [ ] Name the `bug` kind in the settings",
+          "- [ ] Say ``a `critical` word`` in the help",
+          '- [ ] Explain "critical bug" in the guide',
+          "- [ ] Explain “issues” in the guide",
+          '- [ ] Link "see #bug" from the help',
+          '- [ ] Spell out "bug" for the crash on save',
+          "- [ ] Name the `critical` kind, an urgent one",
+          '- [ ] An unclosed "bug quote',
         ].join("\n"),
       ),
       builtInWords,
@@ -362,7 +413,6 @@ describe("deriveRoadmapFile checkboxes", () => {
     expect(epics.map((group) => [group.heading, group.progress])).toEqual([
       ["Scanner PoC", { done: 2, total: 3 }],
       ["Mockups", { done: 0, total: 2 }],
-      ["Ideas", null],
     ]);
     expect(epics[0]?.items.map((item) => [item.text, item.done])).toEqual([
       ["Scaffold", true],

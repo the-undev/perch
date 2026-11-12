@@ -263,8 +263,9 @@ const roadmaps: SourceSpec = {
   ],
   derives: (
     <p>
-      Work items by the per-heading rule, each a task, a bug or a critical bug
-      by whole words from <Code>bug_words</Code> and{" "}
+      Work items by the per-heading rule, where only a checkbox bullet is a task
+      and a plain bullet is a note, each a task, a bug or a critical bug by
+      whole words from <Code>bug_words</Code> and{" "}
       <Code>critical_bug_words</Code> in its text, its tags and the headings
       above it, leaving out inline code and double-quoted text, and the open
       items counted by kind. The counts feed the bird&apos;s plumpness, its

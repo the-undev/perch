@@ -205,7 +205,7 @@ describe("aggregate", () => {
       '[work]\nbug_words = ["defect"]\n\n[items."dev/perch"]\ncritical_bug_words = ["outage"]\nbugs_red_count = 9\n',
     );
     const structure = readRoadmapStructure(
-      "- A defect in the export\n- An outage at night\n- A bug in the import\n",
+      "- [ ] A defect in the export\n- [ ] An outage at night\n- [ ] A bug in the import\n",
     );
     const roadmapFiles: Partial<RawFiles> = {
       ...files,

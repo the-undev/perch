@@ -2,26 +2,45 @@
 
 Work identified and not done. Remove items as they land.
 
-## Reintroducing importance
+## Bird Positions
 
-An importance tier per item would set the bird's size and its place among
-birds of one mood on a wire. It needs an effect the wires do not already give.
+Move to a fixed layout for the birds so they're always in the same spots.
 
-## Critical roadmap items drive health
+## Bird Types
 
-An open roadmap item under a heading marked critical would distress the bird.
-The marking convention is TBD.
+More types of bird, perhaps per project.
 
-## The papers as a view of their own
+## Work sources drive health
 
-Opening the adoption papers should replace the project detail with an animated
-transition, and closing them should bring it back.
+Roadmap files and forge tickets are separate source types with their own data.
+Each exposes the same per-source counts of open bugs and open critical bugs,
+and health judges those without knowing the source.
 
-## Session restore beside autostart
+- Config: `key_files` becomes `documents`, a list of paths shown on the paper.
+  `roadmaps` becomes an array of tables, each with a `path`, and holds parse
+  rules if any are added later. A roadmap is shown on the paper too. The old
+  forms are rejected with an error naming the new key. With neither set, the
+  README is a document and the first standard roadmap name is a roadmap.
+- Roadmap parse, bottom up and without config: bullets and checkboxes under a
+  heading are its tasks, a bare heading is one task with its prose as the
+  body, and higher headings group what is below them.
+- Two axes per task or ticket: kind (`bug` or `task`) and priority (`normal`
+  or `critical`). Each is set by a word list in code, matched as whole words
+  in any case against headings, task titles, `#tags` and forge labels. A task
+  inherits from the headings above it.
+- Only bugs affect the bird. Tasks of any priority are shown and change
+  nothing.
+- Thresholds, global in `[thresholds]` and overridable per item:
+  `bugs_amber_count` 5, `bugs_red_count` 20, `critical_bugs_amber_count` 1,
+  `critical_bugs_red_count` 3. The bird takes the worse of the two levels.
+  Done bugs are not counted.
+- Each source is judged on its own and gives its own cause, so a bug written
+  in the roadmap and filed as a ticket is not counted twice.
+- The UI is TBD, agreed on a mockup round.
 
-Plasma's session restore may relaunch Perch at login as well as the autostart
-entry, showing the window. Not observed yet. If it happens, exclude Perch in
-Plasma's session settings or pass `--hidden` on the restored launch.
+## The papers as an overlay
+
+Opening the adoption papers should show above everything else and centered rather than within the project view
 
 ## Archived scan lane
 
@@ -34,46 +53,14 @@ The zellij action selects or opens the tab but does not raise the terminal
 window. Raising another app's window on Plasma Wayland needs a KWin script or
 `kdotool`.
 
-## TUI tiles
-
-A tile for a TUI such as oxbow or spool would focus its alacritty window, or
-launch it. It needs a config marker for which items are TUIs, and window
-raising.
-
-## Actions from tiles
-
-Push the branch, commit and push an Obsidian vault, open in the editor. Each
-changes what the scanner reads, so each needs a rescan afterwards and a way to
-undo it.
-
 ## Tray icon status
 
 The tray icon could show the worst health colour across everything.
 
-## Nudges
-
-Rules over a scan, such as an Obsidian vault unpushed for three days, shown as
-a flag on the tile or a desktop notification.
-
-## Phone view
-
-Push the latest scan as JSON to a server that serves a read-only page.
-
 ## Server monitoring
 
-The Uptime Kuma aggregate, the live container list and the server tile. The
-scanner's kuma source runs only for a `[[sources.kuma]]` table, which config
-leaves out until this is picked up.
-
-## Server container controls
-
-Stop, restart and update a container from the server detail page. The
-container list is a live read from a Docker socket proxy and is a typed stub
-today.
-
-## Integrations with other services
-
-A source for another service on the server, read from that service's own API.
+- Integrate with Uptime Kuma for status monitor.
+- Investigate other monitoring integrations
 
 ## In-app global shortcut
 
@@ -89,10 +76,9 @@ appimagetool, but the repack must keep the block map and checksum in
 
 ## Forge issues source
 
-Tickets from GitHub and Forgejo as a work source beside the in-repo roadmap.
-GitHub tokens need the Issues read permission added, see
-[forge-access.md](forge-access.md). GitHub's issues listing includes pull
-requests, which the gatherer must filter out.
+Tickets from GitHub and Forgejo as a work source beside the in-repo roadmap,
+following "Work sources drive health". Kind and priority come from labels.
+Whether GitHub issue types can set kind is TBD.
 
 ## Visual roadmap view
 
@@ -133,8 +119,3 @@ browser.
 Forge repositories are keyed by owner/name alone, so the same name at two
 instances is one presence. Keying by instance changes the presence reference
 that config names, and needs a rule for entries written without one.
-
-## Other sources
-
-Candidates: Obsidian vault roadmaps as tiles of their own, a setup runbook
-checklist in an Obsidian vault, a browser reading list.

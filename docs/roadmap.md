@@ -42,7 +42,9 @@ and health judges those without knowing the source.
   Done bugs are not counted.
 - Each source is judged on its own and gives its own cause, so a bug written
   in the roadmap and filed as a ticket is not counted twice.
-- Done tasks show struck through on the parsed sheet.
+- A roadmap renders on the paper as any markdown does. Knowing it is a
+  roadmap only adds a mark in the left margin beside each bug's line: one bar
+  for a bug, two for a critical bug, faint once checked.
 - The UI is agreed on the work sources mockup round.
 
 ## Side by side sheets on wide windows

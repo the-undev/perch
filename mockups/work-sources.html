@@ -145,7 +145,17 @@ section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
   border-top: 1px solid rgb(201 195 179 / .55);
 }
 .tasks .task:first-child { border-top: 0; }
-.task .box { font: 13px var(--mono); color: var(--paper-quiet); }
+/* A drawn checkbox; the bracket text stays in the markup for reading the source. */
+.task .box { font-size: 0; align-self: center; }
+.task .box:not(:empty) {
+  display: block; width: 12px; height: 12px; border: 1.5px solid var(--paper-quiet);
+  border-radius: 3px; position: relative;
+}
+.task.done .box:not(:empty) { background: var(--paper-quiet); }
+.task.done .box:not(:empty)::after {
+  content: ""; position: absolute; left: 3px; top: 0; width: 3px; height: 7px;
+  border: solid var(--paper); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
+}
 .task.done { color: var(--paper-quiet); }
 .task.done .title { text-decoration: line-through; text-decoration-color: var(--paper-rule); }
 .task .body { grid-column: 2 / -1; color: var(--paper-quiet); font-size: 12.5px; margin: 1px 0 0; }
@@ -163,6 +173,42 @@ section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
 .task.crit::after { left: 5px; }
 .task.done.bug::before { opacity: .35; }
 .task.ticket { grid-template-columns: 46px minmax(0, 1fr) auto auto; }
+
+/* Parsed against marked */
+.versus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; align-items: start; }
+@media (max-width: 1000px) { .versus { grid-template-columns: 1fr; } }
+.vs-title { font: 600 15px/1.3 var(--display); margin: 0 0 10px; }
+.lost { margin: 14px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.lost li { margin: 3px 0; }
+
+/* The paper's markdown styles, from theme.css */
+.perch-prose { font-size: 14px; line-height: 1.6; color: var(--paper-ink); }
+.perch-prose > :first-child { margin-top: 0; }
+.perch-prose h1 { font: 700 25px/1.25 var(--display); color: var(--paper-head); margin: 0 0 10px; }
+.perch-prose h2 { font: 700 19px/1.3 var(--display); color: var(--paper-head); margin: 24px 0 8px; }
+.perch-prose h3, .perch-prose h4 { font: 700 15.5px/1.35 var(--display); color: var(--paper-head); margin: 18px 0 6px; }
+.perch-prose p { margin: 0 0 11px; }
+.perch-prose ul { margin: 0 0 11px; padding-left: 22px; list-style: disc; }
+.perch-prose li { margin: 2px 0; }
+.perch-prose li > ul { margin: 2px 0 0; }
+.perch-prose a { color: inherit; text-decoration: underline dotted var(--paper-quiet); text-underline-offset: 3px; }
+.perch-prose code {
+  font: 0.9em var(--mono); background: var(--paper-code); border: 1px solid var(--paper-rule);
+  border-radius: 4px; padding: 1px 5px;
+}
+/* The marks on rendered markdown: in the sheet's left margin, level with the line. */
+.sheet { --gutter: 30px; }
+.sheet.small { --gutter: 20px; }
+.marked .m-bug, .marked .m-crit { position: relative; --indent: 0px; }
+.marked li.m-bug, .marked li.m-crit { --indent: 22px; }
+.marked .m-bug::before, .marked .m-crit::before, .marked .m-crit::after {
+  content: ""; position: absolute; top: .25em; height: 1.1em; width: 2.5px;
+  background: var(--mark); border-radius: 1px;
+}
+.marked .m-bug::before { left: calc(10px - var(--gutter) - var(--indent)); }
+.marked .m-crit::before { left: calc(8px - var(--gutter) - var(--indent)); }
+.marked .m-crit::after { left: calc(13px - var(--gutter) - var(--indent)); }
+.marked .m-done::before { opacity: .35; }
 
 /* Markdown source beside a parsed sheet */
 .shapes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
@@ -214,13 +260,13 @@ section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
 <div class="rules">
   <div class="rule"><h3>Bottom up, no config</h3><p>Bullets and checkboxes are tasks. A bare heading is one task with its prose as the body. Higher headings group.</p></div>
   <div class="rule"><h3>Three kinds from words</h3><p>A task, a bug or a critical bug. Whole words in headings, titles, tags and labels set the kind, inherited downwards. A task has no priority.</p></div>
-  <div class="rule"><h3>Only bugs move the bird</h3><p>Amber at 5 and red at 20 open bugs; amber at 1 and red at 3 critical. Per source, worst level wins.</p></div>
+  <div class="rule"><h3>Only bugs move the bird</h3><p>Amber at 5 and red at 20 open bugs; amber at 1 and red at 3 critical bugs. Per source, worst level wins.</p></div>
 </div>
 
 <!-- A: the detail page -->
 <section>
   <h2>The detail page</h2>
-  <p class="why">The paper gains a tab per work source. A roadmap opens parsed, with the markdown a switch away. Tickets get a sheet of their own. The ledger gives each source its own bug rows, with the thresholds as workings.</p>
+  <p class="why">The paper gains a tab per work source. A roadmap renders as markdown, as it does today, with marks beside its bugs. Tickets get a sheet of their own. The ledger gives each source its own bug rows, with the thresholds as workings.</p>
   <div class="pair">
     <div class="screen">
       <div class="chrome"><span class="brand">Perch</span><span class="tabs"><span>Aviary</span><span class="on">tidewater</span><span>Settings</span></span></div>
@@ -246,41 +292,26 @@ section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
               <span class="ftab">GitHub issues<span class="n">12</span></span>
             </div>
             <div class="sheet">
-              <div class="sheethead"><span class="src">docs/roadmap.md, parsed</span><span class="switch">Show markdown</span></div>
-
-              <div class="group">
-                <div class="ghead l1"><h4>Release</h4></div>
-                <ul class="tasks">
-                  <li class="task"><span class="box">[ ]</span><span class="title">Renew the signing key before 30 November</span><span></span></li>
+              <div class="perch-prose marked">
+                <h1>Roadmap</h1>
+                <h2>Release</h2>
+                <ul><li><input type="checkbox" disabled> Renew the signing key before 30 November</li></ul>
+                <h2>Bugs</h2>
+                <ul>
+                  <li class="m-bug m-done"><input type="checkbox" checked disabled> A CSV with a byte order mark fails to parse</li>
+                  <li class="m-bug"><input type="checkbox" disabled> Dates read as US format</li>
                 </ul>
-              </div>
-              <div class="group">
-                <div class="ghead l1"><h4>Bugs</h4><span class="prog">1 of 2 done</span></div>
-                <div class="bar"><i style="width:50%"></i></div>
-                <ul class="tasks">
-                  <li class="task bug done"><span class="box">[x]</span><span class="title">A CSV with a byte order mark fails to parse</span><span></span></li>
-                  <li class="task bug"><span class="box">[ ]</span><span class="title">Dates read as US format</span><span></span></li>
+                <h2>Features</h2>
+                <h3>Offline mode</h3>
+                <p>Edits made offline are queued and sent on reconnect.</p>
+                <ul>
+                  <li><input type="checkbox" checked disabled> Cache the last sync</li>
+                  <li><input type="checkbox" disabled> Queue edits while offline</li>
+                  <li><input type="checkbox" disabled> A view for conflicting edits</li>
                 </ul>
-              </div>
-              <div class="group">
-                <div class="ghead l1"><h4>Features</h4></div>
-                <div class="sub">
-                  <div class="group">
-                    <div class="ghead"><h4>Offline mode</h4><span class="prog">1 of 3 done</span></div>
-                    <div class="bar"><i style="width:33%"></i></div>
-                    <ul class="tasks">
-                      <li class="task done"><span class="box">[x]</span><span class="title">Cache the last sync</span><span></span></li>
-                      <li class="task"><span class="box">[ ]</span><span class="title">Queue edits while offline</span><span></span></li>
-                      <li class="task"><span class="box">[ ]</span><span class="title">A view for conflicting edits</span><span></span></li>
-                    </ul>
-                  </div>
-                  <div class="group">
-                    <div class="ghead"><h4>Sharing</h4></div>
-                    <ul class="tasks">
-                      <li class="task"><span class="box"></span><span class="title">Read-only links</span><span></span><p class="body">A link anyone can open that shows the board without editing.</p></li>
-                    </ul>
-                  </div>
-                </div>
+                <h3>Sharing</h3>
+                <h4>Read-only links</h4>
+                <p>A link anyone can open that shows the board without editing.</p>
               </div>
             </div>
           </div>
@@ -290,19 +321,122 @@ section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
     <div class="notes">
       <h3>One tab per source</h3>
       <p>Documents, then roadmaps, then a ticket tab per forge. The ticket tab carries its open count. A forge with no open tickets still gets its tab, so an empty list reads as none, not unread.</p>
-      <h3>Parsed first</h3>
-      <p>A roadmap opens <b>parsed</b>. <b>Show markdown</b> swaps the sheet to the file as written, as today.</p>
+      <h3>The file as written</h3>
+      <p>The roadmap renders exactly as any markdown on the paper. Knowing it is a roadmap only adds the marks.</p>
       <h3>The margin marks</h3>
-      <p>One red bar is a bug, two a critical bug. A task has no mark.</p>
+      <p>In the sheet's left margin, level with the line: one red bar for a bug, two for a critical bug, faint once checked. A task has no mark.</p>
       <h3>The ledger</h3>
-      <p>A bug row per source, then a critical row only when there are any. The thresholds sit in the workings. Open tasks stay one row, for plumpness.</p>
+      <p>A bug row per source, then a critical bug row only when there are any. The thresholds sit in the workings. Open tasks stay one row, for plumpness.</p>
+    </div>
+  </div>
+</section>
+
+<!-- A2: parsed against marked -->
+<section>
+  <h2>Two ways to show a roadmap (agreed: rendered, with marks)</h2>
+  <p class="why">One file, <code>docs/roadmap.md</code>, both ways. On the left, the parsed sheet drawn above: rebuilt from what the parser keeps. On the right, the file rendered as the paper renders any markdown today, with the margin marks added on the lines the parser classed as bugs.</p>
+  <div class="versus">
+    <div>
+      <h3 class="vs-title">Parsed and redrawn</h3>
+      <div class="sheet">
+        <div class="sheethead"><span class="src">docs/roadmap.md, parsed</span><span class="switch">Show markdown</span></div>
+        <div class="group">
+          <div class="ghead l1"><h4>Release</h4></div>
+          <ul class="tasks">
+            <li class="task"><span class="box"></span><span class="title">Renew the signing key</span><span></span><p class="body">The key in release/signing.pem expires on 30 November. Renew it before the 1.4 build.</p></li>
+          </ul>
+        </div>
+        <div class="group">
+          <div class="ghead l1"><h4>Critical</h4></div>
+          <ul class="tasks">
+            <li class="task crit"><span class="box">[ ]</span><span class="title">Data loss when two devices save at once</span><span></span></li>
+          </ul>
+        </div>
+        <div class="group">
+          <div class="ghead l1"><h4>Bugs</h4><span class="prog">1 of 2 done</span></div>
+          <div class="bar"><i style="width:50%"></i></div>
+          <ul class="tasks">
+            <li class="task bug done"><span class="box">[x]</span><span class="title">A CSV with a byte order mark fails to parse</span><span></span></li>
+            <li class="task bug"><span class="box">[ ]</span><span class="title">Dates read as US format</span><span></span></li>
+          </ul>
+        </div>
+        <div class="group">
+          <div class="ghead l1"><h4>Features</h4></div>
+          <div class="sub">
+            <div class="group">
+              <div class="ghead"><h4>Offline mode</h4><span class="prog">1 of 3 done</span></div>
+              <div class="bar"><i style="width:33%"></i></div>
+              <ul class="tasks">
+                <li class="task done"><span class="box">[x]</span><span class="title">Cache the last sync</span><span></span></li>
+                <li class="task"><span class="box">[ ]</span><span class="title">Queue edits while offline</span><span></span></li>
+                <li class="task"><span class="box">[ ]</span><span class="title">A view for conflicting edits</span><span></span></li>
+              </ul>
+            </div>
+            <div class="group">
+              <div class="ghead"><h4>Sharing</h4></div>
+              <ul class="tasks">
+                <li class="task"><span class="box"></span><span class="title">Read-only links</span><span></span><p class="body">A link anyone can open that shows the board without editing.</p></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="lost">
+        <li>The title and the intro paragraph, with its link, are gone.</li>
+        <li>The two notes nested under "Data loss" are gone.</li>
+        <li>The paragraph under Offline mode is gone, since that heading has bullets.</li>
+        <li>Code spans become plain text.</li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="vs-title">Rendered, with marks</h3>
+      <div class="sheet">
+        <div class="perch-prose marked">
+          <h1>Roadmap</h1>
+          <p>Planned work for tidewater. The <a href="#">sync design</a> has the background.</p>
+          <h2>Release</h2>
+          <h3>Renew the signing key</h3>
+          <p>The key in <code>release/signing.pem</code> expires on 30 November. Renew it before the 1.4 build.</p>
+          <h2>Critical</h2>
+          <ul>
+            <li class="m-crit"><input type="checkbox" disabled> Data loss when two devices save at once
+              <ul>
+                <li>seen on Android only so far</li>
+                <li>steps to reproduce in <code>tests/sync-race.md</code></li>
+              </ul>
+            </li>
+          </ul>
+          <h2>Bugs</h2>
+          <ul>
+            <li class="m-bug m-done"><input type="checkbox" checked disabled> A CSV with a byte order mark fails to parse</li>
+            <li class="m-bug"><input type="checkbox" disabled> Dates read as US format</li>
+          </ul>
+          <h2>Features</h2>
+          <h3>Offline mode</h3>
+          <p>Edits made offline are queued and sent on reconnect.</p>
+          <ul>
+            <li><input type="checkbox" checked disabled> Cache the last sync</li>
+            <li><input type="checkbox" disabled> Queue edits while offline</li>
+            <li><input type="checkbox" disabled> A view for conflicting edits</li>
+          </ul>
+          <h3>Sharing</h3>
+          <h4>Read-only links</h4>
+          <p>A link anyone can open that shows the board without editing.</p>
+        </div>
+      </div>
+      <ul class="lost">
+        <li>Everything in the file is kept, as written.</li>
+        <li>The marks sit in the margin on the lines classed as bugs. A done bug's mark is faint.</li>
+        <li>No progress bars, no redrawn checkboxes, no switch.</li>
+      </ul>
     </div>
   </div>
 </section>
 
 <!-- B: three roadmap shapes -->
 <section>
-  <h2>How three shapes parse</h2>
+  <h2>How three shapes are marked</h2>
   <p class="why">The same rule over a flat file, a checklist and a deep hierarchy. No file needs config.</p>
   <div class="shapes">
 
@@ -318,18 +452,21 @@ The tray icon could show…
 <span class="h">## Forge issues source</span>
 Tickets from GitHub…</div>
       <div class="sheet small">
-        <ul class="tasks">
-          <li class="task"><span class="box"></span><span class="title">Bird Positions</span><span></span></li>
-          <li class="task"><span class="box"></span><span class="title">Tray icon status</span><span></span></li>
-          <li class="task bug"><span class="box"></span><span class="title">Forge issues source</span><span></span></li>
-        </ul>
+        <div class="perch-prose marked">
+          <h2>Bird Positions</h2>
+          <p>Move to a fixed layout for the birds so they're always in the same spots.</p>
+          <h2>Tray icon status</h2>
+          <p>The tray icon could show the worst health colour across everything.</p>
+          <h2 class="m-bug">Forge issues source</h2>
+          <p>Tickets from GitHub and Forgejo as a work source beside the in-repo roadmap.</p>
+        </div>
       </div>
       <p class="callout"><b>"issues" makes it a bug.</b> Titles count, as agreed. This item moves the bird until it is retitled.</p>
     </div>
 
     <div class="shape">
       <h3>A checklist</h3>
-      <p>Bullets above the first heading are tasks at the top. Checkboxes give a heading progress.</p>
+      <p>Bullets above the first heading are tasks at the top. Each bullet is a task.</p>
       <div class="src-md">- [ ] Fix crash on an empty config
 - [x] Port settings to TOML
 
@@ -337,20 +474,19 @@ Tickets from GitHub…</div>
 - [x] Changelog
 - [ ] Tag and build</div>
       <div class="sheet small">
-        <ul class="tasks">
-          <li class="task bug"><span class="box">[ ]</span><span class="title">Fix crash on an empty config</span><span></span></li>
-          <li class="task done"><span class="box">[x]</span><span class="title">Port settings to TOML</span><span></span></li>
-        </ul>
-        <div class="group" style="margin-top:14px">
-          <div class="ghead"><h4>Release 1.2</h4><span class="prog">1 of 2 done</span></div>
-          <div class="bar"><i style="width:50%"></i></div>
-          <ul class="tasks">
-            <li class="task done"><span class="box">[x]</span><span class="title">Changelog</span><span></span></li>
-            <li class="task"><span class="box">[ ]</span><span class="title">Tag and build</span><span></span></li>
+        <div class="perch-prose marked">
+          <ul>
+            <li class="m-bug"><input type="checkbox" disabled> Fix crash on an empty config</li>
+            <li><input type="checkbox" checked disabled> Port settings to TOML</li>
+          </ul>
+          <h2>Release 1.2</h2>
+          <ul>
+            <li><input type="checkbox" checked disabled> Changelog</li>
+            <li><input type="checkbox" disabled> Tag and build</li>
           </ul>
         </div>
       </div>
-      <p class="callout"><b>"crash" is a bug word</b> in this draft list. The list is TBD.</p>
+      <p class="callout"><b>"crash" is in <code>bug_words</code></b>, so the first task is a bug.</p>
     </div>
 
     <div class="shape">
@@ -365,22 +501,16 @@ Tickets from GitHub…</div>
 <span class="h">### Import</span>
 - [ ] Dates read as US format</div>
       <div class="sheet small">
-        <div class="group">
-          <div class="ghead l1"><h4>Critical</h4></div>
-          <div class="sub"><div class="group">
-            <div class="ghead"><h4>Sync</h4></div>
-            <ul class="tasks"><li class="task crit"><span class="box">[ ]</span><span class="title">Data loss when two devices save at once</span><span></span></li></ul>
-          </div></div>
-        </div>
-        <div class="group">
-          <div class="ghead l1"><h4>Bugs</h4></div>
-          <div class="sub"><div class="group">
-            <div class="ghead"><h4>Import</h4></div>
-            <ul class="tasks"><li class="task bug"><span class="box">[ ]</span><span class="title">Dates read as US format</span><span></span></li></ul>
-          </div></div>
+        <div class="perch-prose marked">
+          <h2>Critical</h2>
+          <h3>Sync</h3>
+          <ul><li class="m-crit"><input type="checkbox" disabled> Data loss when two devices save at once</li></ul>
+          <h2>Bugs</h2>
+          <h3>Import</h3>
+          <ul><li class="m-bug"><input type="checkbox" disabled> Dates read as US format</li></ul>
         </div>
       </div>
-      <p class="callout"><b>A critical word alone makes a critical bug.</b> "Data loss" needs no bug word under Critical.</p>
+      <p class="callout"><b>A word from <code>critical_bug_words</code> alone makes a critical bug.</b> "Data loss" needs no bug word under Critical.</p>
     </div>
 
   </div>
@@ -433,7 +563,7 @@ Tickets from GitHub…</div>
     <div>
       <div class="bubble">
         <p>One critical bug open against me on GitHub.</p>
-        <div class="chips"><span class="chip amber">1 critical on GitHub</span><span class="chip amber">6 bugs on GitHub</span></div>
+        <div class="chips"><span class="chip amber">1 critical bug on GitHub</span><span class="chip amber">6 bugs on GitHub</span></div>
       </div>
       <p class="caption">tidewater. The roadmap's one bug is under 5, so it has no chip.</p>
     </div>
@@ -500,8 +630,8 @@ Tickets from GitHub…</div>
     </div>
     <div class="q">
       <h3>Done items on the sheet</h3>
-      <p>Checked tasks show struck through. A file that keeps months of checked items would bury the open ones.</p>
-      <p class="rec">Agreed: struck through. Making it configurable is parked in the roadmap.</p>
+      <p>A file that keeps months of checked items would bury the open ones.</p>
+      <p class="rec">Agreed: shown as the markdown has them, now that the roadmap renders as written. Hiding them is parked in the roadmap.</p>
     </div>
     <div class="q">
       <h3>A full-width layout at 3440px</h3>

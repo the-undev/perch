@@ -19,7 +19,9 @@ entry. Precedence, each set value replacing the one below: the item entry in
 the owner's config, then `.perch.toml`, then `[work]` and `[thresholds]`, then
 built in. Wires, names, sessions, launch actions and sources stay in the
 owner's config. A bird known only from a forge has no clone to read it from;
-reading it through the forge API is a later step.
+reading it through the forge API is a later step. Perch cannot migrate a file
+in another repository, so the schema and its versioning are settled before
+anything else.
 
 ## Side by side sheets on wide windows
 

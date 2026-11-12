@@ -71,12 +71,27 @@ tracked_forks = []
 # Health windows: amber at the first, red at the second. Unsafe work
 # (uncommitted changes, unpushed commits) ages in hours from its oldest
 # change. Stalled flight, parked on a non-default branch with no new commit,
-# ages in days. Each is overridable per item with the same keys.
+# ages in days. Open bugs and open critical bugs are counted in each roadmap
+# file on its own; left out, their windows are the values shown. Each is
+# overridable per item with the same keys.
 [thresholds]
 unsafe_amber_hours = 24
 unsafe_red_hours = 72
 stalled_amber_days = 7
 stalled_red_days = 30
+# bugs_amber_count = 5
+# bugs_red_count = 20
+# critical_bugs_amber_count = 1
+# critical_bugs_red_count = 3
+
+# Each roadmap item is a task, a bug or a critical bug. A word from
+# critical_bug_words makes a critical bug, else one from bug_words a bug,
+# matched as whole words in any case against the item's text, its #tags and
+# every heading above it. Only bugs move the bird. Each list is taken whole
+# from the item's entry, else from here, else the built-in list shown.
+# [work]
+# bug_words = ["bug", "bugs", "issue", "issues", "problem", "problems", "broken", "regression", "crash", "crashes", "p2", "p3", "p4"]
+# critical_bug_words = ["critical", "urgent", "severe", "blocker", "p0", "p1"]
 
 # Everything is scanned on the interval, counted from the end of the last
 # scan.
@@ -174,7 +189,13 @@ kind = "folder"
 # key_files = ["README.md", "docs/forge-access.md", "docs/roadmap.md"]  # default the README and roadmaps
 # roadmaps = ["docs/roadmap.md"]     # replaces the standard roadmap names
 # zellij_session = "main"
+# bug_words = ["bug", "defect"]      # replaces the [work] list
+# critical_bug_words = ["outage"]    # replaces the [work] list
 # unsafe_amber_hours = 12
 # unsafe_red_hours = 48
 # stalled_amber_days = 14
 # stalled_red_days = 60
+# bugs_amber_count = 3
+# bugs_red_count = 10
+# critical_bugs_amber_count = 1
+# critical_bugs_red_count = 2

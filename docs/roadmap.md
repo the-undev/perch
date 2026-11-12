@@ -10,40 +10,6 @@ Move to a fixed layout for the birds so they're always in the same spots.
 
 More types of bird, perhaps per project.
 
-## Work sources drive health
-
-Roadmap files and forge tickets are separate source types with their own data.
-Each exposes the same per-source counts of open bugs and open critical bugs,
-and health judges those without knowing the source.
-
-- Config: `key_files` and `roadmaps` stay lists of paths. `roadmaps = []`
-  says a project has no roadmap, so an ordinary `ROADMAP.md` is not parsed.
-- Roadmap parse, bottom up and without config: bullets and checkboxes under a
-  heading are its tasks, a bare heading is one task with its prose as the
-  body, and higher headings group what is below them.
-- Each task or ticket is a task, a bug or a critical bug. Tasks have no
-  priority; their order in the file is shown and Perch does not read it.
-- Two word lists set the kind, matched as whole words in any case against
-  headings, task titles, `#tags`, ticket titles and forge labels. A word from
-  `bug_words` makes a bug, and one from `critical_bug_words` makes a critical
-  bug on its own. A task inherits from the headings above it.
-- The lists are built in, and set in a global `[work]` table or directly in
-  an item's entry. A set list replaces the one below it: item over global over
-  built in. Built-in `bug_words`: bug, bugs, issue, issues, problem, problems,
-  broken, regression, crash, crashes, p2, p3, p4. Built-in
-  `critical_bug_words`: critical, urgent, severe, blocker, p0, p1.
-- Only bugs affect the bird. Tasks are shown and change nothing.
-- Thresholds, global in `[thresholds]` and overridable per item:
-  `bugs_amber_count` 5, `bugs_red_count` 20, `critical_bugs_amber_count` 1,
-  `critical_bugs_red_count` 3. The bird takes the worse of the two levels.
-  Done bugs are not counted.
-- Each source is judged on its own and gives its own cause, so a bug written
-  in the roadmap and filed as a ticket is not counted twice.
-- A roadmap renders on the paper as any markdown does. Knowing it is a
-  roadmap only adds a mark in the left margin beside each bug's line: one bar
-  for a bug, two for a critical bug, faint once checked.
-- The UI is agreed on the work sources mockup round.
-
 ## Project config in the repository
 
 A `.perch.toml` at a repository's root, meant to be checked in, holds what is
@@ -104,9 +70,23 @@ appimagetool, but the repack must keep the block map and checksum in
 
 ## Forge issues source
 
-Tickets from GitHub and Forgejo as a work source beside the in-repo roadmap,
-following "Work sources drive health". Kind and priority come from labels.
-Whether GitHub issue types can set kind is TBD.
+Open tickets from GitHub and Forgejo as a work source beside the in-repo
+roadmap. Pull requests are left out.
+
+- Each ticket is a task, a bug or a critical bug by the same `bug_words` and
+  `critical_bug_words` the roadmap uses, matched as whole words in any case
+  against its title and its labels. Whether GitHub issue types can set the
+  kind is TBD.
+- Each forge's tickets are judged on their own against the bug thresholds and
+  give their own cause, as each roadmap file does, so a bug written in the
+  roadmap and filed as a ticket is not counted twice. The ledger gets a bug
+  row per forge and a critical bug row when there are any.
+- The ticket sheet is drawn in `mockups/work-sources.html`: a tab per forge
+  after the roadmaps, carrying its open count and shown even with none open.
+  Each row has the number, title, labels as the forge spells them and last
+  update, with the roadmap's margin marks. Critical bugs come first, then
+  bugs, then tasks, each most recently updated first. A row opens the ticket
+  in the browser.
 
 ## Visual roadmap view
 

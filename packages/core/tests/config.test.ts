@@ -126,6 +126,24 @@ describe("example config", () => {
     expect(parseConfig(text, home).window).toEqual({ tray: false });
   });
 
+  it("shows the bug windows and the built-in word lists, which parse as the defaults once uncommented", async () => {
+    const lines = (await exampleText()).split("\n");
+    const thresholds = lines.indexOf("[thresholds]");
+    const work = lines.indexOf("# [work]");
+    const uncommented = lines.map((line, index) =>
+      (index > thresholds && index < work && /^# \w+ = /.test(line)) ||
+      (index >= work && index <= work + 2)
+        ? line.slice(2)
+        : line,
+    );
+    const config = parseConfig(uncommented.join("\n"), home);
+    const plain = parseConfig(await exampleText(), home);
+
+    expect(config.thresholds).toEqual(plain.thresholds);
+    expect(workWordsFor(config, null)).toEqual(workWordsFor(plain, null));
+    expect(config.work.bugWords).not.toBeNull();
+  });
+
   it("parses its commented update table once uncommented", async () => {
     const text = (await exampleText()).replace(
       /^# (\[update\]|check = |install = )/gm,
@@ -199,14 +217,14 @@ describe("example config", () => {
       thresholds: {
         unsafe: { amberHours: 12, redHours: 48 },
         stalled: { amberDays: 14, redDays: 60 },
-        bugs: {},
-        criticalBugs: {},
+        bugs: { amberCount: 3, redCount: 10 },
+        criticalBugs: { amberCount: 1, redCount: 2 },
       },
       keyFiles: ["README.md", "docs/forge-access.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
       zellijSession: "main",
-      bugWords: null,
-      criticalBugWords: null,
+      bugWords: ["bug", "defect"],
+      criticalBugWords: ["outage"],
     });
   });
 

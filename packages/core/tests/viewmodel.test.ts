@@ -7,7 +7,7 @@ import {
   type Config,
 } from "../src/config.ts";
 import { deriveRoadmapFile } from "../src/derivations.ts";
-import { mockRoadmap } from "../src/mock.ts";
+import { mockDetectedRoadmap, mockRoadmap } from "../src/mock.ts";
 import { readRoadmapStructure } from "../src/roadmap-parser.ts";
 import type {
   FinalisedCommit,
@@ -1960,6 +1960,39 @@ describe("the detail", () => {
         marks: {},
       },
     ]);
+  });
+
+  it("shows a detected roadmap file as a document, with no bug rows, open items, marks or bug chips", async () => {
+    const defaults = await adoptAll(["dev/perch"]);
+    const undeclared = item("dev/perch", {
+      sources: { roadmap: mockDetectedRoadmap("docs/roadmap.md") },
+    });
+    const bird = birdIn([undeclared], defaults, "dev/perch");
+
+    expect(bird.detail.keyFiles).toEqual([
+      {
+        path: "README.md",
+        absolutePath: "/home/test/dev/perch/README.md",
+        marks: {},
+      },
+      {
+        path: "docs/roadmap.md",
+        absolutePath: "/home/test/dev/perch/docs/roadmap.md",
+        marks: {},
+      },
+    ]);
+    expect(
+      bird.detail.ledger.filter((entry) =>
+        /bugs|open roadmap/.test(entry.label),
+      ),
+    ).toEqual([]);
+    expect(bird.bubble.chips.filter((chip) => chip.kind === "bugs")).toEqual(
+      [],
+    );
+    expect(bird.health.causes.filter((cause) => cause.kind === "bugs")).toEqual(
+      [],
+    );
+    expect(bird.plumpness.outstanding).toBe(0);
   });
 
   it("marks each bug's and critical bug's line on a roadmap file's paper, faint once done, and no other file", async () => {

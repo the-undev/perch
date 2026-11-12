@@ -122,7 +122,10 @@ export interface RawRoadmapFile {
 }
 
 export interface RawRoadmap {
+  /** The files the item's entry lists in `roadmaps`, read; empty when it lists none. */
   files: RawRoadmapFile[];
+  /** The first standard-named file found when the entry lists none, shown but never parsed; else null. */
+  detectedPath: string | null;
 }
 
 // Forges

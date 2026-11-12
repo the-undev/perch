@@ -236,7 +236,12 @@ export function deriveRoadmap(
     }
     files.push(deriveRoadmapFile(file.path, file.structure.value, words));
   }
-  return { counts: countOpenItems(files), files, thresholds };
+  return {
+    counts: countOpenItems(files),
+    files,
+    thresholds,
+    detectedPath: raw.detectedPath,
+  };
 }
 
 /** An item without a roadmap file has no work items. */
@@ -245,6 +250,7 @@ export function emptyRoadmap(thresholds: BugThresholds): RoadmapData {
     counts: { task: 0, bug: 0, "critical-bug": 0 },
     files: [],
     thresholds,
+    detectedPath: null,
   };
 }
 
@@ -271,8 +277,10 @@ export function bugLevelsOf(
 export function roadmapOf(item: Item): RoadmapData | null {
   const roadmap = item.sources.roadmap;
   if (roadmap === undefined || "error" in roadmap) return null;
-  // A snapshot cached before roadmap files were judged has no thresholds field at all.
-  return roadmap.thresholds === undefined ? null : roadmap;
+  // A snapshot cached before roadmap files were judged has no thresholds field at all, and one
+  // cached before parsing became opt-in has no detectedPath field.
+  if (roadmap.thresholds === undefined) return null;
+  return roadmap.detectedPath === undefined ? null : roadmap;
 }
 
 // Git

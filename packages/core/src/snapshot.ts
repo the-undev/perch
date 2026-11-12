@@ -183,6 +183,8 @@ export interface RoadmapData {
   counts: WorkItemCounts;
   files: RoadmapFile[];
   thresholds: BugThresholds;
+  /** A standard-named roadmap file shown as a document but not parsed; null when the entry lists files. */
+  detectedPath: string | null;
 }
 
 export interface PullRequest {

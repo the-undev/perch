@@ -1012,7 +1012,8 @@ function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
     }
   }
   const roadmap = roadmapOf(item);
-  if (roadmap) {
+  // Without a parsed roadmap file there is nothing to count or judge, so no rows.
+  if (roadmap && roadmap.files.length > 0) {
     ledger.push(...bugRows(roadmap, handle("bugs"), handle("critical-bugs")));
     ledger.push(
       countEntry(
@@ -1341,10 +1342,13 @@ export function lineMarksOf(file: RoadmapFile): LineMarks {
 function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {
   const path = item.path;
   if (path === null) return [];
-  const roadmapFiles = roadmapOf(item)?.files ?? [];
+  const roadmap = roadmapOf(item);
+  const roadmapFiles = roadmap?.files ?? [];
+  const detectedPath = roadmap?.detectedPath ?? null;
   const files = entry?.keyFiles ?? [
     "README.md",
     ...roadmapFiles.map((file) => file.path),
+    ...(detectedPath === null ? [] : [detectedPath]),
   ];
   return files.map((file) => {
     const roadmapFile = roadmapFiles.find((entry) => entry.path === file);

@@ -45,7 +45,7 @@ describe("the entry form", () => {
       wire: null,
       name: "Perch",
       keyFiles: ["README.md", "docs/forge-access.md", "docs/roadmap.md"],
-      roadmaps: null,
+      roadmaps: ["docs/roadmap.md"],
       thresholds: {},
       zellijSession: null,
       bugWords: null,

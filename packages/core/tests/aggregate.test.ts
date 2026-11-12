@@ -196,6 +196,7 @@ describe("aggregate", () => {
         bugs: { amberCount: 5, redCount: 20 },
         criticalBugs: { amberCount: 1, redCount: 3 },
       },
+      detectedPath: null,
     });
   });
 
@@ -221,6 +222,7 @@ describe("aggregate", () => {
                   structure: { state: "observed", value: structure },
                 },
               ],
+              detectedPath: null,
             },
           },
         },

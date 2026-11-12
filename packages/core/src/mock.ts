@@ -128,6 +128,7 @@ export const mockConfig: Config = {
     ".dotfiles": entry({
       wire: "Machine & Home",
       name: "Dotfiles",
+      roadmaps: ["docs/roadmap.md"],
     }),
     "obsidian/Hothouse": entry({
       wire: "Machine & Home",
@@ -142,15 +143,38 @@ export const mockConfig: Config = {
     "dev/perch": entry({
       name: "Perch",
       keyFiles: ["README.md", "docs/forge-access.md", "docs/roadmap.md"],
+      roadmaps: ["docs/roadmap.md"],
     }),
-    "undev/harbour": entry({ name: "Harbour" }),
-    "undev/skiff": entry({ name: "Skiff" }),
-    "undev/prism": entry({ name: "Prism" }),
-    "undev/Hollow-legacy": entry({ name: "Hollow (legacy)" }),
-    "undev/oxbow": entry({ name: "Oxbow" }),
-    "undev/gramophone": entry({ name: "Gramophone" }),
+    "undev/harbour": entry({
+      name: "Harbour",
+      roadmaps: ["docs/roadmap.md"],
+    }),
+    "undev/skiff": entry({
+      name: "Skiff",
+      roadmaps: ["docs/roadmap.md"],
+    }),
+    "undev/prism": entry({
+      name: "Prism",
+      roadmaps: ["docs/roadmap.md"],
+    }),
+    "undev/Hollow-legacy": entry({
+      name: "Hollow (legacy)",
+      roadmaps: ["docs/roadmap.md"],
+    }),
+    "undev/oxbow": entry({
+      name: "Oxbow",
+      roadmaps: ["docs/roadmap.md"],
+    }),
+    "undev/gramophone": entry({
+      name: "Gramophone",
+      roadmaps: ["docs/roadmap.md"],
+    }),
+    // Spool lists no roadmaps: its standard-named file is shown as a document only.
     "undev/spool": entry({ name: "Spool" }),
-    "undev/glyph-docs": entry({ name: "Glyph Docs" }),
+    "undev/glyph-docs": entry({
+      name: "Glyph Docs",
+      roadmaps: ["Roadmap.md"],
+    }),
     "forgejo:finch/field-notes": entry({
       wire: "Machine & Home",
       name: "Pergola Notes",
@@ -392,7 +416,13 @@ export function mockRoadmap(
       },
     })),
     thresholds: defaultBugThresholds,
+    detectedPath: null,
   };
+}
+
+/** A standard-named roadmap file shown as a document: the entry lists none, so nothing is parsed. */
+export function mockDetectedRoadmap(detectedPath: string): RoadmapData {
+  return { ...mockRoadmap([]), detectedPath };
 }
 
 const quietDrift: GitData["drift"] = {
@@ -1390,9 +1420,7 @@ const spool = localItem("undev/spool", {
       drift: quietDrift,
       stall: null,
     },
-    roadmap: mockRoadmap([
-      { path: "docs/roadmap.md", task: 0, bug: 0, criticalBug: 0 },
-    ]),
+    roadmap: mockDetectedRoadmap("docs/roadmap.md"),
     forgejo: forge("forgejo", "the-undev/spool", {
       finalisedCommits: [
         {

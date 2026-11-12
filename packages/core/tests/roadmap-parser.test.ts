@@ -381,7 +381,7 @@ describe("deriveRoadmapFile checkboxes", () => {
 });
 
 describe("roadmap source", () => {
-  it("reads the first standard file, or the configured files, stating what is missing", async () => {
+  it("detects the first standard file without parsing it, and parses only the configured files, stating what is missing", async () => {
     const files = new Map([
       ["/repo/ROADMAP.md", "## Next\n\n- Upper case wins over TODO\n"],
       ["/repo/TODO.md", "- Not read\n"],
@@ -389,8 +389,10 @@ describe("roadmap source", () => {
     ]);
     const source = createRoadmapSource({
       readText: async (path) => files.get(path) ?? null,
-      roadmapsFor: () => (id) =>
-        id === "hothouse" ? ["Tech/Tech Plans.md", "Missing.md"] : null,
+      roadmapsFor: () => (id) => {
+        if (id === "hothouse") return ["Tech/Tech Plans.md", "Missing.md"];
+        return id === "listless" ? [] : null;
+      },
     });
 
     const entries = await source.gather({
@@ -402,6 +404,7 @@ describe("roadmap source", () => {
           presences: {
             repo: localPresence("/repo", { include: "/repo" }),
             empty: localPresence("/empty", { include: "/empty" }),
+            listless: localPresence("/repo", { include: "/repo" }),
             hothouse: localPresence("/hothouse", {
               include: "/hothouse",
               obsidian: true,
@@ -411,12 +414,11 @@ describe("roadmap source", () => {
       },
     });
 
-    expect(entries.repo).toMatchObject({
+    expect(entries.repo).toEqual({
       state: "observed",
-      value: {
-        files: [{ path: "ROADMAP.md", structure: { state: "observed" } }],
-      },
+      value: { files: [], detectedPath: "ROADMAP.md" },
     });
+    expect(entries.listless).toEqual(entries.repo);
     expect(entries.empty).toEqual({
       state: "absent",
       reason: "no-roadmap-file",
@@ -431,6 +433,7 @@ describe("roadmap source", () => {
             structure: { state: "absent", reason: "file-not-found" },
           },
         ],
+        detectedPath: null,
       },
     });
   });
@@ -445,6 +448,7 @@ describe("roadmap source", () => {
               structure: { state: "absent", reason: "file-not-found" },
             },
           ],
+          detectedPath: null,
         },
         builtInWords,
         defaultBugThresholds,

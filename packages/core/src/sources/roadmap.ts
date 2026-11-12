@@ -12,7 +12,7 @@ import { sortedRecord } from "../records.ts";
 import { readRoadmapStructure } from "../roadmap-parser.ts";
 import type { PolledSource } from "./source.ts";
 
-/** Roadmap file names for a repository, in order of preference; the first that exists is read. */
+/** Roadmap file names for a repository, in order of preference; the first that exists is detected, not parsed. */
 export const repoRoadmapCandidates = [
   "docs/roadmap.md",
   "ROADMAP.md",
@@ -25,8 +25,8 @@ type RoadmapEntry = Entry<RawRoadmap, "no-roadmap-file">;
 export interface RoadmapSourceDeps {
   readText: (path: string) => Promise<string | null>;
   /**
-   * Configured roadmap files for each local presence, relative to it, or null for the standard
-   * names; built once per gather from the earlier rounds' files.
+   * Roadmap files the entry lists for each local presence, relative to it, or null or empty for
+   * none (a standard-named file is then only detected); built once per gather from the earlier rounds' files.
    */
   roadmapsFor: (
     earlier: Partial<RawFiles>,
@@ -48,14 +48,17 @@ async function readFile(
   };
 }
 
-async function standardRoadmap(
+async function detectedRoadmap(
   root: string,
   deps: RoadmapSourceDeps,
 ): Promise<RoadmapEntry> {
   for (const candidate of repoRoadmapCandidates) {
-    const file = await readFile(root, candidate, deps);
-    if (file.structure.state === "observed") {
-      return { state: "observed", value: { files: [file] } };
+    const text = await deps.readText(join(root, candidate));
+    if (text !== null) {
+      return {
+        state: "observed",
+        value: { files: [], detectedPath: candidate },
+      };
     }
   }
   return { state: "absent", reason: "no-roadmap-file" };
@@ -66,11 +69,10 @@ async function configuredRoadmap(
   paths: readonly string[],
   deps: RoadmapSourceDeps,
 ): Promise<RoadmapEntry> {
-  if (paths.length === 0) return { state: "absent", reason: "no-roadmap-file" };
   const files = await Promise.all(
     paths.map((path) => readFile(root, path, deps)),
   );
-  return { state: "observed", value: { files } };
+  return { state: "observed", value: { files, detectedPath: null } };
 }
 
 /** Enricher: reads the roadmap structure of every local presence. */
@@ -93,8 +95,8 @@ export function createRoadmapSource(
         try {
           const configured = roadmapsFor(id);
           entries[id] =
-            configured === null
-              ? await standardRoadmap(presence.path, deps)
+            configured === null || configured.length === 0
+              ? await detectedRoadmap(presence.path, deps)
               : await configuredRoadmap(presence.path, configured, deps);
         } catch (error) {
           entries[id] = { state: "error", error: errorMessage(error) };

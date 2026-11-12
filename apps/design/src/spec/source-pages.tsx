@@ -239,10 +239,12 @@ const roadmaps: SourceSpec = {
   reads: (
     <p>
       For every local presence, the roadmap files its config entry names in{" "}
-      <Code>roadmaps</Code>, else the first of the standard names that exists.
-      The entry is resolved through the project the clone joins, so it runs
-      after the forge enrichers. Each file is parsed into its headings, the
-      bullets directly under each, and the prose between.
+      <Code>roadmaps</Code>. A file is parsed as a roadmap only when listed
+      there; when the list is unset or empty, the first of the standard names
+      that exists is recorded by path and shown as a document. The entry is
+      resolved through the project the clone joins, so it runs after the forge
+      enrichers. Each file is parsed into its headings, the bullets directly
+      under each, and the prose between.
     </p>
   ),
   moduleNames: [

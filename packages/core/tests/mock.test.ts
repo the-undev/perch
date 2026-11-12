@@ -432,6 +432,30 @@ describe("the mock dataset", () => {
     });
   });
 
+  it("covers a bird whose roadmap is parsed because its entry lists it, and one whose standard file is only shown", () => {
+    const rawEntry = (id: string) =>
+      mockConfig.items[id] ?? { roadmaps: undefined };
+    const roadmapOfBird = (id: string) =>
+      mockSnapshot.items.find((item) => item.id === id)?.sources.roadmap;
+    const hollow = roadmapOfBird("undev/Hollow-legacy");
+    const spool = roadmapOfBird("undev/spool");
+
+    expect(rawEntry("undev/Hollow-legacy").roadmaps).toEqual([
+      "docs/roadmap.md",
+    ]);
+    expect(hollow).toMatchObject({
+      files: [{ path: "docs/roadmap.md", counts: { bug: 23 } }],
+      detectedPath: null,
+    });
+    expect(rawEntry("undev/spool").roadmaps).toBeNull();
+    expect(spool).toMatchObject({ files: [], detectedPath: "docs/roadmap.md" });
+    expect(
+      birds
+        .find((bird) => bird.id === "undev/spool")
+        ?.detail.keyFiles.map((file) => file.path),
+    ).toEqual(["README.md", "docs/roadmap.md"]);
+  });
+
   it("agrees with the derivation rules wherever it states a judged value", () => {
     for (const item of mockSnapshot.items) {
       const entry = resolveEntry(mockConfig, item.id, [

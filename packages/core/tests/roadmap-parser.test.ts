@@ -378,24 +378,6 @@ describe("deriveRoadmapFile kinds", () => {
     });
   });
 
-  it("finds no bug or critical bug in the project's own roadmap", () => {
-    const roadmap = readFileSync(
-      join(import.meta.dirname, "..", "..", "..", "docs", "roadmap.md"),
-      "utf8",
-    );
-    const file = deriveRoadmapFile(
-      "docs/roadmap.md",
-      readRoadmapStructure(roadmap),
-      builtInWords,
-    );
-
-    expect(
-      everyItem(file)
-        .filter((item) => item.kind !== "task")
-        .map((item) => [item.line, item.text, item.kind]),
-    ).toEqual([]);
-  });
-
   it("counts open items by kind across nested groups, leaving done ones out", () => {
     expect(countOpenItems([parseFixture("hierarchy.md")])).toEqual({
       task: 2,

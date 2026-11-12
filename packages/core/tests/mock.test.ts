@@ -147,6 +147,7 @@ describe("the mock dataset", () => {
         "unreadable",
         "ci",
         "bugs",
+        "critical-bugs",
         "uncommitted",
         "unpushed",
         "stalled",

@@ -439,7 +439,7 @@ describe("chips", () => {
       ]),
     ).toEqual([
       ["ci failure", null, "red"],
-      ["6 bugs in roadmap", 6, "amber"],
+      ["6 bugs", 6, "amber"],
       ["4 uncommitted", 4, "red"],
       ["1 unpushed", 1, null],
       ["1 open PR", 1, null],
@@ -449,7 +449,12 @@ describe("chips", () => {
     expect(
       birdIn([busy], config, "dev/prism").bubble.chips.map((chip) => chip.kind),
     ).toEqual(
-      chipKinds.filter((kind) => kind !== "unreadable" && kind !== "stalled"),
+      chipKinds.filter(
+        (kind) =>
+          kind !== "unreadable" &&
+          kind !== "critical-bugs" &&
+          kind !== "stalled",
+      ),
     );
   });
 
@@ -1220,15 +1225,17 @@ describe("the ledger's workings", () => {
     expect(
       bird.bubble.chips.map((chip) => [chip.label, chip.severity]),
     ).toEqual([
-      ["3 critical bugs in docs/sync.md", "red"],
       ["6 bugs in docs/roadmap.md", "amber"],
+      ["2 bugs in docs/sync.md", null],
+      ["3 critical bugs in docs/sync.md", "red"],
+      ["4 bugs in docs/ideas.md", null],
       ["28 open items", null],
     ]);
     expect(bugRows).toEqual([
       ["bugs in docs/roadmap.md", "6", "amber", "bugs"],
-      ["bugs in docs/sync.md", "2", null, null],
-      ["critical bugs in docs/sync.md", "3", "red", "bugs"],
-      ["bugs in docs/ideas.md", "4", null, null],
+      ["bugs in docs/sync.md", "2", null, "bugs"],
+      ["critical bugs in docs/sync.md", "3", "red", "critical-bugs"],
+      ["bugs in docs/ideas.md", "4", null, "bugs"],
     ]);
     expect(row(bird, "critical bugs in docs/sync.md").workings).toEqual([
       {
@@ -1264,10 +1271,66 @@ describe("the ledger's workings", () => {
     expect(birdIn([busy(1)], config, "dev/hollow").health.causes).toEqual([]);
     expect(birdIn([busy(2)], config, "dev/hollow").bubble.chips[0]).toEqual({
       kind: "bugs",
-      label: "2 bugs in roadmap",
+      label: "2 bugs",
       count: 2,
       severity: "amber",
     });
+  });
+
+  it("gives a file within its windows uncoloured chips, and none for a kind with nothing open", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const chipsOf = (files: Parameters<typeof mockRoadmap>[0]) =>
+      birdIn(
+        [item("dev/hollow", { sources: { roadmap: mockRoadmap(files) } })],
+        config,
+        "dev/hollow",
+      ).bubble.chips.filter(
+        (chip) => chip.kind === "bugs" || chip.kind === "critical-bugs",
+      );
+
+    expect(
+      chipsOf([{ path: "docs/roadmap.md", task: 2, bug: 1, criticalBug: 0 }]),
+    ).toEqual([{ kind: "bugs", label: "1 bug", count: 1, severity: null }]);
+    expect(
+      chipsOf([{ path: "docs/roadmap.md", task: 2, bug: 0, criticalBug: 0 }]),
+    ).toEqual([]);
+    expect(
+      chipsOf([{ path: "docs/roadmap.md", task: 2, bug: 0, criticalBug: 1 }]),
+    ).toEqual([
+      {
+        kind: "critical-bugs",
+        label: "1 critical bug",
+        count: 1,
+        severity: "amber",
+      },
+    ]);
+  });
+
+  it("gives a file with both kinds two chips, each with its own severity, and names the path only with several roadmap files", async () => {
+    const config = await adoptAll(["dev/hollow"]);
+    const chipsOf = (files: Parameters<typeof mockRoadmap>[0]) =>
+      birdIn(
+        [item("dev/hollow", { sources: { roadmap: mockRoadmap(files) } })],
+        config,
+        "dev/hollow",
+      ).bubble.chips.filter(
+        (chip) => chip.kind === "bugs" || chip.kind === "critical-bugs",
+      );
+    const both = { path: "docs/roadmap.md", task: 0, bug: 6, criticalBug: 3 };
+
+    expect(chipsOf([both]).map((chip) => [chip.label, chip.severity])).toEqual([
+      ["6 bugs", "amber"],
+      ["3 critical bugs", "red"],
+    ]);
+    expect(
+      chipsOf([
+        both,
+        { path: "docs/ideas.md", task: 0, bug: 0, criticalBug: 0 },
+      ]).map((chip) => chip.label),
+    ).toEqual([
+      "6 bugs in docs/roadmap.md",
+      "3 critical bugs in docs/roadmap.md",
+    ]);
   });
 
   it("reads a roadmap cached before files were judged as not read", async () => {

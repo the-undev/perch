@@ -206,6 +206,9 @@ describe("the ledger's workings", () => {
       ["Garden/Garden Plans.md · 75 open", "none"],
     ]);
     expect(workings(container, "bugs")).toEqual([
+      ["Tech/Tech Plans.md · amber at 5, red at 20", "none"],
+    ]);
+    expect(workings(container, "critical-bugs")).toEqual([
       ["Garden/Garden Plans.md · amber at 1, red at 3", "none"],
     ]);
     expect(workings(container, "uncommitted")).toEqual([

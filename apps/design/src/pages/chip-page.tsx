@@ -20,7 +20,9 @@ const kindRule: Record<ChipModel["kind"], string> = {
   unreadable:
     "A forge the clone pushes to that no card can read, named by forge. Always amber; it lands on the record's notice.",
   ci: "The worst CI state across forges on the default branch; red only when failing.",
-  bugs: "A roadmap file past its bug or critical bug window, one chip per file, naming the kind its level comes from: amber, then red. A file within both windows has none.",
+  bugs: "A roadmap file's open bugs, one chip per file with any: plain within the bug window, then amber, then red. The path is named only when the record has several roadmap files.",
+  "critical-bugs":
+    "A roadmap file's open critical bugs, a chip of their own beside its bugs: plain within the critical bug window, then amber, then red.",
   uncommitted:
     "Uncommitted changes, toned by their age: unjudged under 24 hours, amber to 72, red beyond.",
   unpushed: "Commits on no remote, toned by their age like uncommitted work.",

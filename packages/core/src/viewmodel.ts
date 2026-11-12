@@ -14,7 +14,6 @@ import {
   zellijSessionFor,
 } from "./config.ts";
 import {
-  bugCause,
   bugLevelsOf,
   deriveHealth,
   hoursSince,
@@ -203,6 +202,7 @@ export const chipKinds = [
   "unreadable",
   "ci",
   "bugs",
+  "critical-bugs",
   "uncommitted",
   "unpushed",
   "stalled",
@@ -727,20 +727,22 @@ function windowWorking(source: string, window: CountThresholds): Working {
 
 /**
  * Each roadmap file's open bugs, then its open critical bugs when it has any, toned by their
- * windows. A file past either window holds the bubble's bugs chip on the row its level comes from.
+ * windows. A row holds the bubble chip of its kind when the file has any open of that kind.
  */
-function bugRows(roadmap: RoadmapData, chip: ChipKind | null): LedgerEntry[] {
+function bugRows(
+  roadmap: RoadmapData,
+  bugsChip: ChipKind | null,
+  criticalBugsChip: ChipKind | null,
+): LedgerEntry[] {
   const { thresholds } = roadmap;
   return roadmap.files.flatMap((file) => {
     const levels = bugLevelsOf(file.counts, thresholds);
-    const cause = bugCause(file, thresholds);
-    const judged = cause.level === "green" ? null : chip;
     const rows = [
       countEntry(
         `bugs in ${file.path}`,
         file.counts.bug,
         severity(levels.bugs),
-        cause.critical ? null : judged,
+        file.counts.bug > 0 ? bugsChip : null,
         [windowWorking(file.path, thresholds.bugs)],
       ),
     ];
@@ -751,7 +753,7 @@ function bugRows(roadmap: RoadmapData, chip: ChipKind | null): LedgerEntry[] {
         `critical bugs in ${file.path}`,
         file.counts["critical-bug"],
         severity(levels.criticalBugs),
-        cause.critical ? judged : null,
+        criticalBugsChip,
         [windowWorking(file.path, thresholds.criticalBugs)],
       ),
     ];
@@ -797,6 +799,32 @@ function unpushedBranchWorkings(
           : upstreamUrl(item, git, branch.upstream, config),
       at: branch.work.since,
     }));
+}
+
+/** One chip per roadmap file and kind with open bugs, toned by its window; the path only when there are several files. */
+function bugChips(roadmap: RoadmapData): Chip[] {
+  return roadmap.files.flatMap((file) => {
+    const levels = bugLevelsOf(file.counts, roadmap.thresholds);
+    const suffix = roadmap.files.length > 1 ? ` in ${file.path}` : "";
+    const chips: Chip[] = [];
+    if (file.counts.bug > 0) {
+      chips.push({
+        kind: "bugs",
+        label: `${plural(file.counts.bug, "bug", "bugs")}${suffix}`,
+        count: file.counts.bug,
+        severity: severity(levels.bugs),
+      });
+    }
+    if (file.counts["critical-bug"] > 0) {
+      chips.push({
+        kind: "critical-bugs",
+        label: `${plural(file.counts["critical-bug"], "critical bug", "critical bugs")}${suffix}`,
+        count: file.counts["critical-bug"],
+        severity: severity(levels.criticalBugs),
+      });
+    }
+    return chips;
+  });
 }
 
 /** The forge page for an upstream branch, found through its remote's URL; null when none matches. */
@@ -852,19 +880,7 @@ function chipsFor(item: Item, health: Health): Chip[] {
     });
   }
   const roadmap = roadmapOf(item);
-  for (const cause of health.causes) {
-    if (cause.kind !== "bugs") continue;
-    const file = roadmap?.files.length === 1 ? "roadmap" : cause.path;
-    const words = cause.critical
-      ? plural(cause.count, "critical bug", "critical bugs")
-      : plural(cause.count, "bug", "bugs");
-    chips.push({
-      kind: "bugs",
-      label: `${words} in ${file}`,
-      count: cause.count,
-      severity: severity(cause.level),
-    });
-  }
+  if (roadmap) chips.push(...bugChips(roadmap));
   const git = readable<GitData>(item.sources.git);
   const levelOf = (kind: "uncommitted" | "unpushed") =>
     health.causes.find((cause) => cause.kind === kind)?.level ?? "green";
@@ -960,7 +976,7 @@ function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
   }
   const roadmap = roadmapOf(item);
   if (roadmap) {
-    ledger.push(...bugRows(roadmap, handle("bugs")));
+    ledger.push(...bugRows(roadmap, handle("bugs"), handle("critical-bugs")));
     ledger.push(
       countEntry(
         "open roadmap items",

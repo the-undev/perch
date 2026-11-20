@@ -44,7 +44,8 @@ Run from the root: `pnpm dev` runs the app, `pnpm design` the design site,
 - A feature the scanner cannot derive goes in the roadmap, with a note on
   what would have to change first.
 - Secrets never touch the repository or the disk.
-- Work on a branch. `main` moves only on an approved merge.
+- Work on a branch. A change goes into `main` by a pull request on GitHub,
+  merged once approved.
 - Commit messages: imperative subject, a body only when the why is not
   obvious. No attribution trailers.
 - British English. No em dashes.

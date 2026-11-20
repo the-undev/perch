@@ -2,6 +2,25 @@
 
 Work identified and not done. Remove items as they land.
 
+## Code to match the glossary
+
+`GLOSSARY.md` holds the language wanted. The code, config and app text still
+use the older words below. Each is looked at on its own, then renamed.
+
+- "item" becomes "entity". Reaches config's `[items]` table, so it needs a
+  migration.
+- "presence" and "clone" become "repository": local repository, forge
+  repository. Reaches config's comments.
+- "join" becomes "link". Reaches config's `joins` key.
+- "entry" becomes "papers".
+- "working" becomes "reading".
+- "river" becomes "history", and "spread" goes.
+- "parked" on the chip and in speech becomes "stalled".
+- "in-progress" in the scanner becomes "in flight".
+- "window" in comments, config comments and the design site becomes
+  "threshold".
+- `Drift` becomes unsafe work, and `Detail` the bird's page.
+
 ## Bird Positions
 
 Move to a fixed layout for the birds so they're always in the same spots.

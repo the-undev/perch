@@ -305,18 +305,22 @@ const arrivalMood: Record<Mood, number> = {
   content: 2,
 };
 
-/** Who lands first: the wires before the fence, the worst mood first, then the plumpest. */
+/** Orders birds by who needs the owner most: the adopted first, then the worst mood, then the plumpest. */
+export function byNeed(a: Bird, b: Bird): number {
+  return (
+    Number(!a.adopted) - Number(!b.adopted) ||
+    arrivalMood[a.mood] - arrivalMood[b.mood] ||
+    b.plumpness.outstanding - a.plumpness.outstanding
+  );
+}
+
+/** Who lands first: the wires before the fence, then by need. */
 export function arrivalOrder(aviary: Aviary): Map<string, number> {
   const birds = [
     ...aviary.wires.flatMap((wire) => wire.birds),
     ...aviary.fence.birds,
   ];
-  const sorted = [...birds].sort(
-    (a, b) =>
-      Number(!a.adopted) - Number(!b.adopted) ||
-      arrivalMood[a.mood] - arrivalMood[b.mood] ||
-      b.plumpness.outstanding - a.plumpness.outstanding,
-  );
+  const sorted = [...birds].sort(byNeed);
   return new Map(sorted.map((bird, index) => [bird.id, index]));
 }
 

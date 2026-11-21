@@ -126,7 +126,7 @@ export function DetailScenePage() {
           {
             name: "snooze",
             type: "SnoozeCalls",
-            what: "The page's Snooze verb, after the launch verbs, or Wake in its place while the bird is snoozed: onSnooze(birdId, until) with the picked duration's end date, or null for indefinitely, and onWake(birdId). A fence bird has neither. This page keeps the snoozes itself, so a pick shows the wake verb.",
+            what: "The page's Snooze verb, after the launch verbs, or Wake in its place while the bird is snoozed: onSnooze(birdId, until) with the picked duration's end date, or null for indefinitely, and onWake(birdId). A fence bird has neither. This page keeps the snoozes itself, so a pick shows the wake verb. It also carries the pick's clock.",
           },
           {
             name: "sheets",

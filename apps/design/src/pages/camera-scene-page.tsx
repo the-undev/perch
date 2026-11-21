@@ -141,7 +141,7 @@ export function CameraScenePage() {
           {
             name: "onLaunch",
             type: "(action: LaunchAction) => void",
-            what: "A launch action was pressed, in a bubble or on the detail page.",
+            what: "A launch action was pressed, in a bubble or on the detail page. It also carries the pick's clock.",
           },
           {
             name: "snooze",

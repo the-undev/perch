@@ -1,6 +1,7 @@
-// The snooze control, in a bubble or on a bird's page: the snooze action opening the durations, or a
-// wake action in its place while the bird's look is snoozed, and neither on the fence. The durations
-// live only here: a pick becomes an end date counted from the moment of the pick, which the caller hands on.
+// The snooze control, in a bubble or on a bird's page: the snooze action opening the durations, or
+// a wake action in its place while the bird's look is snoozed, and neither on the fence. The
+// durations live only here: a pick becomes an end date counted from the moment of the pick, which
+// the caller hands on.
 
 import {
   type SnoozeDuration,
@@ -12,9 +13,9 @@ import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import type { BirdLook, StateWord } from "./bird.tsx";
 import { Icon } from "./icons.tsx";
 
-/** What the control asks of the main process, and the clock it counts a pick from. */
+/** The calls the control makes to the main process, and the clock it reads at each pick. */
 export interface SnoozeCalls {
-  /** The moment of a pick, which a duration's end date is counted from. */
+  /** The moment of a pick, read at each pick, which a duration's end date is counted from. */
   pickedAt: () => Date;
   /** Snoozes a bird until an end date, or indefinitely with null. */
   onSnooze: (birdId: string, until: SnoozeEnd) => void;

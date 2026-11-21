@@ -57,7 +57,7 @@ export function RoostPage() {
         </Specimen>
         <Specimen
           label="restless"
-          rule="Skiff: parked on a branch, amber breast."
+          rule="Skiff: stalled on a branch, amber breast."
         >
           <Ground>
             <Column width={roostWidth}>

@@ -156,7 +156,7 @@ describe("the mock dataset", () => {
       ]),
     );
     expect(chips).toContainEqual(
-      expect.objectContaining({ label: "parked 21 days", severity: "amber" }),
+      expect.objectContaining({ label: "stalled 21 days", severity: "amber" }),
     );
     expect(chips).toContainEqual(
       expect.objectContaining({ label: "ci failure", severity: "red" }),

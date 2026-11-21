@@ -27,7 +27,7 @@ export function BirdPage() {
         </Specimen>
         <Specimen
           label="restless"
-          rule="Skiff: a remote no card can read, and parked on a branch for three weeks."
+          rule="Skiff: a remote no card can read, and stalled on a branch for three weeks."
         >
           <Plate phase="day">
             <BirdPortrait bird={skiff} facing="right" night={false} />

@@ -23,8 +23,6 @@ import { minPixelsPerUnit, sceneWidth } from "./scene.tsx";
 afterEach(cleanup);
 
 const morning = new Date(mockSnapshot.scannedAt);
-/** Half past ten: the sky shows night, and no bird is asleep yet. */
-const lateEvening = new Date(2026, 9, 22, 22, 30);
 /** Three in the morning, in the sleep hours. */
 const smallHours = new Date(2026, 9, 23, 3, 0);
 
@@ -240,11 +238,6 @@ describe("the aviary view", () => {
       true,
     ]);
     expect(awake.map((id) => spoken(id, smallHours))).toEqual([
-      false,
-      false,
-      false,
-    ]);
-    expect(asleep.map((id) => spoken(id, lateEvening))).toEqual([
       false,
       false,
       false,

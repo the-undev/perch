@@ -253,28 +253,31 @@ export interface PerchedFigureProps {
   idle: boolean;
 }
 
-/** How each mark is inked and sized: the note in the accent, the z in the bird's own breast colour. */
+/** How each mark is drawn: its glyph, ink (the note in the accent, the z in the bird's own breast colour), size and class. */
 const markDrawing: Record<
   Exclude<BirdMark, null>,
-  (
-    look: BirdLook,
-    scale: number,
-  ) => {
-    fill: string;
-    fontSize: number;
+  {
+    glyph: string;
+    ink: (look: BirdLook) => string;
+    minSize: number;
+    sizePerScale: number;
     className: string;
   }
 > = {
-  note: (_look, scale) => ({
-    fill: "var(--color-ink-accent)",
-    fontSize: Math.max(15, 13 * scale),
+  note: {
+    glyph: "♪",
+    ink: () => "var(--color-ink-accent)",
+    minSize: 15,
+    sizePerScale: 13,
     className: "motion-safe:animate-song",
-  }),
-  z: (look, scale) => ({
-    fill: look.breast,
-    fontSize: Math.max(17, 14 * scale),
+  },
+  z: {
+    glyph: "z",
+    ink: (look) => look.breast,
+    minSize: 17,
+    sizePerScale: 14,
     className: "font-display font-semibold italic motion-safe:animate-song",
-  }),
+  },
 };
 
 /** A bird's figure above its perch point at a scale, bobbing and singing while idle. */
@@ -289,6 +292,7 @@ export function PerchedFigure({
 }: PerchedFigureProps) {
   const face = facing === "right" ? 1 : -1;
   const settle = pose === "sitting" ? sitDrop : 0;
+  const mark = look.mark === null ? null : markDrawing[look.mark];
   return (
     <g
       className={
@@ -307,15 +311,17 @@ export function PerchedFigure({
           idle={idle}
         />
       </g>
-      {idle && look.mark !== null && (
+      {idle && mark !== null && (
         <text
           data-part="mark"
           x={48 * face * scale}
           y={(settle - 60) * scale}
           textAnchor="middle"
-          {...markDrawing[look.mark](look, scale)}
+          fill={mark.ink(look)}
+          fontSize={Math.max(mark.minSize, mark.sizePerScale * scale)}
+          className={mark.className}
         >
-          {look.mark === "z" ? "z" : "♪"}
+          {mark.glyph}
         </text>
       )}
     </g>

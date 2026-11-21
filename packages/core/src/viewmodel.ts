@@ -189,12 +189,8 @@ export interface Bird {
 
 // The bubble
 
-/** The bubble's word beside the name: the mood, or where a fence bird stands. */
-export type StateWord = Mood | "not adopted";
-
 export interface Bubble {
   name: string;
-  stateWord: StateWord;
   /** First person, the why behind the colour. */
   speech: string;
   chips: Chip[];
@@ -1545,7 +1541,6 @@ export function deriveBird(
     lives: adopted ? null : livesFor(fenceSituation(item)),
     bubble: {
       name,
-      stateWord: adopted ? mood : "not adopted",
       speech,
       chips,
     },

@@ -61,7 +61,7 @@ What a clicked bird says: its name, state word, speech and chips.
 _Avoid_: Tooltip, popover
 
 **State word**:
-The one word beside the name in a bubble: content, restless, distressed or not adopted.
+The one word beside the name in a bubble: content, restless, distressed, not adopted or snoozed.
 
 **Speech**:
 The bird's first-person sentence giving the reason for its mood.
@@ -142,7 +142,13 @@ A commit on a project's default branch.
 A bird's size, from its outstanding work.
 
 **Asleep**:
-A bird's look, eyes closed with a z. A bird that is neither distressed nor being edited is asleep between midnight and 06:00.
+A bird's look, eyes closed with a z. A bird that is neither distressed nor being edited is asleep between midnight and 06:00, and a snoozed bird at any hour.
+
+**Snoozed**:
+A bird set aside by the owner until a date, or until woken. It is dimmed and asleep and does not wear its mood. Its bubble and page still show the entity's facts.
+
+**Fly-in**:
+The birds landing one by one when the aviary opens.
 
 **Flag**:
 Something odd about how an entity is set up, such as an archived forge repository or two sets of papers naming it.

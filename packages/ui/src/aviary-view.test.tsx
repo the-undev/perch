@@ -1,4 +1,5 @@
 import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
+import type { Aviary } from "@perch/core/viewmodel.ts";
 import {
   act,
   cleanup,
@@ -42,14 +43,27 @@ function scene(size: PixelSize) {
   );
 }
 
-function show(now = morning) {
+/** The mock aviary with the given birds snoozed until a date, or until woken for null. */
+function snoozing(ids: string[], until: string | null): Aviary {
+  return {
+    ...mockAviary,
+    wires: mockAviary.wires.map((wire) => ({
+      ...wire,
+      birds: wire.birds.map((bird) =>
+        ids.includes(bird.id) ? { ...bird, snooze: { until } } : bird,
+      ),
+    })),
+  };
+}
+
+function show(now = morning, aviary = mockAviary) {
   const onLaunch = vi.fn();
   const onFullStory = vi.fn();
   const onAdopt = vi.fn();
   const onChip = vi.fn();
   const { container } = render(
     <AviaryView
-      aviary={mockAviary}
+      aviary={aviary}
       now={now}
       onLaunch={onLaunch}
       onFullStory={onFullStory}
@@ -60,10 +74,11 @@ function show(now = morning) {
   return { container, onLaunch, onFullStory, onAdopt, onChip };
 }
 
+/** A bird's button, named by the bird's name and its state word. */
 function birdButton(id: string): HTMLElement {
   const bird = mockBird(id);
   return screen.getByRole("button", {
-    name: `${bird.name}, ${bird.bubble.stateWord}`,
+    name: (name) => name.startsWith(`${bird.name}, `),
   });
 }
 
@@ -244,6 +259,53 @@ describe("the aviary view", () => {
     ]);
   });
 
+  it.each([
+    ["2026-10-23", "until Friday"],
+    ["2026-12-04", "until 4 December"],
+    [null, "until you wake it"],
+  ])(
+    "says a bird snoozed to %s is snoozed %s, wakes it with the prefix and keeps its true chips",
+    (until, words) => {
+      show(morning, snoozing(["undev/skiff"], until));
+      const skiff = mockBird("undev/skiff");
+
+      fireEvent.click(birdButton("undev/skiff"));
+
+      const bubble = screen.getByRole("region", { name: "Skiff says" });
+      const part = (name: string) =>
+        bubble.querySelector(`[data-part="${name}"]`)?.textContent;
+      expect([part("state-word"), part("snoozed-until")]).toEqual([
+        "snoozed",
+        words,
+      ]);
+      expect(part("speech")).toBe(`Mm? You woke me. ${skiff.bubble.speech}`);
+      expect(
+        skiff.bubble.chips.every(
+          (chip) =>
+            within(bubble).getByRole("button", { name: chip.label }) !== null,
+        ),
+      ).toBe(true);
+      expect(birdButton("undev/skiff").getAttribute("aria-label")).toBe(
+        "Skiff, snoozed",
+      );
+    },
+  );
+
+  it("speaks a run-out snooze's bird in its real mood, with no end and no prefix", () => {
+    show(morning, snoozing(["undev/skiff"], "2026-10-22"));
+
+    fireEvent.click(birdButton("undev/skiff"));
+
+    const bubble = screen.getByRole("region", { name: "Skiff says" });
+    expect(bubble.querySelector('[data-part="state-word"]')?.textContent).toBe(
+      "restless",
+    );
+    expect(bubble.querySelector('[data-part="snoozed-until"]')).toBeNull();
+    expect(
+      bubble.querySelector('[data-part="speech"]')?.textContent,
+    ).not.toContain("You woke me");
+  });
+
   it("shows a hovered bird's tip with the numbers it carries", () => {
     show();
 
@@ -352,6 +414,26 @@ describe("the aviary view", () => {
 
     expect(arrival("undev/prism")).toBeLessThan(arrival("undev/spool"));
     expect(arrival("undev/spool")).toBeLessThan(arrival("dev/odin/hello"));
+  });
+
+  it("lands snoozed birds after every awake bird on a wire, and before the fence", () => {
+    const snoozed = ["undev/prism", "undev/Hollow-legacy"];
+    const { container } = show(morning, snoozing(snoozed, null));
+    const arrivals = (birds: typeof mockBirds) =>
+      birds.map((bird) =>
+        Number(
+          container
+            .querySelector(`[aria-label^="${bird.name},"]`)
+            ?.getAttribute("data-arrival"),
+        ),
+      );
+    const onWires = mockBirds.filter((bird) => bird.adopted);
+    const awake = arrivals(onWires.filter((b) => !snoozed.includes(b.id)));
+    const asleep = arrivals(onWires.filter((b) => snoozed.includes(b.id)));
+    const fence = arrivals(mockBirds.filter((bird) => !bird.adopted));
+
+    expect(Math.min(...asleep)).toBeGreaterThan(Math.max(...awake));
+    expect(Math.max(...asleep)).toBeLessThan(Math.min(...fence));
   });
 
   describe("its motion", () => {

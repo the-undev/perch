@@ -26,7 +26,6 @@ import {
   stripLayout,
   stripWireY,
 } from "./camera.tsx";
-import { mockBird } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth, sceneWidthFor } from "./scene.tsx";
 import {
   columnEdgeFor,
@@ -234,6 +233,30 @@ describe("the camera", () => {
     );
   });
 
+  it("opens an awake bird from a tab before any snoozed one, whatever their moods", () => {
+    const distressed = [
+      "undev/gramophone",
+      "undev/Hollow-legacy",
+      "undev/prism",
+    ];
+    const snoozed = {
+      ...mockAviary,
+      wires: mockAviary.wires.map((wire) => ({
+        ...wire,
+        birds: wire.birds.map((bird) =>
+          distressed.includes(bird.id)
+            ? { ...bird, snooze: { until: null } }
+            : bird,
+        ),
+      })),
+    };
+    const { onNavigate } = camera(aviaryPlace, false, now, snoozed);
+
+    fireEvent.click(tab("Projects"));
+
+    expect(onNavigate).toHaveBeenCalledWith(detailOf("undev/skiff"));
+  });
+
   it("shows an empty wire's tab, quietly saying so, and goes nowhere from it", () => {
     const withEmpty = {
       ...mockAviary,
@@ -257,13 +280,7 @@ describe("the camera", () => {
 
   it("rides down to a bird's detail from its bubble", () => {
     const { onNavigate } = camera(aviaryPlace);
-    const skiff = mockBird("undev/skiff");
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: `Skiff, ${skiff.bubble.stateWord}`,
-      }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Skiff, restless" }));
     fireEvent.click(
       screen.getByRole("button", { name: "Tell me the full story" }),
     );

@@ -19,7 +19,7 @@ export function SpeakingBird({ bird, now, onPress }: SpeakingBirdProps) {
     <div>
       <Bubble
         bubble={bird.bubble}
-        asleep={birdLook(bird, now).asleep}
+        look={birdLook(bird, now)}
         actions={bird.detail.actions}
         onLaunch={(action) => onPress(`${bird.name}: ${action.verb}`)}
         onFullStory={() => onPress(`${bird.name}: Tell me the full story`)}

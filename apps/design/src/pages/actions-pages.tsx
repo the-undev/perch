@@ -5,7 +5,7 @@ import { LaunchActions, LinksOut } from "@perch/ui/actions.tsx";
 import { DetailHeading } from "@perch/ui/detail-heading.tsx";
 import { NoCloneClause } from "@perch/ui/no-clone-slip.tsx";
 import { useState } from "react";
-import { mockBird } from "../specimens.ts";
+import { byDay, mockBird } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 
 /** What a launch action would open, in words, so the page shows the callback working. */
@@ -153,6 +153,7 @@ export function HeadingPage() {
           <Ground>
             <DetailHeading
               bird={mockBird("dev/perch")}
+              now={byDay}
               actions={<HeadingActions bird={mockBird("dev/perch")} />}
             />
           </Ground>
@@ -164,6 +165,7 @@ export function HeadingPage() {
           <Ground>
             <DetailHeading
               bird={mockBird("undev/skiff")}
+              now={byDay}
               actions={<HeadingActions bird={mockBird("undev/skiff")} />}
             />
           </Ground>
@@ -172,6 +174,7 @@ export function HeadingPage() {
           <Ground>
             <DetailHeading
               bird={mockBird("undev/prism")}
+              now={byDay}
               actions={<HeadingActions bird={mockBird("undev/prism")} />}
             />
           </Ground>
@@ -183,6 +186,7 @@ export function HeadingPage() {
           <Ground>
             <DetailHeading
               bird={mockBird("dev/odin/hello")}
+              now={byDay}
               actions={<HeadingActions bird={mockBird("dev/odin/hello")} />}
             />
           </Ground>
@@ -194,6 +198,7 @@ export function HeadingPage() {
           <Ground>
             <DetailHeading
               bird={mockBird("forgejo:finch/field-notes")}
+              now={byDay}
               actions={
                 <HeadingActions bird={mockBird("forgejo:finch/field-notes")} />
               }
@@ -207,6 +212,7 @@ export function HeadingPage() {
           <Ground>
             <DetailHeading
               bird={mockBird("github:finch/obsidian-tidy")}
+              now={byDay}
               actions={
                 <HeadingActions bird={mockBird("github:finch/obsidian-tidy")} />
               }

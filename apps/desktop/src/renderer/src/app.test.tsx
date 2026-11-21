@@ -88,7 +88,7 @@ function renderApp(
 function birdButton(id: string): Promise<HTMLElement> {
   const bird = mockBird(id);
   return screen.findByRole("button", {
-    name: `${bird.name}, ${bird.bubble.stateWord}`,
+    name: (name) => name.startsWith(`${bird.name}, `),
   });
 }
 

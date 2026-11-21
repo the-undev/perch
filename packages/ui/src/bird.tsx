@@ -2,6 +2,7 @@
 // end 3 units below it, the beak tip is at (37, -42). Every trait reads from the view model and
 // the render's clock.
 
+import { hasSnoozeEnded, snoozeWords } from "@perch/core/snooze-date.ts";
 import type {
   Bird as BirdModel,
   Mood,
@@ -48,11 +49,22 @@ function inSleepHours(at: Date): boolean {
   return at.getHours() < 6;
 }
 
+/** Whether the owner has set the bird aside and its snooze has not run out by this time. */
+export function isSnoozed(bird: BirdModel, now: Date): boolean {
+  return bird.snooze !== null && !hasSnoozeEnded(bird.snooze.until, now);
+}
+
+/** The word beside a bird's name: its mood, where a fence bird stands, or that it is snoozed. */
+export type StateWord = Mood | "not adopted" | "snoozed";
+
 /** What a bird shows beside its head: the z while asleep, the note while singing. */
 export type BirdMark = "z" | "note" | null;
 
 /** What the drawing needs to know, worked out at render from the view model and the time. */
 export interface BirdLook {
+  stateWord: StateWord;
+  /** The snooze's end in words while snoozed, such as "until Friday"; else null. */
+  snoozedUntil: string | null;
   breast: string;
   dim: boolean;
   /** Eyes closed and still, with the z. */
@@ -64,8 +76,14 @@ export interface BirdLook {
 }
 
 /** A dimmed bird that does not wear its mood: awake with a gentle bob, or asleep. */
-function dimLook(asleep: boolean): BirdLook {
+function dimLook(
+  stateWord: StateWord,
+  snoozedUntil: string | null,
+  asleep: boolean,
+): BirdLook {
   return {
+    stateWord,
+    snoozedUntil,
     breast: "var(--color-breast-dim)",
     dim: true,
     asleep,
@@ -75,11 +93,16 @@ function dimLook(asleep: boolean): BirdLook {
   };
 }
 
-/** The look of a bird at a time: the fence first, then mood, editing and the hour. */
+/** The look of a bird at a time: the fence first, then a snooze not yet run out, then mood, editing and the hour. */
 export function birdLook(bird: BirdModel, now: Date): BirdLook {
   const sleepHours = inSleepHours(now);
-  if (!bird.adopted) return dimLook(sleepHours);
+  if (!bird.adopted) return dimLook("not adopted", null, sleepHours);
+  if (bird.snooze !== null && isSnoozed(bird, now)) {
+    return dimLook("snoozed", snoozeWords(bird.snooze.until, now), true);
+  }
   const awake = {
+    stateWord: bird.mood,
+    snoozedUntil: null,
     breast: moodColour[bird.mood],
     dim: false,
     asleep: false,
@@ -342,8 +365,8 @@ export interface BirdProps {
   x: number;
   y: number;
   facing: Facing;
-  /** The render's clock: the look follows the hour. */
-  now: Date;
+  /** How the bird looks now, from `birdLook`. */
+  look: BirdLook;
   /** Where the name sits; crowded neighbours alternate baselines so names do not collide. */
   namePlace: NamePlace;
   /** Its bubble has just opened: the beak wiggles. */
@@ -373,12 +396,11 @@ export function Bird({
   x,
   y,
   facing,
-  now,
+  look,
   namePlace,
   speaking,
   idle,
 }: BirdProps) {
-  const look = birdLook(bird, now);
   const scale = birdScale(bird);
   return (
     <g
@@ -400,7 +422,7 @@ export function Bird({
         y={namePlace.drop + 3 * scale}
         textAnchor="middle"
         data-name-size={namePlace.size}
-        className={`${labelClass[look.dim ? "fence" : "wire"][namePlace.size]} ${labelReacts}`}
+        className={`${labelClass[bird.adopted ? "wire" : "fence"][namePlace.size]} ${labelReacts}`}
       >
         {bird.name}
       </text>
@@ -447,7 +469,7 @@ export function BirdPortrait({ bird, facing, now }: BirdPortraitProps) {
   return (
     <svg
       role="img"
-      aria-label={`${bird.name}, ${bird.adopted ? bird.mood : "not adopted"}${look.asleep ? ", asleep" : ""}`}
+      aria-label={`${bird.name}, ${look.stateWord}${look.asleep ? ", asleep" : ""}`}
       viewBox={`${-half} ${-top} ${frame.width} ${frame.height}`}
       width={frame.width}
       height={frame.height}
@@ -458,15 +480,15 @@ export function BirdPortrait({ bird, facing, now }: BirdPortraitProps) {
         y1={0}
         x2={half}
         y2={0}
-        stroke={look.dim ? "var(--color-post)" : "var(--color-wire)"}
-        strokeWidth={look.dim ? 6 : 3}
+        stroke={bird.adopted ? "var(--color-wire)" : "var(--color-post)"}
+        strokeWidth={bird.adopted ? 3 : 6}
       />
       <Bird
         bird={bird}
         x={0}
         y={0}
         facing={facing}
-        now={now}
+        look={look}
         namePlace={roomyName}
         speaking={false}
         idle

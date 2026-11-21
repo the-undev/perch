@@ -72,7 +72,9 @@ describe("the detail page's pieces", () => {
 
   it("heads the page with the name, the state word and the activity, and no speech", () => {
     const perch = mockBird("dev/perch");
-    const { container } = render(<DetailHeading bird={perch} actions={null} />);
+    const { container } = render(
+      <DetailHeading bird={perch} now={now} actions={null} />,
+    );
 
     expect(screen.getByRole("heading").textContent).toBe("Perch");
     expect(
@@ -82,10 +84,24 @@ describe("the detail page's pieces", () => {
     expect(container.textContent).not.toContain(perch.bubble.speech);
   });
 
+  it("heads a snoozed bird's page with snoozed and the snooze's end beside it", () => {
+    const skiff = { ...mockBird("undev/skiff"), snooze: { until: null } };
+    const { container } = render(
+      <DetailHeading bird={skiff} now={now} actions={null} />,
+    );
+    const part = (name: string) =>
+      container.querySelector(`[data-part="${name}"]`)?.textContent;
+
+    expect([part("state-word"), part("snoozed-until")]).toEqual([
+      "snoozed",
+      "until you wake it",
+    ]);
+  });
+
   it("says in the meta line where the bird lives: clone, forges and wire", () => {
     const meta = (id: string) => {
       const { container } = render(
-        <DetailHeading bird={mockBird(id)} actions={null} />,
+        <DetailHeading bird={mockBird(id)} now={now} actions={null} />,
       );
       const text = container.querySelector('[data-part="meta"]')?.textContent;
       cleanup();
@@ -104,6 +120,7 @@ describe("the detail page's pieces", () => {
     const { container } = render(
       <DetailHeading
         bird={perch}
+        now={now}
         actions={
           <div data-part="actions">
             <LinksOut links={perch.detail.links} />

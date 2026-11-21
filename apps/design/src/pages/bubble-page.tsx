@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SpeakingBird } from "../speaking-bird.tsx";
-import { byDay, mockBird, smallHours } from "../specimens.ts";
+import { byDay, mockBird, smallHours, snoozedUntil } from "../specimens.ts";
 import { Code, Plate, Section, Specimen, Usage } from "../usage.tsx";
 
 interface Entry {
@@ -171,18 +171,58 @@ export function BubblePage() {
         </Specimen>
       </Section>
 
+      <Section
+        title="Snoozed"
+        rule="A snoozed bird's state word is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours."
+        min={440}
+      >
+        <Specimen
+          label="Until Friday"
+          rule="Prism snoozed until 23 October, on Thursday 22 October."
+        >
+          <Plate phase="dusk">
+            <SpeakingBird
+              bird={snoozedUntil(mockBird("undev/prism"), "2026-10-23")}
+              now={byDay}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+        <Specimen
+          label="Until a date"
+          rule="Skiff snoozed until 4 December: beyond six days, the day and month."
+        >
+          <Plate phase="dusk">
+            <SpeakingBird
+              bird={snoozedUntil(mockBird("undev/skiff"), "2026-12-04")}
+              now={byDay}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+        <Specimen label="Until woken" rule="Harbour snoozed with no end date.">
+          <Plate phase="dusk">
+            <SpeakingBird
+              bird={snoozedUntil(mockBird("undev/harbour"), null)}
+              now={byDay}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+      </Section>
+
       <Usage
         component="<Bubble>"
         props={[
           {
             name: "bubble",
             type: "Bubble",
-            what: "bird.bubble: name, state word, speech, chips.",
+            what: "bird.bubble: name, speech, chips.",
           },
           {
-            name: "asleep",
-            type: "boolean",
-            what: "The bird's eyes are closed: birdLook(bird, now).asleep. Its speech gains the waking prefix.",
+            name: "look",
+            type: "BirdLook",
+            what: "birdLook(bird, now): the state word, a snooze's end in words, and closed eyes, which give the speech the waking prefix.",
           },
           {
             name: "actions",

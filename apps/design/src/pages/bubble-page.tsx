@@ -315,12 +315,14 @@ export function BubblePage() {
         <p>
           The snooze control is <Code>{"<SnoozeAction>"}</Code> from{" "}
           <Code>@perch/ui/snooze-action.tsx</Code>, given the bird, its look,
-          the clock, its place (bubble or page) and the <Code>SnoozeCalls</Code>
-          . The look decides the key: snoozed offers Wake, not adopted offers
-          neither, any other state word Snooze. The durations exist only there:
-          a pick becomes an end date with <Code>snoozeEndDate</Code>, or null
-          for indefinitely, and goes to <Code>onSnooze(birdId, until)</Code>.
-          The bird&apos;s page carries the same control after its launch verbs.
+          its place (bubble or page) and the <Code>SnoozeCalls</Code>. A
+          pick&apos;s end date is counted from <Code>pickedAt</Code>, the moment
+          of the pick. The look decides the key: snoozed offers Wake, not
+          adopted offers neither, any other state word Snooze. The durations
+          exist only there: a pick becomes an end date with{" "}
+          <Code>snoozeEndDate</Code>, or null for indefinitely, and goes to{" "}
+          <Code>onSnooze(birdId, until)</Code>. The bird&apos;s page carries the
+          same control after its launch verbs.
         </p>
       </Usage>
     </>

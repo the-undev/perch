@@ -29,7 +29,6 @@ export function SpeakingBird({ bird, now, onPress }: SpeakingBirdProps) {
           <SnoozeAction
             bird={bird}
             look={look}
-            now={now}
             place="bubble"
             calls={reportedSnooze(onPress)}
           />

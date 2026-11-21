@@ -296,7 +296,6 @@ export function DetailView({
                 <SnoozeAction
                   bird={bird}
                   look={birdLook(bird, now)}
-                  now={now}
                   place="page"
                   calls={snooze}
                 />

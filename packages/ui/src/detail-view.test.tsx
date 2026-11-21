@@ -117,7 +117,7 @@ function page(bird: Bird, options: PageOptions = {}) {
       bird={next}
       now={now}
       onLaunch={onLaunch}
-      snooze={{ onSnooze, onWake }}
+      snooze={{ onSnooze, onWake, pickedAt: () => now }}
       sheets={given.sheets ?? []}
       entry={{ form: given.form ?? null, onSave, onRemove }}
       problems={given.problems ?? []}

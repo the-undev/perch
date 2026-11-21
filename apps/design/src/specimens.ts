@@ -52,6 +52,7 @@ export function snoozedUntil(bird: Bird, until: string | null): Bird {
 /** Snooze calls that say what was pressed, so a page shows the control working. */
 export function reportedSnooze(onPress: (what: string) => void): SnoozeCalls {
   return {
+    pickedAt: () => scanMoment,
     onSnooze: (birdId, until) =>
       onPress(`onSnooze(${birdId}, ${until ?? "indefinitely"})`),
     onWake: (birdId) => onPress(`onWake(${birdId})`),

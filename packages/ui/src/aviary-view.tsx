@@ -189,7 +189,6 @@ interface AnchoredBubbleProps {
   size: PixelSize;
   /** How the speaking bird looks now. */
   look: BirdLook;
-  now: Date;
   onLaunch: (action: LaunchAction) => void;
   snooze: SnoozeCalls;
   onFullStory: () => void;
@@ -203,7 +202,6 @@ function AnchoredBubble({
   layout,
   size,
   look,
-  now,
   onLaunch,
   snooze,
   onFullStory,
@@ -241,7 +239,6 @@ function AnchoredBubble({
           <SnoozeAction
             bird={placed.bird}
             look={look}
-            now={now}
             place="bubble"
             calls={snooze}
           />
@@ -490,7 +487,6 @@ export function AviaryScene({
           layout={layout}
           size={size}
           look={birdLook(speaker.bird, now)}
-          now={now}
           onLaunch={onLaunch}
           snooze={snooze}
           onFullStory={() => {

@@ -107,6 +107,7 @@ export function AppView({ api }: { api: PerchApi }) {
   }, [api, entryForm, queryClient]);
   const snooze = useMemo(
     (): SnoozeCalls => ({
+      pickedAt: () => new Date(),
       onSnooze: (id, until) => void api.snooze(id, until),
       onWake: (id) => void api.wake(id),
     }),

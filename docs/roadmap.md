@@ -159,6 +159,13 @@ pass it down, as the aviary does.
 The bubble's `stateWordTone` and the page heading's `stateTone` both map each
 state word to a colour, so a new state word must be added to both.
 
+## Forget snoozes that have run out
+
+A snooze past its end date stays in the state file, and the bird offers Snooze,
+not Wake, so nothing removes it. A snooze written over by a new one, or removed
+with the bird's papers, is the only way out. Pruning run-out snoozes when the
+state file is read would keep it small.
+
 ## Bug: each bird landing on its own in the fly-in
 
 Check that each bird visibly lands on its own in the fly-in, one after

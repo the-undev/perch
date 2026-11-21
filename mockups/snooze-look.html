@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snooze round</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* The snooze round: the z on a sleeping bird, the dimmed snoozed bird and the
+   snooze control in the bubble and on the bird's page. Drawn on the ink
+   palette from theme.css, with the bird drawn as packages/ui/src/bird.tsx does. */
+:root {
+  --bg: #101214;
+  --rail: #121517;
+  --band: #15181b;
+  --panel: #1a1e22;
+  --panel-hi: #20252a;
+  --edge: #2b3036;
+  --edge-hi: #3e454d;
+  --ink: #ece7db;
+  --muted: #aaa396;
+  --faint: #837d70;
+  --accent: #b9b2a2;
+  --fence: #8e897d;
+  --green: #66bb86;
+  --amber: #d8a845;
+  --red: #e25d4f;
+  --plumage: #272b31;
+  --plumage-dim: #23262c;
+  --breast-dim: #4a4f58;
+  --leg: #4a4e55;
+  --eye: #0d0f12;
+  --wire: #3a3e46;
+  --post: #2a2d34;
+  --day-top: #2a3a4e;
+  --day-low: #4a5a6a;
+  --night-top: #0d1016;
+  --night-low: #1a1d24;
+  --paper: #e9e4d8;
+  --paper-dim: #ddd7c9;
+  --paper-text: #2a2e35;
+  --paper-strong: #14171b;
+  --paper-quiet: #6e695f;
+  --paper-rule: #c9c3b3;
+  --paper-green: #2c7a4b;
+  --paper-amber: #8f6d14;
+  --chip: #ddd7c9;
+  --chip-ink: #3a3e45;
+  --chip-amber: #e7d3a0;
+  --chip-amber-ink: #6b500e;
+  --key: #22262c;
+  --key-hi: #2e333a;
+  --key-strong: #14171b;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --body: "Figtree", system-ui, sans-serif;
+  --mono: ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 14px/1.55 var(--body); padding: 0 16px 90px; }
+main { max-width: 1100px; margin: 0 auto; }
+code { font: 12.5px var(--mono); background: var(--panel); border: 1px solid var(--edge); border-radius: 4px; padding: 1px 5px; }
+.mast { padding: 42px 0 10px; border-bottom: 1px solid var(--edge); }
+.mast h1 { font: 700 34px/1.1 var(--display); margin: 0 0 10px; }
+.mast p { max-width: 72ch; color: var(--muted); margin: 0 0 6px; }
+section { margin-top: 54px; }
+section > h2 { font: 700 23px/1.2 var(--display); margin: 0 0 4px; }
+section > .why { color: var(--muted); max-width: 76ch; margin: 0 0 20px; }
+.notes { color: var(--muted); font-size: 13px; max-width: 76ch; margin: 14px 0 0; }
+.notes b { color: var(--ink); font-weight: 600; }
+
+/* A strip of sky with a wire or a fence, and birds standing on it */
+.sky { border: 1px solid var(--edge-hi); border-radius: 14px; overflow: hidden; background: linear-gradient(var(--day-top), var(--day-low)); }
+.sky.night { background: linear-gradient(var(--night-top), var(--night-low)); }
+.sky svg { display: block; width: 100%; height: auto; }
+.caption { fill: var(--accent); font: 600 11px var(--body); letter-spacing: .12em; text-transform: uppercase; }
+.name { fill: var(--muted); font: 500 13px var(--body); text-anchor: middle; }
+.name.fence { fill: var(--fence); font-size: 12px; }
+.tag { fill: var(--faint); font: 400 11.5px var(--body); text-anchor: middle; }
+.zmark { fill-opacity: .9; font: italic 600 17px var(--display); animation: drift 2600ms ease-in-out infinite; }
+@keyframes drift { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .zmark { animation: none; } }
+
+/* The bubble, as bubble.tsx draws it */
+.stage { background: linear-gradient(var(--night-top), var(--night-low)); border: 1px solid var(--edge-hi); border-radius: 14px; padding: 28px 24px 40px; display: flex; flex-wrap: wrap; gap: 36px; align-items: flex-start; }
+.stage figure { margin: 0; }
+.stage figcaption { color: var(--accent); font: 600 11px var(--body); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 12px; }
+.bubble { position: relative; width: 390px; max-width: 100%; background: var(--paper); color: var(--paper-text); border-radius: 16px; padding: 14px 16px 13px; font-size: 13.5px; line-height: 1.5; box-shadow: 0 18px 50px -12px rgb(0 0 0 / .8); }
+.bubble h3 { margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; font: 700 16px var(--display); color: var(--paper-strong); }
+.state { font: 600 10px var(--body); text-transform: uppercase; letter-spacing: .12em; }
+.state.restless { color: var(--paper-amber); }
+.state.content { color: var(--paper-green); }
+.state.snoozed { color: var(--paper-quiet); }
+.until { margin: 0 0 6px; font-size: 12.5px; color: var(--paper-quiet); }
+.bubble p { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip { background: var(--chip); color: var(--chip-ink); border-radius: 99px; padding: 2px 10px; font: 600 11.5px var(--body); }
+.chip.amber { background: var(--chip-amber); color: var(--chip-amber-ink); }
+.keys { display: flex; align-items: center; gap: 8px; margin-top: 12px; position: relative; }
+.key { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--key); color: var(--ink); border-radius: 8px; padding: 8px 10px; font: 600 12.5px var(--body); cursor: pointer; }
+.key:hover { background: var(--key-hi); }
+.key.strong { background: var(--key-strong); padding: 8px 14px; margin-left: auto; }
+.key.on { background: var(--key-hi); }
+.key svg { width: 14px; height: 14px; }
+.tail { position: absolute; left: 36px; top: calc(100% - 3px); }
+
+/* The durations, open: dark keys on a small dark card */
+.menu { position: absolute; z-index: 2; top: calc(100% + 6px); background: var(--key-strong); border: 1px solid var(--key-hi); border-radius: 10px; padding: 5px; min-width: 150px; box-shadow: 0 14px 30px -10px rgb(0 0 0 / .8); display: flex; flex-direction: column; }
+.menu button { text-align: left; border: 0; background: none; color: var(--ink); font: 500 13px var(--body); padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+.menu button:hover, .menu button.hot { background: var(--key-hi); }
+.menu .rule { height: 1px; background: var(--key-hi); margin: 4px 6px; }
+.menu .hint { color: var(--faint); font: 400 11px var(--body); padding: 4px 10px 3px; }
+.keys .menu { left: 0; }
+.spacer { height: 250px; }
+
+/* The bird's page */
+.screen { background: var(--bg); border: 1px solid var(--edge-hi); border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px -18px rgb(0 0 0 / .75); margin-bottom: 22px; }
+.chrome { display: flex; align-items: center; gap: 18px; padding: 10px 18px; background: var(--rail); border-bottom: 1px solid var(--edge); font: 700 14px var(--display); }
+.chrome span { font: 400 12.5px var(--body); color: var(--faint); }
+.page { padding: 22px 26px 34px; }
+.page h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin: 0; font: 700 30px/1.2 var(--display); letter-spacing: -.01em; }
+.page .sw { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: .1em; }
+.sw.amber { color: var(--amber); }
+.sw.snoozed { color: var(--faint); }
+.metarow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 4px 0 0; position: relative; }
+.meta { margin: 0; font: 12.5px var(--mono); color: var(--faint); }
+.act { display: inline-flex; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 8px; padding: 8px 13px; background: none; font: 500 13.5px var(--body); color: var(--muted); cursor: pointer; }
+.act:hover, .act.on { border-color: var(--edge); background: var(--panel); color: var(--ink); }
+.act svg { width: 15px; height: 15px; }
+.act.snz { margin-left: 6px; border-color: var(--edge); }
+.page .menu { background: var(--panel); border-color: var(--edge-hi); }
+.page .menu button:hover { background: var(--panel-hi); }
+.page .menu .rule { background: var(--edge); }
+.page .bubble { margin-top: 26px; max-width: 520px; }
+.page .spacer { height: 190px; }
+</style>
+</head>
+<body>
+<main>
+<header class="mast">
+  <h1>Snooze round</h1>
+  <p>Three looks the spec leaves open: the <b>z</b> on a sleeping bird, the <b>dimmed snoozed bird</b>, and the <b>snooze control</b> in the bubble and on the bird's page. Drawn as the app draws them.</p>
+  <p>Each section ends with the choice made, for you to agree or change.</p>
+</header>
+
+<section>
+  <h2>The z</h2>
+  <p class="why">An asleep bird has closed eyes and a z in its own colour, where the song note sits. Each bird is shown awake, then asleep.</p>
+  <div class="sky night" id="zstrip"></div>
+  <p class="notes"><b>Choice.</b> A lower-case italic z in the display font, in the bird's breast colour (green, amber, and the fence's dim grey for a fence bird), at the note's position and size. It fades in and out as the note does, and holds still with reduced motion. Closed eyes are a short downward curve in place of the dot. The fence bird's z is dim because the bird is: it reads as quiet, not missing.</p>
+</section>
+
+<section>
+  <h2>The snoozed bird</h2>
+  <p class="why">A snoozed bird beside a fence bird, by day and by night, at three plumpnesses (outstanding work 0, 25 and 50).</p>
+  <div class="sky" id="daystrip"></div>
+  <div style="height:14px"></div>
+  <div class="sky night" id="nightstrip"></div>
+  <p class="notes"><b>Choice.</b> The snoozed bird wears exactly the fence's dimming: dim plumage and dim breast, whatever its mood. By day it is told from the fence bird by closed eyes and the z. By night the two look the same, as the spec accepts; only the wire it stands on (the bright wire, against the fence's thick dark rail) tells them apart. A snoozed bird keeps its plumpness and does not bob.</p>
+</section>
+
+<section>
+  <h2>The bubble</h2>
+  <p class="why">An adopted bird's bubble gets a snooze key beside the launch actions. Pressing it opens the six durations. A snoozed bird's bubble shows the state word, the end and a wake key in its place.</p>
+  <div class="stage">
+    <figure>
+      <figcaption>Snooze key, durations open</figcaption>
+      <div class="bubble">
+        <h3>tidewater <span class="state restless">restless</span></h3>
+        <p>My CI has been failing on main for two days.</p>
+        <div class="chips"><span class="chip amber">CI failing</span><span class="chip">4 unpushed</span><span class="chip">12 outstanding</span></div>
+        <div class="keys">
+          <button class="key" title="Open in editor" aria-label="Open in editor"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4 1.5 8 5 12M11 4l3.5 4L11 12"/></svg></button>
+          <button class="key" title="Open a terminal tab" aria-label="Open a terminal tab"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4.5 6l2.5 2-2.5 2M9 10.5h3"/></svg></button>
+          <button class="key on" aria-expanded="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12.5 10.2A5.5 5.5 0 0 1 5.8 3.5a5.5 5.5 0 1 0 6.7 6.7z"/></svg>Snooze</button>
+          <button class="key strong">Tell me the full story</button>
+          <div class="menu" style="left:76px" role="menu">
+            <button role="menuitem">1 day</button>
+            <button role="menuitem">3 days</button>
+            <button role="menuitem" class="hot">1 week</button>
+            <button role="menuitem">2 weeks</button>
+            <button role="menuitem">1 month</button>
+            <div class="rule"></div>
+            <button role="menuitem">Indefinitely</button>
+          </div>
+        </div>
+        <svg class="tail" width="44" height="30" viewBox="0 0 44 30"><path d="M 6 0 Q 14 18 2 29 Q 22 22 34 2 Z" fill="var(--paper)"/></svg>
+      </div>
+      <div class="spacer"></div>
+    </figure>
+    <figure>
+      <figcaption>Snoozed, until Friday</figcaption>
+      <div class="bubble">
+        <h3>tidewater <span class="state snoozed">snoozed</span></h3>
+        <p class="until">until Friday</p>
+        <p>Mm? You woke me. My CI has been failing on main for two days.</p>
+        <div class="chips"><span class="chip amber">CI failing</span><span class="chip">4 unpushed</span><span class="chip">12 outstanding</span></div>
+        <div class="keys">
+          <button class="key" title="Open in editor" aria-label="Open in editor"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4 1.5 8 5 12M11 4l3.5 4L11 12"/></svg></button>
+          <button class="key" title="Open a terminal tab" aria-label="Open a terminal tab"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4.5 6l2.5 2-2.5 2M9 10.5h3"/></svg></button>
+          <button class="key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M3.4 12.6l1.3-1.3M11.3 4.7l1.3-1.3"/></svg>Wake</button>
+          <button class="key strong">Tell me the full story</button>
+        </div>
+        <svg class="tail" width="44" height="30" viewBox="0 0 44 30"><path d="M 6 0 Q 14 18 2 29 Q 22 22 34 2 Z" fill="var(--paper)"/></svg>
+      </div>
+      <div style="height:60px"></div>
+      <figcaption style="margin-top:20px">Snoozed, no end</figcaption>
+      <div class="bubble">
+        <h3>harbour <span class="state snoozed">snoozed</span></h3>
+        <p class="until">until you wake it</p>
+        <p>Mm? You woke me. All quiet here.</p>
+        <div class="keys">
+          <button class="key" title="Open in editor" aria-label="Open in editor"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4 1.5 8 5 12M11 4l3.5 4L11 12"/></svg></button>
+          <button class="key"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M3.4 12.6l1.3-1.3M11.3 4.7l1.3-1.3"/></svg>Wake</button>
+          <button class="key strong">Tell me the full story</button>
+        </div>
+        <svg class="tail" width="44" height="30" viewBox="0 0 44 30"><path d="M 6 0 Q 14 18 2 29 Q 22 22 34 2 Z" fill="var(--paper)"/></svg>
+      </div>
+    </figure>
+  </div>
+  <p class="notes"><b>Choice.</b> The snooze key is an icon with the word "Snooze", after the launch icons and before the full-story key, so the row reads actions, then snooze, then the way out. Its durations open beneath it as a small dark card, shortest first, with indefinitely set apart under a rule. The wake key takes the same place, with a sun in place of the moon. The end sits on its own line under the name, in quiet paper ink, worded "until Friday" within six days and "until 4 December" beyond; "until you wake it" when there is no end. The speech carries the waking prefix, as for any asleep bird. The state word is quiet grey, as for the fence; the chips keep their true colours.</p>
+</section>
+
+<section>
+  <h2>The bird's page</h2>
+  <p class="why">The same control on the page: in the action row beside the launch verbs, as a verb of its own.</p>
+  <div class="screen">
+    <div class="chrome">perch <span>tidewater</span></div>
+    <div class="page">
+      <h2>tidewater <span class="sw amber">restless</span></h2>
+      <div class="metarow">
+        <p class="meta">~/dev/tidewater · github · on the main wire</p>
+        <button class="act"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4 1.5 8 5 12M11 4l3.5 4L11 12"/></svg>Open in editor <span style="font-size:11px;color:var(--faint)">↗</span></button>
+        <button class="act on act snz" aria-expanded="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12.5 10.2A5.5 5.5 0 0 1 5.8 3.5a5.5 5.5 0 1 0 6.7 6.7z"/></svg>Snooze</button>
+        <div class="menu" style="right:auto;left:min(420px, 100%)" role="menu">
+          <button role="menuitem">1 day</button>
+          <button role="menuitem">3 days</button>
+          <button role="menuitem">1 week</button>
+          <button role="menuitem">2 weeks</button>
+          <button role="menuitem">1 month</button>
+          <div class="rule"></div>
+          <button role="menuitem">Indefinitely</button>
+        </div>
+      </div>
+      <div class="spacer"></div>
+    </div>
+  </div>
+  <div class="screen">
+    <div class="chrome">perch <span>tidewater</span></div>
+    <div class="page">
+      <h2>tidewater <span class="sw snoozed">snoozed</span> <span style="font-size:12.5px;font-weight:400;color:var(--accent);font-family:var(--body)">until Friday</span></h2>
+      <div class="metarow">
+        <p class="meta">~/dev/tidewater · github · on the main wire</p>
+        <button class="act"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4 1.5 8 5 12M11 4l3.5 4L11 12"/></svg>Open in editor <span style="font-size:11px;color:var(--faint)">↗</span></button>
+        <button class="act snz"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M3.4 12.6l1.3-1.3M11.3 4.7l1.3-1.3"/></svg>Wake</button>
+      </div>
+      <div class="bubble" style="margin-top:22px">
+        <p>Mm? You woke me. My CI has been failing on main for two days.</p>
+        <div class="chips"><span class="chip amber">CI failing</span><span class="chip">4 unpushed</span><span class="chip">12 outstanding</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="notes"><b>Choice.</b> On the page the snooze verb sits in the action row after the launch verbs, set off by an outline so it reads as a change, not a launch. Its durations open as the same list on the page's panel colour. When snoozed, the state word is faint grey with the end beside it, and "Wake" takes the verb's place.</p>
+</section>
+</main>
+
+<script>
+// The bird as bird.tsx draws it, in bird units facing right, scaled and placed on a wire.
+const SVGNS = "http://www.w3.org/2000/svg";
+function bird({ x, y, scale, breast, body, eyes, mark, markColour, name, fence }) {
+  const eye = eyes === "open"
+    ? `<circle cx="19.5" cy="-46" r="1.8" fill="var(--eye)"/>`
+    : `<path d="M 16.5 -46 Q 19.5 -43.2 22.5 -46" fill="none" stroke="var(--leg)" stroke-width="1.7" stroke-linecap="round"/>`;
+  const sign = mark === "z"
+    ? `<text class="zmark" x="${48 * scale}" y="${-60 * scale}" text-anchor="middle" fill="${markColour}" font-size="${Math.max(17, 14 * scale)}">z</text>`
+    : mark === "note"
+      ? `<text x="${48 * scale}" y="${-60 * scale}" text-anchor="middle" fill="var(--accent)" font-size="${Math.max(15, 13 * scale)}">♪</text>`
+      : "";
+  return `<g transform="translate(${x} ${y - 3 * scale})">
+    <g transform="scale(${scale})">
+      <g stroke="var(--leg)" stroke-width="2.4" fill="none" stroke-linecap="round">
+        <path d="M -6 -8 L -7 2 M 6 -8 L 7 2"/><path stroke-width="2" d="M -7 2 L -12 3 M -7 2 L -3 3 M 7 2 L 2 3 M 7 2 L 12 3"/>
+      </g>
+      <path d="M -16 -22 L -42 -10 L -38 -20 L -44 -26 L -20 -32 Z" fill="${body}"/>
+      <ellipse cx="0" cy="-26" rx="23" ry="19" fill="${body}"/>
+      <path d="M 10 -14 A 18 16 0 0 0 20 -34 A 23 19 0 0 1 2 -8 Z" fill="${breast}"/>
+      <circle cx="14" cy="-30" r="5.5" fill="${breast}" opacity=".9"/>
+      <circle cx="16" cy="-44" r="11.5" fill="${body}"/>
+      <path d="M 26 -45 L 37 -42 L 26 -39 Z" fill="var(--accent)"/>
+      ${eye}
+      <path d="M -14 -28 Q 2 -36 8 -24 Q -2 -16 -14 -28 Z" fill="#00000022"/>
+    </g>
+    ${sign}
+    <text class="name ${fence ? "fence" : ""}" y="${28 + 3 * scale}">${name}</text>
+  </g>`;
+}
+
+const colours = { green: "var(--green)", amber: "var(--amber)", dim: "var(--breast-dim)" };
+const wireScale = 0.9, fenceScale = 0.78;
+const plump = (full) => 1 + 0.65 * full;
+
+// A strip: a wire (bright, thin) or a fence rail (dark, thick) with labelled birds on it.
+function strip(el, width, height, parts) {
+  el.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img">${parts.join("")}</svg>`;
+}
+const line = (y, x1, x2, fence) => `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" stroke="${fence ? "var(--post)" : "var(--wire)"}" stroke-width="${fence ? 6 : 3}"/>`;
+const label = (x, y, text) => `<text class="caption" x="${x}" y="${y}">${text}</text>`;
+const tag = (x, y, text) => `<text class="tag" x="${x}" y="${y}">${text}</text>`;
+
+// The z: content, restless and fence, awake then asleep.
+{
+  const kinds = [
+    { name: "content", breast: colours.green, body: "var(--plumage)", scale: wireScale, fence: false },
+    { name: "restless", breast: colours.amber, body: "var(--plumage)", scale: wireScale, fence: false },
+    { name: "fence", breast: colours.dim, body: "var(--plumage-dim)", scale: fenceScale, fence: true },
+  ];
+  const parts = [label(24, 30, "Awake"), label(580, 30, "Asleep")];
+  for (const x0 of [10, 570]) parts.push(line(115, x0, x0 + 300, false), line(115, x0 + 300, x0 + 460, true));
+  kinds.forEach((k, i) => {
+    parts.push(bird({ x: 100 + i * 150, y: 115, scale: k.scale, breast: k.breast, body: k.body, eyes: "open", mark: null, name: k.name, fence: k.fence }));
+    parts.push(bird({ x: 660 + i * 150, y: 115, scale: k.scale, breast: k.breast, body: k.body, eyes: "closed", mark: "z", markColour: k.breast, name: k.name, fence: k.fence }));
+  });
+  strip(document.getElementById("zstrip"), 1100, 170, parts);
+}
+
+// Snoozed beside fence, by day and by night, at three plumpnesses.
+function pairStrip(el, night) {
+  const fulls = [0, 0.5, 1];
+  const parts = [label(24, 30, night ? "By night" : "By day")];
+  fulls.forEach((full, i) => {
+    const cx = 190 + i * 340;
+    const snoozed = bird({ x: cx - 70, y: 172, scale: wireScale * plump(full), breast: colours.dim, body: "var(--plumage-dim)", eyes: "closed", mark: "z", markColour: colours.dim, name: "snoozed", fence: false });
+    // By night a fence bird sleeps; by day it is awake and bobs.
+    const fenced = bird({ x: cx + 80, y: 172, scale: fenceScale * plump(full), breast: colours.dim, body: "var(--plumage-dim)", eyes: night ? "closed" : "open", mark: night ? "z" : null, markColour: colours.dim, name: "on the fence", fence: true });
+    parts.push(line(172, cx - 150, cx - 5, false), line(172, cx + 5, cx + 170, true), snoozed, fenced, tag(cx + 5, 222, `outstanding work ${[0, 25, 50][i]}`));
+  });
+  strip(el, 1100, 235, parts);
+}
+pairStrip(document.getElementById("daystrip"), false);
+pairStrip(document.getElementById("nightstrip"), true);
+</script>
+</body>
+</html>

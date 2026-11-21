@@ -468,7 +468,7 @@ describe("editing config entries", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  /** The app state on a real config file in the temp directory, holding the given config. */
+  /** The app state on a real config file and snoozes file in the temp directory, holding the given config. */
   async function onFile(config: Config) {
     await writeFile(configPath, writeConfig(config, home));
     const store = createConfigStore({
@@ -481,6 +481,11 @@ describe("editing config entries", () => {
       config: store,
       editConfig: (edit) =>
         editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+      snoozes: createSnoozeStore({
+        path: join(dir, "snoozes.json"),
+        readText: readTextIfExists,
+        writeText: replaceFile,
+      }),
     });
   }
 
@@ -738,6 +743,28 @@ describe("snoozing birds", () => {
     });
 
     expect(snoozeOf(published.at(-1), "undev/spool")).toBeNull();
+  });
+
+  it("shows no snooze on a fence bird and forgets the one stored for it when it is adopted", async () => {
+    await replaceFile(
+      snoozesPath,
+      JSON.stringify({
+        "dev/odin/hello": { until: null },
+        "dev/perch": { until: null },
+      }),
+    );
+    const { app, published } = onFiles();
+    await app.start();
+
+    expect(snoozeOf(app.state(), "dev/odin/hello")).toBeNull();
+
+    await app.saveEntry("dev/odin/hello", {
+      ...emptyEntryValues(),
+      wire: "Machine & Home",
+    });
+
+    expect(snoozeOf(published.at(-1), "dev/odin/hello")).toBeNull();
+    expect(await stored()).toEqual({ "dev/perch": { until: null } });
   });
 
   it("holds a snooze across a scan, a change in health and an edit to the bird's papers", async () => {

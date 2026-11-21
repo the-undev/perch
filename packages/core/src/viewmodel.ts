@@ -184,7 +184,7 @@ export interface Bird {
   /** Null without a local clone, which has no work-state. */
   activity: Activity | null;
   plumpness: Plumpness;
-  /** Null when the owner has not snoozed it. */
+  /** Null when the owner has not snoozed it, and always on the fence. */
   snooze: Snooze | null;
   /** At night a content bird not being edited sleeps, as does every fence bird. */
   sleepsAtNight: boolean;
@@ -1552,7 +1552,7 @@ export function deriveBird(
       outstanding,
       fullness: Math.min(outstanding, plumpnessCap) / plumpnessCap,
     },
-    snooze: snoozes[item.id] ?? null,
+    snooze: adopted ? (snoozes[item.id] ?? null) : null,
     sleepsAtNight,
     lives: adopted ? null : livesFor(fenceSituation(item)),
     bubble: {

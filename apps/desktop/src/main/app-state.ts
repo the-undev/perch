@@ -118,8 +118,8 @@ export interface AppState {
   /** A bird's config entry and the form's choices; null for a bird the aviary does not hold. */
   entryForm(birdId: string): EntryForm | null;
   /**
-   * Sets a bird's config entry, adopting it when it has none, then rereads the config and asks
-   * for a scan; a failure writes nothing and becomes a problem until the next scan.
+   * Sets a bird's config entry, adopting it when it has none and forgetting its snooze, then rereads
+   * the config and asks for a scan; a failure writes nothing and becomes a problem until the next scan.
    */
   saveEntry(birdId: string, values: EntryValues): Promise<void>;
   /**
@@ -392,15 +392,6 @@ export function createAppState(deps: AppStateDeps): AppState {
     publish();
   }
 
-  async function editEntry(
-    birdId: string,
-    change: (config: Config, item: Item) => Config,
-  ): Promise<void> {
-    const item = birdItem(birdId);
-    if (item === undefined) return;
-    await edit((config) => change(config, item), nothingAfter);
-  }
-
   return {
     async start() {
       await deps.config.reload();
@@ -479,8 +470,15 @@ export function createAppState(deps: AppStateDeps): AppState {
       if (item === undefined || config === undefined) return null;
       return entryFormFor(config, item, deps.home);
     },
-    saveEntry: (birdId, values) =>
-      editEntry(birdId, (config, item) => withEntry(config, item, values)),
+    async saveEntry(birdId, values) {
+      const item = birdItem(birdId);
+      if (item === undefined) return;
+      // Adopting forgets a snooze left from before the bird was on the fence, so none comes back.
+      const after = bird(birdId)?.adopted
+        ? nothingAfter
+        : () => writeSnooze(birdId, null);
+      await edit((config) => withEntry(config, item, values), after);
+    },
     async removeEntry(birdId) {
       const item = birdItem(birdId);
       if (item === undefined) return;

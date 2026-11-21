@@ -285,6 +285,20 @@ describe("snoozes", () => {
     ]);
   });
 
+  it("gives a fence bird no snooze, whatever is stored for it", async () => {
+    const config = await adoptAll([]);
+    const aviary = deriveAviary(
+      snapshotOf([settled]),
+      config,
+      { "dev/spool": { until: null } },
+      home,
+    );
+
+    expect(aviary.fence.birds.map((bird) => [bird.id, bird.snooze])).toEqual([
+      ["dev/spool", null],
+    ]);
+  });
+
   it("derives a snoozed bird's health, mood, chips, ledger and readings as an awake one's", async () => {
     const config = await adoptAll(["dev/prism"]);
     const awake = birdIn([distressed], config, "dev/prism");

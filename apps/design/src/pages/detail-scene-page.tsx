@@ -81,6 +81,7 @@ export function DetailScenePage() {
             now={scanMoment}
             onLaunch={(action) => setPressed(`${bird.name}: ${action.verb}`)}
             snooze={{
+              pickedAt: reported.pickedAt,
               onSnooze: (birdId, end) => {
                 reported.onSnooze(birdId, end);
                 setSnoozes((current) => ({ ...current, [birdId]: end }));

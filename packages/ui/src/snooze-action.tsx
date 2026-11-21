@@ -1,6 +1,6 @@
 // The snooze control, in a bubble or on a bird's page: the snooze action opening the durations, or a
 // wake action in its place while the bird's look is snoozed, and neither on the fence. The durations
-// live only here: a pick becomes an end date from today, which the caller hands on.
+// live only here: a pick becomes an end date counted from the moment of the pick, which the caller hands on.
 
 import {
   type SnoozeDuration,
@@ -12,8 +12,10 @@ import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import type { BirdLook, StateWord } from "./bird.tsx";
 import { Icon } from "./icons.tsx";
 
-/** What the control asks of the main process. */
+/** What the control asks of the main process, and the clock it counts a pick from. */
 export interface SnoozeCalls {
+  /** The moment of a pick, which a duration's end date is counted from. */
+  pickedAt: () => Date;
   /** Snoozes a bird until an end date, or indefinitely with null. */
   onSnooze: (birdId: string, until: SnoozeEnd) => void;
   /** Ends a bird's snooze before its end date. */
@@ -95,20 +97,12 @@ export interface SnoozeActionProps {
   bird: Bird;
   /** The bird's look now, which decides the key offered. */
   look: BirdLook;
-  /** The render's clock: a duration's end date is counted from its day. */
-  now: Date;
   place: SnoozePlace;
   calls: SnoozeCalls;
 }
 
 /** The snooze action and its durations, or the wake action, as the bird's look offers. */
-export function SnoozeAction({
-  bird,
-  look,
-  now,
-  place,
-  calls,
-}: SnoozeActionProps) {
+export function SnoozeAction({ bird, look, place, calls }: SnoozeActionProps) {
   const style = styles[place];
   const ref = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -185,7 +179,7 @@ export function SnoozeAction({
               key={duration}
               type="button"
               role="menuitem"
-              onClick={() => pick(snoozeEndDate(duration, now))}
+              onClick={() => pick(snoozeEndDate(duration, calls.pickedAt()))}
               className={itemClass}
             >
               {duration}

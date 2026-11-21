@@ -57,7 +57,7 @@ function snoozing(ids: string[], until: string | null): Aviary {
   };
 }
 
-function show(now = morning, aviary = mockAviary) {
+function show(now = morning, aviary = mockAviary, pickedAt = () => now) {
   const onLaunch = vi.fn();
   const onFullStory = vi.fn();
   const onAdopt = vi.fn();
@@ -72,7 +72,7 @@ function show(now = morning, aviary = mockAviary) {
       onFullStory={onFullStory}
       onAdopt={onAdopt}
       onChip={onChip}
-      snooze={{ onSnooze, onWake }}
+      snooze={{ onSnooze, onWake, pickedAt }}
     />,
   );
   return {
@@ -384,6 +384,18 @@ describe("the aviary view", () => {
         expect(screen.queryByRole("menu")).toBeNull();
       },
     );
+
+    it("counts a duration from the moment of the pick, not the window's clock a minute behind midnight", () => {
+      const lastMinute = new Date(2026, 9, 22, 23, 59);
+      const afterMidnight = new Date(2026, 9, 23, 0, 0);
+      const { onSnooze } = show(lastMinute, mockAviary, () => afterMidnight);
+
+      fireEvent.click(birdButton("undev/skiff"));
+      fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: "1 day" }));
+
+      expect(onSnooze).toHaveBeenCalledWith("undev/skiff", "2026-10-24");
+    });
 
     it("offers a snoozed bird the wake action in place of the snooze action, which wakes it", () => {
       const { onWake } = show(morning, snoozing(["undev/skiff"], null));

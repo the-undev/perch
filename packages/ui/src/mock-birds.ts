@@ -19,6 +19,7 @@ import type { SnoozeCalls } from "./snooze-action.tsx";
 
 /** Snooze calls that do nothing, for tests and scenes that only show the control. */
 export const quietSnooze: SnoozeCalls = {
+  pickedAt: () => new Date(2026, 9, 22, 9, 0),
   onSnooze: () => {},
   onWake: () => {},
 };

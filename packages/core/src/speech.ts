@@ -161,7 +161,7 @@ function primary(cause: HealthCause): {
     case "stalled":
       return {
         opening: [
-          `Parked on ${cause.stall.branch} for ${daysWords(cause.stall.days)}.`,
+          `Stalled on ${cause.stall.branch} for ${daysWords(cause.stall.days)}.`,
         ],
         closing: cause.everythingPushed
           ? "Everything's pushed, but the flight's gone quiet."
@@ -184,7 +184,7 @@ function secondary(cause: HealthCause): string {
     case "unpushed":
       return `I'm also holding ${countWords(cause.count)} local-only ${plural(cause.count, "commit", "commits")} for ${hoursWords(cause.work.hours)}.`;
     case "stalled":
-      return `I've also been parked on ${cause.stall.branch} for ${daysWords(cause.stall.days)}.`;
+      return `I've also been stalled on ${cause.stall.branch} for ${daysWords(cause.stall.days)}.`;
   }
 }
 

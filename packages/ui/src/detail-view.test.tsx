@@ -309,7 +309,7 @@ describe("the detail view", () => {
     ]);
   });
 
-  it("lands the parked chip on the branches section, marked with a dot, and gives a bird without it no handle", () => {
+  it("lands the stalled chip on the branches section, marked with a dot, and gives a bird without it no handle", () => {
     const skiff = mockBird("undev/skiff");
     const { container } = page(skiff);
     const bubble = screen.getByRole("region", { name: "Skiff says" });
@@ -320,7 +320,7 @@ describe("the detail view", () => {
     expect(section?.getAttribute("data-chip")).toBe("stalled");
     expect(section?.querySelector('[data-part="handle-mark"]')).not.toBeNull();
     fireEvent.click(
-      within(bubble).getByRole("button", { name: "parked 21 days" }),
+      within(bubble).getByRole("button", { name: "stalled 21 days" }),
     );
 
     expect(scrolled.map(({ element }) => element)).toEqual([section]);

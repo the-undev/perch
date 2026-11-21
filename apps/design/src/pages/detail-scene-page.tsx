@@ -18,7 +18,7 @@ const birds = [
   {
     id: "undev/skiff",
     label: "Skiff",
-    rule: "Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, so the notice under the heading names the fix and links to Sources, where the can't-read chip lands. The ledger and river say couldn't read github; Forgejo was read. Also parked on a feature branch for three weeks.",
+    rule: "Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, so the notice under the heading names the fix and links to Sources, where the can't-read chip lands. The ledger and river say couldn't read github; Forgejo was read. Also stalled on a feature branch for three weeks.",
   },
   {
     id: "dev/odin/hello",

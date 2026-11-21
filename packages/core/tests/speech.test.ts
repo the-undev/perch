@@ -158,16 +158,16 @@ describe("restless birds nudge", () => {
     expect(
       speak(subject({ causes: [cause.unreadable(), cause.stalled(21, true)] })),
     ).toBe(
-      "I push to skiff-app/skiff on github, but no card of yours can read it. I've also been parked on extension-popup-ia for three weeks.",
+      "I push to skiff-app/skiff on github, but no card of yours can read it. I've also been stalled on extension-popup-ia for three weeks.",
     );
   });
 
   it("stalled flight, saying everything is pushed only when it is", () => {
     expect(speak(subject({ causes: [cause.stalled(21, true)] }))).toBe(
-      "Parked on extension-popup-ia for three weeks. Everything's pushed, but the flight's gone quiet.",
+      "Stalled on extension-popup-ia for three weeks. Everything's pushed, but the flight's gone quiet.",
     );
     expect(speak(subject({ causes: [cause.stalled(9, false)] }))).toBe(
-      "Parked on extension-popup-ia for nine days. The flight's gone quiet.",
+      "Stalled on extension-popup-ia for nine days. The flight's gone quiet.",
     );
   });
 });
@@ -230,7 +230,7 @@ describe("distressed birds are blunt and lead with the worst", () => {
       "I've also got two critical bugs open in Garden Plans.md.",
       "I'm also holding two uncommitted changes for four days.",
       "I'm also holding one local-only commit for three days.",
-      "I've also been parked on extension-popup-ia for a month.",
+      "I've also been stalled on extension-popup-ia for a month.",
     ]);
   });
 });

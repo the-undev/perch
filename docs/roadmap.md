@@ -178,3 +178,6 @@ another, rather than the flock landing together.
   whatever its health. Whether to reword it to match: TBD.
 - Whether "Waking a snoozed bird when a new cause appears" and "Custom end
   dates", out of scope for snoozes, become roadmap items: TBD.
+- The header's totals say "settled" for content birds, but the glossary's
+  Settled is an activity: neither editing nor in flight. Which word the count
+  uses: TBD.

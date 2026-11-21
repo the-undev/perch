@@ -92,7 +92,16 @@ A file from the local repository shown on the bird's page, such as the README or
 The sheet on a bird's page that adopts it or changes its papers.
 
 **Action**:
-Something the owner does to a bird from its bubble or its page. Launch actions, the snooze action and the wake action are kinds of action.
+Something the owner does to a bird from its bubble or its page. Launch actions, the adopt action, the full-story action, the snooze action and the wake action are kinds of action.
+_Avoid_: Key
+
+**Adopt action**:
+The action in a fence bird's bubble that opens its page with the adoption papers unfolded.
+_Avoid_: Adopt key
+
+**Full-story action**:
+The bubble's "Tell me the full story" action, which opens the bird's page.
+_Avoid_: Full-story key
 
 **Launch action**:
 An action that opens something for the project, such as an editor or a terminal tab. It changes nothing.

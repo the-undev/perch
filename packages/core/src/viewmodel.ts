@@ -54,6 +54,7 @@ import type {
   WorkItemGroup,
   WorkItemKind,
 } from "./snapshot.ts";
+import type { SnoozeEnd } from "./snooze-date.ts";
 import {
   type FenceSituation,
   type SpeechSubject,
@@ -160,6 +161,14 @@ export interface Plumpness {
 /** Outstanding work at which a bird is as plump as it gets. */
 export const plumpnessCap = 50;
 
+/** The owner has set a bird aside until its end date, or until woken when it has none. */
+export interface Snooze {
+  until: SnoozeEnd;
+}
+
+/** Every snooze the owner has set, keyed by bird id. */
+export type Snoozes = Record<string, Snooze>;
+
 export interface Bird {
   id: string;
   /** The display name from config, else the scanned name. */
@@ -175,6 +184,8 @@ export interface Bird {
   /** Null without a local clone, which has no work-state. */
   activity: Activity | null;
   plumpness: Plumpness;
+  /** Null when the owner has not snoozed it. */
+  snooze: Snooze | null;
   /** At night a content bird not being edited sleeps, as does every fence bird. */
   sleepsAtNight: boolean;
   /** Where a fence bird lives, for its hover tip; null on a wire or while undecided. */
@@ -1510,6 +1521,7 @@ function speechSubject(
 export function deriveBird(
   item: BirdItem,
   config: Config,
+  snoozes: Snoozes,
   scannedAt: Date,
   home: string,
 ): Bird {
@@ -1540,6 +1552,7 @@ export function deriveBird(
       outstanding,
       fullness: Math.min(outstanding, plumpnessCap) / plumpnessCap,
     },
+    snooze: snoozes[item.id] ?? null,
     sleepsAtNight,
     lives: adopted ? null : livesFor(fenceSituation(item)),
     bubble: {
@@ -1600,19 +1613,20 @@ function placed(birds: Bird[], compare: (a: Bird, b: Bird) => number): Bird[] {
 }
 
 /**
- * The aviary from a snapshot and the config, paths under the home directory shown with ~. Every
+ * The aviary from a snapshot, the config and the snoozes, paths under the home directory shown with ~. Every
  * configured wire appears, empty or not, in config order. The server item waits for server
  * monitoring and is not a bird. The fence is ordered by name: it holds no priority.
  */
 export function deriveAviary(
   snapshot: Snapshot,
   config: Config,
+  snoozes: Snoozes,
   home: string,
 ): Aviary {
   const scannedAt = new Date(snapshot.scannedAt);
   const birds = snapshot.items
     .filter(isBirdItem)
-    .map((item) => deriveBird(item, config, scannedAt, home));
+    .map((item) => deriveBird(item, config, snoozes, scannedAt, home));
   return {
     scannedAt: snapshot.scannedAt,
     wires: config.wires.names.map((name) => ({

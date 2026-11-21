@@ -84,6 +84,9 @@ export function fakeApi(
       removeEntry: async (birdId) => {
         fake.entryRemovals.push(birdId);
       },
+      // Nothing in the window snoozes yet.
+      snooze: async () => {},
+      wake: async () => {},
       settingsForm: async () => settingsForm,
       saveSettings: async (values) => {
         fake.settingsSaves.push(values);

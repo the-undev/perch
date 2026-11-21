@@ -1,16 +1,16 @@
 // Tier C: a bird's full page, a fixed stage. The band at the top is one row: the heading (the name,
-// the meta line with the launch actions, the snooze control, links out and papers' verb beside it, then a notice for
-// each remote no card can read and the main process's problems), the roost's bubble at its reading
-// width, and the bird sitting on its perch at the right. It never scrolls. Beneath it the ground holds two panes that each scroll their own contents: the
-// record (the ledger and its sections) and the key files on paper, or for a bird with no clone here
-// the slip saying so; in a narrow page they join into one pane, the paper at the end. The
-// adoption papers rise as a sheet over both panes, which
-// dim and go inert while the band stays live. A chip pressed in the roost's
-// bubble lands on the ledger row holding its working, or the can't-read chip on the notice, as does
-// the chip pressed in the aviary's bubble that brought the camera here. A bug line pressed in the
-// ledger opens its file on the paper at that line. Only what exists is shown.
-// The view fetches nothing: key-file contents, launching, the clipboard and the entry's form and
-// writes are the caller's.
+// the meta line with the launch actions, the snooze control, links out and papers' verb beside it,
+// then a notice for each remote no card can read and the main process's problems), the roost's
+// bubble at its reading width, and the bird sitting on its perch at the right. It never scrolls.
+// Beneath it the ground holds two panes that each scroll their own contents: the record (the
+// ledger and its sections) and the key files on paper, or for a bird with no clone here the slip
+// saying so; in a narrow page they join into one pane, the paper at the end. The adoption papers
+// rise as a sheet over both panes, which dim and go inert while the band stays live. A chip
+// pressed in the roost's bubble lands on the ledger row holding its working, or the can't-read
+// chip on the notice, as does the chip pressed in the aviary's bubble that brought the camera
+// here. A bug line pressed in the ledger opens its file on the paper at that line. Only what
+// exists is shown. The view fetches nothing: key-file contents, launching, the clipboard and the
+// entry's form and writes are the caller's.
 
 import {
   type EntryForm,

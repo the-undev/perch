@@ -25,7 +25,12 @@ import {
 import { mockBird } from "@perch/ui/mock-birds.ts";
 import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 
-export { mockBird, mockBirds, mockEntryForm } from "@perch/ui/mock-birds.ts";
+export {
+  mockBird,
+  mockBirds,
+  mockEntryForm,
+  quietSnooze,
+} from "@perch/ui/mock-birds.ts";
 
 /** The mock scan's moment: times on the pages are measured to it, so they never drift. */
 export const scanMoment = new Date(mockAviary.scannedAt);
@@ -43,12 +48,6 @@ export const smallHours = new Date(2026, 9, 23, 3, 0);
 export function snoozedUntil(bird: Bird, until: string | null): Bird {
   return { ...bird, snooze: { until } };
 }
-
-/** Snooze calls that do nothing, for scenes that only show the control. */
-export const quietSnooze: SnoozeCalls = {
-  onSnooze: () => {},
-  onWake: () => {},
-};
 
 /** Snooze calls that say what was pressed, so a page shows the control working. */
 export function reportedSnooze(onPress: (what: string) => void): SnoozeCalls {

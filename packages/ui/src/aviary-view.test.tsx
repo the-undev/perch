@@ -18,7 +18,7 @@ import {
 } from "./aviary-layout.ts";
 import { AviaryScene, AviaryView, tipLine } from "./aviary-view.tsx";
 import type { PixelSize } from "./hooks.ts";
-import { mockBird, mockBirds } from "./mock-birds.ts";
+import { mockBird, mockBirds, quietSnooze } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth } from "./scene.tsx";
 
 afterEach(cleanup);
@@ -38,7 +38,7 @@ function scene(size: PixelSize) {
       onFullStory={() => {}}
       onAdopt={() => {}}
       onChip={() => {}}
-      snooze={{ onSnooze: () => {}, onWake: () => {} }}
+      snooze={quietSnooze}
       flyingIds={new Set()}
     />,
   );
@@ -123,7 +123,7 @@ describe("the aviary view", () => {
         onFullStory={() => {}}
         onAdopt={() => {}}
         onChip={() => {}}
-        snooze={{ onSnooze: () => {}, onWake: () => {} }}
+        snooze={quietSnooze}
         flyingIds={new Set([flying])}
       />,
     );
@@ -320,7 +320,7 @@ describe("the aviary view", () => {
   });
 
   describe("its snooze and wake actions", () => {
-    /** The keys a bird's bubble offers for its snooze, by name. */
+    /** The snooze and wake actions a bird's bubble offers, by name. */
     function snoozeActions(id: string): string[] {
       fireEvent.click(birdButton(id));
       const bubble = screen.getByRole("region", {
@@ -392,6 +392,33 @@ describe("the aviary view", () => {
       fireEvent.click(screen.getByRole("button", { name: "Wake" }));
 
       expect(onWake).toHaveBeenCalledWith("undev/skiff");
+    });
+
+    it("moves focus through the durations with the arrow keys, Home and End, and Escape returns it to the button", () => {
+      show();
+
+      fireEvent.click(birdButton("undev/skiff"));
+      const button = screen.getByRole("button", { name: "Snooze" });
+      fireEvent.click(button);
+      const items = screen.getAllByRole("menuitem");
+      const menu = screen.getByRole("menu");
+      expect(document.activeElement).toBe(items[0]);
+
+      fireEvent.keyDown(menu, { key: "ArrowDown" });
+      expect(document.activeElement).toBe(items[1]);
+      fireEvent.keyDown(menu, { key: "ArrowUp" });
+      fireEvent.keyDown(menu, { key: "ArrowUp" });
+      expect(document.activeElement).toBe(items[5]);
+      fireEvent.keyDown(menu, { key: "ArrowDown" });
+      expect(document.activeElement).toBe(items[0]);
+      fireEvent.keyDown(menu, { key: "End" });
+      expect(document.activeElement).toBe(items[5]);
+      fireEvent.keyDown(menu, { key: "Home" });
+      expect(document.activeElement).toBe(items[0]);
+
+      fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+      expect(screen.queryByRole("menu")).toBeNull();
+      expect(document.activeElement).toBe(button);
     });
 
     it("offers the snooze action again once a bird's snooze has run out", () => {

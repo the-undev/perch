@@ -267,6 +267,17 @@ describe("the detail view", () => {
     ).toEqual([]);
   });
 
+  it("offers the snooze action again once a bird's snooze has run out", () => {
+    const skiff = mockBird("undev/skiff");
+    const { container } = page({ ...skiff, snooze: { until: "2026-10-22" } });
+    const actions = within(
+      container.querySelector('[data-part="actions"]') as HTMLElement,
+    );
+
+    expect(actions.getByRole("button", { name: "Snooze" })).toBeTruthy();
+    expect(actions.queryByRole("button", { name: "Wake" })).toBeNull();
+  });
+
   it("lands a pressed chip on the ledger row holding its working: scrolled to the middle and marked", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch);

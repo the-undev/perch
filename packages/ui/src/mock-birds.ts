@@ -15,6 +15,13 @@ import {
   settingsFormFor,
 } from "@perch/core/settings-form.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
+import type { SnoozeCalls } from "./snooze-action.tsx";
+
+/** Snooze calls that do nothing, for tests and scenes that only show the control. */
+export const quietSnooze: SnoozeCalls = {
+  onSnooze: () => {},
+  onWake: () => {},
+};
 
 /** Every bird in the mock aviary: the wires top to bottom, then the fence. */
 export const mockBirds: Bird[] = [

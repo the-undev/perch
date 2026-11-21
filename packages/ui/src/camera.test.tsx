@@ -26,6 +26,7 @@ import {
   stripLayout,
   stripWireY,
 } from "./camera.tsx";
+import { quietSnooze } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth, sceneWidthFor } from "./scene.tsx";
 import {
   columnEdgeFor,
@@ -173,7 +174,7 @@ function camera(
       place={at}
       onNavigate={onNavigate}
       onLaunch={() => {}}
-      snooze={{ onSnooze: () => {}, onWake: () => {} }}
+      snooze={quietSnooze}
       sheets={[]}
       scanning={scanning}
       onRescan={onRescan}

@@ -70,7 +70,7 @@ tracked_forks = []
 
 # Health windows: amber at the first, red at the second. Unsafe work
 # (uncommitted changes, unpushed commits) ages in hours from its oldest
-# change. Stalled flight, parked on a non-default branch with no new commit,
+# change. Stalled flight: on a branch other than the default with no new commit,
 # ages in days. Open bugs and open critical bugs are counted in each roadmap
 # file on its own; left out, their windows are the values shown. Each is
 # overridable per item with the same keys.

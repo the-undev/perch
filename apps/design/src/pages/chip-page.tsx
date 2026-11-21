@@ -27,7 +27,7 @@ const kindRule: Record<ChipModel["kind"], string> = {
     "Uncommitted changes, toned by their age: unjudged under 24 hours, amber to 72, red beyond.",
   unpushed: "Commits on no remote, toned by their age like uncommitted work.",
   stalled:
-    "The days the checkout has been stalled on a branch other than the default, past the stall window: amber, then red. It lands on the branches section.",
+    "The days since the last movement on a branch other than the default, once past the stall window: amber, then red. It lands on the branches section.",
   "pull-requests": "Open pull requests across forges. Not judged.",
   "open-items": "Open roadmap items. Not judged: plumpness carries the volume.",
 };

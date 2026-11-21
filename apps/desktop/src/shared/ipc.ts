@@ -3,6 +3,7 @@ import type {
   SettingsForm,
   SettingsValues,
 } from "@perch/core/settings-form.ts";
+import type { SnoozeEnd } from "@perch/core/snooze-date.ts";
 import type {
   SourceTested,
   SourceTestValues,
@@ -74,6 +75,13 @@ export interface PerchApi {
   /** Removes every config entry naming a bird, returning it to the fence, as saveEntry writes. */
   removeEntry(birdId: string): Promise<void>;
   /**
+   * Snoozes an adopted bird until a date, or indefinitely with null, and pushes the state without
+   * a scan; a failure writes nothing and arrives as a problem in the state.
+   */
+  snooze(birdId: string, until: SnoozeEnd): Promise<void>;
+  /** Wakes an adopted bird, as snooze writes. */
+  wake(birdId: string): Promise<void>;
+  /**
    * Everything in config but the item entries, and the autostart entry, as the settings page edits
    * them; null without config.
    */
@@ -116,6 +124,8 @@ export const channels = {
   entryForm: "bird:entry-form",
   saveEntry: "bird:save-entry",
   removeEntry: "bird:remove-entry",
+  snooze: "bird:snooze",
+  wake: "bird:wake",
   settingsForm: "config:settings-form",
   saveSettings: "config:save-settings",
   storeToken: "keyring:store-token",

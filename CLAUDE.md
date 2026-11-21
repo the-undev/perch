@@ -6,11 +6,13 @@ roadmaps. It lives in the tray.
 
 ## Principles
 
-- Everything shown is derived from files, repositories or APIs. Nothing is typed in.
+- Everything shown is derived from files, repositories or APIs. Nothing is typed in
+  but the owner's config and local state, such as snoozes.
 - The scanner is read only. Launch actions open things and change nothing.
 - Perch shows facts, not advice.
 - Only the latest scan is kept.
-- Everything machine-specific lives in config.
+- Everything machine-specific lives in config, or in local state in the app's data
+  directory, which is never written to config.
 
 Parked work is in [docs/roadmap.md](docs/roadmap.md).
 

@@ -22,7 +22,7 @@ const adopted = birds.filter((bird) => bird.adopted);
 
 describe("the mock dataset", () => {
   it("derives the exported aviary", () => {
-    expect(deriveAviary(mockSnapshot, mockConfig, mockHome)).toEqual(
+    expect(deriveAviary(mockSnapshot, mockConfig, {}, mockHome)).toEqual(
       mockAviary,
     );
   });

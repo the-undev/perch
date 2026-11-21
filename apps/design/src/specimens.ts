@@ -136,7 +136,12 @@ function pergolaNotesWith(
           }
         : item,
   );
-  const aviary = deriveAviary({ ...mockSnapshot, items }, mockConfig, mockHome);
+  const aviary = deriveAviary(
+    { ...mockSnapshot, items },
+    mockConfig,
+    {},
+    mockHome,
+  );
   const bird = aviary.wires
     .flatMap((wire) => wire.birds)
     .find((candidate) => candidate.id === pergolaNotesId);
@@ -219,7 +224,12 @@ export function bugLedgerRows(bug: number, criticalBug: number): LedgerEntry[] {
           }
         : item,
   );
-  const aviary = deriveAviary({ ...mockSnapshot, items }, mockConfig, mockHome);
+  const aviary = deriveAviary(
+    { ...mockSnapshot, items },
+    mockConfig,
+    {},
+    mockHome,
+  );
   const bird = aviary.wires
     .flatMap((wire) => wire.birds)
     .find((candidate) => candidate.id === bugLedgerItemId);

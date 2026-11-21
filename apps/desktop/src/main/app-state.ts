@@ -1,5 +1,5 @@
-// The main process's one source of truth: the config, the latest snapshot and the aviary derived
-// from them, what went wrong outside any one source, the release check, and the scan, launch,
+// The main process's one source of truth: the config, the snoozes, the latest snapshot and the
+// aviary derived from them, what went wrong outside any one source, the release check, and the scan, launch,
 // key-file reads, config entry edits and settings that act on them, the autostart entry among the
 // settings. Electron stays outside: every effect is a dependency.
 
@@ -26,6 +26,7 @@ import {
   withSettings,
 } from "@perch/core/settings-form.ts";
 import type { Item, Snapshot } from "@perch/core/snapshot.ts";
+import { isEndDate, type SnoozeEnd } from "@perch/core/snooze-date.ts";
 import {
   createReleaseChecker,
   type DownloadState,
@@ -36,6 +37,8 @@ import {
   type Bird,
   deriveAviary,
   type LaunchAction,
+  type Snooze,
+  type Snoozes,
   type SourceCard,
 } from "@perch/core/viewmodel.ts";
 import type { KeyFileSheet, PerchState } from "../shared/ipc.ts";
@@ -43,12 +46,15 @@ import type { Autostart } from "./autostart.ts";
 import type { ConfigEdit } from "./config-edit.ts";
 import type { ConfigStore } from "./config-store.ts";
 import { configFileAction } from "./launch.ts";
+import type { SnoozeStore } from "./snooze-store.ts";
 import type { Updater } from "./updater.ts";
 
 export interface AppStateDeps {
   /** The home directory, against which the settings page shows paths with ~. */
   home: string;
   config: ConfigStore;
+  /** The owner's snoozes, local state kept beside the scan. */
+  snoozes: SnoozeStore;
   /** The owner's config file, which the settings page's path opens. */
   configPath: string;
   /** The snapshot cached by the last scan, or null. */
@@ -112,12 +118,22 @@ export interface AppState {
   /** A bird's config entry and the form's choices; null for a bird the aviary does not hold. */
   entryForm(birdId: string): EntryForm | null;
   /**
-   * Sets a bird's config entry, adopting it when it has none, then rereads the config and asks
-   * for a scan; a failure writes nothing and becomes a problem until the next scan.
+   * Sets a bird's config entry, adopting it when it has none and forgetting its snooze, then rereads
+   * the config and asks for a scan; a failure writes nothing and becomes a problem until the next scan.
    */
   saveEntry(birdId: string, values: EntryValues): Promise<void>;
-  /** Removes every config entry naming a bird, returning it to the fence, as saveEntry writes. */
+  /**
+   * Removes every config entry naming a bird, returning it to the fence, as saveEntry writes, then
+   * forgets its snooze.
+   */
   removeEntry(birdId: string): Promise<void>;
+  /**
+   * Snoozes an adopted bird until a date, or indefinitely with null, and publishes without a scan;
+   * a failure writes nothing and becomes a problem until the next scan.
+   */
+  snooze(birdId: string, until: SnoozeEnd): Promise<void>;
+  /** Wakes an adopted bird, as snooze writes. */
+  wake(birdId: string): Promise<void>;
   /**
    * Everything in config but the item entries, and the autostart entry, as the settings page edits
    * them; null without config.
@@ -165,17 +181,29 @@ export function createAppState(deps: AppStateDeps): AppState {
   let starterError: string | null = null;
   /** Why the latest config write wrote nothing, an entry's or the settings'. */
   let writeError: string | null = null;
-  let derived: { snapshot: Snapshot; config: Config; aviary: Aviary } | null =
-    null;
+  /** Why the latest snooze or wake wrote nothing. */
+  let snoozeError: string | null = null;
+  let derived: {
+    snapshot: Snapshot;
+    config: Config;
+    snoozes: Snoozes;
+    aviary: Aviary;
+  } | null = null;
 
   function aviary(): Aviary | null {
     const config = deps.config.current().loaded?.config ?? null;
+    const { snoozes } = deps.snoozes.current();
     if (snapshot === null || config === null) return null;
-    if (derived?.snapshot !== snapshot || derived.config !== config) {
+    if (
+      derived?.snapshot !== snapshot ||
+      derived.config !== config ||
+      derived.snoozes !== snoozes
+    ) {
       derived = {
         snapshot,
         config,
-        aviary: deriveAviary(snapshot, config, deps.home),
+        snoozes,
+        aviary: deriveAviary(snapshot, config, snoozes, deps.home),
       };
     }
     return derived.aviary;
@@ -199,6 +227,8 @@ export function createAppState(deps: AppStateDeps): AppState {
     if (launchError !== null) list.push(launchError);
     if (starterError !== null) list.push(starterError);
     if (writeError !== null) list.push(writeError);
+    list.push(...deps.snoozes.current().problems);
+    if (snoozeError !== null) list.push(snoozeError);
     return list;
   }
 
@@ -339,26 +369,43 @@ export function createAppState(deps: AppStateDeps): AppState {
     }
   }
 
-  async function editEntry(
+  /** Writes a bird's snooze, or removes it with null; why it was not, or null. */
+  async function writeSnooze(
     birdId: string,
-    change: (config: Config, item: Item) => Config,
+    snooze: Snooze | null,
+  ): Promise<string | null> {
+    try {
+      await deps.snoozes.write(birdId, snooze);
+      return null;
+    } catch (error) {
+      return `The snooze was not changed: ${errorMessage(error)}`;
+    }
+  }
+
+  /** Snoozes or wakes a bird on a wire, then publishes; nothing for any other bird. */
+  async function setSnooze(
+    birdId: string,
+    snooze: Snooze | null,
   ): Promise<void> {
-    const item = birdItem(birdId);
-    if (item === undefined) return;
-    await edit((config) => change(config, item), nothingAfter);
+    if (bird(birdId)?.adopted !== true) return;
+    snoozeError = await writeSnooze(birdId, snooze);
+    publish();
   }
 
   return {
     async start() {
       await deps.config.reload();
+      await deps.snoozes.reload();
       snapshot = await deps.readCached();
     },
     state,
     async scan() {
       const { loaded } = await deps.config.reload();
+      await deps.snoozes.reload();
       launchError = null;
       starterError = null;
       writeError = null;
+      snoozeError = null;
       if (loaded === null) {
         publish();
         return;
@@ -423,10 +470,28 @@ export function createAppState(deps: AppStateDeps): AppState {
       if (item === undefined || config === undefined) return null;
       return entryFormFor(config, item, deps.home);
     },
-    saveEntry: (birdId, values) =>
-      editEntry(birdId, (config, item) => withEntry(config, item, values)),
-    removeEntry: (birdId) =>
-      editEntry(birdId, (config, item) => withoutEntry(config, item)),
+    async saveEntry(birdId, values) {
+      const item = birdItem(birdId);
+      if (item === undefined) return;
+      // Adopting forgets a snooze left from before the bird was on the fence, so none comes back.
+      const after = bird(birdId)?.adopted
+        ? nothingAfter
+        : () => writeSnooze(birdId, null);
+      await edit((config) => withEntry(config, item, values), after);
+    },
+    async removeEntry(birdId) {
+      const item = birdItem(birdId);
+      if (item === undefined) return;
+      await edit(
+        (config) => withoutEntry(config, item),
+        () => writeSnooze(birdId, null),
+      );
+    },
+    async snooze(birdId, until) {
+      if (until !== null && !isEndDate(until)) return;
+      await setSnooze(birdId, { until });
+    },
+    wake: (birdId) => setSnooze(birdId, null),
     async settingsForm() {
       const config = deps.config.current().loaded?.config;
       if (config === undefined) return null;

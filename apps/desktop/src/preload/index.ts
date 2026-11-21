@@ -18,6 +18,8 @@ const api: PerchApi = {
   saveEntry: (birdId, values) =>
     ipcRenderer.invoke(channels.saveEntry, birdId, values),
   removeEntry: (birdId) => ipcRenderer.invoke(channels.removeEntry, birdId),
+  snooze: (birdId, until) => ipcRenderer.invoke(channels.snooze, birdId, until),
+  wake: (birdId) => ipcRenderer.invoke(channels.wake, birdId),
   settingsForm: () => ipcRenderer.invoke(channels.settingsForm),
   saveSettings: (values) => ipcRenderer.invoke(channels.saveSettings, values),
   storeToken: (key, token) =>

@@ -29,6 +29,7 @@ import { registerIpc } from "./ipc.ts";
 import { createStoreToken, testSource } from "./keyring.ts";
 import { createSpawnDetached, launch } from "./launch.ts";
 import { createScanScheduler } from "./scan-scheduler.ts";
+import { createSnoozeStore } from "./snooze-store.ts";
 import { writeStarterConfig } from "./starter-config.ts";
 import {
   syncTray,
@@ -177,6 +178,11 @@ function start(): void {
   const state = createAppState({
     home,
     config,
+    snoozes: createSnoozeStore({
+      path: paths.snoozesPath,
+      readText: readTextIfExists,
+      writeText: replaceFile,
+    }),
     configPath: paths.userConfigPath,
     // The cache is only a head start: one that cannot be read is no cache.
     readCached: () => readSnapshot(paths.snapshotPath).catch(() => null),
@@ -292,6 +298,8 @@ function start(): void {
       entryForm: async (birdId) => state.entryForm(birdId),
       saveEntry: (birdId, values) => state.saveEntry(birdId, values),
       removeEntry: (birdId) => state.removeEntry(birdId),
+      snooze: (birdId, until) => state.snooze(birdId, until),
+      wake: (birdId) => state.wake(birdId),
       settingsForm: async () => state.settingsForm(),
       saveSettings: (values) => state.saveSettings(values),
       storeToken,

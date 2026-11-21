@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   hasSnoozeEnded,
+  isEndDate,
   type SnoozeDuration,
   snoozeEndDate,
   snoozeWords,
@@ -99,5 +100,24 @@ describe("snoozeWords", () => {
 
   it("says until you wake it when indefinite", () => {
     expect(snoozeWords(null, today)).toBe("until you wake it");
+  });
+});
+
+describe("isEndDate", () => {
+  it("takes a real calendar date as YYYY-MM-DD", () => {
+    expect(isEndDate("2026-12-04")).toBe(true);
+    expect(isEndDate("2028-02-29")).toBe(true);
+  });
+
+  it.each([
+    ["a day the month lacks", "2026-02-30"],
+    ["a thirteenth month", "2026-13-01"],
+    ["digits left unpadded", "2026-1-5"],
+    ["a time after the date", "2026-12-04T00:00"],
+    ["words", "next Friday"],
+    ["a number", 20261204],
+    ["null", null],
+  ])("refuses %s", (_case, value) => {
+    expect(isEndDate(value)).toBe(false);
   });
 });

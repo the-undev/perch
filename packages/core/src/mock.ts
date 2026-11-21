@@ -1825,5 +1825,6 @@ export const mockSnapshot: Snapshot = {
 export const mockAviary: Aviary = deriveAviary(
   mockSnapshot,
   mockConfig,
+  {},
   mockHome,
 );

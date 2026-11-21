@@ -253,29 +253,28 @@ export interface PerchedFigureProps {
   idle: boolean;
 }
 
-/** How each mark is drawn: its glyph, ink (the note in the accent, the z in the bird's own breast colour), size and class. */
+/** A mark's font size at a bird's scale: the note and the z are the same size. */
+function markSize(scale: number): number {
+  return Math.max(17, 14 * scale);
+}
+
+/** How each mark is drawn: its glyph, ink (the note in the accent, the z in the bird's own breast colour) and class. */
 const markDrawing: Record<
   Exclude<BirdMark, null>,
   {
     glyph: string;
     ink: (look: BirdLook) => string;
-    minSize: number;
-    sizePerScale: number;
     className: string;
   }
 > = {
   note: {
     glyph: "♪",
     ink: () => "var(--color-ink-accent)",
-    minSize: 15,
-    sizePerScale: 13,
     className: "motion-safe:animate-song",
   },
   z: {
     glyph: "z",
     ink: (look) => look.breast,
-    minSize: 17,
-    sizePerScale: 14,
     className: "font-display font-semibold italic motion-safe:animate-song",
   },
 };
@@ -318,7 +317,7 @@ export function PerchedFigure({
           y={(settle - 60) * scale}
           textAnchor="middle"
           fill={mark.ink(look)}
-          fontSize={Math.max(mark.minSize, mark.sizePerScale * scale)}
+          fontSize={markSize(scale)}
           className={mark.className}
         >
           {mark.glyph}

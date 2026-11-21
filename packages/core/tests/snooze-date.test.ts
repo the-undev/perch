@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   hasSnoozeEnded,
   type SnoozeDuration,
@@ -6,8 +6,12 @@ import {
   snoozeWords,
 } from "../src/snooze-date.ts";
 
-beforeAll(() => {
-  process.env.TZ = "Europe/London";
+// Set at module level so it applies to Dates built during collection too.
+const LONDON = "Europe/London";
+process.env.TZ = LONDON;
+
+afterEach(() => {
+  process.env.TZ = LONDON;
 });
 
 const local = (
@@ -65,6 +69,14 @@ describe("hasSnoozeEnded", () => {
       false,
     );
     expect(hasSnoozeEnded("2026-10-25", local(2026, 10, 25, 0, 0))).toBe(true);
+  });
+
+  it("ends at the first real instant of a day with no midnight", () => {
+    // 6 September 2026 in Santiago: 00:00 does not exist, clocks go from
+    // 23:59 on the 5th straight to 01:00 on the 6th.
+    process.env.TZ = "America/Santiago";
+    expect(hasSnoozeEnded("2026-09-06", local(2026, 9, 5, 23, 59))).toBe(false);
+    expect(hasSnoozeEnded("2026-09-06", local(2026, 9, 6, 0, 0))).toBe(true);
   });
 
   it("never ends when indefinite", () => {

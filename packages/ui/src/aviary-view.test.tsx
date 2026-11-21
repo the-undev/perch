@@ -38,6 +38,7 @@ function scene(size: PixelSize) {
       onFullStory={() => {}}
       onAdopt={() => {}}
       onChip={() => {}}
+      snooze={{ onSnooze: () => {}, onWake: () => {} }}
       flyingIds={new Set()}
     />,
   );
@@ -61,6 +62,8 @@ function show(now = morning, aviary = mockAviary) {
   const onFullStory = vi.fn();
   const onAdopt = vi.fn();
   const onChip = vi.fn();
+  const onSnooze = vi.fn();
+  const onWake = vi.fn();
   const { container } = render(
     <AviaryView
       aviary={aviary}
@@ -69,9 +72,18 @@ function show(now = morning, aviary = mockAviary) {
       onFullStory={onFullStory}
       onAdopt={onAdopt}
       onChip={onChip}
+      snooze={{ onSnooze, onWake }}
     />,
   );
-  return { container, onLaunch, onFullStory, onAdopt, onChip };
+  return {
+    container,
+    onLaunch,
+    onFullStory,
+    onAdopt,
+    onChip,
+    onSnooze,
+    onWake,
+  };
 }
 
 /** A bird's button, named by the bird's name and its state word. */
@@ -111,6 +123,7 @@ describe("the aviary view", () => {
         onFullStory={() => {}}
         onAdopt={() => {}}
         onChip={() => {}}
+        snooze={{ onSnooze: () => {}, onWake: () => {} }}
         flyingIds={new Set([flying])}
       />,
     );
@@ -304,6 +317,88 @@ describe("the aviary view", () => {
     expect(
       bubble.querySelector('[data-part="speech"]')?.textContent,
     ).not.toContain("You woke me");
+  });
+
+  describe("its snooze and wake keys", () => {
+    /** The keys a bird's bubble offers for its snooze, by name. */
+    function snoozeKeys(id: string): string[] {
+      fireEvent.click(birdButton(id));
+      const bubble = screen.getByRole("region", {
+        name: `${mockBird(id).name} says`,
+      });
+      return ["Snooze", "Wake"].filter(
+        (name) => within(bubble).queryByRole("button", { name }) !== null,
+      );
+    }
+
+    it("offers the snooze key on an adopted bird whatever its mood, and a fence bird neither key", () => {
+      show();
+
+      expect(
+        ["dev/perch", "undev/skiff", "undev/prism", "dev/odin/hello"].map(
+          snoozeKeys,
+        ),
+      ).toEqual([["Snooze"], ["Snooze"], ["Snooze"], []]);
+    });
+
+    it("opens the durations from the snooze key, shortest first and indefinitely last", () => {
+      show();
+
+      fireEvent.click(birdButton("undev/skiff"));
+      fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+
+      expect(screen.getByRole("button", { name: "Snooze" }).ariaExpanded).toBe(
+        "true",
+      );
+      expect(
+        within(screen.getByRole("menu", { name: "Snooze Skiff for" }))
+          .getAllByRole("menuitem")
+          .map((item) => item.textContent),
+      ).toEqual([
+        "1 day",
+        "3 days",
+        "1 week",
+        "2 weeks",
+        "1 month",
+        "Indefinitely",
+      ]);
+    });
+
+    it.each([
+      ["1 day", "2026-10-23"],
+      ["3 days", "2026-10-25"],
+      ["1 week", "2026-10-29"],
+      ["2 weeks", "2026-11-05"],
+      ["1 month", "2026-11-22"],
+      ["Indefinitely", null],
+    ])(
+      "snoozes a bird picked for %s until %s, closing the durations",
+      (duration, until) => {
+        const { onSnooze } = show();
+
+        fireEvent.click(birdButton("undev/skiff"));
+        fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+        fireEvent.click(screen.getByRole("menuitem", { name: duration }));
+
+        expect(onSnooze).toHaveBeenCalledWith("undev/skiff", until);
+        expect(screen.queryByRole("menu")).toBeNull();
+      },
+    );
+
+    it("offers a snoozed bird the wake key in place of the snooze key, which wakes it", () => {
+      const { onWake } = show(morning, snoozing(["undev/skiff"], null));
+
+      expect(snoozeKeys("undev/skiff")).toEqual(["Wake"]);
+      fireEvent.click(screen.getByRole("button", { name: "Wake" }));
+
+      expect(onWake).toHaveBeenCalledWith("undev/skiff");
+    });
+
+    it("offers the snooze key again once a bird's snooze has run out", () => {
+      show(morning, snoozing(["undev/skiff"], "2026-10-22"));
+
+      expect(snoozeKeys("undev/skiff")).toEqual(["Snooze"]);
+    });
   });
 
   it("shows a hovered bird's tip with the numbers it carries", () => {

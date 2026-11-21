@@ -23,6 +23,7 @@ import {
   crowdedFence,
   crowdedWire,
   mockWire,
+  quietSnooze,
   scanMoment,
 } from "../specimens.ts";
 import { Code, SceneFrame, Section, Specimen, Usage } from "../usage.tsx";
@@ -65,6 +66,7 @@ export function CrowdedPage() {
                 onFullStory={() => {}}
                 onAdopt={() => {}}
                 onChip={() => {}}
+                snooze={quietSnooze}
               />
             </SceneFrame>
           </Specimen>
@@ -81,6 +83,7 @@ export function CrowdedPage() {
               onFullStory={() => {}}
               onAdopt={() => {}}
               onChip={() => {}}
+              snooze={quietSnooze}
             />
           </SceneFrame>
         </Specimen>
@@ -103,6 +106,7 @@ export function CrowdedPage() {
               onFullStory={() => {}}
               onAdopt={() => {}}
               onChip={() => {}}
+              snooze={quietSnooze}
             />
           </SceneFrame>
         </Specimen>
@@ -118,6 +122,7 @@ export function CrowdedPage() {
               onFullStory={() => {}}
               onAdopt={() => {}}
               onChip={() => {}}
+              snooze={quietSnooze}
             />
           </SceneFrame>
         </Specimen>
@@ -137,6 +142,7 @@ export function CrowdedPage() {
               }}
               onNavigate={() => {}}
               onLaunch={() => {}}
+              snooze={quietSnooze}
               sheets={[]}
               scanning={false}
               onRescan={() => {}}

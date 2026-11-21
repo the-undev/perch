@@ -1,5 +1,6 @@
 // The speech bubble: paper against the sky, the bird's name and mood word, its first-person
-// speech, the chips it carries, the launch actions and, for a fence bird, the adopt key, with a
+// speech, the chips it carries, the launch actions, the snooze control and, for a fence bird, the
+// adopt key, with a
 // tail whose tip meets the beak. On the bird's own page the bubble is the speech and chips alone.
 // Either way the chips are handles to the ledger rows holding their working.
 
@@ -9,6 +10,7 @@ import type {
   ChipKind,
   LaunchAction,
 } from "@perch/core/viewmodel.ts";
+import type { ReactNode } from "react";
 import type { BirdLook, StateWord } from "./bird.tsx";
 import { ChipHandles } from "./chip.tsx";
 import { Icon } from "./icons.tsx";
@@ -140,6 +142,8 @@ export interface BubbleProps {
   /** The bird's launch actions, shown as icon buttons named by their verbs. */
   actions: LaunchAction[];
   onLaunch: (action: LaunchAction) => void;
+  /** The snooze control, after the launch actions; null for none. */
+  snoozeKey: ReactNode;
   /** Rides the camera down to the bird's detail page. */
   onFullStory: () => void;
   /** Rides to the page with the adoption papers unfolded; null for an adopted bird, which has no adopt key. */
@@ -155,6 +159,7 @@ export function Bubble({
   look,
   actions,
   onLaunch,
+  snoozeKey,
   onFullStory,
   onAdopt,
   onChip,
@@ -205,6 +210,7 @@ export function Bubble({
             <Icon name={action.icon} size={14} />
           </button>
         ))}
+        {snoozeKey}
         {onAdopt !== null && (
           <button
             type="button"

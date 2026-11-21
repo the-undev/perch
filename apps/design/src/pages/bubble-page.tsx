@@ -172,8 +172,39 @@ export function BubblePage() {
       </Section>
 
       <Section
+        title="The snooze key"
+        rule="An adopted bird's bubble has a Snooze key after its launch icons, whatever its mood. It opens the durations on a small dark card, shortest first, with indefinitely under a rule. A pick snoozes the bird until that duration's end date from today, or with no date. A fence bird has no snooze key, and a bird whose snooze has run out offers it again."
+        min={440}
+      >
+        <Specimen
+          label="Durations"
+          rule="Skiff, restless: press Snooze to open the durations."
+        >
+          <Plate phase="dusk">
+            <SpeakingBird
+              bird={mockBird("undev/skiff")}
+              now={byDay}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+        <Specimen
+          label="Run out"
+          rule="Prism snoozed until 22 October, on that day: its real mood, and the Snooze key again."
+        >
+          <Plate phase="dusk">
+            <SpeakingBird
+              bird={snoozedUntil(mockBird("undev/prism"), "2026-10-22")}
+              now={byDay}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+      </Section>
+
+      <Section
         title="Snoozed"
-        rule="A snoozed bird's state word is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours."
+        rule="A snoozed bird's state word is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours. A Wake key takes the Snooze key's place."
         min={440}
       >
         <Specimen
@@ -235,6 +266,11 @@ export function BubblePage() {
             what: "A launch action was pressed; the app asks the main process to open it.",
           },
           {
+            name: "snoozeKey",
+            type: "ReactNode",
+            what: "The snooze control, after the launch actions: a <SnoozeKey> with place bubble, or null for none.",
+          },
+          {
             name: "onFullStory",
             type: "() => void",
             what: "Rides the camera down to the bird's detail page.",
@@ -275,6 +311,16 @@ export function BubblePage() {
           bubble like the full-story key and rides the camera to the bird&apos;s
           page with the chip in the URL, <Code>?chip=ci</Code>; the page lands
           on its row as it opens.
+        </p>
+        <p>
+          The snooze control is <Code>{"<SnoozeKey>"}</Code> from{" "}
+          <Code>@perch/ui/snooze-key.tsx</Code>, given the bird, its look, the
+          clock, its place (bubble or page) and the <Code>SnoozeCalls</Code>.
+          The look decides the key: snoozed offers Wake, not adopted offers
+          neither, any other state word Snooze. The durations exist only there:
+          a pick becomes an end date with <Code>snoozeEndDate</Code>, or null
+          for indefinitely, and goes to <Code>onSnooze(birdId, until)</Code>.
+          The bird&apos;s page carries the same control after its launch verbs.
         </p>
       </Usage>
     </>

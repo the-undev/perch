@@ -6,7 +6,12 @@ import { AdoptionPapers } from "@perch/ui/adoption-papers.tsx";
 import { DetailView } from "@perch/ui/detail-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
-import { mockBird, mockEntryForm, scanMoment } from "../specimens.ts";
+import {
+  mockBird,
+  mockEntryForm,
+  reportedSnooze,
+  scanMoment,
+} from "../specimens.ts";
 import {
   Code,
   Ground,
@@ -94,6 +99,7 @@ export function AdoptionPapersPage() {
               bird={hello}
               now={scanMoment}
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
+              snooze={reportedSnooze(setPressed)}
               sheets={birdSheets(hello)}
               entry={{
                 form: mockEntryForm(hello.id),
@@ -120,6 +126,7 @@ export function AdoptionPapersPage() {
               bird={perch}
               now={scanMoment}
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
+              snooze={reportedSnooze(setPressed)}
               sheets={birdSheets(perch)}
               entry={{
                 form: mockEntryForm(perch.id),

@@ -36,6 +36,7 @@ import { type PixelSize, useElementSize } from "./hooks.ts";
 import type { CustomProperties } from "./motion.ts";
 import { SkyDrawing, skyBackground } from "./scene.tsx";
 import { skyPhase } from "./sky.ts";
+import { type SnoozeCalls, SnoozeKey } from "./snooze-key.tsx";
 import { agoWords } from "./time.ts";
 import {
   FenceCount,
@@ -188,7 +189,9 @@ interface AnchoredBubbleProps {
   size: PixelSize;
   /** How the speaking bird looks now. */
   look: BirdLook;
+  now: Date;
   onLaunch: (action: LaunchAction) => void;
+  snooze: SnoozeCalls;
   onFullStory: () => void;
   onAdopt: (() => void) | null;
   onChip: (chip: ChipKind) => void;
@@ -200,7 +203,9 @@ function AnchoredBubble({
   layout,
   size,
   look,
+  now,
   onLaunch,
+  snooze,
   onFullStory,
   onAdopt,
   onChip,
@@ -232,6 +237,15 @@ function AnchoredBubble({
         look={look}
         actions={placed.bird.detail.actions}
         onLaunch={onLaunch}
+        snoozeKey={
+          <SnoozeKey
+            bird={placed.bird}
+            look={look}
+            now={now}
+            place="bubble"
+            calls={snooze}
+          />
+        }
         onFullStory={onFullStory}
         onAdopt={onAdopt}
         onChip={onChip}
@@ -347,6 +361,8 @@ export interface AviarySceneProps {
   onAdopt: (bird: BirdModel) => void;
   /** A chip in a bubble was pressed. */
   onChip: (bird: BirdModel, chip: ChipKind) => void;
+  /** A bubble's snooze or wake key was pressed. */
+  snooze: SnoozeCalls;
   /** The ids of birds whose flyers are in the air; each is not drawn until its flyer lands. */
   flyingIds: ReadonlySet<string>;
 }
@@ -360,6 +376,7 @@ export function AviaryScene({
   onFullStory,
   onAdopt,
   onChip,
+  snooze,
   flyingIds,
 }: AviarySceneProps) {
   const phase = skyPhase(now);
@@ -473,7 +490,9 @@ export function AviaryScene({
           layout={layout}
           size={size}
           look={birdLook(speaker.bird, now)}
+          now={now}
           onLaunch={onLaunch}
+          snooze={snooze}
           onFullStory={() => {
             setSpeakingId(null);
             onFullStory(speaker.bird);
@@ -510,6 +529,8 @@ export interface AviaryViewProps {
   onAdopt: (bird: BirdModel) => void;
   /** A chip in a bubble was pressed. */
   onChip: (bird: BirdModel, chip: ChipKind) => void;
+  /** A bubble's snooze or wake key was pressed. */
+  snooze: SnoozeCalls;
 }
 
 const noFlyers: ReadonlySet<string> = new Set();

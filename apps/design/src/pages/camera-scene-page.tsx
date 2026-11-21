@@ -2,7 +2,12 @@ import { mockAviary } from "@perch/core/mock.ts";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
-import { aviaryWith, mockBird, mockEntryForm } from "../specimens.ts";
+import {
+  aviaryWith,
+  mockBird,
+  mockEntryForm,
+  reportedSnooze,
+} from "../specimens.ts";
 import {
   Choice,
   Code,
@@ -93,6 +98,7 @@ export function CameraScenePage() {
             setPlace(next);
           }}
           onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
+          snooze={reportedSnooze(setPressed)}
           sheets={sheets}
           scanning={scanning === "scanning"}
           onRescan={() => setPressed("onRescan()")}
@@ -136,6 +142,11 @@ export function CameraScenePage() {
             name: "onLaunch",
             type: "(action: LaunchAction) => void",
             what: "A launch action was pressed, in a bubble or on the detail page.",
+          },
+          {
+            name: "snooze",
+            type: "SnoozeCalls",
+            what: "A snooze or wake key was pressed, in a bubble or on the detail page.",
           },
           {
             name: "sheets",

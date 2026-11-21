@@ -1,7 +1,14 @@
+import type { SnoozeEnd } from "@perch/core/snooze-date.ts";
 import { DetailView } from "@perch/ui/detail-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
-import { mockBird, mockEntryForm, scanMoment } from "../specimens.ts";
+import {
+  mockBird,
+  mockEntryForm,
+  reportedSnooze,
+  scanMoment,
+  snoozedUntil,
+} from "../specimens.ts";
 import { Choice, Code, Pressed, Section, Stage, Usage } from "../usage.tsx";
 
 const birds = [
@@ -37,7 +44,12 @@ type BirdId = (typeof birds)[number]["id"];
 export function DetailScenePage() {
   const [id, setId] = useState<BirdId>("dev/perch");
   const [pressed, setPressed] = useState("nothing yet");
-  const bird = mockBird(id);
+  // The page keeps its own snoozes, as the main process would, so a pick shows the wake verb.
+  const [snoozes, setSnoozes] = useState<Record<string, SnoozeEnd>>({});
+  const until = snoozes[id];
+  const bird =
+    until === undefined ? mockBird(id) : snoozedUntil(mockBird(id), until);
+  const reported = reportedSnooze(setPressed);
   const entry = birds.find((candidate) => candidate.id === id);
   return (
     <>
@@ -68,6 +80,16 @@ export function DetailScenePage() {
             bird={bird}
             now={scanMoment}
             onLaunch={(action) => setPressed(`${bird.name}: ${action.verb}`)}
+            snooze={{
+              onSnooze: (birdId, end) => {
+                reported.onSnooze(birdId, end);
+                setSnoozes((current) => ({ ...current, [birdId]: end }));
+              },
+              onWake: (birdId) => {
+                reported.onWake(birdId);
+                setSnoozes(({ [birdId]: _woken, ...rest }) => rest);
+              },
+            }}
             sheets={birdSheets(bird)}
             entry={{
               form: mockEntryForm(id),
@@ -99,6 +121,11 @@ export function DetailScenePage() {
             name: "onLaunch",
             type: "(action: LaunchAction) => void",
             what: "A launch action was pressed; the app asks the main process to open it.",
+          },
+          {
+            name: "snooze",
+            type: "SnoozeCalls",
+            what: "The page's Snooze verb, after the launch verbs, or Wake in its place while the bird is snoozed: onSnooze(birdId, until) with the picked duration's end date, or null for indefinitely, and onWake(birdId). A fence bird has neither. This page keeps the snoozes itself, so a pick shows the wake verb.",
           },
           {
             name: "sheets",

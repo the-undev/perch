@@ -173,6 +173,7 @@ function camera(
       place={at}
       onNavigate={onNavigate}
       onLaunch={() => {}}
+      snooze={{ onSnooze: () => {}, onWake: () => {} }}
       sheets={[]}
       scanning={scanning}
       onRescan={onRescan}

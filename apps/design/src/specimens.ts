@@ -23,6 +23,7 @@ import {
   type Wire,
 } from "@perch/core/viewmodel.ts";
 import { mockBird } from "@perch/ui/mock-birds.ts";
+import type { SnoozeCalls } from "@perch/ui/snooze-key.tsx";
 
 export { mockBird, mockBirds, mockEntryForm } from "@perch/ui/mock-birds.ts";
 
@@ -41,6 +42,21 @@ export const smallHours = new Date(2026, 9, 23, 3, 0);
 /** A bird the owner has snoozed until a date, or until woken for null. */
 export function snoozedUntil(bird: Bird, until: string | null): Bird {
   return { ...bird, snooze: { until } };
+}
+
+/** Snooze calls that do nothing, for scenes that only show the control. */
+export const quietSnooze: SnoozeCalls = {
+  onSnooze: () => {},
+  onWake: () => {},
+};
+
+/** Snooze calls that say what was pressed, so a page shows the control working. */
+export function reportedSnooze(onPress: (what: string) => void): SnoozeCalls {
+  return {
+    onSnooze: (birdId, until) =>
+      onPress(`onSnooze(${birdId}, ${until ?? "indefinitely"})`),
+    onWake: (birdId) => onPress(`onWake(${birdId})`),
+  };
 }
 
 /** A bird carrying a given amount of outstanding work, against the cap of 50. */

@@ -320,6 +320,16 @@ export function byNeed(now: Date): (a: Bird, b: Bird) => number {
     b.plumpness.outstanding - a.plumpness.outstanding;
 }
 
+/**
+ * Orders a tab's birds by who to open first: need counts only among the adopted, so birds that
+ * need nothing, the fence's, fall to name order, as do adopted birds equal in need.
+ */
+export function byTabOrder(now: Date): (a: Bird, b: Bird) => number {
+  const need = byNeed(now);
+  return (a, b) =>
+    (a.adopted && b.adopted ? need(a, b) : 0) || a.name.localeCompare(b.name);
+}
+
 /** Who lands first at a time: the wires before the fence, then by need. */
 export function arrivalOrder(aviary: Aviary, now: Date): Map<string, number> {
   const birds = [

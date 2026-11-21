@@ -97,9 +97,8 @@ function dimLook(
 export function birdLook(bird: BirdModel, now: Date): BirdLook {
   const sleepHours = inSleepHours(now);
   if (!bird.adopted) return dimLook("not adopted", null, sleepHours);
-  const { snooze } = bird;
-  if (snooze !== null && !hasSnoozeEnded(snooze.until, now)) {
-    return dimLook("snoozed", snoozeWords(snooze.until, now), true);
+  if (bird.snooze !== null && isSnoozed(bird, now)) {
+    return dimLook("snoozed", snoozeWords(bird.snooze.until, now), true);
   }
   const awake = {
     stateWord: bird.mood,
@@ -366,8 +365,8 @@ export interface BirdProps {
   x: number;
   y: number;
   facing: Facing;
-  /** The render's clock: the look follows the hour. */
-  now: Date;
+  /** How the bird looks now, from `birdLook`. */
+  look: BirdLook;
   /** Where the name sits; crowded neighbours alternate baselines so names do not collide. */
   namePlace: NamePlace;
   /** Its bubble has just opened: the beak wiggles. */
@@ -397,12 +396,11 @@ export function Bird({
   x,
   y,
   facing,
-  now,
+  look,
   namePlace,
   speaking,
   idle,
 }: BirdProps) {
-  const look = birdLook(bird, now);
   const scale = birdScale(bird);
   return (
     <g
@@ -490,7 +488,7 @@ export function BirdPortrait({ bird, facing, now }: BirdPortraitProps) {
         x={0}
         y={0}
         facing={facing}
-        now={now}
+        look={look}
         namePlace={roomyName}
         speaking={false}
         idle

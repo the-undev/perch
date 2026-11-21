@@ -10,6 +10,7 @@ import { Fragment, useId } from "react";
 import {
   Bird,
   BirdCut,
+  birdLook,
   birdScale,
   type Facing,
   type NamePlace,
@@ -390,7 +391,7 @@ export function Wire({ wire, y, width, now }: WireProps) {
           x={place.x}
           y={place.y}
           facing={place.facing}
-          now={now}
+          look={birdLook(place.bird, now)}
           namePlace={namePlace(i, spacing, roomyName.drop)}
           speaking={false}
           idle
@@ -442,7 +443,7 @@ export function Fence({ fence, y, width, height, now }: FenceProps) {
           x={place.x}
           y={y + 2}
           facing={place.facing}
-          now={now}
+          look={birdLook(place.bird, now)}
           namePlace={namePlace(i, spacing, roomyName.drop)}
           speaking={false}
           idle

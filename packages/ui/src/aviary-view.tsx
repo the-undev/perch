@@ -30,7 +30,7 @@ import {
   placedBirds,
   toPixels,
 } from "./aviary-layout.ts";
-import { Bird, birdLook } from "./bird.tsx";
+import { Bird, type BirdLook, birdLook } from "./bird.tsx";
 import { Bubble } from "./bubble.tsx";
 import { type PixelSize, useElementSize } from "./hooks.ts";
 import type { CustomProperties } from "./motion.ts";
@@ -124,6 +124,7 @@ function PerchedBird({
   onLeave,
 }: PerchedBirdProps) {
   const { bird } = placed;
+  const look = birdLook(bird, now);
   const [arriving, setArriving] = useState(true);
   const arrive: CustomProperties = {
     "--arrive-delay": `${arrival * arrivalStepMs}ms`,
@@ -133,7 +134,7 @@ function PerchedBird({
     <g
       role="button"
       tabIndex={0}
-      aria-label={`${bird.name}, ${birdLook(bird, now).stateWord}`}
+      aria-label={`${bird.name}, ${look.stateWord}`}
       aria-pressed={speaking}
       data-arrival={arrival}
       className="group cursor-pointer outline-none"
@@ -169,7 +170,7 @@ function PerchedBird({
               x={0}
               y={0}
               facing={placed.facing}
-              now={now}
+              look={look}
               namePlace={placed.namePlace}
               speaking={speaking}
               idle={!arriving}
@@ -185,7 +186,8 @@ interface AnchoredBubbleProps {
   placed: PlacedBird;
   layout: AviaryLayout;
   size: PixelSize;
-  now: Date;
+  /** How the speaking bird looks now. */
+  look: BirdLook;
   onLaunch: (action: LaunchAction) => void;
   onFullStory: () => void;
   onAdopt: (() => void) | null;
@@ -197,7 +199,7 @@ function AnchoredBubble({
   placed,
   layout,
   size,
-  now,
+  look,
   onLaunch,
   onFullStory,
   onAdopt,
@@ -227,7 +229,7 @@ function AnchoredBubble({
       <Bubble
         key={placed.bird.id}
         bubble={placed.bird.bubble}
-        look={birdLook(placed.bird, now)}
+        look={look}
         actions={placed.bird.detail.actions}
         onLaunch={onLaunch}
         onFullStory={onFullStory}
@@ -246,7 +248,17 @@ interface TipAt {
   y: number;
 }
 
-function Tip({ tip, size, now }: { tip: TipAt; size: PixelSize; now: Date }) {
+function Tip({
+  tip,
+  size,
+  look,
+  now,
+}: {
+  tip: TipAt;
+  size: PixelSize;
+  look: BirdLook;
+  now: Date;
+}) {
   const line = tipLine(tip.bird, now);
   return (
     <div
@@ -258,7 +270,7 @@ function Tip({ tip, size, now }: { tip: TipAt; size: PixelSize; now: Date }) {
       }}
     >
       <b className="font-semibold text-ink">{tip.bird.name}</b> ·{" "}
-      {birdLook(tip.bird, now).stateWord}
+      {look.stateWord}
       {line !== null && <div>{line}</div>}
     </div>
   );
@@ -453,14 +465,14 @@ export function AviaryScene({
       <SkyNotices aviary={aviary} now={now} />
       <SkyLegend />
       {tip !== null && tip.bird.id !== speakingId && (
-        <Tip tip={tip} size={size} now={now} />
+        <Tip tip={tip} size={size} look={birdLook(tip.bird, now)} now={now} />
       )}
       {speaker !== undefined && (
         <AnchoredBubble
           placed={speaker}
           layout={layout}
           size={size}
-          now={now}
+          look={birdLook(speaker.bird, now)}
           onLaunch={onLaunch}
           onFullStory={() => {
             setSpeakingId(null);

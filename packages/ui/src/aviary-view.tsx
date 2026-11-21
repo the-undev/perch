@@ -36,7 +36,7 @@ import { type PixelSize, useElementSize } from "./hooks.ts";
 import type { CustomProperties } from "./motion.ts";
 import { SkyDrawing, skyBackground } from "./scene.tsx";
 import { skyPhase } from "./sky.ts";
-import { type SnoozeCalls, SnoozeKey } from "./snooze-key.tsx";
+import { SnoozeAction, type SnoozeCalls } from "./snooze-action.tsx";
 import { agoWords } from "./time.ts";
 import {
   FenceCount,
@@ -237,8 +237,8 @@ function AnchoredBubble({
         look={look}
         actions={placed.bird.detail.actions}
         onLaunch={onLaunch}
-        snoozeKey={
-          <SnoozeKey
+        snoozeAction={
+          <SnoozeAction
             bird={placed.bird}
             look={look}
             now={now}
@@ -361,7 +361,7 @@ export interface AviarySceneProps {
   onAdopt: (bird: BirdModel) => void;
   /** A chip in a bubble was pressed. */
   onChip: (bird: BirdModel, chip: ChipKind) => void;
-  /** A bubble's snooze or wake key was pressed. */
+  /** A bubble's snooze or wake action was pressed. */
   snooze: SnoozeCalls;
   /** The ids of birds whose flyers are in the air; each is not drawn until its flyer lands. */
   flyingIds: ReadonlySet<string>;
@@ -529,7 +529,7 @@ export interface AviaryViewProps {
   onAdopt: (bird: BirdModel) => void;
   /** A chip in a bubble was pressed. */
   onChip: (bird: BirdModel, chip: ChipKind) => void;
-  /** A bubble's snooze or wake key was pressed. */
+  /** A bubble's snooze or wake action was pressed. */
   snooze: SnoozeCalls;
 }
 

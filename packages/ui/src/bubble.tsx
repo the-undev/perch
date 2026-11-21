@@ -143,7 +143,7 @@ export interface BubbleProps {
   actions: LaunchAction[];
   onLaunch: (action: LaunchAction) => void;
   /** The snooze control, after the launch actions; null for none. */
-  snoozeKey: ReactNode;
+  snoozeAction: ReactNode;
   /** Rides the camera down to the bird's detail page. */
   onFullStory: () => void;
   /** Rides to the page with the adoption papers unfolded; null for an adopted bird, which has no adopt key. */
@@ -159,7 +159,7 @@ export function Bubble({
   look,
   actions,
   onLaunch,
-  snoozeKey,
+  snoozeAction,
   onFullStory,
   onAdopt,
   onChip,
@@ -210,7 +210,7 @@ export function Bubble({
             <Icon name={action.icon} size={14} />
           </button>
         ))}
-        {snoozeKey}
+        {snoozeAction}
         {onAdopt !== null && (
           <button
             type="button"

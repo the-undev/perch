@@ -23,7 +23,7 @@ import {
   type Wire,
 } from "@perch/core/viewmodel.ts";
 import { mockBird } from "@perch/ui/mock-birds.ts";
-import type { SnoozeCalls } from "@perch/ui/snooze-key.tsx";
+import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 
 export { mockBird, mockBirds, mockEntryForm } from "@perch/ui/mock-birds.ts";
 

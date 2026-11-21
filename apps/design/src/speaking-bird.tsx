@@ -3,7 +3,7 @@
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { BirdPortrait, birdLook, portraitFrame } from "@perch/ui/bird.tsx";
 import { Bubble, tailDrop } from "@perch/ui/bubble.tsx";
-import { SnoozeKey } from "@perch/ui/snooze-key.tsx";
+import { SnoozeAction } from "@perch/ui/snooze-action.tsx";
 import { reportedSnooze } from "./specimens.ts";
 
 export interface SpeakingBirdProps {
@@ -25,8 +25,8 @@ export function SpeakingBird({ bird, now, onPress }: SpeakingBirdProps) {
         look={look}
         actions={bird.detail.actions}
         onLaunch={(action) => onPress(`${bird.name}: ${action.verb}`)}
-        snoozeKey={
-          <SnoozeKey
+        snoozeAction={
+          <SnoozeAction
             bird={bird}
             look={look}
             now={now}

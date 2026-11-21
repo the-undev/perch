@@ -192,7 +192,7 @@ export function AviaryScenePage() {
           {
             name: "snooze",
             type: "SnoozeCalls",
-            what: "A bubble's snooze key picked a duration, handing on the bird's id and the end date, or null for indefinitely, or its wake key was pressed.",
+            what: "A bubble's snooze action picked a duration, handing on the bird's id and the end date, or null for indefinitely, or its wake action was pressed.",
           },
           {
             name: "onFullStory",

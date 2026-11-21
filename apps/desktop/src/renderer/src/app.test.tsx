@@ -257,7 +257,7 @@ describe("the window", () => {
     ).toBeDefined();
   });
 
-  it("snoozes a bird from its bubble's snooze key until the duration's end date, then offers its wake key", async () => {
+  it("snoozes a bird from its bubble's snooze action until the duration's end date, then offers its wake action", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 22, 10, 0));
     const { fake } = renderApp(idle(mockAviary));

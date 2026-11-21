@@ -5,7 +5,7 @@ import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
 import type { EntryControls } from "@perch/ui/detail-view.tsx";
 import { SettingsView } from "@perch/ui/settings-view.tsx";
-import type { SnoozeCalls } from "@perch/ui/snooze-key.tsx";
+import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useLocation,

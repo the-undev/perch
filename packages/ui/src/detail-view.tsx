@@ -46,7 +46,7 @@ import { NoCloneClause, NoCloneSlip } from "./no-clone-slip.tsx";
 import { KeyFilePaper, type KeyFileSheet, type Reveal } from "./paper.tsx";
 import { RisingSheet } from "./rising-sheet.tsx";
 import { Roost } from "./roost.tsx";
-import { type SnoozeCalls, SnoozeKey } from "./snooze-key.tsx";
+import { SnoozeAction, type SnoozeCalls } from "./snooze-action.tsx";
 
 /** What the detail page needs to adopt its bird or amend its papers. */
 export interface EntryControls {
@@ -293,7 +293,7 @@ export function DetailView({
               >
                 {detail.noClone?.onMetaLine && <NoCloneClause />}
                 <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
-                <SnoozeKey
+                <SnoozeAction
                   bird={bird}
                   look={birdLook(bird, now)}
                   now={now}

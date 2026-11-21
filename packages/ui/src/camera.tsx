@@ -44,7 +44,7 @@ import type { KeyFileSheet } from "./paper.tsx";
 import { ScanLine } from "./scan-line.tsx";
 import { sceneWidthFor, skyBackground } from "./scene.tsx";
 import { skyPhase } from "./sky.ts";
-import type { SnoozeCalls } from "./snooze-key.tsx";
+import type { SnoozeCalls } from "./snooze-action.tsx";
 import {
   birdRoom,
   byPosition,
@@ -556,7 +556,7 @@ export interface CameraViewProps {
   /** Every move the camera is asked to make: a tab, a bird, the brand or Escape. */
   onNavigate: (place: CameraPlace) => void;
   onLaunch: (action: LaunchAction) => void;
-  /** A bubble's or a page's snooze or wake key was pressed. */
+  /** A bubble's or a page's snooze or wake action was pressed. */
   snooze: SnoozeCalls;
   /** The open bird's key files with what was read from each; empty until read. */
   sheets: KeyFileSheet[];

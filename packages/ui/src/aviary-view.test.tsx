@@ -319,9 +319,9 @@ describe("the aviary view", () => {
     ).not.toContain("You woke me");
   });
 
-  describe("its snooze and wake keys", () => {
+  describe("its snooze and wake actions", () => {
     /** The keys a bird's bubble offers for its snooze, by name. */
-    function snoozeKeys(id: string): string[] {
+    function snoozeActions(id: string): string[] {
       fireEvent.click(birdButton(id));
       const bubble = screen.getByRole("region", {
         name: `${mockBird(id).name} says`,
@@ -331,17 +331,17 @@ describe("the aviary view", () => {
       );
     }
 
-    it("offers the snooze key on an adopted bird whatever its mood, and a fence bird neither key", () => {
+    it("offers the snooze action on an adopted bird whatever its mood, and a fence bird neither action", () => {
       show();
 
       expect(
         ["dev/perch", "undev/skiff", "undev/prism", "dev/odin/hello"].map(
-          snoozeKeys,
+          snoozeActions,
         ),
       ).toEqual([["Snooze"], ["Snooze"], ["Snooze"], []]);
     });
 
-    it("opens the durations from the snooze key, shortest first and indefinitely last", () => {
+    it("opens the durations from the snooze action, shortest first and indefinitely last", () => {
       show();
 
       fireEvent.click(birdButton("undev/skiff"));
@@ -385,19 +385,19 @@ describe("the aviary view", () => {
       },
     );
 
-    it("offers a snoozed bird the wake key in place of the snooze key, which wakes it", () => {
+    it("offers a snoozed bird the wake action in place of the snooze action, which wakes it", () => {
       const { onWake } = show(morning, snoozing(["undev/skiff"], null));
 
-      expect(snoozeKeys("undev/skiff")).toEqual(["Wake"]);
+      expect(snoozeActions("undev/skiff")).toEqual(["Wake"]);
       fireEvent.click(screen.getByRole("button", { name: "Wake" }));
 
       expect(onWake).toHaveBeenCalledWith("undev/skiff");
     });
 
-    it("offers the snooze key again once a bird's snooze has run out", () => {
+    it("offers the snooze action again once a bird's snooze has run out", () => {
       show(morning, snoozing(["undev/skiff"], "2026-10-22"));
 
-      expect(snoozeKeys("undev/skiff")).toEqual(["Snooze"]);
+      expect(snoozeActions("undev/skiff")).toEqual(["Snooze"]);
     });
   });
 

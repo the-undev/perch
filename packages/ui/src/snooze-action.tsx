@@ -1,5 +1,5 @@
-// The snooze control, in a bubble or on a bird's page: the snooze key opening the durations, or a
-// wake key in its place while the bird's look is snoozed, and neither on the fence. The durations
+// The snooze control, in a bubble or on a bird's page: the snooze action opening the durations, or a
+// wake action in its place while the bird's look is snoozed, and neither on the fence. The durations
 // live only here: a pick becomes an end date from today, which the caller hands on.
 
 import {
@@ -58,7 +58,7 @@ const styles: Record<SnoozePlace, PlaceStyle> = {
   },
 };
 
-export interface SnoozeKeyProps {
+export interface SnoozeActionProps {
   bird: Bird;
   /** The bird's look now, which decides the key offered. */
   look: BirdLook;
@@ -68,8 +68,14 @@ export interface SnoozeKeyProps {
   calls: SnoozeCalls;
 }
 
-/** The snooze key and its durations, or the wake key, as the bird's look offers. */
-export function SnoozeKey({ bird, look, now, place, calls }: SnoozeKeyProps) {
+/** The snooze action and its durations, or the wake action, as the bird's look offers. */
+export function SnoozeAction({
+  bird,
+  look,
+  now,
+  place,
+  calls,
+}: SnoozeActionProps) {
   const style = styles[place];
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);

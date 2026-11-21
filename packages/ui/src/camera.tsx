@@ -113,8 +113,9 @@ function tabOf(tabs: CameraTab[], bird: Bird): BirdTab | undefined {
 
 /**
  * Where pressing a tab goes: home for The Aviary; for a wire or the fence, the bird last open
- * there while it still sits there, else the one that needs the owner most, by name where need does not count. Null for a
- * wire with no birds, whose tab says "empty" and cannot be pressed.
+ * there while it still sits there, else the one that needs the owner most; the fence's tab falls
+ * to the first fence bird by name. Null for a wire with no birds, whose tab says "empty" and
+ * cannot be pressed.
  */
 export function tabDestination(
   tab: CameraTab,

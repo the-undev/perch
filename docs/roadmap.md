@@ -15,7 +15,6 @@ use the older words below. Each is looked at on its own, then renamed.
 - "entry" becomes "papers".
 - "working" becomes "reading".
 - "river" becomes "history", and "spread" goes.
-- "parked" on the chip and in speech becomes "stalled".
 - "in-progress" in the scanner becomes "in flight".
 - "window" in comments, config comments and the design site becomes
   "threshold".

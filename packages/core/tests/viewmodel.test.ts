@@ -458,7 +458,7 @@ describe("chips", () => {
     );
   });
 
-  it("wear a parked chip at the stall's level, after unpushed, and none for a stall still green", async () => {
+  it("wear a stalled chip at the stall's level, after unpushed, and none for a stall still green", async () => {
     const config = await testConfig('[items."dev/prism"]\n');
     const parked = (days: number, level: "green" | "amber" | "red") =>
       item("dev/prism", {
@@ -480,10 +480,10 @@ describe("chips", () => {
       );
 
     expect(chipsOf(21, "amber")).toEqual([
-      ["stalled", "parked 21 days", 21, "amber"],
+      ["stalled", "stalled 21 days", 21, "amber"],
     ]);
     expect(chipsOf(56, "red")).toEqual([
-      ["stalled", "parked 56 days", 56, "red"],
+      ["stalled", "stalled 56 days", 56, "red"],
     ]);
     expect(chipsOf(2, "green")).toEqual([]);
     expect(chipKinds.indexOf("stalled")).toBe(

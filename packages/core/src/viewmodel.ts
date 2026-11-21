@@ -956,7 +956,7 @@ function chipsFor(item: Item, health: Health): Chip[] {
   if (stall !== undefined) {
     chips.push({
       kind: "stalled",
-      label: `parked ${plural(stall.stall.days, "day", "days")}`,
+      label: `stalled ${plural(stall.stall.days, "day", "days")}`,
       count: stall.stall.days,
       severity: severity(stall.level),
     });

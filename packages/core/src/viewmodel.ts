@@ -1585,7 +1585,7 @@ export function deriveBird(
 }
 
 /** Along a wire and the fence: by name, whatever the birds' moods. */
-export function compareOnWire(a: Bird, b: Bird): number {
+export function compareByName(a: Bird, b: Bird): number {
   return a.name.localeCompare(b.name);
 }
 
@@ -1613,13 +1613,13 @@ export function deriveAviary(
       name,
       birds: placed(
         birds.filter((bird) => bird.wire === name),
-        compareOnWire,
+        compareByName,
       ),
     })),
     fence: {
       birds: placed(
         birds.filter((bird) => !bird.adopted),
-        compareOnWire,
+        compareByName,
       ),
     },
     sourceErrors: Object.entries(snapshot.sources).flatMap(

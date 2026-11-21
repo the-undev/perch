@@ -178,7 +178,7 @@ function perched(
 
 /**
  * The birds of one wire perched at their places, read like text: the first row left to right, then
- * the next, so the top left bird needs you first. Names alternate by the spacing on their own row.
+ * the next, in name order. Names alternate by the spacing on their own row.
  */
 function wireRows(
   wire: Wire,

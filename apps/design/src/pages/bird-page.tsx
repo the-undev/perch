@@ -1,5 +1,11 @@
 import { BirdPortrait } from "@perch/ui/bird.tsx";
-import { mockBird, withOutstanding } from "../specimens.ts";
+import {
+  byDay,
+  lateEvening,
+  mockBird,
+  smallHours,
+  withOutstanding,
+} from "../specimens.ts";
 import { Code, Plate, Section, Specimen, Usage } from "../usage.tsx";
 
 const spool = mockBird("undev/spool");
@@ -22,7 +28,7 @@ export function BirdPage() {
           rule="Spool: nothing amber or red. All settled."
         >
           <Plate phase="day">
-            <BirdPortrait bird={spool} facing="right" night={false} />
+            <BirdPortrait bird={spool} facing="right" now={byDay} />
           </Plate>
         </Specimen>
         <Specimen
@@ -30,7 +36,7 @@ export function BirdPage() {
           rule="Skiff: a remote no card can read, and stalled on a branch for three weeks."
         >
           <Plate phase="day">
-            <BirdPortrait bird={skiff} facing="right" night={false} />
+            <BirdPortrait bird={skiff} facing="right" now={byDay} />
           </Plate>
         </Specimen>
         <Specimen
@@ -38,7 +44,7 @@ export function BirdPage() {
           rule="Prism: CI failing on main. Red is rare enough to mean something."
         >
           <Plate phase="day">
-            <BirdPortrait bird={prism} facing="right" night={false} />
+            <BirdPortrait bird={prism} facing="right" now={byDay} />
           </Plate>
         </Specimen>
       </Section>
@@ -53,7 +59,7 @@ export function BirdPage() {
           rule="Lift 2px, about 3.1 to 4.6 seconds a breath."
         >
           <Plate phase="dusk">
-            <BirdPortrait bird={plainSpool} facing="right" night={false} />
+            <BirdPortrait bird={plainSpool} facing="right" now={byDay} />
           </Plate>
         </Specimen>
         <Specimen
@@ -64,7 +70,7 @@ export function BirdPage() {
             <BirdPortrait
               bird={withOutstanding(skiff, 0)}
               facing="right"
-              night={false}
+              now={byDay}
             />
           </Plate>
         </Specimen>
@@ -76,7 +82,7 @@ export function BirdPage() {
             <BirdPortrait
               bird={withOutstanding(prism, 0)}
               facing="right"
-              night={false}
+              now={byDay}
             />
           </Plate>
         </Specimen>
@@ -101,7 +107,7 @@ export function BirdPage() {
               <BirdPortrait
                 bird={withOutstanding(spool, outstanding)}
                 facing="right"
-                night={false}
+                now={byDay}
               />
             </Plate>
           </Specimen>
@@ -118,7 +124,7 @@ export function BirdPage() {
           rule="Perch: uncommitted work younger than a day."
         >
           <Plate phase="day">
-            <BirdPortrait bird={perch} facing="right" night={false} />
+            <BirdPortrait bird={perch} facing="right" now={byDay} />
           </Plate>
         </Specimen>
         <Specimen
@@ -126,7 +132,7 @@ export function BirdPage() {
           rule="The Hothouse Vault: six changes past a day."
         >
           <Plate phase="day">
-            <BirdPortrait bird={hothouse} facing="right" night={false} />
+            <BirdPortrait bird={hothouse} facing="right" now={byDay} />
           </Plate>
         </Specimen>
         <Specimen
@@ -134,14 +140,14 @@ export function BirdPage() {
           rule="Prism: CI failing while you work on it."
         >
           <Plate phase="day">
-            <BirdPortrait bird={prism} facing="right" night={false} />
+            <BirdPortrait bird={prism} facing="right" now={byDay} />
           </Plate>
         </Specimen>
       </Section>
 
       <Section
-        title="Asleep · the night is cosmetic, sleep is earned"
-        rule="At night a content bird that is not being edited sleeps: eyes closed, still. Restless and distressed birds stay awake, an edited bird sings whatever the hour, and the fence sleeps. Colours and positions never change by night."
+        title="Asleep · midnight to 06:00, by its own rule"
+        rule="From midnight to 06:00 a bird that is neither distressed nor being edited sleeps: eyes closed, still, a z in its own colour where the note sits. The sky keeps its own night from 21:00, and before midnight every bird is awake. Colours and positions never change by night."
         min={260}
       >
         <Specimen
@@ -149,35 +155,55 @@ export function BirdPage() {
           rule="Spool closes its eyes and stops bobbing."
         >
           <Plate phase="night">
-            <BirdPortrait bird={spool} facing="right" night={true} />
+            <BirdPortrait bird={spool} facing="right" now={smallHours} />
           </Plate>
         </Specimen>
         <Specimen
-          label="restless: awake"
-          rule="Skiff lies awake over its stalled branch."
+          label="restless, not edited: asleep"
+          rule="Skiff sleeps on its stalled branch, amber and still."
         >
           <Plate phase="night">
-            <BirdPortrait bird={skiff} facing="right" night={true} />
+            <BirdPortrait bird={skiff} facing="right" now={smallHours} />
+          </Plate>
+        </Specimen>
+        <Specimen
+          label="distressed, not edited: awake"
+          rule="Hollow-legacy stays awake: a red project is never hidden by sleep."
+        >
+          <Plate phase="night">
+            <BirdPortrait
+              bird={mockBird("undev/Hollow-legacy")}
+              facing="right"
+              now={smallHours}
+            />
           </Plate>
         </Specimen>
         <Specimen
           label="edited: singing"
-          rule="Perch sings at night as by day."
+          rule="Perch sings at any hour, and never shows a z."
         >
           <Plate phase="night">
-            <BirdPortrait bird={perch} facing="right" night={true} />
+            <BirdPortrait bird={perch} facing="right" now={smallHours} />
           </Plate>
         </Specimen>
         <Specimen
           label="on the fence: asleep"
-          rule="Every fence bird sleeps at night."
+          rule="Every fence bird sleeps from midnight, whatever its health."
         >
           <Plate phase="night">
             <BirdPortrait
               bird={mockBird("dev/odin/hello")}
               facing="right"
-              night={true}
+              now={smallHours}
             />
+          </Plate>
+        </Specimen>
+        <Specimen
+          label="before midnight: awake"
+          rule="Spool at half past ten: the sky is at night, the bird is not yet asleep."
+        >
+          <Plate phase="night">
+            <BirdPortrait bird={spool} facing="right" now={lateEvening} />
           </Plate>
         </Specimen>
       </Section>
@@ -195,7 +221,7 @@ export function BirdPage() {
             <BirdPortrait
               bird={mockBird("dev/odin/hello")}
               facing="right"
-              night={false}
+              now={byDay}
             />
           </Plate>
         </Specimen>
@@ -207,7 +233,7 @@ export function BirdPage() {
             <BirdPortrait
               bird={mockBird("dev/hearth-config")}
               facing="right"
-              night={false}
+              now={byDay}
             />
           </Plate>
         </Specimen>
@@ -219,7 +245,7 @@ export function BirdPage() {
             <BirdPortrait
               bird={mockBird("github:finch/obsidian-tidy")}
               facing="right"
-              night={false}
+              now={byDay}
             />
           </Plate>
         </Specimen>
@@ -232,12 +258,12 @@ export function BirdPage() {
       >
         <Specimen label="facing right" rule="Left of the middle.">
           <Plate phase="day">
-            <BirdPortrait bird={skiff} facing="right" night={false} />
+            <BirdPortrait bird={skiff} facing="right" now={byDay} />
           </Plate>
         </Specimen>
         <Specimen label="facing left" rule="Right of the middle.">
           <Plate phase="day">
-            <BirdPortrait bird={skiff} facing="left" night={false} />
+            <BirdPortrait bird={skiff} facing="left" now={byDay} />
           </Plate>
         </Specimen>
       </Section>
@@ -248,7 +274,7 @@ export function BirdPage() {
           {
             name: "bird",
             type: "Bird",
-            what: "One bird from the view model: mood, activity, size, plumpness, adoption, sleep.",
+            what: "One bird from the view model: mood, activity, size, plumpness, adoption.",
           },
           {
             name: "facing",
@@ -256,9 +282,9 @@ export function BirdPage() {
             what: "Which way it looks; the wire turns birds inwards.",
           },
           {
-            name: "night",
-            type: "boolean",
-            what: "The sky is at night. Derive it outside: isNight(skyPhase(new Date())).",
+            name: "now",
+            type: "Date",
+            what: "The render's clock: the bird sleeps from midnight to 06:00 unless distressed or edited.",
           },
           {
             name: "x, y",

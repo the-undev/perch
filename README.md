@@ -51,6 +51,8 @@ from the root:
 | `pnpm dist`   | Builds the Linux AppImage into `apps/desktop/dist/`.                                                                       |
 | `pnpm icons`  | Renders the app and tray icons from their SVGs in `apps/desktop/resources/`.                                               |
 
+How a bird looks in every state is in [docs/birds.md](docs/birds.md).
+
 ### Making a release
 
 From an up-to-date `main`, run:

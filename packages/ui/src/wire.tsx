@@ -356,11 +356,12 @@ export interface WireProps {
   /** The wire's height in scene units, at its ends before the sag. */
   y: number;
   width: number;
-  night: boolean;
+  /** The render's clock: each bird's look follows the hour. */
+  now: Date;
 }
 
 /** One priority band on one row: its name painted behind, the wire, its birds leftmost first, and its tally in front. */
-export function Wire({ wire, y, width, night }: WireProps) {
+export function Wire({ wire, y, width, now }: WireProps) {
   const birds = byPosition(wire.birds);
   const spacing = placeSpacing(birds.length, wireGap, width);
   const places = birds.map((bird, i) => {
@@ -389,7 +390,7 @@ export function Wire({ wire, y, width, night }: WireProps) {
           x={place.x}
           y={place.y}
           facing={place.facing}
-          night={night}
+          now={now}
           namePlace={namePlace(i, spacing, roomyName.drop)}
           speaking={false}
           idle
@@ -407,11 +408,12 @@ export interface FenceProps {
   width: number;
   /** The scene's height: the posts run from the rail to the bottom. */
   height: number;
-  night: boolean;
+  /** The render's clock: each bird's look follows the hour. */
+  now: Date;
 }
 
 /** The fence beneath the wires: its name painted behind, a rail on posts, every unadopted bird dimmed upon it, and the count in front. */
-export function Fence({ fence, y, width, height, night }: FenceProps) {
+export function Fence({ fence, y, width, height, now }: FenceProps) {
   const birds = byPosition(fence.birds);
   const spacing = placeSpacing(birds.length, fenceGap, width);
   const places = birds.map((bird, i) => {
@@ -440,7 +442,7 @@ export function Fence({ fence, y, width, height, night }: FenceProps) {
           x={place.x}
           y={y + 2}
           facing={place.facing}
-          night={night}
+          now={now}
           namePlace={namePlace(i, spacing, roomyName.drop)}
           speaking={false}
           idle

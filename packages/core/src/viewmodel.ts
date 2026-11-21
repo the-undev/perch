@@ -55,12 +55,7 @@ import type {
   WorkItemKind,
 } from "./snapshot.ts";
 import type { SnoozeEnd } from "./snooze-date.ts";
-import {
-  type FenceSituation,
-  type SpeechSubject,
-  speak,
-  wakingPrefix,
-} from "./speech.ts";
+import { type FenceSituation, type SpeechSubject, speak } from "./speech.ts";
 
 /** The source cards pass to the renderer as the snapshot holds them; the settings page words them. */
 export type { HealthLevel, SourceCard, SourceCardKind, SourceCardResult };
@@ -186,8 +181,6 @@ export interface Bird {
   plumpness: Plumpness;
   /** Null when the owner has not snoozed it, and always on the fence. */
   snooze: Snooze | null;
-  /** At night a content bird not being edited sleeps, as does every fence bird. */
-  sleepsAtNight: boolean;
   /** Where a fence bird lives, for its hover tip; null on a wire or while undecided. */
   lives: string | null;
   bubble: Bubble;
@@ -204,8 +197,6 @@ export interface Bubble {
   stateWord: StateWord;
   /** First person, the why behind the colour. */
   speech: string;
-  /** The speech with the waking prefix, for a sleeping bird clicked at night; null when it stays awake. */
-  wokenSpeech: string | null;
   chips: Chip[];
 }
 
@@ -1535,8 +1526,6 @@ export function deriveBird(
   const name = entry?.name ?? item.name;
   const outstanding = openItemsOf(roadmapOf(item));
   const speech = speak(speechSubject(item, wire, scannedAt));
-  const sleepsAtNight =
-    !adopted || (mood === "content" && activity !== "editing");
   const chips = adopted ? chipsFor(item, health) : [];
   return {
     id: item.id,
@@ -1553,13 +1542,11 @@ export function deriveBird(
       fullness: Math.min(outstanding, plumpnessCap) / plumpnessCap,
     },
     snooze: adopted ? (snoozes[item.id] ?? null) : null,
-    sleepsAtNight,
     lives: adopted ? null : livesFor(fenceSituation(item)),
     bubble: {
       name,
       stateWord: adopted ? mood : "not adopted",
       speech,
-      wokenSpeech: sleepsAtNight ? `${wakingPrefix} ${speech}` : null,
       chips,
     },
     detail: {

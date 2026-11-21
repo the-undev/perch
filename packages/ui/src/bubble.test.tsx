@@ -7,7 +7,7 @@ import { mockBird } from "./mock-birds.ts";
 
 afterEach(cleanup);
 
-function speak(bird: Bird, night = false) {
+function speak(bird: Bird) {
   const onLaunch = vi.fn();
   const onFullStory = vi.fn();
   const onAdopt = vi.fn();
@@ -15,7 +15,7 @@ function speak(bird: Bird, night = false) {
   const { container } = render(
     <Bubble
       bubble={bird.bubble}
-      night={night}
+      asleep={false}
       actions={bird.detail.actions}
       onLaunch={onLaunch}
       onFullStory={onFullStory}
@@ -76,19 +76,6 @@ describe("the bubble", () => {
     const { container } = speak(mockBird("undev/spool"));
 
     expect(container.querySelectorAll("[data-kind]")).toHaveLength(0);
-  });
-
-  it("wakes a sleeping bird at night, and only a sleeping one", () => {
-    const spool = mockBird("undev/spool");
-    const prism = mockBird("undev/prism");
-
-    expect(speak(spool, true).container.textContent).toContain(
-      `Mm? You woke me. ${spool.bubble.speech}`,
-    );
-    cleanup();
-    expect(speak(prism, true).container.textContent).not.toContain(
-      "You woke me",
-    );
   });
 
   it("names each launch action by its verb and hands it back when pressed", () => {

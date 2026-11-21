@@ -45,7 +45,6 @@ import { NoCloneClause, NoCloneSlip } from "./no-clone-slip.tsx";
 import { KeyFilePaper, type KeyFileSheet, type Reveal } from "./paper.tsx";
 import { RisingSheet } from "./rising-sheet.tsx";
 import { Roost } from "./roost.tsx";
-import { isNight, skyPhase } from "./sky.ts";
 
 /** What the detail page needs to adopt its bird or amend its papers. */
 export interface EntryControls {
@@ -59,7 +58,7 @@ export interface EntryControls {
 
 export interface DetailViewProps {
   bird: Bird;
-  /** The render's clock: ages are measured to it, and at night a sleeping bird sleeps on its perch and speaks woken. */
+  /** The render's clock: ages are measured to it, and the bird's look follows the hour. */
   now: Date;
   onLaunch: (action: LaunchAction) => void;
   /** The bird's key files with what was read from each; empty until the caller has read them. */
@@ -230,7 +229,6 @@ export function DetailView({
     setSigned(null);
     setOpen(false);
   };
-  const night = isNight(skyPhase(now));
   const articleRef = useRef<HTMLElement>(null);
   // The chip that brought the camera here is marked in the page's first commit, and again whenever
   // another arrives.
@@ -311,7 +309,7 @@ export function DetailView({
           data-part="roost-cell"
           className="mx-auto w-120 max-w-full @min-[860px]:mx-0 @min-[860px]:w-auto @min-[860px]:min-w-0 @min-[860px]:flex-[0_1_auto]"
         >
-          <Roost bird={bird} night={night} onChip={pressChip} />
+          <Roost bird={bird} now={now} onChip={pressChip} />
         </div>
       </div>
       {/* The sheet spans both rows: a press anywhere off the papers, the band included, folds them,
@@ -323,7 +321,6 @@ export function DetailView({
           <AdoptionPapers
             bird={bird}
             form={agreed}
-            night={night}
             now={now}
             problems={problems}
             onSign={(values) => {

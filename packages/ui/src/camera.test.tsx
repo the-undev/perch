@@ -222,17 +222,47 @@ describe("the camera", () => {
 
     fireEvent.click(tab("Projects"));
     fireEvent.click(tab("Machine & Home"));
-    fireEvent.click(tab("On the fence"));
 
     expect(onNavigate).toHaveBeenNthCalledWith(1, detailOf("undev/prism"));
     expect(onNavigate).toHaveBeenNthCalledWith(
       2,
       detailOf("obsidian/Hothouse"),
     );
-    expect(onNavigate).toHaveBeenNthCalledWith(
-      3,
-      detailOf(mockAviary.fence.birds[0]?.id ?? ""),
-    );
+  });
+
+  it("opens the first fence bird by name from the fence tab, whatever their health or plumpness", () => {
+    const [first, second, third] = mockAviary.fence.birds;
+    if (first === undefined || second === undefined || third === undefined)
+      throw new Error("the mock fence needs three birds");
+    const named = (
+      bird: Bird,
+      name: string,
+      position: number,
+      mood: Bird["mood"],
+      outstanding: number,
+    ): Bird => ({
+      ...bird,
+      name,
+      position,
+      mood,
+      plumpness: { outstanding, fullness: outstanding / 50 },
+    });
+    const fence = {
+      ...mockAviary,
+      fence: {
+        ...mockAviary.fence,
+        birds: [
+          named(first, "Anvil", 0, "content", 0),
+          named(second, "Bellows", 1, "content", 1),
+          named(third, "Cairn", 2, "distressed", 40),
+        ],
+      },
+    };
+    const { onNavigate } = camera(aviaryPlace, false, now, fence);
+
+    fireEvent.click(tab("On the fence"));
+
+    expect(onNavigate).toHaveBeenCalledWith(detailOf(first.id));
   });
 
   it("opens an awake bird from a tab before any snoozed one, whatever their moods", () => {

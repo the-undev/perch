@@ -25,7 +25,7 @@ import {
   useState,
 } from "react";
 import {
-  byNeed,
+  byTabOrder,
   layoutAviary,
   type PlacedBird,
   pixelsPerUnit,
@@ -113,8 +113,9 @@ function tabOf(tabs: CameraTab[], bird: Bird): BirdTab | undefined {
 
 /**
  * Where pressing a tab goes: home for The Aviary; for a wire or the fence, the bird last open
- * there while it still sits there, else the one that needs the owner most. Null for a
- * wire with no birds, whose tab says "empty" and cannot be pressed.
+ * there while it still sits there, else the one that needs the owner most; the fence's tab falls
+ * to the first fence bird by name. Null for a wire with no birds, whose tab says "empty" and
+ * cannot be pressed.
  */
 export function tabDestination(
   tab: CameraTab,
@@ -125,7 +126,7 @@ export function tabDestination(
   const last = remembered[memoryKey(tab)];
   const bird =
     tab.birds.find((candidate) => candidate.id === last) ??
-    [...tab.birds].sort(byNeed(now))[0];
+    [...tab.birds].sort(byTabOrder(now))[0];
   return bird === undefined
     ? null
     : { at: "detail", birdId: bird.id, papers: false, chip: null };

@@ -19,6 +19,9 @@ use the older words below. Each is looked at on its own, then renamed.
 - "window" in comments, config comments and the design site becomes
   "threshold".
 - `Drift` becomes unsafe work, and `Detail` the bird's page.
+- "parked" in code names and comments becomes "stalled" (`snapshot.ts`,
+  `viewmodel.ts`, `derivations.ts`, `mock.ts`). The app text already says
+  stalled.
 
 ## Bird Types
 
@@ -144,6 +147,17 @@ browser.
 Forge repositories are keyed by owner/name alone, so the same name at two
 instances is one presence. Keying by instance changes the presence reference
 that config names, and needs a rule for entries written without one.
+
+## A bird's look worked out once on its page
+
+The bird's page works out the look in its heading, its view and the roost
+separately, for the same bird and time. The page could work it out once and
+pass it down, as the aviary does.
+
+## One map for the state word's colour
+
+The bubble's `stateWordTone` and the page heading's `stateTone` both map each
+state word to a colour, so a new state word must be added to both.
 
 ## Bug: each bird landing on its own in the fly-in
 

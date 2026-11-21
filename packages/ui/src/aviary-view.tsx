@@ -133,7 +133,7 @@ function PerchedBird({
     <g
       role="button"
       tabIndex={0}
-      aria-label={`${bird.name}, ${bird.bubble.stateWord}`}
+      aria-label={`${bird.name}, ${birdLook(bird, now).stateWord}`}
       aria-pressed={speaking}
       data-arrival={arrival}
       className="group cursor-pointer outline-none"
@@ -227,7 +227,7 @@ function AnchoredBubble({
       <Bubble
         key={placed.bird.id}
         bubble={placed.bird.bubble}
-        asleep={birdLook(placed.bird, now).asleep}
+        look={birdLook(placed.bird, now)}
         actions={placed.bird.detail.actions}
         onLaunch={onLaunch}
         onFullStory={onFullStory}
@@ -258,7 +258,7 @@ function Tip({ tip, size, now }: { tip: TipAt; size: PixelSize; now: Date }) {
       }}
     >
       <b className="font-semibold text-ink">{tip.bird.name}</b> ·{" "}
-      {tip.bird.bubble.stateWord}
+      {birdLook(tip.bird, now).stateWord}
       {line !== null && <div>{line}</div>}
     </div>
   );
@@ -353,7 +353,7 @@ export function AviaryScene({
   const phase = skyPhase(now);
   const layout = useMemo(() => layoutAviary(aviary, size), [aviary, size]);
   const placed = useMemo(() => placedBirds(layout), [layout]);
-  const arrival = useMemo(() => arrivalOrder(aviary), [aviary]);
+  const arrival = useMemo(() => arrivalOrder(aviary, now), [aviary, now]);
   const rootRef = useRef<HTMLDivElement>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [tip, setTip] = useState<TipAt | null>(null);

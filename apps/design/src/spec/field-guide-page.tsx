@@ -51,7 +51,7 @@ const birdNotes: Note[] = [
   },
   {
     title: "The eye and the z · asleep",
-    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor being edited sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. Colours and places never change by night.",
+    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor being edited sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. A snoozed bird sleeps at any hour, dimmed like a fence bird, until its end date or until woken. Colours and places never change by night.",
     rule: "Clicked with its eyes closed, a bird wakes and says so before its speech.",
   },
   {
@@ -74,7 +74,7 @@ const birdNotes: Note[] = [
 const bubbleNotes: Note[] = [
   {
     title: "Name and state word · the same health, spoken",
-    text: 'The display name, and the word for the mood the breast wears, in its colour on paper: content, restless or distressed. A fence bird says "not adopted", quietly.',
+    text: 'The display name, and the word for the mood the breast wears, in its colour on paper: content, restless or distressed. A fence bird says "not adopted" and a snoozed bird "snoozed", quietly, with when its snooze ends beneath.',
     rule: "Never a second status: the colour and the word read from one derivation.",
   },
   {

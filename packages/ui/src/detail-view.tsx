@@ -280,6 +280,7 @@ export function DetailView({
         >
           <DetailHeading
             bird={bird}
+            now={now}
             actions={
               <div
                 data-part="actions"

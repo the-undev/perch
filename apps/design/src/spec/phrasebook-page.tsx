@@ -245,11 +245,7 @@ function speaker(entry: Entry): Bird {
   return {
     ...bird,
     mood,
-    bubble: {
-      ...bird.bubble,
-      stateWord: bird.adopted ? mood : bird.bubble.stateWord,
-      speech,
-    },
+    bubble: { ...bird.bubble, speech },
   };
 }
 

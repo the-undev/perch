@@ -125,12 +125,12 @@ describe("mood", () => {
     expect(
       ["dev/spool", "dev/harbour", "dev/prism"].map((id) => {
         const bird = birdIn(items, config, id);
-        return [bird.health.level, bird.mood, bird.bubble.stateWord];
+        return [bird.health.level, bird.mood];
       }),
     ).toEqual([
-      ["green", "content", "content"],
-      ["amber", "restless", "restless"],
-      ["red", "distressed", "distressed"],
+      ["green", "content"],
+      ["amber", "restless"],
+      ["red", "distressed"],
     ]);
   });
 
@@ -354,11 +354,11 @@ describe("the wires", () => {
         bird.position,
         bird.id,
         bird.wire,
-        bird.bubble.stateWord,
+        bird.adopted,
       ]),
     ).toEqual([
-      [0, "dev/hello", null, "not adopted"],
-      [1, "dev/photo-shuttle", null, "not adopted"],
+      [0, "dev/hello", null, false],
+      [1, "dev/photo-shuttle", null, false],
     ]);
     expect(
       aviary.wires.flatMap((wire) => wire.birds).map((bird) => bird.id),

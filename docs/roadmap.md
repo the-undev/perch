@@ -66,6 +66,7 @@ window. Raising another app's window on Plasma Wayland needs a KWin script or
 ## Tray icon status
 
 The tray icon could show the worst health colour across everything.
+Snoozed birds are left out of it.
 
 ## Server monitoring
 
@@ -143,3 +144,8 @@ browser.
 Forge repositories are keyed by owner/name alone, so the same name at two
 instances is one presence. Keying by instance changes the presence reference
 that config names, and needs a rule for entries written without one.
+
+## Bug: each bird landing on its own in the fly-in
+
+Check that each bird visibly lands on its own in the fly-in, one after
+another, rather than the flock landing together.

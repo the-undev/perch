@@ -253,6 +253,54 @@ describe("the bird's look", () => {
     },
   );
 
+  it.each([
+    ["undev/spool", "content, not edited", "06:00 to midnight"],
+    ["undev/skiff", "restless, not edited", "midnight to 06:00"],
+    ["undev/Hollow-legacy", "distressed, not edited", "06:00 to midnight"],
+    ["undev/prism", "distressed, edited", "06:00 to midnight"],
+    ["undev/prism", "distressed, edited", "midnight to 06:00"],
+  ])("looks snoozed for %s, %s, %s", (id, _row, hour) => {
+    const now = hour === "06:00 to midnight" ? afternoon : smallHours;
+    const snoozed = { ...mockBird(id), snooze: { until: "2026-11-01" } };
+
+    expect(seen(snoozed, now)).toEqual({
+      colour: "dimmed",
+      stateWord: "snoozed",
+      eyes: "closed",
+      mark: "z",
+      motion: "still",
+    });
+  });
+
+  it("looks snoozed with no end date until woken", () => {
+    const snoozed = { ...mockBird("undev/skiff"), snooze: { until: null } };
+
+    expect(seen(snoozed, afternoon).stateWord).toBe("snoozed");
+  });
+
+  it("wears its real mood from the start of the snooze's end date", () => {
+    const skiff = mockBird("undev/skiff");
+    const snoozed = { ...skiff, snooze: { until: "2026-10-22" } };
+
+    expect(seen(snoozed, afternoon)).toEqual(seen(skiff, afternoon));
+    expect(seen(snoozed, new Date(2026, 9, 21, 23, 59)).stateWord).toBe(
+      "snoozed",
+    );
+  });
+
+  it("keeps a snoozed bird's plumpness and stands it on the wire", () => {
+    const plump = {
+      ...mockBird("undev/skiff"),
+      plumpness: { outstanding: 50, fullness: 1 },
+    };
+    const snoozed = { ...plump, snooze: { until: null } };
+
+    expect(birdScale(snoozed)).toBeCloseTo(birdScale(plump));
+    expect(
+      portrait(snoozed).querySelector("line")?.getAttribute("stroke"),
+    ).toBe("var(--color-wire)");
+  });
+
   it("sleeps from midnight until 06:00, and not in the sky's night before midnight", () => {
     const at = (hours: number, minutes: number) =>
       new Date(2026, 9, 22, hours, minutes);

@@ -8,17 +8,18 @@ import type {
   Bubble as BubbleModel,
   ChipKind,
   LaunchAction,
-  StateWord,
 } from "@perch/core/viewmodel.ts";
+import type { BirdLook, StateWord } from "./bird.tsx";
 import { ChipHandles } from "./chip.tsx";
 import { Icon } from "./icons.tsx";
 
-/** The state word's ink on paper: the mood's colour, quiet for the fence. */
+/** The state word's ink on paper: the mood's colour, quiet for the fence and a snoozed bird. */
 export const stateWordTone: Record<StateWord, string> = {
   content: "text-paper-green",
   restless: "text-paper-amber",
   distressed: "text-paper-red",
   "not adopted": "text-paper-quiet",
+  snoozed: "text-paper-quiet",
 };
 
 /** Where the tail hangs: which edge it is measured from, and the distance from that edge to its tip. */
@@ -134,8 +135,8 @@ function SideTail({
 
 export interface BubbleProps {
   bubble: BubbleModel;
-  /** The bird's eyes are closed: the click wakes it and its speech gains the waking prefix. */
-  asleep: boolean;
+  /** The bird's look now: its state word, a snooze's end, and closed eyes, which give the speech the waking prefix. */
+  look: BirdLook;
   /** The bird's launch actions, shown as icon buttons named by their verbs. */
   actions: LaunchAction[];
   onLaunch: (action: LaunchAction) => void;
@@ -151,7 +152,7 @@ export interface BubbleProps {
 /** Tier B: a bird's answer to "what's up with you?". */
 export function Bubble({
   bubble,
-  asleep,
+  look,
   actions,
   onLaunch,
   onFullStory,
@@ -173,13 +174,21 @@ export function Bubble({
         {bubble.name}
         <span
           data-part="state-word"
-          className={`font-body font-semibold text-[10px] uppercase tracking-[0.12em] ${stateWordTone[bubble.stateWord]}`}
+          className={`font-body font-semibold text-[10px] uppercase tracking-[0.12em] ${stateWordTone[look.stateWord]}`}
         >
-          {bubble.stateWord}
+          {look.stateWord}
         </span>
       </h3>
+      {look.snoozedUntil !== null && (
+        <p
+          data-part="snoozed-until"
+          className="m-0 mb-1.5 text-[12.5px] text-paper-quiet"
+        >
+          {look.snoozedUntil}
+        </p>
+      )}
       <p data-part="speech" className="m-0">
-        {spokenSpeech(bubble, asleep)}
+        {spokenSpeech(bubble, look.asleep)}
       </p>
       <ChipHandles chips={bubble.chips} onPress={onChip} />
       <div className="mt-3 flex items-center gap-2">

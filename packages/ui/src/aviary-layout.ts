@@ -3,7 +3,13 @@
 // and the bubble's place against a beak. Proportions are the board's.
 
 import type { Aviary, Bird, Mood, Wire } from "@perch/core/viewmodel.ts";
-import { birdScale, type Facing, type NamePlace, roomyName } from "./bird.tsx";
+import {
+  birdScale,
+  type Facing,
+  isSnoozed,
+  type NamePlace,
+  roomyName,
+} from "./bird.tsx";
 import type { BubbleTail } from "./bubble.tsx";
 import type { PixelSize } from "./hooks.ts";
 import { sceneWidthFor } from "./scene.tsx";
@@ -305,22 +311,22 @@ const arrivalMood: Record<Mood, number> = {
   content: 2,
 };
 
-/** Orders birds by who needs the owner most: the adopted first, then the worst mood, then the plumpest. */
-export function byNeed(a: Bird, b: Bird): number {
-  return (
+/** Orders birds by who needs the owner most at a time: the adopted first, then the awake before the snoozed, then the worst mood, then the plumpest. */
+export function byNeed(now: Date): (a: Bird, b: Bird) => number {
+  return (a, b) =>
     Number(!a.adopted) - Number(!b.adopted) ||
+    Number(isSnoozed(a, now)) - Number(isSnoozed(b, now)) ||
     arrivalMood[a.mood] - arrivalMood[b.mood] ||
-    b.plumpness.outstanding - a.plumpness.outstanding
-  );
+    b.plumpness.outstanding - a.plumpness.outstanding;
 }
 
-/** Who lands first: the wires before the fence, then by need. */
-export function arrivalOrder(aviary: Aviary): Map<string, number> {
+/** Who lands first at a time: the wires before the fence, then by need. */
+export function arrivalOrder(aviary: Aviary, now: Date): Map<string, number> {
   const birds = [
     ...aviary.wires.flatMap((wire) => wire.birds),
     ...aviary.fence.birds,
   ];
-  const sorted = [...birds].sort(byNeed);
+  const sorted = [...birds].sort(byNeed(now));
   return new Map(sorted.map((bird, index) => [bird.id, index]));
 }
 

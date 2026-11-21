@@ -4,6 +4,7 @@ import {
   lateEvening,
   mockBird,
   smallHours,
+  snoozedUntil,
   withOutstanding,
 } from "../specimens.ts";
 import { Code, Plate, Section, Specimen, Usage } from "../usage.tsx";
@@ -204,6 +205,61 @@ export function BirdPage() {
         >
           <Plate phase="night">
             <BirdPortrait bird={spool} facing="right" now={lateEvening} />
+          </Plate>
+        </Specimen>
+      </Section>
+
+      <Section
+        title="Snoozed · set aside by the owner"
+        rule="A snoozed bird wears the fence's dimming whatever its mood, with closed eyes and a z, still, at any hour. It keeps its plumpness and stands on its wire. From the start of its end date it wears its real mood again, with no scan."
+        min={260}
+      >
+        <Specimen
+          label="by day"
+          rule="Prism, distressed and being edited, snoozed: no red, no note."
+        >
+          <Plate phase="day">
+            <BirdPortrait
+              bird={snoozedUntil(prism, "2026-10-23")}
+              facing="right"
+              now={byDay}
+            />
+          </Plate>
+        </Specimen>
+        <Specimen
+          label="by night"
+          rule="Skiff snoozed until woken: by night only the wire tells it from a fence bird."
+        >
+          <Plate phase="night">
+            <BirdPortrait
+              bird={snoozedUntil(skiff, null)}
+              facing="right"
+              now={smallHours}
+            />
+          </Plate>
+        </Specimen>
+        <Specimen
+          label="plump, snoozed"
+          rule="Hothouse keeps its plumpness while snoozed."
+        >
+          <Plate phase="day">
+            <BirdPortrait
+              bird={snoozedUntil(hothouse, null)}
+              facing="right"
+              now={byDay}
+            />
+          </Plate>
+        </Specimen>
+        <Specimen
+          label="snooze run out"
+          rule="Skiff snoozed until 22 October, drawn that afternoon: amber again."
+        >
+          <Plate phase="day">
+            <BirdPortrait
+              bird={snoozedUntil(skiff, "2026-10-22")}
+              facing="right"
+              now={byDay}
+            />
           </Plate>
         </Specimen>
       </Section>

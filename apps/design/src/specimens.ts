@@ -38,6 +38,11 @@ export const lateEvening = new Date(2026, 9, 22, 22, 30);
 /** The small hours after the mock scan: the sky at night and every bird that sleeps asleep. */
 export const smallHours = new Date(2026, 9, 23, 3, 0);
 
+/** A bird the owner has snoozed until a date, or until woken for null. */
+export function snoozedUntil(bird: Bird, until: string | null): Bird {
+  return { ...bird, snooze: { until } };
+}
+
 /** A bird carrying a given amount of outstanding work, against the cap of 50. */
 export function withOutstanding(bird: Bird, outstanding: number): Bird {
   return {
@@ -110,7 +115,6 @@ export function withHelloAdopted(): Aviary {
     ...hello,
     adopted: true,
     wire: "Projects",
-    bubble: { ...hello.bubble, stateWord: hello.mood },
   };
   return {
     ...mockAviary,

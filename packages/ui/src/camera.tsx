@@ -118,12 +118,13 @@ function tabOf(tabs: CameraTab[], bird: Bird): BirdTab | undefined {
 export function tabDestination(
   tab: CameraTab,
   remembered: Record<string, string>,
+  now: Date,
 ): CameraPlace | null {
   if (tab.kind === "aviary") return { at: "aviary" };
   const last = remembered[memoryKey(tab)];
   const bird =
     tab.birds.find((candidate) => candidate.id === last) ??
-    [...tab.birds].sort(byNeed)[0];
+    [...tab.birds].sort(byNeed(now))[0];
   return bird === undefined
     ? null
     : { at: "detail", birdId: bird.id, papers: false, chip: null };
@@ -714,7 +715,7 @@ export function CameraView({
           className="flex gap-1 rounded-full border border-edge bg-band p-0.75"
         >
           {tabs.map((tab) => {
-            const destination = tabDestination(tab, remembered);
+            const destination = tabDestination(tab, remembered, now);
             if (destination === null) {
               return (
                 <span

@@ -154,7 +154,7 @@ export function Roost({ bird, now, onChip }: RoostProps) {
         </div>
         <svg
           role="img"
-          aria-label={`${bird.name}, ${bird.adopted ? bird.mood : "not adopted"}${look.asleep ? ", asleep" : ""}`}
+          aria-label={`${bird.name}, ${look.stateWord}${look.asleep ? ", asleep" : ""}`}
           data-mood={bird.mood}
           data-asleep={look.asleep}
           viewBox={`0 0 ${frame.width} ${frame.height}`}

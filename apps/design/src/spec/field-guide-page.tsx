@@ -62,7 +62,7 @@ const birdNotes: Note[] = [
   {
     title: "The wire · your priority",
     text: "Wires are the owner's priority bands, an ordered named list in config. A bird never changes wire by itself; its papers move it. The wire's name is painted large and quiet on the sky above its left end, cut back round each bird, and its tally hangs in front beneath.",
-    rule: "Along the wire the worst mood sits leftmost, then by name: leftmost needs you first.",
+    rule: "Along a wire the birds are ordered by name, whatever their moods.",
   },
   {
     title: "The fence · not adopted",
@@ -199,7 +199,7 @@ export function FieldGuidePage() {
         </Specimen>
         <Specimen
           label="Where it perches: Machine & Home, and the fence"
-          rule="The wire's painted name and tally, its birds worst mood leftmost, and the unadopted dimmed on the fence beneath."
+          rule="The wire's painted name and tally, its birds in name order, and the unadopted dimmed on the fence beneath."
         >
           <div className="overflow-hidden rounded-xl border border-edge">
             <Scene

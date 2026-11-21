@@ -48,7 +48,7 @@ export function WirePage() {
         </Specimen>
         <Specimen
           label="Projects"
-          rule="Distressed leftmost, then restless, then content; within a mood by name."
+          rule="By name, whatever the moods of its birds."
         >
           <WireScene wire={projects} night={false} />
         </Specimen>
@@ -131,7 +131,7 @@ export function WirePage() {
           {
             name: "wire",
             type: "Wire",
-            what: "Wire only: one priority band from the view model, its birds ordered leftmost first.",
+            what: "Wire only: one priority band from the view model, its birds ordered by name.",
           },
           {
             name: "fence",

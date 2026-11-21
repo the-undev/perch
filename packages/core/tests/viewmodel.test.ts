@@ -267,7 +267,7 @@ describe("mood", () => {
 });
 
 describe("the wires", () => {
-  it("lists every configured wire in order, the worst mood leftmost, then name", async () => {
+  it("lists every configured wire in order, each wire by name whatever the moods", async () => {
     const config = await adoptAll([
       "dev/spool",
       "dev/harbour",
@@ -292,9 +292,9 @@ describe("the wires", () => {
     expect(
       aviary.wires[1]?.birds.map((bird) => [bird.position, bird.id]),
     ).toEqual([
-      [0, "dev/prism"],
+      [0, "dev/alpha"],
       [1, "dev/harbour"],
-      [2, "dev/alpha"],
+      [2, "dev/prism"],
       [3, "dev/spool"],
       [4, "dev/zeta"],
     ]);

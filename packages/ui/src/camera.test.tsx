@@ -200,7 +200,7 @@ function tab(name: string): HTMLElement {
   return screen.getByRole("button", { name });
 }
 
-/** The leftmost bird on a wire: it needs attention first. */
+/** The leftmost bird on a wire. */
 function leftmost(wireName: string): string {
   const wire = mockAviary.wires.find(
     (candidate) => candidate.name === wireName,

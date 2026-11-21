@@ -170,3 +170,11 @@ state file is read would keep it small.
 
 Check that each bird visibly lands on its own in the fly-in, one after
 another, rather than the flock landing together.
+
+## Open decisions
+
+- The glossary's Asleep says a bird "neither distressed nor being edited" is
+  asleep between midnight and 06:00, but every fence bird sleeps at night
+  whatever its health. Whether to reword it to match: TBD.
+- Whether "Waking a snoozed bird when a new cause appears" and "Custom end
+  dates", out of scope for snoozes, become roadmap items: TBD.

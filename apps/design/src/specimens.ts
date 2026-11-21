@@ -17,7 +17,7 @@ import type {
 import {
   type Aviary,
   type Bird,
-  compareOnWire,
+  compareByName,
   deriveAviary,
   type LedgerEntry,
   type Wire,
@@ -62,7 +62,7 @@ export function aviaryWith(wires: Wire[]): Aviary {
 /** Birds in the order the view model gives a wire, their positions renumbered. */
 function onWire(birds: Bird[]): Bird[] {
   return [...birds]
-    .sort(compareOnWire)
+    .sort(compareByName)
     .map((bird, position) => ({ ...bird, position }));
 }
 
@@ -98,7 +98,7 @@ export function crowdedFence(count: number): Aviary {
   });
   // The fence is ordered by name.
   const byName = birds
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort(compareByName)
     .map((bird, position) => ({ ...bird, position }));
   return { ...mockAviary, fence: { birds: byName } };
 }

@@ -200,16 +200,6 @@ function tab(name: string): HTMLElement {
   return screen.getByRole("button", { name });
 }
 
-/** The leftmost bird on a wire: it needs attention first. */
-function leftmost(wireName: string): string {
-  const wire = mockAviary.wires.find(
-    (candidate) => candidate.name === wireName,
-  );
-  const bird = wire?.birds.find((candidate) => candidate.position === 0);
-  if (bird === undefined) throw new Error(`no birds on ${wireName}`);
-  return bird.id;
-}
-
 describe("the camera", () => {
   it("puts the tabs in the scene's own order, The Aviary current at home", () => {
     camera(aviaryPlace);
@@ -226,18 +216,20 @@ describe("the camera", () => {
     expect(tab("The Aviary").getAttribute("aria-current")).toBe("page");
   });
 
-  it("opens a wire's most urgent bird from its tab", () => {
+  it("opens the bird that needs the owner most from a tab: worst mood, then plumpest", () => {
     const { onNavigate } = camera(aviaryPlace);
 
     fireEvent.click(tab("Projects"));
+    fireEvent.click(tab("Machine & Home"));
     fireEvent.click(tab("On the fence"));
 
-    expect(onNavigate).toHaveBeenNthCalledWith(
-      1,
-      detailOf(leftmost("Projects")),
-    );
+    expect(onNavigate).toHaveBeenNthCalledWith(1, detailOf("undev/prism"));
     expect(onNavigate).toHaveBeenNthCalledWith(
       2,
+      detailOf("obsidian/Hothouse"),
+    );
+    expect(onNavigate).toHaveBeenNthCalledWith(
+      3,
       detailOf(mockAviary.fence.birds[0]?.id ?? ""),
     );
   });

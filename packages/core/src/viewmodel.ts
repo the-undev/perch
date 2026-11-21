@@ -128,7 +128,7 @@ export interface Aviary {
   warnings: string[];
 }
 
-/** One priority band from config, its birds leftmost first: leftmost needs attention first. */
+/** One priority band from config, its birds in name order. */
 export interface Wire {
   name: string;
   birds: Bird[];
@@ -1584,15 +1584,9 @@ export function deriveBird(
   };
 }
 
-const moodRank: Record<Mood, number> = {
-  distressed: 0,
-  restless: 1,
-  content: 2,
-};
-
-/** Along a wire: the worst mood leftmost, then by name. */
-export function compareOnWire(a: Bird, b: Bird): number {
-  return moodRank[a.mood] - moodRank[b.mood] || a.name.localeCompare(b.name);
+/** Along a wire and the fence: by name, whatever the birds' moods. */
+export function compareByName(a: Bird, b: Bird): number {
+  return a.name.localeCompare(b.name);
 }
 
 function placed(birds: Bird[], compare: (a: Bird, b: Bird) => number): Bird[] {
@@ -1602,7 +1596,7 @@ function placed(birds: Bird[], compare: (a: Bird, b: Bird) => number): Bird[] {
 /**
  * The aviary from a snapshot, the config and the snoozes, paths under the home directory shown with ~. Every
  * configured wire appears, empty or not, in config order. The server item waits for server
- * monitoring and is not a bird. The fence is ordered by name: it holds no priority.
+ * monitoring and is not a bird. Every wire and the fence are ordered by name.
  */
 export function deriveAviary(
   snapshot: Snapshot,
@@ -1620,13 +1614,13 @@ export function deriveAviary(
       name,
       birds: placed(
         birds.filter((bird) => bird.wire === name),
-        compareOnWire,
+        compareByName,
       ),
     })),
     fence: {
       birds: placed(
         birds.filter((bird) => !bird.adopted),
-        (a, b) => a.name.localeCompare(b.name),
+        compareByName,
       ),
     },
     sourceErrors: Object.entries(snapshot.sources).flatMap(

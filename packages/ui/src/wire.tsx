@@ -1,5 +1,5 @@
-// A wire and the fence, drawn into a Scene. Birds keep the view model's order, leftmost needing
-// attention first, spread evenly and turned to face the middle.
+// A wire and the fence, drawn into a Scene. Birds keep the view model's order, by name,
+// spread evenly and turned to face the middle.
 
 import type {
   Bird as BirdModel,

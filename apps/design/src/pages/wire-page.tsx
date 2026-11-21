@@ -37,7 +37,7 @@ export function WirePage() {
     <>
       <Section
         title="The wire · your priority"
-        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the bird places itself: leftmost needs you first. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who needs attention, who drifts. The birds start ${columnEdgeFor(sceneWidth)} units in at full width whatever the name or tally says.`}
+        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the birds sit in name order. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who needs attention, who drifts. The birds start ${columnEdgeFor(sceneWidth)} units in at full width whatever the name or tally says.`}
         min={900}
       >
         <Specimen
@@ -48,7 +48,7 @@ export function WirePage() {
         </Specimen>
         <Specimen
           label="Projects"
-          rule="Distressed leftmost, then restless, then content; within a mood by name."
+          rule="By name, whatever the moods of its birds."
         >
           <WireScene wire={projects} />
         </Specimen>
@@ -139,7 +139,7 @@ export function WirePage() {
           {
             name: "wire",
             type: "Wire",
-            what: "Wire only: one priority band from the view model, its birds ordered leftmost first.",
+            what: "Wire only: one priority band from the view model, its birds ordered by name.",
           },
           {
             name: "fence",

@@ -108,7 +108,7 @@ export const pages: DesignPage[] = [
     group: "components",
     title: "Wire and Fence",
     summary:
-      "A priority band with its birds leftmost first, and the fence beneath for the unadopted.",
+      "A priority band with its birds in name order, and the fence beneath for the unadopted.",
     component: WirePage,
   },
   {

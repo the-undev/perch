@@ -20,10 +20,6 @@ use the older words below. Each is looked at on its own, then renamed.
   "threshold".
 - `Drift` becomes unsafe work, and `Detail` the bird's page.
 
-## Bird Positions
-
-Move to a fixed layout for the birds so they're always in the same spots.
-
 ## Bird Types
 
 More types of bird, perhaps per project.

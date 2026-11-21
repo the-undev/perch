@@ -314,8 +314,8 @@ function SkyLegend() {
         settled
       </span>
       <span>
-        higher wire = more important · leftmost = needs you first · plumper =
-        more outstanding work · ♪ = being edited
+        higher wire = more important · plumper = more outstanding work · ♪ =
+        being edited
       </span>
       <span>click a bird to hear from it</span>
     </div>

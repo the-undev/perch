@@ -9,7 +9,12 @@ import {
 } from "@perch/ui/scene.tsx";
 import type { SkyPhase } from "@perch/ui/sky.ts";
 import { useState } from "react";
-import { mockWire, scanMoment, withHelloAdopted } from "../specimens.ts";
+import {
+  mockWire,
+  scanMoment,
+  smallHours,
+  withHelloAdopted,
+} from "../specimens.ts";
 import {
   Choice,
   Code,
@@ -20,7 +25,7 @@ import {
   Usage,
 } from "../usage.tsx";
 
-type Clock = "clock" | SkyPhase;
+type Clock = "clock" | SkyPhase | "small-hours";
 
 /** An hour inside each phase on the mock scan's day, local time. */
 const phaseHour: Record<SkyPhase, number> = {
@@ -30,11 +35,11 @@ const phaseHour: Record<SkyPhase, number> = {
   night: 23,
 };
 
-/** The render's clock: the real one, or an hour on the scan's day that sets a phase. */
+/** The render's clock: the real one, the small hours after the scan when birds sleep, or an hour on the scan's day that sets a phase. */
 export function clockFor(clock: Clock): Date {
-  return clock === "clock"
-    ? new Date()
-    : new Date(2026, 9, 22, phaseHour[clock], 0);
+  if (clock === "clock") return new Date();
+  if (clock === "small-hours") return smallHours;
+  return new Date(2026, 9, 22, phaseHour[clock], 0);
 }
 
 export const clockOptions: { value: Clock; label: string }[] = [
@@ -42,7 +47,8 @@ export const clockOptions: { value: Clock; label: string }[] = [
   { value: "dawn", label: "Dawn" },
   { value: "day", label: "Day" },
   { value: "dusk", label: "Dusk" },
-  { value: "night", label: "Night" },
+  { value: "night", label: "Night, before midnight" },
+  { value: "small-hours", label: "Small hours, asleep" },
 ];
 
 type Scan = "mock" | "adopted";
@@ -172,7 +178,7 @@ export function AviaryScenePage() {
           {
             name: "now",
             type: "Date",
-            what: "The render's clock. The sky's phase, sleep, and every age in the tips and notices read from it.",
+            what: "The render's clock. The sky's phase, the birds' sleep from midnight to 06:00, and every age in the tips and notices read from it.",
           },
           {
             name: "onLaunch",

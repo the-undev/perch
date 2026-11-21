@@ -23,7 +23,8 @@ import { minPixelsPerUnit, sceneWidth } from "./scene.tsx";
 afterEach(cleanup);
 
 const morning = new Date(mockSnapshot.scannedAt);
-const night = new Date(2026, 9, 22, 23, 30);
+/** Three in the morning, in the sleep hours. */
+const smallHours = new Date(2026, 9, 23, 3, 0);
 
 /** The mock aviary's scene drawn into a window of a given size. */
 function scene(size: PixelSize) {
@@ -217,14 +218,30 @@ describe("the aviary view", () => {
     expect(screen.queryByRole("region", { name: "Prism says" })).toBeNull();
   });
 
-  it("wakes a sleeping bird clicked at night", () => {
-    show(night);
+  it("wakes any bird with closed eyes when clicked, and no bird with open eyes", () => {
+    const spoken = (id: string, now: Date) => {
+      show(now);
+      fireEvent.click(birdButton(id));
+      const bird = mockBird(id);
+      const words = screen
+        .getByRole("region", { name: `${bird.name} says` })
+        .querySelector('[data-part="speech"]')?.textContent;
+      cleanup();
+      return words?.startsWith("Mm? You woke me. ") ?? false;
+    };
+    const asleep = ["undev/spool", "undev/skiff", "dev/odin/hello"];
+    const awake = ["undev/prism", "dev/perch", "obsidian/Hothouse"];
 
-    fireEvent.click(birdButton("undev/spool"));
-
-    expect(
-      screen.getByRole("region", { name: "Spool says" }).textContent,
-    ).toContain("Mm? You woke me.");
+    expect(asleep.map((id) => spoken(id, smallHours))).toEqual([
+      true,
+      true,
+      true,
+    ]);
+    expect(awake.map((id) => spoken(id, smallHours))).toEqual([
+      false,
+      false,
+      false,
+    ]);
   });
 
   it("shows a hovered bird's tip with the numbers it carries", () => {

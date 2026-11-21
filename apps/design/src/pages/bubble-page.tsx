@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SpeakingBird } from "../speaking-bird.tsx";
-import { mockBird } from "../specimens.ts";
+import { byDay, mockBird, smallHours } from "../specimens.ts";
 import { Code, Plate, Section, Specimen, Usage } from "../usage.tsx";
 
 interface Entry {
@@ -92,31 +92,26 @@ export function BubblePage() {
     title: string;
     rule: string;
     entries: Entry[];
-    night: boolean;
   }[] = [
     {
       title: "Content",
       rule: "Green birds are brief. Contentment never needs more than two sentences, and the backlog is an invitation, not a nag.",
       entries: content,
-      night: false,
     },
     {
       title: "Restless",
       rule: "Amber birds nudge. They name the quantity and the time and stop there; the closing remark may be dry, never wounded.",
       entries: restless,
-      night: false,
     },
     {
       title: "Distressed",
       rule: "Red birds are blunt and lead with the worst thing. One secondary fact at most; the rest waits in the chips.",
       entries: distressed,
-      night: false,
     },
     {
       title: "On the fence",
       rule: "Fence birds state their situation without pleading, and carry no chips. The decision is the owner's; the bird just says where it stands.",
       entries: fence,
-      night: false,
     },
   ];
   return (
@@ -136,7 +131,7 @@ export function BubblePage() {
               <Plate phase="dusk">
                 <SpeakingBird
                   bird={mockBird(entry.id)}
-                  night={section.night}
+                  now={byDay}
                   onPress={setPressed}
                 />
               </Plate>
@@ -146,30 +141,30 @@ export function BubblePage() {
       ))}
 
       <Section
-        title="At night"
-        rule="Sleep is earned. A sleeping bird clicked at night is woken and says so before its usual speech; restless and distressed birds lie awake and never gain the prefix."
+        title="Asleep"
+        rule="Any bird with closed eyes, clicked, is woken and says so before its usual speech. A bird with open eyes never gains the prefix."
         min={440}
       >
         <Specimen
           label="Woken"
-          rule="Spool: content, not being edited, asleep until clicked."
+          rule="Skiff: restless, not being edited, asleep until clicked."
         >
           <Plate phase="night">
             <SpeakingBird
-              bird={mockBird("undev/spool")}
-              night={true}
+              bird={mockBird("undev/skiff")}
+              now={smallHours}
               onPress={setPressed}
             />
           </Plate>
         </Specimen>
         <Specimen
           label="Awake anyway"
-          rule="Skiff: restless, so it never slept."
+          rule="Hollow-legacy: distressed, so it never slept."
         >
           <Plate phase="night">
             <SpeakingBird
-              bird={mockBird("undev/skiff")}
-              night={true}
+              bird={mockBird("undev/Hollow-legacy")}
+              now={smallHours}
               onPress={setPressed}
             />
           </Plate>
@@ -182,12 +177,12 @@ export function BubblePage() {
           {
             name: "bubble",
             type: "Bubble",
-            what: "bird.bubble: name, state word, speech, woken speech, chips.",
+            what: "bird.bubble: name, state word, speech, chips.",
           },
           {
-            name: "night",
+            name: "asleep",
             type: "boolean",
-            what: "At night a bird that sleeps speaks its woken speech.",
+            what: "The bird's eyes are closed: birdLook(bird, now).asleep. Its speech gains the waking prefix.",
           },
           {
             name: "actions",

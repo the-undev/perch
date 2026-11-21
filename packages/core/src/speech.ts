@@ -6,7 +6,7 @@
 import type { ForgeName } from "./snapshot.ts";
 import type { Activity, HealthCause } from "./viewmodel.ts";
 
-/** The prefix a sleeping bird's speech gains when it is clicked at night. */
+/** The prefix an asleep bird's speech gains when it is clicked. */
 export const wakingPrefix = "Mm? You woke me.";
 
 /** Where a fence bird stands: forge only, one disk with no remote, or found and undecided. */

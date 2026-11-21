@@ -10,7 +10,7 @@ import { Scene, sceneWidth } from "@perch/ui/scene.tsx";
 import { Fence, Wire } from "@perch/ui/wire.tsx";
 import { type ReactNode, useState } from "react";
 import { SpeakingBird } from "../speaking-bird.tsx";
-import { mockBird, mockWire } from "../specimens.ts";
+import { byDay, mockBird, mockWire, smallHours } from "../specimens.ts";
 import { Plate, Pressed, Specimen } from "../usage.tsx";
 
 const { unsafe, stalled, bugs, criticalBugs } = defaultConfig().thresholds;
@@ -50,9 +50,9 @@ const birdNotes: Note[] = [
     rule: "From git: editing while any file is uncommitted.",
   },
   {
-    title: "The eye · asleep at night",
-    text: "The sky follows the real clock. At night a content bird that is not being edited sleeps: its eye closes and it stops bobbing. Restless and distressed birds lie awake, and every fence bird sleeps. Colours and places never change by night.",
-    rule: "Clicked while asleep, a bird wakes and says so before its speech.",
+    title: "The eye and the z · asleep",
+    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor being edited sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. Colours and places never change by night.",
+    rule: "Clicked with its eyes closed, a bird wakes and says so before its speech.",
   },
   {
     title: "Name · the project",
@@ -193,7 +193,7 @@ export function FieldGuidePage() {
         >
           <Plate phase="day">
             <div className="w-full max-w-[520px] [&>svg]:w-full">
-              <BirdPortrait bird={vault} facing="right" night={false} />
+              <BirdPortrait bird={vault} facing="right" now={byDay} />
             </div>
           </Plate>
         </Specimen>
@@ -212,14 +212,14 @@ export function FieldGuidePage() {
                 wire={mockWire("Machine & Home")}
                 y={250}
                 width={sceneWidth}
-                night={false}
+                now={byDay}
               />
               <Fence
                 fence={mockAviary.fence}
                 y={500}
                 width={sceneWidth}
                 height={600}
-                night={false}
+                now={byDay}
               />
             </Scene>
           </div>
@@ -232,26 +232,26 @@ export function FieldGuidePage() {
           }}
         >
           <Specimen
-            label="Spool by night: asleep"
-            rule="Content and not edited, so its eye closes."
+            label="Spool in the small hours: asleep"
+            rule="Content and not edited, so its eye closes under a green z."
           >
             <Plate phase="night">
               <BirdPortrait
                 bird={mockBird("undev/spool")}
                 facing="right"
-                night={true}
+                now={smallHours}
               />
             </Plate>
           </Specimen>
           <Specimen
-            label="Perch by night: singing"
-            rule="Being edited, so it stays awake."
+            label="Perch in the small hours: singing"
+            rule="Being edited, so it stays awake and shows the note, never the z."
           >
             <Plate phase="night">
               <BirdPortrait
                 bird={mockBird("dev/perch")}
                 facing="right"
-                night={true}
+                now={smallHours}
               />
             </Plate>
           </Specimen>
@@ -268,7 +268,7 @@ export function FieldGuidePage() {
           rule="A remote no card can read, and stalled on a branch: the worst speaks first, the stall follows."
         >
           <Plate phase="dusk">
-            <SpeakingBird bird={skiff} night={false} onPress={setPressed} />
+            <SpeakingBird bird={skiff} now={byDay} onPress={setPressed} />
           </Plate>
         </Specimen>
         <Specimen
@@ -278,7 +278,7 @@ export function FieldGuidePage() {
           <Plate phase="dusk">
             <SpeakingBird
               bird={mockBird("dev/odin/hello")}
-              night={false}
+              now={byDay}
               onPress={setPressed}
             />
           </Plate>

@@ -100,7 +100,7 @@ export const pages: DesignPage[] = [
     group: "components",
     title: "Bird",
     summary:
-      "Breast from mood, plumpness from outstanding work, the fence, sleep and song.",
+      "Breast from mood, plumpness from outstanding work, the fence, sleep with its z, and song.",
     component: BirdPage,
   },
   {

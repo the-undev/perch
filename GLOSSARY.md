@@ -142,7 +142,7 @@ A commit on a project's default branch.
 A bird's size, from its outstanding work.
 
 **Asleep**:
-A bird's look at night, eyes closed and still, when it is content and not being edited. It follows the clock and says nothing about the project.
+A bird's look, eyes closed with a z. A bird that is neither distressed nor being edited is asleep between midnight and 06:00.
 
 **Flag**:
 Something odd about how an entity is set up, such as an archived forge repository or two sets of papers naming it.

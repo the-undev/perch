@@ -43,7 +43,7 @@ import {
 import type { KeyFileSheet } from "./paper.tsx";
 import { ScanLine } from "./scan-line.tsx";
 import { sceneWidthFor, skyBackground } from "./scene.tsx";
-import { isNight, skyPhase } from "./sky.ts";
+import { skyPhase } from "./sky.ts";
 import {
   birdRoom,
   byPosition,
@@ -288,11 +288,11 @@ function flightTransform(end: FlightEnd): string {
 /** One bird in flight, drawn above everything, gone when it lands. */
 function Flyer({
   flight,
-  night,
+  now,
   onLanded,
 }: {
   flight: Flight;
-  night: boolean;
+  now: Date;
   onLanded: (flight: Flight) => void;
 }) {
   const ref = useRef<SVGSVGElement>(null);
@@ -328,7 +328,7 @@ function Flyer({
     >
       <g transform={`scale(${flight.facing === "right" ? 1 : -1} 1)`}>
         <BirdFigure
-          look={birdLook(flight.bird, night)}
+          look={birdLook(flight.bird, now)}
           id={flight.bird.id}
           pose="standing"
           speaking={false}
@@ -415,7 +415,7 @@ function Strip({
   tab,
   width,
   openId,
-  night,
+  now,
   flyingIds,
   onOpen,
 }: {
@@ -423,7 +423,7 @@ function Strip({
   /** The strip's width in its units: the aviary scene's in the same window. */
   width: number;
   openId: string;
-  night: boolean;
+  now: Date;
   flyingIds: ReadonlySet<string>;
   onOpen: (bird: Bird) => void;
 }) {
@@ -493,7 +493,7 @@ function Strip({
           >
             <g transform={`scale(${base * face} ${base})`}>
               <BirdFigure
-                look={birdLook(bird, night)}
+                look={birdLook(bird, now)}
                 id={bird.id}
                 pose="standing"
                 speaking={false}
@@ -592,7 +592,6 @@ export function CameraView({
   problems,
 }: CameraViewProps) {
   const phase = skyPhase(now);
-  const night = isNight(phase);
   const tabs = cameraTabs(aviary);
   const bird =
     place.at === "detail" ? findBird(aviary, place.birdId) : undefined;
@@ -829,7 +828,7 @@ export function CameraView({
                   tab={shownTab}
                   width={sceneWidthFor(size.width)}
                   openId={shown.id}
-                  night={night}
+                  now={now}
                   flyingIds={flyingIds}
                   onOpen={(chosen) =>
                     onNavigate({
@@ -894,7 +893,7 @@ export function CameraView({
             <Flyer
               key={flight.bird.id}
               flight={flight}
-              night={night}
+              now={now}
               onLanded={landed}
             />
           ))}

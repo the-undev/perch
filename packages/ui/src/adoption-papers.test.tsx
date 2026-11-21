@@ -18,7 +18,6 @@ function papers(id: string, problems: string[] = []) {
     <AdoptionPapers
       bird={mockBird(id)}
       form={form}
-      night={false}
       now={now}
       problems={problems}
       onSign={onSign}

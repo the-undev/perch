@@ -30,12 +30,12 @@ import {
   placedBirds,
   toPixels,
 } from "./aviary-layout.ts";
-import { Bird } from "./bird.tsx";
+import { Bird, birdLook } from "./bird.tsx";
 import { Bubble } from "./bubble.tsx";
 import { type PixelSize, useElementSize } from "./hooks.ts";
 import type { CustomProperties } from "./motion.ts";
 import { SkyDrawing, skyBackground } from "./scene.tsx";
-import { isNight, skyPhase } from "./sky.ts";
+import { skyPhase } from "./sky.ts";
 import { agoWords } from "./time.ts";
 import {
   FenceCount,
@@ -102,7 +102,7 @@ export function tipLine(bird: BirdModel, now: Date): string | null {
 
 interface PerchedBirdProps {
   placed: PlacedBird;
-  night: boolean;
+  now: Date;
   arrival: number;
   /** The bird's flyer is in the air: it is not drawn until the flyer lands. */
   flying: boolean;
@@ -115,7 +115,7 @@ interface PerchedBirdProps {
 /** One bird in the aviary: it lands in its turn (idling only once it has landed), lifts on hover, and speaks when pressed. */
 function PerchedBird({
   placed,
-  night,
+  now,
   arrival,
   flying,
   speaking,
@@ -169,7 +169,7 @@ function PerchedBird({
               x={0}
               y={0}
               facing={placed.facing}
-              night={night}
+              now={now}
               namePlace={placed.namePlace}
               speaking={speaking}
               idle={!arriving}
@@ -185,7 +185,7 @@ interface AnchoredBubbleProps {
   placed: PlacedBird;
   layout: AviaryLayout;
   size: PixelSize;
-  night: boolean;
+  now: Date;
   onLaunch: (action: LaunchAction) => void;
   onFullStory: () => void;
   onAdopt: (() => void) | null;
@@ -197,7 +197,7 @@ function AnchoredBubble({
   placed,
   layout,
   size,
-  night,
+  now,
   onLaunch,
   onFullStory,
   onAdopt,
@@ -227,7 +227,7 @@ function AnchoredBubble({
       <Bubble
         key={placed.bird.id}
         bubble={placed.bird.bubble}
-        night={night}
+        asleep={birdLook(placed.bird, now).asleep}
         actions={placed.bird.detail.actions}
         onLaunch={onLaunch}
         onFullStory={onFullStory}
@@ -351,7 +351,6 @@ export function AviaryScene({
   flyingIds,
 }: AviarySceneProps) {
   const phase = skyPhase(now);
-  const night = isNight(phase);
   const layout = useMemo(() => layoutAviary(aviary, size), [aviary, size]);
   const placed = useMemo(() => placedBirds(layout), [layout]);
   const arrival = useMemo(() => arrivalOrder(aviary), [aviary]);
@@ -431,7 +430,7 @@ export function AviaryScene({
             <PerchedBird
               key={entry.bird.id}
               placed={entry}
-              night={night}
+              now={now}
               arrival={arrival.get(entry.bird.id) ?? 0}
               flying={flyingIds.has(entry.bird.id)}
               speaking={entry.bird.id === speakingId}
@@ -461,7 +460,7 @@ export function AviaryScene({
           placed={speaker}
           layout={layout}
           size={size}
-          night={night}
+          now={now}
           onLaunch={onLaunch}
           onFullStory={() => {
             setSpeakingId(null);

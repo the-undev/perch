@@ -24,11 +24,14 @@ import { Wire as WireDrawing } from "./wire.tsx";
 
 afterEach(cleanup);
 
-function roost(bird: Bird, night = false) {
+/** Two in the afternoon, by day. */
+const afternoon = new Date(2026, 9, 22, 14, 0);
+/** Three in the morning, in the sleep hours. */
+const smallHours = new Date(2026, 9, 23, 3, 0);
+
+function roost(bird: Bird, now = afternoon) {
   const onChip = vi.fn();
-  const { container } = render(
-    <Roost bird={bird} night={night} onChip={onChip} />,
-  );
+  const { container } = render(<Roost bird={bird} now={now} onChip={onChip} />);
   const section = screen.getByRole("region", {
     name: `${bird.name} on its perch`,
   });
@@ -61,7 +64,7 @@ describe("the roost", () => {
     expect(
       container.getElementsByClassName("motion-safe:animate-bird-bob"),
     ).toHaveLength(1);
-    expect(container.querySelector('[data-part="song"]')?.textContent).toBe(
+    expect(container.querySelector('[data-part="mark"]')?.textContent).toBe(
       "♪",
     );
     expect(screen.getByRole("img", { name: "Perch, content" })).toBeDefined();
@@ -99,7 +102,7 @@ describe("the roost", () => {
     const wire = mockAviary.wires[1] as Wire;
     const onWire = render(
       <Scene phase="day" width={2000} height={400} label="test">
-        <WireDrawing wire={wire} y={200} width={2000} night={false} />
+        <WireDrawing wire={wire} y={200} width={2000} now={afternoon} />
       </Scene>,
     ).container;
     const standing = [...onWire.querySelectorAll('[data-part="figure"]')];
@@ -317,17 +320,20 @@ describe("the roost", () => {
     expect(capped.beakX).toBeGreaterThan(0);
   });
 
-  it("sleeps at night when the bird sleeps, still, and speaks woken", () => {
-    const spool = mockBird("undev/spool");
-    const { container, section } = roost(spool, true);
+  it("speaks woken when its eyes are closed, and only then", () => {
+    const speech = (id: string, now: Date) => {
+      const { section } = roost(mockBird(id), now);
+      const words = section.querySelector('[data-part="speech"]')?.textContent;
+      cleanup();
+      return words;
+    };
+    const skiff = mockBird("undev/skiff");
 
-    expect(screen.getByRole("img").getAttribute("data-asleep")).toBe("true");
-    expect(
-      container.getElementsByClassName("motion-safe:animate-bird-bob"),
-    ).toHaveLength(0);
-    expect(section.querySelector('[data-part="speech"]')?.textContent).toBe(
-      spool.bubble.wokenSpeech,
+    expect(speech("undev/skiff", smallHours)).toBe(
+      `Mm? You woke me. ${skiff.bubble.speech}`,
     );
+    expect(speech("undev/skiff", afternoon)).toBe(skiff.bubble.speech);
+    expect(speech("undev/prism", smallHours)).not.toContain("You woke me");
   });
 
   it("roosts a fence bird dimmed, its bubble carrying no chips", () => {

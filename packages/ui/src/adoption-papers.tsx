@@ -34,7 +34,7 @@ const keyClass =
   "cursor-pointer rounded-[9px] bg-key px-4 py-2.5 font-body font-bold text-[13.5px] text-ink hover:bg-key-hi focus-visible:outline-2 focus-visible:outline-paper-head focus-visible:outline-offset-2 disabled:cursor-default disabled:opacity-50 disabled:hover:bg-key";
 
 /** The bird as it stands, facing left as on the board, small in the papers' corner. */
-function Portrait({ bird, night }: { bird: Bird; night: boolean }) {
+function Portrait({ bird, now }: { bird: Bird; now: Date }) {
   return (
     <svg
       aria-hidden="true"
@@ -45,7 +45,7 @@ function Portrait({ bird, night }: { bird: Bird; night: boolean }) {
     >
       <g transform="scale(-1 1)">
         <BirdFigure
-          look={birdLook(bird, night)}
+          look={birdLook(bird, now)}
           id={bird.id}
           pose="standing"
           speaking={false}
@@ -285,8 +285,6 @@ export interface AdoptionPapersProps {
   bird: Bird;
   /** The bird's entry form: amend mode when it has values, adopt mode when it has none. */
   form: EntryForm;
-  /** The sky is at night: the portrait sleeps as the bird does. */
-  night: boolean;
   /** The render's clock, which the last commit's age is measured to. */
   now: Date;
   /** Sentences from the main process, a refused write among them, shown above the signature. */
@@ -303,7 +301,6 @@ export interface AdoptionPapersProps {
 export function AdoptionPapers({
   bird,
   form,
-  night,
   now,
   problems,
   onSign,
@@ -351,7 +348,7 @@ export function AdoptionPapers({
             ring {form.key ?? bird.id}
           </p>
         </div>
-        <Portrait bird={bird} night={night} />
+        <Portrait bird={bird} now={now} />
       </div>
 
       <Part name="What the scan found">

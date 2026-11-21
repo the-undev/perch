@@ -48,7 +48,6 @@ function PapersSpecimen({
       <AdoptionPapers
         bird={mockBird(id)}
         form={form}
-        night={false}
         now={scanMoment}
         problems={problems}
         onSign={(values) => onPressed(`onSign(${signedWords(values)})`)}
@@ -234,14 +233,9 @@ export function AdoptionPapersPage() {
             what: "The bird's entry form: what the scan found, the choices, the session the zellij action gives, and the entry's values, null for a fence bird.",
           },
           {
-            name: "night",
-            type: "boolean",
-            what: "The sky is at night: the portrait sleeps as the bird does.",
-          },
-          {
             name: "now",
             type: "Date",
-            what: "The render's clock, which the last commit's age is measured to.",
+            what: "The render's clock, which the last commit's age is measured to and the portrait's look follows.",
           },
           {
             name: "problems",

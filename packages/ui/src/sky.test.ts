@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isNight, skyPhase } from "./sky.ts";
+import { skyPhase } from "./sky.ts";
 
 const at = (hour: number) => new Date(2026, 9, 22, hour, 30);
 
@@ -19,10 +19,5 @@ describe("the sky", () => {
       "night",
       "night",
     ]);
-  });
-
-  it("counts only the night phase as night", () => {
-    expect(isNight("night")).toBe(true);
-    expect(isNight("dusk")).toBe(false);
   });
 });

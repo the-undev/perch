@@ -244,26 +244,6 @@ describe("mood", () => {
       ].map((id) => birdIn(items, config, id).activity),
     ).toEqual(["settled", "in-flight", "editing", null]);
   });
-
-  it("lets only content birds that are not being edited, and the fence, sleep at night", async () => {
-    const config = await adoptAll(["dev/spool", "dev/harbour", "dev/perch"]);
-    const editing = item("dev/perch", {
-      sources: { git: gitData({ uncommittedCount: 1, activity: "editing" }) },
-    });
-    const fence = item("dev/hello", {
-      sources: { git: gitData({ backup: "local-only" }) },
-    });
-    const items = [settled, restless, editing, fence];
-    const sleeps = (id: string) => birdIn(items, config, id).sleepsAtNight;
-
-    expect(
-      ["dev/spool", "dev/harbour", "dev/perch", "dev/hello"].map(sleeps),
-    ).toEqual([true, false, false, true]);
-    expect(birdIn(items, config, "dev/spool").bubble.wokenSpeech).toBe(
-      "Mm? You woke me. All settled over here. Last touched three days ago.",
-    );
-    expect(birdIn(items, config, "dev/harbour").bubble.wokenSpeech).toBeNull();
-  });
 });
 
 describe("snoozes", () => {

@@ -2,7 +2,7 @@ import { mockAviary } from "@perch/core/mock.ts";
 import type { Wire as WireModel } from "@perch/core/viewmodel.ts";
 import { Scene, sceneWidth } from "@perch/ui/scene.tsx";
 import { columnEdgeFor, Fence, Wire } from "@perch/ui/wire.tsx";
-import { mockBird, mockWire } from "../specimens.ts";
+import { byDay, mockBird, mockWire, smallHours } from "../specimens.ts";
 import { Code, Section, Specimen, Usage } from "../usage.tsx";
 
 const machineHome = mockWire("Machine & Home");
@@ -19,15 +19,15 @@ const settledWire: WireModel = {
   ),
 };
 
-function WireScene({ wire, night }: { wire: WireModel; night: boolean }) {
+function WireScene({ wire }: { wire: WireModel }) {
   return (
     <Scene
-      phase={night ? "night" : "day"}
+      phase="day"
       width={sceneWidth}
       height={340}
       label={`The ${wire.name} wire`}
     >
-      <Wire wire={wire} y={230} width={sceneWidth} night={night} />
+      <Wire wire={wire} y={230} width={sceneWidth} now={byDay} />
     </Scene>
   );
 }
@@ -44,19 +44,19 @@ export function WirePage() {
           label="Machine & Home"
           rule="Two restless birds, one content."
         >
-          <WireScene wire={machineHome} night={false} />
+          <WireScene wire={machineHome} />
         </Specimen>
         <Specimen
           label="Projects"
           rule="Distressed leftmost, then restless, then content; within a mood by name."
         >
-          <WireScene wire={projects} night={false} />
+          <WireScene wire={projects} />
         </Specimen>
         <Specimen
           label="All settled"
           rule="Hand-built: when nobody is restless or distressed the tally says so."
         >
-          <WireScene wire={settledWire} night={false} />
+          <WireScene wire={settledWire} />
         </Specimen>
       </Section>
 
@@ -75,11 +75,14 @@ export function WirePage() {
               y={150}
               width={sceneWidth}
               height={260}
-              night={false}
+              now={byDay}
             />
           </Scene>
         </Specimen>
-        <Specimen label="At night" rule="The fence sleeps.">
+        <Specimen
+          label="Midnight to 06:00"
+          rule="Every fence bird sleeps, whatever its health."
+        >
           <Scene
             phase="night"
             width={sceneWidth}
@@ -91,15 +94,15 @@ export function WirePage() {
               y={150}
               width={sceneWidth}
               height={260}
-              night={true}
+              now={smallHours}
             />
           </Scene>
         </Specimen>
       </Section>
 
       <Section
-        title="Together at night"
-        rule="Night is cosmetic: positions and colours hold. Content birds that are not edited sleep; the rest stay awake, and Perch sings."
+        title="Together in the small hours"
+        rule="The sky shows night as the backdrop only; positions and colours hold. Sleep follows its own hours: from midnight to 06:00 every bird sleeps but the distressed and the edited, and the edited sing."
         min={900}
       >
         <Specimen
@@ -112,14 +115,19 @@ export function WirePage() {
             height={980}
             label="The mock aviary at night"
           >
-            <Wire wire={machineHome} y={300} width={sceneWidth} night={true} />
-            <Wire wire={projects} y={590} width={sceneWidth} night={true} />
+            <Wire
+              wire={machineHome}
+              y={300}
+              width={sceneWidth}
+              now={smallHours}
+            />
+            <Wire wire={projects} y={590} width={sceneWidth} now={smallHours} />
             <Fence
               fence={mockAviary.fence}
               y={850}
               width={sceneWidth}
               height={980}
-              night={true}
+              now={smallHours}
             />
           </Scene>
         </Specimen>
@@ -154,9 +162,9 @@ export function WirePage() {
             what: "Fence only: the scene's height, so the posts reach the bottom.",
           },
           {
-            name: "night",
-            type: "boolean",
-            what: "Passed to every bird for sleep.",
+            name: "now",
+            type: "Date",
+            what: "The render's clock, passed to every bird for its look.",
           },
         ]}
       >

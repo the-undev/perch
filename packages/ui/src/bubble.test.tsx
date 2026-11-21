@@ -1,3 +1,4 @@
+import { wakingPrefix } from "@perch/core/speech.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -7,7 +8,7 @@ import { mockBird } from "./mock-birds.ts";
 
 afterEach(cleanup);
 
-function speak(bird: Bird, night = false) {
+function speak(bird: Bird, asleep = false) {
   const onLaunch = vi.fn();
   const onFullStory = vi.fn();
   const onAdopt = vi.fn();
@@ -15,7 +16,7 @@ function speak(bird: Bird, night = false) {
   const { container } = render(
     <Bubble
       bubble={bird.bubble}
-      night={night}
+      asleep={asleep}
       actions={bird.detail.actions}
       onLaunch={onLaunch}
       onFullStory={onFullStory}
@@ -34,6 +35,19 @@ describe("the bubble", () => {
 
     expect(screen.getByRole("heading").textContent).toBe("Prismdistressed");
     expect(screen.getByText(prism.bubble.speech)).toBeDefined();
+  });
+
+  it("opens a sleeping bird's speech with the waking prefix, and an awake bird's without", () => {
+    const prism = mockBird("undev/prism");
+    const speech = () =>
+      document.querySelector('[data-part="speech"]')?.textContent;
+
+    speak(prism, true);
+    expect(speech()).toBe(`${wakingPrefix} ${prism.bubble.speech}`);
+    cleanup();
+
+    speak(prism, false);
+    expect(speech()).toBe(prism.bubble.speech);
   });
 
   it("hangs the tail from the bubble's bottom edge, its tip 26px below it", () => {
@@ -76,19 +90,6 @@ describe("the bubble", () => {
     const { container } = speak(mockBird("undev/spool"));
 
     expect(container.querySelectorAll("[data-kind]")).toHaveLength(0);
-  });
-
-  it("wakes a sleeping bird at night, and only a sleeping one", () => {
-    const spool = mockBird("undev/spool");
-    const prism = mockBird("undev/prism");
-
-    expect(speak(spool, true).container.textContent).toContain(
-      `Mm? You woke me. ${spool.bubble.speech}`,
-    );
-    cleanup();
-    expect(speak(prism, true).container.textContent).not.toContain(
-      "You woke me",
-    );
   });
 
   it("names each launch action by its verb and hands it back when pressed", () => {

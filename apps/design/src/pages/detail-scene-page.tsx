@@ -93,7 +93,7 @@ export function DetailScenePage() {
           {
             name: "now",
             type: "Date",
-            what: "The render's clock: ages are measured to it, and at night a sleeping bird sleeps on its perch and speaks woken.",
+            what: "The render's clock: ages are measured to it, and the bird's look follows the hour: asleep on its perch from midnight to 06:00, speaking woken.",
           },
           {
             name: "onLaunch",

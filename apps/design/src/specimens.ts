@@ -29,6 +29,15 @@ export { mockBird, mockBirds, mockEntryForm } from "@perch/ui/mock-birds.ts";
 /** The mock scan's moment: times on the pages are measured to it, so they never drift. */
 export const scanMoment = new Date(mockAviary.scannedAt);
 
+/** An afternoon on the mock scan's day: every bird awake. */
+export const byDay = new Date(2026, 9, 22, 14, 0);
+
+/** Half past ten on the mock scan's day: the sky at night, every bird still awake. */
+export const lateEvening = new Date(2026, 9, 22, 22, 30);
+
+/** The small hours after the mock scan: the sky at night and every bird that sleeps asleep. */
+export const smallHours = new Date(2026, 9, 23, 3, 0);
+
 /** A bird carrying a given amount of outstanding work, against the cap of 50. */
 export function withOutstanding(bird: Bird, outstanding: number): Bird {
   return {

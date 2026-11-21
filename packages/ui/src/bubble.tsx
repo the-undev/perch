@@ -3,6 +3,7 @@
 // tail whose tip meets the beak. On the bird's own page the bubble is the speech and chips alone.
 // Either way the chips are handles to the ledger rows holding their working.
 
+import { wakingPrefix } from "@perch/core/speech.ts";
 import type {
   Bubble as BubbleModel,
   ChipKind,
@@ -26,9 +27,9 @@ export interface BubbleTail {
   inset: number;
 }
 
-/** The speech a bubble shows: at night a sleeping bird is woken by the click and says so. */
-export function spokenSpeech(bubble: BubbleModel, night: boolean): string {
-  return night ? (bubble.wokenSpeech ?? bubble.speech) : bubble.speech;
+/** The speech a bubble shows: a bird whose eyes are closed is woken by the click and says so first. */
+function spokenSpeech(bubble: BubbleModel, asleep: boolean): string {
+  return asleep ? `${wakingPrefix} ${bubble.speech}` : bubble.speech;
 }
 
 /** The tail's tip sits 2 units in from the edge of its 44-unit drawing. */
@@ -133,8 +134,8 @@ function SideTail({
 
 export interface BubbleProps {
   bubble: BubbleModel;
-  /** The sky is at night: a bird that sleeps speaks with the waking prefix. */
-  night: boolean;
+  /** The bird's eyes are closed: the click wakes it and its speech gains the waking prefix. */
+  asleep: boolean;
   /** The bird's launch actions, shown as icon buttons named by their verbs. */
   actions: LaunchAction[];
   onLaunch: (action: LaunchAction) => void;
@@ -150,7 +151,7 @@ export interface BubbleProps {
 /** Tier B: a bird's answer to "what's up with you?". */
 export function Bubble({
   bubble,
-  night,
+  asleep,
   actions,
   onLaunch,
   onFullStory,
@@ -178,7 +179,7 @@ export function Bubble({
         </span>
       </h3>
       <p data-part="speech" className="m-0">
-        {spokenSpeech(bubble, night)}
+        {spokenSpeech(bubble, asleep)}
       </p>
       <ChipHandles chips={bubble.chips} onPress={onChip} />
       <div className="mt-3 flex items-center gap-2">
@@ -220,8 +221,8 @@ export function Bubble({
 
 export interface RoostBubbleProps {
   bubble: BubbleModel;
-  /** The sky is at night: a bird that sleeps speaks with the waking prefix. */
-  night: boolean;
+  /** The bird's eyes are closed: the click wakes it and its speech gains the waking prefix. */
+  asleep: boolean;
   /** The tail that hangs from the bottom edge when the roost is stacked. */
   tail: BubbleTail;
   /** How far the hanging tail's tip falls below the bubble's bottom edge. */
@@ -235,7 +236,7 @@ export interface RoostBubbleProps {
 /** The bubble on the bird's own page: speech and chips as handles, the name and state word left to the page's heading. */
 export function RoostBubble({
   bubble,
-  night,
+  asleep,
   tail,
   drop,
   sideTail,
@@ -248,7 +249,7 @@ export function RoostBubble({
       className={`${paperClass} w-full`}
     >
       <p data-part="speech" className="m-0">
-        {spokenSpeech(bubble, night)}
+        {spokenSpeech(bubble, asleep)}
       </p>
       <ChipHandles chips={bubble.chips} onPress={onChip} />
       <Tail tail={tail} drop={drop} className="@min-[460px]:hidden" />

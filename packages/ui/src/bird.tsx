@@ -1,5 +1,6 @@
 // The bird from the design board, drawn in its own units: the origin is the perch point, the toes
-// end 3 units below it, the beak tip is at (37, -42). Every trait reads from the view model.
+// end 3 units below it, the beak tip is at (37, -42). Every trait reads from the view model and
+// the render's clock.
 
 import type {
   Bird as BirdModel,
@@ -42,31 +43,54 @@ export function birdScale(bird: BirdModel): number {
   return base * plumpScale(bird.plumpness);
 }
 
-/** What the drawing needs to know, derived once from the view model and the night. */
+/** Birds sleep from midnight until 06:00 on the local clock, whatever the sky shows. */
+function inSleepHours(at: Date): boolean {
+  return at.getHours() < 6;
+}
+
+/** What a bird shows beside its head: the z while asleep, the note while singing. */
+export type BirdMark = "z" | "note" | null;
+
+/** What the drawing needs to know, worked out at render from the view model and the time. */
 export interface BirdLook {
   breast: string;
   dim: boolean;
+  /** Eyes closed and still, with the z. */
   asleep: boolean;
-  singing: boolean;
+  mark: BirdMark;
   /** Fidget factor: 0 is still, 1 a content bob, up to 2.2 for a distressed bird. */
   restlessness: number;
   tailFlicks: boolean;
 }
 
-/** The look of a bird: dim on the fence, asleep at night only when it sleeps, singing while edited. */
-export function birdLook(bird: BirdModel, night: boolean): BirdLook {
-  const dim = !bird.adopted;
-  const asleep = night && bird.sleepsAtNight;
-  // The fence does not wear its mood, so it does not fidget with it either.
-  const mood: Mood = dim ? "content" : bird.mood;
+/** A dimmed bird that does not wear its mood: awake with a gentle bob, or asleep. */
+function dimLook(asleep: boolean): BirdLook {
   return {
-    breast: dim ? "var(--color-breast-dim)" : moodColour[bird.mood],
-    dim,
+    breast: "var(--color-breast-dim)",
+    dim: true,
     asleep,
-    singing: !dim && bird.activity === "editing",
-    restlessness: asleep ? 0 : restlessness[mood],
-    tailFlicks: !dim && !asleep && bird.mood === "distressed",
+    mark: asleep ? "z" : null,
+    restlessness: asleep ? 0 : restlessness.content,
+    tailFlicks: false,
   };
+}
+
+/** The look of a bird at a time: the fence first, then mood, editing and the hour. */
+export function birdLook(bird: BirdModel, now: Date): BirdLook {
+  const sleepHours = inSleepHours(now);
+  if (!bird.adopted) return dimLook(sleepHours);
+  const awake = {
+    breast: moodColour[bird.mood],
+    dim: false,
+    asleep: false,
+    restlessness: restlessness[bird.mood],
+    tailFlicks: bird.mood === "distressed",
+  };
+  if (bird.activity === "editing") return { ...awake, mark: "note" };
+  if (bird.mood === "distressed" || !sleepHours) {
+    return { ...awake, mark: null };
+  }
+  return { ...awake, asleep: true, mark: "z", restlessness: 0 };
 }
 
 /** The idle timings for one bird: slower and gentler when content, offset by its id. */
@@ -190,13 +214,24 @@ export function BirdFigure({
             : undefined
         }
       />
-      <circle
-        data-part="eye"
-        cx={19.5}
-        cy={-46}
-        r={1.8}
-        fill={look.asleep ? "var(--color-leg)" : "var(--color-eye)"}
-      />
+      {look.asleep ? (
+        <path
+          data-part="eye"
+          d="M 16.5 -46 Q 19.5 -43.2 22.5 -46"
+          fill="none"
+          stroke="var(--color-leg)"
+          strokeWidth={1.7}
+          strokeLinecap="round"
+        />
+      ) : (
+        <circle
+          data-part="eye"
+          cx={19.5}
+          cy={-46}
+          r={1.8}
+          fill="var(--color-eye)"
+        />
+      )}
       <path
         d="M -14 -28 Q 2 -36 8 -24 Q -2 -16 -14 -28 Z"
         fill="var(--color-shade)"
@@ -214,9 +249,35 @@ export interface PerchedFigureProps {
   pose: Pose;
   /** Its bubble has just opened: the beak wiggles. */
   speaking: boolean;
-  /** The bird is at rest: bob, tail flick and song run. */
+  /** The bird is at rest: bob, tail flick and its mark run. */
   idle: boolean;
 }
+
+/** A mark's font size at a bird's scale: the note and the z are the same size. */
+function markSize(scale: number): number {
+  return Math.max(17, 14 * scale);
+}
+
+/** How each mark is drawn: its glyph, ink (the note in the accent, the z in the bird's own breast colour) and class. */
+const markDrawing: Record<
+  Exclude<BirdMark, null>,
+  {
+    glyph: string;
+    ink: (look: BirdLook) => string;
+    className: string;
+  }
+> = {
+  note: {
+    glyph: "♪",
+    ink: () => "var(--color-ink-accent)",
+    className: "motion-safe:animate-song",
+  },
+  z: {
+    glyph: "z",
+    ink: (look) => look.breast,
+    className: "font-display font-semibold italic motion-safe:animate-song",
+  },
+};
 
 /** A bird's figure above its perch point at a scale, bobbing and singing while idle. */
 export function PerchedFigure({
@@ -230,6 +291,7 @@ export function PerchedFigure({
 }: PerchedFigureProps) {
   const face = facing === "right" ? 1 : -1;
   const settle = pose === "sitting" ? sitDrop : 0;
+  const mark = look.mark === null ? null : markDrawing[look.mark];
   return (
     <g
       className={
@@ -248,17 +310,17 @@ export function PerchedFigure({
           idle={idle}
         />
       </g>
-      {idle && look.singing && (
+      {idle && mark !== null && (
         <text
-          data-part="song"
+          data-part="mark"
           x={48 * face * scale}
           y={(settle - 60) * scale}
-          fill="var(--color-ink-accent)"
-          fontSize={Math.max(15, 13 * scale)}
           textAnchor="middle"
-          className="motion-safe:animate-song"
+          fill={mark.ink(look)}
+          fontSize={markSize(scale)}
+          className={mark.className}
         >
-          ♪
+          {mark.glyph}
         </text>
       )}
     </g>
@@ -280,12 +342,13 @@ export interface BirdProps {
   x: number;
   y: number;
   facing: Facing;
-  night: boolean;
+  /** The render's clock: the look follows the hour. */
+  now: Date;
   /** Where the name sits; crowded neighbours alternate baselines so names do not collide. */
   namePlace: NamePlace;
   /** Its bubble has just opened: the beak wiggles. */
   speaking: boolean;
-  /** The bird is at rest: bob, tail flick and song run. False while it arrives. */
+  /** The bird is at rest: bob, tail flick and its mark run. False while it arrives. */
   idle: boolean;
 }
 
@@ -310,12 +373,12 @@ export function Bird({
   x,
   y,
   facing,
-  night,
+  now,
   namePlace,
   speaking,
   idle,
 }: BirdProps) {
-  const look = birdLook(bird, night);
+  const look = birdLook(bird, now);
   const scale = birdScale(bird);
   return (
     <g
@@ -348,7 +411,8 @@ export function Bird({
 export interface BirdPortraitProps {
   bird: BirdModel;
   facing: Facing;
-  night: boolean;
+  /** The render's clock: the look follows the hour. */
+  now: Date;
 }
 
 /** A portrait's size in pixels, and where in it the beak tip lands: a bubble's tail tip meets it. */
@@ -375,11 +439,11 @@ export function portraitFrame(bird: BirdModel, facing: Facing): PortraitFrame {
 }
 
 /** A bird alone on a short length of wire, at its true size: for pages that show one bird. */
-export function BirdPortrait({ bird, facing, night }: BirdPortraitProps) {
+export function BirdPortrait({ bird, facing, now }: BirdPortraitProps) {
   const frame = portraitFrame(bird, facing);
   const half = frame.width / 2;
   const top = frame.height - 44;
-  const look = birdLook(bird, night);
+  const look = birdLook(bird, now);
   return (
     <svg
       role="img"
@@ -402,7 +466,7 @@ export function BirdPortrait({ bird, facing, night }: BirdPortraitProps) {
         x={0}
         y={0}
         facing={facing}
-        night={night}
+        now={now}
         namePlace={roomyName}
         speaking={false}
         idle

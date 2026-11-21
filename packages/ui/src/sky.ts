@@ -1,5 +1,5 @@
 // The sky follows the clock at render; the view model carries no time. Callers pass the Date so
-// the components stay free of clocks.
+// the components stay free of clocks. Birds sleep by their own hours, not by the sky's night.
 
 /** The four skies, by the hour on the local clock. */
 export type SkyPhase = "dawn" | "day" | "dusk" | "night";
@@ -12,9 +12,4 @@ export function skyPhase(at: Date): SkyPhase {
   if (hour < 17) return "day";
   if (hour < 21) return "dusk";
   return "night";
-}
-
-/** Night is cosmetic: it closes the eyes of birds that sleep and wakes them when clicked. */
-export function isNight(phase: SkyPhase): boolean {
-  return phase === "night";
 }

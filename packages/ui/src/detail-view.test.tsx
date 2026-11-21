@@ -89,7 +89,7 @@ function unreadableSkiff(): Bird {
       : item,
   );
   return findBird(
-    deriveAviary({ ...mockSnapshot, items }, mockConfig, mockHome),
+    deriveAviary({ ...mockSnapshot, items }, mockConfig, {}, mockHome),
     "undev/skiff",
   );
 }
@@ -961,7 +961,7 @@ describe("the detail view", () => {
       wire: "Machine & Home",
     });
     const adopted = findBird(
-      deriveAviary(mockSnapshot, config, mockHome),
+      deriveAviary(mockSnapshot, config, {}, mockHome),
       hello.id,
     );
     push(adopted, { form: entryFormFor(config, helloItem, mockHome) });

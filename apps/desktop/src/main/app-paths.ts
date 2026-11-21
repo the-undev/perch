@@ -9,6 +9,8 @@ export interface AppPaths {
   rawDir: string;
   /** The cached snapshot: the window renders from it at start, and it is the first-seen record. */
   snapshotPath: string;
+  /** The owner's snoozes: local state, beside the scan. */
+  snoozesPath: string;
   /** The owner's config. */
   userConfigPath: string;
 }
@@ -20,6 +22,7 @@ export function appPaths(home: string): AppPaths {
     userData,
     rawDir: join(userData, "scan", "raw"),
     snapshotPath: join(userData, "scan", "snapshot.json"),
+    snoozesPath: join(userData, "snoozes.json"),
     userConfigPath: userConfigPath(home),
   };
 }

@@ -1,5 +1,6 @@
 import type { EntryValues } from "@perch/core/entry-form.ts";
 import type { SettingsValues } from "@perch/core/settings-form.ts";
+import type { SnoozeEnd } from "@perch/core/snooze-date.ts";
 import type { SourceTestValues } from "@perch/core/sources-form.ts";
 import type { LaunchAction } from "@perch/core/viewmodel.ts";
 import { ipcMain } from "electron";
@@ -29,6 +30,12 @@ export function registerIpc(handlers: PerchCalls): void {
   );
   ipcMain.handle(channels.removeEntry, (_event, birdId: string) =>
     handlers.removeEntry(birdId),
+  );
+  ipcMain.handle(channels.snooze, (_event, birdId: string, until: SnoozeEnd) =>
+    handlers.snooze(birdId, until),
+  );
+  ipcMain.handle(channels.wake, (_event, birdId: string) =>
+    handlers.wake(birdId),
   );
   ipcMain.handle(channels.settingsForm, () => handlers.settingsForm());
   ipcMain.handle(channels.saveSettings, (_event, values: SettingsValues) =>

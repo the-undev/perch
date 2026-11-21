@@ -24,13 +24,14 @@ import { parse } from "smol-toml";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PerchState } from "../shared/ipc.ts";
 import { type AppStateDeps, createAppState } from "./app-state.ts";
-import type { Autostart } from "./autostart.ts";
+import { type Autostart, replaceFile } from "./autostart.ts";
 import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
 import {
   type ConfigState,
   type ConfigStore,
   createConfigStore,
 } from "./config-store.ts";
+import { createSnoozeStore, type SnoozeStore } from "./snooze-store.ts";
 import type { Updater } from "./updater.ts";
 
 const loaded: LoadedConfig = { config: mockConfig, path: "/config.toml" };
@@ -90,6 +91,15 @@ function fakeAutostart(): Autostart {
   };
 }
 
+/** Snoozes for the tests that set none: there is no file, and nothing may write one. */
+const noSnoozeFile: SnoozeStore = createSnoozeStore({
+  path: "/nowhere/snoozes.json",
+  readText: async () => null,
+  writeText: async (path) => {
+    throw new Error(`this test writes no snoozes, yet wrote ${path}`);
+  },
+});
+
 /** A config store whose next read is whatever the test sets. */
 function configStore(first: ConfigState) {
   let state = first;
@@ -115,6 +125,7 @@ function appState(overrides: Partial<AppStateDeps> = {}) {
   const deps: AppStateDeps = {
     home: "/home/owner",
     config: config.store,
+    snoozes: noSnoozeFile,
     configPath: "/home/owner/.config/perch/config.toml",
     readCached: async () => mockSnapshot,
     gather: vi.fn(async (_config: Config) => {}),
@@ -457,7 +468,7 @@ describe("editing config entries", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  /** The app state on a real config file in the temp directory, holding the given config. */
+  /** The app state on a real config file and snoozes file in the temp directory, holding the given config. */
   async function onFile(config: Config) {
     await writeFile(configPath, writeConfig(config, home));
     const store = createConfigStore({
@@ -470,6 +481,11 @@ describe("editing config entries", () => {
       config: store,
       editConfig: (edit) =>
         editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+      snoozes: createSnoozeStore({
+        path: join(dir, "snoozes.json"),
+        readText: readTextIfExists,
+        writeText: replaceFile,
+      }),
     });
   }
 
@@ -589,6 +605,246 @@ describe("editing config entries", () => {
     expect(await written()).toBe(before);
     expect(deps.requestScan).not.toHaveBeenCalled();
     expect(app.entryForm("dev/nobody")).toBeNull();
+  });
+});
+
+describe("snoozing birds", () => {
+  const home = "/home/owner";
+  let dir: string;
+  let configPath: string;
+  let snoozesPath: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "perch-snoozes-"));
+    configPath = join(dir, "config.toml");
+    snoozesPath = join(dir, "data", "snoozes.json");
+    await writeFile(configPath, writeConfig(mockConfig, home));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  /** The app state on a real config file and a real snoozes file in the temp directory. */
+  function onFiles(overrides: Partial<AppStateDeps> = {}) {
+    const file = { home, path: configPath, readText: readTextIfExists };
+    return appState({
+      config: createConfigStore(file),
+      editConfig: (edit) =>
+        editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+      snoozes: createSnoozeStore({
+        path: snoozesPath,
+        readText: readTextIfExists,
+        writeText: replaceFile,
+      }),
+      ...overrides,
+    });
+  }
+
+  const stored = async () =>
+    JSON.parse(await readFile(snoozesPath, "utf8")) as unknown;
+
+  function snoozeOf(state: PerchState | undefined, birdId: string) {
+    const aviary = state?.aviary;
+    if (aviary === null || aviary === undefined) return undefined;
+    return [
+      ...aviary.wires.flatMap((wire) => wire.birds),
+      ...aviary.fence.birds,
+    ].find((bird) => bird.id === birdId)?.snooze;
+  }
+
+  it("snoozes a bird until a date or indefinitely and wakes it, shown at once without a scan", async () => {
+    const { app, deps, published } = onFiles();
+    await app.start();
+
+    await app.snooze("dev/perch", "2026-12-04");
+    await app.snooze("undev/spool", null);
+
+    expect(snoozeOf(published.at(-1), "dev/perch")).toEqual({
+      until: "2026-12-04",
+    });
+    expect(snoozeOf(published.at(-1), "undev/spool")).toEqual({
+      until: null,
+    });
+    expect(await stored()).toEqual({
+      "dev/perch": { until: "2026-12-04" },
+      "undev/spool": { until: null },
+    });
+
+    await app.wake("dev/perch");
+
+    expect(snoozeOf(published.at(-1), "dev/perch")).toBeNull();
+    expect(await stored()).toEqual({ "undev/spool": { until: null } });
+    expect(deps.requestScan).not.toHaveBeenCalled();
+    expect(published.at(-1)?.problems).toEqual([]);
+  });
+
+  it("lands every one of overlapping snoozes and wakes", async () => {
+    const { app } = onFiles();
+    await app.start();
+    await app.snooze("undev/harbour", null);
+
+    await Promise.all([
+      app.snooze("dev/perch", "2026-12-04"),
+      app.snooze("undev/spool", null),
+      app.wake("undev/harbour"),
+    ]);
+
+    expect(await stored()).toEqual({
+      "dev/perch": { until: "2026-12-04" },
+      "undev/spool": { until: null },
+    });
+  });
+
+  it("keeps a snooze when the app state starts again", async () => {
+    const first = onFiles();
+    await first.app.start();
+    await first.app.snooze("dev/perch", "2026-12-04");
+
+    const second = onFiles();
+    await second.app.start();
+
+    expect(snoozeOf(second.app.state(), "dev/perch")).toEqual({
+      until: "2026-12-04",
+    });
+  });
+
+  it("refuses a bird the aviary does not hold and a bird on the fence, writing nothing", async () => {
+    const { app } = onFiles();
+    await app.start();
+
+    await app.snooze("dev/nobody", null);
+    await app.snooze("dev/odin/hello", "2026-12-04");
+
+    expect(await readTextIfExists(snoozesPath)).toBeNull();
+    expect(snoozeOf(app.state(), "dev/odin/hello")).toBeNull();
+
+    const handWritten = '{ "dev/odin/hello": { "until": null } }\n';
+    await replaceFile(snoozesPath, handWritten);
+    await app.scan();
+    await app.wake("dev/odin/hello");
+    await app.wake("dev/nobody");
+
+    expect(await readFile(snoozesPath, "utf8")).toBe(handWritten);
+  });
+
+  it("forgets a bird's snooze with its papers, so it is not snoozed when adopted again", async () => {
+    const { app, published } = onFiles();
+    await app.start();
+    await app.snooze("undev/spool", null);
+
+    await app.removeEntry("undev/spool");
+
+    expect(await stored()).toEqual({});
+    expect(snoozeOf(published.at(-1), "undev/spool")).toBeNull();
+
+    await app.saveEntry("undev/spool", {
+      ...emptyEntryValues(),
+      wire: "Projects",
+    });
+
+    expect(snoozeOf(published.at(-1), "undev/spool")).toBeNull();
+  });
+
+  it("shows no snooze on a fence bird and forgets the one stored for it when it is adopted", async () => {
+    await replaceFile(
+      snoozesPath,
+      JSON.stringify({
+        "dev/odin/hello": { until: null },
+        "dev/perch": { until: null },
+      }),
+    );
+    const { app, published } = onFiles();
+    await app.start();
+
+    expect(snoozeOf(app.state(), "dev/odin/hello")).toBeNull();
+
+    await app.saveEntry("dev/odin/hello", {
+      ...emptyEntryValues(),
+      wire: "Machine & Home",
+    });
+
+    expect(snoozeOf(published.at(-1), "dev/odin/hello")).toBeNull();
+    expect(await stored()).toEqual({ "dev/perch": { until: null } });
+  });
+
+  it("holds a snooze across a scan, a change in health and an edit to the bird's papers", async () => {
+    const prism = mockSnapshot.items.find((item) => item.id === "undev/prism");
+    if (prism === undefined) throw new Error("the mock has no Prism");
+    const failing: Snapshot = {
+      ...mockSnapshot,
+      items: mockSnapshot.items.map((item) =>
+        item.id === "dev/perch" ? { ...item, sources: prism.sources } : item,
+      ),
+    };
+    const { app, published } = onFiles({
+      aggregate: vi.fn(async () => failing),
+    });
+    await app.start();
+    await app.snooze("dev/perch", "2026-12-04");
+
+    await app.scan();
+    const form = app.entryForm("dev/perch");
+    if (form?.values == null) throw new Error("Perch has no entry");
+    await app.saveEntry("dev/perch", { ...form.values, name: "Perch app" });
+
+    const perch = published
+      .at(-1)
+      ?.aviary?.wires.flatMap((wire) => wire.birds)
+      .find((bird) => bird.id === "dev/perch");
+    expect(perch?.name).toBe("Perch app");
+    expect(perch?.mood).toBe("distressed");
+    expect(perch?.snooze).toEqual({ until: "2026-12-04" });
+  });
+
+  it("keeps a snooze whose end date is not a date until woken, says so, and writes it back as found", async () => {
+    await replaceFile(
+      snoozesPath,
+      JSON.stringify({
+        "dev/perch": { until: "2026-02-30" },
+        "undev/harbour": "soon",
+        "undev/spool": { until: "2026-12-04" },
+      }),
+    );
+    const { app } = onFiles();
+    await app.start();
+
+    expect(snoozeOf(app.state(), "dev/perch")).toEqual({ until: null });
+    expect(snoozeOf(app.state(), "undev/harbour")).toEqual({ until: null });
+    expect(snoozeOf(app.state(), "undev/spool")).toEqual({
+      until: "2026-12-04",
+    });
+    expect(app.state().problems).toEqual([
+      'The snooze of dev/perch has no end date perch can read ({"until":"2026-02-30"}), so it lasts until you wake it',
+      'The snooze of undev/harbour has no end date perch can read ("soon"), so it lasts until you wake it',
+    ]);
+
+    await app.snooze("undev/oxbow", null);
+
+    expect(await stored()).toEqual({
+      "dev/perch": { until: "2026-02-30" },
+      "undev/harbour": "soon",
+      "undev/spool": { until: "2026-12-04" },
+      "undev/oxbow": { until: null },
+    });
+  });
+
+  it("says why a snoozes file that does not parse was not read, and changes nothing in it", async () => {
+    await replaceFile(snoozesPath, "{ not json");
+    const { app } = onFiles();
+    await app.start();
+
+    expect(app.state().aviary).not.toBeNull();
+    expect(app.state().problems).toHaveLength(1);
+    expect(app.state().problems[0]).toMatch(
+      /^The snoozes were not read: .*snoozes\.json does not parse/,
+    );
+
+    await app.snooze("dev/perch", null);
+
+    expect(await readFile(snoozesPath, "utf8")).toBe("{ not json");
+    expect(app.state().problems.at(-1)).toMatch(
+      /^The snooze was not changed: .*snoozes\.json does not parse/,
+    );
   });
 });
 

@@ -6,6 +6,8 @@ import {
   format,
   formatISO,
   isBefore,
+  isMatch,
+  parse,
   parseISO,
   startOfDay,
 } from "date-fns";
@@ -31,6 +33,13 @@ const ADD_DURATION: Record<SnoozeDuration, (from: Date) => Date> = {
 /** The end date for a duration counted from the local day of `today`. */
 export function snoozeEndDate(duration: SnoozeDuration, today: Date): string {
   return formatISO(ADD_DURATION[duration](today), { representation: "date" });
+}
+
+/** Whether a value is an end date in the stored form: a real calendar date as `YYYY-MM-DD`. */
+export function isEndDate(value: unknown): value is string {
+  if (typeof value !== "string" || !isMatch(value, "yyyy-MM-dd")) return false;
+  const date = parse(value, "yyyy-MM-dd", new Date());
+  return formatISO(date, { representation: "date" }) === value;
 }
 
 /** Whether a snooze has ended: from the start of its end date in local time, never when indefinite. */

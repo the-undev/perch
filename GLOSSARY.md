@@ -91,8 +91,19 @@ A file from the local repository shown on the bird's page, such as the README or
 **Adoption papers**:
 The sheet on a bird's page that adopts it or changes its papers.
 
+**Action**:
+Something the owner does to a bird from its bubble or its page. Launch actions, the snooze action and the wake action are kinds of action.
+
 **Launch action**:
-Something a bird's page can open for the project, such as an editor or a terminal tab. It changes nothing.
+An action that opens something for the project, such as an editor or a terminal tab. It changes nothing.
+
+**Snooze action**:
+The action that snoozes an adopted bird for 1 day, 3 days, 1 week, 2 weeks, 1 month or indefinitely.
+_Avoid_: Snooze key
+
+**Wake action**:
+The action that ends a snooze before its end date. It takes the snooze action's place while a bird is snoozed.
+_Avoid_: Wake key
 
 ### Health
 

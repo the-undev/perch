@@ -110,11 +110,14 @@ function page(bird: Bird, options: PageOptions = {}) {
   const onSettings = vi.fn();
   const onLocalSources = vi.fn();
   const onCopy = vi.fn<(text: string) => Promise<void>>(async () => undefined);
+  const onSnooze = vi.fn();
+  const onWake = vi.fn();
   const view = (next: Bird, given: PageOptions) => (
     <DetailView
       bird={next}
       now={now}
       onLaunch={onLaunch}
+      snooze={{ onSnooze, onWake }}
       sheets={given.sheets ?? []}
       entry={{ form: given.form ?? null, onSave, onRemove }}
       problems={given.problems ?? []}
@@ -135,6 +138,8 @@ function page(bird: Bird, options: PageOptions = {}) {
     onSettings,
     onLocalSources,
     onCopy,
+    onSnooze,
+    onWake,
     /** The same page given a new bird and new options, as a push would. */
     push: (next: Bird, given: PageOptions) => rerender(view(next, given)),
   };
@@ -235,6 +240,42 @@ describe("the detail view", () => {
     expect(container.querySelector('[data-part="meta"]')?.textContent).toMatch(
       /^~\/undev\/prism · /,
     );
+  });
+
+  it("carries the snooze verb and its durations, the wake verb while snoozed, and neither on the fence", () => {
+    const skiff = mockBird("undev/skiff");
+    const actions = (container: HTMLElement) =>
+      within(container.querySelector('[data-part="actions"]') as HTMLElement);
+    const { container, onSnooze, onWake, push } = page(skiff);
+
+    fireEvent.click(actions(container).getByRole("button", { name: "Snooze" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "2 weeks" }));
+    expect(onSnooze).toHaveBeenCalledWith("undev/skiff", "2026-11-05");
+
+    push({ ...skiff, snooze: { until: null } }, {});
+    expect(
+      actions(container).queryByRole("button", { name: "Snooze" }),
+    ).toBeNull();
+    fireEvent.click(actions(container).getByRole("button", { name: "Wake" }));
+    expect(onWake).toHaveBeenCalledWith("undev/skiff");
+
+    push(mockBird("dev/odin/hello"), {});
+    expect(
+      ["Snooze", "Wake"].filter(
+        (name) => actions(container).queryByRole("button", { name }) !== null,
+      ),
+    ).toEqual([]);
+  });
+
+  it("offers the snooze action again once a bird's snooze has run out", () => {
+    const skiff = mockBird("undev/skiff");
+    const { container } = page({ ...skiff, snooze: { until: "2026-10-22" } });
+    const actions = within(
+      container.querySelector('[data-part="actions"]') as HTMLElement,
+    );
+
+    expect(actions.getByRole("button", { name: "Snooze" })).toBeTruthy();
+    expect(actions.queryByRole("button", { name: "Wake" })).toBeNull();
   });
 
   it("lands a pressed chip on the ledger row holding its working: scrolled to the middle and marked", () => {
@@ -679,11 +720,13 @@ describe("the detail view", () => {
     expect(perch.detail.actions.length).toBeGreaterThanOrEqual(2);
     expect(perch.detail.links.length).toBeGreaterThanOrEqual(2);
     expect(verbs).toHaveLength(
-      perch.detail.actions.length + perch.detail.links.length + 1,
+      perch.detail.actions.length + perch.detail.links.length + 2,
     );
     expect(verbs.map((verb) => verb.textContent).at(-1)).toBe("The papers");
+    // The snooze verb sits in a holder of its own, which places its durations beneath it.
     for (const verb of verbs) {
-      expect(verb.parentElement).toBe(actions);
+      const item = verb.textContent === "Snooze" ? verb.parentElement : verb;
+      expect(item?.parentElement).toBe(actions);
     }
   });
 

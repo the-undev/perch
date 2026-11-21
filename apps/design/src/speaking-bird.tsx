@@ -3,6 +3,8 @@
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { BirdPortrait, birdLook, portraitFrame } from "@perch/ui/bird.tsx";
 import { Bubble, tailDrop } from "@perch/ui/bubble.tsx";
+import { SnoozeAction } from "@perch/ui/snooze-action.tsx";
+import { reportedSnooze } from "./specimens.ts";
 
 export interface SpeakingBirdProps {
   bird: Bird;
@@ -15,13 +17,23 @@ export interface SpeakingBirdProps {
 /** One bird saying its piece: the bubble, and the bird whose beak the tail ends at. */
 export function SpeakingBird({ bird, now, onPress }: SpeakingBirdProps) {
   const frame = portraitFrame(bird, "right");
+  const look = birdLook(bird, now);
   return (
     <div>
       <Bubble
         bubble={bird.bubble}
-        look={birdLook(bird, now)}
+        look={look}
         actions={bird.detail.actions}
         onLaunch={(action) => onPress(`${bird.name}: ${action.verb}`)}
+        snoozeAction={
+          <SnoozeAction
+            bird={bird}
+            look={look}
+            now={now}
+            place="bubble"
+            calls={reportedSnooze(onPress)}
+          />
+        }
         onFullStory={() => onPress(`${bird.name}: Tell me the full story`)}
         onAdopt={bird.adopted ? null : () => onPress(`${bird.name}: Adopt`)}
         onChip={(chip) => onPress(`${bird.name}: ${chip}`)}

@@ -25,6 +25,7 @@ function speak(bird: Bird, now = afternoon) {
       look={birdLook(bird, now)}
       actions={bird.detail.actions}
       onLaunch={onLaunch}
+      snoozeAction={null}
       onFullStory={onFullStory}
       onAdopt={bird.adopted ? null : onAdopt}
       onChip={onChip}

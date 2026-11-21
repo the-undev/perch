@@ -34,6 +34,13 @@ Birds sleep from midnight to 06:00, whatever the sky shows.
 - A snooze ends at the start of its end date, and the bird wears its mood at
   once, with no scan.
 
+## Snooze
+
+An adopted bird's bubble and page offer a Snooze action, whatever its mood. It
+opens the durations: 1 day, 3 days, 1 week, 2 weeks, 1 month and indefinitely.
+A snoozed bird offers a Wake action in its place, and a bird whose snooze has run
+out offers Snooze again. A fence bird has neither.
+
 ## Fly-in
 
 Birds land wires before fence, worst mood first, then plumpest. A snoozed bird

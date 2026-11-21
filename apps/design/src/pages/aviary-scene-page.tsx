@@ -11,6 +11,8 @@ import type { SkyPhase } from "@perch/ui/sky.ts";
 import { useState } from "react";
 import {
   mockWire,
+  quietSnooze,
+  reportedSnooze,
   scanMoment,
   smallHours,
   withHelloAdopted,
@@ -85,6 +87,7 @@ function SmallWindow({
               onFullStory={() => {}}
               onAdopt={() => {}}
               onChip={() => {}}
+              snooze={quietSnooze}
             />
           </SceneFrame>
         </div>
@@ -141,6 +144,7 @@ export function AviaryScenePage() {
           }
           onAdopt={(bird) => setPressed(`${bird.name}: Adopt`)}
           onChip={(bird, chip) => setPressed(`${bird.name}: ${chip}`)}
+          snooze={reportedSnooze(setPressed)}
         />
       </SceneFrame>
       <Pressed text={pressed} />
@@ -184,6 +188,11 @@ export function AviaryScenePage() {
             name: "onLaunch",
             type: "(action: LaunchAction) => void",
             what: "A bubble's launch action was pressed; the app asks the main process to open it.",
+          },
+          {
+            name: "snooze",
+            type: "SnoozeCalls",
+            what: "A bubble's snooze action picked a duration, handing on the bird's id and the end date, or null for indefinitely, or its wake action was pressed.",
           },
           {
             name: "onFullStory",

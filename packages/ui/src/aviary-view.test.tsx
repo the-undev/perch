@@ -18,7 +18,7 @@ import {
 } from "./aviary-layout.ts";
 import { AviaryScene, AviaryView, tipLine } from "./aviary-view.tsx";
 import type { PixelSize } from "./hooks.ts";
-import { mockBird, mockBirds } from "./mock-birds.ts";
+import { mockBird, mockBirds, quietSnooze } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth } from "./scene.tsx";
 
 afterEach(cleanup);
@@ -38,6 +38,7 @@ function scene(size: PixelSize) {
       onFullStory={() => {}}
       onAdopt={() => {}}
       onChip={() => {}}
+      snooze={quietSnooze}
       flyingIds={new Set()}
     />,
   );
@@ -61,6 +62,8 @@ function show(now = morning, aviary = mockAviary) {
   const onFullStory = vi.fn();
   const onAdopt = vi.fn();
   const onChip = vi.fn();
+  const onSnooze = vi.fn();
+  const onWake = vi.fn();
   const { container } = render(
     <AviaryView
       aviary={aviary}
@@ -69,9 +72,18 @@ function show(now = morning, aviary = mockAviary) {
       onFullStory={onFullStory}
       onAdopt={onAdopt}
       onChip={onChip}
+      snooze={{ onSnooze, onWake }}
     />,
   );
-  return { container, onLaunch, onFullStory, onAdopt, onChip };
+  return {
+    container,
+    onLaunch,
+    onFullStory,
+    onAdopt,
+    onChip,
+    onSnooze,
+    onWake,
+  };
 }
 
 /** A bird's button, named by the bird's name and its state word. */
@@ -111,6 +123,7 @@ describe("the aviary view", () => {
         onFullStory={() => {}}
         onAdopt={() => {}}
         onChip={() => {}}
+        snooze={quietSnooze}
         flyingIds={new Set([flying])}
       />,
     );
@@ -304,6 +317,115 @@ describe("the aviary view", () => {
     expect(
       bubble.querySelector('[data-part="speech"]')?.textContent,
     ).not.toContain("You woke me");
+  });
+
+  describe("its snooze and wake actions", () => {
+    /** The snooze and wake actions a bird's bubble offers, by name. */
+    function snoozeActions(id: string): string[] {
+      fireEvent.click(birdButton(id));
+      const bubble = screen.getByRole("region", {
+        name: `${mockBird(id).name} says`,
+      });
+      return ["Snooze", "Wake"].filter(
+        (name) => within(bubble).queryByRole("button", { name }) !== null,
+      );
+    }
+
+    it("offers the snooze action on an adopted bird whatever its mood, and a fence bird neither action", () => {
+      show();
+
+      expect(
+        ["dev/perch", "undev/skiff", "undev/prism", "dev/odin/hello"].map(
+          snoozeActions,
+        ),
+      ).toEqual([["Snooze"], ["Snooze"], ["Snooze"], []]);
+    });
+
+    it("opens the durations from the snooze action, shortest first and indefinitely last", () => {
+      show();
+
+      fireEvent.click(birdButton("undev/skiff"));
+      fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+
+      expect(screen.getByRole("button", { name: "Snooze" }).ariaExpanded).toBe(
+        "true",
+      );
+      expect(
+        within(screen.getByRole("menu", { name: "Snooze Skiff for" }))
+          .getAllByRole("menuitem")
+          .map((item) => item.textContent),
+      ).toEqual([
+        "1 day",
+        "3 days",
+        "1 week",
+        "2 weeks",
+        "1 month",
+        "Indefinitely",
+      ]);
+    });
+
+    it.each([
+      ["1 day", "2026-10-23"],
+      ["3 days", "2026-10-25"],
+      ["1 week", "2026-10-29"],
+      ["2 weeks", "2026-11-05"],
+      ["1 month", "2026-11-22"],
+      ["Indefinitely", null],
+    ])(
+      "snoozes a bird picked for %s until %s, closing the durations",
+      (duration, until) => {
+        const { onSnooze } = show();
+
+        fireEvent.click(birdButton("undev/skiff"));
+        fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+        fireEvent.click(screen.getByRole("menuitem", { name: duration }));
+
+        expect(onSnooze).toHaveBeenCalledWith("undev/skiff", until);
+        expect(screen.queryByRole("menu")).toBeNull();
+      },
+    );
+
+    it("offers a snoozed bird the wake action in place of the snooze action, which wakes it", () => {
+      const { onWake } = show(morning, snoozing(["undev/skiff"], null));
+
+      expect(snoozeActions("undev/skiff")).toEqual(["Wake"]);
+      fireEvent.click(screen.getByRole("button", { name: "Wake" }));
+
+      expect(onWake).toHaveBeenCalledWith("undev/skiff");
+    });
+
+    it("moves focus through the durations with the arrow keys, Home and End, and Escape returns it to the button", () => {
+      show();
+
+      fireEvent.click(birdButton("undev/skiff"));
+      const button = screen.getByRole("button", { name: "Snooze" });
+      fireEvent.click(button);
+      const items = screen.getAllByRole("menuitem");
+      const menu = screen.getByRole("menu");
+      expect(document.activeElement).toBe(items[0]);
+
+      fireEvent.keyDown(menu, { key: "ArrowDown" });
+      expect(document.activeElement).toBe(items[1]);
+      fireEvent.keyDown(menu, { key: "ArrowUp" });
+      fireEvent.keyDown(menu, { key: "ArrowUp" });
+      expect(document.activeElement).toBe(items[5]);
+      fireEvent.keyDown(menu, { key: "ArrowDown" });
+      expect(document.activeElement).toBe(items[0]);
+      fireEvent.keyDown(menu, { key: "End" });
+      expect(document.activeElement).toBe(items[5]);
+      fireEvent.keyDown(menu, { key: "Home" });
+      expect(document.activeElement).toBe(items[0]);
+
+      fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+      expect(screen.queryByRole("menu")).toBeNull();
+      expect(document.activeElement).toBe(button);
+    });
+
+    it("offers the snooze action again once a bird's snooze has run out", () => {
+      show(morning, snoozing(["undev/skiff"], "2026-10-22"));
+
+      expect(snoozeActions("undev/skiff")).toEqual(["Snooze"]);
+    });
   });
 
   it("shows a hovered bird's tip with the numbers it carries", () => {

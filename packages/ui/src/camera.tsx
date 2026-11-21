@@ -44,6 +44,7 @@ import type { KeyFileSheet } from "./paper.tsx";
 import { ScanLine } from "./scan-line.tsx";
 import { sceneWidthFor, skyBackground } from "./scene.tsx";
 import { skyPhase } from "./sky.ts";
+import type { SnoozeCalls } from "./snooze-action.tsx";
 import {
   birdRoom,
   byPosition,
@@ -555,6 +556,8 @@ export interface CameraViewProps {
   /** Every move the camera is asked to make: a tab, a bird, the brand or Escape. */
   onNavigate: (place: CameraPlace) => void;
   onLaunch: (action: LaunchAction) => void;
+  /** A bubble's or a page's snooze or wake action was pressed. */
+  snooze: SnoozeCalls;
   /** The open bird's key files with what was read from each; empty until read. */
   sheets: KeyFileSheet[];
   /** A scan is running; the header says so quietly. */
@@ -583,6 +586,7 @@ export function CameraView({
   place,
   onNavigate,
   onLaunch,
+  snooze,
   sheets,
   scanning,
   onRescan,
@@ -787,6 +791,7 @@ export function CameraView({
                 now={now}
                 size={size}
                 onLaunch={onLaunch}
+                snooze={snooze}
                 onFullStory={(chosen) =>
                   onNavigate({
                     at: "detail",
@@ -876,6 +881,7 @@ export function CameraView({
                           {...groundPage.props}
                           now={now}
                           onLaunch={onLaunch}
+                          snooze={snooze}
                           onSettings={onSettings}
                           onLocalSources={onLocalSources}
                           onCopy={onCopy}

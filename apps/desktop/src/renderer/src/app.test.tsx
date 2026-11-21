@@ -257,6 +257,35 @@ describe("the window", () => {
     ).toBeDefined();
   });
 
+  it("snoozes a bird from its bubble's snooze action until the duration's end date, then offers its wake action", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 22, 10, 0));
+    const { fake } = renderApp(idle(mockAviary));
+
+    fireEvent.click(await birdButton("undev/skiff"));
+    fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "3 days" }));
+
+    expect(fake.snoozes).toEqual([
+      { birdId: "undev/skiff", until: "2026-10-25" },
+    ]);
+    act(() =>
+      fake.push(
+        idle(
+          deriveAviary(
+            mockSnapshot,
+            mockConfig,
+            { "undev/skiff": { until: "2026-10-25" } },
+            mockHome,
+          ),
+        ),
+      ),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Wake" }));
+
+    expect(fake.wakes).toEqual(["undev/skiff"]);
+  });
+
   it("unfolds the papers where the URL asks", async () => {
     renderApp(
       idle(mockAviary),

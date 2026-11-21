@@ -98,6 +98,11 @@ const bubbleNotes: Note[] = [
     rule: null,
   },
   {
+    title: "Snooze · quiet until a date",
+    text: "An adopted bird's bubble has a Snooze action after the launch actions, whatever its mood. It opens the durations: 1 day, 3 days, 1 week, 2 weeks, 1 month, indefinitely. A snoozed bird has Wake in its place. The bird's page carries the same control.",
+    rule: "The look decides the key: a snooze that has run out offers Snooze again, and a fence bird has neither.",
+  },
+  {
     title: "Tell me the full story · the way down",
     text: "Rides the camera down to the bird's page, which holds everything the bird and its bubble show and the facts behind them.",
     rule: null,

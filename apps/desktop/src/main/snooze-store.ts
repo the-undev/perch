@@ -22,6 +22,7 @@ export interface SnoozeStoreDeps {
   writeText: (path: string, text: string) => Promise<void>;
 }
 
+/** Reads and writes run one after another, in the order asked, so no write drops another's change. */
 export interface SnoozeStore {
   /** Reads the file again; a failure keeps the snoozes last read, a missing file holds none. */
   reload(): Promise<void>;
@@ -81,24 +82,37 @@ export function createSnoozeStore(deps: SnoozeStoreDeps): SnoozeStore {
   const fresh = async () =>
     readEntries(deps.path, await deps.readText(deps.path));
 
+  /** The tail of the queue every read and write joins; it never rejects. */
+  let queue: Promise<void> = Promise.resolve();
+  function inTurn(step: () => Promise<void>): Promise<void> {
+    const turn = queue.then(step);
+    queue = turn.catch(() => {});
+    return turn;
+  }
+
   return {
-    async reload() {
-      try {
-        state = stateOf(await fresh());
-      } catch (error) {
-        state = {
-          snoozes: state.snoozes,
-          problems: [`The snoozes were not read: ${errorMessage(error)}`],
-        };
-      }
-    },
+    reload: () =>
+      inTurn(async () => {
+        try {
+          state = stateOf(await fresh());
+        } catch (error) {
+          state = {
+            snoozes: state.snoozes,
+            problems: [`The snoozes were not read: ${errorMessage(error)}`],
+          };
+        }
+      }),
     current: () => state,
-    async write(birdId, snooze) {
-      const { [birdId]: _replaced, ...others } = await fresh();
-      const entries =
-        snooze === null ? others : { ...others, [birdId]: snooze };
-      await deps.writeText(deps.path, `${JSON.stringify(entries, null, 2)}\n`);
-      state = stateOf(entries);
-    },
+    write: (birdId, snooze) =>
+      inTurn(async () => {
+        const { [birdId]: _replaced, ...others } = await fresh();
+        const entries =
+          snooze === null ? others : { ...others, [birdId]: snooze };
+        await deps.writeText(
+          deps.path,
+          `${JSON.stringify(entries, null, 2)}\n`,
+        );
+        state = stateOf(entries);
+      }),
   };
 }

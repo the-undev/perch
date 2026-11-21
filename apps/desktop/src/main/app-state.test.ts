@@ -673,6 +673,23 @@ describe("snoozing birds", () => {
     expect(published.at(-1)?.problems).toEqual([]);
   });
 
+  it("lands every one of overlapping snoozes and wakes", async () => {
+    const { app } = onFiles();
+    await app.start();
+    await app.snooze("undev/harbour", null);
+
+    await Promise.all([
+      app.snooze("dev/perch", "2026-12-04"),
+      app.snooze("undev/spool", null),
+      app.wake("undev/harbour"),
+    ]);
+
+    expect(await stored()).toEqual({
+      "dev/perch": { until: "2026-12-04" },
+      "undev/spool": { until: null },
+    });
+  });
+
   it("keeps a snooze when the app state starts again", async () => {
     const first = onFiles();
     await first.app.start();

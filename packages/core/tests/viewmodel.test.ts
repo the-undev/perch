@@ -279,8 +279,8 @@ describe("snoozes", () => {
     expect(
       aviary.wires[1]?.birds.map((bird) => [bird.id, bird.snooze]),
     ).toEqual([
-      ["dev/prism", { until: null }],
       ["dev/harbour", { until: "2026-12-04" }],
+      ["dev/prism", { until: null }],
       ["dev/spool", null],
     ]);
   });

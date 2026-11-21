@@ -45,4 +45,5 @@ out offers Snooze again. A fence bird has neither.
 
 Birds land wires before fence, worst mood first, then plumpest. A snoozed bird
 lands after every bird on a wire that is not snoozed, and before the fence. A
-tab in the camera opens the bird that would land first.
+wire's tab in the camera opens the bird that would land first; the fence's tab
+opens the first fence bird by name.

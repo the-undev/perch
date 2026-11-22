@@ -128,7 +128,7 @@ export interface TallyCounts {
   snoozed: number;
 }
 
-/** How many of the birds are at each state word at a time; fence birds are counted by none. */
+/** How many of the birds are at each state word at a time; fence birds are counted by none, as their state word is "not adopted", which no count takes. */
 export function tallyCounts(birds: BirdModel[], now: Date): TallyCounts {
   const stateWords = birds.map((bird) => birdLook(bird, now).stateWord);
   const count = (word: StateWord) =>

@@ -408,7 +408,6 @@ describe("the wire and the fence", () => {
     );
     expect(xs).toEqual([...xs].sort((a, b) => a - b));
     expect(container.textContent).toContain("Projects");
-    expect(container.textContent).toContain("3 attention");
   });
 
   it("paints the wire's name on the sky behind its line and birds, cut round each bird", () => {

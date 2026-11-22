@@ -32,7 +32,13 @@ import {
   toPixels,
 } from "./aviary-layout.ts";
 import { AviaryScene } from "./aviary-view.tsx";
-import { BirdFigure, birdLook, type Facing } from "./bird.tsx";
+import {
+  BirdFigure,
+  birdLook,
+  type Facing,
+  type StateWord,
+  stateTone,
+} from "./bird.tsx";
 import { DetailView, type EntryControls } from "./detail-view.tsx";
 import {
   type PixelSize,
@@ -527,11 +533,16 @@ function Strip({
   );
 }
 
-const totalTone: { key: keyof TallyCounts; className: string }[] = [
-  { key: "attention", className: "text-red" },
-  { key: "drifting", className: "text-amber" },
-  { key: "settled", className: "text-green" },
-  { key: "snoozed", className: "text-ink-faint" },
+/** The header's totals in order: each count's field, the state word it counts and the word it is written with. */
+const totalWords: {
+  key: keyof TallyCounts;
+  stateWord: StateWord;
+  word: string;
+}[] = [
+  { key: "attention", stateWord: "distressed", word: "attention" },
+  { key: "drifting", stateWord: "restless", word: "drifting" },
+  { key: "settled", stateWord: "content", word: "settled" },
+  { key: "snoozed", stateWord: "snoozed", word: "snoozed" },
 ];
 
 /** The header's totals over every adopted bird: how many need attention, drift, are settled or snoozed. */
@@ -542,9 +553,9 @@ function Totals({ aviary, now }: { aviary: Aviary; now: Date }) {
   );
   return (
     <div className="flex gap-4 font-semibold text-[13px]">
-      {totalTone.map(({ key, className }) => (
-        <span key={key} className={className}>
-          {counts[key]} {key}
+      {totalWords.map(({ key, stateWord, word }) => (
+        <span key={key} className={stateTone[stateWord]}>
+          {counts[key]} {word}
         </span>
       ))}
     </div>

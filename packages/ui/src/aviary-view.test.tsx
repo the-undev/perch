@@ -1,5 +1,4 @@
 import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
-import type { Aviary } from "@perch/core/viewmodel.ts";
 import {
   act,
   cleanup,
@@ -18,7 +17,7 @@ import {
 } from "./aviary-layout.ts";
 import { AviaryScene, AviaryView, tipLine } from "./aviary-view.tsx";
 import type { PixelSize } from "./hooks.ts";
-import { mockBird, mockBirds, quietSnooze } from "./mock-birds.ts";
+import { mockBird, mockBirds, quietSnooze, snoozing } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth } from "./scene.tsx";
 
 afterEach(cleanup);
@@ -42,19 +41,6 @@ function scene(size: PixelSize) {
       flyingIds={new Set()}
     />,
   );
-}
-
-/** The mock aviary with the given birds snoozed until a date, or until woken for null. */
-function snoozing(ids: string[], until: string | null): Aviary {
-  return {
-    ...mockAviary,
-    wires: mockAviary.wires.map((wire) => ({
-      ...wire,
-      birds: wire.birds.map((bird) =>
-        ids.includes(bird.id) ? { ...bird, snooze: { until } } : bird,
-      ),
-    })),
-  };
 }
 
 function show(now = morning, aviary = mockAviary, pickedAt = () => now) {

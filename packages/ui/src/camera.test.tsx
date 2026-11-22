@@ -26,7 +26,7 @@ import {
   stripLayout,
   stripWireY,
 } from "./camera.tsx";
-import { quietSnooze } from "./mock-birds.ts";
+import { quietSnooze, snoozing } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth, sceneWidthFor } from "./scene.tsx";
 import {
   columnEdgeFor,
@@ -389,19 +389,6 @@ describe("the camera", () => {
   });
 
   describe("its tallies", () => {
-    /** The mock aviary with the named birds snoozed until a date, or until woken for null. */
-    function snoozing(ids: string[], until: string | null) {
-      return {
-        ...mockAviary,
-        wires: mockAviary.wires.map((wire) => ({
-          ...wire,
-          birds: wire.birds.map((bird) =>
-            ids.includes(bird.id) ? { ...bird, snooze: { until } } : bird,
-          ),
-        })),
-      };
-    }
-
     const header = () => screen.getByRole("banner").textContent;
 
     it("totals attention, drifting, settled and snoozed in the header, each always shown", () => {
@@ -438,13 +425,14 @@ describe("the camera", () => {
     it("never counts a fence bird in the header's totals", () => {
       camera(aviaryPlace);
 
-      const total = ["attention", "drifting", "settled", "snoozed"]
-        .map((word) =>
-          Number(header()?.match(new RegExp(`(\\d+) ${word}`))?.[1]),
-        )
-        .reduce((sum, count) => sum + count, 0);
+      expect(mockAviary.fence.birds.length).toBeGreaterThan(0);
+      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+    });
 
-      expect(total).toBe(mockAviary.wires.flatMap((wire) => wire.birds).length);
+    it("counts a restless bird asleep at night as drifting in the header", () => {
+      camera(aviaryPlace, false, new Date(2026, 9, 23, 3, 0));
+
+      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
     });
 
     it("follows the wire's rule in the strip on a bird's page, snoozed after drifting", () => {

@@ -204,7 +204,7 @@ export function Bubble({
             title={action.verb}
             aria-label={action.verb}
             onClick={() => onLaunch(action)}
-            className="inline-flex cursor-pointer items-center rounded-lg bg-key px-2.5 py-2 text-ink hover:bg-key-hi"
+            className="inline-flex cursor-pointer items-center rounded-lg bg-action px-2.5 py-2 text-ink hover:bg-action-hi"
           >
             <Icon name={action.icon} size={14} />
           </button>
@@ -214,7 +214,7 @@ export function Bubble({
           <button
             type="button"
             onClick={onAdopt}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-key px-3 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-key-hi"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-action px-3 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-action-hi"
           >
             <Icon name="adopt" size={14} />
             Adopt
@@ -223,7 +223,7 @@ export function Bubble({
         <button
           type="button"
           onClick={onFullStory}
-          className="ml-auto cursor-pointer rounded-lg bg-key-strong px-3.5 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-key-hi"
+          className="ml-auto cursor-pointer rounded-lg bg-action-strong px-3.5 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-action-hi"
         >
           Tell me the full story
         </button>

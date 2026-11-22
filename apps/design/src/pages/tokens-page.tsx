@@ -203,7 +203,7 @@ export function TokensPage() {
           label="Actions on paper"
           rule="The bubble's dark buttons and the full-story action."
         >
-          <Swatches tokens={["key", "key-hi", "key-strong"]} />
+          <Swatches tokens={["action", "action-hi", "action-strong"]} />
         </Specimen>
       </Section>
 

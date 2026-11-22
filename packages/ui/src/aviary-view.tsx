@@ -493,7 +493,17 @@ export function AviaryScene({
           size={size}
           look={birdLook(speaker.bird, now)}
           onLaunch={onLaunch}
-          snooze={snooze}
+          snooze={{
+            ...snooze,
+            onSnooze: (birdId, until) => {
+              setSpeakingId(null);
+              snooze.onSnooze(birdId, until);
+            },
+            onWake: (birdId) => {
+              setSpeakingId(null);
+              snooze.onWake(birdId);
+            },
+          }}
           onFullStory={() => {
             setSpeakingId(null);
             onFullStory(speaker.bird);

@@ -202,7 +202,7 @@ export function AviaryScenePage() {
           {
             name: "onAdopt",
             type: "(bird: Bird) => void",
-            what: "A fence bird's bubble's Adopt was pressed; the camera rides down to the bird with its adoption papers unfolded. An adopted bird's bubble has no adopt key.",
+            what: "A fence bird's bubble's Adopt was pressed; the camera rides down to the bird with its adoption papers unfolded. An adopted bird's bubble has no adopt action.",
           },
         ]}
       >

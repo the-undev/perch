@@ -1,6 +1,6 @@
 // The speech bubble: paper against the sky, the bird's name and mood word, its first-person
 // speech, the chips it carries, the launch actions, the snooze control and, for a fence bird, the
-// adopt key, with a tail whose tip meets the beak. On the bird's own page the bubble is the speech
+// adopt action, with a tail whose tip meets the beak. On the bird's own page the bubble is the speech
 // and chips alone. Either way the chips are handles to the ledger rows holding their working.
 
 import { wakingPrefix } from "@perch/core/speech.ts";
@@ -145,7 +145,7 @@ export interface BubbleProps {
   snoozeAction: ReactNode;
   /** Rides the camera down to the bird's detail page. */
   onFullStory: () => void;
-  /** Rides to the page with the adoption papers unfolded; null for an adopted bird, which has no adopt key. */
+  /** Rides to the page with the adoption papers unfolded; null for an adopted bird, which has no adopt action. */
   onAdopt: (() => void) | null;
   /** A chip was pressed: rides to the page and lands on the ledger row holding its working. */
   onChip: (chip: ChipKind) => void;
@@ -204,7 +204,7 @@ export function Bubble({
             title={action.verb}
             aria-label={action.verb}
             onClick={() => onLaunch(action)}
-            className="inline-flex cursor-pointer items-center rounded-lg bg-key px-2.5 py-2 text-ink hover:bg-key-hi"
+            className="inline-flex cursor-pointer items-center rounded-lg bg-action px-2.5 py-2 text-ink hover:bg-action-hi"
           >
             <Icon name={action.icon} size={14} />
           </button>
@@ -214,7 +214,7 @@ export function Bubble({
           <button
             type="button"
             onClick={onAdopt}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-key px-3 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-key-hi"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-action px-3 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-action-hi"
           >
             <Icon name="adopt" size={14} />
             Adopt
@@ -223,7 +223,7 @@ export function Bubble({
         <button
           type="button"
           onClick={onFullStory}
-          className="ml-auto cursor-pointer rounded-lg bg-key-strong px-3.5 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-key-hi"
+          className="ml-auto cursor-pointer rounded-lg bg-action-strong px-3.5 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-action-hi"
         >
           Tell me the full story
         </button>

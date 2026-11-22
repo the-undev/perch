@@ -267,6 +267,29 @@ describe("the detail view", () => {
     ).toEqual([]);
   });
 
+  it("leaves the bird's page as it is after a snooze pick and after a wake", () => {
+    const skiff = mockBird("undev/skiff");
+    const actions = (container: HTMLElement) =>
+      within(container.querySelector('[data-part="actions"]') as HTMLElement);
+    const { container, onSnooze, onWake, push } = page(skiff);
+
+    fireEvent.click(actions(container).getByRole("button", { name: "Snooze" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "2 weeks" }));
+    expect(onSnooze).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole("heading", { name: "Skiff" })).toHaveLength(1);
+    expect(
+      actions(container).getByRole("button", { name: "Snooze" }),
+    ).toBeTruthy();
+
+    push({ ...skiff, snooze: { until: null } }, {});
+    fireEvent.click(actions(container).getByRole("button", { name: "Wake" }));
+    expect(onWake).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole("heading", { name: "Skiff" })).toHaveLength(1);
+    expect(
+      actions(container).getByRole("button", { name: "Wake" }),
+    ).toBeTruthy();
+  });
+
   it("offers the snooze action again once a bird's snooze has run out", () => {
     const skiff = mockBird("undev/skiff");
     const { container } = page({ ...skiff, snooze: { until: "2026-10-22" } });

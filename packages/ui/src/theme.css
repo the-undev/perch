@@ -93,10 +93,10 @@
   --color-chip-red: #ecc0b8;
   --color-chip-red-ink: #8c2619;
 
-  /* Dark keys set on paper: the bubble's buttons. */
-  --color-key: #22262c;
-  --color-key-hi: #2e333a;
-  --color-key-strong: #14171b;
+  /* Action colours: the dark buttons set on paper, as in the bubble. */
+  --color-action: #22262c;
+  --color-action-hi: #2e333a;
+  --color-action-strong: #14171b;
 
   /* The hover tip. */
   --color-tip: #171a1f;

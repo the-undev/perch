@@ -6,6 +6,7 @@ import type {
   SettingsForm,
   SettingsValues,
 } from "@perch/core/settings-form.ts";
+import type { SnoozeEnd } from "@perch/core/snooze-date.ts";
 import type {
   SourceTested,
   SourceTestValues,
@@ -27,6 +28,8 @@ export interface FakeApi {
   starterWritten: boolean;
   entrySaves: { birdId: string; values: EntryValues }[];
   entryRemovals: string[];
+  snoozes: { birdId: string; until: SnoozeEnd }[];
+  wakes: string[];
   settingsSaves: SettingsValues[];
   /** Sets what the settings form reads next, as an edit to the config file would. */
   setSettings(form: SettingsForm | null): void;
@@ -84,6 +87,12 @@ export function fakeApi(
       removeEntry: async (birdId) => {
         fake.entryRemovals.push(birdId);
       },
+      snooze: async (birdId, until) => {
+        fake.snoozes.push({ birdId, until });
+      },
+      wake: async (birdId) => {
+        fake.wakes.push(birdId);
+      },
       settingsForm: async () => settingsForm,
       saveSettings: async (values) => {
         fake.settingsSaves.push(values);
@@ -122,6 +131,8 @@ export function fakeApi(
     starterWritten: true,
     entrySaves: [],
     entryRemovals: [],
+    snoozes: [],
+    wakes: [],
     settingsSaves: [],
     setSettings(form) {
       settingsForm = form;

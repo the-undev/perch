@@ -105,8 +105,8 @@ export function roostFrame(bird: Bird): RoostFrame {
 
 export interface RoostProps {
   bird: Bird;
-  /** The sky is at night: a bird that sleeps sleeps here too, and its bubble speaks woken. */
-  night: boolean;
+  /** The render's clock: the bird's look follows the hour, and an asleep bird's bubble speaks woken. */
+  now: Date;
   /** A chip in the bubble was pressed: the page lands on the ledger row holding its working. */
   onChip: (chip: ChipKind) => void;
 }
@@ -116,9 +116,9 @@ export interface RoostProps {
  * top right of the bird's page. As a row the bubble sizes to its words up to about 56 characters,
  * the bird at the right end, so a caller can let the roost take its own width.
  */
-export function Roost({ bird, night, onChip }: RoostProps) {
+export function Roost({ bird, now, onChip }: RoostProps) {
   const frame = roostFrame(bird);
-  const look = birdLook(bird, night);
+  const look = birdLook(bird, now);
   const centre = frame.centreX;
   return (
     <section
@@ -145,7 +145,7 @@ export function Roost({ bird, night, onChip }: RoostProps) {
         >
           <RoostBubble
             bubble={bird.bubble}
-            night={night}
+            asleep={look.asleep}
             tail={{ side: "left", inset: frame.stackBeakX }}
             drop={frame.drop}
             sideTail={{ reach: frame.rowReach, tipY: frame.rowTipY }}
@@ -154,7 +154,7 @@ export function Roost({ bird, night, onChip }: RoostProps) {
         </div>
         <svg
           role="img"
-          aria-label={`${bird.name}, ${bird.adopted ? bird.mood : "not adopted"}${look.asleep ? ", asleep" : ""}`}
+          aria-label={`${bird.name}, ${look.stateWord}${look.asleep ? ", asleep" : ""}`}
           data-mood={bird.mood}
           data-asleep={look.asleep}
           viewBox={`0 0 ${frame.width} ${frame.height}`}

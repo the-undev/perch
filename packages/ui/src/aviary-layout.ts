@@ -3,7 +3,13 @@
 // and the bubble's place against a beak. Proportions are the board's.
 
 import type { Aviary, Bird, Mood, Wire } from "@perch/core/viewmodel.ts";
-import { birdScale, type Facing, type NamePlace, roomyName } from "./bird.tsx";
+import {
+  birdScale,
+  type Facing,
+  isSnoozed,
+  type NamePlace,
+  roomyName,
+} from "./bird.tsx";
 import type { BubbleTail } from "./bubble.tsx";
 import type { PixelSize } from "./hooks.ts";
 import { sceneWidthFor } from "./scene.tsx";
@@ -178,7 +184,7 @@ function perched(
 
 /**
  * The birds of one wire perched at their places, read like text: the first row left to right, then
- * the next, so the top left bird needs you first. Names alternate by the spacing on their own row.
+ * the next, in name order. Names alternate by the spacing on their own row.
  */
 function wireRows(
   wire: Wire,
@@ -305,18 +311,31 @@ const arrivalMood: Record<Mood, number> = {
   content: 2,
 };
 
-/** Who lands first: the wires before the fence, the worst mood first, then the plumpest. */
-export function arrivalOrder(aviary: Aviary): Map<string, number> {
+/** Orders birds by who needs the owner most at a time: the adopted first, then the awake before the snoozed, then the worst mood, then the plumpest. */
+export function byNeed(now: Date): (a: Bird, b: Bird) => number {
+  return (a, b) =>
+    Number(!a.adopted) - Number(!b.adopted) ||
+    Number(isSnoozed(a, now)) - Number(isSnoozed(b, now)) ||
+    arrivalMood[a.mood] - arrivalMood[b.mood] ||
+    b.plumpness.outstanding - a.plumpness.outstanding;
+}
+
+/** Orders a tab's birds by who to open first: the adopted by need, then by position, which is name order. */
+export function byTabOrder(now: Date): (a: Bird, b: Bird) => number {
+  const need = byNeed(now);
+  return (a, b) =>
+    Number(!a.adopted) - Number(!b.adopted) ||
+    (a.adopted ? need(a, b) : 0) ||
+    a.position - b.position;
+}
+
+/** Who lands first at a time: the wires before the fence, then by need. */
+export function arrivalOrder(aviary: Aviary, now: Date): Map<string, number> {
   const birds = [
     ...aviary.wires.flatMap((wire) => wire.birds),
     ...aviary.fence.birds,
   ];
-  const sorted = [...birds].sort(
-    (a, b) =>
-      Number(!a.adopted) - Number(!b.adopted) ||
-      arrivalMood[a.mood] - arrivalMood[b.mood] ||
-      b.plumpness.outstanding - a.plumpness.outstanding,
-  );
+  const sorted = [...birds].sort(byNeed(now));
   return new Map(sorted.map((bird, index) => [bird.id, index]));
 }
 

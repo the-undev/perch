@@ -1,13 +1,20 @@
+import { wakingPrefix } from "@perch/core/speech.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { birdLook } from "./bird.tsx";
 import { Bubble } from "./bubble.tsx";
 import { Icon } from "./icons.tsx";
 import { mockBird } from "./mock-birds.ts";
 
 afterEach(cleanup);
 
-function speak(bird: Bird, night = false) {
+/** Two in the afternoon, by day. */
+const afternoon = new Date(2026, 9, 22, 14, 0);
+/** Three in the morning, in the sleep hours. */
+const smallHours = new Date(2026, 9, 23, 3, 0);
+
+function speak(bird: Bird, now = afternoon) {
   const onLaunch = vi.fn();
   const onFullStory = vi.fn();
   const onAdopt = vi.fn();
@@ -15,9 +22,10 @@ function speak(bird: Bird, night = false) {
   const { container } = render(
     <Bubble
       bubble={bird.bubble}
-      night={night}
+      look={birdLook(bird, now)}
       actions={bird.detail.actions}
       onLaunch={onLaunch}
+      snoozeAction={null}
       onFullStory={onFullStory}
       onAdopt={bird.adopted ? null : onAdopt}
       onChip={onChip}
@@ -34,6 +42,19 @@ describe("the bubble", () => {
 
     expect(screen.getByRole("heading").textContent).toBe("Prismdistressed");
     expect(screen.getByText(prism.bubble.speech)).toBeDefined();
+  });
+
+  it("opens a sleeping bird's speech with the waking prefix, and an awake bird's without", () => {
+    const spool = mockBird("undev/spool");
+    const speech = () =>
+      document.querySelector('[data-part="speech"]')?.textContent;
+
+    speak(spool, smallHours);
+    expect(speech()).toBe(`${wakingPrefix} ${spool.bubble.speech}`);
+    cleanup();
+
+    speak(spool, afternoon);
+    expect(speech()).toBe(spool.bubble.speech);
   });
 
   it("hangs the tail from the bubble's bottom edge, its tip 26px below it", () => {
@@ -78,19 +99,6 @@ describe("the bubble", () => {
     expect(container.querySelectorAll("[data-kind]")).toHaveLength(0);
   });
 
-  it("wakes a sleeping bird at night, and only a sleeping one", () => {
-    const spool = mockBird("undev/spool");
-    const prism = mockBird("undev/prism");
-
-    expect(speak(spool, true).container.textContent).toContain(
-      `Mm? You woke me. ${spool.bubble.speech}`,
-    );
-    cleanup();
-    expect(speak(prism, true).container.textContent).not.toContain(
-      "You woke me",
-    );
-  });
-
   it("names each launch action by its verb and hands it back when pressed", () => {
     const perch = mockBird("dev/perch");
     const { onLaunch, onFullStory } = speak(perch);
@@ -104,7 +112,7 @@ describe("the bubble", () => {
     expect(onFullStory).toHaveBeenCalledOnce();
   });
 
-  it("draws each launch action's key with the icon the action carries", () => {
+  it("draws each launch action with the icon it carries", () => {
     const perch = mockBird("dev/perch");
     const { container: drawn } = render(<Icon name="edit" size={14} />);
     const editIcon = drawn.innerHTML;

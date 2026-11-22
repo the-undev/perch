@@ -2,7 +2,12 @@ import { mockAviary } from "@perch/core/mock.ts";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
-import { aviaryWith, mockBird, mockEntryForm } from "../specimens.ts";
+import {
+  aviaryWith,
+  mockBird,
+  mockEntryForm,
+  reportedSnooze,
+} from "../specimens.ts";
 import {
   Choice,
   Code,
@@ -53,7 +58,7 @@ export function CameraScenePage() {
     <>
       <Section
         title="The camera, end to end"
-        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The strip is 124px: the wire's name is painted on the sky behind the line's left end, cut round the birds that cross it, the tally beneath in front, and the birds, standing at their wire size, centre in the room right of the 240-unit column, the open one bright. Pressing another bird in the strip, or any move from one bird's page to another, pans the ground under the still strip: the old page slides out as the chosen bird's slides in, from the right for a bird further along the strip or on a later tab, from the left otherwise, and instantly with reduced motion. The header's tabs switch wires; each remembers the bird last open on it, and an empty wire's tab says so. The brand, The Aviary and Escape ride home. The scan line at the right says how old the scan is and scans again when pressed; settings, beside it, leaves for the settings page."
+        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The strip is 124px: the wire's name is painted on the sky behind the line's left end, cut round the birds that cross it, the tally beneath in front (attention, drifting, then snoozed, with a snoozed bird in no other count), and the birds, standing at their wire size, centre in the room right of the 240-unit column, the open one bright. Pressing another bird in the strip, or any move from one bird's page to another, pans the ground under the still strip: the old page slides out as the chosen bird's slides in, from the right for a bird further along the strip or on a later tab, from the left otherwise, and instantly with reduced motion. The header's tabs switch wires; each remembers the bird last open on it, opens the bird that needs you most (awake before snoozed, worst mood, then plumpest) until then, the fence's tab the first fence bird by name, and an empty wire's tab says so. The brand, The Aviary and Escape ride home. The header's totals read attention, drifting, settled and snoozed, each always shown, over the adopted birds only. The scan line at the right says how old the scan is and scans again when pressed; settings, beside it, leaves for the settings page."
         min={600}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -93,6 +98,7 @@ export function CameraScenePage() {
             setPlace(next);
           }}
           onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
+          snooze={reportedSnooze(setPressed)}
           sheets={sheets}
           scanning={scanning === "scanning"}
           onRescan={() => setPressed("onRescan()")}
@@ -136,6 +142,11 @@ export function CameraScenePage() {
             name: "onLaunch",
             type: "(action: LaunchAction) => void",
             what: "A launch action was pressed, in a bubble or on the detail page.",
+          },
+          {
+            name: "snooze",
+            type: "SnoozeCalls",
+            what: "A snooze or wake action was pressed, in a bubble or on the detail page. It also carries the pick's clock.",
           },
           {
             name: "sheets",

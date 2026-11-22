@@ -22,7 +22,7 @@ const adopted = birds.filter((bird) => bird.adopted);
 
 describe("the mock dataset", () => {
   it("derives the exported aviary", () => {
-    expect(deriveAviary(mockSnapshot, mockConfig, mockHome)).toEqual(
+    expect(deriveAviary(mockSnapshot, mockConfig, {}, mockHome)).toEqual(
       mockAviary,
     );
   });
@@ -156,7 +156,7 @@ describe("the mock dataset", () => {
       ]),
     );
     expect(chips).toContainEqual(
-      expect.objectContaining({ label: "parked 21 days", severity: "amber" }),
+      expect.objectContaining({ label: "stalled 21 days", severity: "amber" }),
     );
     expect(chips).toContainEqual(
       expect.objectContaining({ label: "ci failure", severity: "red" }),

@@ -2,15 +2,9 @@
 // doing, and a meta line saying where it lives, the page's actions beside it where they fit. The
 // speech belongs to the roost's bubble.
 
-import type { Activity, Bird, StateWord } from "@perch/core/viewmodel.ts";
+import type { Activity, Bird } from "@perch/core/viewmodel.ts";
 import type { ReactNode } from "react";
-
-const stateTone: Record<StateWord, string> = {
-  content: "text-green",
-  restless: "text-amber",
-  distressed: "text-red",
-  "not adopted": "text-ink-faint",
-};
+import { birdLook, stateTone } from "./bird.tsx";
 
 /** What a bird is doing, in words; settled says nothing. */
 export const activityWords: Record<Activity, string | null> = {
@@ -31,12 +25,15 @@ export function whereabouts(bird: Bird): string {
 
 export interface DetailHeadingProps {
   bird: Bird;
+  /** The render's clock: the state word and a snooze's end follow it. */
+  now: Date;
   /** The page's verbs and links, one group on the meta line's row where it fits and beneath the meta where not; null for none. */
   actions: ReactNode;
 }
 
 /** The page's heading in two tight rows: the one place on the page that carries the name and the state word, then the meta with the actions. */
-export function DetailHeading({ bird, actions }: DetailHeadingProps) {
+export function DetailHeading({ bird, now, actions }: DetailHeadingProps) {
+  const look = birdLook(bird, now);
   const activity = bird.activity === null ? null : activityWords[bird.activity];
   return (
     <header>
@@ -46,10 +43,18 @@ export function DetailHeading({ bird, actions }: DetailHeadingProps) {
         </h2>
         <span
           data-part="state-word"
-          className={`font-body font-semibold text-[11px] uppercase tracking-[0.1em] ${stateTone[bird.bubble.stateWord]}`}
+          className={`font-body font-semibold text-[11px] uppercase tracking-[0.1em] ${stateTone[look.stateWord]}`}
         >
-          {bird.bubble.stateWord}
+          {look.stateWord}
         </span>
+        {look.snoozedUntil !== null && (
+          <span
+            data-part="snoozed-until"
+            className="text-[12.5px] text-ink-accent"
+          >
+            {look.snoozedUntil}
+          </span>
+        )}
         {activity !== null && (
           <span className="text-[12.5px] text-ink-accent">{activity}</span>
         )}

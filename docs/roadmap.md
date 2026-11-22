@@ -15,15 +15,13 @@ use the older words below. Each is looked at on its own, then renamed.
 - "entry" becomes "papers".
 - "working" becomes "reading".
 - "river" becomes "history", and "spread" goes.
-- "parked" on the chip and in speech becomes "stalled".
 - "in-progress" in the scanner becomes "in flight".
 - "window" in comments, config comments and the design site becomes
   "threshold".
 - `Drift` becomes unsafe work, and `Detail` the bird's page.
-
-## Bird Positions
-
-Move to a fixed layout for the birds so they're always in the same spots.
+- "parked" in code names and comments becomes "stalled" (`snapshot.ts`,
+  `viewmodel.ts`, `derivations.ts`, `mock.ts`). The app text already says
+  stalled.
 
 ## Bird Types
 
@@ -71,6 +69,7 @@ window. Raising another app's window on Plasma Wayland needs a KWin script or
 ## Tray icon status
 
 The tray icon could show the worst health colour across everything.
+Snoozed birds are left out of it.
 
 ## Server monitoring
 
@@ -148,3 +147,38 @@ browser.
 Forge repositories are keyed by owner/name alone, so the same name at two
 instances is one presence. Keying by instance changes the presence reference
 that config names, and needs a rule for entries written without one.
+
+## A bird's look worked out once on its page
+
+The bird's page works out the look in its heading, its view and the roost
+separately, for the same bird and time. The page could work it out once and
+pass it down, as the aviary does.
+
+## One map for the state word's colour
+
+The bubble's `stateWordTone` and `stateTone` in `bird.tsx`, read by the page
+heading and the header's totals, both map each state word to a colour, so a
+new state word must be added to both.
+
+## Forget snoozes that have run out
+
+A snooze past its end date stays in the state file, and the bird offers Snooze,
+not Wake, so nothing removes it. A snooze written over by a new one, or removed
+with the bird's papers, is the only way out. Pruning run-out snoozes when the
+state file is read would keep it small.
+
+## Bug: each bird landing on its own in the fly-in
+
+Check that each bird visibly lands on its own in the fly-in, one after
+another, rather than the flock landing together.
+
+## Open decisions
+
+- The glossary's Asleep says a bird "neither distressed nor being edited" is
+  asleep between midnight and 06:00, but every fence bird sleeps at night
+  whatever its health. Whether to reword it to match: TBD.
+- Whether "Waking a snoozed bird when a new cause appears" and "Custom end
+  dates", out of scope for snoozes, become roadmap items: TBD.
+- The header's totals say "settled" for content birds, but the glossary's
+  Settled is an activity: neither editing nor in flight. Which word the count
+  uses: TBD.

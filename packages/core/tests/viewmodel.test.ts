@@ -41,7 +41,7 @@ const adoptAll = (ids: string[], extra = "") =>
   testConfig(`${ids.map((id) => `[items."${id}"]\n`).join("\n")}\n${extra}`);
 
 function birdIn(items: Item[], config: Config, id: string): Bird {
-  const aviary = deriveAviary(snapshotOf(items), config, home);
+  const aviary = deriveAviary(snapshotOf(items), config, {}, home);
   const bird = [
     ...aviary.wires.flatMap((wire) => wire.birds),
     ...aviary.fence.birds,
@@ -125,12 +125,12 @@ describe("mood", () => {
     expect(
       ["dev/spool", "dev/harbour", "dev/prism"].map((id) => {
         const bird = birdIn(items, config, id);
-        return [bird.health.level, bird.mood, bird.bubble.stateWord];
+        return [bird.health.level, bird.mood];
       }),
     ).toEqual([
-      ["green", "content", "content"],
-      ["amber", "restless", "restless"],
-      ["red", "distressed", "distressed"],
+      ["green", "content"],
+      ["amber", "restless"],
+      ["red", "distressed"],
     ]);
   });
 
@@ -244,30 +244,58 @@ describe("mood", () => {
       ].map((id) => birdIn(items, config, id).activity),
     ).toEqual(["settled", "in-flight", "editing", null]);
   });
+});
 
-  it("lets only content birds that are not being edited, and the fence, sleep at night", async () => {
-    const config = await adoptAll(["dev/spool", "dev/harbour", "dev/perch"]);
-    const editing = item("dev/perch", {
-      sources: { git: gitData({ uncommittedCount: 1, activity: "editing" }) },
-    });
-    const fence = item("dev/hello", {
-      sources: { git: gitData({ backup: "local-only" }) },
-    });
-    const items = [settled, restless, editing, fence];
-    const sleeps = (id: string) => birdIn(items, config, id).sleepsAtNight;
+describe("snoozes", () => {
+  it("has each bird carry its snooze: none, until a date or indefinitely", async () => {
+    const config = await adoptAll(["dev/spool", "dev/harbour", "dev/prism"]);
+    const aviary = deriveAviary(
+      snapshotOf([settled, restless, distressed]),
+      config,
+      { "dev/harbour": { until: "2026-12-04" }, "dev/prism": { until: null } },
+      home,
+    );
 
     expect(
-      ["dev/spool", "dev/harbour", "dev/perch", "dev/hello"].map(sleeps),
-    ).toEqual([true, false, false, true]);
-    expect(birdIn(items, config, "dev/spool").bubble.wokenSpeech).toBe(
-      "Mm? You woke me. All settled over here. Last touched three days ago.",
+      aviary.wires[1]?.birds.map((bird) => [bird.id, bird.snooze]),
+    ).toEqual([
+      ["dev/harbour", { until: "2026-12-04" }],
+      ["dev/prism", { until: null }],
+      ["dev/spool", null],
+    ]);
+  });
+
+  it("gives a fence bird no snooze, whatever is stored for it", async () => {
+    const config = await adoptAll([]);
+    const aviary = deriveAviary(
+      snapshotOf([settled]),
+      config,
+      { "dev/spool": { until: null } },
+      home,
     );
-    expect(birdIn(items, config, "dev/harbour").bubble.wokenSpeech).toBeNull();
+
+    expect(aviary.fence.birds.map((bird) => [bird.id, bird.snooze])).toEqual([
+      ["dev/spool", null],
+    ]);
+  });
+
+  it("derives a snoozed bird's health, mood, chips, ledger and readings as an awake one's", async () => {
+    const config = await adoptAll(["dev/prism"]);
+    const awake = birdIn([distressed], config, "dev/prism");
+    const snoozed = deriveAviary(
+      snapshotOf([distressed]),
+      config,
+      { "dev/prism": { until: null } },
+      home,
+    ).wires[1]?.birds[0];
+
+    expect(snoozed?.mood).toBe("distressed");
+    expect({ ...snoozed, snooze: null }).toEqual(awake);
   });
 });
 
 describe("the wires", () => {
-  it("lists every configured wire in order, the worst mood leftmost, then name", async () => {
+  it("lists every configured wire in order, each wire by name whatever the moods", async () => {
     const config = await adoptAll([
       "dev/spool",
       "dev/harbour",
@@ -282,7 +310,7 @@ describe("the wires", () => {
       item("dev/alpha", { sources: { git: gitData({}) } }),
       item("dev/zeta", { sources: { git: gitData({}) } }),
     ];
-    const aviary = deriveAviary(snapshotOf(items), config, home);
+    const aviary = deriveAviary(snapshotOf(items), config, {}, home);
 
     expect(aviary.wires.map((wire) => wire.name)).toEqual([
       "Machine & Home",
@@ -292,9 +320,9 @@ describe("the wires", () => {
     expect(
       aviary.wires[1]?.birds.map((bird) => [bird.position, bird.id]),
     ).toEqual([
-      [0, "dev/prism"],
+      [0, "dev/alpha"],
       [1, "dev/harbour"],
-      [2, "dev/alpha"],
+      [2, "dev/prism"],
       [3, "dev/spool"],
       [4, "dev/zeta"],
     ]);
@@ -304,7 +332,7 @@ describe("the wires", () => {
     const config = await testConfig(
       '[items."dev/spool"]\nwire = "Machine & Home"\n',
     );
-    const aviary = deriveAviary(snapshotOf([settled]), config, home);
+    const aviary = deriveAviary(snapshotOf([settled]), config, {}, home);
 
     expect(aviary.wires[0]?.birds.map((bird) => bird.wire)).toEqual([
       "Machine & Home",
@@ -319,18 +347,18 @@ describe("the wires", () => {
       item("dev/hello", { sources: { git: gitData({}) } }),
       item("server", { kind: "server", path: null }),
     ];
-    const aviary = deriveAviary(snapshotOf(items), config, home);
+    const aviary = deriveAviary(snapshotOf(items), config, {}, home);
 
     expect(
       aviary.fence.birds.map((bird) => [
         bird.position,
         bird.id,
         bird.wire,
-        bird.bubble.stateWord,
+        bird.adopted,
       ]),
     ).toEqual([
-      [0, "dev/hello", null, "not adopted"],
-      [1, "dev/photo-shuttle", null, "not adopted"],
+      [0, "dev/hello", null, false],
+      [1, "dev/photo-shuttle", null, false],
     ]);
     expect(
       aviary.wires.flatMap((wire) => wire.birds).map((bird) => bird.id),
@@ -381,7 +409,7 @@ describe("the wires", () => {
       lastSucceededAt: hoursBefore(5),
       durationMs: 3,
     };
-    const aviary = deriveAviary(snapshot, config, home);
+    const aviary = deriveAviary(snapshot, config, {}, home);
 
     expect(aviary.scannedAt).toBe(scannedAt);
     expect(aviary.warnings).toEqual(["include not found: /home/test/gone"]);
@@ -458,7 +486,7 @@ describe("chips", () => {
     );
   });
 
-  it("wear a parked chip at the stall's level, after unpushed, and none for a stall still green", async () => {
+  it("wear a stalled chip at the stall's level, after unpushed, and none for a stall still green", async () => {
     const config = await testConfig('[items."dev/prism"]\n');
     const parked = (days: number, level: "green" | "amber" | "red") =>
       item("dev/prism", {
@@ -480,10 +508,10 @@ describe("chips", () => {
       );
 
     expect(chipsOf(21, "amber")).toEqual([
-      ["stalled", "parked 21 days", 21, "amber"],
+      ["stalled", "stalled 21 days", 21, "amber"],
     ]);
     expect(chipsOf(56, "red")).toEqual([
-      ["stalled", "parked 56 days", 56, "red"],
+      ["stalled", "stalled 56 days", 56, "red"],
     ]);
     expect(chipsOf(2, "green")).toEqual([]);
     expect(chipKinds.indexOf("stalled")).toBe(

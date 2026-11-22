@@ -11,7 +11,7 @@ import {
   speechSubjectFor,
 } from "@perch/core/viewmodel.ts";
 import { SpeakingBird } from "../speaking-bird.tsx";
-import { mockBird } from "../specimens.ts";
+import { byDay, mockBird, smallHours } from "../specimens.ts";
 import { Code, Plate, Section, Specimen } from "../usage.tsx";
 
 const scannedAt = new Date(mockSnapshot.scannedAt);
@@ -245,13 +245,7 @@ function speaker(entry: Entry): Bird {
   return {
     ...bird,
     mood,
-    bubble: {
-      ...bird.bubble,
-      stateWord: bird.adopted ? mood : bird.bubble.stateWord,
-      speech,
-      wokenSpeech:
-        bird.bubble.wokenSpeech === null ? null : `${wakingPrefix} ${speech}`,
-    },
+    bubble: { ...bird.bubble, speech },
   };
 }
 
@@ -285,8 +279,8 @@ function Rules() {
         </li>
         <li>No suggestions.</li>
         <li>
-          At night a sleeping bird, clicked, is woken and says so first; awake
-          birds never gain the prefix.
+          A bird with closed eyes, clicked, is woken and says so first; a bird
+          with open eyes never gains the prefix.
         </li>
         <li>Calm punctuation: no exclamation marks, ever.</li>
       </ul>
@@ -337,7 +331,7 @@ export function PhrasebookPage() {
               <Plate phase="dusk">
                 <SpeakingBird
                   bird={speaker(item)}
-                  night={false}
+                  now={byDay}
                   onPress={ignore}
                 />
               </Plate>
@@ -346,30 +340,30 @@ export function PhrasebookPage() {
         </Section>
       ))}
       <Section
-        title="At night · any mood"
-        rule="Sleep is earned. At night a content bird that is not being edited sleeps, and so does the fence; restless and distressed birds lie awake, and an edited bird sings whatever the hour."
+        title="Asleep · midnight to 06:00"
+        rule="From midnight to 06:00 a bird that is neither distressed nor being edited sleeps, and so does every fence bird; a distressed bird stays awake, and an edited bird sings at any hour."
         min={440}
       >
         <Specimen
           label="Woken"
-          rule={`A sleeping bird clicked at night: the prefix "${wakingPrefix}" joins its usual speech.`}
+          rule={`A restless bird asleep, clicked: the prefix "${wakingPrefix}" joins its usual speech.`}
         >
           <Plate phase="night">
             <SpeakingBird
-              bird={mockBird("undev/spool")}
-              night={true}
+              bird={mockBird("undev/skiff")}
+              now={smallHours}
               onPress={ignore}
             />
           </Plate>
         </Specimen>
         <Specimen
           label="Awake anyway"
-          rule="Restless, so it never slept and is not woken."
+          rule="Distressed, so it never slept and is not woken."
         >
           <Plate phase="night">
             <SpeakingBird
-              bird={mockBird("undev/skiff")}
-              night={true}
+              bird={mockBird("undev/Hollow-legacy")}
+              now={smallHours}
               onPress={ignore}
             />
           </Plate>

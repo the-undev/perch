@@ -54,12 +54,8 @@ import type {
   WorkItemGroup,
   WorkItemKind,
 } from "./snapshot.ts";
-import {
-  type FenceSituation,
-  type SpeechSubject,
-  speak,
-  wakingPrefix,
-} from "./speech.ts";
+import type { SnoozeEnd } from "./snooze-date.ts";
+import { type FenceSituation, type SpeechSubject, speak } from "./speech.ts";
 
 /** The source cards pass to the renderer as the snapshot holds them; the settings page words them. */
 export type { HealthLevel, SourceCard, SourceCardKind, SourceCardResult };
@@ -132,7 +128,7 @@ export interface Aviary {
   warnings: string[];
 }
 
-/** One priority band from config, its birds leftmost first: leftmost needs attention first. */
+/** One priority band from config, its birds in name order. */
 export interface Wire {
   name: string;
   birds: Bird[];
@@ -160,6 +156,14 @@ export interface Plumpness {
 /** Outstanding work at which a bird is as plump as it gets. */
 export const plumpnessCap = 50;
 
+/** The owner has set a bird aside until its end date, or until woken when it has none. */
+export interface Snooze {
+  until: SnoozeEnd;
+}
+
+/** Every snooze the owner has set, keyed by bird id. */
+export type Snoozes = Record<string, Snooze>;
+
 export interface Bird {
   id: string;
   /** The display name from config, else the scanned name. */
@@ -175,8 +179,8 @@ export interface Bird {
   /** Null without a local clone, which has no work-state. */
   activity: Activity | null;
   plumpness: Plumpness;
-  /** At night a content bird not being edited sleeps, as does every fence bird. */
-  sleepsAtNight: boolean;
+  /** Null when the owner has not snoozed it, and always on the fence. */
+  snooze: Snooze | null;
   /** Where a fence bird lives, for its hover tip; null on a wire or while undecided. */
   lives: string | null;
   bubble: Bubble;
@@ -185,16 +189,10 @@ export interface Bird {
 
 // The bubble
 
-/** The bubble's word beside the name: the mood, or where a fence bird stands. */
-export type StateWord = Mood | "not adopted";
-
 export interface Bubble {
   name: string;
-  stateWord: StateWord;
   /** First person, the why behind the colour. */
   speech: string;
-  /** The speech with the waking prefix, for a sleeping bird clicked at night; null when it stays awake. */
-  wokenSpeech: string | null;
   chips: Chip[];
 }
 
@@ -956,7 +954,7 @@ function chipsFor(item: Item, health: Health): Chip[] {
   if (stall !== undefined) {
     chips.push({
       kind: "stalled",
-      label: `parked ${plural(stall.stall.days, "day", "days")}`,
+      label: `stalled ${plural(stall.stall.days, "day", "days")}`,
       count: stall.stall.days,
       severity: severity(stall.level),
     });
@@ -1510,6 +1508,7 @@ function speechSubject(
 export function deriveBird(
   item: BirdItem,
   config: Config,
+  snoozes: Snoozes,
   scannedAt: Date,
   home: string,
 ): Bird {
@@ -1523,8 +1522,6 @@ export function deriveBird(
   const name = entry?.name ?? item.name;
   const outstanding = openItemsOf(roadmapOf(item));
   const speech = speak(speechSubject(item, wire, scannedAt));
-  const sleepsAtNight =
-    !adopted || (mood === "content" && activity !== "editing");
   const chips = adopted ? chipsFor(item, health) : [];
   return {
     id: item.id,
@@ -1540,13 +1537,11 @@ export function deriveBird(
       outstanding,
       fullness: Math.min(outstanding, plumpnessCap) / plumpnessCap,
     },
-    sleepsAtNight,
+    snooze: adopted ? (snoozes[item.id] ?? null) : null,
     lives: adopted ? null : livesFor(fenceSituation(item)),
     bubble: {
       name,
-      stateWord: adopted ? mood : "not adopted",
       speech,
-      wokenSpeech: sleepsAtNight ? `${wakingPrefix} ${speech}` : null,
       chips,
     },
     detail: {
@@ -1584,15 +1579,9 @@ export function deriveBird(
   };
 }
 
-const moodRank: Record<Mood, number> = {
-  distressed: 0,
-  restless: 1,
-  content: 2,
-};
-
-/** Along a wire: the worst mood leftmost, then by name. */
-export function compareOnWire(a: Bird, b: Bird): number {
-  return moodRank[a.mood] - moodRank[b.mood] || a.name.localeCompare(b.name);
+/** Along a wire and the fence: by name, whatever the birds' moods. */
+export function compareByName(a: Bird, b: Bird): number {
+  return a.name.localeCompare(b.name);
 }
 
 function placed(birds: Bird[], compare: (a: Bird, b: Bird) => number): Bird[] {
@@ -1600,32 +1589,33 @@ function placed(birds: Bird[], compare: (a: Bird, b: Bird) => number): Bird[] {
 }
 
 /**
- * The aviary from a snapshot and the config, paths under the home directory shown with ~. Every
+ * The aviary from a snapshot, the config and the snoozes, paths under the home directory shown with ~. Every
  * configured wire appears, empty or not, in config order. The server item waits for server
- * monitoring and is not a bird. The fence is ordered by name: it holds no priority.
+ * monitoring and is not a bird. Every wire and the fence are ordered by name.
  */
 export function deriveAviary(
   snapshot: Snapshot,
   config: Config,
+  snoozes: Snoozes,
   home: string,
 ): Aviary {
   const scannedAt = new Date(snapshot.scannedAt);
   const birds = snapshot.items
     .filter(isBirdItem)
-    .map((item) => deriveBird(item, config, scannedAt, home));
+    .map((item) => deriveBird(item, config, snoozes, scannedAt, home));
   return {
     scannedAt: snapshot.scannedAt,
     wires: config.wires.names.map((name) => ({
       name,
       birds: placed(
         birds.filter((bird) => bird.wire === name),
-        compareOnWire,
+        compareByName,
       ),
     })),
     fence: {
       birds: placed(
         birds.filter((bird) => !bird.adopted),
-        (a, b) => a.name.localeCompare(b.name),
+        compareByName,
       ),
     },
     sourceErrors: Object.entries(snapshot.sources).flatMap(

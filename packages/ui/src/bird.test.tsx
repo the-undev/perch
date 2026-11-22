@@ -10,8 +10,9 @@ import {
   portraitFrame,
   wireScale,
 } from "./bird.tsx";
-import { mockBird } from "./mock-birds.ts";
+import { mockBird, mockBirds } from "./mock-birds.ts";
 import { Scene } from "./scene.tsx";
+import { skyPhase } from "./sky.ts";
 import {
   columnEdgeFor,
   Fence,
@@ -22,6 +23,11 @@ import {
   tallySize,
   Wire,
 } from "./wire.tsx";
+
+/** Two in the afternoon, by day. */
+const afternoon = new Date(2026, 9, 22, 14, 0);
+/** Three in the morning, in the sleep hours. */
+const smallHours = new Date(2026, 9, 23, 3, 0);
 
 /** Whether `later` comes after `earlier` in the document, so it is drawn in front of it. */
 function drawnAfter(earlier: Element, later: Element): boolean {
@@ -35,7 +41,7 @@ function drawnAfter(earlier: Element, later: Element): boolean {
 function wireScene(wire: WireModel) {
   return render(
     <Scene phase="day" width={2000} height={400} label="test">
-      <Wire wire={wire} y={200} width={2000} night={false} />
+      <Wire wire={wire} y={200} width={2000} now={afternoon} />
     </Scene>,
   ).container;
 }
@@ -48,69 +54,300 @@ function part(container: HTMLElement, name: string): Element {
   return element;
 }
 
-function portrait(bird: Bird, night = false) {
-  return render(<BirdPortrait bird={bird} facing="right" night={night} />)
+function portrait(bird: Bird, now = afternoon) {
+  return render(<BirdPortrait bird={bird} facing="right" now={now} />)
     .container;
 }
 
-describe("the bird", () => {
-  it("wears each mood as its breast colour", () => {
-    const breasts = {
-      content: part(portrait(mockBird("undev/spool")), "breast"),
-      restless: part(portrait(mockBird("undev/skiff")), "breast"),
-      distressed: part(portrait(mockBird("undev/prism")), "breast"),
-    };
+/** How the bird moves: still, or how high its bob lifts and whether its tail flicks. */
+function motionOf(container: HTMLElement): string {
+  const bob = container.querySelector(".motion-safe\\:animate-bird-bob");
+  if (bob === null) return "still";
+  const lift = (bob as HTMLElement).style.getPropertyValue("--bob-lift");
+  const flicks =
+    part(container, "tail").getAttribute("class") ===
+    "motion-safe:animate-tail-flick";
+  const bobs: Record<string, string> = {
+    "2": "gentle bob",
+    "3": "higher, quicker bob",
+    "4.4": "highest bob",
+  };
+  return flicks ? `${bobs[lift]}, tail flicks` : (bobs[lift] ?? lift);
+}
 
-    expect(breasts.content.getAttribute("fill")).toBe("var(--color-green)");
-    expect(breasts.restless.getAttribute("fill")).toBe("var(--color-amber)");
-    expect(breasts.distressed.getAttribute("fill")).toBe("var(--color-red)");
+/** What the owner sees of a bird drawn at a time, in the look table's words. */
+function seen(bird: Bird, now: Date) {
+  const container = portrait(bird, now);
+  const breast = part(container, "breast").getAttribute("fill");
+  const colours: Record<string, string> = {
+    "var(--color-breast-dim)": "dimmed",
+    "var(--color-green)": "green",
+    "var(--color-amber)": "amber",
+    "var(--color-red)": "red",
+  };
+  const mark = container.querySelector('[data-part="mark"]')?.textContent;
+  const label = container.querySelector("svg")?.getAttribute("aria-label");
+  return {
+    colour: colours[breast ?? ""],
+    stateWord: label?.split(", ")[1],
+    eyes: part(container, "eye").tagName === "circle" ? "open" : "closed",
+    mark: mark === "z" ? "z" : mark === "♪" ? "note" : "none",
+    motion: motionOf(container),
+  };
+}
+
+describe("the bird's look", () => {
+  it.each([
+    [
+      "dev/odin/hello",
+      "on the fence",
+      "06:00 to midnight",
+      "dimmed",
+      "not adopted",
+      "open",
+      "none",
+      "gentle bob",
+    ],
+    [
+      "dev/odin/hello",
+      "on the fence",
+      "midnight to 06:00",
+      "dimmed",
+      "not adopted",
+      "closed",
+      "z",
+      "still",
+    ],
+    [
+      "undev/spool",
+      "content, not edited",
+      "06:00 to midnight",
+      "green",
+      "content",
+      "open",
+      "none",
+      "gentle bob",
+    ],
+    [
+      "undev/spool",
+      "content, not edited",
+      "midnight to 06:00",
+      "green",
+      "content",
+      "closed",
+      "z",
+      "still",
+    ],
+    [
+      "dev/perch",
+      "content, edited",
+      "06:00 to midnight",
+      "green",
+      "content",
+      "open",
+      "note",
+      "gentle bob",
+    ],
+    [
+      "dev/perch",
+      "content, edited",
+      "midnight to 06:00",
+      "green",
+      "content",
+      "open",
+      "note",
+      "gentle bob",
+    ],
+    [
+      "undev/skiff",
+      "restless, not edited",
+      "06:00 to midnight",
+      "amber",
+      "restless",
+      "open",
+      "none",
+      "higher, quicker bob",
+    ],
+    [
+      "undev/skiff",
+      "restless, not edited",
+      "midnight to 06:00",
+      "amber",
+      "restless",
+      "closed",
+      "z",
+      "still",
+    ],
+    [
+      "obsidian/Hothouse",
+      "restless, edited",
+      "06:00 to midnight",
+      "amber",
+      "restless",
+      "open",
+      "note",
+      "higher, quicker bob",
+    ],
+    [
+      "obsidian/Hothouse",
+      "restless, edited",
+      "midnight to 06:00",
+      "amber",
+      "restless",
+      "open",
+      "note",
+      "higher, quicker bob",
+    ],
+    [
+      "undev/Hollow-legacy",
+      "distressed, not edited",
+      "06:00 to midnight",
+      "red",
+      "distressed",
+      "open",
+      "none",
+      "highest bob, tail flicks",
+    ],
+    [
+      "undev/Hollow-legacy",
+      "distressed, not edited",
+      "midnight to 06:00",
+      "red",
+      "distressed",
+      "open",
+      "none",
+      "highest bob, tail flicks",
+    ],
+    [
+      "undev/prism",
+      "distressed, edited",
+      "06:00 to midnight",
+      "red",
+      "distressed",
+      "open",
+      "note",
+      "highest bob, tail flicks",
+    ],
+    [
+      "undev/prism",
+      "distressed, edited",
+      "midnight to 06:00",
+      "red",
+      "distressed",
+      "open",
+      "note",
+      "highest bob, tail flicks",
+    ],
+  ])(
+    "looks right for %s, %s, %s",
+    (id, _row, hour, colour, stateWord, eyes, mark, motion) => {
+      const now = hour === "06:00 to midnight" ? afternoon : smallHours;
+
+      expect(seen(mockBird(id), now)).toEqual({
+        colour,
+        stateWord,
+        eyes,
+        mark,
+        motion,
+      });
+    },
+  );
+
+  it.each([
+    ["undev/spool", "content, not edited", "06:00 to midnight"],
+    ["undev/skiff", "restless, not edited", "midnight to 06:00"],
+    ["undev/Hollow-legacy", "distressed, not edited", "06:00 to midnight"],
+    ["undev/prism", "distressed, edited", "06:00 to midnight"],
+    ["undev/prism", "distressed, edited", "midnight to 06:00"],
+  ])("looks snoozed for %s, %s, %s", (id, _row, hour) => {
+    const now = hour === "06:00 to midnight" ? afternoon : smallHours;
+    const snoozed = { ...mockBird(id), snooze: { until: "2026-11-01" } };
+
+    expect(seen(snoozed, now)).toEqual({
+      colour: "dimmed",
+      stateWord: "snoozed",
+      eyes: "closed",
+      mark: "z",
+      motion: "still",
+    });
   });
 
-  it("is dimmed on the fence, whatever its mood", () => {
-    const container = portrait(mockBird("dev/odin/hello"));
+  it("looks snoozed with no end date until woken", () => {
+    const snoozed = { ...mockBird("undev/skiff"), snooze: { until: null } };
 
-    expect(part(container, "breast").getAttribute("fill")).toBe(
-      "var(--color-breast-dim)",
+    expect(seen(snoozed, afternoon).stateWord).toBe("snoozed");
+  });
+
+  it("wears its real mood from the start of the snooze's end date", () => {
+    const skiff = mockBird("undev/skiff");
+    const snoozed = { ...skiff, snooze: { until: "2026-10-22" } };
+
+    expect(seen(snoozed, afternoon)).toEqual(seen(skiff, afternoon));
+    expect(seen(snoozed, new Date(2026, 9, 21, 23, 59)).stateWord).toBe(
+      "snoozed",
     );
-    expect(part(container, "body").getAttribute("fill")).toBe(
+  });
+
+  it("keeps a snoozed bird's plumpness and stands it on the wire", () => {
+    const plump = {
+      ...mockBird("undev/skiff"),
+      plumpness: { outstanding: 50, fullness: 1 },
+    };
+    const snoozed = { ...plump, snooze: { until: null } };
+
+    expect(birdScale(snoozed)).toBeCloseTo(birdScale(plump));
+    expect(
+      portrait(snoozed).querySelector("line")?.getAttribute("stroke"),
+    ).toBe("var(--color-wire)");
+  });
+
+  it("sleeps from midnight until 06:00, and not in the sky's night before midnight", () => {
+    const at = (hours: number, minutes: number) =>
+      new Date(2026, 9, 22, hours, minutes);
+    const asleep = (now: Date) =>
+      mockBirds.filter((bird) => seen(bird, now).eyes === "closed").length;
+
+    expect(skyPhase(at(22, 30))).toBe("night");
+    expect([at(21, 0), at(23, 59), at(6, 0)].map(asleep)).toEqual([0, 0, 0]);
+    expect([at(0, 0), at(5, 59)].map(asleep)).toEqual([11, 11]);
+  });
+
+  it("wakes and sleeps every fence bird by the hour, whatever its health, dimmed", () => {
+    const hello = mockBird("dev/odin/hello");
+    const distressed = { ...hello, mood: "distressed" as const };
+
+    expect([afternoon, smallHours].map((now) => seen(distressed, now))).toEqual(
+      [afternoon, smallHours].map((now) => seen(hello, now)),
+    );
+    expect(part(portrait(distressed), "body").getAttribute("fill")).toBe(
       "var(--color-plumage-dim)",
     );
   });
 
-  it("sleeps at night only when content and not edited, eyes closed and still", () => {
-    const spool = portrait(mockBird("undev/spool"), true);
-    const skiff = portrait(mockBird("undev/skiff"), true);
-    const spoolByDay = portrait(mockBird("undev/spool"), false);
+  it("puts the z where the note sits, in the bird's own colour", () => {
+    const spool = mockBird("undev/spool");
+    const asleep = portrait(spool, smallHours);
+    const z = part(asleep, "mark");
+    cleanup();
+    const singing = portrait({ ...spool, activity: "editing" }, smallHours);
+    const note = part(singing, "mark");
 
-    expect(part(spool, "eye").getAttribute("fill")).toBe("var(--color-leg)");
-    expect(
-      spool.querySelector("[data-asleep=true] .motion-safe\\:animate-bird-bob"),
-    ).toBeNull();
-    expect(part(skiff, "eye").getAttribute("fill")).toBe("var(--color-eye)");
-    expect(part(spoolByDay, "eye").getAttribute("fill")).toBe(
-      "var(--color-eye)",
-    );
+    expect([z.getAttribute("x"), z.getAttribute("y")]).toEqual([
+      note.getAttribute("x"),
+      note.getAttribute("y"),
+    ]);
+    expect(z.getAttribute("fill")).toBe("var(--color-green)");
+    expect(z.getAttribute("class")).toContain("font-display");
+    expect(z.getAttribute("class")).toContain("italic");
   });
 
-  it("sings while edited, by night as by day, and never on the fence", () => {
-    const perch = mockBird("dev/perch");
+  it("looks the same in flight as settled, by day and by night", () => {
+    const spool = mockBird("undev/spool");
+    const inFlight = { ...spool, activity: "in-flight" as const };
 
-    expect(part(portrait(perch, true), "song").textContent).toBe("♪");
-    expect(part(portrait(perch, false), "song").textContent).toBe("♪");
-    expect(
-      portrait(mockBird("undev/spool")).querySelector('[data-part="song"]'),
-    ).toBeNull();
-  });
-
-  it("flicks its tail only when distressed", () => {
-    const flick = "motion-safe:animate-tail-flick";
-
-    expect(
-      part(portrait(mockBird("undev/prism")), "tail").getAttribute("class"),
-    ).toBe(flick);
-    expect(
-      part(portrait(mockBird("undev/skiff")), "tail").getAttribute("class"),
-    ).toBeNull();
+    for (const now of [afternoon, smallHours]) {
+      expect(seen(inFlight, now)).toEqual(seen(spool, now));
+    }
   });
 
   it("idles from the start when it is drawn outside the aviary", () => {
@@ -156,7 +393,7 @@ describe("the wire and the fence", () => {
     if (wire === undefined) throw new Error("the mock has a second wire");
     const { container } = render(
       <Scene phase="day" width={2000} height={400} label="test">
-        <Wire wire={wire} y={200} width={2000} night={false} />
+        <Wire wire={wire} y={200} width={2000} now={afternoon} />
       </Scene>,
     );
     const drawn = [...container.querySelectorAll("[data-bird]")];
@@ -171,7 +408,6 @@ describe("the wire and the fence", () => {
     );
     expect(xs).toEqual([...xs].sort((a, b) => a - b));
     expect(container.textContent).toContain("Projects");
-    expect(container.textContent).toContain("3 attention");
   });
 
   it("paints the wire's name on the sky behind its line and birds, cut round each bird", () => {
@@ -262,7 +498,7 @@ describe("the wire and the fence", () => {
           y={300}
           width={2000}
           height={400}
-          night={true}
+          now={smallHours}
         />
       </Scene>,
     );
@@ -315,7 +551,7 @@ describe("the wire and the fence", () => {
           y={300}
           width={2000}
           height={400}
-          night={false}
+          now={afternoon}
         />
       </Scene>,
     );

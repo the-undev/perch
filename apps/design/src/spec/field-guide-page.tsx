@@ -10,7 +10,7 @@ import { Scene, sceneWidth } from "@perch/ui/scene.tsx";
 import { Fence, Wire } from "@perch/ui/wire.tsx";
 import { type ReactNode, useState } from "react";
 import { SpeakingBird } from "../speaking-bird.tsx";
-import { mockBird, mockWire } from "../specimens.ts";
+import { byDay, mockBird, mockWire, smallHours } from "../specimens.ts";
 import { Plate, Pressed, Specimen } from "../usage.tsx";
 
 const { unsafe, stalled, bugs, criticalBugs } = defaultConfig().thresholds;
@@ -31,7 +31,7 @@ interface Note {
 const birdNotes: Note[] = [
   {
     title: "Breast colour · health, worn as mood",
-    text: `Green content, amber restless, red distressed. Failing CI is red. Each roadmap file is judged on its own: ${bugs.amberCount} open bugs turn it amber and ${bugs.redCount} red, ${criticalBugs.amberCount} open critical bug amber and ${criticalBugs.redCount} red. Tasks never count. A remote the clone pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled flight, parked on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
+    text: `Green content, amber restless, red distressed. Failing CI is red. Each roadmap file is judged on its own: ${bugs.amberCount} open bugs turn it amber and ${bugs.redCount} red, ${criticalBugs.amberCount} open critical bug amber and ${criticalBugs.redCount} red. Tasks never count. A remote the clone pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled flight: on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
     rule: "Worst input wins. The windows are config defaults from the Judgement page; a bird's papers may set its own.",
   },
   {
@@ -50,9 +50,9 @@ const birdNotes: Note[] = [
     rule: "From git: editing while any file is uncommitted.",
   },
   {
-    title: "The eye · asleep at night",
-    text: "The sky follows the real clock. At night a content bird that is not being edited sleeps: its eye closes and it stops bobbing. Restless and distressed birds lie awake, and every fence bird sleeps. Colours and places never change by night.",
-    rule: "Clicked while asleep, a bird wakes and says so before its speech.",
+    title: "The eye and the z · asleep",
+    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor being edited sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. A snoozed bird sleeps at any hour, dimmed like a fence bird, until its end date or until woken. Colours and places never change by night.",
+    rule: "Clicked with its eyes closed, a bird wakes and says so before its speech.",
   },
   {
     title: "Name · the project",
@@ -62,7 +62,7 @@ const birdNotes: Note[] = [
   {
     title: "The wire · your priority",
     text: "Wires are the owner's priority bands, an ordered named list in config. A bird never changes wire by itself; its papers move it. The wire's name is painted large and quiet on the sky above its left end, cut back round each bird, and its tally hangs in front beneath.",
-    rule: "Along the wire the worst mood sits leftmost, then by name: leftmost needs you first.",
+    rule: "Along a wire the birds are ordered by name, whatever their moods.",
   },
   {
     title: "The fence · not adopted",
@@ -74,7 +74,7 @@ const birdNotes: Note[] = [
 const bubbleNotes: Note[] = [
   {
     title: "Name and state word · the same health, spoken",
-    text: 'The display name, and the word for the mood the breast wears, in its colour on paper: content, restless or distressed. A fence bird says "not adopted", quietly.',
+    text: 'The display name, and the word for the mood the breast wears, in its colour on paper: content, restless or distressed. A fence bird says "not adopted" and a snoozed bird "snoozed", quietly, with when its snooze ends beneath.',
     rule: "Never a second status: the colour and the word read from one derivation.",
   },
   {
@@ -96,6 +96,11 @@ const bubbleNotes: Note[] = [
     title: "Adopt · a fence bird's one key",
     text: "A fence bird's bubble has one key beside the full story: Adopt, which opens the bird's page with its adoption papers unfolded. An adopted bird's bubble has no such key.",
     rule: null,
+  },
+  {
+    title: "Snooze · quiet until a date",
+    text: "An adopted bird's bubble has a Snooze action after the launch actions, whatever its mood. It opens the durations: 1 day, 3 days, 1 week, 2 weeks, 1 month, indefinitely. A snoozed bird has Wake in its place. The bird's page carries the same control.",
+    rule: "The look decides the key: a snooze that has run out offers Snooze again, and a fence bird has neither.",
   },
   {
     title: "Tell me the full story · the way down",
@@ -193,13 +198,13 @@ export function FieldGuidePage() {
         >
           <Plate phase="day">
             <div className="w-full max-w-[520px] [&>svg]:w-full">
-              <BirdPortrait bird={vault} facing="right" night={false} />
+              <BirdPortrait bird={vault} facing="right" now={byDay} />
             </div>
           </Plate>
         </Specimen>
         <Specimen
           label="Where it perches: Machine & Home, and the fence"
-          rule="The wire's painted name and tally, its birds worst mood leftmost, and the unadopted dimmed on the fence beneath."
+          rule="The wire's painted name and tally, its birds in name order, and the unadopted dimmed on the fence beneath."
         >
           <div className="overflow-hidden rounded-xl border border-edge">
             <Scene
@@ -212,14 +217,14 @@ export function FieldGuidePage() {
                 wire={mockWire("Machine & Home")}
                 y={250}
                 width={sceneWidth}
-                night={false}
+                now={byDay}
               />
               <Fence
                 fence={mockAviary.fence}
                 y={500}
                 width={sceneWidth}
                 height={600}
-                night={false}
+                now={byDay}
               />
             </Scene>
           </div>
@@ -232,26 +237,26 @@ export function FieldGuidePage() {
           }}
         >
           <Specimen
-            label="Spool by night: asleep"
-            rule="Content and not edited, so its eye closes."
+            label="Spool in the small hours: asleep"
+            rule="Content and not edited, so its eye closes under a green z."
           >
             <Plate phase="night">
               <BirdPortrait
                 bird={mockBird("undev/spool")}
                 facing="right"
-                night={true}
+                now={smallHours}
               />
             </Plate>
           </Specimen>
           <Specimen
-            label="Perch by night: singing"
-            rule="Being edited, so it stays awake."
+            label="Perch in the small hours: singing"
+            rule="Being edited, so it stays awake and shows the note, never the z."
           >
             <Plate phase="night">
               <BirdPortrait
                 bird={mockBird("dev/perch")}
                 facing="right"
-                night={true}
+                now={smallHours}
               />
             </Plate>
           </Specimen>
@@ -265,20 +270,20 @@ export function FieldGuidePage() {
       >
         <Specimen
           label={`${skiff.name}: restless, adopted`}
-          rule="A remote no card can read, and parked on a branch: the worst speaks first, the stall follows."
+          rule="A remote no card can read, and stalled on a branch: the worst speaks first, the stall follows."
         >
           <Plate phase="dusk">
-            <SpeakingBird bird={skiff} night={false} onPress={setPressed} />
+            <SpeakingBird bird={skiff} now={byDay} onPress={setPressed} />
           </Plate>
         </Specimen>
         <Specimen
           label="hello: on the fence"
-          rule="No chips, and the Adopt key beside the full story."
+          rule="No chips, and the Adopt action beside the full story."
         >
           <Plate phase="dusk">
             <SpeakingBird
               bird={mockBird("dev/odin/hello")}
-              night={false}
+              now={byDay}
               onPress={setPressed}
             />
           </Plate>

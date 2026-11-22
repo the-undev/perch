@@ -2,7 +2,13 @@ import { mockAviary } from "@perch/core/mock.ts";
 import type { Wire as WireModel } from "@perch/core/viewmodel.ts";
 import { Scene, sceneWidth } from "@perch/ui/scene.tsx";
 import { columnEdgeFor, Fence, Wire } from "@perch/ui/wire.tsx";
-import { mockBird, mockWire } from "../specimens.ts";
+import {
+  byDay,
+  mockBird,
+  mockWire,
+  smallHours,
+  snoozedUntil,
+} from "../specimens.ts";
 import { Code, Section, Specimen, Usage } from "../usage.tsx";
 
 const machineHome = mockWire("Machine & Home");
@@ -19,15 +25,33 @@ const settledWire: WireModel = {
   ),
 };
 
-function WireScene({ wire, night }: { wire: WireModel; night: boolean }) {
+/** Projects with its distressed Prism and its restless Skiff snoozed, the others as they are. */
+const snoozedWire: WireModel = {
+  ...projects,
+  birds: projects.birds.map((bird) =>
+    ["undev/prism", "undev/skiff"].includes(bird.id)
+      ? snoozedUntil(bird, null)
+      : bird,
+  ),
+};
+
+/** Projects with Skiff's snooze run out by the scene's clock: it counts by its mood again. */
+const runOutWire: WireModel = {
+  ...projects,
+  birds: projects.birds.map((bird) =>
+    bird.id === "undev/skiff" ? snoozedUntil(bird, "2026-10-22") : bird,
+  ),
+};
+
+function WireScene({ wire }: { wire: WireModel }) {
   return (
     <Scene
-      phase={night ? "night" : "day"}
+      phase="day"
       width={sceneWidth}
       height={340}
       label={`The ${wire.name} wire`}
     >
-      <Wire wire={wire} y={230} width={sceneWidth} night={night} />
+      <Wire wire={wire} y={230} width={sceneWidth} now={byDay} />
     </Scene>
   );
 }
@@ -37,26 +61,38 @@ export function WirePage() {
     <>
       <Section
         title="The wire · your priority"
-        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the bird places itself: leftmost needs you first. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who needs attention, who drifts. The birds start ${columnEdgeFor(sceneWidth)} units in at full width whatever the name or tally says.`}
+        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the birds sit in name order. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who needs attention, who drifts, who is snoozed. A snoozed bird is counted as snoozed only, and a snooze that has run out counts by its mood again. The birds start ${columnEdgeFor(sceneWidth)} units in at full width whatever the name or tally says.`}
         min={900}
       >
         <Specimen
           label="Machine & Home"
           rule="Two restless birds, one content."
         >
-          <WireScene wire={machineHome} night={false} />
+          <WireScene wire={machineHome} />
         </Specimen>
         <Specimen
           label="Projects"
-          rule="Distressed leftmost, then restless, then content; within a mood by name."
+          rule="By name, whatever the moods of its birds."
         >
-          <WireScene wire={projects} night={false} />
+          <WireScene wire={projects} />
         </Specimen>
         <Specimen
           label="All settled"
           rule="Hand-built: when nobody is restless or distressed the tally says so."
         >
-          <WireScene wire={settledWire} night={false} />
+          <WireScene wire={settledWire} />
+        </Specimen>
+        <Specimen
+          label="Snoozed"
+          rule="Prism and Skiff snoozed: the tally counts them as snoozed after drifting, and not as attention or drifting."
+        >
+          <WireScene wire={snoozedWire} />
+        </Specimen>
+        <Specimen
+          label="Snooze run out"
+          rule="Skiff snoozed until 22 October, drawn that afternoon: counted as drifting again."
+        >
+          <WireScene wire={runOutWire} />
         </Specimen>
       </Section>
 
@@ -75,11 +111,14 @@ export function WirePage() {
               y={150}
               width={sceneWidth}
               height={260}
-              night={false}
+              now={byDay}
             />
           </Scene>
         </Specimen>
-        <Specimen label="At night" rule="The fence sleeps.">
+        <Specimen
+          label="Midnight to 06:00"
+          rule="Every fence bird sleeps, whatever its health."
+        >
           <Scene
             phase="night"
             width={sceneWidth}
@@ -91,15 +130,15 @@ export function WirePage() {
               y={150}
               width={sceneWidth}
               height={260}
-              night={true}
+              now={smallHours}
             />
           </Scene>
         </Specimen>
       </Section>
 
       <Section
-        title="Together at night"
-        rule="Night is cosmetic: positions and colours hold. Content birds that are not edited sleep; the rest stay awake, and Perch sings."
+        title="Together in the small hours"
+        rule="The sky shows night as the backdrop only; positions and colours hold. Sleep follows its own hours: from midnight to 06:00 every bird sleeps but the distressed and the edited, and the edited sing."
         min={900}
       >
         <Specimen
@@ -112,14 +151,19 @@ export function WirePage() {
             height={980}
             label="The mock aviary at night"
           >
-            <Wire wire={machineHome} y={300} width={sceneWidth} night={true} />
-            <Wire wire={projects} y={590} width={sceneWidth} night={true} />
+            <Wire
+              wire={machineHome}
+              y={300}
+              width={sceneWidth}
+              now={smallHours}
+            />
+            <Wire wire={projects} y={590} width={sceneWidth} now={smallHours} />
             <Fence
               fence={mockAviary.fence}
               y={850}
               width={sceneWidth}
               height={980}
-              night={true}
+              now={smallHours}
             />
           </Scene>
         </Specimen>
@@ -131,7 +175,7 @@ export function WirePage() {
           {
             name: "wire",
             type: "Wire",
-            what: "Wire only: one priority band from the view model, its birds ordered leftmost first.",
+            what: "Wire only: one priority band from the view model, its birds ordered by name.",
           },
           {
             name: "fence",
@@ -154,9 +198,9 @@ export function WirePage() {
             what: "Fence only: the scene's height, so the posts reach the bottom.",
           },
           {
-            name: "night",
-            type: "boolean",
-            what: "Passed to every bird for sleep.",
+            name: "now",
+            type: "Date",
+            what: "The render's clock, passed to every bird for its look.",
           },
         ]}
       >

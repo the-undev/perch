@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SpeakingBird } from "../speaking-bird.tsx";
-import { mockBird } from "../specimens.ts";
+import { byDay, mockBird, smallHours, snoozedUntil } from "../specimens.ts";
 import { Code, Plate, Section, Specimen, Usage } from "../usage.tsx";
 
 interface Entry {
@@ -92,31 +92,26 @@ export function BubblePage() {
     title: string;
     rule: string;
     entries: Entry[];
-    night: boolean;
   }[] = [
     {
       title: "Content",
       rule: "Green birds are brief. Contentment never needs more than two sentences, and the backlog is an invitation, not a nag.",
       entries: content,
-      night: false,
     },
     {
       title: "Restless",
       rule: "Amber birds nudge. They name the quantity and the time and stop there; the closing remark may be dry, never wounded.",
       entries: restless,
-      night: false,
     },
     {
       title: "Distressed",
       rule: "Red birds are blunt and lead with the worst thing. One secondary fact at most; the rest waits in the chips.",
       entries: distressed,
-      night: false,
     },
     {
       title: "On the fence",
       rule: "Fence birds state their situation without pleading, and carry no chips. The decision is the owner's; the bird just says where it stands.",
       entries: fence,
-      night: false,
     },
   ];
   return (
@@ -136,7 +131,7 @@ export function BubblePage() {
               <Plate phase="dusk">
                 <SpeakingBird
                   bird={mockBird(entry.id)}
-                  night={section.night}
+                  now={byDay}
                   onPress={setPressed}
                 />
               </Plate>
@@ -146,30 +141,101 @@ export function BubblePage() {
       ))}
 
       <Section
-        title="At night"
-        rule="Sleep is earned. A sleeping bird clicked at night is woken and says so before its usual speech; restless and distressed birds lie awake and never gain the prefix."
+        title="Asleep"
+        rule="Any bird with closed eyes, clicked, is woken and says so before its usual speech. A bird with open eyes never gains the prefix."
         min={440}
       >
         <Specimen
           label="Woken"
-          rule="Spool: content, not being edited, asleep until clicked."
+          rule="Skiff: restless, not being edited, asleep until clicked."
         >
           <Plate phase="night">
             <SpeakingBird
-              bird={mockBird("undev/spool")}
-              night={true}
+              bird={mockBird("undev/skiff")}
+              now={smallHours}
               onPress={setPressed}
             />
           </Plate>
         </Specimen>
         <Specimen
           label="Awake anyway"
-          rule="Skiff: restless, so it never slept."
+          rule="Hollow-legacy: distressed, so it never slept."
         >
           <Plate phase="night">
             <SpeakingBird
+              bird={mockBird("undev/Hollow-legacy")}
+              now={smallHours}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+      </Section>
+
+      <Section
+        title="The snooze action"
+        rule="An adopted bird's bubble has a Snooze action after its launch icons, whatever its mood. It opens the durations on a small dark card, shortest first, with indefinitely under a rule. A pick snoozes the bird until that duration's end date from today, or with no date, and closes the bubble. Opening the durations, or folding them with Escape, leaves it open. A fence bird has no snooze action, and a bird whose snooze has run out offers it again."
+        min={440}
+      >
+        <Specimen
+          label="Durations"
+          rule="Skiff, restless: press Snooze to open the durations."
+        >
+          <Plate phase="dusk">
+            <SpeakingBird
               bird={mockBird("undev/skiff")}
-              night={true}
+              now={byDay}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+        <Specimen
+          label="Run out"
+          rule="Prism snoozed until 22 October, on that day: its real mood, and the Snooze action again."
+        >
+          <Plate phase="dusk">
+            <SpeakingBird
+              bird={snoozedUntil(mockBird("undev/prism"), "2026-10-22")}
+              now={byDay}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+      </Section>
+
+      <Section
+        title="Snoozed"
+        rule="A snoozed bird's state word is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours. A Wake action takes the Snooze action's place, and pressing it wakes the bird and closes the bubble."
+        min={440}
+      >
+        <Specimen
+          label="Until Friday"
+          rule="Prism snoozed until 23 October, on Thursday 22 October."
+        >
+          <Plate phase="dusk">
+            <SpeakingBird
+              bird={snoozedUntil(mockBird("undev/prism"), "2026-10-23")}
+              now={byDay}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+        <Specimen
+          label="Until a date"
+          rule="Skiff snoozed until 4 December: beyond six days, the day and month."
+        >
+          <Plate phase="dusk">
+            <SpeakingBird
+              bird={snoozedUntil(mockBird("undev/skiff"), "2026-12-04")}
+              now={byDay}
+              onPress={setPressed}
+            />
+          </Plate>
+        </Specimen>
+        <Specimen label="Until woken" rule="Harbour snoozed with no end date.">
+          <Plate phase="dusk">
+            <SpeakingBird
+              bird={snoozedUntil(mockBird("undev/harbour"), null)}
+              now={byDay}
               onPress={setPressed}
             />
           </Plate>
@@ -182,12 +248,12 @@ export function BubblePage() {
           {
             name: "bubble",
             type: "Bubble",
-            what: "bird.bubble: name, state word, speech, woken speech, chips.",
+            what: "bird.bubble: name, speech, chips.",
           },
           {
-            name: "night",
-            type: "boolean",
-            what: "At night a bird that sleeps speaks its woken speech.",
+            name: "look",
+            type: "BirdLook",
+            what: "birdLook(bird, now): the state word, a snooze's end in words, and closed eyes, which give the speech the waking prefix.",
           },
           {
             name: "actions",
@@ -200,6 +266,11 @@ export function BubblePage() {
             what: "A launch action was pressed; the app asks the main process to open it.",
           },
           {
+            name: "snoozeAction",
+            type: "ReactNode",
+            what: "The snooze control, after the launch actions: a <SnoozeAction> with place bubble, or null for none.",
+          },
+          {
             name: "onFullStory",
             type: "() => void",
             what: "Rides the camera down to the bird's detail page.",
@@ -207,7 +278,7 @@ export function BubblePage() {
           {
             name: "onAdopt",
             type: "(() => void) | null",
-            what: "A fence bird's one key: rides to the bird's page with its adoption papers unfolded. Null for an adopted bird, whose bubble has no adopt key; the caller decides from bird.adopted.",
+            what: "A fence bird's one action: rides to the bird's page with its adoption papers unfolded. Null for an adopted bird, whose bubble has no adopt action; the caller decides from bird.adopted.",
           },
           {
             name: "onChip",
@@ -231,15 +302,28 @@ export function BubblePage() {
         <p>
           On the bird&apos;s own page the bubble is{" "}
           <Code>{"<RoostBubble>"}</Code>: the same paper, speech and chips with
-          no header and no keys, since the page carries both. Beside the bird it
-          is as wide as its words up to about 56 characters, so its chips keep
-          to one row where they fit. The Roost page shows it.
+          no header and no actions, since the page carries both. Beside the bird
+          it is as wide as its words up to about 56 characters, so its chips
+          keep to one row where they fit. The Roost page shows it.
         </p>
         <p>
           The chips are handles in both bubbles. Pressed here, one closes the
-          bubble like the full-story key and rides the camera to the bird&apos;s
-          page with the chip in the URL, <Code>?chip=ci</Code>; the page lands
-          on its row as it opens.
+          bubble like the full-story action and rides the camera to the
+          bird&apos;s page with the chip in the URL, <Code>?chip=ci</Code>; the
+          page lands on its row as it opens.
+        </p>
+        <p>
+          The snooze control is <Code>{"<SnoozeAction>"}</Code> from{" "}
+          <Code>@perch/ui/snooze-action.tsx</Code>, given the bird, its look,
+          its place (bubble or page) and the <Code>SnoozeCalls</Code>. A
+          pick&apos;s end date is counted from <Code>pickedAt</Code>, the moment
+          of the pick. The look decides the action: snoozed offers Wake, not
+          adopted offers neither, any other state word Snooze. The durations
+          exist only there: a pick becomes an end date with{" "}
+          <Code>snoozeEndDate</Code>, or null for indefinitely, and goes to{" "}
+          <Code>onSnooze(birdId, until)</Code>. The bird&apos;s page carries the
+          same control after its launch verbs. In the aviary a pick or a wake
+          closes the bubble; on the page it leaves the page as it is.
         </p>
       </Usage>
     </>

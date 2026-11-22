@@ -61,7 +61,7 @@ What a clicked bird says: its name, state word, speech and chips.
 _Avoid_: Tooltip, popover
 
 **State word**:
-The one word beside the name in a bubble: content, restless, distressed or not adopted.
+The one word beside the name in a bubble: content, restless, distressed, not adopted or snoozed.
 
 **Speech**:
 The bird's first-person sentence giving the reason for its mood.
@@ -91,8 +91,28 @@ A file from the local repository shown on the bird's page, such as the README or
 **Adoption papers**:
 The sheet on a bird's page that adopts it or changes its papers.
 
+**Action**:
+Something the owner does to a bird from its bubble or its page. Launch actions, the adopt action, the full-story action, the snooze action and the wake action are kinds of action.
+_Avoid_: Key
+
+**Adopt action**:
+The action in a fence bird's bubble that opens its page with the adoption papers unfolded.
+_Avoid_: Adopt key
+
+**Full-story action**:
+The bubble's "Tell me the full story" action, which opens the bird's page.
+_Avoid_: Full-story key
+
 **Launch action**:
-Something a bird's page can open for the project, such as an editor or a terminal tab. It changes nothing.
+An action that opens something for the project, such as an editor or a terminal tab. It changes nothing.
+
+**Snooze action**:
+The action that snoozes an adopted bird for 1 day, 3 days, 1 week, 2 weeks, 1 month or indefinitely.
+_Avoid_: Snooze key
+
+**Wake action**:
+The action that ends a snooze before its end date. It takes the snooze action's place while a bird is snoozed.
+_Avoid_: Wake key
 
 ### Health
 
@@ -142,7 +162,13 @@ A commit on a project's default branch.
 A bird's size, from its outstanding work.
 
 **Asleep**:
-A bird's look at night, eyes closed and still, when it is content and not being edited. It follows the clock and says nothing about the project.
+A bird's look, eyes closed with a z. A bird that is neither distressed nor being edited is asleep between midnight and 06:00, and a snoozed bird at any hour.
+
+**Snoozed**:
+A bird set aside by the owner until a date, or until woken. It is dimmed and asleep and does not wear its mood. Its bubble and page still show the entity's facts.
+
+**Fly-in**:
+The birds landing one by one when the aviary opens.
 
 **Flag**:
 Something odd about how an entity is set up, such as an archived forge repository or two sets of papers naming it.

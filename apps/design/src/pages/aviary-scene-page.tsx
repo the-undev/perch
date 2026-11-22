@@ -9,7 +9,14 @@ import {
 } from "@perch/ui/scene.tsx";
 import type { SkyPhase } from "@perch/ui/sky.ts";
 import { useState } from "react";
-import { mockWire, scanMoment, withHelloAdopted } from "../specimens.ts";
+import {
+  mockWire,
+  quietSnooze,
+  reportedSnooze,
+  scanMoment,
+  smallHours,
+  withHelloAdopted,
+} from "../specimens.ts";
 import {
   Choice,
   Code,
@@ -20,7 +27,7 @@ import {
   Usage,
 } from "../usage.tsx";
 
-type Clock = "clock" | SkyPhase;
+type Clock = "clock" | SkyPhase | "small-hours";
 
 /** An hour inside each phase on the mock scan's day, local time. */
 const phaseHour: Record<SkyPhase, number> = {
@@ -30,11 +37,11 @@ const phaseHour: Record<SkyPhase, number> = {
   night: 23,
 };
 
-/** The render's clock: the real one, or an hour on the scan's day that sets a phase. */
+/** The render's clock: the real one, the small hours after the scan when birds sleep, or an hour on the scan's day that sets a phase. */
 export function clockFor(clock: Clock): Date {
-  return clock === "clock"
-    ? new Date()
-    : new Date(2026, 9, 22, phaseHour[clock], 0);
+  if (clock === "clock") return new Date();
+  if (clock === "small-hours") return smallHours;
+  return new Date(2026, 9, 22, phaseHour[clock], 0);
 }
 
 export const clockOptions: { value: Clock; label: string }[] = [
@@ -42,7 +49,8 @@ export const clockOptions: { value: Clock; label: string }[] = [
   { value: "dawn", label: "Dawn" },
   { value: "day", label: "Day" },
   { value: "dusk", label: "Dusk" },
-  { value: "night", label: "Night" },
+  { value: "night", label: "Night, before midnight" },
+  { value: "small-hours", label: "Small hours, asleep" },
 ];
 
 type Scan = "mock" | "adopted";
@@ -79,6 +87,7 @@ function SmallWindow({
               onFullStory={() => {}}
               onAdopt={() => {}}
               onChip={() => {}}
+              snooze={quietSnooze}
             />
           </SceneFrame>
         </div>
@@ -135,6 +144,7 @@ export function AviaryScenePage() {
           }
           onAdopt={(bird) => setPressed(`${bird.name}: Adopt`)}
           onChip={(bird, chip) => setPressed(`${bird.name}: ${chip}`)}
+          snooze={reportedSnooze(setPressed)}
         />
       </SceneFrame>
       <Pressed text={pressed} />
@@ -167,17 +177,22 @@ export function AviaryScenePage() {
           {
             name: "aviary",
             type: "Aviary",
-            what: "deriveAviary(snapshot, config, home): the wires top to bottom, the fence, failing sources and warnings.",
+            what: "deriveAviary(snapshot, config, snoozes, home): the wires top to bottom, the fence, failing sources and warnings.",
           },
           {
             name: "now",
             type: "Date",
-            what: "The render's clock. The sky's phase, sleep, and every age in the tips and notices read from it.",
+            what: "The render's clock. The sky's phase, the birds' sleep from midnight to 06:00, and every age in the tips and notices read from it.",
           },
           {
             name: "onLaunch",
             type: "(action: LaunchAction) => void",
             what: "A bubble's launch action was pressed; the app asks the main process to open it.",
+          },
+          {
+            name: "snooze",
+            type: "SnoozeCalls",
+            what: "A bubble's snooze action picked a duration, handing on the bird's id and the end date, or null for indefinitely, or its wake action was pressed. It also carries the pick's clock.",
           },
           {
             name: "onFullStory",
@@ -187,7 +202,7 @@ export function AviaryScenePage() {
           {
             name: "onAdopt",
             type: "(bird: Bird) => void",
-            what: "A fence bird's bubble's Adopt was pressed; the camera rides down to the bird with its adoption papers unfolded. An adopted bird's bubble has no adopt key.",
+            what: "A fence bird's bubble's Adopt was pressed; the camera rides down to the bird with its adoption papers unfolded. An adopted bird's bubble has no adopt action.",
           },
         ]}
       >

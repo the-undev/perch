@@ -17,17 +17,47 @@ import type {
 import {
   type Aviary,
   type Bird,
-  compareOnWire,
+  compareByName,
   deriveAviary,
   type LedgerEntry,
   type Wire,
 } from "@perch/core/viewmodel.ts";
 import { mockBird } from "@perch/ui/mock-birds.ts";
+import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 
-export { mockBird, mockBirds, mockEntryForm } from "@perch/ui/mock-birds.ts";
+export {
+  mockBird,
+  mockBirds,
+  mockEntryForm,
+  quietSnooze,
+} from "@perch/ui/mock-birds.ts";
 
 /** The mock scan's moment: times on the pages are measured to it, so they never drift. */
 export const scanMoment = new Date(mockAviary.scannedAt);
+
+/** An afternoon on the mock scan's day: every bird awake. */
+export const byDay = new Date(2026, 9, 22, 14, 0);
+
+/** Half past ten on the mock scan's day: the sky at night, every bird still awake. */
+export const lateEvening = new Date(2026, 9, 22, 22, 30);
+
+/** The small hours after the mock scan: the sky at night and every bird that sleeps asleep. */
+export const smallHours = new Date(2026, 9, 23, 3, 0);
+
+/** A bird the owner has snoozed until a date, or until woken for null. */
+export function snoozedUntil(bird: Bird, until: string | null): Bird {
+  return { ...bird, snooze: { until } };
+}
+
+/** Snooze calls that say what was pressed, so a page shows the control working. */
+export function reportedSnooze(onPress: (what: string) => void): SnoozeCalls {
+  return {
+    pickedAt: () => scanMoment,
+    onSnooze: (birdId, until) =>
+      onPress(`onSnooze(${birdId}, ${until ?? "indefinitely"})`),
+    onWake: (birdId) => onPress(`onWake(${birdId})`),
+  };
+}
 
 /** A bird carrying a given amount of outstanding work, against the cap of 50. */
 export function withOutstanding(bird: Bird, outstanding: number): Bird {
@@ -53,7 +83,7 @@ export function aviaryWith(wires: Wire[]): Aviary {
 /** Birds in the order the view model gives a wire, their positions renumbered. */
 function onWire(birds: Bird[]): Bird[] {
   return [...birds]
-    .sort(compareOnWire)
+    .sort(compareByName)
     .map((bird, position) => ({ ...bird, position }));
 }
 
@@ -89,7 +119,7 @@ export function crowdedFence(count: number): Aviary {
   });
   // The fence is ordered by name.
   const byName = birds
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort(compareByName)
     .map((bird, position) => ({ ...bird, position }));
   return { ...mockAviary, fence: { birds: byName } };
 }
@@ -101,7 +131,6 @@ export function withHelloAdopted(): Aviary {
     ...hello,
     adopted: true,
     wire: "Projects",
-    bubble: { ...hello.bubble, stateWord: hello.mood },
   };
   return {
     ...mockAviary,
@@ -136,7 +165,12 @@ function pergolaNotesWith(
           }
         : item,
   );
-  const aviary = deriveAviary({ ...mockSnapshot, items }, mockConfig, mockHome);
+  const aviary = deriveAviary(
+    { ...mockSnapshot, items },
+    mockConfig,
+    {},
+    mockHome,
+  );
   const bird = aviary.wires
     .flatMap((wire) => wire.birds)
     .find((candidate) => candidate.id === pergolaNotesId);
@@ -219,7 +253,12 @@ export function bugLedgerRows(bug: number, criticalBug: number): LedgerEntry[] {
           }
         : item,
   );
-  const aviary = deriveAviary({ ...mockSnapshot, items }, mockConfig, mockHome);
+  const aviary = deriveAviary(
+    { ...mockSnapshot, items },
+    mockConfig,
+    {},
+    mockHome,
+  );
   const bird = aviary.wires
     .flatMap((wire) => wire.birds)
     .find((candidate) => candidate.id === bugLedgerItemId);

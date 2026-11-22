@@ -14,7 +14,28 @@ import {
   type SettingsForm,
   settingsFormFor,
 } from "@perch/core/settings-form.ts";
-import type { Bird } from "@perch/core/viewmodel.ts";
+import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
+import type { SnoozeCalls } from "./snooze-action.tsx";
+
+/** Snooze calls that do nothing, for tests and scenes that only show the control. */
+export const quietSnooze: SnoozeCalls = {
+  pickedAt: () => new Date(2026, 9, 22, 9, 0),
+  onSnooze: () => {},
+  onWake: () => {},
+};
+
+/** The mock aviary with the named birds snoozed until a date, or until woken for null. */
+export function snoozing(ids: string[], until: string | null): Aviary {
+  return {
+    ...mockAviary,
+    wires: mockAviary.wires.map((wire) => ({
+      ...wire,
+      birds: wire.birds.map((bird) =>
+        ids.includes(bird.id) ? { ...bird, snooze: { until } } : bird,
+      ),
+    })),
+  };
+}
 
 /** Every bird in the mock aviary: the wires top to bottom, then the fence. */
 export const mockBirds: Bird[] = [

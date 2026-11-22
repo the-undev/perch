@@ -5,6 +5,7 @@ import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
 import type { EntryControls } from "@perch/ui/detail-view.tsx";
 import { SettingsView } from "@perch/ui/settings-view.tsx";
+import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useLocation,
@@ -104,6 +105,14 @@ export function AppView({ api }: { api: PerchApi }) {
       onRemove: (id) => void api.removeEntry(id).finally(reread),
     };
   }, [api, entryForm, queryClient]);
+  const snooze = useMemo(
+    (): SnoozeCalls => ({
+      pickedAt: () => new Date(),
+      onSnooze: (id, until) => void api.snooze(id, until),
+      onWake: (id) => void api.wake(id),
+    }),
+    [api],
+  );
   const aviary = useMemo(
     () =>
       state?.aviary ? withProblems(state.aviary, state.problems) : undefined,
@@ -194,6 +203,7 @@ export function AppView({ api }: { api: PerchApi }) {
       place={place}
       onNavigate={onNavigate}
       onLaunch={(action) => void api.launch(action)}
+      snooze={snooze}
       sheets={sheets}
       scanning={state.scanning}
       onRescan={() => void api.rescan()}

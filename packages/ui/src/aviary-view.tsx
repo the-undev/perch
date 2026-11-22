@@ -30,12 +30,13 @@ import {
   placedBirds,
   toPixels,
 } from "./aviary-layout.ts";
-import { Bird } from "./bird.tsx";
+import { Bird, type BirdLook, birdLook } from "./bird.tsx";
 import { Bubble } from "./bubble.tsx";
 import { type PixelSize, useElementSize } from "./hooks.ts";
 import type { CustomProperties } from "./motion.ts";
 import { SkyDrawing, skyBackground } from "./scene.tsx";
-import { isNight, skyPhase } from "./sky.ts";
+import { skyPhase } from "./sky.ts";
+import { SnoozeAction, type SnoozeCalls } from "./snooze-action.tsx";
 import { agoWords } from "./time.ts";
 import {
   FenceCount,
@@ -102,7 +103,7 @@ export function tipLine(bird: BirdModel, now: Date): string | null {
 
 interface PerchedBirdProps {
   placed: PlacedBird;
-  night: boolean;
+  now: Date;
   arrival: number;
   /** The bird's flyer is in the air: it is not drawn until the flyer lands. */
   flying: boolean;
@@ -115,7 +116,7 @@ interface PerchedBirdProps {
 /** One bird in the aviary: it lands in its turn (idling only once it has landed), lifts on hover, and speaks when pressed. */
 function PerchedBird({
   placed,
-  night,
+  now,
   arrival,
   flying,
   speaking,
@@ -124,6 +125,7 @@ function PerchedBird({
   onLeave,
 }: PerchedBirdProps) {
   const { bird } = placed;
+  const look = birdLook(bird, now);
   const [arriving, setArriving] = useState(true);
   const arrive: CustomProperties = {
     "--arrive-delay": `${arrival * arrivalStepMs}ms`,
@@ -133,7 +135,7 @@ function PerchedBird({
     <g
       role="button"
       tabIndex={0}
-      aria-label={`${bird.name}, ${bird.bubble.stateWord}`}
+      aria-label={`${bird.name}, ${look.stateWord}`}
       aria-pressed={speaking}
       data-arrival={arrival}
       className="group cursor-pointer outline-none"
@@ -169,7 +171,7 @@ function PerchedBird({
               x={0}
               y={0}
               facing={placed.facing}
-              night={night}
+              look={look}
               namePlace={placed.namePlace}
               speaking={speaking}
               idle={!arriving}
@@ -185,8 +187,10 @@ interface AnchoredBubbleProps {
   placed: PlacedBird;
   layout: AviaryLayout;
   size: PixelSize;
-  night: boolean;
+  /** How the speaking bird looks now. */
+  look: BirdLook;
   onLaunch: (action: LaunchAction) => void;
+  snooze: SnoozeCalls;
   onFullStory: () => void;
   onAdopt: (() => void) | null;
   onChip: (chip: ChipKind) => void;
@@ -197,8 +201,9 @@ function AnchoredBubble({
   placed,
   layout,
   size,
-  night,
+  look,
   onLaunch,
+  snooze,
   onFullStory,
   onAdopt,
   onChip,
@@ -227,9 +232,17 @@ function AnchoredBubble({
       <Bubble
         key={placed.bird.id}
         bubble={placed.bird.bubble}
-        night={night}
+        look={look}
         actions={placed.bird.detail.actions}
         onLaunch={onLaunch}
+        snoozeAction={
+          <SnoozeAction
+            bird={placed.bird}
+            look={look}
+            place="bubble"
+            calls={snooze}
+          />
+        }
         onFullStory={onFullStory}
         onAdopt={onAdopt}
         onChip={onChip}
@@ -246,7 +259,17 @@ interface TipAt {
   y: number;
 }
 
-function Tip({ tip, size, now }: { tip: TipAt; size: PixelSize; now: Date }) {
+function Tip({
+  tip,
+  size,
+  look,
+  now,
+}: {
+  tip: TipAt;
+  size: PixelSize;
+  look: BirdLook;
+  now: Date;
+}) {
   const line = tipLine(tip.bird, now);
   return (
     <div
@@ -258,7 +281,7 @@ function Tip({ tip, size, now }: { tip: TipAt; size: PixelSize; now: Date }) {
       }}
     >
       <b className="font-semibold text-ink">{tip.bird.name}</b> ·{" "}
-      {tip.bird.bubble.stateWord}
+      {look.stateWord}
       {line !== null && <div>{line}</div>}
     </div>
   );
@@ -314,8 +337,8 @@ function SkyLegend() {
         settled
       </span>
       <span>
-        higher wire = more important · leftmost = needs you first · plumper =
-        more outstanding work · ♪ = being edited
+        higher wire = more important · plumper = more outstanding work · ♪ =
+        being edited
       </span>
       <span>click a bird to hear from it</span>
     </div>
@@ -335,6 +358,8 @@ export interface AviarySceneProps {
   onAdopt: (bird: BirdModel) => void;
   /** A chip in a bubble was pressed. */
   onChip: (bird: BirdModel, chip: ChipKind) => void;
+  /** A bubble's snooze or wake action was pressed. */
+  snooze: SnoozeCalls;
   /** The ids of birds whose flyers are in the air; each is not drawn until its flyer lands. */
   flyingIds: ReadonlySet<string>;
 }
@@ -348,13 +373,13 @@ export function AviaryScene({
   onFullStory,
   onAdopt,
   onChip,
+  snooze,
   flyingIds,
 }: AviarySceneProps) {
   const phase = skyPhase(now);
-  const night = isNight(phase);
   const layout = useMemo(() => layoutAviary(aviary, size), [aviary, size]);
   const placed = useMemo(() => placedBirds(layout), [layout]);
-  const arrival = useMemo(() => arrivalOrder(aviary), [aviary]);
+  const arrival = useMemo(() => arrivalOrder(aviary, now), [aviary, now]);
   const rootRef = useRef<HTMLDivElement>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [tip, setTip] = useState<TipAt | null>(null);
@@ -431,7 +456,7 @@ export function AviaryScene({
             <PerchedBird
               key={entry.bird.id}
               placed={entry}
-              night={night}
+              now={now}
               arrival={arrival.get(entry.bird.id) ?? 0}
               flying={flyingIds.has(entry.bird.id)}
               speaking={entry.bird.id === speakingId}
@@ -447,22 +472,38 @@ export function AviaryScene({
         {layout.rows
           .filter((row) => row.index === 0)
           .map((row) => (
-            <WireTally key={row.wire.name} y={row.y} birds={row.wire.birds} />
+            <WireTally
+              key={row.wire.name}
+              y={row.y}
+              birds={row.wire.birds}
+              now={now}
+            />
           ))}
         <FenceCount y={layout.fence.y} count={aviary.fence.birds.length} />
       </svg>
       <SkyNotices aviary={aviary} now={now} />
       <SkyLegend />
       {tip !== null && tip.bird.id !== speakingId && (
-        <Tip tip={tip} size={size} now={now} />
+        <Tip tip={tip} size={size} look={birdLook(tip.bird, now)} now={now} />
       )}
       {speaker !== undefined && (
         <AnchoredBubble
           placed={speaker}
           layout={layout}
           size={size}
-          night={night}
+          look={birdLook(speaker.bird, now)}
           onLaunch={onLaunch}
+          snooze={{
+            ...snooze,
+            onSnooze: (birdId, until) => {
+              setSpeakingId(null);
+              snooze.onSnooze(birdId, until);
+            },
+            onWake: (birdId) => {
+              setSpeakingId(null);
+              snooze.onWake(birdId);
+            },
+          }}
           onFullStory={() => {
             setSpeakingId(null);
             onFullStory(speaker.bird);
@@ -499,6 +540,8 @@ export interface AviaryViewProps {
   onAdopt: (bird: BirdModel) => void;
   /** A chip in a bubble was pressed. */
   onChip: (bird: BirdModel, chip: ChipKind) => void;
+  /** A bubble's snooze or wake action was pressed. */
+  snooze: SnoozeCalls;
 }
 
 const noFlyers: ReadonlySet<string> = new Set();

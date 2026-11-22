@@ -26,7 +26,7 @@ import {
   stripLayout,
   stripWireY,
 } from "./camera.tsx";
-import { mockBird } from "./mock-birds.ts";
+import { quietSnooze, snoozing } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth, sceneWidthFor } from "./scene.tsx";
 import {
   columnEdgeFor,
@@ -174,6 +174,7 @@ function camera(
       place={at}
       onNavigate={onNavigate}
       onLaunch={() => {}}
+      snooze={quietSnooze}
       sheets={[]}
       scanning={scanning}
       onRescan={onRescan}
@@ -200,16 +201,6 @@ function tab(name: string): HTMLElement {
   return screen.getByRole("button", { name });
 }
 
-/** The leftmost bird on a wire: it needs attention first. */
-function leftmost(wireName: string): string {
-  const wire = mockAviary.wires.find(
-    (candidate) => candidate.name === wireName,
-  );
-  const bird = wire?.birds.find((candidate) => candidate.position === 0);
-  if (bird === undefined) throw new Error(`no birds on ${wireName}`);
-  return bird.id;
-}
-
 describe("the camera", () => {
   it("puts the tabs in the scene's own order, The Aviary current at home", () => {
     camera(aviaryPlace);
@@ -226,20 +217,76 @@ describe("the camera", () => {
     expect(tab("The Aviary").getAttribute("aria-current")).toBe("page");
   });
 
-  it("opens a wire's most urgent bird from its tab", () => {
+  it("opens the bird that needs the owner most from a tab: worst mood, then plumpest", () => {
     const { onNavigate } = camera(aviaryPlace);
 
     fireEvent.click(tab("Projects"));
-    fireEvent.click(tab("On the fence"));
+    fireEvent.click(tab("Machine & Home"));
 
-    expect(onNavigate).toHaveBeenNthCalledWith(
-      1,
-      detailOf(leftmost("Projects")),
-    );
+    expect(onNavigate).toHaveBeenNthCalledWith(1, detailOf("undev/prism"));
     expect(onNavigate).toHaveBeenNthCalledWith(
       2,
-      detailOf(mockAviary.fence.birds[0]?.id ?? ""),
+      detailOf("obsidian/Hothouse"),
     );
+  });
+
+  it("opens the first fence bird by name from the fence tab, whatever their health or plumpness", () => {
+    const [first, second, third] = mockAviary.fence.birds;
+    if (first === undefined || second === undefined || third === undefined)
+      throw new Error("the mock fence needs three birds");
+    const named = (
+      bird: Bird,
+      name: string,
+      position: number,
+      mood: Bird["mood"],
+      outstanding: number,
+    ): Bird => ({
+      ...bird,
+      name,
+      position,
+      mood,
+      plumpness: { outstanding, fullness: outstanding / 50 },
+    });
+    const fence = {
+      ...mockAviary,
+      fence: {
+        ...mockAviary.fence,
+        birds: [
+          named(first, "Anvil", 0, "content", 0),
+          named(second, "Bellows", 1, "content", 1),
+          named(third, "Cairn", 2, "distressed", 40),
+        ],
+      },
+    };
+    const { onNavigate } = camera(aviaryPlace, false, now, fence);
+
+    fireEvent.click(tab("On the fence"));
+
+    expect(onNavigate).toHaveBeenCalledWith(detailOf(first.id));
+  });
+
+  it("opens an awake bird from a tab before any snoozed one, whatever their moods", () => {
+    const distressed = [
+      "undev/gramophone",
+      "undev/Hollow-legacy",
+      "undev/prism",
+    ];
+    const snoozed = {
+      ...mockAviary,
+      wires: mockAviary.wires.map((wire) => ({
+        ...wire,
+        birds: wire.birds.map((bird) =>
+          distressed.includes(bird.id)
+            ? { ...bird, snooze: { until: null } }
+            : bird,
+        ),
+      })),
+    };
+    const { onNavigate } = camera(aviaryPlace, false, now, snoozed);
+
+    fireEvent.click(tab("Projects"));
+
+    expect(onNavigate).toHaveBeenCalledWith(detailOf("undev/skiff"));
   });
 
   it("shows an empty wire's tab, quietly saying so, and goes nowhere from it", () => {
@@ -265,13 +312,7 @@ describe("the camera", () => {
 
   it("rides down to a bird's detail from its bubble", () => {
     const { onNavigate } = camera(aviaryPlace);
-    const skiff = mockBird("undev/skiff");
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: `Skiff, ${skiff.bubble.stateWord}`,
-      }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Skiff, restless" }));
     fireEvent.click(
       screen.getByRole("button", { name: "Tell me the full story" }),
     );
@@ -345,6 +386,80 @@ describe("the camera", () => {
         expect(classes(link)).toContain("min-h-0");
       }
     }
+  });
+
+  describe("its tallies", () => {
+    const header = () => screen.getByRole("banner").textContent;
+
+    it("totals attention, drifting, settled and snoozed in the header, each always shown", () => {
+      camera(aviaryPlace);
+
+      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+    });
+
+    it("counts a snoozed bird in the header as snoozed only, in the snoozed word's grey", () => {
+      camera(
+        aviaryPlace,
+        false,
+        now,
+        snoozing(["undev/gramophone", ".dotfiles", "undev/spool"], null),
+      );
+
+      expect(header()).toContain("2 attention2 drifting6 settled3 snoozed");
+      expect(screen.getByText("3 snoozed").className).toContain(
+        "text-ink-faint",
+      );
+    });
+
+    it("counts a run-out snooze's bird in the header by its mood again", () => {
+      camera(
+        aviaryPlace,
+        false,
+        now,
+        snoozing(["undev/gramophone", "undev/spool"], "2026-10-22"),
+      );
+
+      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+    });
+
+    it("never counts a fence bird in the header's totals", () => {
+      camera(aviaryPlace);
+
+      expect(mockAviary.fence.birds.length).toBeGreaterThan(0);
+      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+    });
+
+    it("counts a restless bird asleep at night as drifting in the header", () => {
+      camera(aviaryPlace, false, new Date(2026, 9, 23, 3, 0));
+
+      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+    });
+
+    it("follows the wire's rule in the strip on a bird's page, snoozed after drifting", () => {
+      const { container } = camera(
+        detailOf("undev/skiff"),
+        false,
+        now,
+        snoozing(["undev/gramophone", "undev/spool"], null),
+      );
+
+      expect(
+        container.querySelector('[data-part="strip-tally"]')?.textContent,
+      ).toBe("2 attention · 1 drifting · 2 snoozed");
+    });
+
+    it("counts a run-out snooze in the strip by its mood again", () => {
+      const { container } = camera(
+        detailOf("undev/skiff"),
+        false,
+        now,
+        snoozing(["undev/gramophone"], "2026-10-22"),
+      );
+
+      expect(
+        container.querySelector('[data-part="strip-tally"]')?.textContent,
+      ).toBe("3 attention · 1 drifting");
+    });
   });
 
   it("paints its name behind the wire and its birds, its tally in front, the birds right of the column at the new height", () => {

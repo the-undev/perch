@@ -1,4 +1,4 @@
-import { mockAviary } from "@perch/core/mock.ts";
+import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
 import type { Aviary, Bird, Wire } from "@perch/core/viewmodel.ts";
 import { describe, expect, it } from "vitest";
 import {
@@ -655,7 +655,7 @@ describe("the names on a crowded perch", () => {
 
 describe("the arrival", () => {
   it("lands the wires before the fence, the worst first, then the plumpest", () => {
-    const order = arrivalOrder(mockAviary);
+    const order = arrivalOrder(mockAviary, new Date(mockSnapshot.scannedAt));
     const sorted = [...order.entries()]
       .sort((a, b) => a[1] - b[1])
       .map(([id]) => mockBird(id));

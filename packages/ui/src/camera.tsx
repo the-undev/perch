@@ -14,7 +14,6 @@ import type {
   Bird,
   ChipKind,
   LaunchAction,
-  Mood,
 } from "@perch/core/viewmodel.ts";
 import {
   type ReactNode,
@@ -25,6 +24,7 @@ import {
   useState,
 } from "react";
 import {
+  byTabOrder,
   layoutAviary,
   type PlacedBird,
   pixelsPerUnit,
@@ -32,7 +32,13 @@ import {
   toPixels,
 } from "./aviary-layout.ts";
 import { AviaryScene } from "./aviary-view.tsx";
-import { BirdFigure, birdLook, type Facing } from "./bird.tsx";
+import {
+  BirdFigure,
+  birdLook,
+  type Facing,
+  type StateWord,
+  stateTone,
+} from "./bird.tsx";
 import { DetailView, type EntryControls } from "./detail-view.tsx";
 import {
   type PixelSize,
@@ -42,7 +48,8 @@ import {
 import type { KeyFileSheet } from "./paper.tsx";
 import { ScanLine } from "./scan-line.tsx";
 import { sceneWidthFor, skyBackground } from "./scene.tsx";
-import { isNight, skyPhase } from "./sky.ts";
+import { skyPhase } from "./sky.ts";
+import type { SnoozeCalls } from "./snooze-action.tsx";
 import {
   birdRoom,
   byPosition,
@@ -53,6 +60,8 @@ import {
   placeAt,
   placeSpacing,
   Tally,
+  type TallyCounts,
+  tallyCounts,
   tallyText,
 } from "./wire.tsx";
 
@@ -111,17 +120,20 @@ function tabOf(tabs: CameraTab[], bird: Bird): BirdTab | undefined {
 
 /**
  * Where pressing a tab goes: home for The Aviary; for a wire or the fence, the bird last open
- * there while it still sits there, else the leftmost, which needs attention first. Null for a
- * wire with no birds, whose tab says "empty" and cannot be pressed.
+ * there while it still sits there, else the one that needs the owner most; the fence's tab falls
+ * to the first fence bird by name. Null for a wire with no birds, whose tab says "empty" and
+ * cannot be pressed.
  */
 export function tabDestination(
   tab: CameraTab,
   remembered: Record<string, string>,
+  now: Date,
 ): CameraPlace | null {
   if (tab.kind === "aviary") return { at: "aviary" };
   const last = remembered[memoryKey(tab)];
   const bird =
-    tab.birds.find((candidate) => candidate.id === last) ?? tab.birds[0];
+    tab.birds.find((candidate) => candidate.id === last) ??
+    [...tab.birds].sort(byTabOrder(now))[0];
   return bird === undefined
     ? null
     : { at: "detail", birdId: bird.id, papers: false, chip: null };
@@ -169,11 +181,11 @@ const stripTallyY = stripWireY + 16;
 /** The most birds in the strip sit apart; a crowded tab squeezes them closer. */
 const stripGap = 175;
 
-/** The tally beneath the strip's name: the wire's moods, or how many sit on the fence. */
-function stripTally(tab: BirdTab): string {
+/** The tally beneath the strip's name: the wire's state words, or how many sit on the fence. */
+function stripTally(tab: BirdTab, now: Date): string {
   return tab.kind === "fence"
     ? `${tab.birds.length} not adopted`
-    : tallyText(tab.birds);
+    : tallyText(tab.birds, now);
 }
 
 /** Where the strip draws a tab: each bird's x and facing in the room right of the column. */
@@ -286,11 +298,11 @@ function flightTransform(end: FlightEnd): string {
 /** One bird in flight, drawn above everything, gone when it lands. */
 function Flyer({
   flight,
-  night,
+  now,
   onLanded,
 }: {
   flight: Flight;
-  night: boolean;
+  now: Date;
   onLanded: (flight: Flight) => void;
 }) {
   const ref = useRef<SVGSVGElement>(null);
@@ -326,7 +338,7 @@ function Flyer({
     >
       <g transform={`scale(${flight.facing === "right" ? 1 : -1} 1)`}>
         <BirdFigure
-          look={birdLook(flight.bird, night)}
+          look={birdLook(flight.bird, now)}
           id={flight.bird.id}
           pose="standing"
           speaking={false}
@@ -413,7 +425,7 @@ function Strip({
   tab,
   width,
   openId,
-  night,
+  now,
   flyingIds,
   onOpen,
 }: {
@@ -421,7 +433,7 @@ function Strip({
   /** The strip's width in its units: the aviary scene's in the same window. */
   width: number;
   openId: string;
-  night: boolean;
+  now: Date;
   flyingIds: ReadonlySet<string>;
   onOpen: (bird: Bird) => void;
 }) {
@@ -491,7 +503,7 @@ function Strip({
           >
             <g transform={`scale(${base * face} ${base})`}>
               <BirdFigure
-                look={birdLook(bird, night)}
+                look={birdLook(bird, now)}
                 id={bird.id}
                 pose="standing"
                 speaking={false}
@@ -515,28 +527,35 @@ function Strip({
         y={stripTallyY}
         className="fill-ink-faint font-body text-[13px]"
       >
-        {dim ? stripTally(tab) : <Tally birds={tab.birds} />}
+        {dim ? stripTally(tab, now) : <Tally birds={tab.birds} now={now} />}
       </text>
     </svg>
   );
 }
 
-const totalTone: Record<Mood, { word: string; className: string }> = {
-  distressed: { word: "attention", className: "text-red" },
-  restless: { word: "drifting", className: "text-amber" },
-  content: { word: "settled", className: "text-green" },
-};
+/** The header's totals in order: each count's field, the state word it counts and the word it is written with. */
+const totalWords: {
+  key: keyof TallyCounts;
+  stateWord: StateWord;
+  word: string;
+}[] = [
+  { key: "attention", stateWord: "distressed", word: "attention" },
+  { key: "drifting", stateWord: "restless", word: "drifting" },
+  { key: "settled", stateWord: "content", word: "settled" },
+  { key: "snoozed", stateWord: "snoozed", word: "snoozed" },
+];
 
-/** The header's totals over every adopted bird: how many need attention, drift, or are settled. */
-function Totals({ aviary }: { aviary: Aviary }) {
-  const adopted = aviary.wires.flatMap((wire) => wire.birds);
-  const moods: Mood[] = ["distressed", "restless", "content"];
+/** The header's totals over every adopted bird: how many need attention, drift, are settled or snoozed. */
+function Totals({ aviary, now }: { aviary: Aviary; now: Date }) {
+  const counts = tallyCounts(
+    aviary.wires.flatMap((wire) => wire.birds),
+    now,
+  );
   return (
     <div className="flex gap-4 font-semibold text-[13px]">
-      {moods.map((mood) => (
-        <span key={mood} className={totalTone[mood].className}>
-          {adopted.filter((bird) => bird.mood === mood).length}{" "}
-          {totalTone[mood].word}
+      {totalWords.map(({ key, stateWord, word }) => (
+        <span key={key} className={stateTone[stateWord]}>
+          {counts[key]} {word}
         </span>
       ))}
     </div>
@@ -552,6 +571,8 @@ export interface CameraViewProps {
   /** Every move the camera is asked to make: a tab, a bird, the brand or Escape. */
   onNavigate: (place: CameraPlace) => void;
   onLaunch: (action: LaunchAction) => void;
+  /** A bubble's or a page's snooze or wake action was pressed. */
+  snooze: SnoozeCalls;
   /** The open bird's key files with what was read from each; empty until read. */
   sheets: KeyFileSheet[];
   /** A scan is running; the header says so quietly. */
@@ -580,6 +601,7 @@ export function CameraView({
   place,
   onNavigate,
   onLaunch,
+  snooze,
   sheets,
   scanning,
   onRescan,
@@ -590,7 +612,6 @@ export function CameraView({
   problems,
 }: CameraViewProps) {
   const phase = skyPhase(now);
-  const night = isNight(phase);
   const tabs = cameraTabs(aviary);
   const bird =
     place.at === "detail" ? findBird(aviary, place.birdId) : undefined;
@@ -713,7 +734,7 @@ export function CameraView({
           className="flex gap-1 rounded-full border border-edge bg-band p-0.75"
         >
           {tabs.map((tab) => {
-            const destination = tabDestination(tab, remembered);
+            const destination = tabDestination(tab, remembered, now);
             if (destination === null) {
               return (
                 <span
@@ -744,7 +765,7 @@ export function CameraView({
             );
           })}
         </nav>
-        <Totals aviary={aviary} />
+        <Totals aviary={aviary} now={now} />
         <ScanLine
           aviary={aviary}
           now={now}
@@ -785,6 +806,7 @@ export function CameraView({
                 now={now}
                 size={size}
                 onLaunch={onLaunch}
+                snooze={snooze}
                 onFullStory={(chosen) =>
                   onNavigate({
                     at: "detail",
@@ -827,7 +849,7 @@ export function CameraView({
                   tab={shownTab}
                   width={sceneWidthFor(size.width)}
                   openId={shown.id}
-                  night={night}
+                  now={now}
                   flyingIds={flyingIds}
                   onOpen={(chosen) =>
                     onNavigate({
@@ -874,6 +896,7 @@ export function CameraView({
                           {...groundPage.props}
                           now={now}
                           onLaunch={onLaunch}
+                          snooze={snooze}
                           onSettings={onSettings}
                           onLocalSources={onLocalSources}
                           onCopy={onCopy}
@@ -892,7 +915,7 @@ export function CameraView({
             <Flyer
               key={flight.bird.id}
               flight={flight}
-              night={night}
+              now={now}
               onLanded={landed}
             />
           ))}

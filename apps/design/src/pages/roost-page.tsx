@@ -2,7 +2,7 @@
 
 import { Roost, roostColumnWidth, roostWidth } from "@perch/ui/roost.tsx";
 import { type ReactNode, useState } from "react";
-import { mockBird, withOutstanding } from "../specimens.ts";
+import { byDay, mockBird, smallHours, withOutstanding } from "../specimens.ts";
 import { Code, Ground, Pressed, Section, Specimen, Usage } from "../usage.tsx";
 
 /** A container of the given width, as the detail page is one, so its width picks the roost's arrangement. */
@@ -24,7 +24,7 @@ export function RoostPage() {
     <>
       <Section
         title="The bird on its perch"
-        rule="On its own page the bird leaves the wire for a T-stand at the top right, drawn in the post's colour. It sits on the crossbar, breast settled and no legs showing, where the wires and the strip keep it standing. It is drawn larger than on any wire, idle, and always faces left toward its record. Its bubble continues word for word from the aviary but drops the name and state word, which the page's heading carries, and the keys, which the heading's action row carries. The tail meets the beak. Its chips are handles: pressing one hands back the chip's kind, and the detail page lands on the ledger row holding its working. These are drawn in a 330px container, under the 460px at which the roost becomes a row, so they are stacked."
+        rule="On its own page the bird leaves the wire for a T-stand at the top right, drawn in the post's colour. It sits on the crossbar, breast settled and no legs showing, where the wires and the strip keep it standing. It is drawn larger than on any wire, idle, and always faces left toward its record. Its bubble continues word for word from the aviary but drops the name and state word, which the page's heading carries, and the actions, which the heading's action row carries. The tail meets the beak. Its chips are handles: pressing one hands back the chip's kind, and the detail page lands on the ledger row holding its working. These are drawn in a 330px container, under the 460px at which the roost becomes a row, so they are stacked."
         min={380}
       >
         <Specimen
@@ -33,11 +33,7 @@ export function RoostPage() {
         >
           <Ground>
             <Column width={roostWidth}>
-              <Roost
-                bird={mockBird("dev/perch")}
-                night={false}
-                onChip={onChip}
-              />
+              <Roost bird={mockBird("dev/perch")} now={byDay} onChip={onChip} />
             </Column>
           </Ground>
         </Specimen>
@@ -49,7 +45,7 @@ export function RoostPage() {
             <Column width={roostWidth}>
               <Roost
                 bird={mockBird("undev/prism")}
-                night={false}
+                now={byDay}
                 onChip={onChip}
               />
             </Column>
@@ -57,13 +53,13 @@ export function RoostPage() {
         </Specimen>
         <Specimen
           label="restless"
-          rule="Skiff: parked on a branch, amber breast."
+          rule="Skiff: stalled on a branch, amber breast."
         >
           <Ground>
             <Column width={roostWidth}>
               <Roost
                 bird={mockBird("undev/skiff")}
-                night={false}
+                now={byDay}
                 onChip={onChip}
               />
             </Column>
@@ -77,21 +73,21 @@ export function RoostPage() {
             <Column width={roostWidth}>
               <Roost
                 bird={mockBird("dev/odin/hello")}
-                night={false}
+                now={byDay}
                 onChip={onChip}
               />
             </Column>
           </Ground>
         </Specimen>
         <Specimen
-          label="asleep at night"
-          rule="Spool at night: eyes closed and still, its bubble speaking woken, as the aviary's does when clicked."
+          label="asleep, midnight to 06:00"
+          rule="Spool in the small hours: eyes closed, still, a z where the note sits, its bubble speaking woken, as the aviary's does when clicked."
         >
           <Ground>
             <Column width={roostWidth}>
               <Roost
                 bird={mockBird("undev/spool")}
-                night={true}
+                now={smallHours}
                 onChip={onChip}
               />
             </Column>
@@ -105,7 +101,7 @@ export function RoostPage() {
             <Column width={roostWidth}>
               <Roost
                 bird={withOutstanding(mockBird("undev/spool"), 50)}
-                night={false}
+                now={byDay}
                 onChip={onChip}
               />
             </Column>
@@ -126,7 +122,7 @@ export function RoostPage() {
             <Column width={roostWidth}>
               <Roost
                 bird={mockBird("undev/prism")}
-                night={false}
+                now={byDay}
                 onChip={onChip}
               />
             </Column>
@@ -140,7 +136,7 @@ export function RoostPage() {
             <Column width={roostColumnWidth}>
               <Roost
                 bird={mockBird("undev/prism")}
-                night={false}
+                now={byDay}
                 onChip={onChip}
               />
             </Column>
@@ -154,7 +150,7 @@ export function RoostPage() {
             <Column width={wideColumn}>
               <Roost
                 bird={mockBird("undev/skiff")}
-                night={false}
+                now={byDay}
                 onChip={onChip}
               />
             </Column>
@@ -166,11 +162,7 @@ export function RoostPage() {
         >
           <Ground>
             <Column width={wideColumn}>
-              <Roost
-                bird={mockBird("dev/perch")}
-                night={false}
-                onChip={onChip}
-              />
+              <Roost bird={mockBird("dev/perch")} now={byDay} onChip={onChip} />
             </Column>
           </Ground>
         </Specimen>
@@ -180,9 +172,9 @@ export function RoostPage() {
         props={[
           { name: "bird", type: "Bird", what: "The bird whose page this is." },
           {
-            name: "night",
-            type: "boolean",
-            what: "The sky is at night: a bird that sleeps sleeps here too, and its bubble speaks woken.",
+            name: "now",
+            type: "Date",
+            what: "The render's clock: the bird's look follows the hour, and an asleep bird's bubble speaks woken.",
           },
           {
             name: "onChip",
@@ -202,7 +194,7 @@ export function RoostPage() {
           bubble&apos;s tail is hung there. The bubble is{" "}
           <Code>{"<RoostBubble>"}</Code> from <Code>bubble.tsx</Code>: the
           aviary bubble&apos;s paper, speech and chips without the header and
-          keys, its chips drawn as handles by <Code>{"<ChipHandles>"}</Code>.
+          actions, its chips drawn as handles by <Code>{"<ChipHandles>"}</Code>.
         </p>
       </Usage>
     </>

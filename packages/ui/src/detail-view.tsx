@@ -1,16 +1,16 @@
 // Tier C: a bird's full page, a fixed stage. The band at the top is one row: the heading (the name,
-// the meta line with the launch actions, links out and papers' verb beside it, then a notice for
-// each remote no card can read and the main process's problems), the roost's bubble at its reading
-// width, and the bird sitting on its perch at the right. It never scrolls. Beneath it the ground holds two panes that each scroll their own contents: the
-// record (the ledger and its sections) and the key files on paper, or for a bird with no clone here
-// the slip saying so; in a narrow page they join into one pane, the paper at the end. The
-// adoption papers rise as a sheet over both panes, which
-// dim and go inert while the band stays live. A chip pressed in the roost's
-// bubble lands on the ledger row holding its working, or the can't-read chip on the notice, as does
-// the chip pressed in the aviary's bubble that brought the camera here. A bug line pressed in the
-// ledger opens its file on the paper at that line. Only what exists is shown.
-// The view fetches nothing: key-file contents, launching, the clipboard and the entry's form and
-// writes are the caller's.
+// the meta line with the launch actions, the snooze control, links out and papers' verb beside it,
+// then a notice for each remote no card can read and the main process's problems), the roost's
+// bubble at its reading width, and the bird sitting on its perch at the right. It never scrolls.
+// Beneath it the ground holds two panes that each scroll their own contents: the record (the
+// ledger and its sections) and the key files on paper, or for a bird with no clone here the slip
+// saying so; in a narrow page they join into one pane, the paper at the end. The adoption papers
+// rise as a sheet over both panes, which dim and go inert while the band stays live. A chip
+// pressed in the roost's bubble lands on the ledger row holding its working, or the can't-read
+// chip on the notice, as does the chip pressed in the aviary's bubble that brought the camera
+// here. A bug line pressed in the ledger opens its file on the paper at that line. Only what
+// exists is shown. The view fetches nothing: key-file contents, launching, the clipboard and the
+// entry's form and writes are the caller's.
 
 import {
   type EntryForm,
@@ -28,6 +28,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { actionClass, LaunchActions, LinksOut } from "./actions.tsx";
 import { AdoptionPapers } from "./adoption-papers.tsx";
+import { birdLook } from "./bird.tsx";
 import { DetailHeading } from "./detail-heading.tsx";
 import { Icon } from "./icons.tsx";
 import {
@@ -45,7 +46,7 @@ import { NoCloneClause, NoCloneSlip } from "./no-clone-slip.tsx";
 import { KeyFilePaper, type KeyFileSheet, type Reveal } from "./paper.tsx";
 import { RisingSheet } from "./rising-sheet.tsx";
 import { Roost } from "./roost.tsx";
-import { isNight, skyPhase } from "./sky.ts";
+import { SnoozeAction, type SnoozeCalls } from "./snooze-action.tsx";
 
 /** What the detail page needs to adopt its bird or amend its papers. */
 export interface EntryControls {
@@ -59,9 +60,11 @@ export interface EntryControls {
 
 export interface DetailViewProps {
   bird: Bird;
-  /** The render's clock: ages are measured to it, and at night a sleeping bird sleeps on its perch and speaks woken. */
+  /** The render's clock: ages are measured to it, and the bird's look follows the hour. */
   now: Date;
   onLaunch: (action: LaunchAction) => void;
+  /** The page's snooze or wake verb was pressed. */
+  snooze: SnoozeCalls;
   /** The bird's key files with what was read from each; empty until the caller has read them. */
   sheets: KeyFileSheet[];
   /** Adopting the bird or amending its papers. */
@@ -197,6 +200,7 @@ export function DetailView({
   bird,
   now,
   onLaunch,
+  snooze,
   sheets,
   entry,
   problems,
@@ -230,7 +234,6 @@ export function DetailView({
     setSigned(null);
     setOpen(false);
   };
-  const night = isNight(skyPhase(now));
   const articleRef = useRef<HTMLElement>(null);
   // The chip that brought the camera here is marked in the page's first commit, and again whenever
   // another arrives.
@@ -282,6 +285,7 @@ export function DetailView({
         >
           <DetailHeading
             bird={bird}
+            now={now}
             actions={
               <div
                 data-part="actions"
@@ -289,6 +293,12 @@ export function DetailView({
               >
                 {detail.noClone?.onMetaLine && <NoCloneClause />}
                 <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
+                <SnoozeAction
+                  bird={bird}
+                  look={birdLook(bird, now)}
+                  place="page"
+                  calls={snooze}
+                />
                 <LinksOut links={detail.links} />
                 {agreed !== null && (
                   <PapersVerb
@@ -311,7 +321,7 @@ export function DetailView({
           data-part="roost-cell"
           className="mx-auto w-120 max-w-full @min-[860px]:mx-0 @min-[860px]:w-auto @min-[860px]:min-w-0 @min-[860px]:flex-[0_1_auto]"
         >
-          <Roost bird={bird} night={night} onChip={pressChip} />
+          <Roost bird={bird} now={now} onChip={pressChip} />
         </div>
       </div>
       {/* The sheet spans both rows: a press anywhere off the papers, the band included, folds them,
@@ -323,7 +333,6 @@ export function DetailView({
           <AdoptionPapers
             bird={bird}
             form={agreed}
-            night={night}
             now={now}
             problems={problems}
             onSign={(values) => {

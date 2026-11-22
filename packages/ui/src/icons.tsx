@@ -1,12 +1,15 @@
-// The board's line icons for launch actions, links out and the config entry's verbs, stroked in
-// the accent.
+// The board's line icons for launch actions, links out, the config entry's verbs and the snooze
+// control, stroked in the accent.
 
 import type { IconName } from "@perch/core/launch-kinds.ts";
 import type { ReactNode } from "react";
 
 export type { IconName };
 
-const paths: Record<IconName, ReactNode> = {
+/** The snooze control's icons, which config cannot give a launch action. */
+type ControlIconName = "moon" | "sun";
+
+const paths: Record<IconName | ControlIconName, ReactNode> = {
   terminal: (
     <>
       <path d="M4 17l6-5-6-5" />
@@ -46,10 +49,25 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M13 7l4 4" />
     </>
   ),
+  moon: (
+    <path d="M18.75 15.3A8.25 8.25 0 0 1 8.7 5.25a8.25 8.25 0 1 0 10.05 10.05z" />
+  ),
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4.5" />
+      <path d="M12 2.25v2.7M12 19.05v2.7M2.25 12h2.7M19.05 12h2.7M5.1 5.1l1.95 1.95M16.95 16.95l1.95 1.95M5.1 18.9l1.95-1.95M16.95 7.05l1.95-1.95" />
+    </>
+  ),
 };
 
 /** One line icon at the given size in pixels; decorative, so hidden from assistive technology. */
-export function Icon({ name, size }: { name: IconName; size: number }) {
+export function Icon({
+  name,
+  size,
+}: {
+  name: IconName | ControlIconName;
+  size: number;
+}) {
   return (
     <svg
       aria-hidden="true"

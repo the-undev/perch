@@ -6,7 +6,12 @@ import { AdoptionPapers } from "@perch/ui/adoption-papers.tsx";
 import { DetailView } from "@perch/ui/detail-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
-import { mockBird, mockEntryForm, scanMoment } from "../specimens.ts";
+import {
+  mockBird,
+  mockEntryForm,
+  reportedSnooze,
+  scanMoment,
+} from "../specimens.ts";
 import {
   Code,
   Ground,
@@ -48,7 +53,6 @@ function PapersSpecimen({
       <AdoptionPapers
         bird={mockBird(id)}
         form={form}
-        night={false}
         now={scanMoment}
         problems={problems}
         onSign={(values) => onPressed(`onSign(${signedWords(values)})`)}
@@ -83,7 +87,7 @@ export function AdoptionPapersPage() {
       <Pressed text={pressed} />
       <Section
         title="On the bird's page"
-        rule="The papers rise as a sheet over the bird's record and paper panes, which dim to a quarter and go inert. The band above, with the heading, the verb and the roost, stays lit, but its controls rest: a press anywhere off the papers, the band included, folds them. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt key leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
+        rule="The papers rise as a sheet over the bird's record and paper panes, which dim to a quarter and go inert. The band above, with the heading, the verb and the roost, stays lit, but its controls rest: a press anywhere off the papers, the band included, folds them. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt action leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
         min={620}
       >
         <Specimen
@@ -95,6 +99,7 @@ export function AdoptionPapersPage() {
               bird={hello}
               now={scanMoment}
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
+              snooze={reportedSnooze(setPressed)}
               sheets={birdSheets(hello)}
               entry={{
                 form: mockEntryForm(hello.id),
@@ -121,6 +126,7 @@ export function AdoptionPapersPage() {
               bird={perch}
               now={scanMoment}
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
+              snooze={reportedSnooze(setPressed)}
               sheets={birdSheets(perch)}
               entry={{
                 form: mockEntryForm(perch.id),
@@ -234,14 +240,9 @@ export function AdoptionPapersPage() {
             what: "The bird's entry form: what the scan found, the choices, the session the zellij action gives, and the entry's values, null for a fence bird.",
           },
           {
-            name: "night",
-            type: "boolean",
-            what: "The sky is at night: the portrait sleeps as the bird does.",
-          },
-          {
             name: "now",
             type: "Date",
-            what: "The render's clock, which the last commit's age is measured to.",
+            what: "The render's clock, which the last commit's age is measured to and the portrait's look follows.",
           },
           {
             name: "problems",

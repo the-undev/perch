@@ -172,7 +172,18 @@ state file is read would keep it small.
 Check that each bird visibly lands on its own in the fly-in, one after
 another, rather than the flock landing together.
 
+## Quiet git output in the desktop tests
+
+The desktop tests print git's "You appear to have cloned an empty
+repository" warning several times from their fixtures. Finding the clone that
+prints it and silencing it at the cause would leave the test output clean.
+
 ## Open decisions
+
+- Forge tokens live in the desktop keyring under service perch for every
+  run: the installed app, `make dev` and `make isolated` share them, so a token
+  saved on the settings page of a dev or isolated run replaces the installed
+  app's. Whether runs from source get their own keyring service: TBD.
 
 - The glossary's Asleep says a bird "neither distressed nor being edited" is
   asleep between midnight and 06:00, but every fence bird sleeps at night

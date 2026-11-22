@@ -11,6 +11,7 @@
     "gather": "node packages/core/src/cli/gather.ts",
     "aggregate": "node packages/core/src/cli/aggregate.ts",
     "scan": "pnpm gather && pnpm aggregate",
+    "build": "pnpm -r build",
     "dev": "pnpm --filter @perch/desktop dev",
     "design": "pnpm --filter @perch/design dev",
     "dist": "pnpm --filter @perch/desktop dist",
@@ -20,7 +21,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "release": "node apps/desktop/scripts/release.ts",
-    "check": "biome check . && pnpm -r typecheck && pnpm -r test"
+    "check": "biome check . && pnpm -r typecheck && pnpm -r test && pnpm build"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",

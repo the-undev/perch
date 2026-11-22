@@ -105,7 +105,7 @@ function createWindow(icon: string, showWhenReady: boolean): BrowserWindow {
 function start(): void {
   const home = homedir();
   const env = process.env;
-  const paths = appPaths(home);
+  const paths = appPaths(home, env);
   const icons = iconPaths(
     resourceDirFor(app.isPackaged, process.resourcesPath, import.meta.dirname),
   );

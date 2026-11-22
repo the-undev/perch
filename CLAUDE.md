@@ -34,27 +34,38 @@ A pnpm workspace. The code is the reference; this is a map.
 
 ## Commands
 
-Run from the root: `pnpm dev` runs the app, `pnpm design` the design site,
-`pnpm check` Biome, tsc and vitest, `pnpm scan` a scan into `.scan/`, and
-`pnpm dist` builds the AppImage.
+Run from the root.
+
+| What | Command |
+| --- | --- |
+| Full check: Biome, tsc, vitest and the build | `make check` |
+| Dev instance: data in `~/.local/share/perch-dev`, config in `~/.config/perch-dev/config.toml` | `make dev` |
+| Isolated run: data and config in a temp directory deleted on exit; opens a window, no URL | `make isolated` |
+| Design site | `pnpm design` |
+| A scan into `.scan/` | `pnpm scan` |
+| The AppImage | `pnpm dist` |
+
+The installed AppImage is the owner's live app, on `~/.local/share/perch`
+and `~/.config/perch/config.toml`. Nothing touches it.
+
+## Ports
+
+| What | Port |
+| --- | --- |
+| Dev instance renderer | 5175 |
+| Isolated run renderer | 5176 |
+| Design site | 5174 |
+
+## Workflow
+
+A change goes into `main` by a pull request on GitHub, merged once
+approved. `origin` fetches from GitHub.
 
 ## Conventions
 
-- Every behaviour change ships with a test in the same commit. Scanners are
-  tested against fixtures under `tests/fixtures/`, never the live machine.
-- Dependencies are required parameters, never optional with a null guard.
+- Scanners are tested against fixtures under `tests/fixtures/`.
 - A feature the scanner cannot derive goes in the roadmap, with a note on
   what would have to change first.
-- Secrets never touch the repository or the disk.
-- Work on a branch. A change goes into `main` by a pull request on GitHub,
-  merged once approved.
-- Commit messages: imperative subject, a body only when the why is not
-  obvious. No attribution trailers.
-- British English. No em dashes.
 - Design is agreed visually on a mockup page: one new file in `mockups/`
   per round, agreed before implementation, deleted once the round is
   implemented.
-- A decision goes in the commit message, or in a code comment where the code
-  would surprise.
-- Docs are the minimum a user or a potential dev needs. The code documents
-  the code.

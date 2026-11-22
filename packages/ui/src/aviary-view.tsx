@@ -472,7 +472,12 @@ export function AviaryScene({
         {layout.rows
           .filter((row) => row.index === 0)
           .map((row) => (
-            <WireTally key={row.wire.name} y={row.y} birds={row.wire.birds} />
+            <WireTally
+              key={row.wire.name}
+              y={row.y}
+              birds={row.wire.birds}
+              now={now}
+            />
           ))}
         <FenceCount y={layout.fence.y} count={aviary.fence.birds.length} />
       </svg>

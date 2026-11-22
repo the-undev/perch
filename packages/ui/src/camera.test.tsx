@@ -388,6 +388,92 @@ describe("the camera", () => {
     }
   });
 
+  describe("its tallies", () => {
+    /** The mock aviary with the named birds snoozed until a date, or until woken for null. */
+    function snoozing(ids: string[], until: string | null) {
+      return {
+        ...mockAviary,
+        wires: mockAviary.wires.map((wire) => ({
+          ...wire,
+          birds: wire.birds.map((bird) =>
+            ids.includes(bird.id) ? { ...bird, snooze: { until } } : bird,
+          ),
+        })),
+      };
+    }
+
+    const header = () => screen.getByRole("banner").textContent;
+
+    it("totals attention, drifting, settled and snoozed in the header, each always shown", () => {
+      camera(aviaryPlace);
+
+      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+    });
+
+    it("counts a snoozed bird in the header as snoozed only, in the snoozed word's grey", () => {
+      camera(
+        aviaryPlace,
+        false,
+        now,
+        snoozing(["undev/gramophone", ".dotfiles", "undev/spool"], null),
+      );
+
+      expect(header()).toContain("2 attention2 drifting6 settled3 snoozed");
+      expect(screen.getByText("3 snoozed").className).toContain(
+        "text-ink-faint",
+      );
+    });
+
+    it("counts a run-out snooze's bird in the header by its mood again", () => {
+      camera(
+        aviaryPlace,
+        false,
+        now,
+        snoozing(["undev/gramophone", "undev/spool"], "2026-10-22"),
+      );
+
+      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+    });
+
+    it("never counts a fence bird in the header's totals", () => {
+      camera(aviaryPlace);
+
+      const total = ["attention", "drifting", "settled", "snoozed"]
+        .map((word) =>
+          Number(header()?.match(new RegExp(`(\\d+) ${word}`))?.[1]),
+        )
+        .reduce((sum, count) => sum + count, 0);
+
+      expect(total).toBe(mockAviary.wires.flatMap((wire) => wire.birds).length);
+    });
+
+    it("follows the wire's rule in the strip on a bird's page, snoozed after drifting", () => {
+      const { container } = camera(
+        detailOf("undev/skiff"),
+        false,
+        now,
+        snoozing(["undev/gramophone", "undev/spool"], null),
+      );
+
+      expect(
+        container.querySelector('[data-part="strip-tally"]')?.textContent,
+      ).toBe("2 attention · 1 drifting · 2 snoozed");
+    });
+
+    it("counts a run-out snooze in the strip by its mood again", () => {
+      const { container } = camera(
+        detailOf("undev/skiff"),
+        false,
+        now,
+        snoozing(["undev/gramophone"], "2026-10-22"),
+      );
+
+      expect(
+        container.querySelector('[data-part="strip-tally"]')?.textContent,
+      ).toBe("3 attention · 1 drifting");
+    });
+  });
+
   it("paints its name behind the wire and its birds, its tally in front, the birds right of the column at the new height", () => {
     const { container } = camera(detailOf("undev/skiff"));
     const strip = container.querySelector('[data-part="strip"]') as HTMLElement;

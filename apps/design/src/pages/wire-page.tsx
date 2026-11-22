@@ -2,7 +2,13 @@ import { mockAviary } from "@perch/core/mock.ts";
 import type { Wire as WireModel } from "@perch/core/viewmodel.ts";
 import { Scene, sceneWidth } from "@perch/ui/scene.tsx";
 import { columnEdgeFor, Fence, Wire } from "@perch/ui/wire.tsx";
-import { byDay, mockBird, mockWire, smallHours } from "../specimens.ts";
+import {
+  byDay,
+  mockBird,
+  mockWire,
+  smallHours,
+  snoozedUntil,
+} from "../specimens.ts";
 import { Code, Section, Specimen, Usage } from "../usage.tsx";
 
 const machineHome = mockWire("Machine & Home");
@@ -16,6 +22,24 @@ const settledWire: WireModel = {
       ...mockBird(id),
       position,
     }),
+  ),
+};
+
+/** Projects with its distressed Prism and its restless Skiff snoozed, the others as they are. */
+const snoozedWire: WireModel = {
+  ...projects,
+  birds: projects.birds.map((bird) =>
+    ["undev/prism", "undev/skiff"].includes(bird.id)
+      ? snoozedUntil(bird, null)
+      : bird,
+  ),
+};
+
+/** Projects with Skiff's snooze run out by the scene's clock: it counts by its mood again. */
+const runOutWire: WireModel = {
+  ...projects,
+  birds: projects.birds.map((bird) =>
+    bird.id === "undev/skiff" ? snoozedUntil(bird, "2026-10-22") : bird,
   ),
 };
 
@@ -37,7 +61,7 @@ export function WirePage() {
     <>
       <Section
         title="The wire · your priority"
-        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the birds sit in name order. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who needs attention, who drifts. The birds start ${columnEdgeFor(sceneWidth)} units in at full width whatever the name or tally says.`}
+        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the birds sit in name order. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who needs attention, who drifts, who is snoozed. A snoozed bird is counted as snoozed only, and a snooze that has run out counts by its mood again. The birds start ${columnEdgeFor(sceneWidth)} units in at full width whatever the name or tally says.`}
         min={900}
       >
         <Specimen
@@ -57,6 +81,18 @@ export function WirePage() {
           rule="Hand-built: when nobody is restless or distressed the tally says so."
         >
           <WireScene wire={settledWire} />
+        </Specimen>
+        <Specimen
+          label="Snoozed"
+          rule="Prism and Skiff snoozed: the tally counts them as snoozed after drifting, and not as attention or drifting."
+        >
+          <WireScene wire={snoozedWire} />
+        </Specimen>
+        <Specimen
+          label="Snooze run out"
+          rule="Skiff snoozed until 22 October, drawn that afternoon: counted as drifting again."
+        >
+          <WireScene wire={runOutWire} />
         </Specimen>
       </Section>
 

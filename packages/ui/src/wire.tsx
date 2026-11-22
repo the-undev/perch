@@ -15,6 +15,7 @@ import {
   type Facing,
   type NamePlace,
   roomyName,
+  type StateWord,
 } from "./bird.tsx";
 
 /** The margin no bird is placed inside at the scene's right end: 0.06 of the scene, at least 60 units, so 120 at full width. */
@@ -119,41 +120,53 @@ export function byPosition(birds: BirdModel[]): BirdModel[] {
   return [...birds].sort((a, b) => a.position - b.position);
 }
 
-/** The words beside a wire's name: how many need attention, how many drift, else all settled. */
-export function wireTally(birds: BirdModel[]): {
+/** The state words a tally counts: the awake moods and a snooze, each by the bird's look at the time. */
+export interface TallyCounts {
   attention: number;
   drifting: number;
-} {
+  settled: number;
+  snoozed: number;
+}
+
+/** How many of the birds are at each state word at a time; fence birds are counted by none. */
+export function tallyCounts(birds: BirdModel[], now: Date): TallyCounts {
+  const stateWords = birds.map((bird) => birdLook(bird, now).stateWord);
+  const count = (word: StateWord) =>
+    stateWords.filter((stateWord) => stateWord === word).length;
   return {
-    attention: birds.filter((bird) => bird.mood === "distressed").length,
-    drifting: birds.filter((bird) => bird.mood === "restless").length,
+    attention: count("distressed"),
+    drifting: count("restless"),
+    settled: count("content"),
+    snoozed: count("snoozed"),
   };
 }
 
 /** The tally's words in order, each with its ink; "all settled" when nothing else is said. */
 function tallyWords(
   birds: BirdModel[],
+  now: Date,
 ): { words: string; ink: string | undefined }[] {
-  const { attention, drifting } = wireTally(birds);
+  const { attention, drifting, snoozed } = tallyCounts(birds, now);
   const said = [
     { count: attention, words: `${attention} attention`, ink: "fill-red" },
     { count: drifting, words: `${drifting} drifting`, ink: "fill-amber" },
+    { count: snoozed, words: `${snoozed} snoozed`, ink: undefined },
   ].filter((part) => part.count > 0);
   return said.length > 0 ? said : [{ words: "all settled", ink: undefined }];
 }
 
 /** The tally as one line of text, as the tspans spell it. */
-export function tallyText(birds: BirdModel[]): string {
-  return tallyWords(birds)
+export function tallyText(birds: BirdModel[], now: Date): string {
+  return tallyWords(birds, now)
     .map((part) => part.words)
     .join(" · ");
 }
 
 /** The tally as tspans on one line, its word groups parted by a dot. */
-export function Tally({ birds }: { birds: BirdModel[] }) {
+export function Tally({ birds, now }: { birds: BirdModel[]; now: Date }) {
   return (
     <>
-      {tallyWords(birds).map((part, index) => (
+      {tallyWords(birds, now).map((part, index) => (
         <Fragment key={part.words}>
           {index > 0 && <tspan> · </tspan>}
           <tspan className={part.ink}>{part.words}</tspan>
@@ -249,10 +262,18 @@ const tallyLeading = 20;
 const tallyDrop = 30;
 
 /** The tally under a wire's left end, in front: one line per word group in its colour, or "all settled" faintly. */
-export function WireTally({ y, birds }: { y: number; birds: BirdModel[] }) {
+export function WireTally({
+  y,
+  birds,
+  now,
+}: {
+  y: number;
+  birds: BirdModel[];
+  now: Date;
+}) {
   return (
     <g data-part="tally">
-      {tallyWords(birds).map((part, index) => (
+      {tallyWords(birds, now).map((part, index) => (
         <text
           key={part.words}
           x={labelX}
@@ -397,7 +418,7 @@ export function Wire({ wire, y, width, now }: WireProps) {
           idle
         />
       ))}
-      <WireTally y={y} birds={birds} />
+      <WireTally y={y} birds={birds} now={now} />
     </g>
   );
 }

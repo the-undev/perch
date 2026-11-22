@@ -239,7 +239,7 @@ describe("the window", () => {
     ).toBeDefined();
   });
 
-  it("rides to a fence bird's page with its papers unfolded from its bubble's adopt key", async () => {
+  it("rides to a fence bird's page with its papers unfolded from its bubble's adopt action", async () => {
     const { router } = renderApp(idle(mockAviary), "/", undefined, (birdId) => {
       const item = mockSnapshot.items.find((entry) => entry.id === birdId);
       return item === undefined
@@ -257,7 +257,7 @@ describe("the window", () => {
     ).toBeDefined();
   });
 
-  it("snoozes a bird from its bubble's snooze action until the duration's end date, then offers its wake action", async () => {
+  it("snoozes a bird from its bubble's snooze action until the duration's end date and closes the bubble, then offers its wake action when clicked again", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 22, 10, 0));
     const { fake } = renderApp(idle(mockAviary));
@@ -269,6 +269,7 @@ describe("the window", () => {
     expect(fake.snoozes).toEqual([
       { birdId: "undev/skiff", until: "2026-10-25" },
     ]);
+    expect(screen.queryByRole("region", { name: "Skiff says" })).toBeNull();
     act(() =>
       fake.push(
         idle(
@@ -281,6 +282,7 @@ describe("the window", () => {
         ),
       ),
     );
+    fireEvent.click(await birdButton("undev/skiff"));
     fireEvent.click(await screen.findByRole("button", { name: "Wake" }));
 
     expect(fake.wakes).toEqual(["undev/skiff"]);

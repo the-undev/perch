@@ -173,7 +173,7 @@ export function BubblePage() {
 
       <Section
         title="The snooze action"
-        rule="An adopted bird's bubble has a Snooze action after its launch icons, whatever its mood. It opens the durations on a small dark card, shortest first, with indefinitely under a rule. A pick snoozes the bird until that duration's end date from today, or with no date. A fence bird has no snooze action, and a bird whose snooze has run out offers it again."
+        rule="An adopted bird's bubble has a Snooze action after its launch icons, whatever its mood. It opens the durations on a small dark card, shortest first, with indefinitely under a rule. A pick snoozes the bird until that duration's end date from today, or with no date, and closes the bubble. Opening the durations, or folding them with Escape, leaves it open. A fence bird has no snooze action, and a bird whose snooze has run out offers it again."
         min={440}
       >
         <Specimen
@@ -204,7 +204,7 @@ export function BubblePage() {
 
       <Section
         title="Snoozed"
-        rule="A snoozed bird's state word is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours. A Wake action takes the Snooze action's place."
+        rule="A snoozed bird's state word is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours. A Wake action takes the Snooze action's place, and pressing it wakes the bird and closes the bubble."
         min={440}
       >
         <Specimen
@@ -278,7 +278,7 @@ export function BubblePage() {
           {
             name: "onAdopt",
             type: "(() => void) | null",
-            what: "A fence bird's one key: rides to the bird's page with its adoption papers unfolded. Null for an adopted bird, whose bubble has no adopt key; the caller decides from bird.adopted.",
+            what: "A fence bird's one action: rides to the bird's page with its adoption papers unfolded. Null for an adopted bird, whose bubble has no adopt action; the caller decides from bird.adopted.",
           },
           {
             name: "onChip",
@@ -302,27 +302,28 @@ export function BubblePage() {
         <p>
           On the bird&apos;s own page the bubble is{" "}
           <Code>{"<RoostBubble>"}</Code>: the same paper, speech and chips with
-          no header and no keys, since the page carries both. Beside the bird it
-          is as wide as its words up to about 56 characters, so its chips keep
-          to one row where they fit. The Roost page shows it.
+          no header and no actions, since the page carries both. Beside the bird
+          it is as wide as its words up to about 56 characters, so its chips
+          keep to one row where they fit. The Roost page shows it.
         </p>
         <p>
           The chips are handles in both bubbles. Pressed here, one closes the
-          bubble like the full-story key and rides the camera to the bird&apos;s
-          page with the chip in the URL, <Code>?chip=ci</Code>; the page lands
-          on its row as it opens.
+          bubble like the full-story action and rides the camera to the
+          bird&apos;s page with the chip in the URL, <Code>?chip=ci</Code>; the
+          page lands on its row as it opens.
         </p>
         <p>
           The snooze control is <Code>{"<SnoozeAction>"}</Code> from{" "}
           <Code>@perch/ui/snooze-action.tsx</Code>, given the bird, its look,
           its place (bubble or page) and the <Code>SnoozeCalls</Code>. A
           pick&apos;s end date is counted from <Code>pickedAt</Code>, the moment
-          of the pick. The look decides the key: snoozed offers Wake, not
+          of the pick. The look decides the action: snoozed offers Wake, not
           adopted offers neither, any other state word Snooze. The durations
           exist only there: a pick becomes an end date with{" "}
           <Code>snoozeEndDate</Code>, or null for indefinitely, and goes to{" "}
           <Code>onSnooze(birdId, until)</Code>. The bird&apos;s page carries the
-          same control after its launch verbs.
+          same control after its launch verbs. In the aviary a pick or a wake
+          closes the bubble; on the page it leaves the page as it is.
         </p>
       </Usage>
     </>

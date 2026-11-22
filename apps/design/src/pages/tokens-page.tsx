@@ -200,8 +200,8 @@ export function TokensPage() {
           />
         </Specimen>
         <Specimen
-          label="Keys on paper"
-          rule="The bubble's dark buttons and the full-story key."
+          label="Actions on paper"
+          rule="The bubble's dark buttons and the full-story action."
         >
           <Swatches tokens={["key", "key-hi", "key-strong"]} />
         </Specimen>

@@ -1,6 +1,6 @@
 // The speech bubble: paper against the sky, the bird's name and mood word, its first-person
 // speech, the chips it carries, the launch actions, the snooze control and, for a fence bird, the
-// adopt key, with a tail whose tip meets the beak. On the bird's own page the bubble is the speech
+// adopt action, with a tail whose tip meets the beak. On the bird's own page the bubble is the speech
 // and chips alone. Either way the chips are handles to the ledger rows holding their working.
 
 import { wakingPrefix } from "@perch/core/speech.ts";
@@ -145,7 +145,7 @@ export interface BubbleProps {
   snoozeAction: ReactNode;
   /** Rides the camera down to the bird's detail page. */
   onFullStory: () => void;
-  /** Rides to the page with the adoption papers unfolded; null for an adopted bird, which has no adopt key. */
+  /** Rides to the page with the adoption papers unfolded; null for an adopted bird, which has no adopt action. */
   onAdopt: (() => void) | null;
   /** A chip was pressed: rides to the page and lands on the ledger row holding its working. */
   onChip: (chip: ChipKind) => void;

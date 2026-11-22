@@ -4,15 +4,7 @@
 
 import type { Activity, Bird } from "@perch/core/viewmodel.ts";
 import type { ReactNode } from "react";
-import { birdLook, type StateWord } from "./bird.tsx";
-
-const stateTone: Record<StateWord, string> = {
-  content: "text-green",
-  restless: "text-amber",
-  distressed: "text-red",
-  "not adopted": "text-ink-faint",
-  snoozed: "text-ink-faint",
-};
+import { birdLook, stateTone } from "./bird.tsx";
 
 /** What a bird is doing, in words; settled says nothing. */
 export const activityWords: Record<Activity, string | null> = {

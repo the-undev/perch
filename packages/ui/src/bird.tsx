@@ -57,6 +57,15 @@ export function isSnoozed(bird: BirdModel, now: Date): boolean {
 /** The word beside a bird's name: its mood, where a fence bird stands, or that it is snoozed. */
 export type StateWord = Mood | "not adopted" | "snoozed";
 
+/** The text colour of each state word, where the word is written. */
+export const stateTone: Record<StateWord, string> = {
+  content: "text-green",
+  restless: "text-amber",
+  distressed: "text-red",
+  "not adopted": "text-ink-faint",
+  snoozed: "text-ink-faint",
+};
+
 /** What a bird shows beside its head: the z while asleep, the note while singing. */
 export type BirdMark = "z" | "note" | null;
 

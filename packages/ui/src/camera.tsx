@@ -14,7 +14,6 @@ import type {
   Bird,
   ChipKind,
   LaunchAction,
-  Mood,
 } from "@perch/core/viewmodel.ts";
 import {
   type ReactNode,
@@ -33,7 +32,13 @@ import {
   toPixels,
 } from "./aviary-layout.ts";
 import { AviaryScene } from "./aviary-view.tsx";
-import { BirdFigure, birdLook, type Facing } from "./bird.tsx";
+import {
+  BirdFigure,
+  birdLook,
+  type Facing,
+  type StateWord,
+  stateTone,
+} from "./bird.tsx";
 import { DetailView, type EntryControls } from "./detail-view.tsx";
 import {
   type PixelSize,
@@ -55,6 +60,8 @@ import {
   placeAt,
   placeSpacing,
   Tally,
+  type TallyCounts,
+  tallyCounts,
   tallyText,
 } from "./wire.tsx";
 
@@ -175,10 +182,10 @@ const stripTallyY = stripWireY + 16;
 const stripGap = 175;
 
 /** The tally beneath the strip's name: the wire's moods, or how many sit on the fence. */
-function stripTally(tab: BirdTab): string {
+function stripTally(tab: BirdTab, now: Date): string {
   return tab.kind === "fence"
     ? `${tab.birds.length} not adopted`
-    : tallyText(tab.birds);
+    : tallyText(tab.birds, now);
 }
 
 /** Where the strip draws a tab: each bird's x and facing in the room right of the column. */
@@ -520,28 +527,35 @@ function Strip({
         y={stripTallyY}
         className="fill-ink-faint font-body text-[13px]"
       >
-        {dim ? stripTally(tab) : <Tally birds={tab.birds} />}
+        {dim ? stripTally(tab, now) : <Tally birds={tab.birds} now={now} />}
       </text>
     </svg>
   );
 }
 
-const totalTone: Record<Mood, { word: string; className: string }> = {
-  distressed: { word: "attention", className: "text-red" },
-  restless: { word: "drifting", className: "text-amber" },
-  content: { word: "settled", className: "text-green" },
-};
+/** The header's totals in order: each count's field, the state word it counts and the word it is written with. */
+const totalWords: {
+  key: keyof TallyCounts;
+  stateWord: StateWord;
+  word: string;
+}[] = [
+  { key: "attention", stateWord: "distressed", word: "attention" },
+  { key: "drifting", stateWord: "restless", word: "drifting" },
+  { key: "settled", stateWord: "content", word: "settled" },
+  { key: "snoozed", stateWord: "snoozed", word: "snoozed" },
+];
 
-/** The header's totals over every adopted bird: how many need attention, drift, or are settled. */
-function Totals({ aviary }: { aviary: Aviary }) {
-  const adopted = aviary.wires.flatMap((wire) => wire.birds);
-  const moods: Mood[] = ["distressed", "restless", "content"];
+/** The header's totals over every adopted bird: how many need attention, drift, are settled or snoozed. */
+function Totals({ aviary, now }: { aviary: Aviary; now: Date }) {
+  const counts = tallyCounts(
+    aviary.wires.flatMap((wire) => wire.birds),
+    now,
+  );
   return (
     <div className="flex gap-4 font-semibold text-[13px]">
-      {moods.map((mood) => (
-        <span key={mood} className={totalTone[mood].className}>
-          {adopted.filter((bird) => bird.mood === mood).length}{" "}
-          {totalTone[mood].word}
+      {totalWords.map(({ key, stateWord, word }) => (
+        <span key={key} className={stateTone[stateWord]}>
+          {counts[key]} {word}
         </span>
       ))}
     </div>
@@ -751,7 +765,7 @@ export function CameraView({
             );
           })}
         </nav>
-        <Totals aviary={aviary} />
+        <Totals aviary={aviary} now={now} />
         <ScanLine
           aviary={aviary}
           now={now}

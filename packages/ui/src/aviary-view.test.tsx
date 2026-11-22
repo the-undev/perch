@@ -1,5 +1,4 @@
 import { mockAviary, mockSnapshot } from "@perch/core/mock.ts";
-import type { Aviary } from "@perch/core/viewmodel.ts";
 import {
   act,
   cleanup,
@@ -18,7 +17,7 @@ import {
 } from "./aviary-layout.ts";
 import { AviaryScene, AviaryView, tipLine } from "./aviary-view.tsx";
 import type { PixelSize } from "./hooks.ts";
-import { mockBird, mockBirds, quietSnooze } from "./mock-birds.ts";
+import { mockBird, mockBirds, quietSnooze, snoozing } from "./mock-birds.ts";
 import { minPixelsPerUnit, sceneWidth } from "./scene.tsx";
 
 afterEach(cleanup);
@@ -42,19 +41,6 @@ function scene(size: PixelSize) {
       flyingIds={new Set()}
     />,
   );
-}
-
-/** The mock aviary with the given birds snoozed until a date, or until woken for null. */
-function snoozing(ids: string[], until: string | null): Aviary {
-  return {
-    ...mockAviary,
-    wires: mockAviary.wires.map((wire) => ({
-      ...wire,
-      birds: wire.birds.map((bird) =>
-        ids.includes(bird.id) ? { ...bird, snooze: { until } } : bird,
-      ),
-    })),
-  };
 }
 
 function show(now = morning, aviary = mockAviary, pickedAt = () => now) {
@@ -549,6 +535,52 @@ describe("the aviary view", () => {
     expect(holder.style.left).toBe(`${expected.left}px`);
     expect(holder.style.top).toBe(`${expected.top}px`);
     expect(holder.style.width).toBe(`${expected.width}px`);
+  });
+
+  describe("its wire tallies", () => {
+    /** Each wire's tally lines, top wire first. */
+    function tallies(container: HTMLElement): string[][] {
+      return [...container.querySelectorAll('[data-part="tally"]')].map(
+        (tally) =>
+          [...tally.querySelectorAll("text")].map((line) => line.textContent),
+      ) as string[][];
+    }
+
+    it("counts a snoozed bird as snoozed, out of attention, drifting and settled", () => {
+      const { container } = show(
+        morning,
+        snoozing(["undev/gramophone", "undev/skiff", ".dotfiles"], null),
+      );
+
+      expect(tallies(container)).toEqual([
+        ["1 drifting", "1 snoozed"],
+        ["2 attention", "2 snoozed"],
+      ]);
+    });
+
+    it("never says all settled while a bird on the wire is snoozed", () => {
+      const { container } = show(
+        morning,
+        snoozing([".dotfiles", "obsidian/Hothouse"], null),
+      );
+
+      expect(tallies(container)[0]).toEqual(["2 snoozed"]);
+    });
+
+    it("counts a run-out snooze's bird by its mood again", () => {
+      const { container } = show(
+        morning,
+        snoozing(["undev/gramophone", "undev/skiff"], "2026-10-22"),
+      );
+
+      expect(tallies(container)[1]).toEqual(["3 attention", "1 drifting"]);
+    });
+
+    it("counts a restless bird asleep at night as drifting", () => {
+      const { container } = show(smallHours);
+
+      expect(tallies(container)[0]).toEqual(["2 drifting"]);
+    });
   });
 
   it("staggers the arrival, the worst first", () => {

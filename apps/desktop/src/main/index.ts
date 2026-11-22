@@ -104,8 +104,14 @@ function createWindow(icon: string, showWhenReady: boolean): BrowserWindow {
 
 function start(): void {
   const home = homedir();
-  const env = process.env;
-  const paths = appPaths(home);
+  const paths = appPaths(home, process.env);
+  /** What every program the app starts runs with: without the variables that chose this run's paths. */
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    PERCH_DATA_DIR: undefined,
+    PERCH_CONFIG: undefined,
+    PERCH_RENDERER_PORT: undefined,
+  };
   const icons = iconPaths(
     resourceDirFor(app.isPackaged, process.resourcesPath, import.meta.dirname),
   );

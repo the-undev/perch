@@ -42,14 +42,14 @@ values. Forge tokens come from the desktop keyring, see
 An Electron app. It needs Node 26 and pnpm 11. Run `pnpm install` once, then
 from the root:
 
-| Command       | Does                                                                                                                       |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`    | Runs the desktop app: it scans this machine and the forges and shows the aviary. Its data lives in `~/.local/share/perch`. |
-| `pnpm design` | Serves the design site at http://localhost:5174, every component in every state.                                           |
-| `pnpm check`  | Runs Biome, tsc and vitest across the workspace.                                                                           |
-| `pnpm scan`   | Runs the same scan from the command line, into `.scan/raw/` and `.scan/snapshot.json`.                                     |
-| `pnpm dist`   | Builds the Linux AppImage into `apps/desktop/dist/`.                                                                       |
-| `pnpm icons`  | Renders the app and tray icons from their SVGs in `apps/desktop/resources/`.                                               |
+| Command | Does |
+| --- | --- |
+| `pnpm dev` | Runs the desktop app: it scans this machine and the forges and shows the aviary. Its data lives in `~/.local/share/perch-dev` and its config in `~/.config/perch-dev/config.toml`, so it runs beside the installed app. |
+| `pnpm design` | Serves the design site at http://localhost:5174, every component in every state. |
+| `pnpm check` | Runs Biome, tsc, vitest and the build across the workspace. |
+| `pnpm scan` | Runs the same scan from the command line, into `.scan/raw/` and `.scan/snapshot.json`. |
+| `pnpm dist` | Builds the Linux AppImage into `apps/desktop/dist/`. |
+| `pnpm icons` | Renders the app and tray icons from their SVGs in `apps/desktop/resources/`. |
 
 How a bird looks in every state is in [docs/birds.md](docs/birds.md).
 

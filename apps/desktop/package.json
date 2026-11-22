@@ -10,7 +10,7 @@
   "main": "./out/main/index.js",
   "scripts": {
     "postinstall": "install-electron",
-    "dev": "electron-vite dev",
+    "dev": "PERCH_DATA_DIR=$HOME/.local/share/perch-dev PERCH_CONFIG=$HOME/.config/perch-dev/config.toml electron-vite dev",
     "build": "electron-vite build",
     "dist": "electron-vite build && electron-builder --linux --publish never",
     "icons": "node scripts/render-icons.ts",

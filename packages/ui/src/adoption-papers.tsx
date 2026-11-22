@@ -31,7 +31,7 @@ const linkClass =
   "cursor-pointer p-0 font-body text-[13px] text-paper-quiet underline hover:text-paper-head focus-visible:outline-2 focus-visible:outline-paper-head";
 
 const keyClass =
-  "cursor-pointer rounded-[9px] bg-key px-4 py-2.5 font-body font-bold text-[13.5px] text-ink hover:bg-key-hi focus-visible:outline-2 focus-visible:outline-paper-head focus-visible:outline-offset-2 disabled:cursor-default disabled:opacity-50 disabled:hover:bg-key";
+  "cursor-pointer rounded-[9px] bg-action px-4 py-2.5 font-body font-bold text-[13.5px] text-ink hover:bg-action-hi focus-visible:outline-2 focus-visible:outline-paper-head focus-visible:outline-offset-2 disabled:cursor-default disabled:opacity-50 disabled:hover:bg-action";
 
 /** The bird as it stands, facing left as on the board, small in the papers' corner. */
 function Portrait({ bird, now }: { bird: Bird; now: Date }) {

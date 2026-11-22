@@ -55,12 +55,12 @@ interface PlaceStyle {
 const styles: Record<SnoozePlace, PlaceStyle> = {
   bubble: {
     button:
-      "inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-key px-3 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-key-hi",
-    open: "bg-key-hi",
+      "inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-action px-3 py-2 font-body font-semibold text-[12.5px] text-ink hover:bg-action-hi",
+    open: "bg-action-hi",
     iconSize: 14,
-    card: "border-key-hi bg-key-strong",
-    item: "hover:bg-key-hi",
-    rule: "bg-key-hi",
+    card: "border-action-hi bg-action-strong",
+    item: "hover:bg-action-hi",
+    rule: "bg-action-hi",
   },
   page: {
     button:

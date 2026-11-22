@@ -146,7 +146,7 @@ export function DetailScenePage() {
           {
             name: "openPapers",
             type: "boolean",
-            what: "The papers unfold as the page opens, and again whenever it turns true: the bubble's adopt key leads here with it set.",
+            what: "The papers unfold as the page opens, and again whenever it turns true: the bubble's adopt action leads here with it set.",
           },
           {
             name: "arrivalChip",

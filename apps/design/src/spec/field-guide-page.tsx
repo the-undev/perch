@@ -278,7 +278,7 @@ export function FieldGuidePage() {
         </Specimen>
         <Specimen
           label="hello: on the fence"
-          rule="No chips, and the Adopt key beside the full story."
+          rule="No chips, and the Adopt action beside the full story."
         >
           <Plate phase="dusk">
             <SpeakingBird

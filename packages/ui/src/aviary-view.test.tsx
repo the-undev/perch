@@ -215,7 +215,7 @@ describe("the aviary view", () => {
     expect(screen.queryByRole("region", { name: "Perch says" })).toBeNull();
   });
 
-  it("hands back a fence bird's adopt key, closing its bubble, and gives an adopted bird none", () => {
+  it("hands back a fence bird's adopt action, closing its bubble, and gives an adopted bird none", () => {
     const { onAdopt } = show();
     const hello = mockBird("dev/odin/hello");
 
@@ -372,7 +372,7 @@ describe("the aviary view", () => {
       ["1 month", "2026-11-22"],
       ["Indefinitely", null],
     ])(
-      "snoozes a bird picked for %s until %s, closing the durations",
+      "snoozes a bird picked for %s until %s, closing the durations and the bubble",
       (duration, until) => {
         const { onSnooze } = show();
 
@@ -382,6 +382,7 @@ describe("the aviary view", () => {
 
         expect(onSnooze).toHaveBeenCalledWith("undev/skiff", until);
         expect(screen.queryByRole("menu")).toBeNull();
+        expect(screen.queryByRole("region", { name: "Skiff says" })).toBeNull();
       },
     );
 
@@ -404,6 +405,19 @@ describe("the aviary view", () => {
       fireEvent.click(screen.getByRole("button", { name: "Wake" }));
 
       expect(onWake).toHaveBeenCalledWith("undev/skiff");
+      expect(screen.queryByRole("region", { name: "Skiff says" })).toBeNull();
+    });
+
+    it("leaves the bubble open while the durations open and fold with Escape", () => {
+      show();
+
+      fireEvent.click(birdButton("undev/skiff"));
+      fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+      expect(screen.getByRole("region", { name: "Skiff says" })).toBeTruthy();
+      fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+
+      expect(screen.queryByRole("menu")).toBeNull();
+      expect(screen.getByRole("region", { name: "Skiff says" })).toBeTruthy();
     });
 
     it("moves focus through the durations with the arrow keys, Home and End, and Escape returns it to the button", () => {

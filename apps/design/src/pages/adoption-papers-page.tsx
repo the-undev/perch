@@ -87,7 +87,7 @@ export function AdoptionPapersPage() {
       <Pressed text={pressed} />
       <Section
         title="On the bird's page"
-        rule="The papers rise as a sheet over the bird's record and paper panes, which dim to a quarter and go inert. The band above, with the heading, the verb and the roost, stays lit, but its controls rest: a press anywhere off the papers, the band included, folds them. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt key leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
+        rule="The papers rise as a sheet over the bird's record and paper panes, which dim to a quarter and go inert. The band above, with the heading, the verb and the roost, stays lit, but its controls rest: a press anywhere off the papers, the band included, folds them. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt action leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
         min={620}
       >
         <Specimen

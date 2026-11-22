@@ -181,7 +181,7 @@ const stripTallyY = stripWireY + 16;
 /** The most birds in the strip sit apart; a crowded tab squeezes them closer. */
 const stripGap = 175;
 
-/** The tally beneath the strip's name: the wire's moods, or how many sit on the fence. */
+/** The tally beneath the strip's name: the wire's state words, or how many sit on the fence. */
 function stripTally(tab: BirdTab, now: Date): string {
   return tab.kind === "fence"
     ? `${tab.birds.length} not adopted`

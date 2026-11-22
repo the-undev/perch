@@ -156,8 +156,9 @@ pass it down, as the aviary does.
 
 ## One map for the state word's colour
 
-The bubble's `stateWordTone` and the page heading's `stateTone` both map each
-state word to a colour, so a new state word must be added to both.
+The bubble's `stateWordTone` and `stateTone` in `bird.tsx`, read by the page
+heading and the header's totals, both map each state word to a colour, so a
+new state word must be added to both.
 
 ## Forget snoozes that have run out
 

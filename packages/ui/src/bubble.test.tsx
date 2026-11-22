@@ -112,7 +112,7 @@ describe("the bubble", () => {
     expect(onFullStory).toHaveBeenCalledOnce();
   });
 
-  it("draws each launch action's key with the icon the action carries", () => {
+  it("draws each launch action with the icon it carries", () => {
     const perch = mockBird("dev/perch");
     const { container: drawn } = render(<Icon name="edit" size={14} />);
     const editIcon = drawn.innerHTML;

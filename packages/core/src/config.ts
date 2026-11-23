@@ -124,20 +124,11 @@ export interface ForgejoSourceConfig extends GithubSourceConfig {
   baseUrl: string;
 }
 
-/** An Uptime Kuma status page, monitored as the server it names. */
-export interface KumaSourceConfig {
-  /** The server's name, which is also the source's identity. */
-  name: string;
-  baseUrl: string;
-  statusPage: string;
-}
-
 /** Every source config declares, each kind in the order configured. */
 export interface SourcesConfig {
   local: LocalSourceConfig[];
   github: GithubSourceConfig[];
   forgejo: ForgejoSourceConfig[];
-  kuma: KumaSourceConfig[];
 }
 
 export interface Config {
@@ -575,6 +566,7 @@ function checkDistinct<T>(
 
 function parseSources(document: Table, home: string): SourcesConfig {
   const sources = optionalTable(document, "sources", "");
+  // kuma tables are ignored: perch no longer reads an Uptime Kuma source.
   onlyKeys(sources, ["local", "github", "forgejo", "kuma"], "sources.");
   const paths = (card: Table, key: string, where: string) =>
     optionalStrings(card, key, where).map((path) => expandHome(path, home));
@@ -599,14 +591,6 @@ function parseSources(document: Table, home: string): SourcesConfig {
         baseUrl: string(card, "base_url", where),
       };
     }),
-    kuma: cards(sources, "kuma", (card, where) => {
-      onlyKeys(card, ["name", "base_url", "status_page"], where);
-      return {
-        name: string(card, "name", where),
-        baseUrl: string(card, "base_url", where),
-        statusPage: string(card, "status_page", where),
-      };
-    }),
   };
   checkDistinct(
     "github",
@@ -628,12 +612,6 @@ function parseSources(document: Table, home: string): SourcesConfig {
       (source) => `keyring key ${source.key}`,
     );
   }
-  checkDistinct(
-    "kuma",
-    parsed.kuma,
-    (source) => source.name,
-    (source) => `name ${source.name}`,
-  );
   return parsed;
 }
 

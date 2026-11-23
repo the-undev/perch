@@ -182,19 +182,6 @@ hosts = ["b.example.lan"]
     ]);
   });
 
-  it("runs no kuma source without a kuma table, and one over every table declared", async () => {
-    const { fetchJson } = emptyForges();
-    const kuma = (name: string) =>
-      `[[sources.kuma]]\nname = "${name}"\nbase_url = "http://kuma.invalid"\nstatus_page = "${name}"\n`;
-
-    expect(gatherSources(withSources(""), io(fetchJson)).kuma).toBeNull();
-    const data = await gatherSources(
-      withSources(kuma("one") + kuma("two")),
-      io(fetchJson),
-    ).kuma?.gather({});
-    expect(Object.keys(data ?? {})).toEqual(["one", "two"]);
-  });
-
   it("gathers nothing from a config with no sources", async () => {
     const { requests, fetchJson } = emptyForges();
     const config = parseConfig(

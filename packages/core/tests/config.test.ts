@@ -13,6 +13,7 @@ import {
   zellijActionOf,
   zellijSessionFor,
 } from "../src/config.ts";
+import { writeConfig } from "../src/config-write.ts";
 import { fixtureConfigText } from "./helpers/config.ts";
 
 const examplePath = join(
@@ -113,7 +114,6 @@ describe("example config", () => {
         baseUrl: "https://forge.example.lan",
       },
     ]);
-    expect(config.sources.kuma).toEqual([]);
     expect(config.window).toEqual({ tray: true });
   });
 
@@ -154,21 +154,6 @@ describe("example config", () => {
       check: false,
       install: true,
     });
-  });
-
-  it("parses its commented kuma source once uncommented", async () => {
-    const text = (await exampleText()).replace(
-      /^# (\[\[sources\.kuma\]\]|name = "Server"|base_url = |status_page = )/gm,
-      "$1",
-    );
-
-    expect(parseConfig(text, home).sources.kuma).toEqual([
-      {
-        name: "Server",
-        baseUrl: "http://kuma.example.lan:3001",
-        statusPage: "status",
-      },
-    ]);
   });
 
   it("parses its commented Obsidian and custom actions once uncommented, last on the bird", async () => {
@@ -634,11 +619,6 @@ base_url = "https://forge.example.lan"
 account = "someone"
 key = "forgejo-someone"
 hosts = ["forge.example.lan"]
-
-[[sources.kuma]]
-name = "Box"
-base_url = "http://kuma.example.lan"
-status_page = "box"
 `),
       home,
     );
@@ -665,13 +645,6 @@ status_page = "box"
           baseUrl: "https://forge.example.lan",
         },
       ],
-      kuma: [
-        {
-          name: "Box",
-          baseUrl: "http://kuma.example.lan",
-          statusPage: "box",
-        },
-      ],
     });
   });
 
@@ -682,7 +655,6 @@ status_page = "box"
       local: [],
       github: [],
       forgejo: [],
-      kuma: [],
     });
   });
 
@@ -744,15 +716,14 @@ hosts = ["github-alias"]
     );
   });
 
-  it("refuses two kuma tables with one name", async () => {
+  it("loads a config that still declares kuma tables, ignoring them", async () => {
     const card =
       '[[sources.kuma]]\nname = "Box"\nbase_url = "http://k.lan"\nstatus_page = "p"\n';
 
-    const text = await withSources(card + card);
+    const config = parseConfig(await withSources(card + card), home);
 
-    expect(() => parseConfig(text, home)).toThrow(
-      "config: two sources.kuma tables name name Box; each may appear once",
-    );
+    expect(config.sources).toEqual({ local: [], github: [], forgejo: [] });
+    expect(writeConfig(config, home)).not.toContain("kuma");
   });
 
   it("names a key a source table may not hold", async () => {

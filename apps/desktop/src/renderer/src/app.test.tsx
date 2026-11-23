@@ -912,10 +912,10 @@ describe("the window", () => {
         form,
       );
 
-      const kuma = await screen.findByRole("region", {
-        name: "Uptime Kuma · Silo",
+      const newcomer = await screen.findByRole("region", {
+        name: "GitHub · newcomer",
       });
-      expect(within(kuma).getByText("never scanned yet")).toBeDefined();
+      expect(within(newcomer).getByText("never scanned yet")).toBeDefined();
       expect(
         within(
           screen.getByRole("region", { name: "GitHub · finch" }),

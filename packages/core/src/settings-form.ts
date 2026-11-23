@@ -214,7 +214,6 @@ function mapSourcePaths(
     })),
     github: sources.github.map(forge),
     forgejo: sources.forgejo.map(forge),
-    kuma: sources.kuma.map((source) => ({ ...source })),
   };
 }
 

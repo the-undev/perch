@@ -91,6 +91,12 @@ export const mockConfig: Config = {
         hosts: ["github.com", "github-work"],
         trackedForks: [],
       },
+      {
+        account: "newcomer",
+        key: "github-newcomer",
+        hosts: ["github.com"],
+        trackedForks: [],
+      },
     ],
     forgejo: [
       {
@@ -106,13 +112,6 @@ export const mockConfig: Config = {
         baseUrl: forgejoBase,
         hosts: ["forgejo", "forge-work", "forge.example.lan"],
         trackedForks: [],
-      },
-    ],
-    kuma: [
-      {
-        name: "Silo",
-        baseUrl: "http://forge.example.lan:3001",
-        statusPage: "perch",
       },
     ],
   },
@@ -1675,18 +1674,6 @@ const pergolaNotes: Item = {
   },
 };
 
-/** The server item, which waits for server monitoring and is not a bird. */
-const server: Item = {
-  id: "server:Silo",
-  name: "Silo",
-  kind: "server",
-  path: null,
-  liveSources: ["dockerContainers"],
-  presences: { local: null, forges: [] },
-  flags: [],
-  sources: {},
-};
-
 const items: Item[] = [
   dotfiles,
   hothouse,
@@ -1704,7 +1691,6 @@ const items: Item[] = [
   hello,
   obsidianTidy,
   pergolaNotes,
-  server,
 ];
 
 function listing(forgeName: ForgeName): Snapshot["forges"][ForgeName] {
@@ -1788,7 +1774,6 @@ export const mockSnapshot: Snapshot = {
       lastSucceededAt: "2026-10-22T08:45:00.000Z",
       durationMs: 10000,
     },
-    kuma: ok(90),
     roadmap: ok(60),
     github: ok(2400),
     forgejo: ok(700),
@@ -1808,15 +1793,15 @@ export const mockSnapshot: Snapshot = {
     },
     githubCard("finch", 5),
     githubCard("the-undev", 4),
-    forgejoCard("finch"),
-    forgejoCard("the-undev"),
-    // The raw kuma file holds nothing for Silo yet, which is why its item has no kuma data.
+    // Added to config since the last scan, so no raw file holds it yet.
     {
-      id: "kuma:Silo",
-      kind: "kuma",
-      label: "Silo",
+      id: "github:newcomer",
+      kind: "github",
+      label: "newcomer",
       result: { state: "never-scanned" },
     },
+    forgejoCard("finch"),
+    forgejoCard("the-undev"),
   ],
   items,
 };

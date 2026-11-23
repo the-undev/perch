@@ -168,7 +168,7 @@ export interface Bird {
   id: string;
   /** The display name from config, else the scanned name. */
   name: string;
-  kind: Exclude<ItemKind, "server">;
+  kind: ItemKind;
   adopted: boolean;
   /** Null on the fence. */
   wire: string | null;
@@ -447,7 +447,6 @@ const sourceLabel: Record<keyof ItemSourceData, string> = {
   roadmap: "roadmap",
   github: "GitHub",
   forgejo: "Forgejo",
-  kuma: "Uptime Kuma",
 };
 
 const flagText: Record<ItemFlagName, string> = {
@@ -483,12 +482,6 @@ function readable<T extends object>(
 ): T | null {
   if (value === undefined || "error" in value) return null;
   return value;
-}
-
-type BirdItem = Item & { kind: Exclude<ItemKind, "server"> };
-
-function isBirdItem(item: Item): item is BirdItem {
-  return item.kind !== "server";
 }
 
 /** The config entry an item resolves to, by its id and every presence reference it holds. */
@@ -1506,7 +1499,7 @@ function speechSubject(
 
 /** One bird, before it is placed: its position is set when the wire is ordered; paths show home as ~. */
 export function deriveBird(
-  item: BirdItem,
+  item: Item,
   config: Config,
   snoozes: Snoozes,
   scannedAt: Date,
@@ -1590,8 +1583,7 @@ function placed(birds: Bird[], compare: (a: Bird, b: Bird) => number): Bird[] {
 
 /**
  * The aviary from a snapshot, the config and the snoozes, paths under the home directory shown with ~. Every
- * configured wire appears, empty or not, in config order. The server item waits for server
- * monitoring and is not a bird. Every wire and the fence are ordered by name.
+ * configured wire appears, empty or not, in config order. Every wire and the fence are ordered by name.
  */
 export function deriveAviary(
   snapshot: Snapshot,
@@ -1600,9 +1592,9 @@ export function deriveAviary(
   home: string,
 ): Aviary {
   const scannedAt = new Date(snapshot.scannedAt);
-  const birds = snapshot.items
-    .filter(isBirdItem)
-    .map((item) => deriveBird(item, config, snoozes, scannedAt, home));
+  const birds = snapshot.items.map((item) =>
+    deriveBird(item, config, snoozes, scannedAt, home),
+  );
   return {
     scannedAt: snapshot.scannedAt,
     wires: config.wires.names.map((name) => ({

@@ -38,7 +38,6 @@ import { PhrasebookPage } from "./spec/phrasebook-page.tsx";
 import {
   ForgejoPage,
   GithubPage,
-  KumaPage,
   LocalGitPage,
   RoadmapsPage,
 } from "./spec/source-pages.tsx";
@@ -336,14 +335,6 @@ export const pages: DesignPage[] = [
     summary:
       "Data source: roadmap files parsed into headings and bullets, counted into work items.",
     component: RoadmapsPage,
-  },
-  {
-    slug: "source-uptime-kuma",
-    group: "spec",
-    title: "Uptime Kuma",
-    summary:
-      "Data source: the server's status page, gathered and derived, not shown until server monitoring.",
-    component: KumaPage,
   },
   {
     slug: "config",

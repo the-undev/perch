@@ -339,13 +339,12 @@ describe("the wires", () => {
     ]);
   });
 
-  it("puts every unadopted bird on the fence by name, and leaves the server off the scene", async () => {
+  it("puts every unadopted bird on the fence by name", async () => {
     const config = await adoptAll(["dev/spool"]);
     const items = [
       settled,
       item("dev/photo-shuttle", { sources: { git: gitData({}) } }),
       item("dev/hello", { sources: { git: gitData({}) } }),
-      item("server", { kind: "server", path: null }),
     ];
     const aviary = deriveAviary(snapshotOf(items), config, {}, home);
 

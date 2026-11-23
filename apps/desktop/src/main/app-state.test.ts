@@ -198,9 +198,9 @@ describe("the app state", () => {
       ...mockSnapshot,
       sourceCards: [
         {
-          id: "kuma:Silo",
-          kind: "kuma",
-          label: "Silo",
+          id: "github:finch",
+          kind: "github",
+          label: "finch",
           result: {
             state: "ok",
             at: "2026-10-22T12:00:00.000Z",

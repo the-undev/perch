@@ -101,11 +101,6 @@ function sourcesTable(
       base_url: source.baseUrl,
       ...githubTable(source),
     })),
-    kuma: sources.kuma.map((source) => ({
-      name: source.name,
-      base_url: source.baseUrl,
-      status_page: source.statusPage,
-    })),
   };
   for (const [kind, list] of Object.entries(out)) {
     if ((list as unknown[]).length === 0) delete out[kind];

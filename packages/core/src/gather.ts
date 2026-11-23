@@ -11,10 +11,8 @@ import type {
 } from "./raw.ts";
 import type { PolledSource } from "./sources/source.ts";
 
-/** One polled source per name; kuma is null when config declares no kuma source. */
-export type PolledSources = {
-  [N in Exclude<PolledSourceName, "kuma">]: PolledSource<N>;
-} & { kuma: PolledSource<"kuma"> | null };
+/** One polled source per name. */
+export type PolledSources = { [N in PolledSourceName]: PolledSource<N> };
 
 /**
  * Collection rounds, run in order. Root collectors read config and the outside world; enrichers
@@ -23,7 +21,7 @@ export type PolledSources = {
  * run together.
  */
 export const gatherRounds: readonly (readonly PolledSourceName[])[] = [
-  ["local", "githubAccounts", "forgejoAccounts", "kuma"],
+  ["local", "githubAccounts", "forgejoAccounts"],
   ["github", "forgejo"],
   ["roadmap"],
 ];
@@ -115,10 +113,9 @@ export async function gather(deps: GatherDeps): Promise<StatusFile> {
   const earlier: Partial<RawFiles> = {};
   const sources: Partial<Record<PolledSourceName, SourceStatus>> = {};
   for (const configuredRound of gatherRounds) {
-    const round = configuredRound.filter((name) => deps.sources[name] !== null);
     const gathered: Partial<RawFiles> = {};
     const outcomes = await Promise.all(
-      round.map((name) =>
+      configuredRound.map((name) =>
         gatherSource(
           deps.sources[name] as PolledSource<typeof name>,
           earlier,
@@ -128,7 +125,7 @@ export async function gather(deps: GatherDeps): Promise<StatusFile> {
         ),
       ),
     );
-    round.forEach((name, index) => {
+    configuredRound.forEach((name, index) => {
       sources[name] = outcomes[index] as SourceStatus;
     });
     Object.assign(earlier, gathered);

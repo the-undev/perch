@@ -11,7 +11,6 @@ import {
 import {
   deriveForge,
   deriveGit,
-  deriveKuma,
   deriveRoadmap,
   deriveSourceCards,
   emptyRoadmap,
@@ -52,11 +51,6 @@ import type { LiveSource } from "./sources/source.ts";
 
 /** Any live source, whatever data it returns. */
 export type AnyLiveSource = LiveSource<LiveSourceName, unknown>;
-
-/** Id of the server item a kuma source monitors, by the source's name. */
-export function serverItemId(name: string): string {
-  return `server:${name}`;
-}
 
 const forgeNames: readonly ForgeName[] = ["github", "forgejo"];
 
@@ -356,28 +350,6 @@ export function aggregate(
       };
     },
   );
-  for (const card of config.sources.kuma) {
-    const id = serverItemId(card.name);
-    const { keys } = resolveEntry(config, id, []);
-    const kuma = fromEntry(
-      files.kuma?.data[card.name],
-      deriveKuma,
-      () => undefined,
-    );
-    resolved.push({
-      item: {
-        id,
-        name: card.name,
-        kind: "server",
-        path: null,
-        liveSources: [],
-        presences: { local: null, forges: [] },
-        flags: [],
-        sources: kuma === undefined ? {} : { kuma },
-      },
-      keys,
-    });
-  }
   const items = resolved.map(({ item }) => item);
   for (const item of items) {
     item.liveSources = input.liveSources

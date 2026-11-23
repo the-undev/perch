@@ -81,7 +81,7 @@ describe("excerpts of the real sources", () => {
   it("finds the real declarations in raw.ts and the gather's rounds", () => {
     expect(declaration(rawSource, "Tracking")).toContain("upstream-gone");
     expect(gatherRoundsFrom(gatherSource)).toEqual([
-      ["local", "githubAccounts", "forgejoAccounts", "kuma"],
+      ["local", "githubAccounts", "forgejoAccounts"],
       ["github", "forgejo"],
       ["roadmap"],
     ]);

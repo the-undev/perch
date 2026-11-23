@@ -290,32 +290,6 @@ const roadmaps: SourceSpec = {
   example: { itemId: "undev/Hollow-legacy", source: "roadmap" },
 };
 
-const kuma: SourceSpec = {
-  polled: ["kuma"],
-  reads: (
-    <p>
-      Each <Code>[[sources.kuma]]</Code> table&apos;s Uptime Kuma status page,{" "}
-      <Code>status_page</Code> at <Code>base_url</Code>: its monitor groups and
-      their heartbeats, keyed by the table&apos;s <Code>name</Code>. The gather
-      reads them on every scan, and the aggregate puts each on the server item
-      that name gives. The view model leaves the server off the scene until
-      server monitoring is picked up, so nothing it reads is shown; see the
-      roadmap&apos;s Server monitoring.
-    </p>
-  ),
-  moduleNames: [{ file: "src/sources/kuma.ts", names: ["createKumaSource"] }],
-  rawTypes: ["RawKuma", "RawMonitor", "RawHeartbeat"],
-  derives: (
-    <p>
-      Each monitor&apos;s status from its newest heartbeat, and whether the
-      server is all up: at least one monitor, every one of them up.
-    </p>
-  ),
-  derivations: ["deriveKuma"],
-  snapshotTypes: ["KumaData", "Monitor", "MonitorStatus"],
-  example: { itemId: "server:Silo", source: "kuma" },
-};
-
 export function LocalGitPage() {
   return <SourcePage spec={localGit} />;
 }
@@ -330,8 +304,4 @@ export function ForgejoPage() {
 
 export function RoadmapsPage() {
   return <SourcePage spec={roadmaps} />;
-}
-
-export function KumaPage() {
-  return <SourcePage spec={kuma} />;
 }

@@ -51,16 +51,6 @@ key = "forgejo-finch"
 hosts = ["forgejo"]
 tracked_forks = []
 
-[[sources.kuma]]
-name = "Silo"
-base_url = "http://kuma.invalid:3001"
-status_page = "perch"
-
-[[sources.kuma]]
-name = "Box"
-base_url = "http://kuma.invalid:3002"
-status_page = "box"
-
 [thresholds]
 unsafe_amber_hours = 12
 unsafe_red_hours = 48
@@ -158,7 +148,7 @@ describe("writeConfig", () => {
   it("writes every field back to an equal config", () => {
     const config = parseConfig(maximalText, home);
 
-    expect(config.sources.kuma).toHaveLength(2);
+    expect(config.sources.forgejo).toHaveLength(1);
     expect(config.items["forgejo:finch/hollow"]?.keyFiles).toEqual([]);
     expect(config.items["dev/perch"]?.criticalBugWords).toEqual([]);
     expect(config.work.bugWords).toEqual(["defect", "fault"]);
@@ -172,17 +162,17 @@ describe("writeConfig", () => {
 
   it("leaves out a source kind with no tables, and the sources table with none at all", () => {
     const config = parseConfig(maximalText, home);
-    const noKuma: Config = {
+    const noForgejo: Config = {
       ...config,
-      sources: { ...config.sources, kuma: [] },
+      sources: { ...config.sources, forgejo: [] },
     };
     const none: Config = {
       ...config,
-      sources: { local: [], github: [], forgejo: [], kuma: [] },
+      sources: { local: [], github: [], forgejo: [] },
     };
 
-    expect(writeConfig(noKuma, home)).not.toContain("sources.kuma");
-    expect(roundTrip(noKuma)).toEqual(noKuma);
+    expect(writeConfig(noForgejo, home)).not.toContain("sources.forgejo");
+    expect(roundTrip(noForgejo)).toEqual(noForgejo);
     expect(writeConfig(none, home)).not.toContain("sources");
     expect(roundTrip(none)).toEqual(none);
   });
@@ -201,9 +191,6 @@ describe("writeConfig", () => {
 
     expect(text.indexOf('account = "finch"')).toBeLessThan(
       text.indexOf('account = "the-undev"'),
-    );
-    expect(text).toContain(
-      '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://kuma.invalid:3001"\nstatus_page = "perch"\n\n[[sources.kuma]]\nname = "Box"',
     );
     expect(roundTrip(reversed)).toEqual(reversed);
   });

@@ -114,7 +114,6 @@ export function snapshotOf(items: Item[]): Snapshot {
       roadmap: ok,
       github: ok,
       forgejo: ok,
-      kuma: ok,
     },
     sourceCards: [],
     items,

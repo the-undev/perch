@@ -755,12 +755,12 @@ function fromVersion1(document: Table): Table {
     }
   }
   const { items, joins, sources, ...rest } = document;
-  const kept = isTable(sources)
+  const sourcesWithoutKuma = isTable(sources)
     ? Object.fromEntries(
         Object.entries(sources).filter(([kind]) => kind !== "kuma"),
       )
     : sources;
-  return { ...rest, sources: kept, papers: items, links: joins };
+  return { ...rest, sources: sourcesWithoutKuma, papers: items, links: joins };
 }
 
 /** The steps that take a document up one version, the step from version 1 first. */
@@ -793,11 +793,11 @@ export function parseVersionedConfig(
   text: string,
   home: string,
 ): VersionedConfig {
-  const read: Table = parse(text);
-  const fileVersion = versionOf(read);
+  const unmigrated: Table = parse(text);
+  const fileVersion = versionOf(unmigrated);
   const document = migrationSteps
     .slice(fileVersion - 1)
-    .reduce((current, step) => step(current), read);
+    .reduce((current, step) => step(current), unmigrated);
   return { config: validConfig(document, home), fileVersion };
 }
 

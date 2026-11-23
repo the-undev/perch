@@ -8,7 +8,7 @@ import {
   type WorkWords,
 } from "../src/config.ts";
 import {
-  countOpenItems,
+  countOpenWorkItems,
   deriveRoadmap,
   deriveRoadmapFile,
 } from "../src/derivations.ts";
@@ -76,12 +76,12 @@ describe("readRoadmapStructure", () => {
 
   it("collects bullets above the first heading separately", () => {
     const structure = readRoadmapStructure(
-      "- loose item\n\n## Next\n\n- grouped\n",
+      "- loose work item\n\n## Next\n\n- grouped\n",
     );
 
     expect(
       structure.bulletsBeforeFirstHeading.map((bullet) => bullet.text),
-    ).toEqual(["loose item"]);
+    ).toEqual(["loose work item"]);
     expect(structure.sections[0]?.bullets.map((bullet) => bullet.text)).toEqual(
       ["grouped"],
     );
@@ -92,27 +92,27 @@ function summary(file: RoadmapFile): unknown {
   const group = (entry: WorkItemGroup): unknown => [
     entry.heading,
     entry.role,
-    entry.items.map((item) => item.text),
+    entry.workItems.map((workItem) => workItem.text),
     entry.groups.map(group),
   ];
   return {
-    items: file.items.map((item) => item.text),
+    workItems: file.workItems.map((workItem) => workItem.text),
     groups: file.groups.map(group),
   };
 }
 
-function everyItem(file: RoadmapFile): WorkItem[] {
+function everyWorkItem(file: RoadmapFile): WorkItem[] {
   const walk = (group: WorkItemGroup): WorkItem[] => [
-    ...group.items,
+    ...group.workItems,
     ...group.groups.flatMap(walk),
   ];
-  return [...file.items, ...file.groups.flatMap(walk)];
+  return [...file.workItems, ...file.groups.flatMap(walk)];
 }
 
 describe("deriveRoadmapFile, per heading", () => {
-  it("makes bulleted headings groups, bare headings items, and sub-heading-only headings structure", () => {
+  it("makes bulleted headings groups, bare headings work items, and sub-heading-only headings structure", () => {
     expect(summary(parseFixture("mixed.md"))).toEqual({
-      items: [],
+      workItems: [],
       groups: [
         [
           "Roadmap",
@@ -144,8 +144,8 @@ describe("deriveRoadmapFile, per heading", () => {
   });
 
   it("gives a bare heading its prose as the body", () => {
-    const actions = everyItem(parseFixture("mixed.md")).find(
-      (item) => item.text === "Actions from tiles",
+    const actions = everyWorkItem(parseFixture("mixed.md")).find(
+      (workItem) => workItem.text === "Actions from tiles",
     );
 
     expect(actions).toMatchObject({
@@ -159,7 +159,7 @@ describe("deriveRoadmapFile, per heading", () => {
     const file = parseFixture("bullets.md");
 
     expect(summary(file)).toEqual({
-      items: [],
+      workItems: [],
       groups: [
         [
           "Documentation",
@@ -185,7 +185,7 @@ describe("deriveRoadmapFile, per heading", () => {
         ],
       ],
     });
-    expect(file.groups[0]?.items[0]).toMatchObject({
+    expect(file.groups[0]?.workItems[0]).toMatchObject({
       line: 7,
       done: false,
       source: "bullet",
@@ -193,8 +193,8 @@ describe("deriveRoadmapFile, per heading", () => {
   });
 
   it("ignores tag lines, nested bullets and fenced code", () => {
-    const texts = everyItem(parseFixture("bullets.md")).map(
-      (item) => item.text,
+    const texts = everyWorkItem(parseFixture("bullets.md")).map(
+      (workItem) => workItem.text,
     );
 
     expect(texts).not.toContain("not a bullet inside a fence");
@@ -203,7 +203,7 @@ describe("deriveRoadmapFile, per heading", () => {
 
   it("treats every heading the same way in a file without bullets", () => {
     expect(summary(parseFixture("headings-only.md"))).toEqual({
-      items: [],
+      workItems: [],
       groups: [
         [
           "Roadmap",
@@ -218,8 +218,8 @@ describe("deriveRoadmapFile, per heading", () => {
 
 describe("deriveRoadmapFile, plain bullets", () => {
   it("makes a heading with only plain bullets one task, the bullets its body", () => {
-    const monitoring = everyItem(parseFixture("plain-bullets.md")).find(
-      (item) => item.text === "Server monitoring",
+    const monitoring = everyWorkItem(parseFixture("plain-bullets.md")).find(
+      (workItem) => workItem.text === "Server monitoring",
     );
 
     expect(monitoring).toMatchObject({
@@ -236,7 +236,7 @@ describe("deriveRoadmapFile, plain bullets", () => {
     );
 
     expect(mixed?.role).toBe("group");
-    expect(mixed?.items.map((item) => item.text)).toEqual([
+    expect(mixed?.workItems.map((workItem) => workItem.text)).toEqual([
       "A task beside a note",
     ]);
   });
@@ -244,13 +244,13 @@ describe("deriveRoadmapFile, plain bullets", () => {
   it("ignores plain bullets above the first heading and under a heading with sub-headings", () => {
     const file = parseFixture("plain-bullets.md");
 
-    expect(file.items.map((item) => item.text)).toEqual([
+    expect(file.workItems.map((workItem) => workItem.text)).toEqual([
       "A loose task above the first heading",
       "Server monitoring",
     ]);
     expect(
       file.groups.find((group) => group.heading === "Structure"),
-    ).toMatchObject({ role: "structure", items: [] });
+    ).toMatchObject({ role: "structure", workItems: [] });
   });
 
   it("leaves a bug word in a plain bullet out of its heading task", () => {
@@ -262,15 +262,15 @@ describe("deriveRoadmapFile, plain bullets", () => {
   it("counts one task per heading in a file of bare headings and two note headings", () => {
     const file = parseFixture("reference-shape.md");
 
-    expect(everyItem(file)).toHaveLength(20);
+    expect(everyWorkItem(file)).toHaveLength(20);
     expect(file.counts).toEqual({ task: 20, bug: 0, "critical-bug": 0 });
   });
 });
 
-/** Each item's text against its kind. */
+/** Each work item's text against its kind. */
 function kindsIn(file: RoadmapFile): Record<string, string> {
   return Object.fromEntries(
-    everyItem(file).map((item) => [item.text, item.kind]),
+    everyWorkItem(file).map((workItem) => [workItem.text, workItem.kind]),
   );
 }
 
@@ -283,7 +283,7 @@ describe("deriveRoadmapFile kinds", () => {
     });
   });
 
-  it("makes a checklist item a bug from its own text", () => {
+  it("makes a checklist work item a bug from its own text", () => {
     expect(kindsIn(parseFixture("checklist.md"))).toEqual({
       "Fix crash on an empty config": "bug",
       "Port settings to TOML": "task",
@@ -292,7 +292,7 @@ describe("deriveRoadmapFile kinds", () => {
     });
   });
 
-  it("makes an item a critical bug from a heading above it, with no bug word needed", () => {
+  it("makes a work item a critical bug from a heading above it, with no bug word needed", () => {
     expect(kindsIn(parseFixture("hierarchy.md"))).toEqual({
       "Renew the signing key": "task",
       "Data loss when two devices save at once": "critical-bug",
@@ -378,8 +378,8 @@ describe("deriveRoadmapFile kinds", () => {
     });
   });
 
-  it("counts open items by kind across nested groups, leaving done ones out", () => {
-    expect(countOpenItems([parseFixture("hierarchy.md")])).toEqual({
+  it("counts open work items by kind across nested groups, leaving done ones out", () => {
+    expect(countOpenWorkItems([parseFixture("hierarchy.md")])).toEqual({
       task: 2,
       bug: 1,
       "critical-bug": 1,
@@ -396,15 +396,17 @@ describe("deriveRoadmapFile checkboxes", () => {
       ["Scanner PoC", { done: 2, total: 3 }],
       ["Mockups", { done: 0, total: 2 }],
     ]);
-    expect(epics[0]?.items.map((item) => [item.text, item.done])).toEqual([
+    expect(
+      epics[0]?.workItems.map((workItem) => [workItem.text, workItem.done]),
+    ).toEqual([
       ["Scaffold", true],
       ["Roadmap parser", true],
       ["Git source", false],
     ]);
   });
 
-  it("leaves done items out of the counts", () => {
-    expect(countOpenItems([parseFixture("epics.md")])).toEqual({
+  it("leaves done work items out of the counts", () => {
+    expect(countOpenWorkItems([parseFixture("epics.md")])).toEqual({
       task: 4,
       bug: 0,
       "critical-bug": 0,

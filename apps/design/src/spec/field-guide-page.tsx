@@ -41,8 +41,8 @@ const birdNotes: Note[] = [
   },
   {
     title: "Plumpness · outstanding work",
-    text: `Open roadmap items make a plumper bird, up to ${largestGrowth} per cent larger at ${plumpnessCap} items, so nobody bursts. Every wire bird starts from one size and a fence bird from a slightly smaller one; plumpness is the only thing that changes it. ${vault.name} carries ${vault.plumpness.outstanding} open items, past the cap.`,
-    rule: "Volume at a glance; the exact count is the bubble's open-items chip.",
+    text: `Open work items make a plumper bird, up to ${largestGrowth} per cent larger at ${plumpnessCap} work items, so nobody bursts. Every wire bird starts from one size and a fence bird from a slightly smaller one; plumpness is the only thing that changes it. ${vault.name} carries ${vault.plumpness.outstanding} open work items, past the cap.`,
+    rule: "Volume at a glance; the exact count is the bubble's open-work-items chip.",
   },
   {
     title: "♪ · being edited",
@@ -84,7 +84,7 @@ const bubbleNotes: Note[] = [
   },
   {
     title: "Chips · the numbers it carries",
-    text: "In a fixed order: can't read, CI, bugs, uncommitted, unpushed, stalled, pull requests, open items. A chip is plain when its fact is not judged, amber or red when it is. Each is a handle: pressed, it rides the camera to the bird's page and lands on the ledger row holding its working.",
+    text: "In a fixed order: can't read, CI, bugs, uncommitted, unpushed, stalled, pull requests, open work items. A chip is plain when its fact is not judged, amber or red when it is. Each is a handle: pressed, it rides the camera to the bird's page and lands on the ledger row holding its working.",
     rule: "A zero or an absent source shows no chip; a fence bird carries none.",
   },
   {

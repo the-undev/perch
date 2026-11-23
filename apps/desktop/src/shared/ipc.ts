@@ -82,12 +82,12 @@ export interface PerchApi {
   /** Wakes an adopted bird, as snooze writes. */
   wake(birdId: string): Promise<void>;
   /**
-   * Everything in config but the item entries, and the autostart entry, as the settings page edits
+   * Everything in config but the entity entries, and the autostart entry, as the settings page edits
    * them; null without config.
    */
   settingsForm(): Promise<SettingsForm | null>;
   /**
-   * Sets everything in config but the item entries, then writes or removes the autostart entry,
+   * Sets everything in config but the entity entries, then writes or removes the autostart entry,
    * then scans; a config that cannot be written writes nothing, and either failure arrives as a
    * problem in the state.
    */

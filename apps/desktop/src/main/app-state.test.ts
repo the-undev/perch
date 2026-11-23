@@ -506,11 +506,11 @@ describe("editing config entries", () => {
 
   /** The mock config with Perch's entry keyed by its GitHub reference instead of its id. */
   function forgeKeyed(): Config {
-    const { "dev/perch": perch, ...rest } = mockConfig.items;
+    const { "dev/perch": perch, ...rest } = mockConfig.entities;
     if (perch === undefined) throw new Error("the mock config has no Perch");
     return {
       ...mockConfig,
-      items: { ...rest, "github:finch/perch": perch },
+      entities: { ...rest, "github:finch/perch": perch },
     };
   }
 
@@ -549,10 +549,10 @@ describe("editing config entries", () => {
     });
 
     const config = await writtenConfig();
-    expect(Object.keys(config.items)).toEqual(
-      Object.keys(forgeKeyed().items).sort(),
+    expect(Object.keys(config.entities)).toEqual(
+      Object.keys(forgeKeyed().entities).sort(),
     );
-    expect(config.items["github:finch/perch"]).toMatchObject({
+    expect(config.entities["github:finch/perch"]).toMatchObject({
       name: "Perch",
       wire: "Machine & Home",
       thresholds: { stalled: { amberDays: 3 } },
@@ -566,7 +566,7 @@ describe("editing config entries", () => {
 
     await app.removeEntry("undev/spool");
 
-    expect((await writtenConfig()).items["undev/spool"]).toBeUndefined();
+    expect((await writtenConfig()).entities["undev/spool"]).toBeUndefined();
     expect(wireOf(published.at(-1)?.aviary, "undev/spool")).toBe("fence");
     expect(deps.requestScan).toHaveBeenCalledTimes(1);
   });
@@ -776,12 +776,16 @@ describe("snoozing birds", () => {
   });
 
   it("holds a snooze across a scan, a change in health and an edit to the bird's papers", async () => {
-    const prism = mockSnapshot.items.find((item) => item.id === "undev/prism");
+    const prism = mockSnapshot.entities.find(
+      (entity) => entity.id === "undev/prism",
+    );
     if (prism === undefined) throw new Error("the mock has no Prism");
     const failing: Snapshot = {
       ...mockSnapshot,
-      items: mockSnapshot.items.map((item) =>
-        item.id === "dev/perch" ? { ...item, sources: prism.sources } : item,
+      entities: mockSnapshot.entities.map((entity) =>
+        entity.id === "dev/perch"
+          ? { ...entity, sources: prism.sources }
+          : entity,
       ),
     };
     const { app, published } = onFiles({

@@ -81,7 +81,7 @@ export function ConfigPage() {
             table header; its comments say what each field asserts. Beside each
             table, what <Code>parseConfig(text, &quot;{home}&quot;)</Code> makes
             of it: snake case keys become the model&apos;s camel case, a leading{" "}
-            <Code>~</Code> expands, and an absent per-item field takes its
+            <Code>~</Code> expands, and an absent per-entity field takes its
             default.
           </p>
         </Prose>
@@ -111,7 +111,7 @@ export function ConfigPage() {
           file="src/config.ts"
           names={[
             "Config",
-            "ItemEntry",
+            "EntityEntry",
             "Thresholds",
             "ThresholdOverrides",
             "SourcesConfig",

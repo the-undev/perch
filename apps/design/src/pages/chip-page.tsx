@@ -29,7 +29,8 @@ const kindRule: Record<ChipModel["kind"], string> = {
   stalled:
     "The days since the last movement on a branch other than the default, once past the stall window: amber, then red. It lands on the branches section.",
   "pull-requests": "Open pull requests across forges. Not judged.",
-  "open-items": "Open roadmap items. Not judged: plumpness carries the volume.",
+  "open-work-items":
+    "Open work items. Not judged: plumpness carries the volume.",
 };
 
 function ChipRow({ list }: { list: ChipModel[] }) {
@@ -70,7 +71,7 @@ export function ChipPage() {
 
       <Section
         title="Kinds"
-        rule="Chips run in this order on a bubble: can't read, CI, bugs, uncommitted, unpushed, stalled, open pull requests, open items."
+        rule="Chips run in this order on a bubble: can't read, CI, bugs, uncommitted, unpushed, stalled, open pull requests, open work items."
         min={320}
       >
         {kinds.map((kind) => (

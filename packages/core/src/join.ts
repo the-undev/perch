@@ -10,7 +10,7 @@ import type {
 } from "./raw.ts";
 import { candidateRefs, forgeRef, localRef } from "./refs.ts";
 import { parseRemoteUrl, remoteUrls } from "./remote-url.ts";
-import type { ConfigConflict, ItemFlag } from "./snapshot.ts";
+import type { ConfigConflict, EntityFlag } from "./snapshot.ts";
 import { repoKey } from "./sources/forge.ts";
 
 export interface LocalInput {
@@ -50,7 +50,7 @@ export interface Project {
   refs: string[];
   local: LocalInput | null;
   forges: ForgeInput[];
-  flags: ItemFlag[];
+  flags: EntityFlag[];
 }
 
 export interface JoinInput {
@@ -100,7 +100,7 @@ function conflict(
  * - An asserted join merges the named presences' projects, unless a presence was not observed
  *   or the merge would put two local clones in one project. Either way the assertion loses and
  *   the conflict is recorded.
- * - An ignored presence's forge-only project leaves the item list. Ignoring a presence a local
+ * - An ignored presence's forge-only project leaves the entity list. Ignoring a presence a local
  *   clone uses, or one not observed, is a conflict.
  * - Joins and ignores name a presence by any of its references: a forge reference without case,
  *   `local:<id>`, or the bare local id.

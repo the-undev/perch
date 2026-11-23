@@ -1,6 +1,6 @@
 # Roadmap
 
-Work identified and not done. Each item has its own heading.
+Work identified and not done. Each work item has its own heading.
 
 ## First build
 

@@ -7,25 +7,25 @@
 // read, forges that couldn't be read at all and one whose pull requests alone couldn't be read,
 // the source cards every scan state, the Updates page every update state, and every kind of launch action, some overridden, the
 // Obsidian one on Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
-// numbered placeholder items, as many as each file's open counts, with roadmap files within
+// numbered placeholder work items, as many as each file's open counts, with roadmap files within
 // their bug windows, past amber on critical bugs, and past red on bugs.
 
 import {
   type Config,
   defaultBugThresholds,
-  type ItemEntry,
+  type EntityEntry,
   noThresholdOverrides,
 } from "./config.ts";
 import type { LoginEntry } from "./settings-form.ts";
 import type {
   CiRun,
+  Entity,
+  EntityError,
   FinalisedCommit,
   ForgeData,
   ForgeName,
   ForgePresence,
   GitData,
-  Item,
-  ItemError,
   LocalBranch,
   PullRequest,
   RoadmapData,
@@ -48,7 +48,7 @@ const dayWindows = { amberDays: 7, redDays: 30 };
 
 // Config
 
-function entry(fields: Partial<ItemEntry>): ItemEntry {
+function entry(fields: Partial<EntityEntry>): EntityEntry {
   return {
     wire: null,
     name: null,
@@ -123,7 +123,7 @@ export const mockConfig: Config = {
     ...defaultBugThresholds,
   },
   work: { bugWords: null, criticalBugWords: null },
-  items: {
+  entities: {
     ".dotfiles": entry({
       wire: "Machine & Home",
       name: "Dotfiles",
@@ -318,7 +318,7 @@ export const mockUpdates = {
   sourceRun: { ...updateBase, running: "0.3.0-dev", image: null },
 } satisfies Record<string, UpdateState>;
 
-// Snapshot builders: shape only, every value is written out per item below.
+// Snapshot builders: shape only, every value is written out per entity below.
 
 function repoUrl(forge: ForgeName, fullName: string): string {
   return forge === "github"
@@ -353,7 +353,7 @@ function forge(
   fullName: string,
   fields: {
     latestCi?: CiRun;
-    openPullRequests?: PullRequest[] | ItemError;
+    openPullRequests?: PullRequest[] | EntityError;
     finalisedCommits: FinalisedCommit[];
   },
 ): ForgeData {
@@ -376,8 +376,8 @@ function branch(
   return { name, lastCommitAt, subject, upstream };
 }
 
-/** Open placeholder items of one kind, numbered from the first line. */
-function openItems(kind: WorkItemKind, count: number): WorkItem[] {
+/** Open placeholder work items of one kind, numbered from the first line. */
+function openWorkItems(kind: WorkItemKind, count: number): WorkItem[] {
   return Array.from({ length: count }, (_, index) => ({
     text: `${kind.replace("-", " ")} ${index + 1}`,
     kind,
@@ -402,10 +402,10 @@ export function mockRoadmap(
     },
     files: files.map((file) => ({
       path: file.path,
-      items: [
-        ...openItems("task", file.task),
-        ...openItems("bug", file.bug),
-        ...openItems("critical-bug", file.criticalBug),
+      workItems: [
+        ...openWorkItems("task", file.task),
+        ...openWorkItems("bug", file.bug),
+        ...openWorkItems("critical-bug", file.criticalBug),
       ],
       groups: [],
       counts: {
@@ -431,15 +431,15 @@ const quietDrift: GitData["drift"] = {
   thresholds: unsafeWindows,
 };
 
-function localItem(
+function localEntity(
   id: string,
   fields: {
-    kind?: Item["kind"];
+    kind?: Entity["kind"];
     forges: ForgePresence[];
-    flags?: Item["flags"];
-    sources: Item["sources"];
+    flags?: Entity["flags"];
+    sources: Entity["sources"];
   },
-): Item {
+): Entity {
   const path = `${home}/${id}`;
   return {
     id,
@@ -452,7 +452,7 @@ function localItem(
   };
 }
 
-function notSetUp(include: string): Item["flags"] {
+function notSetUp(include: string): Entity["flags"] {
   return [
     {
       flag: "not-set-up",
@@ -465,7 +465,7 @@ function notSetUp(include: string): Item["flags"] {
 // The birds
 
 /** Restless: three commits on main local only for 50 hours, a fresh branch with no upstream, both forges in step. */
-const dotfiles = localItem(".dotfiles", {
+const dotfiles = localEntity(".dotfiles", {
   forges: [
     presence("github", "finch/dotfiles"),
     presence("forgejo", "finch/dotfiles"),
@@ -591,7 +591,7 @@ const dotfiles = localItem(".dotfiles", {
  * Restless and being edited: one critical bug in its garden plans, six changes uncommitted for
  * 30 hours, and a full roadmap whose tech plans hold one bug, within its window.
  */
-const hothouse = localItem("obsidian/Hothouse", {
+const hothouse = localEntity("obsidian/Hothouse", {
   kind: "obsidian",
   forges: [presence("forgejo", "finch/Hothouse", "account-listing")],
   sources: {
@@ -662,7 +662,7 @@ const hothouse = localItem("obsidian/Hothouse", {
 });
 
 /** Content, settled, with a backlog on offer. */
-const pocket = localItem("obsidian/Pocket", {
+const pocket = localEntity("obsidian/Pocket", {
   kind: "obsidian",
   forges: [presence("forgejo", "finch/Pocket", "account-listing")],
   sources: {
@@ -720,7 +720,7 @@ const pocket = localItem("obsidian/Pocket", {
 });
 
 /** Content and being edited on a fresh branch; CI passing on GitHub and pending on Forgejo, with no runner. */
-const perch = localItem("dev/perch", {
+const perch = localEntity("dev/perch", {
   forges: [
     presence("github", "finch/perch"),
     presence("forgejo", "finch/perch"),
@@ -860,7 +860,7 @@ const perch = localItem("dev/perch", {
 });
 
 /** Content and settled on two forges, neither running CI, Forgejo a commit behind GitHub. */
-const harbour = localItem("undev/harbour", {
+const harbour = localEntity("undev/harbour", {
   forges: [
     presence("github", "the-undev/harbour"),
     presence("forgejo", "the-undev/harbour"),
@@ -944,7 +944,7 @@ const harbour = localItem("undev/harbour", {
  * Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, and to Forgejo, read
  * fine; and parked on a feature branch for three weeks with everything pushed.
  */
-const skiff = localItem("undev/skiff", {
+const skiff = localEntity("undev/skiff", {
   forges: [
     {
       forge: "github",
@@ -1058,7 +1058,7 @@ const skiff = localItem("undev/skiff", {
  * Distressed: CI failing on Forgejo, four changes uncommitted for 60 hours, and GitHub's pull
  * requests not read while its CI and commits were.
  */
-const prism = localItem("undev/prism", {
+const prism = localEntity("undev/prism", {
   forges: [
     presence("github", "the-undev/prism"),
     presence("forgejo", "the-undev/prism"),
@@ -1177,7 +1177,7 @@ const prism = localItem("undev/prism", {
 });
 
 /** Distressed: twenty-three bugs open on the roadmap, past red. */
-const hollow = localItem("undev/Hollow-legacy", {
+const hollow = localEntity("undev/Hollow-legacy", {
   forges: [presence("github", "the-undev/Hollow")],
   sources: {
     git: {
@@ -1242,7 +1242,7 @@ const hollow = localItem("undev/Hollow-legacy", {
 });
 
 /** Content and settled on two forges, neither running CI, with a long backlog. */
-const oxbow = localItem("undev/oxbow", {
+const oxbow = localEntity("undev/oxbow", {
   forges: [
     presence("github", "the-undev/oxbow"),
     presence("forgejo", "the-undev/oxbow"),
@@ -1313,7 +1313,7 @@ const oxbow = localItem("undev/oxbow", {
 });
 
 /** Distressed and being edited: fourteen changes uncommitted for five days. */
-const gramophone = localItem("undev/gramophone", {
+const gramophone = localEntity("undev/gramophone", {
   forges: [presence("forgejo", "the-undev/gramophone")],
   sources: {
     git: {
@@ -1378,7 +1378,7 @@ const gramophone = localItem("undev/gramophone", {
 });
 
 /** Content and settled with every count a clean zero. */
-const spool = localItem("undev/spool", {
+const spool = localEntity("undev/spool", {
   forges: [presence("forgejo", "the-undev/spool")],
   sources: {
     git: {
@@ -1432,7 +1432,7 @@ const spool = localItem("undev/spool", {
 });
 
 /** Content and in flight on a branch with one fresh commit not yet pushed. */
-const glyphDocs = localItem("undev/glyph-docs", {
+const glyphDocs = localEntity("undev/glyph-docs", {
   kind: "obsidian",
   forges: [presence("forgejo", "the-undev/glyph-docs")],
   sources: {
@@ -1525,7 +1525,7 @@ const glyphDocs = localItem("undev/glyph-docs", {
 // The fence
 
 /** Found under an include directory, joined to two forges, not yet decided; neither forge's detail read. */
-const homeItConfig = localItem("dev/hearth-config", {
+const homeItConfig = localEntity("dev/hearth-config", {
   forges: [
     presence("github", "finch/hearth-config"),
     presence("forgejo", "finch/hearth-config"),
@@ -1588,7 +1588,7 @@ const homeItConfig = localItem("dev/hearth-config", {
 });
 
 /** Found with no remote at all: one disk only. */
-const hello = localItem("dev/odin/hello", {
+const hello = localEntity("dev/odin/hello", {
   flags: notSetUp(`${home}/dev`),
   forges: [],
   sources: {
@@ -1624,7 +1624,7 @@ const hello = localItem("dev/odin/hello", {
 });
 
 /** On a forge, never cloned here. */
-const obsidianTidy: Item = {
+const obsidianTidy: Entity = {
   id: "github:finch/obsidian-tidy",
   name: "obsidian-tidy",
   kind: "git",
@@ -1648,7 +1648,7 @@ const obsidianTidy: Item = {
 };
 
 /** Adopted while only on Forgejo: no clone here, so its slip says so and the meta line too. */
-const pergolaNotes: Item = {
+const pergolaNotes: Entity = {
   id: "forgejo:finch/field-notes",
   name: "field-notes",
   kind: "git",
@@ -1671,7 +1671,7 @@ const pergolaNotes: Item = {
   },
 };
 
-const items: Item[] = [
+const entities: Entity[] = [
   dotfiles,
   hothouse,
   pocket,
@@ -1692,8 +1692,8 @@ const items: Item[] = [
 
 function listing(forgeName: ForgeName): Snapshot["forges"][ForgeName] {
   return {
-    active: items.flatMap((item) =>
-      item.presences.forges.flatMap((entry) =>
+    active: entities.flatMap((entity) =>
+      entity.presences.forges.flatMap((entry) =>
         entry.forge !== forgeName || entry.url === null
           ? []
           : [
@@ -1701,7 +1701,7 @@ function listing(forgeName: ForgeName): Snapshot["forges"][ForgeName] {
                 ref: entry.ref,
                 fullName: entry.fullName,
                 url: entry.url,
-                itemId: item.id,
+                entityId: entity.id,
                 ignored: false,
               },
             ],
@@ -1714,7 +1714,7 @@ function listing(forgeName: ForgeName): Snapshot["forges"][ForgeName] {
               ref: "github:finch/antler",
               fullName: "finch/antler",
               url: "https://github.com/finch/antler",
-              itemId: null,
+              entityId: null,
               ignored: false,
             },
           ]
@@ -1800,7 +1800,7 @@ export const mockSnapshot: Snapshot = {
     forgejoCard("finch"),
     forgejoCard("the-undev"),
   ],
-  items,
+  entities,
 };
 
 /** The view model of the mock pair: every component state the design site renders. */

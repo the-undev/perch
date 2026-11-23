@@ -174,7 +174,7 @@ function WirePicker({
 }
 
 /**
- * A list of paths relative to the item, each once: each removable, one more added at the end.
+ * A list of paths relative to the entity, each once: each removable, one more added at the end.
  * Null keeps the defaults, which the list names; an empty list is none at all.
  */
 function PathList({

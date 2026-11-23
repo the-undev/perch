@@ -51,7 +51,7 @@ describe("the ledger", () => {
       ["uncommitted changes", "4", "amber"],
       ["unpushed commits", "none", "green"],
       ["bugs in docs/roadmap.md", "none", "green"],
-      ["open roadmap items", "78", "none"],
+      ["open work items", "78", "none"],
     ]);
   });
 
@@ -212,7 +212,7 @@ describe("the ledger's workings", () => {
     ]);
   });
 
-  it("spells out open items per roadmap file and unsafe work by its oldest", () => {
+  it("spells out open work items per roadmap file and unsafe work by its oldest", () => {
     const { container } = render(
       <Ledger
         onReveal={ignoreReveal}
@@ -223,7 +223,7 @@ describe("the ledger's workings", () => {
       />,
     );
 
-    expect(workings(container, "open-items")).toEqual([
+    expect(workings(container, "open-work-items")).toEqual([
       ["Tech/Tech Plans.md · 121 open", "none"],
       ["Garden/Garden Plans.md · 75 open", "none"],
     ]);
@@ -320,15 +320,15 @@ describe("a chip's landing", () => {
         quiet={null}
         entries={entries}
         now={now}
-        landing={{ chip: "open-items", press: 3 }}
+        landing={{ chip: "open-work-items", press: 3 }}
       />,
     );
     expect(
       container
         .querySelector('[data-part="landing"]')
         ?.parentElement?.getAttribute("data-chip"),
-    ).toBe("open-items");
-    expect(lit()).toEqual(["open-items"]);
+    ).toBe("open-work-items");
+    expect(lit()).toEqual(["open-work-items"]);
 
     rerender(
       <Ledger

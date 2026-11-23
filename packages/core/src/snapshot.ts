@@ -5,10 +5,10 @@ import type { FailureReason, ForgeName, PolledSourceName } from "./raw.ts";
 
 export type { FailureReason, ForgeName, PolledSourceName };
 
-export type ItemKind = "git" | "obsidian";
+export type EntityKind = "git" | "obsidian";
 
-/** Data a source could not read for one item, kept as data rather than failing the source. */
-export interface ItemError {
+/** Data a source could not read for one entity, kept as data rather than failing the source. */
+export interface EntityError {
   error: string;
 }
 
@@ -52,13 +52,13 @@ export interface DayThresholds {
   redDays: number;
 }
 
-/** Windows in open items: amber at or beyond the first count, red at or beyond the second. */
+/** Windows in open work items: amber at or beyond the first count, red at or beyond the second. */
 export interface CountThresholds {
   amberCount: number;
   redCount: number;
 }
 
-/** Unsafe work of one kind, aged from its oldest change and judged against the item's windows. */
+/** Unsafe work of one kind, aged from its oldest change and judged against the entity's windows. */
 export interface AgedWork {
   since: string;
   /** Whole hours from since to when git was read. */
@@ -132,12 +132,12 @@ export type WorkItemKind = "task" | "bug" | "critical-bug";
 export interface WorkItem {
   text: string;
   kind: WorkItemKind;
-  /** Null when the item carries no checkbox. */
+  /** Null when the work item carries no checkbox. */
   done: boolean | null;
   line: number;
   /** A bullet, or a bare heading whose prose is its body. */
   source: "bullet" | "heading";
-  /** The prose under a heading item; null for a bullet or a heading with no prose. */
+  /** The prose under a heading work item; null for a bullet or a heading with no prose. */
   body: string | null;
 }
 
@@ -152,21 +152,21 @@ export interface WorkItemGroup {
   line: number;
   /** A group has direct bullets; structure only holds sub-headings. */
   role: "group" | "structure";
-  items: WorkItem[];
+  workItems: WorkItem[];
   groups: WorkItemGroup[];
-  /** Checked against total checkbox items among the direct items, null without checkboxes. */
+  /** Checked against total checkbox work items among the direct work items, null without checkboxes. */
   progress: Progress | null;
 }
 
 export type WorkItemCounts = Record<WorkItemKind, number>;
 
 export interface RoadmapFile {
-  /** Path relative to the item. */
+  /** Path relative to the entity. */
   path: string;
   /** Bullets above the first heading and bare top-level headings. */
-  items: WorkItem[];
+  workItems: WorkItem[];
   groups: WorkItemGroup[];
-  /** Open items in this file by kind; done items are not counted. */
+  /** Open work items in this file by kind; done work items are not counted. */
   counts: WorkItemCounts;
 }
 
@@ -177,7 +177,7 @@ export interface BugThresholds {
 }
 
 export interface RoadmapData {
-  /** Open items by kind across every file; done items are not counted. */
+  /** Open work items by kind across every file; done work items are not counted. */
   counts: WorkItemCounts;
   files: RoadmapFile[];
   thresholds: BugThresholds;
@@ -214,18 +214,18 @@ export interface ForgeData {
   fullName: string;
   url: string;
   defaultBranch: string;
-  openPullRequests: PullRequest[] | ItemError;
+  openPullRequests: PullRequest[] | EntityError;
   /** Latest CI result on the default branch, null when there is none. */
-  latestCi: CiRun | null | ItemError;
+  latestCi: CiRun | null | EntityError;
   /** The newest commits on the forge's default branch: finalised work, against local work. */
-  finalisedCommits: FinalisedCommit[] | ItemError;
+  finalisedCommits: FinalisedCommit[] | EntityError;
 }
 
 /**
  * A forge repository perch could not read at all: no card covers its owner, a standing config gap,
  * or the read failed this scan.
  */
-export interface ForgeError extends ItemError {
+export interface ForgeError extends EntityError {
   cause: "no-card" | "read-failed";
 }
 
@@ -235,15 +235,15 @@ export interface FinalisedCommit {
   subject: string;
 }
 
-/** Derived data per source on an item. */
-export interface ItemSourceData {
-  git: GitData | ItemError;
-  roadmap: RoadmapData | ItemError;
+/** Derived data per source on an entity. */
+export interface EntitySourceData {
+  git: GitData | EntityError;
+  roadmap: RoadmapData | EntityError;
   github: ForgeData | ForgeError;
   forgejo: ForgeData | ForgeError;
 }
 
-export type ItemSources = Partial<ItemSourceData>;
+export type EntitySources = Partial<EntitySourceData>;
 
 export interface ForgePresence {
   forge: ForgeName;
@@ -266,29 +266,29 @@ export interface Presences {
   forges: ForgePresence[];
 }
 
-export type ItemFlagName =
+export type EntityFlagName =
   | "not-set-up"
   | "remote-archived"
   | "remote-joined-elsewhere"
   | "config-conflict";
 
-export interface ItemFlag {
-  flag: ItemFlagName;
+export interface EntityFlag {
+  flag: EntityFlagName;
   /** The health level the flag carries where one is decided, else null. */
   level: HealthLevel | null;
   detail: string;
 }
 
-export interface Item {
-  /** A local presence's id, or the first forge presence's reference for a forge-only item. */
+export interface Entity {
+  /** A local presence's id, or the first forge presence's reference for a forge-only entity. */
   id: string;
   name: string;
-  kind: ItemKind;
+  kind: EntityKind;
   /** Absolute path of the local clone, null without one. */
   path: string | null;
   presences: Presences;
-  flags: ItemFlag[];
-  sources: ItemSources;
+  flags: EntityFlag[];
+  sources: EntitySources;
 }
 
 /** A config assertion that the observations contradict; the observation won. */
@@ -301,8 +301,8 @@ export interface ForgeListingEntry {
   ref: string;
   fullName: string;
   url: string;
-  /** The item this presence belongs to, null when it is on no item. */
-  itemId: string | null;
+  /** The entity this presence belongs to, null when it is on no entity. */
+  entityId: string | null;
   ignored: boolean;
 }
 
@@ -357,12 +357,12 @@ export interface Snapshot {
   durationMs: number;
   aggregatedAt: string;
   configPath: string;
-  /** Problems outside any one item, such as a configured include path that does not exist. */
+  /** Problems outside any one entity, such as a configured include path that does not exist. */
   warnings: string[];
   conflicts: ConfigConflict[];
   forges: Record<ForgeName, ForgeListing>;
   sources: Partial<Record<PolledSourceName, SourceStatus>>;
   /** One per configured source table, in config order: local, github, forgejo. */
   sourceCards: SourceCard[];
-  items: Item[];
+  entities: Entity[];
 }

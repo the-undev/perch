@@ -2,10 +2,10 @@
 
 import type {
   AgedWork,
+  Entity,
   ForgeData,
   GitData,
   HealthLevel,
-  Item,
   Snapshot,
 } from "../../src/snapshot.ts";
 
@@ -72,8 +72,8 @@ export function forgeData(overrides: Partial<ForgeData>): ForgeData {
   };
 }
 
-/** An item with a local clone at /home/test/<id> and no sources unless given. */
-export function item(id: string, overrides: Partial<Item> = {}): Item {
+/** An entity with a local clone at /home/test/<id> and no sources unless given. */
+export function entity(id: string, overrides: Partial<Entity> = {}): Entity {
   const path = `/home/test/${id}`;
   return {
     id,
@@ -87,7 +87,7 @@ export function item(id: string, overrides: Partial<Item> = {}): Item {
   };
 }
 
-export function snapshotOf(items: Item[]): Snapshot {
+export function snapshotOf(entities: Entity[]): Snapshot {
   const ok = {
     state: "ok" as const,
     reason: null,
@@ -115,6 +115,6 @@ export function snapshotOf(items: Item[]): Snapshot {
       forgejo: ok,
     },
     sourceCards: [],
-    items,
+    entities,
   };
 }

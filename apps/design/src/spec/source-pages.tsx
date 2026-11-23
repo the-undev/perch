@@ -2,7 +2,7 @@
 // derives from them, each declaration excerpted from the repository and a mock value beside.
 
 import { mockSnapshot } from "@perch/core/mock.ts";
-import type { ItemSources } from "@perch/core/snapshot.ts";
+import type { EntitySources } from "@perch/core/snapshot.ts";
 import type { ReactNode } from "react";
 import { Code } from "../usage.tsx";
 import { type CoreFile, roundOf } from "./code.ts";
@@ -20,8 +20,8 @@ interface SourceSpec {
   derives: ReactNode;
   derivations: string[];
   snapshotTypes: string[];
-  /** One item's derived data for this source in the mock snapshot. */
-  example: { itemId: string; source: keyof ItemSources };
+  /** One entity's derived data for this source in the mock snapshot. */
+  example: { entityId: string; source: keyof EntitySources };
 }
 
 function roundWords(source: string): string {
@@ -29,10 +29,16 @@ function roundWords(source: string): string {
   return `${source}: round ${round}, ${round === 1 ? "a root collector" : "an enricher"}, written to .scan/raw/${source}.json`;
 }
 
-function mockSourceData(itemId: string, source: keyof ItemSources): unknown {
-  const item = mockSnapshot.items.find((candidate) => candidate.id === itemId);
-  if (item === undefined) throw new Error(`the mock has no item ${itemId}`);
-  return item.sources[source] ?? null;
+function mockSourceData(
+  entityId: string,
+  source: keyof EntitySources,
+): unknown {
+  const entity = mockSnapshot.entities.find(
+    (candidate) => candidate.id === entityId,
+  );
+  if (entity === undefined)
+    throw new Error(`the mock has no entity ${entityId}`);
+  return entity.sources[source] ?? null;
 }
 
 function SourcePage({ spec }: { spec: SourceSpec }) {
@@ -70,14 +76,14 @@ function SourcePage({ spec }: { spec: SourceSpec }) {
       <Part title="In the mock snapshot">
         <Prose>
           <p>
-            <Code>{spec.example.itemId}</Code>&apos;s{" "}
+            <Code>{spec.example.entityId}</Code>&apos;s{" "}
             <Code>sources.{spec.example.source}</Code>, from{" "}
             <Code>packages/core/src/mock.ts</Code>.
           </p>
         </Prose>
         <MockValue
-          title={`items["${spec.example.itemId}"].sources.${spec.example.source}`}
-          value={mockSourceData(spec.example.itemId, spec.example.source)}
+          title={`entities["${spec.example.entityId}"].sources.${spec.example.source}`}
+          value={mockSourceData(spec.example.entityId, spec.example.source)}
         />
       </Part>
     </>
@@ -121,9 +127,9 @@ const localGit: SourceSpec = {
     <p>
       Joining comes first: each clone is a presence, and its remote URLs join it
       to forge presences (<Code>joinPresences</Code> in <Code>src/join.ts</Code>
-      ). Then git data per item: the default branch, the work-state, unsafe work
-      aged in hours from its oldest change, and stalled flight aged in days. A
-      missing include path becomes a scene-wide warning.
+      ). Then git data per entity: the default branch, the work-state, unsafe
+      work aged in hours from its oldest change, and stalled flight aged in
+      days. A missing include path becomes a scene-wide warning.
     </p>
   ),
   derivations: [
@@ -143,7 +149,7 @@ const localGit: SourceSpec = {
     "LocalBranch",
     "Remote",
   ],
-  example: { itemId: "dev/perch", source: "git" },
+  example: { entityId: "dev/perch", source: "git" },
 };
 
 const forgeRawTypes = [
@@ -172,7 +178,7 @@ const forgeDerives = (
   <p>
     Each forge repository is a presence, joined to clones by their remote URLs
     and to other presences by config&apos;s <Code>links</Code>. Its details
-    become the item&apos;s forge data: open pull requests, the latest CI in
+    become the entity&apos;s forge data: open pull requests, the latest CI in
     Perch&apos;s own four states, and the finalised commits. Each is read by its
     own request, so one that fails is that part&apos;s error and the others
     stand. Archived repositories go to the forge&apos;s listing only, never the
@@ -209,7 +215,7 @@ const github: SourceSpec = {
   derives: forgeDerives,
   derivations: ["deriveForge", "githubCiState"],
   snapshotTypes: forgeSnapshotTypes,
-  example: { itemId: "dev/perch", source: "github" },
+  example: { entityId: "dev/perch", source: "github" },
 };
 
 const forgejo: SourceSpec = {
@@ -231,7 +237,7 @@ const forgejo: SourceSpec = {
   derives: forgeDerives,
   derivations: ["deriveForge", "forgejoCiState"],
   snapshotTypes: forgeSnapshotTypes,
-  example: { itemId: "undev/prism", source: "forgejo" },
+  example: { entityId: "undev/prism", source: "forgejo" },
 };
 
 const roadmaps: SourceSpec = {
@@ -268,7 +274,7 @@ const roadmaps: SourceSpec = {
       whole words from <Code>bug_words</Code> and{" "}
       <Code>critical_bug_words</Code> in its text, its tags and the headings
       above it, leaving out inline code and double-quoted text, and the open
-      items counted by kind. The counts feed the bird&apos;s plumpness, its
+      work items counted by kind. The counts feed the bird&apos;s plumpness, its
       chips and its ledger. Each file&apos;s open bugs and critical bugs are
       judged against their windows, and the worse level is a cause of the
       bird&apos;s health; tasks never are.
@@ -277,7 +283,7 @@ const roadmaps: SourceSpec = {
   derivations: [
     "deriveRoadmap",
     "deriveRoadmapFile",
-    "countOpenItems",
+    "countOpenWorkItems",
     "kindClassifier",
   ],
   snapshotTypes: [
@@ -287,7 +293,7 @@ const roadmaps: SourceSpec = {
     "WorkItem",
     "WorkItemCounts",
   ],
-  example: { itemId: "undev/Hollow-legacy", source: "roadmap" },
+  example: { entityId: "undev/Hollow-legacy", source: "roadmap" },
 };
 
 export function LocalGitPage() {

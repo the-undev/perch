@@ -165,7 +165,7 @@ describe("not set up", () => {
       new Date(gatheredAt),
     );
     const flags = Object.fromEntries(
-      snapshot.items.map((item) => [item.id, item.flags]),
+      snapshot.entities.map((entity) => [entity.id, entity.flags]),
     );
 
     expect(flags["dev/stray"]).toEqual([

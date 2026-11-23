@@ -241,10 +241,10 @@ describe("the window", () => {
 
   it("rides to a fence bird's page with its papers unfolded from its bubble's adopt action", async () => {
     const { router } = renderApp(idle(mockAviary), "/", undefined, (birdId) => {
-      const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-      return item === undefined
+      const entity = mockSnapshot.entities.find((entry) => entry.id === birdId);
+      return entity === undefined
         ? null
-        : entryFormFor(mockConfig, item, mockHome);
+        : entryFormFor(mockConfig, entity, mockHome);
     });
 
     fireEvent.click(await birdButton("dev/odin/hello"));
@@ -294,10 +294,12 @@ describe("the window", () => {
       "/bird/dev/perch?papers=true",
       undefined,
       (birdId) => {
-        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-        return item === undefined
+        const entity = mockSnapshot.entities.find(
+          (entry) => entry.id === birdId,
+        );
+        return entity === undefined
           ? null
-          : entryFormFor(mockConfig, item, mockHome);
+          : entryFormFor(mockConfig, entity, mockHome);
       },
     );
 
@@ -312,10 +314,12 @@ describe("the window", () => {
       "/bird/dev/perch",
       undefined,
       (birdId) => {
-        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-        return item === undefined
+        const entity = mockSnapshot.entities.find(
+          (entry) => entry.id === birdId,
+        );
+        return entity === undefined
           ? null
-          : entryFormFor(mockConfig, item, mockHome);
+          : entryFormFor(mockConfig, entity, mockHome);
       },
     );
     const verb = await screen.findByRole("button", { name: "The papers" });
@@ -508,10 +512,10 @@ describe("the window", () => {
       );
 
     function entryForms(birdId: string): EntryForm | null {
-      const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-      return item === undefined
+      const entity = mockSnapshot.entities.find((entry) => entry.id === birdId);
+      return entity === undefined
         ? null
-        : entryFormFor(mockConfig, item, mockHome);
+        : entryFormFor(mockConfig, entity, mockHome);
     }
 
     it("pans the ground to a wire-mate pressed in the strip, the page left keeping its key files, leaving one page once it settles", async () => {
@@ -598,16 +602,18 @@ describe("the window", () => {
     /** The config the fake main process holds, which a save changes as the real one would. */
     function configHolder() {
       let config: Config = mockConfig;
-      const item = (birdId: string) => {
-        const found = mockSnapshot.items.find((entry) => entry.id === birdId);
-        if (found === undefined) throw new Error(`no item ${birdId}`);
+      const entity = (birdId: string) => {
+        const found = mockSnapshot.entities.find(
+          (entry) => entry.id === birdId,
+        );
+        if (found === undefined) throw new Error(`no entity ${birdId}`);
         return found;
       };
       return {
         formFor: (birdId: string) =>
-          entryFormFor(config, item(birdId), mockHome),
+          entryFormFor(config, entity(birdId), mockHome),
         save: (birdId: string, values: EntryValues) => {
-          config = withEntry(config, item(birdId), values);
+          config = withEntry(config, entity(birdId), values);
           return idle(deriveAviary(mockSnapshot, config, {}, mockHome));
         },
       };
@@ -1107,8 +1113,12 @@ describe("the window", () => {
     it("gives open papers the wires the file now has", async () => {
       let config: Config = mockConfig;
       const formFor = (birdId: string) => {
-        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-        return item === undefined ? null : entryFormFor(config, item, mockHome);
+        const entity = mockSnapshot.entities.find(
+          (entry) => entry.id === birdId,
+        );
+        return entity === undefined
+          ? null
+          : entryFormFor(config, entity, mockHome);
       };
       const { fake } = renderApp(
         idle(mockAviary),

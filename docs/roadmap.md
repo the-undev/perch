@@ -1,6 +1,6 @@
 # Roadmap
 
-Work identified and not done. Remove items as they land.
+Work identified and not done. Remove work items as they land.
 
 ## Code to match the glossary
 
@@ -45,8 +45,8 @@ More types of bird, perhaps per project.
 
 A `.perch.toml` at a repository's root, meant to be checked in, holds what is
 true of the project on any machine: `key_files`, `roadmaps`, `bug_words`,
-`critical_bug_words` and the bug thresholds, with the same keys as an item
-entry. Precedence, each set value replacing the one below: the item entry in
+`critical_bug_words` and the bug thresholds, with the same keys as an entity
+entry. Precedence, each set value replacing the one below: the entity entry in
 the owner's config, then `.perch.toml`, then `[work]` and `[thresholds]`, then
 built in. Wires, names, sessions, launch actions and sources stay in the
 owner's config. A bird known only from a forge has no clone to read it from;
@@ -200,4 +200,4 @@ prints it and silencing it at the cause would leave the test output clean.
   app's. Whether runs from source get their own keyring service: TBD.
 
 - Whether "Waking a snoozed bird when a new cause appears" and "Custom end
-  dates", out of scope for snoozes, become roadmap items: TBD.
+  dates", out of scope for snoozes, become work items: TBD.

@@ -156,8 +156,8 @@ describe("writeConfig", () => {
     const config = parseConfig(maximalText, home);
 
     expect(config.sources.forgejo).toHaveLength(1);
-    expect(config.items["forgejo:finch/hollow"]?.keyFiles).toEqual([]);
-    expect(config.items["dev/perch"]?.criticalBugWords).toEqual([]);
+    expect(config.entities["forgejo:finch/hollow"]?.keyFiles).toEqual([]);
+    expect(config.entities["dev/perch"]?.criticalBugWords).toEqual([]);
     expect(config.work.bugWords).toEqual(["defect", "fault"]);
     expect(config.launch.actions.map((action) => action.kind)).toEqual([
       "vscode",
@@ -202,10 +202,10 @@ describe("writeConfig", () => {
     expect(roundTrip(reversed)).toEqual(reversed);
   });
 
-  it("writes a config with no item entries", async () => {
+  it("writes a config with no entity entries", async () => {
     const config: Config = {
       ...parseConfig(await exampleText(), home),
-      items: {},
+      entities: {},
     };
 
     expect(roundTrip(config)).toEqual(config);
@@ -218,7 +218,7 @@ describe("writeConfig", () => {
         [`${home}/undev`]: "undev",
         [`${home}/undev/tools`]: "tools",
       }),
-      items: Object.fromEntries(Object.entries(config.items).reverse()),
+      entities: Object.fromEntries(Object.entries(config.entities).reverse()),
     };
 
     const text = writeConfig(config, home);
@@ -278,9 +278,9 @@ describe("writeConfig", () => {
     expect(roundTrip(paths)).toEqual(paths);
   });
 
-  it("leaves out empty item and session tables, and the launch table with no actions", () => {
+  it("leaves out empty entity and session tables, and the launch table with no actions", () => {
     const config = parseConfig(maximalText, home);
-    const noSessions: Config = { ...withSessions(config, {}), items: {} };
+    const noSessions: Config = { ...withSessions(config, {}), entities: {} };
     const noActions: Config = { ...config, launch: { actions: [] } };
 
     const text = writeConfig(noSessions, home);

@@ -27,7 +27,7 @@ links = []
 # listing.
 ignore = []
 
-# The wires, top to bottom: the owner's priority bands. An adopted item
+# The wires, top to bottom: the owner's priority bands. An adopted entity
 # sits on the wire its papers name, else the default. Everything config does
 # not name sits on the fence beneath.
 [wires]
@@ -70,7 +70,7 @@ tracked_forks = []
 # change. Stalled flight: on a branch other than the default with no new commit,
 # ages in days. Open bugs and open critical bugs are counted in each roadmap
 # file on its own; left out, their windows are the values shown. Each is
-# overridable per item with the same keys.
+# overridable per entity with the same keys.
 [thresholds]
 unsafe_amber_hours = 24
 unsafe_red_hours = 72
@@ -81,12 +81,12 @@ stalled_red_days = 30
 # critical_bugs_amber_count = 1
 # critical_bugs_red_count = 3
 
-# Each roadmap item is a task, a bug or a critical bug. A word from
+# Each work item is a task, a bug or a critical bug. A word from
 # critical_bug_words makes a critical bug, else one from bug_words a bug,
-# matched as whole words in any case against the item's text, its #tags and
+# matched as whole words in any case against the work item's text, its #tags and
 # every heading above it. Words in inline code or double quotes are left out,
 # so a term can be mentioned. Only bugs move the bird. Each list is taken
-# whole from the item's papers, else from here, else the built-in list shown.
+# whole from the entity's papers, else from here, else the built-in list shown.
 # [work]
 # bug_words = ["bug", "bugs", "issue", "issues", "problem", "problems", "broken", "regression", "crash", "crashes", "p2", "p3", "p4"]
 # critical_bug_words = ["critical", "urgent", "severe", "blocker", "p0", "p1"]
@@ -104,7 +104,7 @@ finalised_commits = 10
 # Each table names its kind and only what differs from the kind's defaults:
 # its verb, the words on the bird's page, and its command, run without a
 # shell, detached from Perch. The placeholders in braces are filled in at
-# launch: {path} is the item's directory, and {obsidian} the Obsidian vault's
+# launch: {path} is the entity's directory, and {obsidian} the Obsidian vault's
 # folder name, encoded for a URI.
 #
 #   vscode    Open in VS Code    ["code", "{path}"]
@@ -119,8 +119,8 @@ finalised_commits = 10
 # The zellij kind, at most once, finds the session's tab named after the
 # project and goes to it, or opens one in the project's directory. A session
 # that is not running opens in its terminal command, with {session} and
-# {cwd}, the project's directory. The session is the item's own
-# zellij_session, else the session of the longest root holding the item in
+# {cwd}, the project's directory. The session is the entity's own
+# zellij_session, else the session of the longest root holding the entity in
 # [launch.actions.sessions], else its session. Its defaults:
 #
 #   verb      "Open the zellij tab"
@@ -173,10 +173,10 @@ kind = "folder"
 # check = false
 # install = true
 
-# Papers. An item's papers adopt the bird and put it on a wire. Their key
-# names any presence of the item: a local id, or a forge presence such as
+# Papers. An entity's papers adopt the bird and put it on a wire. Their key
+# names any presence of the entity: a local id, or a forge presence such as
 # "forgejo:owner/name", which still applies once a local clone joins it. When
-# two papers name one item, the one keyed by the item's id applies and the
+# two papers name one entity, the one keyed by the entity's id applies and the
 # clash is flagged. A repository found inside an include directory is flagged
 # as not set up until it has papers here, even empty ones.
 #

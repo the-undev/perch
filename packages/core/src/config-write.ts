@@ -10,8 +10,8 @@ import {
   defaultTray,
   defaultUpdateCheck,
   defaultUpdateInstall,
+  type EntityEntry,
   type GithubSourceConfig,
-  type ItemEntry,
   type LaunchActionConfig,
   type ThresholdOverrides,
   type Thresholds,
@@ -64,7 +64,7 @@ function wordsTable(words: WorkWordsConfig): Table {
   return out;
 }
 
-function entryTable(entry: ItemEntry): Table {
+function entryTable(entry: EntityEntry): Table {
   const out: Table = {};
   if (entry.wire !== null) out.wire = entry.wire;
   if (entry.name !== null) out.name = entry.name;
@@ -205,7 +205,7 @@ export function writeConfig(config: Config, home: string): string {
     }),
     papers: unlessEmpty(
       Object.fromEntries(
-        Object.entries(sortedByKey(config.items)).map(([key, entry]) => [
+        Object.entries(sortedByKey(config.entities)).map(([key, entry]) => [
           key,
           entryTable(entry),
         ]),

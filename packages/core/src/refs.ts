@@ -2,13 +2,13 @@
 // and the view model may import it.
 
 import type { ForgeName } from "./raw.ts";
-import type { Item } from "./snapshot.ts";
+import type { Entity } from "./snapshot.ts";
 
-/** Every presence reference an item holds: its local clone's, then its forges'. */
-export function itemRefs(item: Item): string[] {
+/** Every presence reference an entity holds: its local clone's, then its forges'. */
+export function entityRefs(entity: Entity): string[] {
   return [
-    ...(item.presences.local ? [item.presences.local.ref] : []),
-    ...item.presences.forges.map((presence) => presence.ref),
+    ...(entity.presences.local ? [entity.presences.local.ref] : []),
+    ...entity.presences.forges.map((presence) => presence.ref),
   ];
 }
 

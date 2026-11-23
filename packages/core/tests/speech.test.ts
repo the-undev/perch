@@ -21,7 +21,7 @@ function subject(overrides: Partial<SpeechSubject>): SpeechSubject {
     branch: "main",
     defaultBranch: "main",
     unpushedCount: 0,
-    openItems: 0,
+    openWorkItems: 0,
     lastTouchedHours: 30,
     ...overrides,
   };
@@ -108,17 +108,17 @@ describe("content birds are brief", () => {
   });
 
   it("being edited: acknowledges you, with the song", () => {
-    expect(speak(subject({ activity: "editing", openItems: 24 }))).toBe(
+    expect(speak(subject({ activity: "editing", openWorkItems: 24 }))).toBe(
       "We're in the middle of something. ♪",
     );
   });
 
-  it("settled with a backlog: offers the items", () => {
-    expect(speak(subject({ openItems: 12 }))).toBe(
-      "All settled, and twelve items on my roadmap when you want me.",
+  it("settled with a backlog: offers the work items", () => {
+    expect(speak(subject({ openWorkItems: 12 }))).toBe(
+      "All settled, and twelve work items on my roadmap when you want me.",
     );
-    expect(speak(subject({ openItems: 1 }))).toBe(
-      "All settled, and one item on my roadmap when you want me.",
+    expect(speak(subject({ openWorkItems: 1 }))).toBe(
+      "All settled, and one work item on my roadmap when you want me.",
     );
   });
 

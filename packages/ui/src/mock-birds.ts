@@ -50,12 +50,12 @@ export function mockBird(id: string): Bird {
   return bird;
 }
 
-/** One mock bird's entry form from the mock config; throws when the mock holds no such item. */
+/** One mock bird's entry form from the mock config; throws when the mock holds no such entity. */
 export function mockEntryForm(id: string): EntryForm {
-  const item = mockSnapshot.items.find((candidate) => candidate.id === id);
-  if (item === undefined)
-    throw new Error(`the mock snapshot has no item ${id}`);
-  return entryFormFor(mockConfig, item, mockHome);
+  const entity = mockSnapshot.entities.find((candidate) => candidate.id === id);
+  if (entity === undefined)
+    throw new Error(`the mock snapshot has no entity ${id}`);
+  return entryFormFor(mockConfig, entity, mockHome);
 }
 
 export { mockHome };

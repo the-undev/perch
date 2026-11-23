@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveEntry, thresholdsFor } from "../src/config.ts";
 import {
   configuredCards,
-  countOpenItems,
+  countOpenWorkItems,
   deriveActivity,
   deriveDrift,
   deriveStall,
@@ -29,12 +29,12 @@ describe("the mock dataset", () => {
 
   it("gives each bird the speech its own speech subject speaks", () => {
     for (const bird of birds) {
-      const item = mockSnapshot.items.find(
+      const entity = mockSnapshot.entities.find(
         (candidate) => candidate.id === bird.id,
       );
-      if (item === undefined) throw new Error(`no item ${bird.id}`);
+      if (entity === undefined) throw new Error(`no entity ${bird.id}`);
 
-      expect(speak(speechSubjectFor(item, mockConfig, scannedAt))).toBe(
+      expect(speak(speechSubjectFor(entity, mockConfig, scannedAt))).toBe(
         bird.bubble.speech,
       );
     }
@@ -152,7 +152,7 @@ describe("the mock dataset", () => {
         "unpushed",
         "stalled",
         "pull-requests",
-        "open-items",
+        "open-work-items",
       ]),
     );
     expect(chips).toContainEqual(
@@ -254,7 +254,7 @@ describe("the mock dataset", () => {
     }
   });
 
-  it("spells out two forges disagreeing on CI, a forge's part that couldn't be read, and open items over two roadmap files", () => {
+  it("spells out two forges disagreeing on CI, a forge's part that couldn't be read, and open work items over two roadmap files", () => {
     const rows = (label: string) =>
       adopted.flatMap((bird) =>
         bird.detail.ledger.flatMap((entry) =>
@@ -282,9 +282,9 @@ describe("the mock dataset", () => {
         ),
       ),
     ).toBe(true);
-    expect(
-      rows("open roadmap items").some((row) => row.workings.length > 1),
-    ).toBe(true);
+    expect(rows("open work items").some((row) => row.workings.length > 1)).toBe(
+      true,
+    );
   });
 
   it("holds a forge whose pull requests alone couldn't be read, its CI and commits shown", () => {
@@ -427,16 +427,17 @@ describe("the mock dataset", () => {
       new Set(["never-scanned", "ok", "ok-missing-include", "failed"]),
     );
     expect(cards.find((card) => card.kind === "local")?.result).toMatchObject({
-      count: mockSnapshot.items.filter((item) => item.presences.local !== null)
-        .length,
+      count: mockSnapshot.entities.filter(
+        (entity) => entity.presences.local !== null,
+      ).length,
     });
   });
 
   it("covers a bird whose roadmap is parsed because its entry lists it, and one whose standard file is only shown", () => {
     const rawEntry = (id: string) =>
-      mockConfig.items[id] ?? { roadmaps: undefined };
+      mockConfig.entities[id] ?? { roadmaps: undefined };
     const roadmapOfBird = (id: string) =>
-      mockSnapshot.items.find((item) => item.id === id)?.sources.roadmap;
+      mockSnapshot.entities.find((entity) => entity.id === id)?.sources.roadmap;
     const hollow = roadmapOfBird("undev/Hollow-legacy");
     const spool = roadmapOfBird("undev/spool");
 
@@ -457,28 +458,30 @@ describe("the mock dataset", () => {
   });
 
   it("agrees with the derivation rules wherever it states a judged value", () => {
-    for (const item of mockSnapshot.items) {
-      const entry = resolveEntry(mockConfig, item.id, [
-        ...(item.presences.local ? [item.presences.local.ref] : []),
-        ...item.presences.forges.map((presence) => presence.ref),
+    for (const entity of mockSnapshot.entities) {
+      const entry = resolveEntry(mockConfig, entity.id, [
+        ...(entity.presences.local ? [entity.presences.local.ref] : []),
+        ...entity.presences.forges.map((presence) => presence.ref),
       ]).entry;
       const thresholds = thresholdsFor(mockConfig, entry);
-      const roadmap = item.sources.roadmap;
+      const roadmap = entity.sources.roadmap;
       if (roadmap !== undefined && !("error" in roadmap)) {
-        expect(roadmap.counts, item.id).toEqual(countOpenItems(roadmap.files));
+        expect(roadmap.counts, entity.id).toEqual(
+          countOpenWorkItems(roadmap.files),
+        );
         for (const file of roadmap.files) {
-          expect(file.counts, `${item.id} ${file.path}`).toEqual(
-            countOpenItems([file]),
+          expect(file.counts, `${entity.id} ${file.path}`).toEqual(
+            countOpenWorkItems([file]),
           );
         }
-        expect(roadmap.thresholds, item.id).toEqual({
+        expect(roadmap.thresholds, entity.id).toEqual({
           bugs: thresholds.bugs,
           criticalBugs: thresholds.criticalBugs,
         });
       }
-      const git = item.sources.git;
+      const git = entity.sources.git;
       if (git === undefined || "error" in git) continue;
-      expect(git.drift, item.id).toEqual(
+      expect(git.drift, entity.id).toEqual(
         deriveDrift(
           {
             oldestUncommittedAt: git.oldestUncommittedAt,
@@ -492,9 +495,9 @@ describe("the mock dataset", () => {
         (branch) => branch.work.since,
       );
       if (unpushedSince.length > 0) {
-        expect(unpushedSince.sort()[0], item.id).toBe(git.oldestUnpushedAt);
+        expect(unpushedSince.sort()[0], entity.id).toBe(git.oldestUnpushedAt);
       }
-      expect(git.stall, item.id).toEqual(
+      expect(git.stall, entity.id).toEqual(
         deriveStall(
           {
             branch: git.branch,
@@ -514,11 +517,11 @@ describe("the mock dataset", () => {
           Date.parse(newestOnMain.committedAt),
           newestOnMain.subject,
         ],
-        item.id,
+        entity.id,
       ).toEqual(
         mainBranch && [Date.parse(mainBranch.lastCommitAt), mainBranch.subject],
       );
-      expect(git.activity, item.id).toBe(
+      expect(git.activity, entity.id).toBe(
         deriveActivity({
           uncommittedCount: git.uncommittedCount,
           unpushedCount: git.unpushedCount,

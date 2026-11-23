@@ -53,7 +53,7 @@ describe("launch actions", () => {
     ).toEqual(["code", "--new-window", "/a b"]);
   });
 
-  it("run a command action detached, its {path} the item's directory as it is", async () => {
+  it("run a command action detached, its {path} the entity's directory as it is", async () => {
     const { deps, run, spawnDetached } = recorder({});
 
     await launch(

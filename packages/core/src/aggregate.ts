@@ -1,8 +1,8 @@
 import { basename } from "node:path";
 import {
   type Config,
+  type EntityEntry,
   hostsOf,
-  type ItemEntry,
   type ResolvedEntry,
   resolveEntry,
   thresholdsFor,
@@ -37,12 +37,12 @@ import { forgeRef, localRef } from "./refs.ts";
 import type {
   Backup,
   ConfigConflict,
+  Entity,
+  EntityError,
+  EntitySources,
   ForgeData,
   ForgeError,
   ForgeListing,
-  Item,
-  ItemError,
-  ItemSources,
   Snapshot,
   SourceStatus,
 } from "./snapshot.ts";
@@ -81,9 +81,9 @@ export async function readRawBundle(store: RawStore): Promise<RawBundle> {
 /** Maps one raw entry: an error stays an error, absence maps through its own rule. */
 function fromEntry<T, R extends string, D>(
   entry: Entry<T, R> | undefined,
-  observed: (value: T) => D | ItemError,
+  observed: (value: T) => D | EntityError,
   absent: (reason: R) => D | undefined,
-): D | ItemError | undefined {
+): D | EntityError | undefined {
   if (entry === undefined) return undefined;
   if (entry.state === "error") return { error: entry.error };
   if (entry.state === "absent") return absent(entry.reason);
@@ -145,11 +145,11 @@ function backupOf(project: Project & { local: LocalInput }): Backup {
 
 function localSources(
   project: Project & { local: LocalInput },
-  entry: ItemEntry | null,
+  entry: EntityEntry | null,
   files: Partial<RawFiles>,
   config: Config,
-): ItemSources {
-  const sources: ItemSources = {};
+): EntitySources {
+  const sources: EntitySources = {};
   const { id, presence } = project.local;
   const observedAt = new Date(files.local?.gatheredAt ?? 0);
   const thresholds = thresholdsFor(config, entry);
@@ -176,7 +176,7 @@ function localSources(
   return sources;
 }
 
-/** A project's item id: the local id when a clone exists, else its first reference. */
+/** A project's entity id: the local id when a clone exists, else its first reference. */
 function projectId(project: Project): string {
   return project.local ? project.local.id : (project.refs[0] ?? "");
 }
@@ -219,7 +219,7 @@ export function joinRawFiles(
 export function localEntries(
   files: Partial<RawFiles>,
   config: Config,
-): Map<string, ItemEntry | null> {
+): Map<string, EntityEntry | null> {
   return new Map(
     joinRawFiles(files, config).projects.flatMap((project) =>
       project.local
@@ -229,16 +229,16 @@ export function localEntries(
   );
 }
 
-function itemFor(
+function entityFor(
   project: Project,
-  entry: ItemEntry | null,
+  entry: EntityEntry | null,
   files: Partial<RawFiles>,
   config: Config,
-): Item {
+): Entity {
   const local = project.local;
   const first = project.forges[0];
   const id = projectId(project);
-  const sources: ItemSources = local
+  const sources: EntitySources = local
     ? localSources({ ...project, local }, entry, files, config)
     : {};
   for (const forge of forgeNames) {
@@ -334,33 +334,33 @@ export function aggregate(
   const files = bundle.files;
   const join = joinRawFiles(files, config);
 
-  const resolved: { item: Item; keys: string[] }[] = join.projects.map(
+  const resolved: { entity: Entity; keys: string[] }[] = join.projects.map(
     (project) => {
       const { entry, keys } = entryOf(project, config);
       return {
-        item: itemFor(project, entry, files, config),
+        entity: entityFor(project, entry, files, config),
         keys,
       };
     },
   );
-  const items = resolved.map(({ item }) => item);
+  const entities = resolved.map(({ entity }) => entity);
 
   const conflicts: ConfigConflict[] = [...join.conflicts];
-  for (const { item, keys } of resolved) {
+  for (const { entity, keys } of resolved) {
     if (keys.length < 2) continue;
     const assertion = keys
       .map((key) => `papers.${JSON.stringify(key)}`)
       .join(", ");
-    const detail = `name one item, ${item.id}; papers.${JSON.stringify(keys[0])} applies`;
+    const detail = `name one entity, ${entity.id}; papers.${JSON.stringify(keys[0])} applies`;
     conflicts.push({ assertion, detail });
-    item.flags.push({
+    entity.flags.push({
       flag: "config-conflict",
       level: null,
       detail: `${assertion}: ${detail}`,
     });
   }
   const matched = new Set(resolved.flatMap(({ keys }) => keys));
-  for (const key of Object.keys(config.items)) {
+  for (const key of Object.keys(config.entities)) {
     if (matched.has(key)) continue;
     conflicts.push({
       assertion: `papers.${JSON.stringify(key)}`,
@@ -379,7 +379,7 @@ export function aggregate(
         ref,
         fullName: presence.repo.value.info.fullName,
         url: presence.repo.value.info.url,
-        itemId: project ? projectId(project) : null,
+        entityId: project ? projectId(project) : null,
         ignored: join.ignored.has(ref),
       });
     }
@@ -411,6 +411,6 @@ export function aggregate(
       previous: input.previous?.sourceCards ?? [],
       home: input.home,
     }),
-    items,
+    entities,
   };
 }

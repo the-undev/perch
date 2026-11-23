@@ -13,7 +13,7 @@ import {
   zellijActionOf,
   zellijSessionFor,
 } from "../src/config.ts";
-import { fixtureConfigText } from "./helpers/config.ts";
+import { fixtureConfigText, version1ConfigPath } from "./helpers/config.ts";
 
 const examplePath = join(
   import.meta.dirname,
@@ -386,6 +386,17 @@ describe("removed keys", () => {
     ).toThrow("config: items is not a config key");
     expect(() => parseConfig(`joins = []\n${version2}`, home)).toThrow(
       "config: joins is not a config key",
+    );
+  });
+
+  it("refuses papers and links by name in a version 1 file", async () => {
+    const version1 = await readFile(version1ConfigPath, "utf8");
+
+    expect(() =>
+      parseConfig(`${version1}\n[papers."dev/notes"]\n`, home),
+    ).toThrow("config: papers is not a version 1 config key");
+    expect(() => parseConfig(`links = []\n${version1}`, home)).toThrow(
+      "config: links is not a version 1 config key",
     );
   });
 

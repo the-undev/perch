@@ -749,6 +749,11 @@ export const configVersion = 2;
 
 /** Version 2 renamed [items] to [papers] and joins to links, and dropped [[sources.kuma]]. */
 function fromVersion1(document: Table): Table {
+  for (const key of ["papers", "links"]) {
+    if (key in document) {
+      throw new Error(`config: ${key} is not a version 1 config key`);
+    }
+  }
   const { items, joins, sources, ...rest } = document;
   const kept = isTable(sources)
     ? Object.fromEntries(

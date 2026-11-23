@@ -115,26 +115,13 @@ describe("the config store", () => {
 });
 
 /** A config written before config carried a version: [items] and joins. */
-const version1Text = `joins = [["github:finch/notes", "forgejo:finch/notes"]]
-ignore = []
-
-[wires]
-names = ["Projects"]
-default = "Projects"
-
-[thresholds]
-unsafe_amber_hours = 24
-unsafe_red_hours = 72
-stalled_amber_days = 7
-stalled_red_days = 30
-
-[scan]
-interval_minutes = 15
-finalised_commits = 10
-
-[items."dev/perch"]
-name = "Perch"
-`;
+const version1Text = await readFile(
+  join(
+    import.meta.dirname,
+    "../../../../packages/core/tests/fixtures/config-version1.toml",
+  ),
+  "utf8",
+);
 
 describe("migrating the config", () => {
   let dir: string;

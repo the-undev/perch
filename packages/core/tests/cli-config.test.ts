@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cliConfig } from "../src/cli/config.ts";
-import { fixtureConfigText } from "./helpers/config.ts";
+import { version1ConfigPath } from "./helpers/config.ts";
 
 let dir: string;
 
@@ -17,10 +17,7 @@ afterEach(async () => {
 describe("the command line scanner's config", () => {
   it("reads a version 1 file migrated in memory and leaves the file unchanged", async () => {
     const userPath = join(dir, "config.toml");
-    const version1 = (await fixtureConfigText('[papers."dev/perch"]\n'))
-      .replace("version = 2\n", "")
-      .replace("links = []", "joins = []")
-      .replace("[papers.", "[items.");
+    const version1 = await readFile(version1ConfigPath, "utf8");
     await writeFile(userPath, version1);
 
     const { config } = await cliConfig({ home: "/home/test", userPath });

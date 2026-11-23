@@ -15,13 +15,27 @@ use the older words below. Each is looked at on its own, then renamed.
 - "entry" becomes "papers".
 - "working" becomes "reading".
 - "river" becomes "history", and "spread" goes.
-- "in-progress" in the scanner becomes "in flight".
+- "activity" becomes "work state": "editing" becomes "uncommitted", "in flight"
+  and the scanner's "in-progress" become "committed", and "settled" becomes
+  "merged". Reaches the app text on the bird's page.
 - "window" in comments, config comments and the design site becomes
   "threshold".
 - `Drift` becomes unsafe work, and `Detail` the bird's page.
 - "parked" in code names and comments becomes "stalled" (`snapshot.ts`,
   `viewmodel.ts`, `derivations.ts`, `mock.ts`). The app text already says
   stalled.
+- "state word" becomes "state phrase" (`stateWord`, `stateWordTone`).
+- The sky legend, the header's totals and each wire's tally say "attention",
+  "drifting" and "settled". They become "distressed", "restless" and
+  "content".
+- The Uptime Kuma source and the server entity go, until server monitoring is
+  built. The migration drops a config's `[[sources.kuma]]` tables.
+
+## Branches that are not work under way
+
+A project on a release or dev branch is not unfinished work. Config would hold
+the branches that count as merged beside the default: a list, or a wildcard
+pattern. Which of the two is TBD.
 
 ## Bird Types
 
@@ -68,7 +82,7 @@ window. Raising another app's window on Plasma Wayland needs a KWin script or
 
 ## Tray icon status
 
-The tray icon could show the worst health colour across everything.
+The tray icon could show the worst level across everything.
 Snoozed birds are left out of it.
 
 ## Server monitoring
@@ -185,11 +199,5 @@ prints it and silencing it at the cause would leave the test output clean.
   saved on the settings page of a dev or isolated run replaces the installed
   app's. Whether runs from source get their own keyring service: TBD.
 
-- The glossary's Asleep says a bird "neither distressed nor being edited" is
-  asleep between midnight and 06:00, but every fence bird sleeps at night
-  whatever its health. Whether to reword it to match: TBD.
 - Whether "Waking a snoozed bird when a new cause appears" and "Custom end
   dates", out of scope for snoozes, become roadmap items: TBD.
-- The header's totals say "settled" for content birds, but the glossary's
-  Settled is an activity: neither editing nor in flight. Which word the count
-  uses: TBD.

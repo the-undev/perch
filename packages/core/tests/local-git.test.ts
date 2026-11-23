@@ -134,7 +134,7 @@ describe("local source", () => {
 
 describe("not set up", () => {
   it("flags red a repository found in an include directory that config does not know", async () => {
-    const config = await testConfig('[items."dev/known"]\n');
+    const config = await testConfig('[papers."dev/known"]\n');
     const files = rawFiles({
       includes: {
         "/home/test/dev": "directory",
@@ -172,7 +172,7 @@ describe("not set up", () => {
       {
         flag: "not-set-up",
         level: "red",
-        detail: "found under /home/test/dev with no entry in config items",
+        detail: "found under /home/test/dev with no papers in config",
       },
     ]);
     expect(flags["dev/known"]).toEqual([]);

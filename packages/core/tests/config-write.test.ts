@@ -17,7 +17,8 @@ async function exampleText(): Promise<string> {
 
 /** Every field config can hold, each set away from its default. */
 const maximalText = `
-joins = [["github:finch/notes", "forgejo:finch/notes"], ["local:dev/a", "github:finch/a"]]
+version = 2
+links = [["github:finch/notes", "forgejo:finch/notes"], ["local:dev/a", "github:finch/a"]]
 ignore = ["github:finch/scratch", "forgejo:the-undev/old"]
 
 [wires]
@@ -91,7 +92,7 @@ icon = "obsidian"
 [window]
 tray = false
 
-[items."dev/perch"]
+[papers."dev/perch"]
 wire = "Projects"
 name = "Perch"
 key_files = ["README.md", "docs/spec.md"]
@@ -104,13 +105,13 @@ unsafe_red_hours = 30
 stalled_amber_days = 2
 stalled_red_days = 40
 
-[items."forgejo:finch/hollow"]
+[papers."forgejo:finch/hollow"]
 stalled_red_days = 90
 bugs_red_count = 50
 key_files = []
 roadmaps = []
 
-[items.".dotfiles"]
+[papers.".dotfiles"]
 `;
 
 function roundTrip(config: Config): Config {
@@ -139,6 +140,12 @@ function writtenSessions(document: Record<string, unknown>): unknown {
 }
 
 describe("writeConfig", () => {
+  it("begins with version = 2", async () => {
+    const text = writeConfig(parseConfig(await exampleText(), home), home);
+
+    expect(text.startsWith("version = 2\n")).toBe(true);
+  });
+
   it("writes the example config back to an equal config", async () => {
     const config = parseConfig(await exampleText(), home);
 
@@ -278,7 +285,7 @@ describe("writeConfig", () => {
 
     const text = writeConfig(noSessions, home);
 
-    expect(text).not.toContain("[items]");
+    expect(text).not.toContain("[papers]");
     expect(text).not.toContain("sessions");
     expect(roundTrip(noSessions)).toEqual(noSessions);
     expect(writeConfig(noActions, home)).not.toContain("launch");

@@ -459,7 +459,7 @@ describe("the ledger's sections", () => {
 
     expect(rows(container)).toEqual([
       [
-        "found under /home/owner/dev with no entry in config items",
+        "found under /home/owner/dev with no papers in config",
         "not set up",
         "red",
       ],

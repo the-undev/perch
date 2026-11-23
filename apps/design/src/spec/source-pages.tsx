@@ -171,7 +171,7 @@ const forgeSnapshotTypes = [
 const forgeDerives = (
   <p>
     Each forge repository is a presence, joined to clones by their remote URLs
-    and to other presences by config&apos;s <Code>joins</Code>. Its details
+    and to other presences by config&apos;s <Code>links</Code>. Its details
     become the item&apos;s forge data: open pull requests, the latest CI in
     Perch&apos;s own four states, and the finalised commits. Each is read by its
     own request, so one that fails is that part&apos;s error and the others

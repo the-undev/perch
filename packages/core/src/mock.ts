@@ -457,7 +457,7 @@ function notSetUp(include: string): Item["flags"] {
     {
       flag: "not-set-up",
       level: "red",
-      detail: `found under ${include} with no entry in config items`,
+      detail: `found under ${include} with no papers in config`,
     },
   ];
 }

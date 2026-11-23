@@ -954,7 +954,7 @@ export function PresencesGroup({
   return (
     <SettingsGroup
       title="Joining up"
-      table="joins, ignore"
+      table="links, ignore"
       lead="A presence is local: and a path under the home directory, github:owner/name or forgejo:owner/name. A join is a list line: its presences in brackets, double-quoted."
     >
       <FormRow label="Joins" sub="Presences that are one project">

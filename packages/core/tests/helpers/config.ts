@@ -10,6 +10,14 @@ export const fixtureConfigPath = join(
   "config.toml",
 );
 
+/** A config written before config carried a version: [items] and joins. */
+export const version1ConfigPath = join(
+  import.meta.dirname,
+  "..",
+  "fixtures",
+  "config-version1.toml",
+);
+
 /** The fixture config's text with extra TOML, such as item entries, appended. */
 export async function fixtureConfigText(extra: string): Promise<string> {
   return `${await readFile(fixtureConfigPath, "utf8")}\n${extra}\n`;

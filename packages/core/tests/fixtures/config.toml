@@ -1,7 +1,8 @@
 # The config the scanner tests run against: every table set, values modelled on a real machine.
-# Tests append item entries and further sources to it.
+# Tests append papers and further sources to it.
 
-joins = []
+version = 2
+links = []
 ignore = []
 
 [wires]

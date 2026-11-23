@@ -268,7 +268,7 @@ export function FlagsPage() {
       >
         <Specimen
           label="Not set up"
-          rule="hello: found under an include path with no entry in config items."
+          rule="hello: found under an include path with no papers in config."
         >
           <Ground>
             <FlagLines flags={mockBird("dev/odin/hello").detail.flags} />

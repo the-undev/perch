@@ -38,7 +38,7 @@ import {
 const home = "/home/test";
 
 const adoptAll = (ids: string[], extra = "") =>
-  testConfig(`${ids.map((id) => `[items."${id}"]\n`).join("\n")}\n${extra}`);
+  testConfig(`${ids.map((id) => `[papers."${id}"]\n`).join("\n")}\n${extra}`);
 
 function birdIn(items: Item[], config: Config, id: string): Bird {
   const aviary = deriveAviary(snapshotOf(items), config, {}, home);
@@ -193,7 +193,7 @@ describe("mood", () => {
   });
 
   it("leaves green inputs out: fresh work and a young stall are content", async () => {
-    const config = await testConfig('[items."dev/gramophone"]\n');
+    const config = await testConfig('[papers."dev/gramophone"]\n');
     const young = item("dev/gramophone", {
       sources: {
         git: gitData({
@@ -330,7 +330,7 @@ describe("the wires", () => {
 
   it("puts a bird on the wire its entry names", async () => {
     const config = await testConfig(
-      '[items."dev/spool"]\nwire = "Machine & Home"\n',
+      '[papers."dev/spool"]\nwire = "Machine & Home"\n',
     );
     const aviary = deriveAviary(snapshotOf([settled]), config, {}, home);
 
@@ -365,7 +365,7 @@ describe("the wires", () => {
   });
 
   it("names the bird from config and fills it by outstanding work", async () => {
-    const config = await testConfig('[items."dev/spool"]\nname = "Spool"\n');
+    const config = await testConfig('[papers."dev/spool"]\nname = "Spool"\n');
     const busy = item("dev/spool", {
       sources: {
         git: gitData({}),
@@ -425,7 +425,7 @@ describe("the wires", () => {
 
 describe("chips", () => {
   it("carry real numbers in order, each with the severity of its fact", async () => {
-    const config = await testConfig('[items."dev/prism"]\n');
+    const config = await testConfig('[papers."dev/prism"]\n');
     const busy = item("dev/prism", {
       sources: {
         git: gitData({
@@ -486,7 +486,7 @@ describe("chips", () => {
   });
 
   it("wear a stalled chip at the stall's level, after unpushed, and none for a stall still green", async () => {
-    const config = await testConfig('[items."dev/prism"]\n');
+    const config = await testConfig('[papers."dev/prism"]\n');
     const parked = (days: number, level: "green" | "amber" | "red") =>
       item("dev/prism", {
         sources: {
@@ -703,7 +703,7 @@ describe("the ledger", () => {
   });
 
   it("states one disk only, and failing CI in red with its run", async () => {
-    const config = await testConfig('[items."dev/hello"]\n');
+    const config = await testConfig('[papers."dev/hello"]\n');
     const hello = item("dev/hello", {
       sources: {
         git: gitData({ backup: "local-only", lastCommitAt: null }),
@@ -1528,7 +1528,7 @@ describe("the detail", () => {
         flag: "config-conflict",
         level: null,
         detail:
-          'items."dev/perch", items."github:finch/perch": name one item, dev/perch; items."dev/perch" applies',
+          'papers."dev/perch", papers."github:finch/perch": name one item, dev/perch; papers."dev/perch" applies',
       },
     ],
     presences: {
@@ -1641,7 +1641,7 @@ describe("the detail", () => {
         flag: "config-conflict",
         text: "config conflict",
         detail:
-          'items."dev/perch", items."github:finch/perch": name one item, dev/perch; items."dev/perch" applies',
+          'papers."dev/perch", papers."github:finch/perch": name one item, dev/perch; papers."dev/perch" applies',
         level: null,
       },
     ]);
@@ -2004,7 +2004,7 @@ describe("the detail", () => {
   it("lists the README and roadmaps as key files, unless config names its own", async () => {
     const defaults = await adoptAll(["dev/perch"]);
     const own = await testConfig(
-      '[items."dev/perch"]\nkey_files = ["docs/spec.md"]\n',
+      '[papers."dev/perch"]\nkey_files = ["docs/spec.md"]\n',
     );
 
     expect(birdIn([perch], defaults, "dev/perch").detail.keyFiles).toEqual([
@@ -2063,7 +2063,7 @@ describe("the detail", () => {
 
   it("marks each bug's and critical bug's line on a roadmap file's paper, faint once done, and no other file", async () => {
     const own = await testConfig(
-      '[items."dev/perch"]\nkey_files = ["README.md", "docs/roadmap.md", "docs/plans.md"]\n',
+      '[papers."dev/perch"]\nkey_files = ["README.md", "docs/roadmap.md", "docs/plans.md"]\n',
     );
     const fixture = (path: string, name: string) =>
       deriveRoadmapFile(

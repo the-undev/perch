@@ -43,14 +43,9 @@ import type {
   Item,
   ItemError,
   ItemSources,
-  LiveSourceName,
   Snapshot,
   SourceStatus,
 } from "./snapshot.ts";
-import type { LiveSource } from "./sources/source.ts";
-
-/** Any live source, whatever data it returns. */
-export type AnyLiveSource = LiveSource<LiveSourceName, unknown>;
 
 const forgeNames: readonly ForgeName[] = ["github", "forgejo"];
 
@@ -65,7 +60,6 @@ export interface AggregateInput {
   configPath: string;
   /** The home directory, written as ~ in the source cards' paths. */
   home: string;
-  liveSources: readonly AnyLiveSource[];
   /** The previous snapshot, which carries each source card's last read; null for none. */
   previous: Snapshot | null;
 }
@@ -276,7 +270,6 @@ function itemFor(
         : id,
     kind: local?.presence.obsidian.folder ? "obsidian" : "git",
     path: local ? local.presence.path : null,
-    liveSources: [],
     presences: {
       local: local
         ? { ref: localRef(local.id), path: local.presence.path }
@@ -351,11 +344,6 @@ export function aggregate(
     },
   );
   const items = resolved.map(({ item }) => item);
-  for (const item of items) {
-    item.liveSources = input.liveSources
-      .filter((source) => source.appliesTo(item))
-      .map((source) => source.name);
-  }
 
   const conflicts: ConfigConflict[] = [...join.conflicts];
   for (const { item, keys } of resolved) {

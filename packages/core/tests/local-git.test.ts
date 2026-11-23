@@ -160,7 +160,6 @@ describe("not set up", () => {
         config,
         configPath: "c",
         home: "/home/test",
-        liveSources: [],
         previous: null,
       },
       new Date(gatheredAt),

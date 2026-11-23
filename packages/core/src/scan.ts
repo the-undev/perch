@@ -146,7 +146,6 @@ export async function runAggregate(run: AggregateRun): Promise<Snapshot> {
       config: run.config,
       configPath: run.configPath,
       home: run.home,
-      liveSources: [],
       previous,
     },
     run.now(),

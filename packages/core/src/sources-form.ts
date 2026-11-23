@@ -43,9 +43,13 @@ export const pickerKinds: readonly SourceKindWords[] = [
   },
 ];
 
+const kindNames = Object.fromEntries(
+  pickerKinds.map((words) => [words.kind, words.name]),
+) as Record<SourceCardKind, string>;
+
 /** A kind's name on the page. */
 export function kindName(kind: SourceCardKind): string {
-  return pickerKinds.find((words) => words.kind === kind)?.name ?? kind;
+  return kindNames[kind];
 }
 
 /** One configured source table and where it sits among its kind's tables. */

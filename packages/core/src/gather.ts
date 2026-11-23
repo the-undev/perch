@@ -112,12 +112,12 @@ export async function gather(deps: GatherDeps): Promise<StatusFile> {
   const previous = (await deps.store.read("status")) as StatusFile | null;
   const earlier: Partial<RawFiles> = {};
   const sources: Partial<Record<PolledSourceName, SourceStatus>> = {};
-  for (const configuredRound of gatherRounds) {
+  for (const round of gatherRounds) {
     const gathered: Partial<RawFiles> = {};
     const outcomes = await Promise.all(
-      configuredRound.map((name) =>
+      round.map((name) =>
         gatherSource(
-          deps.sources[name] as PolledSource<typeof name>,
+          deps.sources[name],
           earlier,
           gathered,
           previous?.sources[name],
@@ -125,7 +125,7 @@ export async function gather(deps: GatherDeps): Promise<StatusFile> {
         ),
       ),
     );
-    configuredRound.forEach((name, index) => {
+    round.forEach((name, index) => {
       sources[name] = outcomes[index] as SourceStatus;
     });
     Object.assign(earlier, gathered);

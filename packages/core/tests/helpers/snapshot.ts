@@ -80,7 +80,6 @@ export function item(id: string, overrides: Partial<Item> = {}): Item {
     name: id.slice(id.lastIndexOf("/") + 1),
     kind: "git",
     path,
-    liveSources: [],
     presences: { local: { ref: `local:${id}`, path }, forges: [] },
     flags: [],
     sources: {},

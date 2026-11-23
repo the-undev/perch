@@ -7,8 +7,6 @@ export type { FailureReason, ForgeName, PolledSourceName };
 
 export type ItemKind = "git" | "obsidian";
 
-export type LiveSourceName = "dockerContainers";
-
 /** Data a source could not read for one item, kept as data rather than failing the source. */
 export interface ItemError {
   error: string;
@@ -288,8 +286,6 @@ export interface Item {
   kind: ItemKind;
   /** Absolute path of the local clone, null without one. */
   path: string | null;
-  /** Live sources a detail view may fetch for this item; never part of the scan. */
-  liveSources: LiveSourceName[];
   presences: Presences;
   flags: ItemFlag[];
   sources: ItemSources;

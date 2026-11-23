@@ -446,7 +446,6 @@ function localItem(
     name: id.slice(id.lastIndexOf("/") + 1),
     kind: fields.kind ?? "git",
     path,
-    liveSources: [],
     presences: { local: { ref: `local:${id}`, path }, forges: fields.forges },
     flags: fields.flags ?? [],
     sources: fields.sources,
@@ -1630,7 +1629,6 @@ const obsidianTidy: Item = {
   name: "obsidian-tidy",
   kind: "git",
   path: null,
-  liveSources: [],
   presences: {
     local: null,
     forges: [presence("github", "finch/obsidian-tidy", "account-listing")],
@@ -1655,7 +1653,6 @@ const pergolaNotes: Item = {
   name: "field-notes",
   kind: "git",
   path: null,
-  liveSources: [],
   presences: {
     local: null,
     forges: [presence("forgejo", "finch/field-notes", "account-listing")],

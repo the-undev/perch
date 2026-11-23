@@ -600,7 +600,7 @@ describe("editing config entries", () => {
     const before = await written();
 
     await app.saveEntry("dev/nobody", emptyEntryValues());
-    await app.removeEntry("server");
+    await app.removeEntry("dev/nobody");
 
     expect(await written()).toBe(before);
     expect(deps.requestScan).not.toHaveBeenCalled();

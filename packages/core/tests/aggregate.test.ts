@@ -70,7 +70,6 @@ const input = {
   config,
   configPath: "config.toml",
   home: "/home/test",
-  liveSources: [],
   previous: null,
 };
 
@@ -78,9 +77,9 @@ describe("aggregate", () => {
   it("lists each project as an item, and the snapshot's times", () => {
     const snapshot = aggregate(bundle, input, new Date("2026-10-22T00:00:00Z"));
 
-    expect(
-      snapshot.items.map((item) => [item.id, item.kind, item.liveSources]),
-    ).toEqual([["dev/perch", "git", []]]);
+    expect(snapshot.items.map((item) => [item.id, item.kind])).toEqual([
+      ["dev/perch", "git"],
+    ]);
     expect(snapshot.scannedAt).toBe(gatheredAt);
     expect(snapshot.aggregatedAt).toBe("2026-10-22T00:00:00.000Z");
     expect(snapshot.warnings).toEqual([

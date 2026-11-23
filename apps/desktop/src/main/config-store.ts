@@ -25,8 +25,8 @@ export interface ConfigStoreDeps {
   readText: (path: string) => Promise<string | null>;
   /** Replaces a file's text in one step. */
   writeText: (path: string, text: string) => Promise<void>;
-  /** Copies a file's bytes to a new path. */
-  copyFile: (from: string, to: string) => Promise<void>;
+  /** Copies a file's bytes to a path that does not exist; rejects with code EEXIST when it does. */
+  copyToNewFile: (from: string, to: string) => Promise<void>;
 }
 
 export interface ConfigStore {
@@ -35,10 +35,25 @@ export interface ConfigStore {
   current(): ConfigState;
 }
 
-/**
- * Reads the config file, and writes a file of an older version back migrated, after copying it
- * beside itself as config.toml.v<old version>; null when the file does not exist.
- */
+function isExisting(error: unknown): boolean {
+  return error instanceof Error && "code" in error && error.code === "EEXIST";
+}
+
+/** Copies the config beside itself as config.toml.v<version>, or the first free config.toml.v<version>.<n>. */
+async function backUp(deps: ConfigStoreDeps, version: number): Promise<void> {
+  const firstPath = `${deps.path}.v${version}`;
+  for (let suffix = 0; ; suffix++) {
+    const backupPath = suffix === 0 ? firstPath : `${firstPath}.${suffix}`;
+    try {
+      await deps.copyToNewFile(deps.path, backupPath);
+      return;
+    } catch (error) {
+      if (!isExisting(error)) throw error;
+    }
+  }
+}
+
+/** Reads the config file, writing an older version back migrated after backing it up; null when there is no file. */
 async function readMigrating(
   deps: ConfigStoreDeps,
 ): Promise<LoadedConfig | null> {
@@ -46,7 +61,7 @@ async function readMigrating(
   if (text === null) return null;
   const { config, fileVersion } = parseVersionedConfig(text, deps.home);
   if (fileVersion < configVersion) {
-    await deps.copyFile(deps.path, `${deps.path}.v${fileVersion}`);
+    await backUp(deps, fileVersion);
     await deps.writeText(deps.path, writeConfig(config, deps.home));
   }
   return { config, path: deps.path };

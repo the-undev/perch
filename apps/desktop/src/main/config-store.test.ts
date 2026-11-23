@@ -1,16 +1,9 @@
-import {
-  copyFile,
-  mkdtemp,
-  readdir,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readTextIfExists } from "@perch/core/fs.ts";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { writeTextAtomic } from "./config-edit.ts";
+import { copyToNewFile, writeTextAtomic } from "./config-edit.ts";
 import { createConfigStore } from "./config-store.ts";
 
 const examplePath = join(
@@ -37,7 +30,10 @@ function storeOver(files: Map<string, string>) {
     writeText: async (path, text) => {
       files.set(path, text);
     },
-    copyFile: async (from, to) => {
+    copyToNewFile: async (from, to) => {
+      if (files.has(to)) {
+        throw Object.assign(new Error(`${to} exists`), { code: "EEXIST" });
+      }
       files.set(to, files.get(from) ?? "");
     },
   });
@@ -158,7 +154,7 @@ describe("migrating the config", () => {
       path: configPath,
       readText: readTextIfExists,
       writeText: writeTextAtomic,
-      copyFile,
+      copyToNewFile,
     });
 
   it("reads a version 1 file as version 2, writes it back, and keeps the old file as config.toml.v1", async () => {
@@ -176,6 +172,21 @@ describe("migrating the config", () => {
     );
     expect(written).not.toMatch(/items|joins/);
     expect(await readFile(join(dir, "config.toml.v1"), "utf8")).toBe(
+      version1Text,
+    );
+  });
+
+  it("keeps an earlier config.toml.v1 and copies the old file to config.toml.v1.1", async () => {
+    await writeFile(configPath, version1Text);
+    await writeFile(join(dir, "config.toml.v1"), "# an earlier copy\n");
+
+    const state = await storeOnDisk().reload();
+
+    expect(state.error).toBeNull();
+    expect(await readFile(join(dir, "config.toml.v1"), "utf8")).toBe(
+      "# an earlier copy\n",
+    );
+    expect(await readFile(join(dir, "config.toml.v1.1"), "utf8")).toBe(
       version1Text,
     );
   });

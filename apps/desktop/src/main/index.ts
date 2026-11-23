@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { copyFile, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { defaultTray } from "@perch/core/config.ts";
@@ -20,7 +20,11 @@ import {
   replaceFile,
 } from "./autostart.ts";
 import { handOver, parseArguments, startsHidden } from "./command-line.ts";
-import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
+import {
+  copyToNewFile,
+  editConfigFile,
+  writeTextAtomic,
+} from "./config-edit.ts";
 import { createConfigStore } from "./config-store.ts";
 import { createConfigWatch, rescanOnConfigChange } from "./config-watch.ts";
 import { isWebUrl } from "./external-links.ts";
@@ -131,7 +135,7 @@ function start(): void {
     path: paths.userConfigPath,
     readText: readTextIfExists,
     writeText: writeTextAtomic,
-    copyFile,
+    copyToNewFile,
   });
   const spawnDetached = createSpawnDetached(spawn, { cwd: home, env });
   const run = ([program, ...args]: string[]) =>

@@ -1,4 +1,4 @@
-import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -25,7 +25,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PerchState } from "../shared/ipc.ts";
 import { type AppStateDeps, createAppState } from "./app-state.ts";
 import { type Autostart, replaceFile } from "./autostart.ts";
-import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
+import {
+  copyToNewFile,
+  editConfigFile,
+  writeTextAtomic,
+} from "./config-edit.ts";
 import {
   type ConfigState,
   type ConfigStore,
@@ -477,7 +481,7 @@ describe("editing config entries", () => {
       readText: readTextIfExists,
       writeText: writeTextAtomic,
     };
-    const store = createConfigStore({ ...file, copyFile });
+    const store = createConfigStore({ ...file, copyToNewFile });
     return appState({
       config: store,
       editConfig: (edit) => editConfigFile(file, edit),
@@ -633,7 +637,7 @@ describe("snoozing birds", () => {
       writeText: writeTextAtomic,
     };
     return appState({
-      config: createConfigStore({ ...file, copyFile }),
+      config: createConfigStore({ ...file, copyToNewFile }),
       editConfig: (edit) => editConfigFile(file, edit),
       snoozes: createSnoozeStore({
         path: snoozesPath,
@@ -879,7 +883,7 @@ describe("the settings", () => {
     };
     const app = appState({
       autostart,
-      config: createConfigStore({ ...file, copyFile }),
+      config: createConfigStore({ ...file, copyToNewFile }),
       editConfig: (edit) => editConfigFile(file, edit),
     });
     await app.app.start();

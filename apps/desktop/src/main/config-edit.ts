@@ -1,4 +1,12 @@
-import { chmod, realpath, rename, stat, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import {
+  chmod,
+  copyFile,
+  realpath,
+  rename,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { type Config, parseConfig } from "@perch/core/config.ts";
 import { writeConfig } from "@perch/core/config-write.ts";
 
@@ -46,4 +54,9 @@ export async function writeTextAtomic(
   await writeFile(partPath, text);
   await chmod(partPath, mode & 0o7777);
   await rename(partPath, target);
+}
+
+/** Copies a file's bytes to a path that does not exist; rejects with code EEXIST when it does. */
+export async function copyToNewFile(from: string, to: string): Promise<void> {
+  await copyFile(from, to, constants.COPYFILE_EXCL);
 }

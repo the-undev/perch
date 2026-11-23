@@ -7,7 +7,12 @@ import {
   stat,
   writeFile,
 } from "node:fs/promises";
-import { type Config, parseConfig } from "@perch/core/config.ts";
+import {
+  type Config,
+  configVersion,
+  parseConfig,
+  parseVersionedConfig,
+} from "@perch/core/config.ts";
 import { writeConfig } from "@perch/core/config-write.ts";
 
 /** A change to config, made to a fresh read of the file. */
@@ -26,7 +31,8 @@ export interface ConfigFileDeps {
 
 /**
  * Reads the config file afresh, applies the edit and writes the result back; rejects, writing
- * nothing, when the file is missing, does not parse, or the edited config would not read back.
+ * nothing, when the file is missing, does not parse, is older than configVersion, or the edited
+ * config would not read back.
  */
 export async function editConfigFile(
   deps: ConfigFileDeps,
@@ -34,7 +40,13 @@ export async function editConfigFile(
 ): Promise<void> {
   const text = await deps.readText(deps.path);
   if (text === null) throw new Error(`${deps.path} does not exist`);
-  const next = writeConfig(edit(parseConfig(text, deps.home)), deps.home);
+  const { config, fileVersion } = parseVersionedConfig(text, deps.home);
+  if (fileVersion < configVersion) {
+    throw new Error(
+      `config: version ${fileVersion} is older than this perch edits, version ${configVersion}`,
+    );
+  }
+  const next = writeConfig(edit(config), deps.home);
   parseConfig(next, deps.home);
   await deps.writeText(deps.path, next);
 }

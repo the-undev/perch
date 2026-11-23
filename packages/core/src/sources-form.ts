@@ -5,7 +5,6 @@
 import type {
   ForgejoSourceConfig,
   GithubSourceConfig,
-  KumaSourceConfig,
   LocalSourceConfig,
   SourcesConfig,
 } from "./config.ts";
@@ -21,7 +20,7 @@ export interface SourceKindWords {
   needs: string;
 }
 
-/** The kinds the picker offers, in its order; Uptime Kuma waits for server monitoring. */
+/** The kinds the picker offers, in its order. */
 export const pickerKinds: readonly SourceKindWords[] = [
   {
     kind: "local",
@@ -44,30 +43,22 @@ export const pickerKinds: readonly SourceKindWords[] = [
   },
 ];
 
-/** Every kind of source perch can read: the picker's, then Uptime Kuma, which a config may still declare. */
-export const sourceKinds: readonly SourceKindWords[] = [
-  ...pickerKinds,
-  {
-    kind: "kuma",
-    name: "Uptime Kuma",
-    reads: "One server's monitors, shown as a single bird.",
-    needs: "needs an address",
-  },
-];
+const kindNames = Object.fromEntries(
+  pickerKinds.map((words) => [words.kind, words.name]),
+) as Record<SourceCardKind, string>;
 
 /** A kind's name on the page. */
 export function kindName(kind: SourceCardKind): string {
-  return sourceKinds.find((words) => words.kind === kind)?.name ?? kind;
+  return kindNames[kind];
 }
 
 /** One configured source table and where it sits among its kind's tables. */
 export type SourceCardValues =
   | { kind: "local"; index: number; source: LocalSourceConfig }
   | { kind: "github"; index: number; source: GithubSourceConfig }
-  | { kind: "forgejo"; index: number; source: ForgejoSourceConfig }
-  | { kind: "kuma"; index: number; source: KumaSourceConfig };
+  | { kind: "forgejo"; index: number; source: ForgejoSourceConfig };
 
-/** Every source table as a card, in config order: local, github, forgejo, then kuma. */
+/** Every source table as a card, in config order: local, github, forgejo. */
 export function sourceCardsOf(sources: SourcesConfig): SourceCardValues[] {
   return [
     ...sources.local.map(
@@ -82,9 +73,6 @@ export function sourceCardsOf(sources: SourcesConfig): SourceCardValues[] {
         index,
         source,
       }),
-    ),
-    ...sources.kuma.map(
-      (source, index): SourceCardValues => ({ kind: "kuma", index, source }),
     ),
   ];
 }
@@ -112,11 +100,6 @@ export function withSourceCard(
       return {
         ...sources,
         forgejo: replaced(sources.forgejo, card.index, card.source),
-      };
-    case "kuma":
-      return {
-        ...sources,
-        kuma: replaced(sources.kuma, card.index, card.source),
       };
   }
 }
@@ -176,11 +159,6 @@ export function withSourceAdded(
         ...sources,
         forgejo: [...sources.forgejo, { ...account, baseUrl: "" }],
       };
-    case "kuma":
-      return {
-        ...sources,
-        kuma: [...sources.kuma, { name: "", baseUrl: "", statusPage: "" }],
-      };
   }
 }
 
@@ -199,8 +177,6 @@ export function withSourceRemoved(
       return { ...sources, github: without(sources.github) };
     case "forgejo":
       return { ...sources, forgejo: without(sources.forgejo) };
-    case "kuma":
-      return { ...sources, kuma: without(sources.kuma) };
   }
 }
 
@@ -213,8 +189,6 @@ export function sourceCardId(card: SourceCardValues): string {
       return sourceCardIds.github(card.source);
     case "forgejo":
       return sourceCardIds.forgejo(card.source);
-    case "kuma":
-      return sourceCardIds.kuma(card.source);
   }
 }
 
@@ -229,8 +203,6 @@ export function sourceHeading(card: SourceCardValues): string {
         return card.source.account.trim();
       case "forgejo":
         return hostOf(card.source.baseUrl.trim());
-      case "kuma":
-        return card.source.name.trim();
     }
   })();
   return detail === "" ? name : `${name} · ${detail}`;
@@ -244,9 +216,7 @@ export type SourceField =
   | "key"
   | "hosts"
   | "trackedForks"
-  | "baseUrl"
-  | "name"
-  | "statusPage";
+  | "baseUrl";
 
 /** Each field's label on its card. */
 export const sourceFieldLabels: Record<SourceField, string> = {
@@ -257,8 +227,6 @@ export const sourceFieldLabels: Record<SourceField, string> = {
   hosts: "Hosts",
   trackedForks: "Tracked forks",
   baseUrl: "Base URL",
-  name: "Name",
-  statusPage: "Status page",
 };
 
 /** Why one field of one card cannot be written. */
@@ -375,20 +343,6 @@ export function sourceProblems(sources: SourcesConfig): SourceProblem[] {
         `another ${kindName(kind)} source uses this keyring key`,
       );
     }
-  }
-  sources.kuma.forEach((source, index) => {
-    const add = at("kuma", index);
-    add("name", isBlank(source.name) ? "needs a name" : null);
-    add("baseUrl", addressProblem(source.baseUrl));
-    add(
-      "statusPage",
-      isBlank(source.statusPage) ? "needs the status page's slug" : null,
-    );
-  });
-  for (const index of repeats(sources.kuma, (source) =>
-    isBlank(source.name) ? null : source.name,
-  )) {
-    at("kuma", index)("name", "another Uptime Kuma source has this name");
   }
   return problems;
 }

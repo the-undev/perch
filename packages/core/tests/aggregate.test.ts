@@ -9,7 +9,6 @@ import type {
   SourceCard,
   SourceCardResult,
 } from "../src/snapshot.ts";
-import { dockerContainersSource } from "../src/sources/docker-containers.ts";
 import { testConfig } from "./helpers/config.ts";
 import {
   forgeRepo,
@@ -21,7 +20,7 @@ import {
 } from "./helpers/raw.ts";
 
 const config = await testConfig(
-  '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://forge.example.lan:3001"\nstatus_page = "perch"\n\n[items."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\n',
+  '[items."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\n',
 );
 
 const files = rawFiles({
@@ -71,21 +70,16 @@ const input = {
   config,
   configPath: "config.toml",
   home: "/home/test",
-  liveSources: [dockerContainersSource],
   previous: null,
 };
 
 describe("aggregate", () => {
-  it("adds the server item from config, wiring live sources by kind", () => {
+  it("lists each project as an item, and the snapshot's times", () => {
     const snapshot = aggregate(bundle, input, new Date("2026-10-22T00:00:00Z"));
 
-    expect(
-      snapshot.items.map((item) => [item.id, item.kind, item.liveSources]),
-    ).toEqual([
-      ["dev/perch", "git", []],
-      ["server:Silo", "server", ["dockerContainers"]],
+    expect(snapshot.items.map((item) => [item.id, item.kind])).toEqual([
+      ["dev/perch", "git"],
     ]);
-    expect(snapshot.items[1]?.name).toBe("Silo");
     expect(snapshot.scannedAt).toBe(gatheredAt);
     expect(snapshot.aggregatedAt).toBe("2026-10-22T00:00:00.000Z");
     expect(snapshot.warnings).toEqual([
@@ -122,54 +116,6 @@ describe("aggregate", () => {
       ["obsidian/notes", "obsidian"],
       ["obsidian/plain", "git"],
     ]);
-  });
-
-  it("adds a server item per kuma source, each with its own status page", async () => {
-    const twoServers = await testConfig(
-      '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://kuma.invalid"\nstatus_page = "silo"\n\n[[sources.kuma]]\nname = "Box"\nbase_url = "http://kuma.invalid"\nstatus_page = "box"\n',
-    );
-    const withKuma: RawBundle = {
-      ...bundle,
-      files: {
-        ...files,
-        kuma: {
-          source: "kuma",
-          gatheredAt,
-          data: {
-            Silo: {
-              state: "observed",
-              value: { statusPage: "silo", monitors: [] },
-            },
-            Box: { state: "error", error: "HTTP 502" },
-          },
-        },
-      },
-    };
-
-    const servers = aggregate(
-      withKuma,
-      { ...input, config: twoServers },
-      new Date(),
-    ).items.filter((item) => item.kind === "server");
-
-    expect(
-      servers.map((item) => [item.id, item.name, item.sources.kuma]),
-    ).toEqual([
-      ["server:Silo", "Silo", { allUp: false, monitors: [] }],
-      ["server:Box", "Box", { error: "HTTP 502" }],
-    ]);
-  });
-
-  it("adds no server item when config has no kuma source", async () => {
-    const withoutServer = await testConfig("");
-
-    const snapshot = aggregate(
-      bundle,
-      { ...input, config: withoutServer },
-      new Date(),
-    );
-
-    expect(snapshot.items.map((item) => item.id)).toEqual(["dev/perch"]);
   });
 
   it("derives git data against the item's thresholds, as of when it was gathered", () => {
@@ -256,14 +202,6 @@ describe("aggregate", () => {
       durationMs: 3,
     });
     expect(snapshot.sources.local?.lastSucceededAt).toBe(gatheredAt);
-  });
-
-  it("returns not-implemented from the container list stub", async () => {
-    const server = aggregate(bundle, input, new Date()).items[1];
-
-    expect(server && (await dockerContainersSource.fetch(server))).toEqual({
-      state: "not-implemented",
-    });
   });
 
   it("keeps a forge the enricher could not read as a presence carrying its error", () => {
@@ -419,22 +357,6 @@ describe("source cards", () => {
         "forgejo-the-undev": listing("the-undev/notes", "the-undev/box"),
       },
     },
-    kuma: {
-      source: "kuma",
-      gatheredAt,
-      data: {
-        Silo: {
-          state: "observed",
-          value: {
-            statusPage: "perch",
-            monitors: [
-              { id: 1, name: "web", group: "", heartbeats: [] },
-              { id: 2, name: "db", group: "", heartbeats: [] },
-            ],
-          },
-        },
-      },
-    },
   };
   const cardBundle: RawBundle = { status: okStatus({}), files: cardFiles };
   const cardsOf = (
@@ -477,7 +399,6 @@ describe("source cards", () => {
         "forgejo",
         "the-undev@forge.example.lan:3000",
       ],
-      ["kuma:Silo", "kuma", "Silo"],
     ]);
   });
 
@@ -490,7 +411,6 @@ describe("source cards", () => {
     expect(resultOf(cards, "forgejo:the-undev@forge.example.lan:3000")).toEqual(
       ok(2),
     );
-    expect(resultOf(cards, "kuma:Silo")).toEqual(ok(2));
   });
 
   it("fails a forge card on its account's error, carrying its last read from the previous snapshot", () => {
@@ -514,26 +434,6 @@ describe("source cards", () => {
       state: "failed",
       message: "HTTP 401",
       lastSucceededAt: earlier,
-    });
-  });
-
-  it("fails a kuma card whose status page could not be read", () => {
-    const pageError: RawBundle = {
-      ...cardBundle,
-      files: {
-        ...cardFiles,
-        kuma: {
-          source: "kuma",
-          gatheredAt,
-          data: { Silo: { state: "error", error: "HTTP 502" } },
-        },
-      },
-    };
-
-    expect(resultOf(cardsOf(pageError, config), "kuma:Silo")).toEqual({
-      state: "failed",
-      message: "HTTP 502",
-      lastSucceededAt: null,
     });
   });
 
@@ -580,25 +480,27 @@ describe("source cards", () => {
 
   it("says never scanned for a card added since the last gather", async () => {
     const added = await testConfig(
-      '[[sources.local]]\ninclude = ["~/new"]\n\n[[sources.github]]\naccount = "newcomer"\nkey = "github-newcomer"\nhosts = ["github.com"]\n\n[[sources.kuma]]\nname = "Box"\nbase_url = "http://kuma.invalid"\nstatus_page = "box"\n',
+      '[[sources.local]]\ninclude = ["~/new"]\n\n[[sources.github]]\naccount = "newcomer"\nkey = "github-newcomer"\nhosts = ["github.com"]\n',
     );
 
     const cards = cardsOf(cardBundle, added);
 
-    for (const id of ["local:~/new", "github:newcomer", "kuma:Box"]) {
+    for (const id of ["local:~/new", "github:newcomer"]) {
       expect(resultOf(cards, id), id).toEqual({ state: "never-scanned" });
     }
     expect(resultOf(cards, "github:finch")).toEqual(ok(3));
   });
 
   it("says never scanned for a source the gather did not run", () => {
-    const { kuma: _kuma, ...sources } = okStatus({}).sources;
+    const { forgejoAccounts: _unrun, ...sources } = okStatus({}).sources;
     const unrun: RawBundle = {
       status: { ...okStatus({}), sources },
       files: cardFiles,
     };
 
-    expect(resultOf(cardsOf(unrun, config), "kuma:Silo")).toEqual({
+    expect(
+      resultOf(cardsOf(unrun, config), "forgejo:finch@forge.example.lan:3000"),
+    ).toEqual({
       state: "never-scanned",
     });
   });

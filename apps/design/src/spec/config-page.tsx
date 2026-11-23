@@ -118,7 +118,6 @@ export function ConfigPage() {
             "LocalSourceConfig",
             "GithubSourceConfig",
             "ForgejoSourceConfig",
-            "KumaSourceConfig",
           ]}
         />
         <FunctionTable file="src/config.ts" />

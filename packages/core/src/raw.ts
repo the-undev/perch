@@ -220,28 +220,6 @@ export interface RawForgeRepo {
   details: Entry<RawForgeDetails, "archived-slow-lane">;
 }
 
-// Uptime Kuma
-
-export interface RawHeartbeat {
-  /** Kuma's numeric status: 0 down, 1 up, 2 pending, 3 maintenance. */
-  status: number;
-  time: string;
-  message: string;
-}
-
-export interface RawMonitor {
-  id: number;
-  name: string;
-  group: string;
-  /** Heartbeats as the status page returns them. */
-  heartbeats: RawHeartbeat[];
-}
-
-export interface RawKuma {
-  statusPage: string;
-  monitors: RawMonitor[];
-}
-
 // Local presences
 
 export type IncludeKind = "repo" | "directory";
@@ -276,8 +254,6 @@ export interface RawData {
   /** Account listings keyed by their table's keyring key. */
   githubAccounts: Record<string, Entry<RawForgeAccount, never>>;
   forgejoAccounts: Record<string, Entry<RawForgeAccount, never>>;
-  /** Status pages keyed by their source's name. */
-  kuma: Record<string, Entry<RawKuma, never>>;
   roadmap: Record<string, Entry<RawRoadmap, "no-roadmap-file">>;
   /** Forge repositories keyed by lower-case owner/name. */
   github: Record<string, RawForgeEntry>;
@@ -311,6 +287,6 @@ export type SourceStatus =
 export interface StatusFile {
   gatheredAt: string;
   durationMs: number;
-  /** A source that did not run, such as kuma with no [[sources.kuma]] table, has no entry. */
+  /** A source that did not run has no entry. */
   sources: Partial<Record<PolledSourceName, SourceStatus>>;
 }

@@ -21,7 +21,6 @@ describe("the default config", () => {
       local: [],
       github: [],
       forgejo: [],
-      kuma: [],
     });
     expect(config.items).toEqual({});
     expect(config.wires).toEqual({ names: ["projects"], default: "projects" });

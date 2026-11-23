@@ -14,7 +14,7 @@ import {
 export function defaultConfig(): Config {
   return {
     wires: { names: ["projects"], default: "projects" },
-    sources: { local: [], github: [], forgejo: [], kuma: [] },
+    sources: { local: [], github: [], forgejo: [] },
     joins: [],
     ignore: [],
     thresholds: {

@@ -57,7 +57,7 @@ describe("the design site", () => {
       "SourcesJoining upWiresJudgementScanningLaunchingWindowUpdates",
     );
     expect(
-      screen.getAllByRole("region", { name: "Uptime Kuma · Silo" }),
+      screen.getAllByRole("region", { name: "GitHub · newcomer" }),
     ).toHaveLength(1);
   });
 

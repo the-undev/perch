@@ -198,9 +198,9 @@ describe("the app state", () => {
       ...mockSnapshot,
       sourceCards: [
         {
-          id: "kuma:Silo",
-          kind: "kuma",
-          label: "Silo",
+          id: "github:finch",
+          kind: "github",
+          label: "finch",
           result: {
             state: "ok",
             at: "2026-10-22T12:00:00.000Z",
@@ -600,7 +600,7 @@ describe("editing config entries", () => {
     const before = await written();
 
     await app.saveEntry("dev/nobody", emptyEntryValues());
-    await app.removeEntry("server");
+    await app.removeEntry("dev/nobody");
 
     expect(await written()).toBe(before);
     expect(deps.requestScan).not.toHaveBeenCalled();

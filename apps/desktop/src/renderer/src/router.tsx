@@ -72,7 +72,6 @@ const sourceCardKinds: readonly SourceCardKind[] = [
   "local",
   "github",
   "forgejo",
-  "kuma",
 ];
 
 /**

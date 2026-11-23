@@ -11,7 +11,6 @@ import {
 import {
   deriveForge,
   deriveGit,
-  deriveKuma,
   deriveRoadmap,
   deriveSourceCards,
   emptyRoadmap,
@@ -44,19 +43,9 @@ import type {
   Item,
   ItemError,
   ItemSources,
-  LiveSourceName,
   Snapshot,
   SourceStatus,
 } from "./snapshot.ts";
-import type { LiveSource } from "./sources/source.ts";
-
-/** Any live source, whatever data it returns. */
-export type AnyLiveSource = LiveSource<LiveSourceName, unknown>;
-
-/** Id of the server item a kuma source monitors, by the source's name. */
-export function serverItemId(name: string): string {
-  return `server:${name}`;
-}
 
 const forgeNames: readonly ForgeName[] = ["github", "forgejo"];
 
@@ -71,7 +60,6 @@ export interface AggregateInput {
   configPath: string;
   /** The home directory, written as ~ in the source cards' paths. */
   home: string;
-  liveSources: readonly AnyLiveSource[];
   /** The previous snapshot, which carries each source card's last read; null for none. */
   previous: Snapshot | null;
 }
@@ -282,7 +270,6 @@ function itemFor(
         : id,
     kind: local?.presence.obsidian.folder ? "obsidian" : "git",
     path: local ? local.presence.path : null,
-    liveSources: [],
     presences: {
       local: local
         ? { ref: localRef(local.id), path: local.presence.path }
@@ -356,34 +343,7 @@ export function aggregate(
       };
     },
   );
-  for (const card of config.sources.kuma) {
-    const id = serverItemId(card.name);
-    const { keys } = resolveEntry(config, id, []);
-    const kuma = fromEntry(
-      files.kuma?.data[card.name],
-      deriveKuma,
-      () => undefined,
-    );
-    resolved.push({
-      item: {
-        id,
-        name: card.name,
-        kind: "server",
-        path: null,
-        liveSources: [],
-        presences: { local: null, forges: [] },
-        flags: [],
-        sources: kuma === undefined ? {} : { kuma },
-      },
-      keys,
-    });
-  }
   const items = resolved.map(({ item }) => item);
-  for (const item of items) {
-    item.liveSources = input.liveSources
-      .filter((source) => source.appliesTo(item))
-      .map((source) => source.name);
-  }
 
   const conflicts: ConfigConflict[] = [...join.conflicts];
   for (const { item, keys } of resolved) {

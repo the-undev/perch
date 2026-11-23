@@ -12,7 +12,6 @@ import forge from "../../../../packages/core/src/sources/forge.ts?raw";
 import forgejo from "../../../../packages/core/src/sources/forgejo.ts?raw";
 import git from "../../../../packages/core/src/sources/git.ts?raw";
 import github from "../../../../packages/core/src/sources/github.ts?raw";
-import kuma from "../../../../packages/core/src/sources/kuma.ts?raw";
 import local from "../../../../packages/core/src/sources/local.ts?raw";
 import roadmap from "../../../../packages/core/src/sources/roadmap.ts?raw";
 import speech from "../../../../packages/core/src/speech.ts?raw";
@@ -36,7 +35,6 @@ export const coreFiles = {
   "src/sources/github.ts": github,
   "src/sources/forgejo.ts": forgejo,
   "src/sources/roadmap.ts": roadmap,
-  "src/sources/kuma.ts": kuma,
 } as const;
 
 export type CoreFile = keyof typeof coreFiles;

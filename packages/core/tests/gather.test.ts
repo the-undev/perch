@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { SourceFailure } from "../src/failure.ts";
@@ -57,12 +57,6 @@ function sources(overrides: Partial<PolledSources>): PolledSources {
     local: returning("local", localData),
     githubAccounts: returning("githubAccounts", {}),
     forgejoAccounts: returning("forgejoAccounts", {}),
-    kuma: returning("kuma", {
-      Silo: {
-        state: "observed",
-        value: { statusPage: "perch", monitors: [] },
-      },
-    }),
     roadmap: returning("roadmap", {}),
     github: returning("github", {}),
     forgejo: returning("forgejo", {}),
@@ -77,7 +71,7 @@ function readRaw(name: string): string {
 describe("gather", () => {
   it("runs root collectors before enrichers, and the roadmap reader last", () => {
     expect(gatherRounds).toEqual([
-      ["local", "githubAccounts", "forgejoAccounts", "kuma"],
+      ["local", "githubAccounts", "forgejoAccounts"],
       ["github", "forgejo"],
       ["roadmap"],
     ]);
@@ -107,18 +101,6 @@ describe("gather", () => {
     });
 
     expect(seen).toEqual([["finch/a"]]);
-  });
-
-  it("skips the kuma collector and writes no kuma file when config declares no kuma source", async () => {
-    const status = await gather({
-      now: stepClock(9),
-      store: createRawStore(rawDir),
-      sources: sources({ kuma: null }),
-    });
-
-    expect(Object.keys(status.sources)).not.toContain("kuma");
-    expect(existsSync(join(rawDir, "kuma.json"))).toBe(false);
-    expect(status.sources.local?.state).toBe("ok");
   });
 
   it("writes one pretty-printed file per source and a status file", async () => {
@@ -200,10 +182,12 @@ describe("gather", () => {
     const status = await gather({
       now: stepClock(9),
       store: createRawStore(rawDir),
-      sources: sources({ kuma: failing("kuma", new Error("unreachable")) }),
+      sources: sources({
+        forgejoAccounts: failing("forgejoAccounts", new Error("unreachable")),
+      }),
     });
 
-    expect(status.sources.kuma).toMatchObject({
+    expect(status.sources.forgejoAccounts).toMatchObject({
       state: "error",
       reason: "unexpected",
       lastSucceededAt: { state: "absent", reason: "never-succeeded" },

@@ -9,7 +9,6 @@ import type {
   RawFiles,
   RawForgeRepo,
   RawGit,
-  RawKuma,
   RawLocal,
   RawPullRequest,
   RawRoadmap,
@@ -33,8 +32,6 @@ import type {
   HourThresholds,
   Item,
   ItemError,
-  KumaData,
-  MonitorStatus,
   PullRequest,
   RoadmapData,
   RoadmapFile,
@@ -780,41 +777,6 @@ export function deriveHealth(item: Item): Health {
   return { level: causes[0]?.level ?? "green", causes };
 }
 
-// Uptime Kuma
-
-const monitorStatuses: Record<number, MonitorStatus> = {
-  0: "down",
-  1: "up",
-  2: "pending",
-  3: "maintenance",
-};
-
-/**
- * Each monitor's status is its newest heartbeat's, unknown when it has none. The server is all
- * up when it has at least one monitor and every monitor is up.
- */
-export function deriveKuma(raw: RawKuma): KumaData {
-  const monitors = raw.monitors.map((monitor) => {
-    const newest = monitor.heartbeats
-      .slice()
-      .sort((a, b) => b.time.localeCompare(a.time))[0];
-    return {
-      id: monitor.id,
-      name: monitor.name,
-      status: newest
-        ? (monitorStatuses[newest.status] ?? "unknown")
-        : "unknown",
-      lastHeartbeatAt: newest?.time ?? null,
-    };
-  });
-  return {
-    allUp:
-      monitors.length > 0 &&
-      monitors.every((monitor) => monitor.status === "up"),
-    monitors,
-  };
-}
-
 // Source cards
 
 /** What the raw files hold for one card: nothing yet, an error, or what it read. */
@@ -828,7 +790,7 @@ export interface ConfiguredCard {
   id: string;
   kind: SourceCardKind;
   label: string;
-  polled: "local" | "githubAccounts" | "forgejoAccounts" | "kuma";
+  polled: "local" | "githubAccounts" | "forgejoAccounts";
   grain: (files: Partial<RawFiles>) => CardGrain;
 }
 
@@ -891,10 +853,9 @@ export const sourceCardIds: {
   local: (card) => `local:${card.include[0] ?? ""}`,
   github: (card) => `github:${card.account}`,
   forgejo: (card) => `forgejo:${forgejoCardLabel(card)}`,
-  kuma: (card) => `kuma:${card.name}`,
 };
 
-/** Every configured source table in config order, local, github, forgejo, then kuma. */
+/** Every configured source table in config order, local, github, forgejo. */
 export function configuredCards(
   sources: SourcesConfig,
   home: string,
@@ -936,19 +897,6 @@ export function configuredCards(
           ),
       };
     }),
-    ...sources.kuma.map(
-      (card): ConfiguredCard => ({
-        id: sourceCardIds.kuma(card),
-        kind: "kuma",
-        label: card.name,
-        polled: "kuma",
-        grain: (files) =>
-          entryGrain(
-            files.kuma?.data[card.name],
-            (value) => value.monitors.length,
-          ),
-      }),
-    ),
   ];
 }
 

@@ -61,13 +61,6 @@ key = "forgejo-someone"
 hosts = ["forge.example.lan"]
 tracked_forks = []
 
-# An Uptime Kuma status page, monitored as the server it names. Each name
-# appears once.
-# [[sources.kuma]]
-# name = "Server"
-# base_url = "http://kuma.example.lan:3001"
-# status_page = "status"
-
 # Health windows: amber at the first, red at the second. Unsafe work
 # (uncommitted changes, unpushed commits) ages in hours from its oldest
 # change. Stalled flight: on a branch other than the default with no new commit,

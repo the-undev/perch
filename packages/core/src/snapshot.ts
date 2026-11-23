@@ -5,9 +5,7 @@ import type { FailureReason, ForgeName, PolledSourceName } from "./raw.ts";
 
 export type { FailureReason, ForgeName, PolledSourceName };
 
-export type ItemKind = "git" | "obsidian" | "server";
-
-export type LiveSourceName = "dockerContainers";
+export type ItemKind = "git" | "obsidian";
 
 /** Data a source could not read for one item, kept as data rather than failing the source. */
 export interface ItemError {
@@ -237,32 +235,12 @@ export interface FinalisedCommit {
   subject: string;
 }
 
-export type MonitorStatus =
-  | "up"
-  | "down"
-  | "pending"
-  | "maintenance"
-  | "unknown";
-
-export interface Monitor {
-  id: number;
-  name: string;
-  status: MonitorStatus;
-  lastHeartbeatAt: string | null;
-}
-
-export interface KumaData {
-  allUp: boolean;
-  monitors: Monitor[];
-}
-
 /** Derived data per source on an item. */
 export interface ItemSourceData {
   git: GitData | ItemError;
   roadmap: RoadmapData | ItemError;
   github: ForgeData | ForgeError;
   forgejo: ForgeData | ForgeError;
-  kuma: KumaData | ItemError;
 }
 
 export type ItemSources = Partial<ItemSourceData>;
@@ -308,8 +286,6 @@ export interface Item {
   kind: ItemKind;
   /** Absolute path of the local clone, null without one. */
   path: string | null;
-  /** Live sources a detail view may fetch for this item; never part of the scan. */
-  liveSources: LiveSourceName[];
   presences: Presences;
   flags: ItemFlag[];
   sources: ItemSources;
@@ -344,7 +320,7 @@ export interface SourceStatus {
   durationMs: number;
 }
 
-export type SourceCardKind = "local" | "github" | "forgejo" | "kuma";
+export type SourceCardKind = "local" | "github" | "forgejo";
 
 /** A source card's last scan: never read, read with what it found, or failed. */
 export type SourceCardResult =
@@ -353,7 +329,7 @@ export type SourceCardResult =
       state: "ok";
       /** When the card's raw file was gathered. */
       at: string;
-      /** Repositories found or listed, or a kuma page's monitors. */
+      /** Repositories found or listed. */
       count: number;
       /** A local card's include paths that do not exist, home as ~; empty for other kinds. */
       missingIncludes: string[];
@@ -367,10 +343,10 @@ export type SourceCardResult =
 
 /** One configured source table, as its settings card shows it, with its last scan. */
 export interface SourceCard {
-  /** Stable identity: local:<first include>, github:<account>, forgejo:<account>@<host>, kuma:<name>. */
+  /** Stable identity: local:<first include>, github:<account>, forgejo:<account>@<host>. */
   id: string;
   kind: SourceCardKind;
-  /** The card's heading: the account, account@host, the kuma name, or the include paths, home as ~. */
+  /** The card's heading: the account, account@host, or the include paths, home as ~. */
   label: string;
   result: SourceCardResult;
 }
@@ -386,7 +362,7 @@ export interface Snapshot {
   conflicts: ConfigConflict[];
   forges: Record<ForgeName, ForgeListing>;
   sources: Partial<Record<PolledSourceName, SourceStatus>>;
-  /** One per configured source table, in config order: local, github, forgejo, then kuma. */
+  /** One per configured source table, in config order: local, github, forgejo. */
   sourceCards: SourceCard[];
   items: Item[];
 }

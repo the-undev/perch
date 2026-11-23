@@ -72,7 +72,6 @@ export function scanWords(
     local: `found ${plural(result.count, "repository", "repositories")}`,
     github: `read ${plural(result.count, "repository", "repositories")}`,
     forgejo: `read ${plural(result.count, "repository", "repositories")}`,
-    kuma: `read ${plural(result.count, "monitor", "monitors")}`,
   }[kind];
   return {
     tone: "ok",
@@ -486,44 +485,6 @@ function CardBody({
           </p>
         </>
       );
-    case "kuma": {
-      const { source } = card;
-      const set = (next: typeof source) => onChange({ ...card, source: next });
-      return (
-        <>
-          <div className="grid gap-2.5 @min-[520px]:grid-cols-2">
-            <TextField
-              field="name"
-              sub="the server this source reads"
-              value={source.name}
-              placeholder="Server"
-              problems={problems("name")}
-              onChange={(name) => set({ ...source, name })}
-            />
-            <TextField
-              field="statusPage"
-              sub="its slug"
-              value={source.statusPage}
-              placeholder="perch"
-              problems={problems("statusPage")}
-              onChange={(statusPage) => set({ ...source, statusPage })}
-            />
-          </div>
-          <TextField
-            field="baseUrl"
-            sub="Uptime Kuma's address"
-            value={source.baseUrl}
-            placeholder="http://forge.example.lan:3001"
-            problems={problems("baseUrl")}
-            onChange={(baseUrl) => set({ ...source, baseUrl })}
-          />
-          <p className={quietLineClass}>
-            The page's monitors become one bird named for the server, on the
-            fence until it is adopted.
-          </p>
-        </>
-      );
-    }
   }
 }
 

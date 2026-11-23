@@ -25,7 +25,7 @@ export interface SpeechSubject {
   branch: string | null;
   defaultBranch: string | null;
   unpushedCount: number;
-  openItems: number;
+  openWorkItems: number;
   /** Hours from the newest commit to the scan; null when there is none. */
   lastTouchedHours: number | null;
 }
@@ -215,8 +215,8 @@ function contentSpeech(subject: SpeechSubject): string {
   if (subject.activity === "in-flight" && unpushedCount > 0) {
     return `${capitalise(countWords(unpushedCount))} ${plural(unpushedCount, "commit", "commits")} waiting to go up. All fresh so far.`;
   }
-  if (subject.openItems > 0) {
-    return `All settled, and ${countWords(subject.openItems)} ${plural(subject.openItems, "item", "items")} on my roadmap when you want me.`;
+  if (subject.openWorkItems > 0) {
+    return `All settled, and ${countWords(subject.openWorkItems)} ${plural(subject.openWorkItems, "work item", "work items")} on my roadmap when you want me.`;
   }
   if (subject.lastTouchedHours === null) return "All settled over here.";
   return `All settled over here. Last touched ${hoursWords(subject.lastTouchedHours)} ago.`;

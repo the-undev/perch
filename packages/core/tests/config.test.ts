@@ -24,7 +24,7 @@ const examplePath = join(
 );
 const home = "/home/test";
 
-/** The entry config resolves for a local item with no forge presence. */
+/** The entry config resolves for a local entity with no forge presence. */
 const entryOf = (config: Config, id: string) =>
   resolveEntry(config, id, [`local:${id}`]).entry;
 
@@ -58,7 +58,7 @@ describe("example config", () => {
       bugs: { amberCount: 5, redCount: 20 },
       criticalBugs: { amberCount: 1, redCount: 3 },
     });
-    expect(config.items).toEqual({});
+    expect(config.entities).toEqual({});
     expect(config.scan).toEqual({
       intervalMinutes: 15,
       finalisedCommits: 10,
@@ -180,7 +180,7 @@ describe("example config", () => {
     ]);
   });
 
-  it("gives every item the global thresholds when nothing is overridden", async () => {
+  it("gives every entity the global thresholds when nothing is overridden", async () => {
     const config = parseConfig(await exampleText(), home);
 
     expect(thresholdsFor(config, entryOf(config, "projects/example"))).toEqual(
@@ -199,7 +199,7 @@ describe("example config", () => {
     }
     const config = parseConfig(`${text}\n${block.join("\n")}\n`, home);
 
-    expect(config.items["projects/example"]).toEqual({
+    expect(config.entities["projects/example"]).toEqual({
       wire: "Projects",
       name: "Example",
       thresholds: {
@@ -228,10 +228,10 @@ describe("example config", () => {
   });
 });
 
-describe("item overrides", () => {
+describe("entity overrides", () => {
   const withOverrides = fixtureConfigText;
 
-  it("apply thresholds to the named item only", async () => {
+  it("apply thresholds to the named entity only", async () => {
     const text = await withOverrides(
       '[papers.".dotfiles"]\nunsafe_amber_hours = 3\nstalled_red_days = 60\n',
     );
@@ -248,7 +248,7 @@ describe("item overrides", () => {
     );
   });
 
-  it("put an adopted item on its wire, the default wire without one, and the rest on the fence", async () => {
+  it("put an adopted entity on its wire, the default wire without one, and the rest on the fence", async () => {
     const text = await withOverrides(
       '[papers.".dotfiles"]\nwire = "Machine & Home"\n\n[papers."dev/perch"]\n',
     );
@@ -438,7 +438,7 @@ describe("bug thresholds", () => {
     ]);
   });
 
-  it("read from [thresholds], with an item overriding either", async () => {
+  it("read from [thresholds], with an entity overriding either", async () => {
     const text = (
       await fixtureConfigText(
         '[papers."dev/perch"]\nbugs_red_count = 40\ncritical_bugs_amber_count = 2\n',
@@ -519,7 +519,7 @@ describe("work word lists", () => {
     );
     const config = parseConfig(text, home);
 
-    expect(config.items["dev/perch"]).toMatchObject({
+    expect(config.entities["dev/perch"]).toMatchObject({
       bugWords: ["wart"],
       criticalBugWords: null,
     });

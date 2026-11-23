@@ -75,7 +75,7 @@ async function openZellijTab(
 }
 
 /**
- * Performs one launch action: {path} takes the item's directory as it is, {obsidian} the Obsidian
+ * Performs one launch action: {path} takes the entity's directory as it is, {obsidian} the Obsidian
  * vault's folder name encoded for a URI, and the zellij action finds or opens its tab.
  */
 export async function launch(

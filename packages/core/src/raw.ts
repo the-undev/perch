@@ -13,13 +13,13 @@ export type Observed<T, R extends string> =
   | { state: "observed"; value: T }
   | Absent<R>;
 
-/** Something that went wrong reading one item, recorded as data rather than failing the source. */
+/** Something that went wrong reading one entity, recorded as data rather than failing the source. */
 export interface EntryError {
   state: "error";
   error: string;
 }
 
-/** One item's entry in a source file. */
+/** One entity's entry in a source file. */
 export type Entry<T, R extends string> = Observed<T, R> | EntryError;
 
 // Git
@@ -116,13 +116,13 @@ export interface RoadmapStructure {
 }
 
 export interface RawRoadmapFile {
-  /** Path relative to the item. */
+  /** Path relative to the entity. */
   path: string;
   structure: Observed<RoadmapStructure, "file-not-found">;
 }
 
 export interface RawRoadmap {
-  /** The files the item's entry lists in `roadmaps`, read; empty when it lists none. */
+  /** The files the entity's entry lists in `roadmaps`, read; empty when it lists none. */
   files: RawRoadmapFile[];
   /** The first standard-named file found when the entry lists none, shown but never parsed; else null. */
   detectedPath: string | null;

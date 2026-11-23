@@ -95,7 +95,7 @@ export function RoostPage() {
         </Specimen>
         <Specimen
           label="at the plumpness cap"
-          rule="Spool given 50 open items: plumpness grows the bird on a stand that does not move or resize: the stand is sized for the plumpest bird."
+          rule="Spool given 50 open work items: plumpness grows the bird on a stand that does not move or resize: the stand is sized for the plumpest bird."
         >
           <Ground>
             <Column width={roostWidth}>

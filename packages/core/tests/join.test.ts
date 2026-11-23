@@ -354,7 +354,7 @@ describe("aggregating joined projects", () => {
     },
   });
 
-  it("merges local and forge data into one item and sets each clone's backup state", async () => {
+  it("merges local and forge data into one entity and sets each clone's backup state", async () => {
     const snapshot = aggregate(
       { status: okStatus({}), files },
       {
@@ -368,14 +368,14 @@ describe("aggregating joined projects", () => {
       new Date(gatheredAt),
     );
 
-    expect(snapshot.items.map((item) => item.id)).toEqual([
+    expect(snapshot.entities.map((entity) => entity.id)).toEqual([
       "dev/perch",
       "dev/toy",
       "dev/gone",
       "github:finch/notes",
     ]);
     const byId = Object.fromEntries(
-      snapshot.items.map((item) => [item.id, item]),
+      snapshot.entities.map((entity) => [entity.id, entity]),
     );
     expect(
       byId["dev/perch"]?.presences.forges.map((presence) => presence.ref),
@@ -400,7 +400,7 @@ describe("aggregating joined projects", () => {
     });
   });
 
-  it("lists every forge presence grouped active and archived, and keeps archived ones off the items", async () => {
+  it("lists every forge presence grouped active and archived, and keeps archived ones off the entities", async () => {
     const snapshot = aggregate(
       { status: okStatus({}), files },
       {
@@ -418,14 +418,14 @@ describe("aggregating joined projects", () => {
           ref: "github:finch/notes",
           fullName: "finch/notes",
           url: "https://example.invalid/finch/notes",
-          itemId: "github:finch/notes",
+          entityId: "github:finch/notes",
           ignored: false,
         },
         {
           ref: "github:finch/perch",
           fullName: "finch/perch",
           url: "https://example.invalid/finch/perch",
-          itemId: "dev/perch",
+          entityId: "dev/perch",
           ignored: false,
         },
       ],
@@ -434,14 +434,14 @@ describe("aggregating joined projects", () => {
           ref: "github:finch/old",
           fullName: "finch/old",
           url: "https://example.invalid/finch/old",
-          itemId: null,
+          entityId: null,
           ignored: false,
         },
       ],
     });
-    expect(snapshot.items.some((item) => item.id === "github:finch/old")).toBe(
-      false,
-    );
+    expect(
+      snapshot.entities.some((entity) => entity.id === "github:finch/old"),
+    ).toBe(false);
   });
 
   function aggregated(snapshotFiles: Partial<RawFiles>, configured: Config) {
@@ -457,7 +457,7 @@ describe("aggregating joined projects", () => {
     );
   }
 
-  const itemConflicts = (snapshot: Snapshot) =>
+  const entityConflicts = (snapshot: Snapshot) =>
     snapshot.conflicts.filter((entry) => !entry.assertion.includes("obsidian"));
 
   it("records a config entry that names nothing observed", async () => {
@@ -466,7 +466,7 @@ describe("aggregating joined projects", () => {
       await config('[papers."dev/vanished"]\n'),
     );
 
-    expect(itemConflicts(snapshot)).toEqual([
+    expect(entityConflicts(snapshot)).toEqual([
       {
         assertion: 'papers."dev/vanished"',
         detail: "dev/vanished was not observed",
@@ -506,7 +506,7 @@ describe("aggregating joined projects", () => {
     );
     const snapshot = aggregated(files, configured);
     const after = birdNamed(snapshot, "dev/perch");
-    const perch = snapshot.items.find((item) => item.id === "dev/perch");
+    const perch = snapshot.entities.find((entity) => entity.id === "dev/perch");
 
     expect([before?.wire, before?.name]).toEqual(["Machine & Home", "Perch"]);
     expect([after?.wire, after?.name]).toEqual(["Machine & Home", "Perch"]);
@@ -520,7 +520,7 @@ describe("aggregating joined projects", () => {
     expect(localEntries(files, configured).get("dev/perch")?.roadmaps).toEqual([
       "docs/plan.md",
     ]);
-    expect(itemConflicts(snapshot)).toEqual([]);
+    expect(entityConflicts(snapshot)).toEqual([]);
   });
 
   it("flags two entries naming one project, and the one keyed by its id applies", async () => {
@@ -529,22 +529,22 @@ describe("aggregating joined projects", () => {
     );
 
     const snapshot = aggregated(files, configured);
-    const perch = snapshot.items.find((item) => item.id === "dev/perch");
+    const perch = snapshot.entities.find((entity) => entity.id === "dev/perch");
     const bird = deriveAviary(snapshot, configured, {}, "/home/test")
       .wires.flatMap((wire) => wire.birds)
       .find((candidate) => candidate.id === "dev/perch");
 
-    expect(itemConflicts(snapshot)).toEqual([
+    expect(entityConflicts(snapshot)).toEqual([
       {
         assertion: 'papers."dev/perch", papers."github:finch/perch"',
-        detail: 'name one item, dev/perch; papers."dev/perch" applies',
+        detail: 'name one entity, dev/perch; papers."dev/perch" applies',
       },
     ]);
     expect(perch?.flags).toContainEqual({
       flag: "config-conflict",
       level: null,
       detail:
-        'papers."dev/perch", papers."github:finch/perch": name one item, dev/perch; papers."dev/perch" applies',
+        'papers."dev/perch", papers."github:finch/perch": name one entity, dev/perch; papers."dev/perch" applies',
     });
     expect(bird?.name).toBe("Local");
   });

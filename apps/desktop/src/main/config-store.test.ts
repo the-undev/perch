@@ -150,7 +150,7 @@ describe("migrating the config", () => {
     const state = await storeOnDisk().reload();
 
     expect(state.error).toBeNull();
-    expect(state.loaded?.config.items["dev/perch"]?.name).toBe("Perch");
+    expect(state.loaded?.config.entities["dev/perch"]?.name).toBe("Perch");
     const written = await readFile(configPath, "utf8");
     expect(written).toMatch(/^version = 2$/m);
     expect(written).toContain('[papers."dev/perch"]');
@@ -216,7 +216,7 @@ describe("migrating the config", () => {
     const state = await storeOnDisk().reload();
 
     expect(state.error).toBeNull();
-    expect(state.loaded?.config.items["dev/perch"]?.name).toBe("Perch");
+    expect(state.loaded?.config.entities["dev/perch"]?.name).toBe("Perch");
     expect(await readFile(configPath, "utf8")).toBe(version2);
     expect(await readdir(dir)).toEqual(["config.toml"]);
   });

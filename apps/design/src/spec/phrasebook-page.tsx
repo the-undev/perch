@@ -18,9 +18,9 @@ const scannedAt = new Date(mockSnapshot.scannedAt);
 
 /** The speech subject the view model built a mock bird's speech from. */
 function subjectOf(id: string): SpeechSubject {
-  const item = mockSnapshot.items.find((candidate) => candidate.id === id);
-  if (item === undefined) throw new Error(`the mock has no item ${id}`);
-  return speechSubjectFor(item, mockConfig, scannedAt);
+  const entity = mockSnapshot.entities.find((candidate) => candidate.id === id);
+  if (entity === undefined) throw new Error(`the mock has no entity ${id}`);
+  return speechSubjectFor(entity, mockConfig, scannedAt);
 }
 
 /** A cause of a mock bird's, its level changed. */
@@ -96,7 +96,7 @@ const book: Group[] = [
       ),
       entry(
         "Settled with a backlog",
-        "Green with open roadmap items. The items are an offer.",
+        "Green with open work items. The work items are an offer.",
         "obsidian/Pocket",
       ),
       entry(
@@ -298,7 +298,7 @@ export function PhrasebookPage() {
       <p className="mt-4 mb-0 max-w-[90ch] text-[13px] text-ink-faint">
         Each bubble holds what <Code>speak(subject)</Code> in{" "}
         <Code>packages/core/src/speech.ts</Code> returns for the subject{" "}
-        <Code>speechSubjectFor(item, config, scannedAt)</Code> builds from the
+        <Code>speechSubjectFor(entity, config, scannedAt)</Code> builds from the
         mock snapshot. Where the mock holds no bird in a situation, the nearest
         bird&apos;s subject has one fact changed, and the entry says which.
       </p>
@@ -309,20 +309,20 @@ export function PhrasebookPage() {
           rule={group.rule}
           min={440}
         >
-          {group.entries.map((item) => (
+          {group.entries.map((entity) => (
             <Specimen
-              key={item.name}
-              label={item.name}
+              key={entity.name}
+              label={entity.name}
               rule={
                 <>
-                  {item.when}{" "}
+                  {entity.when}{" "}
                   <span className="font-mono text-[11.5px] text-ink-faint/80">
-                    {causeWords(item.subject)}
+                    {causeWords(entity.subject)}
                   </span>
-                  {item.changed !== null && (
+                  {entity.changed !== null && (
                     <span className="text-amber">
                       {" "}
-                      {mockBird(item.id).name}, {item.changed}.
+                      {mockBird(entity.id).name}, {entity.changed}.
                     </span>
                   )}
                 </>
@@ -330,7 +330,7 @@ export function PhrasebookPage() {
             >
               <Plate phase="dusk">
                 <SpeakingBird
-                  bird={speaker(item)}
+                  bird={speaker(entity)}
                   now={byDay}
                   onPress={ignore}
                 />
@@ -371,7 +371,7 @@ export function PhrasebookPage() {
       </Section>
       <Section
         title="Candidates"
-        rule="Lines the board proposed that wait on a fact the scan does not yet gather. They are not spoken; each has its roadmap item."
+        rule="Lines the board proposed that wait on a fact the scan does not yet gather. They are not spoken; each has its roadmap work item."
         min={440}
       >
         <Specimen

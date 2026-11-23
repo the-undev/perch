@@ -33,7 +33,7 @@ const stages: Stage[] = [
     where: ".scan/snapshot.json",
     writtenBy:
       "pnpm aggregate · src/aggregate.ts, src/join.ts, src/derivations.ts",
-    types: ["Snapshot", "Item", "ItemSourceData"],
+    types: ["Snapshot", "Entity", "EntitySourceData"],
     reads:
       "The raw files and the config only; the previous snapshot for first-seen times.",
   },
@@ -167,7 +167,7 @@ export function ChainPage() {
         <ModuleNote file="src/snapshot.ts" />
         <Declarations
           file="src/snapshot.ts"
-          names={["Snapshot", "Item", "ItemSourceData", "SourceStatus"]}
+          names={["Snapshot", "Entity", "EntitySourceData", "SourceStatus"]}
         />
         <h3 className="mt-7 mb-0 font-semibold text-[14px] text-ink-faint">
           Where each derivation lives

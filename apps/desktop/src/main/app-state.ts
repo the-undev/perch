@@ -25,7 +25,7 @@ import {
   settingsFormFor,
   withSettings,
 } from "@perch/core/settings-form.ts";
-import type { Item, Snapshot } from "@perch/core/snapshot.ts";
+import type { Entity, Snapshot } from "@perch/core/snapshot.ts";
 import { isEndDate, type SnoozeEnd } from "@perch/core/snooze-date.ts";
 import {
   createReleaseChecker,
@@ -135,12 +135,12 @@ export interface AppState {
   /** Wakes an adopted bird, as snooze writes. */
   wake(birdId: string): Promise<void>;
   /**
-   * Everything in config but the item entries, and the autostart entry, as the settings page edits
+   * Everything in config but the entity entries, and the autostart entry, as the settings page edits
    * them; null without config.
    */
   settingsForm(): Promise<SettingsForm | null>;
   /**
-   * Sets everything in config but the item entries, then the autostart entry, then rereads the
+   * Sets everything in config but the entity entries, then the autostart entry, then rereads the
    * config and asks for a scan. A config that cannot be written writes nothing; either failure
    * becomes a problem until the next scan.
    */
@@ -275,10 +275,10 @@ export function createAppState(deps: AppStateDeps): AppState {
     return birdsOf(current).find((candidate) => candidate.id === birdId);
   }
 
-  /** The snapshot item behind a bird the aviary holds. */
-  function birdItem(birdId: string): Item | undefined {
+  /** The snapshot entity behind a bird the aviary holds. */
+  function birdEntity(birdId: string): Entity | undefined {
     if (bird(birdId) === undefined) return undefined;
-    return snapshot?.items.find((item) => item.id === birdId);
+    return snapshot?.entities.find((entity) => entity.id === birdId);
   }
 
   /** Every config read is published, so quitting installs a finished download only while install is on. */
@@ -465,25 +465,25 @@ export function createAppState(deps: AppStateDeps): AppState {
       return written;
     },
     entryForm(birdId) {
-      const item = birdItem(birdId);
+      const entity = birdEntity(birdId);
       const config = deps.config.current().loaded?.config;
-      if (item === undefined || config === undefined) return null;
-      return entryFormFor(config, item, deps.home);
+      if (entity === undefined || config === undefined) return null;
+      return entryFormFor(config, entity, deps.home);
     },
     async saveEntry(birdId, values) {
-      const item = birdItem(birdId);
-      if (item === undefined) return;
+      const entity = birdEntity(birdId);
+      if (entity === undefined) return;
       // Adopting forgets a snooze left from before the bird was on the fence, so none comes back.
       const after = bird(birdId)?.adopted
         ? nothingAfter
         : () => writeSnooze(birdId, null);
-      await edit((config) => withEntry(config, item, values), after);
+      await edit((config) => withEntry(config, entity, values), after);
     },
     async removeEntry(birdId) {
-      const item = birdItem(birdId);
-      if (item === undefined) return;
+      const entity = birdEntity(birdId);
+      if (entity === undefined) return;
       await edit(
-        (config) => withoutEntry(config, item),
+        (config) => withoutEntry(config, entity),
         () => writeSnooze(birdId, null),
       );
     },

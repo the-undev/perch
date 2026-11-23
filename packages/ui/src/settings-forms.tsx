@@ -688,7 +688,7 @@ function ActionFields({
       <div className="grid gap-2.5 @min-[520px]:grid-cols-2">
         <ActionField
           field="session"
-          sub="for an item no root assigns"
+          sub="for a project no root assigns"
           problems={problems("session")}
         >
           {text(
@@ -700,7 +700,7 @@ function ActionFields({
         </ActionField>
         <ActionField
           field="sessions"
-          sub="the longest root holding the item"
+          sub="the longest root holding the project"
           problems={problems("sessions")}
         >
           <RecordRows

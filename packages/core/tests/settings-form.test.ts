@@ -734,8 +734,8 @@ describe("what the settings cannot be", () => {
 /** The mock config with Perch's entry naming Projects, so both wires have an entry naming them. */
 const bothNamed: Config = {
   ...mockConfig,
-  items: Object.fromEntries(
-    Object.entries(mockConfig.items).map(([key, entry]) => [
+  entities: Object.fromEntries(
+    Object.entries(mockConfig.entities).map(([key, entry]) => [
       key,
       key === "dev/perch" ? { ...entry, wire: "Projects" } : entry,
     ]),
@@ -755,7 +755,7 @@ const wiresOf = (
 /** Each entry key and the wire it names, null for the default. */
 const wiresByEntry = (config: Config) =>
   Object.fromEntries(
-    Object.entries(config.items).map(([key, entry]) => [key, entry.wire]),
+    Object.entries(config.entities).map(([key, entry]) => [key, entry.wire]),
   );
 
 const homeEntries = [
@@ -814,9 +814,10 @@ describe("renaming, removing and adding wires", () => {
       names: ["Home", "Projects"],
       default: "Projects",
     });
-    for (const key of homeEntries) expect(next.items[key]?.wire).toBe("Home");
-    expect(next.items["undev/spool"]?.wire).toBeNull();
-    expect(next.items[".dotfiles"]?.name).toBe("Dotfiles");
+    for (const key of homeEntries)
+      expect(next.entities[key]?.wire).toBe("Home");
+    expect(next.entities["undev/spool"]?.wire).toBeNull();
+    expect(next.entities[".dotfiles"]?.name).toBe("Dotfiles");
   });
 
   it("keeps a renamed default the default, its entries following", () => {
@@ -836,8 +837,8 @@ describe("renaming, removing and adding wires", () => {
       names: ["Machine & Home", "Work"],
       default: "Work",
     });
-    expect(next.items["dev/perch"]?.wire).toBe("Work");
-    expect(next.items["undev/spool"]?.wire).toBeNull();
+    expect(next.entities["dev/perch"]?.wire).toBe("Work");
+    expect(next.entities["undev/spool"]?.wire).toBeNull();
   });
 
   it("swaps two wires' entries when their names are swapped, the default staying with its row", () => {
@@ -858,9 +859,9 @@ describe("renaming, removing and adding wires", () => {
       default: "Machine & Home",
     });
     for (const key of homeEntries)
-      expect(next.items[key]?.wire).toBe("Projects");
-    expect(next.items["dev/perch"]?.wire).toBe("Machine & Home");
-    expect(next.items["undev/spool"]?.wire).toBeNull();
+      expect(next.entities[key]?.wire).toBe("Projects");
+    expect(next.entities["dev/perch"]?.wire).toBe("Machine & Home");
+    expect(next.entities["undev/spool"]?.wire).toBeNull();
   });
 
   it("moves a removed wire's entries to the default, warning first", () => {
@@ -878,9 +879,9 @@ describe("renaming, removing and adding wires", () => {
     const next = saved(mockConfig, values);
 
     expect(next.wires.names).toEqual(["Projects"]);
-    for (const key of homeEntries) expect(next.items[key]?.wire).toBeNull();
-    expect(next.items["obsidian/Pocket"]?.roadmaps).toEqual(
-      mockConfig.items["obsidian/Pocket"]?.roadmaps,
+    for (const key of homeEntries) expect(next.entities[key]?.wire).toBeNull();
+    expect(next.entities["obsidian/Pocket"]?.roadmaps).toEqual(
+      mockConfig.entities["obsidian/Pocket"]?.roadmaps,
     );
   });
 
@@ -973,6 +974,6 @@ describe("renaming, removing and adding wires", () => {
       ),
     );
 
-    for (const key of homeEntries) expect(next.items[key]?.wire).toBeNull();
+    for (const key of homeEntries) expect(next.entities[key]?.wire).toBeNull();
   });
 });

@@ -77,7 +77,7 @@ describe("the scan with its directories passed in", () => {
     expect(status.sources.local?.state).toBe("ok");
     expect(readdirSync(rawDir)).toContain("local.json");
     expect(snapshot.configPath).toBe("/configs/perch.toml");
-    expect(snapshot.items.map((item) => item.id)).toEqual(["dev/kept"]);
+    expect(snapshot.entities.map((entity) => entity.id)).toEqual(["dev/kept"]);
     expect(await readSnapshot(snapshotPath)).toEqual(snapshot);
     expect(readdirSync(join(dataDir, "scan")).sort()).toEqual([
       "raw",
@@ -102,7 +102,7 @@ describe("the scan with its directories passed in", () => {
       snapshotPath,
       now,
     });
-    expect(snapshot.items).toHaveLength(1);
+    expect(snapshot.entities).toHaveLength(1);
   });
 
   it("reads no snapshot where none was written", async () => {

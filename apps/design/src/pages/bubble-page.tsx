@@ -23,7 +23,7 @@ const content: Entry[] = [
   {
     id: "obsidian/Pocket",
     label: "Settled with a backlog",
-    rule: "Green with open roadmap items. The items are an offer.",
+    rule: "Green with open work items. The work items are an offer.",
   },
   {
     id: "undev/glyph-docs",

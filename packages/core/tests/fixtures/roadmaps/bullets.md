@@ -1,13 +1,13 @@
 #roadmap #it
 
-Outstanding work. This paragraph is not an item.
+Outstanding work. This paragraph is not a work item.
 
 ## Documentation
 
 - [ ] Write up the shares and the user accounts, which
   continue onto a second line
 - [ ] Record the Plex entry name
-  - a nested note that belongs to the item above
+  - a nested note that belongs to the work item above
 
 ### Runbooks
 

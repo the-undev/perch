@@ -27,7 +27,7 @@ export interface Thresholds {
   criticalBugs: CountThresholds;
 }
 
-/** Per-item threshold overrides; anything left out takes the global value. */
+/** Per-entity threshold overrides; anything left out takes the global value. */
 export interface ThresholdOverrides {
   unsafe: Partial<HourThresholds>;
   stalled: Partial<DayThresholds>;
@@ -41,7 +41,7 @@ export interface WorkWordsConfig {
   criticalBugWords: string[] | null;
 }
 
-/** The word lists an item's work is classed by, each taken whole from one place. */
+/** The word lists an entity's work is classed by, each taken whole from one place. */
 export interface WorkWords {
   bug: string[];
   criticalBug: string[];
@@ -80,18 +80,18 @@ export const defaultBugThresholds: Pick<Thresholds, "bugs" | "criticalBugs"> = {
   criticalBugs: { amberCount: 1, redCount: 3 },
 };
 
-/** An item's entry in config. Having one adopts the bird, which puts it on a wire. */
-export interface ItemEntry {
+/** An entity's entry in config. Having one adopts the bird, which puts it on a wire. */
+export interface EntityEntry {
   /** The wire the bird sits on; null puts it on the default wire. */
   wire: string | null;
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
   thresholds: ThresholdOverrides;
-  /** Files for the detail page, relative to the item; null keeps the README and any roadmap. */
+  /** Files for the detail page, relative to the entity; null keeps the README and any roadmap. */
   keyFiles: string[] | null;
-  /** Roadmap files relative to the item, the only files parsed as roadmaps; null or empty parses none. */
+  /** Roadmap files relative to the entity, the only files parsed as roadmaps; null or empty parses none. */
   roadmaps: string[] | null;
-  /** The zellij session holding the item's tab; null takes it from the zellij action. */
+  /** The zellij session holding the entity's tab; null takes it from the zellij action. */
   zellijSession: string | null;
   /** Words making a bug, replacing the [work] list; null keeps it. */
   bugWords: string[] | null;
@@ -132,7 +132,7 @@ export interface SourcesConfig {
 }
 
 export interface Config {
-  /** The wires top to bottom, and the one an adopted item sits on when its entry names none. */
+  /** The wires top to bottom, and the one an adopted entity sits on when its entry names none. */
   wires: { names: string[]; default: string };
   sources: SourcesConfig;
   /** Groups of presence references asserted to be one project. */
@@ -143,10 +143,10 @@ export interface Config {
   /** The [work] table's word lists, which an entry's own lists replace. */
   work: WorkWordsConfig;
   /**
-   * Item entries keyed by any of the item's presence references (see resolveEntry); an entry
-   * adopts the item and marks a found repository set up.
+   * Entity entries keyed by any of the entity's presence references (see resolveEntry); an entry
+   * adopts the entity and marks a found repository set up.
    */
-  items: Record<string, ItemEntry>;
+  entities: Record<string, EntityEntry>;
   /** The scan interval, and the commits read on each forge repository's default branch. */
   scan: {
     intervalMinutes: number;
@@ -196,7 +196,7 @@ export interface CommandActionConfig {
   icon: IconName;
 }
 
-/** The zellij tab action: goes to the item's tab in its session, or opens one there. */
+/** The zellij tab action: goes to the entity's tab in its session, or opens one there. */
 export interface ZellijActionConfig {
   kind: "zellij";
   /** The words on the bird's page. */
@@ -205,9 +205,9 @@ export interface ZellijActionConfig {
   zellij: string[];
   /** Opens a terminal attached to a session that is not running. */
   terminal: string[];
-  /** The session for an item no root or entry assigns. */
+  /** The session for an entity no root or entry assigns. */
   session: string;
-  /** Sessions by root directory, home expanded; the longest root containing the item wins. */
+  /** Sessions by root directory, home expanded; the longest root containing the entity wins. */
   sessions: Record<string, string>;
 }
 
@@ -349,7 +349,7 @@ export function collapseHome(path: string, home: string): string {
   return path;
 }
 
-/** The threshold keys, the same globally and per item, with the window and field each sets. */
+/** The threshold keys, the same globally and per entity, with the window and field each sets. */
 export const thresholdKeys = [
   ["unsafe", "amberHours", "unsafe_amber_hours"],
   ["unsafe", "redHours", "unsafe_red_hours"],
@@ -361,7 +361,7 @@ export const thresholdKeys = [
   ["criticalBugs", "redCount", "critical_bugs_red_count"],
 ] as const;
 
-/** Per-item threshold overrides that set nothing. */
+/** Per-entity threshold overrides that set nothing. */
 export function noThresholdOverrides(): ThresholdOverrides {
   return { unsafe: {}, stalled: {}, bugs: {}, criticalBugs: {} };
 }
@@ -450,7 +450,7 @@ function optionalWords(
   return words;
 }
 
-/** The word list keys, the same in [work] and in an item entry. */
+/** The word list keys, the same in [work] and in an entity entry. */
 const workWordKeys = ["bug_words", "critical_bug_words"] as const;
 
 function parseWork(document: Table): WorkWordsConfig {
@@ -462,7 +462,7 @@ function parseWork(document: Table): WorkWordsConfig {
   };
 }
 
-/** Every key an item entry may hold. */
+/** Every key an entity entry may hold. */
 const entryKeys = [
   "wire",
   "name",
@@ -480,7 +480,7 @@ function parseEntry(
     wires: readonly string[];
     thresholds: Thresholds;
   },
-): ItemEntry {
+): EntityEntry {
   const where = `papers."${id}".`;
   if (!isTable(value))
     throw new Error(`config: papers."${id}" must be a table`);
@@ -836,7 +836,7 @@ function validConfig(document: Table, home: string): Config {
     ignore: stringArray(document.ignore, "ignore"),
     thresholds,
     work: parseWork(document),
-    items: Object.fromEntries(
+    entities: Object.fromEntries(
       Object.entries(papers).map(([id, value]) => [
         id,
         parseEntry(id, value, { wires: wireNames, thresholds }),
@@ -890,16 +890,16 @@ export function hostsOf(sources: readonly { hosts: string[] }[]): string[] {
   return [...new Set(sources.flatMap((source) => source.hosts))];
 }
 
-/** The entry an item resolves to, and every key naming the item. */
+/** The entry an entity resolves to, and every key naming the entity. */
 export interface ResolvedEntry {
-  /** The entry that applies, null when no key names the item. */
-  entry: ItemEntry | null;
-  /** Every key naming the item, the one that applies first; more than one is a conflict. */
+  /** The entry that applies, null when no key names the entity. */
+  entry: EntityEntry | null;
+  /** Every key naming the entity, the one that applies first; more than one is a conflict. */
   keys: string[];
 }
 
 /**
- * The config entry for an item, given its id and presence references: an entry applies when its
+ * The config entry for an entity, given its id and presence references: an entry applies when its
  * key names any of them, and the key naming the earliest wins, the id first, ties by key.
  */
 export function resolveEntry(
@@ -908,7 +908,7 @@ export function resolveEntry(
   refs: readonly string[],
 ): ResolvedEntry {
   const names = [id, ...refs];
-  const ranked = Object.keys(config.items)
+  const ranked = Object.keys(config.entities)
     .map((key) => {
       const candidates = [key, ...candidateRefs(key)];
       const rank = names.findIndex((name) => candidates.includes(name));
@@ -919,24 +919,24 @@ export function resolveEntry(
   const keys = ranked.map(({ key }) => key);
   const first = keys[0];
   return {
-    entry: first === undefined ? null : (config.items[first] ?? null),
+    entry: first === undefined ? null : (config.entities[first] ?? null),
     keys,
   };
 }
 
-/** The health windows for an item: the global values with its entry's overrides applied. */
+/** The health windows for an entity: the global values with its entry's overrides applied. */
 export function thresholdsFor(
   config: Config,
-  entry: ItemEntry | null,
+  entry: EntityEntry | null,
 ): Thresholds {
   const overrides = entry?.thresholds ?? noThresholdOverrides();
   return applyOverrides(config.thresholds, overrides);
 }
 
-/** The word lists for an item: each from its entry if set, else from [work], else built in. */
+/** The word lists for an entity: each from its entry if set, else from [work], else built in. */
 export function workWordsFor(
   config: Config,
-  entry: ItemEntry | null,
+  entry: EntityEntry | null,
 ): WorkWords {
   return {
     bug: [...(entry?.bugWords ?? config.work.bugWords ?? builtInBugWords)],
@@ -948,10 +948,10 @@ export function workWordsFor(
   };
 }
 
-/** The wire an adopted item sits on; null for an item config does not name, which is on the fence. */
+/** The wire an adopted entity sits on; null for an entity config does not name, which is on the fence. */
 export function wireFor(
   config: Config,
-  entry: ItemEntry | null,
+  entry: EntityEntry | null,
 ): string | null {
   if (entry === null) return null;
   return entry.wire ?? config.wires.default;
@@ -967,12 +967,12 @@ export function zellijActionOf(config: Config): ZellijActionConfig | null {
 }
 
 /**
- * The zellij session for an item at a path: its entry's, else the session of the action's longest
+ * The zellij session for an entity at a path: its entry's, else the session of the action's longest
  * root containing the path, else the action's default.
  */
 export function zellijSessionFor(
   action: ZellijActionConfig,
-  entry: ItemEntry | null,
+  entry: EntityEntry | null,
   path: string,
 ): string {
   const asserted = entry?.zellijSession;

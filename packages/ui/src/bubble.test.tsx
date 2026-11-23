@@ -79,7 +79,7 @@ describe("the bubble", () => {
       ["ci failure", "red"],
       ["4 uncommitted", "amber"],
       ["2 open PRs", "none"],
-      ["78 open items", "none"],
+      ["78 open work items", "none"],
     ]);
   });
 

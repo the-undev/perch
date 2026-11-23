@@ -8,7 +8,7 @@ import {
   mockRoadmap,
   mockSnapshot,
 } from "@perch/core/mock.ts";
-import type { ForgePresence, Item } from "@perch/core/snapshot.ts";
+import type { Entity, ForgePresence } from "@perch/core/snapshot.ts";
 import type {
   KeyringCalls,
   SourceTested,
@@ -153,20 +153,20 @@ const pergolaNotesId = "forgejo:finch/field-notes";
 function pergolaNotesWith(
   presences: (forges: ForgePresence[]) => ForgePresence[],
 ): Bird {
-  const items = mockSnapshot.items.map(
-    (item): Item =>
-      item.id === pergolaNotesId
+  const entities = mockSnapshot.entities.map(
+    (entity): Entity =>
+      entity.id === pergolaNotesId
         ? {
-            ...item,
+            ...entity,
             presences: {
-              ...item.presences,
-              forges: presences(item.presences.forges),
+              ...entity.presences,
+              forges: presences(entity.presences.forges),
             },
           }
-        : item,
+        : entity,
   );
   const aviary = deriveAviary(
-    { ...mockSnapshot, items },
+    { ...mockSnapshot, entities },
     mockConfig,
     {},
     mockHome,
@@ -229,17 +229,17 @@ export function stubKeyring(
   };
 }
 
-const bugLedgerItemId = "undev/Hollow-legacy";
+const bugLedgerEntityId = "undev/Hollow-legacy";
 
 /** Hollow's bug and critical bug ledger rows derived again with the given open counts, the windows 5 and 20 for bugs and 3 and 6 for critical bugs. */
 export function bugLedgerRows(bug: number, criticalBug: number): LedgerEntry[] {
-  const items = mockSnapshot.items.map(
-    (item): Item =>
-      item.id === bugLedgerItemId
+  const entities = mockSnapshot.entities.map(
+    (entity): Entity =>
+      entity.id === bugLedgerEntityId
         ? {
-            ...item,
+            ...entity,
             sources: {
-              ...item.sources,
+              ...entity.sources,
               roadmap: {
                 ...mockRoadmap([
                   { path: "docs/roadmap.md", task: 0, bug, criticalBug },
@@ -251,17 +251,17 @@ export function bugLedgerRows(bug: number, criticalBug: number): LedgerEntry[] {
               },
             },
           }
-        : item,
+        : entity,
   );
   const aviary = deriveAviary(
-    { ...mockSnapshot, items },
+    { ...mockSnapshot, entities },
     mockConfig,
     {},
     mockHome,
   );
   const bird = aviary.wires
     .flatMap((wire) => wire.birds)
-    .find((candidate) => candidate.id === bugLedgerItemId);
+    .find((candidate) => candidate.id === bugLedgerEntityId);
   if (bird === undefined) throw new Error("the mock has no Hollow");
   return bird.detail.ledger.filter(
     (entry) => entry.kind === "count" && entry.label.includes("bugs in"),

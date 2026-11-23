@@ -10,10 +10,10 @@ import { deriveRoadmapFile } from "../src/derivations.ts";
 import { mockDetectedRoadmap, mockRoadmap } from "../src/mock.ts";
 import { readRoadmapStructure } from "../src/roadmap-parser.ts";
 import type {
+  Entity,
   FinalisedCommit,
   ForgeName,
   ForgePresence,
-  Item,
   RoadmapData,
 } from "../src/snapshot.ts";
 import {
@@ -26,22 +26,22 @@ import {
 import { testConfig } from "./helpers/config.ts";
 import {
   aged,
+  entity,
   forgeData,
   gitData,
   hoursBefore,
-  item,
   scannedAt,
   snapshotOf,
 } from "./helpers/snapshot.ts";
 
-/** The home directory the test items' clones sit under. */
+/** The home directory the test entities' clones sit under. */
 const home = "/home/test";
 
 const adoptAll = (ids: string[], extra = "") =>
   testConfig(`${ids.map((id) => `[papers."${id}"]\n`).join("\n")}\n${extra}`);
 
-function birdIn(items: Item[], config: Config, id: string): Bird {
-  const aviary = deriveAviary(snapshotOf(items), config, {}, home);
+function birdIn(entities: Entity[], config: Config, id: string): Bird {
+  const aviary = deriveAviary(snapshotOf(entities), config, {}, home);
   const bird = [
     ...aviary.wires.flatMap((wire) => wire.birds),
     ...aviary.fence.birds,
@@ -58,8 +58,8 @@ const failingRun = {
   createdAt: hoursBefore(2),
 };
 
-const settled = item("dev/spool", { sources: { git: gitData({}) } });
-const restless = item("dev/harbour", {
+const settled = entity("dev/spool", { sources: { git: gitData({}) } });
+const restless = entity("dev/harbour", {
   sources: {
     git: gitData({
       unpushedCount: 2,
@@ -73,7 +73,7 @@ const restless = item("dev/harbour", {
     }),
   },
 });
-const distressed = item("dev/prism", {
+const distressed = entity("dev/prism", {
   sources: {
     git: gitData({}),
     github: forgeData({ latestCi: failingRun }),
@@ -81,13 +81,13 @@ const distressed = item("dev/prism", {
 });
 
 /** A clone pushing to the named forges' skiff-app/skiff, each unread: no card, or a failed read. */
-function unreadableItem(
+function unreadableEntity(
   id: string,
   forges: ForgeName[],
-  sources: Item["sources"],
+  sources: Entity["sources"],
   cause: "no-card" | "read-failed",
-): Item {
-  return item(id, {
+): Entity {
+  return entity(id, {
     presences: {
       local: { ref: `local:${id}`, path: `/home/test/${id}` },
       forges: forges.map((forge) => ({
@@ -120,11 +120,11 @@ function unreadableItem(
 describe("mood", () => {
   it("wears health as mood: green content, amber restless, red distressed", async () => {
     const config = await adoptAll(["dev/spool", "dev/harbour", "dev/prism"]);
-    const items = [settled, restless, distressed];
+    const entities = [settled, restless, distressed];
 
     expect(
       ["dev/spool", "dev/harbour", "dev/prism"].map((id) => {
-        const bird = birdIn(items, config, id);
+        const bird = birdIn(entities, config, id);
         return [bird.health.level, bird.mood];
       }),
     ).toEqual([
@@ -136,7 +136,7 @@ describe("mood", () => {
 
   it("takes the worst cause and lists the amber and red ones worst first", async () => {
     const config = await adoptAll(["dev/prism"]);
-    const both = item("dev/prism", {
+    const both = entity("dev/prism", {
       sources: {
         git: gitData({
           uncommittedCount: 4,
@@ -165,12 +165,12 @@ describe("mood", () => {
 
   it("makes a bird whose remote no card can read restless, and not one whose token failed", async () => {
     const config = await adoptAll(["undev/skiff", "undev/tokenless"]);
-    const items = [
-      unreadableItem("undev/skiff", ["github"], {}, "no-card"),
-      unreadableItem("undev/tokenless", ["github"], {}, "read-failed"),
+    const entities = [
+      unreadableEntity("undev/skiff", ["github"], {}, "no-card"),
+      unreadableEntity("undev/tokenless", ["github"], {}, "read-failed"),
     ];
 
-    expect(birdIn(items, config, "undev/skiff").health).toEqual({
+    expect(birdIn(entities, config, "undev/skiff").health).toEqual({
       level: "amber",
       causes: [
         {
@@ -181,20 +181,22 @@ describe("mood", () => {
         },
       ],
     });
-    expect(birdIn(items, config, "undev/skiff").mood).toBe("restless");
-    expect(birdIn(items, config, "undev/skiff").bubble.speech).toBe(
+    expect(birdIn(entities, config, "undev/skiff").mood).toBe("restless");
+    expect(birdIn(entities, config, "undev/skiff").bubble.speech).toBe(
       "I push to skiff-app/skiff on github, but no card of yours can read it.",
     );
-    expect(birdIn(items, config, "undev/tokenless").health).toEqual({
+    expect(birdIn(entities, config, "undev/tokenless").health).toEqual({
       level: "green",
       causes: [],
     });
-    expect(birdIn(items, config, "undev/tokenless").bubble.chips).toEqual([]);
+    expect(birdIn(entities, config, "undev/tokenless").bubble.chips).toEqual(
+      [],
+    );
   });
 
   it("leaves green inputs out: fresh work and a young stall are content", async () => {
     const config = await testConfig('[papers."dev/gramophone"]\n');
-    const young = item("dev/gramophone", {
+    const young = entity("dev/gramophone", {
       sources: {
         git: gitData({
           branch: "spec",
@@ -226,14 +228,14 @@ describe("mood", () => {
 
   it("maps the git work-state to activity, null without a local clone", async () => {
     const config = await adoptAll(["dev/spool", "dev/harbour", "dev/perch"]);
-    const editing = item("dev/perch", {
+    const editing = entity("dev/perch", {
       sources: { git: gitData({ uncommittedCount: 1, activity: "editing" }) },
     });
-    const forgeOnly = item("github:finch/obsidian-tidy", {
+    const forgeOnly = entity("github:finch/obsidian-tidy", {
       path: null,
       presences: { local: null, forges: [] },
     });
-    const items = [settled, restless, editing, forgeOnly];
+    const entities = [settled, restless, editing, forgeOnly];
 
     expect(
       [
@@ -241,7 +243,7 @@ describe("mood", () => {
         "dev/harbour",
         "dev/perch",
         "github:finch/obsidian-tidy",
-      ].map((id) => birdIn(items, config, id).activity),
+      ].map((id) => birdIn(entities, config, id).activity),
     ).toEqual(["settled", "in-flight", "editing", null]);
   });
 });
@@ -303,14 +305,14 @@ describe("the wires", () => {
       "dev/alpha",
       "dev/zeta",
     ]);
-    const items = [
+    const entities = [
       settled,
       restless,
       distressed,
-      item("dev/alpha", { sources: { git: gitData({}) } }),
-      item("dev/zeta", { sources: { git: gitData({}) } }),
+      entity("dev/alpha", { sources: { git: gitData({}) } }),
+      entity("dev/zeta", { sources: { git: gitData({}) } }),
     ];
-    const aviary = deriveAviary(snapshotOf(items), config, {}, home);
+    const aviary = deriveAviary(snapshotOf(entities), config, {}, home);
 
     expect(aviary.wires.map((wire) => wire.name)).toEqual([
       "Machine & Home",
@@ -341,12 +343,12 @@ describe("the wires", () => {
 
   it("puts every unadopted bird on the fence by name", async () => {
     const config = await adoptAll(["dev/spool"]);
-    const items = [
+    const entities = [
       settled,
-      item("dev/photo-shuttle", { sources: { git: gitData({}) } }),
-      item("dev/hello", { sources: { git: gitData({}) } }),
+      entity("dev/photo-shuttle", { sources: { git: gitData({}) } }),
+      entity("dev/hello", { sources: { git: gitData({}) } }),
     ];
-    const aviary = deriveAviary(snapshotOf(items), config, {}, home);
+    const aviary = deriveAviary(snapshotOf(entities), config, {}, home);
 
     expect(
       aviary.fence.birds.map((bird) => [
@@ -366,7 +368,7 @@ describe("the wires", () => {
 
   it("names the bird from config and fills it by outstanding work", async () => {
     const config = await testConfig('[papers."dev/spool"]\nname = "Spool"\n');
-    const busy = item("dev/spool", {
+    const busy = entity("dev/spool", {
       sources: {
         git: gitData({}),
         roadmap: mockRoadmap([
@@ -382,7 +384,7 @@ describe("the wires", () => {
 
   it("caps plumpness", async () => {
     const config = await adoptAll([]);
-    const hothouse = item("obsidian/Hothouse", {
+    const hothouse = entity("obsidian/Hothouse", {
       kind: "obsidian",
       sources: {
         roadmap: mockRoadmap([
@@ -426,7 +428,7 @@ describe("the wires", () => {
 describe("chips", () => {
   it("carry real numbers in order, each with the severity of its fact", async () => {
     const config = await testConfig('[papers."dev/prism"]\n');
-    const busy = item("dev/prism", {
+    const busy = entity("dev/prism", {
       sources: {
         git: gitData({
           uncommittedCount: 4,
@@ -470,7 +472,7 @@ describe("chips", () => {
       ["4 uncommitted", 4, "red"],
       ["1 unpushed", 1, null],
       ["1 open PR", 1, null],
-      ["13 open items", 13, null],
+      ["13 open work items", 13, null],
     ]);
     // Every kind but the unreadable remote's, which needs a forge no card reads.
     expect(
@@ -488,7 +490,7 @@ describe("chips", () => {
   it("wear a stalled chip at the stall's level, after unpushed, and none for a stall still green", async () => {
     const config = await testConfig('[papers."dev/prism"]\n');
     const parked = (days: number, level: "green" | "amber" | "red") =>
-      item("dev/prism", {
+      entity("dev/prism", {
         sources: {
           git: gitData({
             stall: {
@@ -520,7 +522,7 @@ describe("chips", () => {
 
   it("lead with a can't-read chip in amber naming each forge no card can read", async () => {
     const config = await adoptAll(["undev/skiff"]);
-    const skiff = unreadableItem(
+    const skiff = unreadableEntity(
       "undev/skiff",
       ["github", "forgejo"],
       {
@@ -539,7 +541,7 @@ describe("chips", () => {
       ]),
     ).toEqual([
       ["unreadable", "can't read github and forgejo", "amber"],
-      ["open-items", "3 open items", null],
+      ["open-work-items", "3 open work items", null],
     ]);
   });
 
@@ -551,7 +553,7 @@ describe("chips", () => {
 
   it("say nothing of CI a bird does not run: no chip, no not set up, no ledger row", async () => {
     const config = await adoptAll(["dev/oxbow"]);
-    const noCi = item("dev/oxbow", {
+    const noCi = entity("dev/oxbow", {
       sources: { github: forgeData({}), forgejo: forgeData({}) },
     });
     const bird = birdIn([noCi], config, "dev/oxbow");
@@ -569,7 +571,7 @@ describe("chips", () => {
 
   it("stay off fence birds, which only say where they stand", async () => {
     const config = await adoptAll([]);
-    const found = item("dev/mixed-bag", {
+    const found = entity("dev/mixed-bag", {
       sources: {
         git: gitData({}),
         roadmap: mockRoadmap([
@@ -585,7 +587,7 @@ describe("chips", () => {
 describe("the ledger", () => {
   it("reads clean zeros as a green none and tones counts by severity", async () => {
     const config = await adoptAll(["dev/harbour"]);
-    const harbour = item("dev/harbour", {
+    const harbour = entity("dev/harbour", {
       sources: {
         git: gitData({
           unpushedCount: 2,
@@ -655,11 +657,11 @@ describe("the ledger", () => {
       },
       {
         kind: "count",
-        label: "open roadmap items",
+        label: "open work items",
         count: 15,
         text: "15",
         tone: null,
-        chip: "open-items",
+        chip: "open-work-items",
         workings: [
           {
             source: "docs/roadmap.md",
@@ -704,7 +706,7 @@ describe("the ledger", () => {
 
   it("states one disk only, and failing CI in red with its run", async () => {
     const config = await testConfig('[papers."dev/hello"]\n');
-    const hello = item("dev/hello", {
+    const hello = entity("dev/hello", {
       sources: {
         git: gitData({ backup: "local-only", lastCommitAt: null }),
         github: forgeData({ latestCi: failingRun }),
@@ -749,7 +751,7 @@ describe("the unpushed commits row", () => {
     url: "https://github.com/finch/perch",
     foundBy: "local-remote",
   };
-  const perch = item("dev/perch", {
+  const perch = entity("dev/perch", {
     presences: {
       local: { ref: "local:dev/perch", path: "/home/test/dev/perch" },
       forges: [github],
@@ -871,7 +873,7 @@ describe("the unpushed commits row", () => {
 });
 
 describe("where a fence bird lives", () => {
-  const forgeOnly = item("github:finch/river", {
+  const forgeOnly = entity("github:finch/river", {
     path: null,
     presences: {
       local: null,
@@ -886,13 +888,13 @@ describe("where a fence bird lives", () => {
       ],
     },
   });
-  const oneDisk = item("dev/hello", {
+  const oneDisk = entity("dev/hello", {
     sources: { git: gitData({ backup: "local-only" }) },
   });
-  const undecided = item("dev/spool", { sources: { git: gitData({}) } });
-  const items = [forgeOnly, oneDisk, undecided];
+  const undecided = entity("dev/spool", { sources: { git: gitData({}) } });
+  const entities = [forgeOnly, oneDisk, undecided];
   const livesOf = (config: Config) =>
-    items.map((entry) => birdIn(items, config, entry.id).lives);
+    entities.map((entry) => birdIn(entities, config, entry.id).lives);
 
   it("names the forge, the one disk, or nothing while undecided", async () => {
     expect(livesOf(await adoptAll([]))).toEqual([
@@ -903,7 +905,7 @@ describe("where a fence bird lives", () => {
   });
 
   it("says nothing for an adopted bird", async () => {
-    expect(livesOf(await adoptAll(items.map((entry) => entry.id)))).toEqual([
+    expect(livesOf(await adoptAll(entities.map((entry) => entry.id)))).toEqual([
       null,
       null,
       null,
@@ -914,7 +916,7 @@ describe("where a fence bird lives", () => {
 describe("the ledger's quiet sentence", () => {
   it("says the tree is clean and everything is pushed when nothing waits", async () => {
     const config = await adoptAll(["dev/spool"]);
-    const spool = item("dev/spool", {
+    const spool = entity("dev/spool", {
       sources: {
         git: gitData({ lastCommitAt: hoursBefore(3) }),
         github: forgeData({
@@ -930,7 +932,7 @@ describe("the ledger's quiet sentence", () => {
 
   it("says no remote holds a copy of a clean clone on one disk only", async () => {
     const config = await adoptAll(["dev/hello"]);
-    const hello = item("dev/hello", {
+    const hello = entity("dev/hello", {
       sources: { git: gitData({ backup: "local-only" }) },
     });
 
@@ -948,14 +950,14 @@ describe("the ledger's quiet sentence", () => {
       "dev/parked",
       "github:finch/river",
     ]);
-    const fresh = item("dev/fresh", {
+    const fresh = entity("dev/fresh", {
       sources: { git: gitData({ uncommittedCount: 3 }) },
     });
-    const unread = item("dev/unread", {
+    const unread = entity("dev/unread", {
       sources: { git: { error: "not a git repository" } },
     });
     // Clean and pushed, but parked: the stall lives in health, never on a ledger row.
-    const parked = item("dev/parked", {
+    const parked = entity("dev/parked", {
       sources: {
         git: gitData({
           stall: {
@@ -968,15 +970,15 @@ describe("the ledger's quiet sentence", () => {
         }),
       },
     });
-    const forgeOnly = item("github:finch/river", {
+    const forgeOnly = entity("github:finch/river", {
       path: null,
       presences: { local: null, forges: [] },
       sources: { github: forgeData({}) },
     });
-    const items = [restless, distressed, fresh, unread, parked, forgeOnly];
+    const entities = [restless, distressed, fresh, unread, parked, forgeOnly];
 
     expect(
-      items.map((entry) => birdIn(items, config, entry.id).detail.quiet),
+      entities.map((entry) => birdIn(entities, config, entry.id).detail.quiet),
     ).toEqual([null, null, null, null, null, null]);
   });
 });
@@ -995,7 +997,7 @@ describe("the ledger's workings", () => {
 
   it("names each forge's newest run on one CI row, which says the worst state as the chip does", async () => {
     const config = await adoptAll(["dev/perch"]);
-    const perch = item("dev/perch", {
+    const perch = entity("dev/perch", {
       sources: {
         github: forgeData({
           latestCi: { ...failingRun, state: "success" },
@@ -1040,7 +1042,7 @@ describe("the ledger's workings", () => {
 
   it("leaves a forge with no run, or no pull requests, silent", async () => {
     const config = await adoptAll(["dev/perch"]);
-    const perch = item("dev/perch", {
+    const perch = entity("dev/perch", {
       sources: {
         github: forgeData({
           latestCi: failingRun,
@@ -1081,7 +1083,7 @@ describe("the ledger's workings", () => {
 
   it("says a forge couldn't be read on the rows it would have spelled out", async () => {
     const config = await adoptAll(["dev/prism"]);
-    const prism = item("dev/prism", {
+    const prism = entity("dev/prism", {
       sources: {
         github: { error: "HTTP 404", cause: "read-failed" },
         forgejo: forgeData({
@@ -1112,7 +1114,7 @@ describe("the ledger's workings", () => {
 
   it("says couldn't read, never not read, for a failed source, on the rows no forge could fill", async () => {
     const config = await adoptAll(["dev/hearth-config"]);
-    const unread = item("dev/hearth-config", {
+    const unread = entity("dev/hearth-config", {
       sources: {
         github: { error: "no token in the keyring", cause: "read-failed" },
         forgejo: { error: "HTTP 500", cause: "read-failed" },
@@ -1147,7 +1149,7 @@ describe("the ledger's workings", () => {
     const config = await adoptAll(["dev/prism"]);
     const pullsError =
       "HTTP 404 from https://api.github.com/repos/the-undev/prism/pulls?state=open&per_page=100";
-    const prism = item("dev/prism", {
+    const prism = entity("dev/prism", {
       sources: {
         github: forgeData({
           latestCi: failingRun,
@@ -1200,9 +1202,9 @@ describe("the ledger's workings", () => {
     ]);
   });
 
-  it("counts open items per roadmap file, a file with none silent", async () => {
+  it("counts open work items per roadmap file, a file with none silent", async () => {
     const config = await adoptAll(["dev/hollow"]);
-    const hollow = item("dev/hollow", {
+    const hollow = entity("dev/hollow", {
       sources: {
         roadmap: mockRoadmap([
           { path: "docs/roadmap.md", task: 1, bug: 2, criticalBug: 0 },
@@ -1214,7 +1216,7 @@ describe("the ledger's workings", () => {
     const bird = birdIn([hollow], config, "dev/hollow");
 
     expect(
-      row(bird, "open roadmap items").workings.map((working) => [
+      row(bird, "open work items").workings.map((working) => [
         working.source,
         working.text,
       ]),
@@ -1226,7 +1228,7 @@ describe("the ledger's workings", () => {
 
   it("judges each roadmap file's bugs and critical bugs on its own, the bird taking the worst", async () => {
     const config = await adoptAll(["dev/hollow"]);
-    const hollow = item("dev/hollow", {
+    const hollow = entity("dev/hollow", {
       sources: {
         roadmap: mockRoadmap([
           { path: "docs/roadmap.md", task: 4, bug: 6, criticalBug: 0 },
@@ -1260,7 +1262,7 @@ describe("the ledger's workings", () => {
       ["2 bugs in docs/sync.md", null],
       ["3 critical bugs in docs/sync.md", "red"],
       ["4 bugs in docs/ideas.md", null],
-      ["28 open items", null],
+      ["28 open work items", null],
     ]);
     expect(bugRows).toEqual([
       ["bugs in docs/roadmap.md", "6", "amber", "bugs"],
@@ -1303,7 +1305,7 @@ describe("the ledger's workings", () => {
       ),
       { bug: [...builtInBugWords], criticalBug: [...builtInCriticalBugWords] },
     );
-    const tidewater = item("dev/tidewater", {
+    const tidewater = entity("dev/tidewater", {
       sources: { roadmap: { ...mockRoadmap([]), files: [file] } },
     });
     const bird = birdIn([tidewater], config, "dev/tidewater");
@@ -1325,13 +1327,13 @@ describe("the ledger's workings", () => {
     ]);
   });
 
-  it("adds no mood line to a row within its window, and a restless or distressed one at its window's count, from per-item overrides when set", async () => {
+  it("adds no mood line to a row within its window, and a restless or distressed one at its window's count, from per-entity overrides when set", async () => {
     const config = await adoptAll(["dev/hollow"]);
     const lineOf = (
       counts: { bug: number; criticalBug: number },
       label: string,
     ) => {
-      const hollow = item("dev/hollow", {
+      const hollow = entity("dev/hollow", {
         sources: {
           roadmap: {
             ...mockRoadmap([{ path: "docs/roadmap.md", task: 0, ...counts }]),
@@ -1377,7 +1379,7 @@ describe("the ledger's workings", () => {
   it("leaves tasks out of health however many there are, and judges against the windows the roadmap carries", async () => {
     const config = await adoptAll(["dev/hollow"]);
     const busy = (bug: number) =>
-      item("dev/hollow", {
+      entity("dev/hollow", {
         sources: {
           roadmap: {
             ...mockRoadmap([
@@ -1404,7 +1406,7 @@ describe("the ledger's workings", () => {
     const config = await adoptAll(["dev/hollow"]);
     const chipsOf = (files: Parameters<typeof mockRoadmap>[0]) =>
       birdIn(
-        [item("dev/hollow", { sources: { roadmap: mockRoadmap(files) } })],
+        [entity("dev/hollow", { sources: { roadmap: mockRoadmap(files) } })],
         config,
         "dev/hollow",
       ).bubble.chips.filter(
@@ -1433,7 +1435,7 @@ describe("the ledger's workings", () => {
     const config = await adoptAll(["dev/hollow"]);
     const chipsOf = (files: Parameters<typeof mockRoadmap>[0]) =>
       birdIn(
-        [item("dev/hollow", { sources: { roadmap: mockRoadmap(files) } })],
+        [entity("dev/hollow", { sources: { roadmap: mockRoadmap(files) } })],
         config,
         "dev/hollow",
       ).bubble.chips.filter(
@@ -1458,11 +1460,11 @@ describe("the ledger's workings", () => {
 
   it("reads a roadmap cached before files were judged as not read", async () => {
     const config = await adoptAll(["dev/hollow"]);
-    const cached = item("dev/hollow", {
+    const cached = entity("dev/hollow", {
       sources: {
         roadmap: {
           counts: { bug: 2, feature: 3 },
-          files: [{ path: "docs/roadmap.md", items: [], groups: [] }],
+          files: [{ path: "docs/roadmap.md", workItems: [], groups: [] }],
         } as unknown as RoadmapData,
       },
     });
@@ -1473,7 +1475,7 @@ describe("the ledger's workings", () => {
 
   it("ages uncommitted changes from the oldest, toned by its window", async () => {
     const config = await adoptAll(["dev/gramophone"]);
-    const gramophone = item("dev/gramophone", {
+    const gramophone = entity("dev/gramophone", {
       sources: {
         git: gitData({
           uncommittedCount: 14,
@@ -1506,7 +1508,7 @@ describe("the ledger's workings", () => {
 
   it("hands a fence bird's rows no chip, for its bubble carries none", async () => {
     const config = await adoptAll([]);
-    const found = item("dev/mixed-bag", {
+    const found = entity("dev/mixed-bag", {
       sources: {
         git: gitData({ uncommittedCount: 2 }),
         github: forgeData({ latestCi: failingRun }),
@@ -1522,13 +1524,13 @@ describe("the ledger's workings", () => {
 });
 
 describe("the detail", () => {
-  const perch = item("dev/perch", {
+  const perch = entity("dev/perch", {
     flags: [
       {
         flag: "config-conflict",
         level: null,
         detail:
-          'papers."dev/perch", papers."github:finch/perch": name one item, dev/perch; papers."dev/perch" applies',
+          'papers."dev/perch", papers."github:finch/perch": name one entity, dev/perch; papers."dev/perch" applies',
       },
     ],
     presences: {
@@ -1641,21 +1643,21 @@ describe("the detail", () => {
         flag: "config-conflict",
         text: "config conflict",
         detail:
-          'papers."dev/perch", papers."github:finch/perch": name one item, dev/perch; papers."dev/perch" applies',
+          'papers."dev/perch", papers."github:finch/perch": name one entity, dev/perch; papers."dev/perch" applies',
         level: null,
       },
     ]);
     expect(detail.problems).toEqual([{ source: "Forgejo", error: "HTTP 500" }]);
   });
 
-  it("offers launch actions in config order, each with its commands, in the item's zellij session", async () => {
+  it("offers launch actions in config order, each with its commands, in the entity's zellij session", async () => {
     const config = await adoptAll(["dev/perch", "undev/notes"]);
     config.launch.actions = config.launch.actions.map((action) =>
       action.kind === "zellij"
         ? { ...action, sessions: { "/home/test/undev": "undev" } }
         : action,
     );
-    const obsidianBird = item("undev/notes", { kind: "obsidian" });
+    const obsidianBird = entity("undev/notes", { kind: "obsidian" });
 
     expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([
       {
@@ -1722,7 +1724,7 @@ describe("the detail", () => {
         icon: "edit",
       },
     );
-    const obsidianBird = item("obsidian/Home Notes", { kind: "obsidian" });
+    const obsidianBird = entity("obsidian/Home Notes", { kind: "obsidian" });
     const obsidianActions = (id: string) =>
       birdIn([obsidianBird, perch], config, id).detail.actions.filter(
         (action) => action.kind === "obsidian",
@@ -1794,7 +1796,7 @@ describe("the detail", () => {
       url: `https://${forge}.example/${fullName}`,
       foundBy: "local-remote" as const,
     });
-    const cloned = item("dev/perch", {
+    const cloned = entity("dev/perch", {
       presences: {
         local: { ref: "local:dev/perch", path: "/home/test/dev/perch" },
         forges: [
@@ -1804,25 +1806,25 @@ describe("the detail", () => {
         ],
       },
     });
-    const forgeOnly = item("github:finch/obsidian-tidy", {
+    const forgeOnly = entity("github:finch/obsidian-tidy", {
       path: null,
       presences: {
         local: null,
         forges: [presence("github", "finch/obsidian-tidy")],
       },
     });
-    const oneDisk = item("dev/odin/hello");
-    const outside = item("scratch", {
+    const oneDisk = entity("dev/odin/hello");
+    const outside = entity("scratch", {
       path: "/srv/scratch",
       presences: {
         local: { ref: "local:/srv/scratch", path: "/srv/scratch" },
         forges: [],
       },
     });
-    const items = [cloned, forgeOnly, oneDisk, outside];
-    const config = await adoptAll(items.map((entry) => entry.id));
+    const entities = [cloned, forgeOnly, oneDisk, outside];
+    const config = await adoptAll(entities.map((entry) => entry.id));
     const whereabouts = (id: string) => {
-      const { clonePath, forges } = birdIn(items, config, id).detail;
+      const { clonePath, forges } = birdIn(entities, config, id).detail;
       return { clonePath, forges };
     };
 
@@ -1846,7 +1848,7 @@ describe("the detail", () => {
 
   it("names a forge it could not read where the bird lives, with no link out to it", async () => {
     const config = await adoptAll(["undev/skiff"]);
-    const skiff = item("undev/skiff", {
+    const skiff = entity("undev/skiff", {
       presences: {
         local: { ref: "local:undev/skiff", path: "/home/test/undev/skiff" },
         forges: [
@@ -1881,23 +1883,25 @@ describe("the detail", () => {
 
   it("gives the record a notice naming a remote no card can read and the card that would", async () => {
     const config = await adoptAll(["undev/skiff", "undev/tokenless"]);
-    const items = [
-      unreadableItem("undev/skiff", ["github"], {}, "no-card"),
-      unreadableItem("undev/tokenless", ["github"], {}, "read-failed"),
+    const entities = [
+      unreadableEntity("undev/skiff", ["github"], {}, "no-card"),
+      unreadableEntity("undev/tokenless", ["github"], {}, "read-failed"),
     ];
 
-    expect(birdIn(items, config, "undev/skiff").detail.notices).toEqual([
+    expect(birdIn(entities, config, "undev/skiff").detail.notices).toEqual([
       {
         text: "The clone pushes to skiff-app/skiff on github, which no GitHub card reads.",
         fix: "Add a card for skiff-app under",
       },
     ]);
-    expect(birdIn(items, config, "undev/tokenless").detail.notices).toEqual([]);
+    expect(birdIn(entities, config, "undev/tokenless").detail.notices).toEqual(
+      [],
+    );
   });
 
   it("offers no launch actions and no key files without a local clone", async () => {
     const config = await adoptAll(["github:finch/obsidian-tidy"]);
-    const forgeOnly = item("github:finch/obsidian-tidy", {
+    const forgeOnly = entity("github:finch/obsidian-tidy", {
       path: null,
       presences: { local: null, forges: [] },
     });
@@ -1920,7 +1924,7 @@ describe("the detail", () => {
       foundBy: "account-listing",
     });
     const forgeOnly = (id: string, forges: ForgePresence[]) =>
-      item(id, { path: null, presences: { local: null, forges } });
+      entity(id, { path: null, presences: { local: null, forges } });
 
     it("names the forge, the repository and the clone address for a bird held by a forge and cloned nowhere here", async () => {
       const pocket = forgeOnly("forgejo:finch/pocket", [
@@ -1981,7 +1985,7 @@ describe("the detail", () => {
     });
 
     it("never shows for a bird with a clone here, nor for one on no forge", async () => {
-      const oneDisk = item("dev/odin/hello");
+      const oneDisk = entity("dev/odin/hello");
       const config = await adoptAll(["dev/perch", oneDisk.id]);
 
       expect(birdIn([perch], config, "dev/perch").detail.noClone).toBeNull();
@@ -2028,9 +2032,9 @@ describe("the detail", () => {
     ]);
   });
 
-  it("shows a detected roadmap file as a document, with no bug rows, open items, marks or bug chips", async () => {
+  it("shows a detected roadmap file as a document, with no bug rows, open work items, marks or bug chips", async () => {
     const defaults = await adoptAll(["dev/perch"]);
-    const undeclared = item("dev/perch", {
+    const undeclared = entity("dev/perch", {
       sources: { roadmap: mockDetectedRoadmap("docs/roadmap.md") },
     });
     const bird = birdIn([undeclared], defaults, "dev/perch");
@@ -2079,7 +2083,7 @@ describe("the detail", () => {
           criticalBug: [...builtInCriticalBugWords],
         },
       );
-    const marked = item("dev/perch", {
+    const marked = entity("dev/perch", {
       sources: {
         roadmap: {
           ...mockRoadmap([]),
@@ -2136,7 +2140,7 @@ describe("the commit river", () => {
     const forges = (["github", "forgejo"] as const).filter(
       (forge) => lists[forge] !== undefined,
     );
-    const sources: Item["sources"] = {
+    const sources: Entity["sources"] = {
       git: gitData({ defaultBranchCommits: lists.here }),
     };
     if (lists.github)
@@ -2149,7 +2153,7 @@ describe("the commit river", () => {
         url: forgejoUrl,
         finalisedCommits: lists.forgejo,
       });
-    const subject = item("dev/river", {
+    const subject = entity("dev/river", {
       presences: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
         forges: forges.map(presenceOn),
@@ -2269,7 +2273,7 @@ describe("the commit river", () => {
   });
 
   it("judges over the forges read, noting one that couldn't be read, whatever the clone's list", async () => {
-    const partly = item("dev/river", {
+    const partly = entity("dev/river", {
       presences: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
         forges: [presenceOn("github"), presenceOn("forgejo")],
@@ -2297,7 +2301,7 @@ describe("the commit river", () => {
       forges: [presenceOn("github"), presenceOn("forgejo")],
     };
     const commits = [at("c1", 1)];
-    const pullsUnread = item("dev/river", {
+    const pullsUnread = entity("dev/river", {
       presences: twoForges,
       sources: {
         git: gitData({ defaultBranchCommits: commits }),
@@ -2309,7 +2313,7 @@ describe("the commit river", () => {
         forgejo: forgeData({ url: forgejoUrl, finalisedCommits: commits }),
       },
     });
-    const commitsUnread = item("dev/river", {
+    const commitsUnread = entity("dev/river", {
       presences: twoForges,
       sources: {
         git: gitData({ defaultBranchCommits: commits }),
@@ -2334,7 +2338,7 @@ describe("the commit river", () => {
   });
 
   it("tones unpushed commits amber, on no remote that could be read, while a forge couldn't be read", async () => {
-    const partly = item("dev/river", {
+    const partly = entity("dev/river", {
       presences: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
         forges: [presenceOn("github"), presenceOn("forgejo")],
@@ -2358,7 +2362,7 @@ describe("the commit river", () => {
 
   it("names the branch in the river's heading and marks every commit amber when no remote could be read", async () => {
     const unread = (cause: "no-card" | "read-failed") =>
-      item("dev/river", {
+      entity("dev/river", {
         presences: {
           local: { ref: "local:dev/river", path: "/home/test/dev/river" },
           forges: [presenceOn("github")],
@@ -2393,7 +2397,7 @@ describe("the commit river", () => {
   });
 
   it("tells a forge-only bird's commits from its forge", async () => {
-    const forgeOnly = item("github:finch/river", {
+    const forgeOnly = entity("github:finch/river", {
       path: null,
       presences: { local: null, forges: [presenceOn("github")] },
       sources: {

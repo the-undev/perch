@@ -776,6 +776,10 @@ describe("the Launching page", () => {
       ],
       ["home", "main"],
     ]);
+    expect(cardAt(1).getByText(/for a project no root assigns/)).toBeTruthy();
+    expect(
+      cardAt(1).getByText(/the longest root holding the project/),
+    ).toBeTruthy();
     fireEvent.click(
       cardAt(1).getByRole("button", { name: "Add session root" }),
     );

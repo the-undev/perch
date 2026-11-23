@@ -74,12 +74,12 @@ const input = {
 };
 
 describe("aggregate", () => {
-  it("lists each project as an item, and the snapshot's times", () => {
+  it("lists each project as an entity, and the snapshot's times", () => {
     const snapshot = aggregate(bundle, input, new Date("2026-10-22T00:00:00Z"));
 
-    expect(snapshot.items.map((item) => [item.id, item.kind])).toEqual([
-      ["dev/perch", "git"],
-    ]);
+    expect(snapshot.entities.map((entity) => [entity.id, entity.kind])).toEqual(
+      [["dev/perch", "git"]],
+    );
     expect(snapshot.scannedAt).toBe(gatheredAt);
     expect(snapshot.aggregatedAt).toBe("2026-10-22T00:00:00.000Z");
     expect(snapshot.warnings).toEqual([
@@ -87,7 +87,7 @@ describe("aggregate", () => {
     ]);
   });
 
-  it("names a local item's kind by what it holds: obsidian with an .obsidian folder, else git", () => {
+  it("names a local entity's kind by what it holds: obsidian with an .obsidian folder, else git", () => {
     const siloFiles = rawFiles({
       includes: { "/home/test/obsidian": "directory" },
       locals: {
@@ -109,19 +109,19 @@ describe("aggregate", () => {
     );
 
     expect(
-      snapshot.items
-        .filter((item) => item.path !== null)
-        .map((item) => [item.id, item.kind]),
+      snapshot.entities
+        .filter((entity) => entity.path !== null)
+        .map((entity) => [entity.id, entity.kind]),
     ).toEqual([
       ["obsidian/notes", "obsidian"],
       ["obsidian/plain", "git"],
     ]);
   });
 
-  it("derives git data against the item's thresholds, as of when it was gathered", () => {
+  it("derives git data against the entity's thresholds, as of when it was gathered", () => {
     const later = aggregate(bundle, input, new Date("2027-01-01T00:00:00Z"));
 
-    expect(later.items[0]?.sources.git).toMatchObject({
+    expect(later.entities[0]?.sources.git).toMatchObject({
       backup: "local-only",
       activity: "editing",
       drift: {
@@ -133,7 +133,7 @@ describe("aggregate", () => {
   });
 
   it("maps a missing roadmap file to no work items", () => {
-    const perch = aggregate(bundle, input, new Date()).items[0];
+    const perch = aggregate(bundle, input, new Date()).entities[0];
 
     expect(perch?.sources.roadmap).toEqual({
       counts: { task: 0, bug: 0, "critical-bug": 0 },
@@ -146,7 +146,7 @@ describe("aggregate", () => {
     });
   });
 
-  it("classes roadmap items by the word lists the item's entry sets, else [work], and judges them by its windows", async () => {
+  it("classes work items by the word lists the entity's entry sets, else [work], and judges them by its windows", async () => {
     const worded = await testConfig(
       '[work]\nbug_words = ["defect"]\n\n[papers."dev/perch"]\ncritical_bug_words = ["outage"]\nbugs_red_count = 9\n',
     );
@@ -179,7 +179,7 @@ describe("aggregate", () => {
       { ...bundle, files: roadmapFiles },
       { ...input, config: worded },
       new Date(),
-    ).items[0];
+    ).entities[0];
 
     expect(perch?.sources.roadmap).toMatchObject({
       counts: { task: 1, bug: 1, "critical-bug": 1 },
@@ -251,14 +251,14 @@ describe("aggregate", () => {
       input,
       new Date(),
     );
-    const item = (id: string) =>
-      snapshot.items.find((candidate) => candidate.id === id);
+    const entity = (id: string) =>
+      snapshot.entities.find((candidate) => candidate.id === id);
 
-    expect(item("undev/skiff")?.sources.github).toEqual({
+    expect(entity("undev/skiff")?.sources.github).toEqual({
       error: "no GitHub card is configured for owner skiff-app",
       cause: "no-card",
     });
-    expect(item("undev/skiff")?.presences.forges).toEqual([
+    expect(entity("undev/skiff")?.presences.forges).toEqual([
       {
         forge: "github",
         ref: "github:skiff-app/skiff",
@@ -268,12 +268,12 @@ describe("aggregate", () => {
         foundBy: "local-remote",
       },
     ]);
-    expect(item("undev/gone")?.sources.github).toEqual({
+    expect(entity("undev/gone")?.sources.github).toEqual({
       error: "HTTP 404 for the-undev/gone",
       cause: "read-failed",
     });
-    expect(item("undev/fork")?.presences.forges).toEqual([]);
-    expect(item("undev/fork")?.sources.github).toBeUndefined();
+    expect(entity("undev/fork")?.presences.forges).toEqual([]);
+    expect(entity("undev/fork")?.sources.github).toBeUndefined();
     expect(snapshot.forges.github.active).toEqual([]);
   });
 
@@ -296,8 +296,8 @@ describe("aggregate", () => {
     );
 
     expect(
-      snapshot.items.flatMap((item) =>
-        item.presences.forges.map((presence) => [
+      snapshot.entities.flatMap((entity) =>
+        entity.presences.forges.map((presence) => [
           presence.ref,
           presence.sshUrl,
         ]),

@@ -5,7 +5,7 @@
 import {
   type Config,
   collapseHome,
-  type ItemEntry,
+  type EntityEntry,
   noThresholdOverrides,
   resolveEntry,
   type ThresholdOverrides,
@@ -13,10 +13,10 @@ import {
   zellijActionOf,
   zellijSessionFor,
 } from "./config.ts";
-import { itemRefs } from "./refs.ts";
-import type { Item } from "./snapshot.ts";
+import { entityRefs } from "./refs.ts";
+import type { Entity } from "./snapshot.ts";
 
-/** A threshold's key in config, the same globally and per item. */
+/** A threshold's key in config, the same globally and per entity. */
 export type ThresholdKey = (typeof thresholdKeys)[number][2];
 
 /** The entry fields the detail page edits. */
@@ -25,13 +25,13 @@ export interface EntryValues {
   wire: string | null;
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
-  /** Key files relative to the item; null keeps the README and the roadmaps. */
+  /** Key files relative to the entity; null keeps the README and the roadmaps. */
   keyFiles: string[] | null;
-  /** Roadmap files relative to the item; null keeps the standard names. */
+  /** Roadmap files relative to the entity; null keeps the standard names. */
   roadmaps: string[] | null;
   /** The overrides set; a key left out takes the global value. */
   thresholds: Partial<Record<ThresholdKey, number>>;
-  /** The zellij session holding the item's tab; null takes it from the zellij action. */
+  /** The zellij session holding the entity's tab; null takes it from the zellij action. */
   zellijSession: string | null;
   /** The entry's bug words, kept as config has them; the form does not edit them. */
   bugWords: string[] | null;
@@ -47,16 +47,16 @@ export interface EntryOptions {
   thresholds: Record<ThresholdKey, number>;
 }
 
-/** The newest commit the scan read for an item. */
+/** The newest commit the scan read for an entity. */
 export interface SeenCommit {
   at: string;
   /** Null when the scan read no subject for it, as on a detached HEAD. */
   subject: string | null;
 }
 
-/** What the scan found for an item, which the papers show and cannot change. */
+/** What the scan found for an entity, which the papers show and cannot change. */
 export interface EntrySeen {
-  /** Where the clone is on disk, home as ~; null for an item with no clone here. */
+  /** Where the clone is on disk, home as ~; null for an entity with no clone here. */
   foundAt: string | null;
   /** The forges that also hold it, each as its web address without the scheme. */
   forges: string[];
@@ -145,7 +145,7 @@ export function nestedThresholds(
 }
 
 /** An entry's editable fields as form values. */
-export function entryValues(entry: ItemEntry): EntryValues {
+export function entryValues(entry: EntityEntry): EntryValues {
   return {
     wire: entry.wire,
     name: entry.name,
@@ -173,13 +173,13 @@ export function entryOptions(config: Config): EntryOptions {
 }
 
 /** The newest commit the scan read: git's checked-out one, else the newest any forge finalised. */
-function lastCommitOf(item: Item): SeenCommit | null {
-  const git = item.sources.git;
+function lastCommitOf(entity: Entity): SeenCommit | null {
+  const git = entity.sources.git;
   if (git !== undefined && !("error" in git) && git.lastCommitAt !== null) {
     const head = git.branches.find((branch) => branch.name === git.branch);
     return { at: git.lastCommitAt, subject: head?.subject ?? null };
   }
-  const finalised = [item.sources.github, item.sources.forgejo].flatMap(
+  const finalised = [entity.sources.github, entity.sources.forgejo].flatMap(
     (forge) =>
       forge === undefined ||
       "error" in forge ||
@@ -201,55 +201,55 @@ function lastCommitOf(item: Item): SeenCommit | null {
 }
 
 /**
- * What the scan found for an item: its clone, its forges, by address or by reference for one that
+ * What the scan found for an entity: its clone, its forges, by address or by reference for one that
  * could not be read, and its newest commit.
  */
-export function entrySeen(item: Item, home: string): EntrySeen {
+export function entrySeen(entity: Entity, home: string): EntrySeen {
   return {
-    foundAt: item.path === null ? null : collapseHome(item.path, home),
-    forges: item.presences.forges.map(
+    foundAt: entity.path === null ? null : collapseHome(entity.path, home),
+    forges: entity.presences.forges.map(
       (presence) => presence.url?.replace(/^[a-z]+:\/\//, "") ?? presence.ref,
     ),
-    lastCommit: lastCommitOf(item),
+    lastCommit: lastCommitOf(entity),
   };
 }
 
 /**
- * The entry form for an item: the entry that applies to it, if any, what the scan found, and the
+ * The entry form for an entity: the entry that applies to it, if any, what the scan found, and the
  * form's choices. Paths are written with ~ for the home directory.
  */
 export function entryFormFor(
   config: Config,
-  item: Item,
+  entity: Entity,
   home: string,
 ): EntryForm {
-  const { entry, keys } = resolveEntry(config, item.id, itemRefs(item));
+  const { entry, keys } = resolveEntry(config, entity.id, entityRefs(entity));
   const zellij = zellijActionOf(config);
   return {
     key: keys[0] ?? null,
-    scannedName: item.name,
-    seen: entrySeen(item, home),
+    scannedName: entity.name,
+    seen: entrySeen(entity, home),
     defaultSession:
-      zellij === null || item.path === null
+      zellij === null || entity.path === null
         ? null
-        : zellijSessionFor(zellij, null, item.path),
+        : zellijSessionFor(zellij, null, entity.path),
     values: entry === null ? null : entryValues(entry),
     options: entryOptions(config),
   };
 }
 
 /**
- * Config with an item's entry set to the values: under the key that already applies to the item,
+ * Config with an entity's entry set to the values: under the key that already applies to the entity,
  * else under its id.
  */
 export function withEntry(
   config: Config,
-  item: Item,
+  entity: Entity,
   values: EntryValues,
 ): Config {
-  const { keys } = resolveEntry(config, item.id, itemRefs(item));
-  const key = keys[0] ?? item.id;
-  const next: ItemEntry = {
+  const { keys } = resolveEntry(config, entity.id, entityRefs(entity));
+  const key = keys[0] ?? entity.id;
+  const next: EntityEntry = {
     wire: values.wire,
     name: values.name,
     thresholds: nestedThresholds(values.thresholds),
@@ -260,7 +260,7 @@ export function withEntry(
     criticalBugWords:
       values.criticalBugWords === null ? null : [...values.criticalBugWords],
   };
-  return { ...config, items: { ...config.items, [key]: next } };
+  return { ...config, entities: { ...config.entities, [key]: next } };
 }
 
 /** Whether two sets of values write the same entry, whatever order their thresholds were set in. */
@@ -279,13 +279,13 @@ export function sameEntryValues(a: EntryValues, b: EntryValues): boolean {
   return canonical(a) === canonical(b);
 }
 
-/** Config without any entry naming the item, so it returns to the fence. */
-export function withoutEntry(config: Config, item: Item): Config {
-  const { keys } = resolveEntry(config, item.id, itemRefs(item));
+/** Config without any entry naming the entity, so it returns to the fence. */
+export function withoutEntry(config: Config, entity: Entity): Config {
+  const { keys } = resolveEntry(config, entity.id, entityRefs(entity));
   return {
     ...config,
-    items: Object.fromEntries(
-      Object.entries(config.items).filter(([key]) => !keys.includes(key)),
+    entities: Object.fromEntries(
+      Object.entries(config.entities).filter(([key]) => !keys.includes(key)),
     ),
   };
 }

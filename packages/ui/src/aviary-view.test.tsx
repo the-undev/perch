@@ -339,7 +339,7 @@ describe("the aviary view", () => {
       expect(
         within(screen.getByRole("menu", { name: "Snooze Skiff for" }))
           .getAllByRole("menuitem")
-          .map((item) => item.textContent),
+          .map((entity) => entity.textContent),
       ).toEqual([
         "1 day",
         "3 days",
@@ -412,21 +412,21 @@ describe("the aviary view", () => {
       fireEvent.click(birdButton("undev/skiff"));
       const button = screen.getByRole("button", { name: "Snooze" });
       fireEvent.click(button);
-      const items = screen.getAllByRole("menuitem");
+      const menuItems = screen.getAllByRole("menuitem");
       const menu = screen.getByRole("menu");
-      expect(document.activeElement).toBe(items[0]);
+      expect(document.activeElement).toBe(menuItems[0]);
 
       fireEvent.keyDown(menu, { key: "ArrowDown" });
-      expect(document.activeElement).toBe(items[1]);
+      expect(document.activeElement).toBe(menuItems[1]);
       fireEvent.keyDown(menu, { key: "ArrowUp" });
       fireEvent.keyDown(menu, { key: "ArrowUp" });
-      expect(document.activeElement).toBe(items[5]);
+      expect(document.activeElement).toBe(menuItems[5]);
       fireEvent.keyDown(menu, { key: "ArrowDown" });
-      expect(document.activeElement).toBe(items[0]);
+      expect(document.activeElement).toBe(menuItems[0]);
       fireEvent.keyDown(menu, { key: "End" });
-      expect(document.activeElement).toBe(items[5]);
+      expect(document.activeElement).toBe(menuItems[5]);
       fireEvent.keyDown(menu, { key: "Home" });
-      expect(document.activeElement).toBe(items[0]);
+      expect(document.activeElement).toBe(menuItems[0]);
 
       fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
       expect(screen.queryByRole("menu")).toBeNull();
@@ -446,7 +446,7 @@ describe("the aviary view", () => {
     fireEvent.pointerMove(birdButton("undev/prism"));
 
     expect(screen.getByRole("tooltip").textContent).toBe(
-      "Prism · distressedci failure · 4 uncommitted · 2 open PRs · 78 open items",
+      "Prism · distressedci failure · 4 uncommitted · 2 open PRs · 78 open work items",
     );
   });
 
@@ -461,7 +461,7 @@ describe("the aviary view", () => {
       "last commit ten days ago",
     );
     expect(tipLine(mockBird("undev/prism"), morning)).toBe(
-      "ci failure · 4 uncommitted · 2 open PRs · 78 open items",
+      "ci failure · 4 uncommitted · 2 open PRs · 78 open work items",
     );
   });
 

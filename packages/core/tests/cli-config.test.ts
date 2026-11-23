@@ -22,7 +22,7 @@ describe("the command line scanner's config", () => {
 
     const { config } = await cliConfig({ home: "/home/test", userPath });
 
-    expect(Object.keys(config.items)).toEqual(["dev/perch"]);
+    expect(Object.keys(config.entities)).toEqual(["dev/perch"]);
     expect(await readFile(userPath, "utf8")).toBe(version1);
     expect(await readdir(dir)).toEqual(["config.toml"]);
   });

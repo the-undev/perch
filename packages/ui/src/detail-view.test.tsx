@@ -47,12 +47,12 @@ afterEach(() => {
 
 const now = new Date(mockSnapshot.scannedAt);
 
-const helloItem = (() => {
-  const item = mockSnapshot.items.find(
+const helloEntity = (() => {
+  const entity = mockSnapshot.entities.find(
     (entry) => entry.id === "dev/odin/hello",
   );
-  if (item === undefined) throw new Error("the mock snapshot has no hello");
-  return item;
+  if (entity === undefined) throw new Error("the mock snapshot has no hello");
+  return entity;
 })();
 
 function findBird(aviary: Aviary, id: string): Bird {
@@ -66,30 +66,30 @@ function findBird(aviary: Aviary, id: string): Bird {
 
 /** Skiff with its GitHub remote unread for want of a card that covers its owner. */
 function unreadableSkiff(): Bird {
-  const items = mockSnapshot.items.map((item) =>
-    item.id === "undev/skiff"
+  const entities = mockSnapshot.entities.map((entity) =>
+    entity.id === "undev/skiff"
       ? {
-          ...item,
+          ...entity,
           presences: {
-            ...item.presences,
-            forges: item.presences.forges.map((presence) =>
+            ...entity.presences,
+            forges: entity.presences.forges.map((presence) =>
               presence.forge === "github"
                 ? { ...presence, fullName: "skiff-app/skiff", url: null }
                 : presence,
             ),
           },
           sources: {
-            ...item.sources,
+            ...entity.sources,
             github: {
               error: "no GitHub card is configured for owner skiff-app",
               cause: "no-card" as const,
             },
           },
         }
-      : item,
+      : entity,
   );
   return findBird(
-    deriveAviary({ ...mockSnapshot, items }, mockConfig, {}, mockHome),
+    deriveAviary({ ...mockSnapshot, entities }, mockConfig, {}, mockHome),
     "undev/skiff",
   );
 }
@@ -578,14 +578,14 @@ describe("the detail view", () => {
     expect(scrolled).toEqual([]);
     expect(markedRow()).toBeUndefined();
 
-    push(perch, { arrivalChip: "open-items" });
+    push(perch, { arrivalChip: "open-work-items" });
     expect(scrolled).toEqual([
       {
-        element: row("open-items"),
+        element: row("open-work-items"),
         options: landingOptions,
       },
     ]);
-    expect(markedRow()).toBe("open-items");
+    expect(markedRow()).toBe("open-work-items");
 
     push(perch, { arrivalChip: "ci" });
     expect(scrolled.at(-1)?.element).toBe(row("ci"));
@@ -610,7 +610,7 @@ describe("the detail view", () => {
     try {
       const perch = mockBird("dev/perch");
       const { push } = page(perch, { arrivalChip: "ci" });
-      push(perch, { arrivalChip: "open-items" });
+      push(perch, { arrivalChip: "open-work-items" });
 
       expect(scrolled).toHaveLength(2);
       expect(
@@ -748,8 +748,8 @@ describe("the detail view", () => {
     expect(verbs.map((verb) => verb.textContent).at(-1)).toBe("The papers");
     // The snooze verb sits in a holder of its own, which places its durations beneath it.
     for (const verb of verbs) {
-      const item = verb.textContent === "Snooze" ? verb.parentElement : verb;
-      expect(item?.parentElement).toBe(actions);
+      const entity = verb.textContent === "Snooze" ? verb.parentElement : verb;
+      expect(entity?.parentElement).toBe(actions);
     }
   });
 
@@ -1022,7 +1022,7 @@ describe("the detail view", () => {
       screen.getByRole("form", { name: "Adoption papers for hello" }),
     ).toBeDefined();
 
-    const config = withEntry(mockConfig, helloItem, {
+    const config = withEntry(mockConfig, helloEntity, {
       ...emptyEntryValues(),
       wire: "Machine & Home",
     });
@@ -1030,7 +1030,7 @@ describe("the detail view", () => {
       deriveAviary(mockSnapshot, config, {}, mockHome),
       hello.id,
     );
-    push(adopted, { form: entryFormFor(config, helloItem, mockHome) });
+    push(adopted, { form: entryFormFor(config, helloEntity, mockHome) });
 
     expect(screen.queryByRole("form")).toBeNull();
     expect(screen.getByRole("button", { name: "The papers" })).toBeDefined();

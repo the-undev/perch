@@ -41,7 +41,7 @@ describe("the key-file paper", () => {
     const lists = screen.getAllByRole("list");
     expect(lists.map((list) => list.tagName)).toEqual(["UL", "OL"]);
     expect(
-      screen.getAllByRole("listitem").map((item) => item.textContent),
+      screen.getAllByRole("listitem").map((listItem) => listItem.textContent),
     ).toEqual(["pnpm dev", "pnpm check", "first", "second"]);
   });
 

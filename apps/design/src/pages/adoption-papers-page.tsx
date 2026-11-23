@@ -267,7 +267,7 @@ export function AdoptionPapersPage() {
         ]}
       >
         <p>
-          The form comes from <Code>entryFormFor(config, item, home)</Code> in{" "}
+          The form comes from <Code>entryFormFor(config, entity, home)</Code> in{" "}
           <Code>@perch/core/entry-form.ts</Code>, which the main process answers{" "}
           <Code>entryForm(birdId)</Code> with. Inside the app the detail page
           mounts the papers and hands a signature to the main process as{" "}

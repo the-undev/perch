@@ -79,8 +79,8 @@ const workingSpecimens: LedgerSpecimen[] = [
   },
   {
     id: "obsidian/Hothouse",
-    label: "Open items over two roadmap files",
-    rule: "Hothouse Vault: the open items row counts per file; the uncommitted row names the oldest change and its age, amber past a day.",
+    label: "Open work items over two roadmap files",
+    rule: "Hothouse Vault: the open work items row counts per file; the uncommitted row names the oldest change and its age, amber past a day.",
   },
   {
     id: ".dotfiles",
@@ -90,7 +90,7 @@ const workingSpecimens: LedgerSpecimen[] = [
   {
     id: "obsidian/Pocket",
     label: "A roadmap file with none open",
-    rule: "Pocket Vault: a source with nothing to say is silent, so the roadmap file with no open items is left out.",
+    rule: "Pocket Vault: a source with nothing to say is silent, so the roadmap file with no open work items is left out.",
   },
   {
     id: "undev/Hollow-legacy",

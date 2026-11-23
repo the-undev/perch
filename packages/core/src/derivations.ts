@@ -25,13 +25,13 @@ import type {
   CiState,
   DayThresholds,
   Drift,
+  Entity,
+  EntityError,
   ForgeData,
   ForgeError,
   GitData,
   HealthLevel,
   HourThresholds,
-  Item,
-  ItemError,
   PullRequest,
   RoadmapData,
   RoadmapFile,
@@ -100,15 +100,15 @@ function headingsOf(section: RawSection): string[] {
   ];
 }
 
-/** Progress is checked against total checkbox items; null for a group without checkboxes. */
-function progressOf(items: readonly WorkItem[]): WorkItemGroup["progress"] {
-  const checkboxes = items.filter((item) => item.done !== null);
+/** Progress is checked against total checkbox work items; null for a group without checkboxes. */
+function progressOf(workItems: readonly WorkItem[]): WorkItemGroup["progress"] {
+  const checkboxes = workItems.filter((workItem) => workItem.done !== null);
   if (checkboxes.length === 0) return null;
-  const done = checkboxes.filter((item) => item.done === true).length;
+  const done = checkboxes.filter((workItem) => workItem.done === true).length;
   return { done, total: checkboxes.length };
 }
 
-function bulletItem(
+function bulletWorkItem(
   bullet: RawBullet,
   headings: readonly string[],
   kindOf: KindOf,
@@ -139,7 +139,7 @@ function bodyOf(section: RawSection): string | null {
   return body === "" ? null : body;
 }
 
-function headingItem(section: RawSection, kindOf: KindOf): WorkItem {
+function headingWorkItem(section: RawSection, kindOf: KindOf): WorkItem {
   return {
     text: section.heading,
     kind: kindOf(headingsOf(section)),
@@ -153,10 +153,10 @@ function headingItem(section: RawSection, kindOf: KindOf): WorkItem {
 /**
  * Work items from one roadmap file, by the per-heading rule. Only checkbox bullets are tasks;
  * plain bullets are notes. A heading with checkbox bullets is a group whose checkbox bullets are
- * items. A heading with no checkbox bullets and no sub-headings is one item, its prose and plain
+ * work items. A heading with no checkbox bullets and no sub-headings is one work item, its prose and plain
  * bullets the body. A heading with sub-headings and no checkbox bullets is structure; one with
- * both is a group with nested sub-groups. Checkbox bullets above the first heading are items at
- * the top. The word lists class each item as a task, a bug or a critical bug. Checkboxes set done.
+ * both is a group with nested sub-groups. Checkbox bullets above the first heading are work items at
+ * the top. The word lists class each work item as a task, a bug or a critical bug. Checkboxes set done.
  */
 export function deriveRoadmapFile(
   path: string,
@@ -179,70 +179,75 @@ export function deriveRoadmapFile(
     taskBulletsOf(section).length === 0 && childrenOf(section).length === 0;
 
   const node = (section: RawSection): WorkItemGroup => {
-    const items = [
+    const workItems = [
       ...taskBulletsOf(section).map((bullet) =>
-        bulletItem(bullet, headingsOf(section), kindOf),
+        bulletWorkItem(bullet, headingsOf(section), kindOf),
       ),
       ...childrenOf(section)
         .filter(isBare)
-        .map((child) => headingItem(child, kindOf)),
+        .map((child) => headingWorkItem(child, kindOf)),
     ];
     return {
       heading: section.heading,
       level: section.level,
       line: section.line,
       role: taskBulletsOf(section).length > 0 ? "group" : "structure",
-      items,
+      workItems,
       groups: childrenOf(section)
         .filter((child) => !isBare(child))
         .map(node),
-      progress: progressOf(items),
+      progress: progressOf(workItems),
     };
   };
 
-  const items = [
+  const workItems = [
     ...structure.bulletsBeforeFirstHeading
       .filter((bullet) => bullet.checkbox !== "none")
-      .map((bullet) => bulletItem(bullet, [], kindOf)),
-    ...roots.filter(isBare).map((section) => headingItem(section, kindOf)),
+      .map((bullet) => bulletWorkItem(bullet, [], kindOf)),
+    ...roots.filter(isBare).map((section) => headingWorkItem(section, kindOf)),
   ];
   const groups = roots.filter((section) => !isBare(section)).map(node);
   return {
     path,
-    items,
+    workItems,
     groups,
-    counts: openCounts([...items, ...groups.flatMap(allItems)]),
+    counts: openCounts([...workItems, ...groups.flatMap(allWorkItems)]),
   };
 }
 
-function allItems(group: WorkItemGroup): WorkItem[] {
-  return [...group.items, ...group.groups.flatMap(allItems)];
+function allWorkItems(group: WorkItemGroup): WorkItem[] {
+  return [...group.workItems, ...group.groups.flatMap(allWorkItems)];
 }
 
-function openCounts(items: readonly WorkItem[]): WorkItemCounts {
+function openCounts(workItems: readonly WorkItem[]): WorkItemCounts {
   const counts: WorkItemCounts = { task: 0, bug: 0, "critical-bug": 0 };
-  for (const item of items) {
-    if (item.done !== true) counts[item.kind] += 1;
+  for (const workItem of workItems) {
+    if (workItem.done !== true) counts[workItem.kind] += 1;
   }
   return counts;
 }
 
-/** Counts open items by kind across files and every nested group; done items are left out. */
-export function countOpenItems(files: readonly RoadmapFile[]): WorkItemCounts {
+/** Counts open work items by kind across files and every nested group; done work items are left out. */
+export function countOpenWorkItems(
+  files: readonly RoadmapFile[],
+): WorkItemCounts {
   return openCounts(
-    files.flatMap((file) => [...file.items, ...file.groups.flatMap(allItems)]),
+    files.flatMap((file) => [
+      ...file.workItems,
+      ...file.groups.flatMap(allWorkItems),
+    ]),
   );
 }
 
 /**
- * Roadmap data for an item. A configured file that was not found makes the whole entry an
+ * Roadmap data for an entity. A configured file that was not found makes the whole entry an
  * error naming the file.
  */
 export function deriveRoadmap(
   raw: RawRoadmap,
   words: WorkWords,
   thresholds: BugThresholds,
-): RoadmapData | ItemError {
+): RoadmapData | EntityError {
   const files: RoadmapFile[] = [];
   for (const file of raw.files) {
     if (file.structure.state === "absent") {
@@ -251,14 +256,14 @@ export function deriveRoadmap(
     files.push(deriveRoadmapFile(file.path, file.structure.value, words));
   }
   return {
-    counts: countOpenItems(files),
+    counts: countOpenWorkItems(files),
     files,
     thresholds,
     detectedPath: raw.detectedPath,
   };
 }
 
-/** An item without a roadmap file has no work items. */
+/** An entity without a roadmap file has no work items. */
 export function emptyRoadmap(thresholds: BugThresholds): RoadmapData {
   return {
     counts: { task: 0, bug: 0, "critical-bug": 0 },
@@ -287,9 +292,9 @@ export function bugLevelsOf(
   };
 }
 
-/** The item's roadmap when it was read and judged; null otherwise. */
-export function roadmapOf(item: Item): RoadmapData | null {
-  const roadmap = item.sources.roadmap;
+/** The entity's roadmap when it was read and judged; null otherwise. */
+export function roadmapOf(entity: Entity): RoadmapData | null {
+  const roadmap = entity.sources.roadmap;
   if (roadmap === undefined || "error" in roadmap) return null;
   // A snapshot cached before roadmap files were judged has no thresholds field at all, and one
   // cached before parsing became opt-in has no detectedPath field.
@@ -392,7 +397,7 @@ function agedWork(
 
 /**
  * Unsafe work is uncommitted changes and unpushed commits, each aged in hours from its oldest
- * change at the time git was read and judged against the item's windows. The level is the worse
+ * change at the time git was read and judged against the entity's windows. The level is the worse
  * of the two, so continuing to edit never resets the clock on an older backlog.
  */
 export function deriveDrift(
@@ -455,7 +460,7 @@ function earliest(timestamps: readonly string[]): string | null {
 }
 
 /**
- * Git data for an item. The oldest uncommitted change is the earliest mtime among dirty files
+ * Git data for an entity. The oldest uncommitted change is the earliest mtime among dirty files
  * that still exist; deleted files have none. Unpushed work is every commit on a local branch
  * that no remote-tracking ref holds. It only drifts against a joined forge presence; a clone
  * with no remote at all is local only, one disk, with no unpushed work and no unpushed drift.
@@ -643,14 +648,14 @@ function deriveCi(ci: RawCi, repoUrl: string): CiRun | null {
 function deriveFacet<T, U>(
   facet: Entry<T, never>,
   derive: (value: T) => U,
-): U | ItemError {
+): U | EntityError {
   return facet.state === "observed"
     ? derive(facet.value)
     : { error: facet.state === "error" ? facet.error : "couldn't read" };
 }
 
 /**
- * Forge data for a presence; details that could not be read at all are the item's error, and a
+ * Forge data for a presence; details that could not be read at all are the entity's error, and a
  * part that could not be read is that part's error.
  */
 export function deriveForge(repo: RawForgeRepo): ForgeData | ForgeError {
@@ -696,18 +701,18 @@ export function bugCause(
 }
 
 /**
- * An item's health: the worst of its inputs. Failing CI is red. Each roadmap file is judged on its
+ * An entity's health: the worst of its inputs. Failing CI is red. Each roadmap file is judged on its
  * own, the worse of its open bugs and open critical bugs against their windows. A remote the clone
  * pushes to that no card can read is amber; a forge whose read failed this scan is not an input.
  * Uncommitted changes, unpushed commits and stalled flight take the level already judged against
- * the item's windows. Only amber and red inputs are causes; they come worst first, ties in the
+ * the entity's windows. Only amber and red inputs are causes; they come worst first, ties in the
  * order CI, unreadable remotes, bugs, uncommitted, unpushed, stalled. Flags are not inputs: the
  * one with a level, not set up, is the fence's own situation.
  */
-export function deriveHealth(item: Item): Health {
+export function deriveHealth(entity: Entity): Health {
   const candidates: HealthCause[] = [];
   for (const forge of ["github", "forgejo"] as const) {
-    const data = item.sources[forge];
+    const data = entity.sources[forge];
     if (data === undefined || "error" in data) continue;
     const run = latestRunOf(data);
     if (run?.state !== "failure") continue;
@@ -720,11 +725,11 @@ export function deriveHealth(item: Item): Health {
     });
   }
   for (const forge of ["github", "forgejo"] as const) {
-    const data = item.sources[forge];
+    const data = entity.sources[forge];
     if (data === undefined || !("cause" in data) || data.cause !== "no-card")
       continue;
     // The source is the first presence's of its forge, as aggregation assigns it.
-    const presence = item.presences.forges.find(
+    const presence = entity.presences.forges.find(
       (entry) => entry.forge === forge,
     );
     if (presence === undefined) continue;
@@ -735,13 +740,13 @@ export function deriveHealth(item: Item): Health {
       fullName: presence.fullName,
     });
   }
-  const roadmap = roadmapOf(item);
+  const roadmap = roadmapOf(entity);
   if (roadmap !== null) {
     candidates.push(
       ...roadmap.files.map((file) => bugCause(file, roadmap.thresholds)),
     );
   }
-  const git = item.sources.git;
+  const git = entity.sources.git;
   if (git !== undefined && !("error" in git)) {
     const { drift } = git;
     if (drift.uncommitted) {

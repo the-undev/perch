@@ -9,26 +9,26 @@ import {
   withoutEntry,
 } from "../src/entry-form.ts";
 import { mockConfig, mockSnapshot } from "../src/mock.ts";
-import type { Item } from "../src/snapshot.ts";
+import type { Entity } from "../src/snapshot.ts";
 
-function mockItem(id: string): Item {
-  const item = mockSnapshot.items.find((candidate) => candidate.id === id);
-  if (item === undefined) throw new Error(`the mock snapshot has no ${id}`);
-  return item;
+function mockEntity(id: string): Entity {
+  const entity = mockSnapshot.entities.find((candidate) => candidate.id === id);
+  if (entity === undefined) throw new Error(`the mock snapshot has no ${id}`);
+  return entity;
 }
 
 const home = "/home/owner";
-const perch = mockItem("dev/perch");
-const hello = mockItem("dev/odin/hello");
-const obsidianTidy = mockItem("github:finch/obsidian-tidy");
+const perch = mockEntity("dev/perch");
+const hello = mockEntity("dev/odin/hello");
+const obsidianTidy = mockEntity("github:finch/obsidian-tidy");
 
 /** The mock config with Perch's entry keyed by its GitHub reference instead of its id. */
 function forgeKeyed(): Config {
-  const { "dev/perch": entry, ...rest } = mockConfig.items;
+  const { "dev/perch": entry, ...rest } = mockConfig.entities;
   if (entry === undefined) throw new Error("the mock config has no Perch");
   return {
     ...mockConfig,
-    items: {
+    entities: {
       ...rest,
       "github:finch/perch": { ...entry, zellijSession: "dev" },
     },
@@ -113,7 +113,7 @@ describe("the entry form", () => {
 
     expect(entryFormFor(mockConfig, perch, home).defaultSession).toBe("home");
     expect(
-      entryFormFor(mockConfig, mockItem("undev/spool"), home).defaultSession,
+      entryFormFor(mockConfig, mockEntity("undev/spool"), home).defaultSession,
     ).toBe("undev");
     expect(
       entryFormFor(mockConfig, obsidianTidy, home).defaultSession,
@@ -121,14 +121,14 @@ describe("the entry form", () => {
     expect(entryFormFor(noZellij, perch, home).defaultSession).toBeNull();
   });
 
-  it("adopts a fence bird under its item id", () => {
+  it("adopts a fence bird under its entity id", () => {
     const config = withEntry(mockConfig, hello, {
       ...emptyEntryValues(),
       wire: "Machine & Home",
       name: "Hello",
     });
 
-    expect(config.items["dev/odin/hello"]).toEqual({
+    expect(config.entities["dev/odin/hello"]).toEqual({
       wire: "Machine & Home",
       name: "Hello",
       thresholds: { unsafe: {}, stalled: {}, bugs: {}, criticalBugs: {} },
@@ -138,8 +138,8 @@ describe("the entry form", () => {
       bugWords: null,
       criticalBugWords: null,
     });
-    expect(Object.keys(config.items)).toHaveLength(
-      Object.keys(mockConfig.items).length + 1,
+    expect(Object.keys(config.entities)).toHaveLength(
+      Object.keys(mockConfig.entities).length + 1,
     );
   });
 
@@ -150,8 +150,8 @@ describe("the entry form", () => {
       thresholds: { stalled_amber_days: 3 },
     });
 
-    expect(config.items["dev/perch"]).toBeUndefined();
-    expect(config.items["github:finch/perch"]).toMatchObject({
+    expect(config.entities["dev/perch"]).toBeUndefined();
+    expect(config.entities["github:finch/perch"]).toMatchObject({
       name: "Perch app",
       thresholds: { unsafe: {}, stalled: { amberDays: 3 } },
     });
@@ -172,30 +172,32 @@ describe("the entry form", () => {
       zellijSession: null,
     });
 
-    expect(moved.items["github:finch/perch"]?.zellijSession).toBe("work");
-    expect(cleared.items["github:finch/perch"]?.zellijSession).toBeNull();
+    expect(moved.entities["github:finch/perch"]?.zellijSession).toBe("work");
+    expect(cleared.entities["github:finch/perch"]?.zellijSession).toBeNull();
   });
 
   it("unadopts by removing every key naming the bird", () => {
     const both: Config = {
       ...forgeKeyed(),
-      items: {
-        ...forgeKeyed().items,
-        "dev/perch": mockConfig.items["dev/perch"] as Config["items"][string],
+      entities: {
+        ...forgeKeyed().entities,
+        "dev/perch": mockConfig.entities[
+          "dev/perch"
+        ] as Config["entities"][string],
       },
     };
 
     const config = withoutEntry(both, perch);
 
     expect(entryFormFor(config, perch, home).values).toBeNull();
-    expect(Object.keys(config.items)).toEqual(
-      Object.keys(mockConfig.items).filter((key) => key !== "dev/perch"),
+    expect(Object.keys(config.entities)).toEqual(
+      Object.keys(mockConfig.entities).filter((key) => key !== "dev/perch"),
     );
   });
 
   it("keeps an entry's word lists and bug thresholds, which the form does not edit", () => {
     const entry = {
-      ...(mockConfig.items["dev/perch"] as Config["items"][string]),
+      ...(mockConfig.entities["dev/perch"] as Config["entities"][string]),
       bugWords: ["wart"],
       criticalBugWords: [],
       thresholds: {
@@ -207,12 +209,14 @@ describe("the entry form", () => {
     };
     const config: Config = {
       ...mockConfig,
-      items: { ...mockConfig.items, "dev/perch": entry },
+      entities: { ...mockConfig.entities, "dev/perch": entry },
     };
     const values = entryFormFor(config, perch, home).values;
     if (values === null) throw new Error("perch has an entry");
 
-    expect(withEntry(config, perch, values).items["dev/perch"]).toEqual(entry);
+    expect(withEntry(config, perch, values).entities["dev/perch"]).toEqual(
+      entry,
+    );
     expect(
       sameEntryValues(values, { ...values, criticalBugWords: ["fire"] }),
     ).toBe(false);

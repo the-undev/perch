@@ -15,7 +15,7 @@ which ones need your attention.
 
 - **Local git repositories:** branches, uncommitted and unpushed work.
 - **GitHub and Forgejo:** your repositories, their pull requests and CI runs.
-- **Roadmaps:** Markdown files listing open items.
+- **Roadmaps:** Markdown files listing open work items.
 
 ## Launch actions
 

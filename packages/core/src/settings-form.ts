@@ -1,12 +1,12 @@
-// The config but the item entries as the settings page edits it: the values the form holds, what
+// The config but the entity entries as the settings page edits it: the values the form holds, what
 // they cannot be, and the edit that puts them back into config. No Node modules, so the renderer
 // may import it.
 
 import {
   type Config,
   collapseHome,
+  type EntityEntry,
   expandHome,
-  type ItemEntry,
   type SourcesConfig,
   type Thresholds,
 } from "./config.ts";
@@ -32,7 +32,7 @@ export interface WireRow {
   name: string;
 }
 
-/** Everything in config but the item entries, which each bird's page edits. */
+/** Everything in config but the entity entries, which each bird's page edits. */
 export interface SettingsValues {
   /** The wires top to bottom, and the default by its row's place among them. */
   wires: { rows: WireRow[]; defaultRow: number };
@@ -84,7 +84,7 @@ export const sourceRunHeld =
 export const installSourceRunHeld =
   "run from source there is no image to replace.";
 
-/** What the settings page needs: the values, which item entries name each wire, and two rows' machine facts. */
+/** What the settings page needs: the values, which entity entries name each wire, and two rows' machine facts. */
 export interface SettingsForm {
   values: SettingsValues;
   /** The keys of the entries naming each config wire, which removing it moves to the default. */
@@ -96,11 +96,11 @@ export interface SettingsForm {
 }
 
 function namedBy(
-  items: Record<string, ItemEntry>,
-  field: (entry: ItemEntry) => string | null,
+  entities: Record<string, EntityEntry>,
+  field: (entry: EntityEntry) => string | null,
 ): Record<string, string[]> {
   const named: Record<string, string[]> = {};
-  for (const [key, entry] of Object.entries(items)) {
+  for (const [key, entry] of Object.entries(entities)) {
     const name = field(entry);
     if (name === null) continue;
     named[name] = [...(named[name] ?? []), key];
@@ -142,7 +142,7 @@ export function settingsFormFor(
       update: { ...config.update },
     },
     named: {
-      wires: namedBy(config.items, (entry) => entry.wire),
+      wires: namedBy(config.entities, (entry) => entry.wire),
     },
     login: {
       held: login.held,
@@ -312,7 +312,7 @@ export function wireWarnings(
 }
 
 /**
- * Config with everything but its item entries and [work] set to the values, paths expanded against the home
+ * Config with everything but its entity entries and [work] set to the values, paths expanded against the home
  * directory; the login toggle is the caller's to write. An entry's wire follows the row that starts as it to that row's name, all in one
  * pass; an entry naming a wire no row starts as falls to the default. Throws when
  * settingsProblems finds any.
@@ -339,8 +339,8 @@ export function withSettings(
     ignore: [...values.ignore],
     thresholds: nestedThresholds(values.thresholds) as Thresholds,
     work: config.work,
-    items: Object.fromEntries(
-      Object.entries(config.items).map(([key, entry]) => [
+    entities: Object.fromEntries(
+      Object.entries(config.entities).map(([key, entry]) => [
         key,
         {
           ...entry,

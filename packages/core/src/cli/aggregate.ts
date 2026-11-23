@@ -16,6 +16,6 @@ const snapshot = await runAggregate({
 });
 
 console.log(
-  `${snapshot.items.length} items, config ${configPath}, wrote ${snapshotPath}`,
+  `${snapshot.entities.length} entities, config ${configPath}, wrote ${snapshotPath}`,
 );
 for (const warning of snapshot.warnings) console.log(`warning: ${warning}`);

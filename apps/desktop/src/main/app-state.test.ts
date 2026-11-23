@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -471,16 +471,16 @@ describe("editing config entries", () => {
   /** The app state on a real config file and snoozes file in the temp directory, holding the given config. */
   async function onFile(config: Config) {
     await writeFile(configPath, writeConfig(config, home));
-    const store = createConfigStore({
+    const file = {
       home,
       path: configPath,
       readText: readTextIfExists,
-    });
-    const file = { home, path: configPath, readText: readTextIfExists };
+      writeText: writeTextAtomic,
+    };
+    const store = createConfigStore({ ...file, copyFile });
     return appState({
       config: store,
-      editConfig: (edit) =>
-        editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+      editConfig: (edit) => editConfigFile(file, edit),
       snoozes: createSnoozeStore({
         path: join(dir, "snoozes.json"),
         readText: readTextIfExists,
@@ -523,7 +523,7 @@ describe("editing config entries", () => {
 
     const after = await written();
     const block =
-      '[items."dev/odin/hello"]\nwire = "Machine & Home"\nname = "Hello"\n\n';
+      '[papers."dev/odin/hello"]\nwire = "Machine & Home"\nname = "Hello"\n\n';
     expect(after).toContain(block);
     expect(after.replace(block, "")).toBe(before);
     expect(wireOf(published.at(-1)?.aviary, "dev/odin/hello")).toBe(
@@ -579,7 +579,7 @@ describe("editing config entries", () => {
 
     expect(await written()).toBe(before);
     expect(published.at(-1)?.problems).toEqual([
-      'The config was not changed: config: items."dev/perch".stalled amber threshold must be below its red threshold',
+      'The config was not changed: config: papers."dev/perch".stalled amber threshold must be below its red threshold',
     ]);
     expect(deps.requestScan).not.toHaveBeenCalled();
 
@@ -626,11 +626,15 @@ describe("snoozing birds", () => {
 
   /** The app state on a real config file and a real snoozes file in the temp directory. */
   function onFiles(overrides: Partial<AppStateDeps> = {}) {
-    const file = { home, path: configPath, readText: readTextIfExists };
+    const file = {
+      home,
+      path: configPath,
+      readText: readTextIfExists,
+      writeText: writeTextAtomic,
+    };
     return appState({
-      config: createConfigStore(file),
-      editConfig: (edit) =>
-        editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+      config: createConfigStore({ ...file, copyFile }),
+      editConfig: (edit) => editConfigFile(file, edit),
       snoozes: createSnoozeStore({
         path: snoozesPath,
         readText: readTextIfExists,
@@ -867,12 +871,16 @@ describe("the settings", () => {
   /** The app state on a real config file in the temp directory holding the text. */
   async function onText(text: string, autostart: Autostart) {
     await writeFile(configPath, text);
-    const file = { home, path: configPath, readText: readTextIfExists };
+    const file = {
+      home,
+      path: configPath,
+      readText: readTextIfExists,
+      writeText: writeTextAtomic,
+    };
     const app = appState({
       autostart,
-      config: createConfigStore(file),
-      editConfig: (edit) =>
-        editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+      config: createConfigStore({ ...file, copyFile }),
+      editConfig: (edit) => editConfigFile(file, edit),
     });
     await app.app.start();
     return app;

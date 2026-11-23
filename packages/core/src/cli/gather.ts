@@ -3,9 +3,9 @@
 
 import { runGather } from "../scan.ts";
 import { cliConfig } from "./config.ts";
-import { home, rawDir } from "./paths.ts";
+import { home, rawDir, userPath } from "./paths.ts";
 
-const { config } = await cliConfig();
+const { config } = await cliConfig({ home, userPath });
 const status = await runGather({
   home,
   env: process.env,

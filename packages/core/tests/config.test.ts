@@ -13,7 +13,6 @@ import {
   zellijActionOf,
   zellijSessionFor,
 } from "../src/config.ts";
-import { writeConfig } from "../src/config-write.ts";
 import { fixtureConfigText } from "./helpers/config.ts";
 
 const examplePath = join(
@@ -188,7 +187,7 @@ describe("example config", () => {
   it("shows every entry field in its commented example, and each parses", async () => {
     const text = await exampleText();
     const lines = text.split("\n");
-    const start = lines.indexOf('# [items."projects/example"]');
+    const start = lines.indexOf('# [papers."projects/example"]');
     const block = [];
     for (const line of lines.slice(start)) {
       if (!line.startsWith("# ")) break;
@@ -230,7 +229,7 @@ describe("item overrides", () => {
 
   it("apply thresholds to the named item only", async () => {
     const text = await withOverrides(
-      '[items.".dotfiles"]\nunsafe_amber_hours = 3\nstalled_red_days = 60\n',
+      '[papers.".dotfiles"]\nunsafe_amber_hours = 3\nstalled_red_days = 60\n',
     );
     const config = parseConfig(text, home);
 
@@ -247,7 +246,7 @@ describe("item overrides", () => {
 
   it("put an adopted item on its wire, the default wire without one, and the rest on the fence", async () => {
     const text = await withOverrides(
-      '[items.".dotfiles"]\nwire = "Machine & Home"\n\n[items."dev/perch"]\n',
+      '[papers.".dotfiles"]\nwire = "Machine & Home"\n\n[papers."dev/perch"]\n',
     );
     const config = parseConfig(text, home);
 
@@ -260,7 +259,7 @@ describe("item overrides", () => {
 
   it("choose the zellij session from the entry, then the action's longest root, then its default", async () => {
     const text = await withOverrides(
-      '[items."undev/spool"]\nzellij_session = "spool"\n',
+      '[papers."undev/spool"]\nzellij_session = "spool"\n',
     );
     const config = parseConfig(text, home);
     const zellij = zellijActionOf(config);
@@ -300,26 +299,26 @@ describe("item overrides", () => {
   });
 
   it("reject a wire that is not in the wire list", async () => {
-    const text = await withOverrides('[items."dev/perch"]\nwire = "Garden"\n');
+    const text = await withOverrides('[papers."dev/perch"]\nwire = "Garden"\n');
 
     expect(() => parseConfig(text, home)).toThrow(/wire must be one of/);
   });
 
   it("reject an amber window that does not open before red, once merged with the globals", async () => {
     const text = await withOverrides(
-      '[items."dev/perch"]\nunsafe_amber_hours = 72\n',
+      '[papers."dev/perch"]\nunsafe_amber_hours = 72\n',
     );
 
     expect(() => parseConfig(text, home)).toThrow(
-      /items."dev\/perch".unsafe amber threshold must be below its red threshold/,
+      /papers."dev\/perch".unsafe amber threshold must be below its red threshold/,
     );
   });
 
   it("name a key an entry may not hold", async () => {
-    const text = await withOverrides('[items."dev/perch"]\ncolour = "red"\n');
+    const text = await withOverrides('[papers."dev/perch"]\ncolour = "red"\n');
 
     expect(() => parseConfig(text, home)).toThrow(
-      'config: items."dev/perch".colour is not a config key',
+      'config: papers."dev/perch".colour is not a config key',
     );
   });
 });
@@ -337,21 +336,21 @@ describe("removed keys", () => {
 
   it("refuses an entry's importance by name", async () => {
     const text = await fixtureConfigText(
-      '[items."dev/perch"]\nimportance = "machine"\n',
+      '[papers."dev/perch"]\nimportance = "machine"\n',
     );
 
     expect(() => parseConfig(text, home)).toThrow(
-      'config: items."dev/perch".importance is not a config key',
+      'config: papers."dev/perch".importance is not a config key',
     );
   });
 
   it("refuses an entry's expect by name", async () => {
     const text = await fixtureConfigText(
-      '[items."dev/perch"]\nexpect = ["ci"]\n',
+      '[papers."dev/perch"]\nexpect = ["ci"]\n',
     );
 
     expect(() => parseConfig(text, home)).toThrow(
-      'config: items."dev/perch".expect is not a config key',
+      'config: papers."dev/perch".expect is not a config key',
     );
   });
 
@@ -379,13 +378,24 @@ describe("removed keys", () => {
     );
   });
 
+  it("refuses items and joins by name in a version 2 file", async () => {
+    const version2 = await fixtureConfigText("");
+
+    expect(() =>
+      parseConfig(`${version2}\n[items."dev/perch"]\n`, home),
+    ).toThrow("config: items is not a config key");
+    expect(() => parseConfig(`joins = []\n${version2}`, home)).toThrow(
+      "config: joins is not a config key",
+    );
+  });
+
   it("refuses an entry's expectation thresholds by name", async () => {
     const text = await fixtureConfigText(
-      '[items."dev/perch"]\nexpectation_amber_days = 3\n',
+      '[papers."dev/perch"]\nexpectation_amber_days = 3\n',
     );
 
     expect(() => parseConfig(text, home)).toThrow(
-      'config: items."dev/perch".expectation_amber_days is not a config key',
+      'config: papers."dev/perch".expectation_amber_days is not a config key',
     );
   });
 });
@@ -416,7 +426,7 @@ describe("bug thresholds", () => {
   it("read from [thresholds], with an item overriding either", async () => {
     const text = (
       await fixtureConfigText(
-        '[items."dev/perch"]\nbugs_red_count = 40\ncritical_bugs_amber_count = 2\n',
+        '[papers."dev/perch"]\nbugs_red_count = 40\ncritical_bugs_amber_count = 2\n',
       )
     ).replace(
       "[thresholds]\n",
@@ -440,14 +450,14 @@ describe("bug thresholds", () => {
       "[thresholds]\nbugs_amber_count = 0\n",
     );
     const entryText = await fixtureConfigText(
-      '[items."dev/perch"]\ncritical_bugs_amber_count = 3\n',
+      '[papers."dev/perch"]\ncritical_bugs_amber_count = 3\n',
     );
 
     expect(() => parseConfig(globalText, home)).toThrow(
       "config: thresholds.bugs_amber_count must be a positive integer",
     );
     expect(() => parseConfig(entryText, home)).toThrow(
-      'config: items."dev/perch".critical bugs amber threshold must be below its red threshold',
+      'config: papers."dev/perch".critical bugs amber threshold must be below its red threshold',
     );
   });
 });
@@ -484,10 +494,10 @@ describe("work word lists", () => {
         'bug_words = ["defect"]',
         'critical_bug_words = ["outage"]',
         "",
-        '[items."dev/perch"]',
+        '[papers."dev/perch"]',
         'bug_words = ["wart"]',
         "",
-        '[items.".dotfiles"]',
+        '[papers.".dotfiles"]',
         'critical_bug_words = ["fire"]',
         "",
       ].join("\n"),
@@ -523,9 +533,9 @@ describe("work word lists", () => {
       "config: work.bug_words must be an array of strings",
     );
     await expect(
-      parsed('[items."dev/perch"]\ncritical_bug_words = [" "]\n'),
+      parsed('[papers."dev/perch"]\ncritical_bug_words = [" "]\n'),
     ).rejects.toThrow(
-      'config: items."dev/perch".critical_bug_words must not hold a blank word',
+      'config: papers."dev/perch".critical_bug_words must not hold a blank word',
     );
   });
 });
@@ -714,16 +724,6 @@ hosts = ["github-alias"]
     expect(() => parseConfig(github, home)).toThrow(
       "config: two sources.github tables name keyring key shared; each may appear once",
     );
-  });
-
-  it("loads a config that still declares kuma tables, ignoring them", async () => {
-    const card =
-      '[[sources.kuma]]\nname = "Box"\nbase_url = "http://k.lan"\nstatus_page = "p"\n';
-
-    const config = parseConfig(await withSources(card + card), home);
-
-    expect(config.sources).toEqual({ local: [], github: [], forgejo: [] });
-    expect(writeConfig(config, home)).not.toContain("kuma");
   });
 
   it("names a key a source table may not hold", async () => {

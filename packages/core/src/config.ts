@@ -481,8 +481,9 @@ function parseEntry(
     thresholds: Thresholds;
   },
 ): ItemEntry {
-  const where = `items."${id}".`;
-  if (!isTable(value)) throw new Error(`config: items."${id}" must be a table`);
+  const where = `papers."${id}".`;
+  if (!isTable(value))
+    throw new Error(`config: papers."${id}" must be a table`);
   onlyKeys(value, entryKeys, where);
   const wire = optionalString(value, "wire", where);
   if (wire !== null) oneOf(wire, context.wires, `${where}wire`);
@@ -566,8 +567,7 @@ function checkDistinct<T>(
 
 function parseSources(document: Table, home: string): SourcesConfig {
   const sources = optionalTable(document, "sources", "");
-  // kuma tables are ignored: perch no longer reads an Uptime Kuma source.
-  onlyKeys(sources, ["local", "github", "forgejo", "kuma"], "sources.");
+  onlyKeys(sources, ["local", "github", "forgejo"], "sources.");
   const paths = (card: Table, key: string, where: string) =>
     optionalStrings(card, key, where).map((path) => expandHome(path, home));
   const parsed: SourcesConfig = {
@@ -730,22 +730,78 @@ function stringArrays(value: unknown, name: string): string[][] {
 
 /** Every key config may hold at its top level. */
 const topLevelKeys = [
+  "version",
   "wires",
   "sources",
-  "joins",
+  "links",
   "ignore",
   "thresholds",
   "work",
-  "items",
+  "papers",
   "scan",
   "launch",
   "window",
   "update",
 ] as const;
 
-/** Parses and validates config TOML, expanding a leading ~ in paths against the home directory. */
+/** The config version this perch reads and writes. */
+export const configVersion = 2;
+
+/** Version 2 renamed [items] to [papers] and joins to links, and dropped [[sources.kuma]]. */
+function fromVersion1(document: Table): Table {
+  const { items, joins, sources, ...rest } = document;
+  const kept = isTable(sources)
+    ? Object.fromEntries(
+        Object.entries(sources).filter(([kind]) => kind !== "kuma"),
+      )
+    : sources;
+  return { ...rest, sources: kept, papers: items, links: joins };
+}
+
+/** The steps that take a document up one version, the step from version 1 first. */
+const migrationSteps: readonly ((document: Table) => Table)[] = [fromVersion1];
+
+/** The version a document was written at: 1 when it names none; refused when newer than this perch. */
+function versionOf(document: Table): number {
+  if (document.version === undefined) return 1;
+  const version = positiveInteger(document.version, "version");
+  if (version > configVersion) {
+    throw new Error(
+      `config: version ${version} is newer than this perch reads, version ${configVersion}`,
+    );
+  }
+  return version;
+}
+
+/** A parsed config and the version its text was written at. */
+export interface VersionedConfig {
+  config: Config;
+  /** Below configVersion when the text was migrated on read. */
+  fileVersion: number;
+}
+
+/**
+ * Parses and validates config TOML of any version up to configVersion, migrating it in memory one
+ * step per version, and expanding a leading ~ in paths against the home directory.
+ */
+export function parseVersionedConfig(
+  text: string,
+  home: string,
+): VersionedConfig {
+  const read: Table = parse(text);
+  const fileVersion = versionOf(read);
+  const document = migrationSteps
+    .slice(fileVersion - 1)
+    .reduce((current, step) => step(current), read);
+  return { config: validConfig(document, home), fileVersion };
+}
+
+/** Parses and validates config TOML, migrated in memory to the current version. */
 export function parseConfig(text: string, home: string): Config {
-  const document: Table = parse(text);
+  return parseVersionedConfig(text, home).config;
+}
+
+function validConfig(document: Table, home: string): Config {
   onlyKeys(document, topLevelKeys, "");
 
   const wires = table(document, "wires", "");
@@ -760,7 +816,7 @@ export function parseConfig(text: string, home: string): Config {
   );
   const thresholds = globalThresholds(table(document, "thresholds", ""));
   checkOrder(thresholds, "thresholds.");
-  const items = optionalTable(document, "items", "");
+  const papers = optionalTable(document, "papers", "");
   const scan = table(document, "scan", "");
   onlyKeys(scan, ["interval_minutes", "finalised_commits"], "scan.");
   const windowTable = optionalTable(document, "window", "");
@@ -771,12 +827,12 @@ export function parseConfig(text: string, home: string): Config {
   return {
     wires: { names: wireNames, default: defaultWire },
     sources: parseSources(document, home),
-    joins: stringArrays(document.joins, "joins"),
+    joins: stringArrays(document.links, "links"),
     ignore: stringArray(document.ignore, "ignore"),
     thresholds,
     work: parseWork(document),
     items: Object.fromEntries(
-      Object.entries(items).map(([id, value]) => [
+      Object.entries(papers).map(([id, value]) => [
         id,
         parseEntry(id, value, { wires: wireNames, thresholds }),
       ]),

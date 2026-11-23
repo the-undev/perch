@@ -15,16 +15,20 @@
 # forgejo:<owner>/<name>. A local id is the path relative to the home
 # directory.
 
+# The config version. A file without one is version 1, which the app
+# migrates to this version once, keeping the old file as config.toml.v1.
+version = 2
+
 # Presences that are one project although no remote URL proves it, for
 # example [["github:someone/notes", "forgejo:someone/notes"]].
-joins = []
+links = []
 
 # Presences to leave off the main view. They still appear in their forge's
 # listing.
 ignore = []
 
 # The wires, top to bottom: the owner's priority bands. An adopted item
-# sits on the wire its entry names, else the default. Everything config does
+# sits on the wire its papers name, else the default. Everything config does
 # not name sits on the fence beneath.
 [wires]
 names = ["Home", "Projects"]
@@ -82,7 +86,7 @@ stalled_red_days = 30
 # matched as whole words in any case against the item's text, its #tags and
 # every heading above it. Words in inline code or double quotes are left out,
 # so a term can be mentioned. Only bugs move the bird. Each list is taken
-# whole from the item's entry, else from here, else the built-in list shown.
+# whole from the item's papers, else from here, else the built-in list shown.
 # [work]
 # bug_words = ["bug", "bugs", "issue", "issues", "problem", "problems", "broken", "regression", "crash", "crashes", "p2", "p3", "p4"]
 # critical_bug_words = ["critical", "urgent", "severe", "blocker", "p0", "p1"]
@@ -169,15 +173,15 @@ kind = "folder"
 # check = false
 # install = true
 
-# Item entries. An entry adopts the bird and puts it on a wire. Its key names
-# any presence of the item: a local id, or a forge presence such as
+# Papers. An item's papers adopt the bird and put it on a wire. Their key
+# names any presence of the item: a local id, or a forge presence such as
 # "forgejo:owner/name", which still applies once a local clone joins it. When
-# two entries name one item, the one keyed by the item's id applies and the
+# two papers name one item, the one keyed by the item's id applies and the
 # clash is flagged. A repository found inside an include directory is flagged
-# as not set up until it has an entry here, even an empty one.
+# as not set up until it has papers here, even empty ones.
 #
-# Every field an entry can hold, each optional:
-# [items."projects/example"]
+# Every field papers can hold, each optional:
+# [papers."projects/example"]
 # wire = "Projects"                  # one of wires.names
 # name = "Example"                   # the bird's name; default the folder or repository name
 # key_files = ["README.md", "docs/forge-access.md", "docs/roadmap.md"]  # default the README and any roadmap

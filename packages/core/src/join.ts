@@ -196,7 +196,7 @@ export function joinPresences(input: JoinInput): JoinResult {
   };
 
   for (const group of input.joins) {
-    const assertion = `joins ${JSON.stringify(group)}`;
+    const assertion = `links ${JSON.stringify(group)}`;
     const refs = group.map(named);
     const missing = refs.filter((ref) => !projectOf.has(ref));
     if (missing.length > 0) {

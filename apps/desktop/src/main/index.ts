@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { copyFile, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { defaultTray } from "@perch/core/config.ts";
@@ -130,6 +130,8 @@ function start(): void {
     home,
     path: paths.userConfigPath,
     readText: readTextIfExists,
+    writeText: writeTextAtomic,
+    copyFile,
   });
   const spawnDetached = createSpawnDetached(spawn, { cwd: home, env });
   const run = ([program, ...args]: string[]) =>

@@ -20,7 +20,7 @@ import {
 } from "./helpers/raw.ts";
 
 const config = await testConfig(
-  '[items."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\n',
+  '[papers."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\n',
 );
 
 const files = rawFiles({
@@ -148,7 +148,7 @@ describe("aggregate", () => {
 
   it("classes roadmap items by the word lists the item's entry sets, else [work], and judges them by its windows", async () => {
     const worded = await testConfig(
-      '[work]\nbug_words = ["defect"]\n\n[items."dev/perch"]\ncritical_bug_words = ["outage"]\nbugs_red_count = 9\n',
+      '[work]\nbug_words = ["defect"]\n\n[papers."dev/perch"]\ncritical_bug_words = ["outage"]\nbugs_red_count = 9\n',
     );
     const structure = readRoadmapStructure(
       "- [ ] A defect in the export\n- [ ] An outage at night\n- [ ] A bug in the import\n",

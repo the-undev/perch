@@ -3,9 +3,9 @@
 
 import { runAggregate } from "../scan.ts";
 import { cliConfig } from "./config.ts";
-import { home, rawDir, snapshotPath } from "./paths.ts";
+import { home, rawDir, snapshotPath, userPath } from "./paths.ts";
 
-const { config, path: configPath } = await cliConfig();
+const { config, path: configPath } = await cliConfig({ home, userPath });
 const snapshot = await runAggregate({
   config,
   configPath,

@@ -186,7 +186,7 @@ function entryOf(project: Project, config: Config): ResolvedEntry {
   return resolveEntry(config, projectId(project), project.refs);
 }
 
-/** Joins the presences in a set of raw files into projects, with config's hosts, joins and ignores. */
+/** Joins the presences in a set of raw files into projects, with config's hosts, links and ignores. */
 export function joinRawFiles(
   files: Partial<RawFiles>,
   config: Config,
@@ -258,7 +258,7 @@ function itemFor(
     flags.unshift({
       flag: "not-set-up",
       level: "red",
-      detail: `found under ${local.presence.include} with no entry in config items`,
+      detail: `found under ${local.presence.include} with no papers in config`,
     });
   }
   return {
@@ -349,9 +349,9 @@ export function aggregate(
   for (const { item, keys } of resolved) {
     if (keys.length < 2) continue;
     const assertion = keys
-      .map((key) => `items.${JSON.stringify(key)}`)
+      .map((key) => `papers.${JSON.stringify(key)}`)
       .join(", ");
-    const detail = `name one item, ${item.id}; items.${JSON.stringify(keys[0])} applies`;
+    const detail = `name one item, ${item.id}; papers.${JSON.stringify(keys[0])} applies`;
     conflicts.push({ assertion, detail });
     item.flags.push({
       flag: "config-conflict",
@@ -363,7 +363,7 @@ export function aggregate(
   for (const key of Object.keys(config.items)) {
     if (matched.has(key)) continue;
     conflicts.push({
-      assertion: `items.${JSON.stringify(key)}`,
+      assertion: `papers.${JSON.stringify(key)}`,
       detail: `${key} was not observed`,
     });
   }

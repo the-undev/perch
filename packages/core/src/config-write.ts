@@ -5,6 +5,7 @@ import { stringify } from "smol-toml";
 import {
   type Config,
   collapseHome,
+  configVersion,
   defaultBugThresholds,
   defaultTray,
   defaultUpdateCheck,
@@ -162,8 +163,8 @@ function actionTable(
 }
 
 /**
- * Serialises config to TOML that parseConfig reads back to an equal config, deterministic because
- * item entries and zellij session roots are sorted by key and every list, sources and launch
+ * Serialises config to TOML at the current version that parseConfig reads back to an equal config,
+ * deterministic because papers and zellij session roots are sorted by key and every list, sources and launch
  * actions among them, keeps its order. Paths at or under the home directory are written with a
  * leading ~, empty optional tables, source kinds and launch actions are left out, and so is a
  * launch action's field that holds its kind's default, a window or update setting that holds its own,
@@ -172,7 +173,8 @@ function actionTable(
 export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);
   const document: Table = {
-    joins: config.joins,
+    version: configVersion,
+    links: config.joins,
     ignore: config.ignore,
     wires: { names: config.wires.names, default: config.wires.default },
     sources: unlessEmpty(sourcesTable(config.sources, path)),
@@ -201,7 +203,7 @@ export function writeConfig(config: Config, home: string): string {
         ? {}
         : { install: config.update.install }),
     }),
-    items: unlessEmpty(
+    papers: unlessEmpty(
       Object.fromEntries(
         Object.entries(sortedByKey(config.items)).map(([key, entry]) => [
           key,

@@ -246,7 +246,7 @@ describe("asserted joins", () => {
     expect(refsOf(result)).toEqual([["local:dev/a"], ["local:dev/b"]]);
     expect(result.conflicts).toEqual([
       {
-        assertion: 'joins ["local:dev/a","local:dev/b"]',
+        assertion: 'links ["local:dev/a","local:dev/b"]',
         detail: "it would join two local clones into one project",
       },
     ]);
@@ -359,7 +359,7 @@ describe("aggregating joined projects", () => {
       { status: okStatus({}), files },
       {
         config: await config(
-          '[items."dev/perch"]\n[items."dev/toy"]\n[items."dev/gone"]\n',
+          '[papers."dev/perch"]\n[papers."dev/toy"]\n[papers."dev/gone"]\n',
         ),
         configPath: "c",
         home: "/home/test",
@@ -463,12 +463,12 @@ describe("aggregating joined projects", () => {
   it("records a config entry that names nothing observed", async () => {
     const snapshot = aggregated(
       files,
-      await config('[items."dev/vanished"]\n'),
+      await config('[papers."dev/vanished"]\n'),
     );
 
     expect(itemConflicts(snapshot)).toEqual([
       {
-        assertion: 'items."dev/vanished"',
+        assertion: 'papers."dev/vanished"',
         detail: "dev/vanished was not observed",
       },
     ]);
@@ -477,7 +477,7 @@ describe("aggregating joined projects", () => {
   it("keeps a forge-keyed entry's adoption, name, wire, thresholds, key files and roadmaps after a local clone joins", async () => {
     const configured = await config(
       [
-        '[items."github:Finch/Perch"]',
+        '[papers."github:Finch/Perch"]',
         'wire = "Machine & Home"',
         'name = "Perch"',
         "unsafe_amber_hours = 300",
@@ -525,7 +525,7 @@ describe("aggregating joined projects", () => {
 
   it("flags two entries naming one project, and the one keyed by its id applies", async () => {
     const configured = await config(
-      '[items."github:finch/perch"]\nname = "Forge"\n\n[items."dev/perch"]\nname = "Local"\n',
+      '[papers."github:finch/perch"]\nname = "Forge"\n\n[papers."dev/perch"]\nname = "Local"\n',
     );
 
     const snapshot = aggregated(files, configured);
@@ -536,15 +536,15 @@ describe("aggregating joined projects", () => {
 
     expect(itemConflicts(snapshot)).toEqual([
       {
-        assertion: 'items."dev/perch", items."github:finch/perch"',
-        detail: 'name one item, dev/perch; items."dev/perch" applies',
+        assertion: 'papers."dev/perch", papers."github:finch/perch"',
+        detail: 'name one item, dev/perch; papers."dev/perch" applies',
       },
     ]);
     expect(perch?.flags).toContainEqual({
       flag: "config-conflict",
       level: null,
       detail:
-        'items."dev/perch", items."github:finch/perch": name one item, dev/perch; items."dev/perch" applies',
+        'papers."dev/perch", papers."github:finch/perch": name one item, dev/perch; papers."dev/perch" applies',
     });
     expect(bird?.name).toBe("Local");
   });

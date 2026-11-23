@@ -140,6 +140,12 @@ function writtenSessions(document: Record<string, unknown>): unknown {
 }
 
 describe("writeConfig", () => {
+  it("begins with version = 2", async () => {
+    const text = writeConfig(parseConfig(await exampleText(), home), home);
+
+    expect(text.startsWith("version = 2\n")).toBe(true);
+  });
+
   it("writes the example config back to an equal config", async () => {
     const config = parseConfig(await exampleText(), home);
 

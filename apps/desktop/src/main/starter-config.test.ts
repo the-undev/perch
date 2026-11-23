@@ -25,6 +25,7 @@ describe("the starter config", () => {
     await writeStarterConfig(configPath, home);
 
     const text = await readFile(configPath, "utf8");
+    expect(text.startsWith("version = 2\n")).toBe(true);
     expect(text).toBe(writeConfig(defaultConfig(), home));
     expect(parseConfig(text, home)).toEqual(defaultConfig());
   });

@@ -33,6 +33,10 @@ async function exampleText(): Promise<string> {
 }
 
 describe("example config", () => {
+  it("carries version = 2", async () => {
+    expect(await exampleText()).toMatch(/^version = 2$/m);
+  });
+
   it("parses with every path expanded against the home directory", async () => {
     const config = parseConfig(await exampleText(), home);
 

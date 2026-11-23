@@ -330,7 +330,7 @@ describe("the wires", () => {
     ]);
   });
 
-  it("puts a bird on the wire its entry names", async () => {
+  it("puts a bird on the wire its papers name", async () => {
     const config = await testConfig(
       '[papers."dev/spool"]\nwire = "Machine & Home"\n',
     );
@@ -894,7 +894,7 @@ describe("where a fence bird lives", () => {
   const undecided = entity("dev/spool", { sources: { git: gitData({}) } });
   const entities = [forgeOnly, oneDisk, undecided];
   const livesOf = (config: Config) =>
-    entities.map((entry) => birdIn(entities, config, entry.id).lives);
+    entities.map((entity) => birdIn(entities, config, entity.id).lives);
 
   it("names the forge, the one disk, or nothing while undecided", async () => {
     expect(livesOf(await adoptAll([]))).toEqual([
@@ -905,11 +905,9 @@ describe("where a fence bird lives", () => {
   });
 
   it("says nothing for an adopted bird", async () => {
-    expect(livesOf(await adoptAll(entities.map((entry) => entry.id)))).toEqual([
-      null,
-      null,
-      null,
-    ]);
+    expect(
+      livesOf(await adoptAll(entities.map((entity) => entity.id))),
+    ).toEqual([null, null, null]);
   });
 });
 
@@ -978,7 +976,9 @@ describe("the ledger's quiet sentence", () => {
     const entities = [restless, distressed, fresh, unread, parked, forgeOnly];
 
     expect(
-      entities.map((entry) => birdIn(entities, config, entry.id).detail.quiet),
+      entities.map(
+        (entity) => birdIn(entities, config, entity.id).detail.quiet,
+      ),
     ).toEqual([null, null, null, null, null, null]);
   });
 });
@@ -1822,7 +1822,7 @@ describe("the detail", () => {
       },
     });
     const entities = [cloned, forgeOnly, oneDisk, outside];
-    const config = await adoptAll(entities.map((entry) => entry.id));
+    const config = await adoptAll(entities.map((entity) => entity.id));
     const whereabouts = (id: string) => {
       const { clonePath, forges } = birdIn(entities, config, id).detail;
       return { clonePath, forges };

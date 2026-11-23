@@ -5,7 +5,7 @@ import {
   type Config,
   loadConfig,
   parseConfig,
-  resolveEntry,
+  resolvePapers,
   thresholdsFor,
   userConfigPath,
   wireFor,
@@ -24,9 +24,9 @@ const examplePath = join(
 );
 const home = "/home/test";
 
-/** The entry config resolves for a local entity with no forge presence. */
-const entryOf = (config: Config, id: string) =>
-  resolveEntry(config, id, [`local:${id}`]).entry;
+/** The papers config resolves for a local entity with no forge presence. */
+const papersOf = (config: Config, id: string) =>
+  resolvePapers(config, id, [`local:${id}`]).papers;
 
 async function exampleText(): Promise<string> {
   return readFile(examplePath, "utf8");
@@ -183,12 +183,12 @@ describe("example config", () => {
   it("gives every entity the global thresholds when nothing is overridden", async () => {
     const config = parseConfig(await exampleText(), home);
 
-    expect(thresholdsFor(config, entryOf(config, "projects/example"))).toEqual(
+    expect(thresholdsFor(config, papersOf(config, "projects/example"))).toEqual(
       config.thresholds,
     );
   });
 
-  it("shows every entry field in its commented example, and each parses", async () => {
+  it("shows every papers field in its commented example, and each parses", async () => {
     const text = await exampleText();
     const lines = text.split("\n");
     const start = lines.indexOf('# [papers."projects/example"]');
@@ -237,13 +237,13 @@ describe("entity overrides", () => {
     );
     const config = parseConfig(text, home);
 
-    expect(thresholdsFor(config, entryOf(config, ".dotfiles"))).toEqual({
+    expect(thresholdsFor(config, papersOf(config, ".dotfiles"))).toEqual({
       unsafe: { amberHours: 3, redHours: 72 },
       stalled: { amberDays: 7, redDays: 60 },
       bugs: { amberCount: 5, redCount: 20 },
       criticalBugs: { amberCount: 1, redCount: 3 },
     });
-    expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toEqual(
+    expect(thresholdsFor(config, papersOf(config, "dev/perch"))).toEqual(
       config.thresholds,
     );
   });
@@ -254,14 +254,14 @@ describe("entity overrides", () => {
     );
     const config = parseConfig(text, home);
 
-    expect(wireFor(config, entryOf(config, ".dotfiles"))).toBe(
+    expect(wireFor(config, papersOf(config, ".dotfiles"))).toBe(
       "Machine & Home",
     );
-    expect(wireFor(config, entryOf(config, "dev/perch"))).toBe("Projects");
-    expect(wireFor(config, entryOf(config, "dev/hello"))).toBeNull();
+    expect(wireFor(config, papersOf(config, "dev/perch"))).toBe("Projects");
+    expect(wireFor(config, papersOf(config, "dev/hello"))).toBeNull();
   });
 
-  it("choose the zellij session from the entry, then the action's longest root, then its default", async () => {
+  it("choose the zellij session from the papers, then the action's longest root, then its default", async () => {
     const text = await withOverrides(
       '[papers."undev/spool"]\nzellij_session = "spool"\n',
     );
@@ -279,26 +279,26 @@ describe("entity overrides", () => {
     expect(
       zellijSessionFor(
         action,
-        entryOf(config, "undev/spool"),
+        papersOf(config, "undev/spool"),
         "/home/test/undev/spool",
       ),
     ).toBe("spool");
     expect(
       zellijSessionFor(
         action,
-        entryOf(config, "undev/x"),
+        papersOf(config, "undev/x"),
         "/home/test/undev/tools/x",
       ),
     ).toBe("tools");
     expect(
       zellijSessionFor(
         action,
-        entryOf(config, "undev/y"),
+        papersOf(config, "undev/y"),
         "/home/test/undev/y",
       ),
     ).toBe("undev");
     expect(
-      zellijSessionFor(action, entryOf(config, "undevx"), "/home/test/undevx"),
+      zellijSessionFor(action, papersOf(config, "undevx"), "/home/test/undevx"),
     ).toBe("home");
   });
 
@@ -318,7 +318,7 @@ describe("entity overrides", () => {
     );
   });
 
-  it("name a key an entry may not hold", async () => {
+  it("name a key papers may not hold", async () => {
     const text = await withOverrides('[papers."dev/perch"]\ncolour = "red"\n');
 
     expect(() => parseConfig(text, home)).toThrow(
@@ -338,7 +338,7 @@ describe("removed keys", () => {
     );
   });
 
-  it("refuses an entry's importance by name", async () => {
+  it("refuses papers' importance by name", async () => {
     const text = await fixtureConfigText(
       '[papers."dev/perch"]\nimportance = "machine"\n',
     );
@@ -348,7 +348,7 @@ describe("removed keys", () => {
     );
   });
 
-  it("refuses an entry's expect by name", async () => {
+  it("refuses papers' expect by name", async () => {
     const text = await fixtureConfigText(
       '[papers."dev/perch"]\nexpect = ["ci"]\n',
     );
@@ -404,7 +404,7 @@ describe("removed keys", () => {
     );
   });
 
-  it("refuses an entry's expectation thresholds by name", async () => {
+  it("refuses papers' expectation thresholds by name", async () => {
     const text = await fixtureConfigText(
       '[papers."dev/perch"]\nexpectation_amber_days = 3\n',
     );
@@ -449,11 +449,11 @@ describe("bug thresholds", () => {
     );
     const config = parseConfig(text, home);
 
-    expect(thresholdsFor(config, entryOf(config, "dev/perch"))).toMatchObject({
+    expect(thresholdsFor(config, papersOf(config, "dev/perch"))).toMatchObject({
       bugs: { amberCount: 10, redCount: 40 },
       criticalBugs: { amberCount: 2, redCount: 4 },
     });
-    expect(thresholdsFor(config, entryOf(config, ".dotfiles"))).toMatchObject({
+    expect(thresholdsFor(config, papersOf(config, ".dotfiles"))).toMatchObject({
       bugs: { amberCount: 10, redCount: 20 },
       criticalBugs: { amberCount: 1, redCount: 4 },
     });
@@ -464,25 +464,25 @@ describe("bug thresholds", () => {
       "[thresholds]\n",
       "[thresholds]\nbugs_amber_count = 0\n",
     );
-    const entryText = await fixtureConfigText(
+    const papersText = await fixtureConfigText(
       '[papers."dev/perch"]\ncritical_bugs_amber_count = 3\n',
     );
 
     expect(() => parseConfig(globalText, home)).toThrow(
       "config: thresholds.bugs_amber_count must be a positive integer",
     );
-    expect(() => parseConfig(entryText, home)).toThrow(
+    expect(() => parseConfig(papersText, home)).toThrow(
       'config: papers."dev/perch".critical bugs amber threshold must be below its red threshold',
     );
   });
 });
 
 describe("work word lists", () => {
-  it("are built in when neither [work] nor the entry sets them", async () => {
+  it("are built in when neither [work] nor the papers set them", async () => {
     const config = parseConfig(await fixtureConfigText(""), home);
 
     expect(config.work).toEqual({ bugWords: null, criticalBugWords: null });
-    expect(workWordsFor(config, entryOf(config, "dev/perch"))).toEqual({
+    expect(workWordsFor(config, papersOf(config, "dev/perch"))).toEqual({
       bug: [
         "bug",
         "bugs",
@@ -502,7 +502,7 @@ describe("work word lists", () => {
     });
   });
 
-  it("take each list whole from the entry, else [work], else built in, never merged", async () => {
+  it("take each list whole from the papers, else [work], else built in, never merged", async () => {
     const text = await fixtureConfigText(
       [
         "[work]",
@@ -523,15 +523,15 @@ describe("work word lists", () => {
       bugWords: ["wart"],
       criticalBugWords: null,
     });
-    expect(workWordsFor(config, entryOf(config, "dev/perch"))).toEqual({
+    expect(workWordsFor(config, papersOf(config, "dev/perch"))).toEqual({
       bug: ["wart"],
       criticalBug: ["outage"],
     });
-    expect(workWordsFor(config, entryOf(config, ".dotfiles"))).toEqual({
+    expect(workWordsFor(config, papersOf(config, ".dotfiles"))).toEqual({
       bug: ["defect"],
       criticalBug: ["fire"],
     });
-    expect(workWordsFor(config, entryOf(config, "dev/hello"))).toEqual({
+    expect(workWordsFor(config, papersOf(config, "dev/hello"))).toEqual({
       bug: ["defect"],
       criticalBug: ["outage"],
     });

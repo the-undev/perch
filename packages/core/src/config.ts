@@ -47,7 +47,7 @@ export interface WorkWords {
   criticalBug: string[];
 }
 
-/** The words that make a bug when neither the entry nor [work] sets the list. */
+/** The words that make a bug when neither the papers nor [work] set the list. */
 export const builtInBugWords: readonly string[] = [
   "bug",
   "bugs",
@@ -64,7 +64,7 @@ export const builtInBugWords: readonly string[] = [
   "p4",
 ];
 
-/** The words that make a critical bug when neither the entry nor [work] sets the list. */
+/** The words that make a critical bug when neither the papers nor [work] set the list. */
 export const builtInCriticalBugWords: readonly string[] = [
   "critical",
   "urgent",
@@ -80,8 +80,8 @@ export const defaultBugThresholds: Pick<Thresholds, "bugs" | "criticalBugs"> = {
   criticalBugs: { amberCount: 1, redCount: 3 },
 };
 
-/** An entity's entry in config. Having one adopts the bird, which puts it on a wire. */
-export interface EntityEntry {
+/** An entity's papers in config. Having one adopts the bird, which puts it on a wire. */
+export interface Papers {
   /** The wire the bird sits on; null puts it on the default wire. */
   wire: string | null;
   /** The name the bird goes by; null keeps the scanned name. */
@@ -132,7 +132,7 @@ export interface SourcesConfig {
 }
 
 export interface Config {
-  /** The wires top to bottom, and the one an adopted entity sits on when its entry names none. */
+  /** The wires top to bottom, and the one an adopted entity sits on when its papers name none. */
   wires: { names: string[]; default: string };
   sources: SourcesConfig;
   /** Groups of presence references asserted to be one project. */
@@ -140,13 +140,13 @@ export interface Config {
   /** Presence references to leave off the main view. */
   ignore: string[];
   thresholds: Thresholds;
-  /** The [work] table's word lists, which an entry's own lists replace. */
+  /** The [work] table's word lists, which the papers' own lists replace. */
   work: WorkWordsConfig;
   /**
-   * Entity entries keyed by any of the entity's presence references (see resolveEntry); an entry
-   * adopts the entity and marks a found repository set up.
+   * Papers keyed by any of the entity's presence references (see resolvePapers); papers
+   * adopt the entity and mark a found repository set up.
    */
-  entities: Record<string, EntityEntry>;
+  entities: Record<string, Papers>;
   /** The scan interval, and the commits read on each forge repository's default branch. */
   scan: {
     intervalMinutes: number;
@@ -205,7 +205,7 @@ export interface ZellijActionConfig {
   zellij: string[];
   /** Opens a terminal attached to a session that is not running. */
   terminal: string[];
-  /** The session for an entity no root or entry assigns. */
+  /** The session for an entity no root or papers assigns. */
   session: string;
   /** Sessions by root directory, home expanded; the longest root containing the entity wins. */
   sessions: Record<string, string>;
@@ -450,7 +450,7 @@ function optionalWords(
   return words;
 }
 
-/** The word list keys, the same in [work] and in an entity entry. */
+/** The word list keys, the same in [work] and in papers. */
 const workWordKeys = ["bug_words", "critical_bug_words"] as const;
 
 function parseWork(document: Table): WorkWordsConfig {
@@ -462,8 +462,8 @@ function parseWork(document: Table): WorkWordsConfig {
   };
 }
 
-/** Every key an entity entry may hold. */
-const entryKeys = [
+/** Every key papers may hold. */
+const papersKeys = [
   "wire",
   "name",
   "key_files",
@@ -473,18 +473,18 @@ const entryKeys = [
   ...thresholdKeys.map(([, , key]) => key),
 ];
 
-function parseEntry(
+function parsePapers(
   id: string,
   value: unknown,
   context: {
     wires: readonly string[];
     thresholds: Thresholds;
   },
-): EntityEntry {
+): Papers {
   const where = `papers."${id}".`;
   if (!isTable(value))
     throw new Error(`config: papers."${id}" must be a table`);
-  onlyKeys(value, entryKeys, where);
+  onlyKeys(value, papersKeys, where);
   const wire = optionalString(value, "wire", where);
   if (wire !== null) oneOf(wire, context.wires, `${where}wire`);
   const thresholds = thresholdOverrides(value, where);
@@ -839,7 +839,7 @@ function validConfig(document: Table, home: string): Config {
     entities: Object.fromEntries(
       Object.entries(papers).map(([id, value]) => [
         id,
-        parseEntry(id, value, { wires: wireNames, thresholds }),
+        parsePapers(id, value, { wires: wireNames, thresholds }),
       ]),
     ),
     scan: {
@@ -890,23 +890,23 @@ export function hostsOf(sources: readonly { hosts: string[] }[]): string[] {
   return [...new Set(sources.flatMap((source) => source.hosts))];
 }
 
-/** The entry an entity resolves to, and every key naming the entity. */
-export interface ResolvedEntry {
-  /** The entry that applies, null when no key names the entity. */
-  entry: EntityEntry | null;
+/** The papers an entity resolves to, and every key naming the entity. */
+export interface ResolvedPapers {
+  /** The papers that apply, null when no key names the entity. */
+  papers: Papers | null;
   /** Every key naming the entity, the one that applies first; more than one is a conflict. */
   keys: string[];
 }
 
 /**
- * The config entry for an entity, given its id and presence references: an entry applies when its
+ * The papers for an entity, given its id and presence references: papers apply when its
  * key names any of them, and the key naming the earliest wins, the id first, ties by key.
  */
-export function resolveEntry(
+export function resolvePapers(
   config: Config,
   id: string,
   refs: readonly string[],
-): ResolvedEntry {
+): ResolvedPapers {
   const names = [id, ...refs];
   const ranked = Object.keys(config.entities)
     .map((key) => {
@@ -919,29 +919,26 @@ export function resolveEntry(
   const keys = ranked.map(({ key }) => key);
   const first = keys[0];
   return {
-    entry: first === undefined ? null : (config.entities[first] ?? null),
+    papers: first === undefined ? null : (config.entities[first] ?? null),
     keys,
   };
 }
 
-/** The health windows for an entity: the global values with its entry's overrides applied. */
+/** The health windows for an entity: the global values with its papers' overrides applied. */
 export function thresholdsFor(
   config: Config,
-  entry: EntityEntry | null,
+  papers: Papers | null,
 ): Thresholds {
-  const overrides = entry?.thresholds ?? noThresholdOverrides();
+  const overrides = papers?.thresholds ?? noThresholdOverrides();
   return applyOverrides(config.thresholds, overrides);
 }
 
-/** The word lists for an entity: each from its entry if set, else from [work], else built in. */
-export function workWordsFor(
-  config: Config,
-  entry: EntityEntry | null,
-): WorkWords {
+/** The word lists for an entity: each from its papers if set, else from [work], else built in. */
+export function workWordsFor(config: Config, papers: Papers | null): WorkWords {
   return {
-    bug: [...(entry?.bugWords ?? config.work.bugWords ?? builtInBugWords)],
+    bug: [...(papers?.bugWords ?? config.work.bugWords ?? builtInBugWords)],
     criticalBug: [
-      ...(entry?.criticalBugWords ??
+      ...(papers?.criticalBugWords ??
         config.work.criticalBugWords ??
         builtInCriticalBugWords),
     ],
@@ -949,12 +946,9 @@ export function workWordsFor(
 }
 
 /** The wire an adopted entity sits on; null for an entity config does not name, which is on the fence. */
-export function wireFor(
-  config: Config,
-  entry: EntityEntry | null,
-): string | null {
-  if (entry === null) return null;
-  return entry.wire ?? config.wires.default;
+export function wireFor(config: Config, papers: Papers | null): string | null {
+  if (papers === null) return null;
+  return papers.wire ?? config.wires.default;
 }
 
 /** The config's zellij action, or null when it has none. */
@@ -967,15 +961,15 @@ export function zellijActionOf(config: Config): ZellijActionConfig | null {
 }
 
 /**
- * The zellij session for an entity at a path: its entry's, else the session of the action's longest
+ * The zellij session for an entity at a path: its papers', else the session of the action's longest
  * root containing the path, else the action's default.
  */
 export function zellijSessionFor(
   action: ZellijActionConfig,
-  entry: EntityEntry | null,
+  papers: Papers | null,
   path: string,
 ): string {
-  const asserted = entry?.zellijSession;
+  const asserted = papers?.zellijSession;
   if (asserted) return asserted;
   const byRoot = Object.entries(action.sessions)
     .filter(([root]) => path === root || path.startsWith(`${root}/`))

@@ -1,14 +1,14 @@
 // The adoption papers: the sheet that adopts a fence bird and amends an adopted one, in each of its
 // states from the mock dataset.
 
-import type { EntryForm, EntryValues } from "@perch/core/entry-form.ts";
+import type { PapersForm, PapersValues } from "@perch/core/papers-form.ts";
 import { AdoptionPapers } from "@perch/ui/adoption-papers.tsx";
 import { DetailView } from "@perch/ui/detail-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
 import {
   mockBird,
-  mockEntryForm,
+  mockPapersForm,
   reportedSnooze,
   scanMoment,
 } from "../specimens.ts";
@@ -23,14 +23,14 @@ import {
 } from "../usage.tsx";
 
 /** What a signature would write, in short, so the page shows the callback working. */
-function signedWords(values: EntryValues): string {
+function signedWords(values: PapersValues): string {
   const set = Object.entries(values).filter(
     ([, value]) =>
       value !== null &&
       !(Array.isArray(value) && value.length === 0) &&
       !(typeof value === "object" && Object.keys(value).length === 0),
   );
-  if (set.length === 0) return "an entry with nothing set";
+  if (set.length === 0) return "papers with nothing set";
   return set
     .map(([field, value]) => `${field} = ${JSON.stringify(value)}`)
     .join(", ");
@@ -44,7 +44,7 @@ function PapersSpecimen({
   onPressed,
 }: {
   id: string;
-  form: EntryForm;
+  form: PapersForm;
   problems: string[];
   onPressed: (text: string) => void;
 }) {
@@ -63,10 +63,10 @@ function PapersSpecimen({
   );
 }
 
-/** A mock bird's entry form with its values changed, as a draft would hold them. */
-function withValues(id: string, change: Partial<EntryValues>): EntryForm {
-  const form = mockEntryForm(id);
-  if (form.values === null) throw new Error(`${id} has no entry`);
+/** A mock bird's papers form with its values changed, as a draft would hold them. */
+function withValues(id: string, change: Partial<PapersValues>): PapersForm {
+  const form = mockPapersForm(id);
+  if (form.values === null) throw new Error(`${id} has no papers`);
   return { ...form, values: { ...form.values, ...change } };
 }
 
@@ -77,7 +77,7 @@ export function AdoptionPapersPage() {
   const specimen = (id: string, problems: string[] = []) => (
     <PapersSpecimen
       id={id}
-      form={mockEntryForm(id)}
+      form={mockPapersForm(id)}
       problems={problems}
       onPressed={setPressed}
     />
@@ -101,8 +101,8 @@ export function AdoptionPapersPage() {
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
               snooze={reportedSnooze(setPressed)}
               sheets={birdSheets(hello)}
-              entry={{
-                form: mockEntryForm(hello.id),
+              papers={{
+                form: mockPapersForm(hello.id),
                 onSave: (birdId, values) =>
                   setPressed(`onSave(${birdId}, ${signedWords(values)})`),
                 onRemove: (birdId) => setPressed(`onRemove(${birdId})`),
@@ -119,7 +119,7 @@ export function AdoptionPapersPage() {
         </Specimen>
         <Specimen
           label="Led here by the bubble's Adopt"
-          rule="Perch with openPapers set: the sheet is risen as the page opens, filled with the entry as written, and the panes beneath it are dimmed and inert. Not now lowers the sheet and brings the panes back."
+          rule="Perch with openPapers set: the sheet is risen as the page opens, filled with the papers as written, and the panes beneath it are dimmed and inert. Not now lowers the sheet and brings the panes back."
         >
           <Stage height="640px">
             <DetailView
@@ -128,8 +128,8 @@ export function AdoptionPapersPage() {
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
               snooze={reportedSnooze(setPressed)}
               sheets={birdSheets(perch)}
-              entry={{
-                form: mockEntryForm(perch.id),
+              papers={{
+                form: mockPapersForm(perch.id),
                 onSave: (birdId, values) =>
                   setPressed(`onSave(${birdId}, ${signedWords(values)})`),
                 onRemove: (birdId) => setPressed(`onRemove(${birdId})`),
@@ -171,7 +171,7 @@ export function AdoptionPapersPage() {
       </Section>
       <Section
         title="Amending"
-        rule="The same sheet, filled with the entry as written and signed with Amend the papers. Return to the fence sits on the signature line. More particulars names what it holds while closed: the key files, roadmaps, zellij session and the bird's own windows, the current form parts in the paper's ink."
+        rule="The same sheet, filled with the papers as written and signed with Amend the papers. Return to the fence sits on the signature line. More particulars names what it holds while closed: the key files, roadmaps, zellij session and the bird's own windows, the current form parts in the paper's ink."
         min={560}
       >
         <Specimen
@@ -236,8 +236,8 @@ export function AdoptionPapersPage() {
           },
           {
             name: "form",
-            type: "EntryForm",
-            what: "The bird's entry form: what the scan found, the choices, the session the zellij action gives, and the entry's values, null for a fence bird.",
+            type: "PapersForm",
+            what: "The bird's papers form: what the scan found, the choices, the session the zellij action gives, and the papers' values, null for a fence bird.",
           },
           {
             name: "now",
@@ -251,7 +251,7 @@ export function AdoptionPapersPage() {
           },
           {
             name: "onSign",
-            type: "(values: EntryValues) => void",
+            type: "(values: PapersValues) => void",
             what: "Signed with values that can be written, every untouched field null.",
           },
           {
@@ -267,14 +267,14 @@ export function AdoptionPapersPage() {
         ]}
       >
         <p>
-          The form comes from <Code>entryFormFor(config, entity, home)</Code> in{" "}
-          <Code>@perch/core/entry-form.ts</Code>, which the main process answers{" "}
-          <Code>entryForm(birdId)</Code> with. Inside the app the detail page
-          mounts the papers and hands a signature to the main process as{" "}
-          <Code>saveEntry(birdId, values)</Code>, written under the key that
-          already names the bird, else its id; a return to the fence as{" "}
-          <Code>removeEntry(birdId)</Code>, which removes every key naming it.
-          The papers fold once the entry read back matches what was signed.
+          The form comes from <Code>papersFormFor(config, entity, home)</Code>{" "}
+          in <Code>@perch/core/papers-form.ts</Code>, which the main process
+          answers <Code>papersForm(birdId)</Code> with. Inside the app the
+          detail page mounts the papers and hands a signature to the main
+          process as <Code>savePapers(birdId, values)</Code>, written under the
+          key that already names the bird, else its id; a return to the fence as{" "}
+          <Code>removePapers(birdId)</Code>, which removes every key naming it.
+          The papers fold once the papers read back match what was signed.
         </p>
       </Usage>
     </>

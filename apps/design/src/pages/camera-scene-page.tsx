@@ -5,7 +5,7 @@ import { birdSheets } from "../key-files.ts";
 import {
   aviaryWith,
   mockBird,
-  mockEntryForm,
+  mockPapersForm,
   reportedSnooze,
 } from "../specimens.ts";
 import {
@@ -105,10 +105,10 @@ export function CameraScenePage() {
           onSettings={() => setPressed("onSettings()")}
           onLocalSources={() => setPressed("onLocalSources()")}
           onCopy={async (text) => setPressed(`onCopy(${text})`)}
-          entry={{
-            form: place.at === "detail" ? mockEntryForm(place.birdId) : null,
-            onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
-            onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
+          papers={{
+            form: place.at === "detail" ? mockPapersForm(place.birdId) : null,
+            onSave: (birdId) => setPressed(`papers.onSave(${birdId})`),
+            onRemove: (birdId) => setPressed(`papers.onRemove(${birdId})`),
           }}
           problems={[]}
         />
@@ -179,9 +179,9 @@ export function CameraScenePage() {
             what: "A no-clone slip's Copy was pressed: the app puts the clone address on the clipboard.",
           },
           {
-            name: "entry",
-            type: "EntryControls",
-            what: "The open bird's entry form and the calls that save or remove its entry, for the detail page's papers.",
+            name: "papers",
+            type: "PapersControls",
+            what: "The open bird's papers form and the calls that save or remove its papers, for the detail page's papers.",
           },
           {
             name: "problems",

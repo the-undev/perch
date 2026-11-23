@@ -6,10 +6,10 @@
 import {
   type Config,
   collapseHome,
-  type EntityEntry,
   hostsOf,
   obsidianOnly,
-  resolveEntry,
+  type Papers,
+  resolvePapers,
   wireFor,
   zellijSessionFor,
 } from "./config.ts";
@@ -484,9 +484,9 @@ function readable<T extends object>(
   return value;
 }
 
-/** The config entry an entity resolves to, by its id and every presence reference it holds. */
-function entryFor(entity: Entity, config: Config): EntityEntry | null {
-  return resolveEntry(config, entity.id, entityRefs(entity)).entry;
+/** The papers an entity resolves to, by its id and every presence reference it holds. */
+function papersFor(entity: Entity, config: Config): Papers | null {
+  return resolvePapers(config, entity.id, entityRefs(entity)).papers;
 }
 
 /** A level as a severity: amber and red stand, green is not judged. */
@@ -1298,7 +1298,7 @@ function pullRequestsFor(entity: Entity): PullRequestLine[] {
  */
 function actionsFor(
   entity: Entity,
-  entry: EntityEntry | null,
+  papers: Papers | null,
   config: Config,
 ): LaunchAction[] {
   const path = entity.path;
@@ -1312,7 +1312,7 @@ function actionsFor(
           icon: zellijKind.icon,
           zellij: action.zellij,
           terminal: action.terminal,
-          session: zellijSessionFor(action, entry, path),
+          session: zellijSessionFor(action, papers, path),
           tab: entity.name,
           cwd: path,
         },
@@ -1354,13 +1354,13 @@ export function lineMarksOf(file: RoadmapFile): LineMarks {
   return marks;
 }
 
-function keyFilesFor(entity: Entity, entry: EntityEntry | null): KeyFile[] {
+function keyFilesFor(entity: Entity, papers: Papers | null): KeyFile[] {
   const path = entity.path;
   if (path === null) return [];
   const roadmap = roadmapOf(entity);
   const roadmapFiles = roadmap?.files ?? [];
   const detectedPath = roadmap?.detectedPath ?? null;
-  const files = entry?.keyFiles ?? [
+  const files = papers?.keyFiles ?? [
     "README.md",
     ...roadmapFiles.map((file) => file.path),
     ...(detectedPath === null ? [] : [detectedPath]),
@@ -1488,7 +1488,7 @@ export function speechSubjectFor(
 ): SpeechSubject {
   return speechSubject(
     entity,
-    wireFor(config, entryFor(entity, config)),
+    wireFor(config, papersFor(entity, config)),
     scannedAt,
   );
 }
@@ -1523,10 +1523,10 @@ export function deriveBird(
   const mood = moodOf[health.level];
   const git = readable<GitData>(entity.sources.git);
   const activity = git ? activityOf[git.activity] : null;
-  const entry = entryFor(entity, config);
-  const wire = wireFor(config, entry);
+  const papers = papersFor(entity, config);
+  const wire = wireFor(config, papers);
   const adopted = wire !== null;
-  const name = entry?.name ?? entity.name;
+  const name = papers?.name ?? entity.name;
   const outstanding = openWorkItemsOf(roadmapOf(entity));
   const speech = speak(speechSubject(entity, wire, scannedAt));
   const chips = adopted ? chipsFor(entity, health) : [];
@@ -1568,7 +1568,7 @@ export function deriveBird(
         detail: flag.detail,
         level: flag.level,
       })),
-      actions: actionsFor(entity, entry, config),
+      actions: actionsFor(entity, papers, config),
       links: entity.presences.forges.flatMap((presence) =>
         presence.url === null
           ? []
@@ -1579,7 +1579,7 @@ export function deriveBird(
               },
             ],
       ),
-      keyFiles: keyFilesFor(entity, entry),
+      keyFiles: keyFilesFor(entity, papers),
       noClone: noCloneFor(entity, config),
       problems: problemsFor(entity),
     },

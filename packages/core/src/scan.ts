@@ -4,7 +4,7 @@
 
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { aggregate, localEntries, readRawBundle } from "./aggregate.ts";
+import { aggregate, localPapers, readRawBundle } from "./aggregate.ts";
 import type { Config } from "./config.ts";
 import { fileMtime, readTextIfExists } from "./fs.ts";
 import { createRawStore, gather, type PolledSources } from "./gather.ts";
@@ -84,8 +84,8 @@ export function gatherSources(config: Config, io: SourceIo): PolledSources {
     roadmap: createRoadmapSource({
       readText: readTextIfExists,
       roadmapsFor: (earlier) => {
-        const entries = localEntries(earlier, config);
-        return (localId) => entries.get(localId)?.roadmaps ?? null;
+        const papersByLocalId = localPapers(earlier, config);
+        return (localId) => papersByLocalId.get(localId)?.roadmaps ?? null;
       },
     }),
     github: createForgeSource("github", "githubAccounts", github),

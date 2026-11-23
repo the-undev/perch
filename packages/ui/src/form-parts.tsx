@@ -2,7 +2,7 @@
 // alike: page headings, ruled rows, pill choices, switches, editable lists and threshold fields,
 // in one set of styles.
 
-import type { thresholdWindows } from "@perch/core/entry-form.ts";
+import type { thresholdWindows } from "@perch/core/papers-form.ts";
 import { type ReactNode, useId, useState } from "react";
 
 export const panelClass =

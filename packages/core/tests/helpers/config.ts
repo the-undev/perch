@@ -18,7 +18,7 @@ export const version1ConfigPath = join(
   "config-version1.toml",
 );
 
-/** The fixture config's text with extra TOML, such as entity entries, appended. */
+/** The fixture config's text with extra TOML, such as papers, appended. */
 export async function fixtureConfigText(extra: string): Promise<string> {
   return `${await readFile(fixtureConfigPath, "utf8")}\n${extra}\n`;
 }

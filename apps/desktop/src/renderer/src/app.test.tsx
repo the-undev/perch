@@ -1,12 +1,6 @@
 import type { Config } from "@perch/core/config.ts";
 import { defaultConfig } from "@perch/core/config-default.ts";
 import {
-  type EntryForm,
-  type EntryValues,
-  entryFormFor,
-  withEntry,
-} from "@perch/core/entry-form.ts";
-import {
   mockAviary,
   mockConfig,
   mockImage,
@@ -14,6 +8,12 @@ import {
   mockSnapshot,
   mockUpdates,
 } from "@perch/core/mock.ts";
+import {
+  type PapersForm,
+  type PapersValues,
+  papersFormFor,
+  withPapers,
+} from "@perch/core/papers-form.ts";
 import {
   type SettingsForm,
   settingsFormFor,
@@ -66,7 +66,7 @@ function renderApp(
   initial: PerchState,
   path = "/",
   sheetsFor?: (birdId: string) => KeyFileSheet[],
-  formFor?: (birdId: string) => EntryForm | null,
+  formFor?: (birdId: string) => PapersForm | null,
   settings: SettingsForm | null = null,
 ) {
   const fake = fakeApi(initial, sheetsFor, formFor, settings);
@@ -241,10 +241,12 @@ describe("the window", () => {
 
   it("rides to a fence bird's page with its papers unfolded from its bubble's adopt action", async () => {
     const { router } = renderApp(idle(mockAviary), "/", undefined, (birdId) => {
-      const entity = mockSnapshot.entities.find((entry) => entry.id === birdId);
+      const entity = mockSnapshot.entities.find(
+        (candidate) => candidate.id === birdId,
+      );
       return entity === undefined
         ? null
-        : entryFormFor(mockConfig, entity, mockHome);
+        : papersFormFor(mockConfig, entity, mockHome);
     });
 
     fireEvent.click(await birdButton("dev/odin/hello"));
@@ -295,11 +297,11 @@ describe("the window", () => {
       undefined,
       (birdId) => {
         const entity = mockSnapshot.entities.find(
-          (entry) => entry.id === birdId,
+          (candidate) => candidate.id === birdId,
         );
         return entity === undefined
           ? null
-          : entryFormFor(mockConfig, entity, mockHome);
+          : papersFormFor(mockConfig, entity, mockHome);
       },
     );
 
@@ -315,11 +317,11 @@ describe("the window", () => {
       undefined,
       (birdId) => {
         const entity = mockSnapshot.entities.find(
-          (entry) => entry.id === birdId,
+          (candidate) => candidate.id === birdId,
         );
         return entity === undefined
           ? null
-          : entryFormFor(mockConfig, entity, mockHome);
+          : papersFormFor(mockConfig, entity, mockHome);
       },
     );
     const verb = await screen.findByRole("button", { name: "The papers" });
@@ -511,11 +513,13 @@ describe("the window", () => {
         page.getAttribute("data-page"),
       );
 
-    function entryForms(birdId: string): EntryForm | null {
-      const entity = mockSnapshot.entities.find((entry) => entry.id === birdId);
+    function papersForms(birdId: string): PapersForm | null {
+      const entity = mockSnapshot.entities.find(
+        (candidate) => candidate.id === birdId,
+      );
       return entity === undefined
         ? null
-        : entryFormFor(mockConfig, entity, mockHome);
+        : papersFormFor(mockConfig, entity, mockHome);
     }
 
     it("pans the ground to a wire-mate pressed in the strip, the page left keeping its key files, leaving one page once it settles", async () => {
@@ -573,7 +577,7 @@ describe("the window", () => {
         idle(mockAviary),
         "/bird/dev/perch?papers=true",
         undefined,
-        entryForms,
+        papersForms,
       );
       await screen.findByRole("form", { name: "Adoption papers for Perch" });
 
@@ -598,22 +602,22 @@ describe("the window", () => {
     });
   });
 
-  describe("config entries", () => {
+  describe("config papers", () => {
     /** The config the fake main process holds, which a save changes as the real one would. */
     function configHolder() {
       let config: Config = mockConfig;
       const entity = (birdId: string) => {
         const found = mockSnapshot.entities.find(
-          (entry) => entry.id === birdId,
+          (candidate) => candidate.id === birdId,
         );
         if (found === undefined) throw new Error(`no entity ${birdId}`);
         return found;
       };
       return {
         formFor: (birdId: string) =>
-          entryFormFor(config, entity(birdId), mockHome),
-        save: (birdId: string, values: EntryValues) => {
-          config = withEntry(config, entity(birdId), values);
+          papersFormFor(config, entity(birdId), mockHome),
+        save: (birdId: string, values: PapersValues) => {
+          config = withPapers(config, entity(birdId), values);
           return idle(deriveAviary(mockSnapshot, config, {}, mockHome));
         },
       };
@@ -639,7 +643,7 @@ describe("the window", () => {
         ).getByRole("button", { name: "Adopt onto Machine & Home" }),
       );
 
-      expect(fake.entrySaves).toEqual([
+      expect(fake.papersSaves).toEqual([
         {
           birdId: "dev/odin/hello",
           values: {
@@ -658,7 +662,7 @@ describe("the window", () => {
         fake.push(
           holder.save(
             "dev/odin/hello",
-            fake.entrySaves[0]?.values as EntryValues,
+            fake.papersSaves[0]?.values as PapersValues,
           ),
         ),
       );
@@ -696,7 +700,7 @@ describe("the window", () => {
       );
       fireEvent.click(screen.getByRole("button", { name: "Amend the papers" }));
 
-      expect(fake.entrySaves).toEqual([
+      expect(fake.papersSaves).toEqual([
         {
           birdId: "dev/perch",
           values: expect.objectContaining({
@@ -721,7 +725,7 @@ describe("the window", () => {
       fireEvent.click(
         screen.getByRole("button", { name: "Return it to the fence" }),
       );
-      expect(fake.entryRemovals).toEqual(["dev/perch"]);
+      expect(fake.papersRemovals).toEqual(["dev/perch"]);
     });
   });
 
@@ -1059,7 +1063,7 @@ describe("the window", () => {
       await waitFor(async () => expect(await interval()).toBe("20"));
     });
 
-    it("saves the Window page's switches and shows the entry the main process wrote", async () => {
+    it("saves the Window page's switches and shows the login entry the main process wrote", async () => {
       const form = mockSettingsForm();
       const { fake } = renderApp(
         idle(mockAviary),
@@ -1114,11 +1118,11 @@ describe("the window", () => {
       let config: Config = mockConfig;
       const formFor = (birdId: string) => {
         const entity = mockSnapshot.entities.find(
-          (entry) => entry.id === birdId,
+          (candidate) => candidate.id === birdId,
         );
         return entity === undefined
           ? null
-          : entryFormFor(config, entity, mockHome);
+          : papersFormFor(config, entity, mockHome);
       };
       const { fake } = renderApp(
         idle(mockAviary),

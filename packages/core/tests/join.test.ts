@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregate, localEntries } from "../src/aggregate.ts";
+import { aggregate, localPapers } from "../src/aggregate.ts";
 import type { Config } from "../src/config.ts";
 import {
   type ForgeInput,
@@ -460,7 +460,7 @@ describe("aggregating joined projects", () => {
   const entityConflicts = (snapshot: Snapshot) =>
     snapshot.conflicts.filter((entry) => !entry.assertion.includes("obsidian"));
 
-  it("records a config entry that names nothing observed", async () => {
+  it("records papers that name nothing observed", async () => {
     const snapshot = aggregated(
       files,
       await config('[papers."dev/vanished"]\n'),
@@ -474,7 +474,7 @@ describe("aggregating joined projects", () => {
     ]);
   });
 
-  it("keeps a forge-keyed entry's adoption, name, wire, thresholds, key files and roadmaps after a local clone joins", async () => {
+  it("keeps forge-keyed papers' adoption, name, wire, thresholds, key files and roadmaps after a local clone joins", async () => {
     const configured = await config(
       [
         '[papers."github:Finch/Perch"]',
@@ -517,13 +517,13 @@ describe("aggregating joined projects", () => {
     expect(after?.detail.keyFiles.map((file) => file.path)).toEqual([
       "docs/spec.md",
     ]);
-    expect(localEntries(files, configured).get("dev/perch")?.roadmaps).toEqual([
+    expect(localPapers(files, configured).get("dev/perch")?.roadmaps).toEqual([
       "docs/plan.md",
     ]);
     expect(entityConflicts(snapshot)).toEqual([]);
   });
 
-  it("flags two entries naming one project, and the one keyed by its id applies", async () => {
+  it("flags two sets of papers naming one project, and the one keyed by its id applies", async () => {
     const configured = await config(
       '[papers."github:finch/perch"]\nname = "Forge"\n\n[papers."dev/perch"]\nname = "Local"\n',
     );

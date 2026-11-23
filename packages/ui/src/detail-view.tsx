@@ -10,13 +10,13 @@
 // chip on the notice, as does the chip pressed in the aviary's bubble that brought the camera
 // here. A bug line pressed in the ledger opens its file on the paper at that line. Only what
 // exists is shown. The view fetches nothing: key-file contents, launching, the clipboard and the
-// entry's form and writes are the caller's.
+// papers' form and writes are the caller's.
 
 import {
-  type EntryForm,
-  type EntryValues,
-  sameEntryValues,
-} from "@perch/core/entry-form.ts";
+  type PapersForm,
+  type PapersValues,
+  samePapersValues,
+} from "@perch/core/papers-form.ts";
 import type {
   Bird,
   ChipKind,
@@ -49,12 +49,12 @@ import { Roost } from "./roost.tsx";
 import { SnoozeAction, type SnoozeCalls } from "./snooze-action.tsx";
 
 /** What the detail page needs to adopt its bird or amend its papers. */
-export interface EntryControls {
-  /** The open bird's entry and the form's choices; null until read, when no control shows. */
-  form: EntryForm | null;
-  /** Writes the bird's entry, adopting it when it has none. */
-  onSave: (birdId: string, values: EntryValues) => void;
-  /** Removes the bird's entry, returning it to the fence. */
+export interface PapersControls {
+  /** The open bird's papers and the form's choices; null until read, when no control shows. */
+  form: PapersForm | null;
+  /** Writes the bird's papers, adopting it when it has none. */
+  onSave: (birdId: string, values: PapersValues) => void;
+  /** Removes the bird's papers, returning it to the fence. */
   onRemove: (birdId: string) => void;
 }
 
@@ -68,7 +68,7 @@ export interface DetailViewProps {
   /** The bird's key files with what was read from each; empty until the caller has read them. */
   sheets: KeyFileSheet[];
   /** Adopting the bird or amending its papers. */
-  entry: EntryControls;
+  papers: PapersControls;
   /** The main process's problems, a refused write among them, which the strip under the heading or open papers show. */
   problems: string[];
   /** The papers unfold as the page opens, and again whenever this turns true. */
@@ -85,13 +85,13 @@ export interface DetailViewProps {
   panning: boolean;
 }
 
-/** What was signed and is not yet in the entry read back: the values written, or the return. */
-type Signed = { kind: "values"; values: EntryValues } | { kind: "return" };
+/** What was signed and is not yet in the papers read back: the values written, or the return. */
+type Signed = { kind: "values"; values: PapersValues } | { kind: "return" };
 
-/** Whether the entry read back shows what was signed. */
-function landed(signed: Signed, form: EntryForm): boolean {
+/** Whether the papers read back show what was signed. */
+function landed(signed: Signed, form: PapersForm): boolean {
   if (signed.kind === "return") return form.values === null;
-  return form.values !== null && sameEntryValues(form.values, signed.values);
+  return form.values !== null && samePapersValues(form.values, signed.values);
 }
 
 /** The papers' verb: Adopt for a fence bird, The papers for an adopted one. */
@@ -202,7 +202,7 @@ export function DetailView({
   onLaunch,
   snooze,
   sheets,
-  entry,
+  papers,
   problems,
   openPapers,
   arrivalChip,
@@ -218,10 +218,10 @@ export function DetailView({
     setAsked(openPapers);
     if (openPapers) setOpen(true);
   }
-  // Signed papers stay open until the entry read back shows the write, so a refused one keeps them
+  // Signed papers stay open until the papers read back show the write, so a refused one keeps them
   // open with the reason.
   const [signed, setSigned] = useState<Signed | null>(null);
-  const { form } = entry;
+  const { form } = papers;
   if (signed !== null && form !== null && landed(signed, form)) {
     setSigned(null);
     setOpen(false);
@@ -337,11 +337,11 @@ export function DetailView({
             problems={problems}
             onSign={(values) => {
               setSigned({ kind: "values", values });
-              entry.onSave(bird.id, values);
+              papers.onSave(bird.id, values);
             }}
             onReturn={() => {
               setSigned({ kind: "return" });
-              entry.onRemove(bird.id);
+              papers.onRemove(bird.id);
             }}
             onClose={close}
           />

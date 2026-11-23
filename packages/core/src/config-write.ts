@@ -10,9 +10,9 @@ import {
   defaultTray,
   defaultUpdateCheck,
   defaultUpdateInstall,
-  type EntityEntry,
   type GithubSourceConfig,
   type LaunchActionConfig,
+  type Papers,
   type ThresholdOverrides,
   type Thresholds,
   thresholdKeys,
@@ -55,7 +55,7 @@ function globalThresholdTable(thresholds: Thresholds): Table {
   return written;
 }
 
-/** The word lists a [work] table or an entry sets; a list left unset is left out. */
+/** The word lists a [work] table or papers sets; a list left unset is left out. */
 function wordsTable(words: WorkWordsConfig): Table {
   const out: Table = {};
   if (words.bugWords !== null) out.bug_words = words.bugWords;
@@ -64,17 +64,17 @@ function wordsTable(words: WorkWordsConfig): Table {
   return out;
 }
 
-function entryTable(entry: EntityEntry): Table {
+function papersTable(papers: Papers): Table {
   const out: Table = {};
-  if (entry.wire !== null) out.wire = entry.wire;
-  if (entry.name !== null) out.name = entry.name;
-  if (entry.keyFiles !== null) out.key_files = entry.keyFiles;
-  if (entry.roadmaps !== null) out.roadmaps = entry.roadmaps;
-  if (entry.zellijSession !== null) out.zellij_session = entry.zellijSession;
+  if (papers.wire !== null) out.wire = papers.wire;
+  if (papers.name !== null) out.name = papers.name;
+  if (papers.keyFiles !== null) out.key_files = papers.keyFiles;
+  if (papers.roadmaps !== null) out.roadmaps = papers.roadmaps;
+  if (papers.zellijSession !== null) out.zellij_session = papers.zellijSession;
   return {
     ...out,
-    ...wordsTable(entry),
-    ...thresholdTable(entry.thresholds),
+    ...wordsTable(papers),
+    ...thresholdTable(papers.thresholds),
   };
 }
 
@@ -205,9 +205,9 @@ export function writeConfig(config: Config, home: string): string {
     }),
     papers: unlessEmpty(
       Object.fromEntries(
-        Object.entries(sortedByKey(config.entities)).map(([key, entry]) => [
+        Object.entries(sortedByKey(config.entities)).map(([key, papers]) => [
           key,
-          entryTable(entry),
+          papersTable(papers),
         ]),
       ),
     ),

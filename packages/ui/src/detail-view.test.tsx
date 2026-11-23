@@ -1,10 +1,10 @@
-import {
-  type EntryForm,
-  emptyEntryValues,
-  entryFormFor,
-  withEntry,
-} from "@perch/core/entry-form.ts";
 import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
+import {
+  emptyPapersValues,
+  type PapersForm,
+  papersFormFor,
+  withPapers,
+} from "@perch/core/papers-form.ts";
 import type { Aviary, Bird, ChipKind } from "@perch/core/viewmodel.ts";
 import { deriveAviary } from "@perch/core/viewmodel.ts";
 import {
@@ -17,7 +17,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DetailView } from "./detail-view.tsx";
-import { mockBird, mockEntryForm, mockHome } from "./mock-birds.ts";
+import { mockBird, mockHome, mockPapersForm } from "./mock-birds.ts";
 import type { KeyFileSheet } from "./paper.tsx";
 import { roostColumnWidth, roostFrame } from "./roost.tsx";
 
@@ -49,7 +49,7 @@ const now = new Date(mockSnapshot.scannedAt);
 
 const helloEntity = (() => {
   const entity = mockSnapshot.entities.find(
-    (entry) => entry.id === "dev/odin/hello",
+    (candidate) => candidate.id === "dev/odin/hello",
   );
   if (entity === undefined) throw new Error("the mock snapshot has no hello");
   return entity;
@@ -96,7 +96,7 @@ function unreadableSkiff(): Bird {
 
 interface PageOptions {
   sheets?: KeyFileSheet[];
-  form?: EntryForm | null;
+  form?: PapersForm | null;
   problems?: string[];
   openPapers?: boolean;
   arrivalChip?: ChipKind | null;
@@ -119,7 +119,7 @@ function page(bird: Bird, options: PageOptions = {}) {
       onLaunch={onLaunch}
       snooze={{ onSnooze, onWake, pickedAt: () => now }}
       sheets={given.sheets ?? []}
-      entry={{ form: given.form ?? null, onSave, onRemove }}
+      papers={{ form: given.form ?? null, onSave, onRemove }}
       problems={given.problems ?? []}
       openPapers={given.openPapers ?? false}
       arrivalChip={given.arrivalChip ?? null}
@@ -736,7 +736,7 @@ describe("the detail view", () => {
 
   it("packs every verb of the band into one wrapping row", () => {
     const perch = mockBird("dev/perch");
-    const { container } = page(perch, { form: mockEntryForm(perch.id) });
+    const { container } = page(perch, { form: mockPapersForm(perch.id) });
     const actions = container.querySelector('[data-part="actions"]');
     const verbs = [...(actions?.querySelectorAll("button, a") ?? [])];
 
@@ -755,7 +755,7 @@ describe("the detail view", () => {
 
   it("keeps the heading to tight rows: name, then the meta with the actions, links and verb beside it", () => {
     const perch = mockBird("dev/perch");
-    const { container } = page(perch, { form: mockEntryForm(perch.id) });
+    const { container } = page(perch, { form: mockPapersForm(perch.id) });
     const heading = container.querySelector('[data-part="heading"]');
     const metaRow = heading?.querySelector('[data-part="meta-row"]');
     const actions = metaRow?.querySelector('[data-part="actions"]');
@@ -785,7 +785,7 @@ describe("the detail view", () => {
   it("holds the band to the bird's height: nothing in it declares a greater one", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch, {
-      form: mockEntryForm(perch.id),
+      form: mockPapersForm(perch.id),
       problems: ["Could not open zellij: no such session"],
     });
     const band = container.querySelector('[data-part="band"]') as Element;
@@ -995,7 +995,7 @@ describe("the detail view", () => {
 
   it("offers a fence bird adoption, and signs the papers onto the wire chosen", () => {
     const hello = mockBird("dev/odin/hello");
-    const { onSave } = page(hello, { form: mockEntryForm(hello.id) });
+    const { onSave } = page(hello, { form: mockPapersForm(hello.id) });
 
     expect(screen.queryByRole("button", { name: "The papers" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
@@ -1005,14 +1005,14 @@ describe("the detail view", () => {
     );
 
     expect(onSave).toHaveBeenCalledWith("dev/odin/hello", {
-      ...emptyEntryValues(),
+      ...emptyPapersValues(),
       wire: "Machine & Home",
     });
   });
 
-  it("folds signed papers once the entry read back shows the write", () => {
+  it("folds signed papers once the papers read back show the write", () => {
     const hello = mockBird("dev/odin/hello");
-    const { push } = page(hello, { form: mockEntryForm(hello.id) });
+    const { push } = page(hello, { form: mockPapersForm(hello.id) });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
     fireEvent.click(screen.getByRole("radio", { name: "Machine & Home" }));
     fireEvent.click(
@@ -1022,15 +1022,15 @@ describe("the detail view", () => {
       screen.getByRole("form", { name: "Adoption papers for hello" }),
     ).toBeDefined();
 
-    const config = withEntry(mockConfig, helloEntity, {
-      ...emptyEntryValues(),
+    const config = withPapers(mockConfig, helloEntity, {
+      ...emptyPapersValues(),
       wire: "Machine & Home",
     });
     const adopted = findBird(
       deriveAviary(mockSnapshot, config, {}, mockHome),
       hello.id,
     );
-    push(adopted, { form: entryFormFor(config, helloEntity, mockHome) });
+    push(adopted, { form: papersFormFor(config, helloEntity, mockHome) });
 
     expect(screen.queryByRole("form")).toBeNull();
     expect(screen.getByRole("button", { name: "The papers" })).toBeDefined();
@@ -1038,7 +1038,7 @@ describe("the detail view", () => {
 
   it("keeps refused papers open, with the reason above the signature", () => {
     const hello = mockBird("dev/odin/hello");
-    const form = mockEntryForm(hello.id);
+    const form = mockPapersForm(hello.id);
     const { push } = page(hello, { form });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
     fireEvent.click(
@@ -1046,7 +1046,7 @@ describe("the detail view", () => {
     );
 
     push(hello, {
-      form: mockEntryForm(hello.id),
+      form: mockPapersForm(hello.id),
       problems: ["The config was not changed: the disk is read-only"],
     });
 
@@ -1069,7 +1069,7 @@ describe("the detail view", () => {
 
   it("shows no problem strip when there are none", () => {
     const hello = mockBird("dev/odin/hello");
-    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const { container } = page(hello, { form: mockPapersForm(hello.id) });
 
     expect(container.querySelector('[data-part="problems"]')).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
@@ -1079,7 +1079,7 @@ describe("the detail view", () => {
     const hello = mockBird("dev/odin/hello");
     const problems = ["The config was not changed: the disk is read-only"];
     const { container } = page(hello, {
-      form: mockEntryForm(hello.id),
+      form: mockPapersForm(hello.id),
       problems,
     });
     expect(container.querySelector('[data-part="problems"]')).not.toBeNull();
@@ -1094,7 +1094,7 @@ describe("the detail view", () => {
 
   it("offers an adopted bird its papers to amend, and to return it to the fence", () => {
     const perch = mockBird("dev/perch");
-    const form = mockEntryForm(perch.id);
+    const form = mockPapersForm(perch.id);
     const { onSave, onRemove } = page(perch, { form });
 
     expect(screen.queryByRole("button", { name: "Adopt" })).toBeNull();
@@ -1115,7 +1115,7 @@ describe("the detail view", () => {
 
   it("unfolds the papers as the page opens when asked, and again each time it is asked", () => {
     const hello = mockBird("dev/odin/hello");
-    const form = mockEntryForm(hello.id);
+    const form = mockPapersForm(hello.id);
     const { push } = page(hello, { form, openPapers: true });
 
     expect(
@@ -1133,7 +1133,7 @@ describe("the detail view", () => {
 
   it("raises the papers as a sheet over both panes, which are dimmed and inert, scrolling nothing", () => {
     const hello = mockBird("dev/odin/hello");
-    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const { container } = page(hello, { form: mockPapersForm(hello.id) });
     const panes = container.querySelector('[data-part="panes"]');
     expect(container.querySelector('[data-part="rising-sheet"]')).toBeNull();
     expect(panes?.hasAttribute("inert")).toBe(false);
@@ -1160,7 +1160,7 @@ describe("the detail view", () => {
 
   it("restores the panes as the papers close, leaving the sheet inert while it slides away", () => {
     const hello = mockBird("dev/odin/hello");
-    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const { container } = page(hello, { form: mockPapersForm(hello.id) });
     const panes = container.querySelector('[data-part="panes"]');
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
     fireEvent.click(screen.getByRole("button", { name: "Not now" }));
@@ -1175,7 +1175,7 @@ describe("the detail view", () => {
   it("folds the papers on a press on the dimmed background without writing, and not on a press inside the card", () => {
     const hello = mockBird("dev/odin/hello");
     const { container, onSave, onRemove } = page(hello, {
-      form: mockEntryForm(hello.id),
+      form: mockPapersForm(hello.id),
     });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
 
@@ -1202,7 +1202,7 @@ describe("the detail view", () => {
   it("folds the papers on a press over the band's region, the catcher spanning both of the page's rows", () => {
     const hello = mockBird("dev/odin/hello");
     const { container, onSave, onRemove } = page(hello, {
-      form: mockEntryForm(hello.id),
+      form: mockPapersForm(hello.id),
     });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
     const article = screen.getByRole("article", { name: "hello in full" });
@@ -1234,7 +1234,7 @@ describe("the detail view", () => {
 
   it("keeps the band, the heading, the verb and the roost undimmed outside the panes, resting under the catcher", () => {
     const hello = mockBird("dev/odin/hello");
-    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const { container } = page(hello, { form: mockPapersForm(hello.id) });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
 
     const panes = container.querySelector('[data-part="panes"]');
@@ -1259,12 +1259,12 @@ describe("the detail view", () => {
     );
   });
 
-  it("offers neither until the entry is read, or while it disagrees with the bird", () => {
+  it("offers neither until the papers are read, or while they disagree with the bird", () => {
     page(mockBird("dev/perch"));
     expect(screen.queryByRole("button", { name: "The papers" })).toBeNull();
     cleanup();
 
-    page(mockBird("dev/perch"), { form: mockEntryForm("dev/odin/hello") });
+    page(mockBird("dev/perch"), { form: mockPapersForm("dev/odin/hello") });
     expect(screen.queryByRole("button", { name: "Adopt" })).toBeNull();
   });
 });

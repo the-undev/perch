@@ -181,7 +181,7 @@ function camera(
       onSettings={onSettings}
       onLocalSources={onLocalSources}
       onCopy={onCopy}
-      entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
+      papers={{ form: null, onSave: () => {}, onRemove: () => {} }}
       problems={[]}
     />
   );

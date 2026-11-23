@@ -1,7 +1,6 @@
-// The mock dataset's birds by id, their entry forms and the settings form, for the tests and the
+// The mock dataset's birds by id, their papers forms and the settings form, for the tests and the
 // design site.
 
-import { type EntryForm, entryFormFor } from "@perch/core/entry-form.ts";
 import {
   mockAviary,
   mockConfig,
@@ -10,6 +9,7 @@ import {
   mockLogin,
   mockSnapshot,
 } from "@perch/core/mock.ts";
+import { type PapersForm, papersFormFor } from "@perch/core/papers-form.ts";
 import {
   type SettingsForm,
   settingsFormFor,
@@ -50,12 +50,12 @@ export function mockBird(id: string): Bird {
   return bird;
 }
 
-/** One mock bird's entry form from the mock config; throws when the mock holds no such entity. */
-export function mockEntryForm(id: string): EntryForm {
+/** One mock bird's papers form from the mock config; throws when the mock holds no such entity. */
+export function mockPapersForm(id: string): PapersForm {
   const entity = mockSnapshot.entities.find((candidate) => candidate.id === id);
   if (entity === undefined)
     throw new Error(`the mock snapshot has no entity ${id}`);
-  return entryFormFor(mockConfig, entity, mockHome);
+  return papersFormFor(mockConfig, entity, mockHome);
 }
 
 export { mockHome };

@@ -1,21 +1,15 @@
-// The config but the entity entries as the settings page edits it: the values the form holds, what
+// The config but the papers as the settings page edits it: the values the form holds, what
 // they cannot be, and the edit that puts them back into config. No Node modules, so the renderer
 // may import it.
 
 import {
   type Config,
   collapseHome,
-  type EntityEntry,
   expandHome,
+  type Papers,
   type SourcesConfig,
   type Thresholds,
 } from "./config.ts";
-import {
-  flatThresholds,
-  nestedThresholds,
-  type ThresholdKey,
-  thresholdProblems,
-} from "./entry-form.ts";
 import {
   type LaunchActionValues,
   launchConfigOf,
@@ -24,6 +18,12 @@ import {
   launchValuesOf,
 } from "./launch-form.ts";
 import { listLine, listOf, parseListLine } from "./list-line.ts";
+import {
+  flatThresholds,
+  nestedThresholds,
+  type ThresholdKey,
+  thresholdProblems,
+} from "./papers-form.ts";
 import { sourceProblemLine, sourceProblems } from "./sources-form.ts";
 
 /** A wire on the settings page: the config wire it started as, null for one added, and its name now. */
@@ -32,7 +32,7 @@ export interface WireRow {
   name: string;
 }
 
-/** Everything in config but the entity entries, which each bird's page edits. */
+/** Everything in config but the papers, which each bird's page edits. */
 export interface SettingsValues {
   /** The wires top to bottom, and the default by its row's place among them. */
   wires: { rows: WireRow[]; defaultRow: number };
@@ -84,10 +84,10 @@ export const sourceRunHeld =
 export const installSourceRunHeld =
   "run from source there is no image to replace.";
 
-/** What the settings page needs: the values, which entity entries name each wire, and two rows' machine facts. */
+/** What the settings page needs: the values, which papers name each wire, and two rows' machine facts. */
 export interface SettingsForm {
   values: SettingsValues;
-  /** The keys of the entries naming each config wire, which removing it moves to the default. */
+  /** The keys of the papers naming each config wire, which removing it moves to the default. */
   named: { wires: Record<string, string[]> };
   /** The login row beyond its toggle: its hold, and the entry's path and target shown with ~. */
   login: Pick<LoginEntry, "held" | "path" | "target">;
@@ -96,12 +96,12 @@ export interface SettingsForm {
 }
 
 function namedBy(
-  entities: Record<string, EntityEntry>,
-  field: (entry: EntityEntry) => string | null,
+  entities: Record<string, Papers>,
+  field: (papers: Papers) => string | null,
 ): Record<string, string[]> {
   const named: Record<string, string[]> = {};
-  for (const [key, entry] of Object.entries(entities)) {
-    const name = field(entry);
+  for (const [key, papers] of Object.entries(entities)) {
+    const name = field(papers);
     if (name === null) continue;
     named[name] = [...(named[name] ?? []), key];
   }
@@ -142,7 +142,7 @@ export function settingsFormFor(
       update: { ...config.update },
     },
     named: {
-      wires: namedBy(config.entities, (entry) => entry.wire),
+      wires: namedBy(config.entities, (papers) => papers.wire),
     },
     login: {
       held: login.held,
@@ -292,12 +292,12 @@ export function settingsProblems(values: SettingsValues): string[] {
   return problems;
 }
 
-function entryNames(keys: string[]): string {
+function keysInWords(keys: string[]): string {
   if (keys.length === 1) return keys[0] ?? "";
   return `${keys.slice(0, -1).join(", ")} and ${keys.at(-1)}`;
 }
 
-/** What saving does to entries naming a config wire no row starts as, in words. */
+/** What saving does to papers naming a config wire no row starts as, in words. */
 export function wireWarnings(
   named: Record<string, string[]>,
   wires: SettingsValues["wires"],
@@ -307,14 +307,14 @@ export function wireWarnings(
     .filter(([wire]) => !kept.has(wire))
     .map(
       ([wire, keys]) =>
-        `${entryNames(keys)} ${keys.length === 1 ? "sits" : "sit"} on ${wire}, which is removed: saving moves ${keys.length === 1 ? "it" : "them"} to the default wire, ${defaultName(wires)}.`,
+        `${keysInWords(keys)} ${keys.length === 1 ? "sits" : "sit"} on ${wire}, which is removed: saving moves ${keys.length === 1 ? "it" : "them"} to the default wire, ${defaultName(wires)}.`,
     );
 }
 
 /**
- * Config with everything but its entity entries and [work] set to the values, paths expanded against the home
- * directory; the login toggle is the caller's to write. An entry's wire follows the row that starts as it to that row's name, all in one
- * pass; an entry naming a wire no row starts as falls to the default. Throws when
+ * Config with everything but its papers and [work] set to the values, paths expanded against the home
+ * directory; the login toggle is the caller's to write. The papers' wire follows the row that starts as it to that row's name, all in one
+ * pass; papers naming a wire no row starts as fall to the default. Throws when
  * settingsProblems finds any.
  */
 export function withSettings(
@@ -340,11 +340,12 @@ export function withSettings(
     thresholds: nestedThresholds(values.thresholds) as Thresholds,
     work: config.work,
     entities: Object.fromEntries(
-      Object.entries(config.entities).map(([key, entry]) => [
+      Object.entries(config.entities).map(([key, papers]) => [
         key,
         {
-          ...entry,
-          wire: entry.wire === null ? null : (renamed.get(entry.wire) ?? null),
+          ...papers,
+          wire:
+            papers.wire === null ? null : (renamed.get(papers.wire) ?? null),
         },
       ]),
     ),

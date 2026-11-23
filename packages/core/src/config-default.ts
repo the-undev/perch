@@ -1,4 +1,4 @@
-// The config perch starts from: no sources, no entity entries, no launch actions, one wire, and the
+// The config perch starts from: no sources, no papers, no launch actions, one wire, and the
 // default thresholds and scan interval. The starter config file is this written out; the CLI scans
 // with it when the owner has no config. No Node modules, so the renderer may import it.
 

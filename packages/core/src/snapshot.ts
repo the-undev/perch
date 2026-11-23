@@ -181,7 +181,7 @@ export interface RoadmapData {
   counts: WorkItemCounts;
   files: RoadmapFile[];
   thresholds: BugThresholds;
-  /** A standard-named roadmap file shown as a document but not parsed; null when the entry lists files. */
+  /** A standard-named roadmap file shown as a document but not parsed; null when the papers list files. */
   detectedPath: string | null;
 }
 

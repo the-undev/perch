@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveEntry, thresholdsFor } from "../src/config.ts";
+import { resolvePapers, thresholdsFor } from "../src/config.ts";
 import {
   configuredCards,
   countOpenWorkItems,
@@ -433,7 +433,7 @@ describe("the mock dataset", () => {
     });
   });
 
-  it("covers a bird whose roadmap is parsed because its entry lists it, and one whose standard file is only shown", () => {
+  it("covers a bird whose roadmap is parsed because its papers list it, and one whose standard file is only shown", () => {
     const rawEntry = (id: string) =>
       mockConfig.entities[id] ?? { roadmaps: undefined };
     const roadmapOfBird = (id: string) =>
@@ -459,11 +459,11 @@ describe("the mock dataset", () => {
 
   it("agrees with the derivation rules wherever it states a judged value", () => {
     for (const entity of mockSnapshot.entities) {
-      const entry = resolveEntry(mockConfig, entity.id, [
+      const papers = resolvePapers(mockConfig, entity.id, [
         ...(entity.presences.local ? [entity.presences.local.ref] : []),
         ...entity.presences.forges.map((presence) => presence.ref),
-      ]).entry;
-      const thresholds = thresholdsFor(mockConfig, entry);
+      ]).papers;
+      const thresholds = thresholdsFor(mockConfig, papers);
       const roadmap = entity.sources.roadmap;
       if (roadmap !== undefined && !("error" in roadmap)) {
         expect(roadmap.counts, entity.id).toEqual(

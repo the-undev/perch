@@ -1,13 +1,13 @@
-// A bird's config entry as its detail page edits it: the values the form holds, the choices it
+// A bird's config papers as its detail page edits it: the values the form holds, the choices it
 // offers, and the edits that put them back into config. No Node modules, so the renderer may
 // import it.
 
 import {
   type Config,
   collapseHome,
-  type EntityEntry,
   noThresholdOverrides,
-  resolveEntry,
+  type Papers,
+  resolvePapers,
   type ThresholdOverrides,
   thresholdKeys,
   zellijActionOf,
@@ -19,8 +19,8 @@ import type { Entity } from "./snapshot.ts";
 /** A threshold's key in config, the same globally and per entity. */
 export type ThresholdKey = (typeof thresholdKeys)[number][2];
 
-/** The entry fields the detail page edits. */
-export interface EntryValues {
+/** The papers fields the detail page edits. */
+export interface PapersValues {
   /** The wire the bird sits on; null puts it on the default wire. */
   wire: string | null;
   /** The name the bird goes by; null keeps the scanned name. */
@@ -33,14 +33,14 @@ export interface EntryValues {
   thresholds: Partial<Record<ThresholdKey, number>>;
   /** The zellij session holding the entity's tab; null takes it from the zellij action. */
   zellijSession: string | null;
-  /** The entry's bug words, kept as config has them; the form does not edit them. */
+  /** The papers' bug words, kept as config has them; the form does not edit them. */
   bugWords: string[] | null;
-  /** The entry's critical bug words, kept as config has them; the form does not edit them. */
+  /** The papers' critical bug words, kept as config has them; the form does not edit them. */
   criticalBugWords: string[] | null;
 }
 
-/** The choices the entry form offers, and the defaults a value left unset takes. */
-export interface EntryOptions {
+/** The choices the papers form offers, and the defaults a value left unset takes. */
+export interface PapersOptions {
   wires: string[];
   defaultWire: string;
   /** The global thresholds, which an override left out takes. */
@@ -55,7 +55,7 @@ export interface SeenCommit {
 }
 
 /** What the scan found for an entity, which the papers show and cannot change. */
-export interface EntrySeen {
+export interface PapersSeen {
   /** Where the clone is on disk, home as ~; null for an entity with no clone here. */
   foundAt: string | null;
   /** The forges that also hold it, each as its web address without the scheme. */
@@ -64,18 +64,18 @@ export interface EntrySeen {
   lastCommit: SeenCommit | null;
 }
 
-/** What the detail page needs to adopt a bird or edit its entry. */
-export interface EntryForm {
-  /** The config key the entry sits under; null for a bird config does not name. */
+/** What the detail page needs to adopt a bird or edit its papers. */
+export interface PapersForm {
+  /** The config key the papers sits under; null for a bird config does not name. */
   key: string | null;
   /** The name the scan found, which a name left unset keeps. */
   scannedName: string;
-  seen: EntrySeen;
+  seen: PapersSeen;
   /** The session the zellij action gives the clone, which a session left unset takes; null without either. */
   defaultSession: string | null;
-  /** The entry's values; null for a bird on the fence. */
-  values: EntryValues | null;
-  options: EntryOptions;
+  /** The papers' values; null for a bird on the fence. */
+  values: PapersValues | null;
+  options: PapersOptions;
 }
 
 /** The two health windows, each an amber key and a red key, with the unit they count in and a fragment saying what the number counts. */
@@ -103,8 +103,8 @@ export const thresholdWindows: readonly {
   },
 ];
 
-/** The values of a new entry: everything left to the defaults. */
-export function emptyEntryValues(): EntryValues {
+/** The values of a new papers: everything left to the defaults. */
+export function emptyPapersValues(): PapersValues {
   return {
     wire: null,
     name: null,
@@ -144,23 +144,23 @@ export function nestedThresholds(
   return overrides;
 }
 
-/** An entry's editable fields as form values. */
-export function entryValues(entry: EntityEntry): EntryValues {
+/** Papers' editable fields as form values. */
+export function papersValues(papers: Papers): PapersValues {
   return {
-    wire: entry.wire,
-    name: entry.name,
-    keyFiles: entry.keyFiles === null ? null : [...entry.keyFiles],
-    roadmaps: entry.roadmaps === null ? null : [...entry.roadmaps],
-    thresholds: flatThresholds(entry.thresholds),
-    zellijSession: entry.zellijSession,
-    bugWords: entry.bugWords === null ? null : [...entry.bugWords],
+    wire: papers.wire,
+    name: papers.name,
+    keyFiles: papers.keyFiles === null ? null : [...papers.keyFiles],
+    roadmaps: papers.roadmaps === null ? null : [...papers.roadmaps],
+    thresholds: flatThresholds(papers.thresholds),
+    zellijSession: papers.zellijSession,
+    bugWords: papers.bugWords === null ? null : [...papers.bugWords],
     criticalBugWords:
-      entry.criticalBugWords === null ? null : [...entry.criticalBugWords],
+      papers.criticalBugWords === null ? null : [...papers.criticalBugWords],
   };
 }
 
 /** The choices the form offers from config. */
-export function entryOptions(config: Config): EntryOptions {
+export function papersOptions(config: Config): PapersOptions {
   const thresholds = flatThresholds(config.thresholds) as Record<
     ThresholdKey,
     number
@@ -204,7 +204,7 @@ function lastCommitOf(entity: Entity): SeenCommit | null {
  * What the scan found for an entity: its clone, its forges, by address or by reference for one that
  * could not be read, and its newest commit.
  */
-export function entrySeen(entity: Entity, home: string): EntrySeen {
+export function papersSeen(entity: Entity, home: string): PapersSeen {
   return {
     foundAt: entity.path === null ? null : collapseHome(entity.path, home),
     forges: entity.presences.forges.map(
@@ -215,41 +215,41 @@ export function entrySeen(entity: Entity, home: string): EntrySeen {
 }
 
 /**
- * The entry form for an entity: the entry that applies to it, if any, what the scan found, and the
+ * The papers form for an entity: the papers that apply to it, if any, what the scan found, and the
  * form's choices. Paths are written with ~ for the home directory.
  */
-export function entryFormFor(
+export function papersFormFor(
   config: Config,
   entity: Entity,
   home: string,
-): EntryForm {
-  const { entry, keys } = resolveEntry(config, entity.id, entityRefs(entity));
+): PapersForm {
+  const { papers, keys } = resolvePapers(config, entity.id, entityRefs(entity));
   const zellij = zellijActionOf(config);
   return {
     key: keys[0] ?? null,
     scannedName: entity.name,
-    seen: entrySeen(entity, home),
+    seen: papersSeen(entity, home),
     defaultSession:
       zellij === null || entity.path === null
         ? null
         : zellijSessionFor(zellij, null, entity.path),
-    values: entry === null ? null : entryValues(entry),
-    options: entryOptions(config),
+    values: papers === null ? null : papersValues(papers),
+    options: papersOptions(config),
   };
 }
 
 /**
- * Config with an entity's entry set to the values: under the key that already applies to the entity,
+ * Config with an entity's papers set to the values: under the key that already applies to the entity,
  * else under its id.
  */
-export function withEntry(
+export function withPapers(
   config: Config,
   entity: Entity,
-  values: EntryValues,
+  values: PapersValues,
 ): Config {
-  const { keys } = resolveEntry(config, entity.id, entityRefs(entity));
+  const { keys } = resolvePapers(config, entity.id, entityRefs(entity));
   const key = keys[0] ?? entity.id;
-  const next: EntityEntry = {
+  const next: Papers = {
     wire: values.wire,
     name: values.name,
     thresholds: nestedThresholds(values.thresholds),
@@ -263,9 +263,9 @@ export function withEntry(
   return { ...config, entities: { ...config.entities, [key]: next } };
 }
 
-/** Whether two sets of values write the same entry, whatever order their thresholds were set in. */
-export function sameEntryValues(a: EntryValues, b: EntryValues): boolean {
-  const canonical = (values: EntryValues) =>
+/** Whether two sets of values write the same papers, whatever order their thresholds were set in. */
+export function samePapersValues(a: PapersValues, b: PapersValues): boolean {
+  const canonical = (values: PapersValues) =>
     JSON.stringify([
       values.wire,
       values.name,
@@ -279,9 +279,9 @@ export function sameEntryValues(a: EntryValues, b: EntryValues): boolean {
   return canonical(a) === canonical(b);
 }
 
-/** Config without any entry naming the entity, so it returns to the fence. */
-export function withoutEntry(config: Config, entity: Entity): Config {
-  const { keys } = resolveEntry(config, entity.id, entityRefs(entity));
+/** Config without any papers naming the entity, so it returns to the fence. */
+export function withoutPapers(config: Config, entity: Entity): Config {
+  const { keys } = resolvePapers(config, entity.id, entityRefs(entity));
   return {
     ...config,
     entities: Object.fromEntries(
@@ -291,9 +291,9 @@ export function withoutEntry(config: Config, entity: Entity): Config {
 }
 
 /** Why the values cannot be saved, in words; empty when they can. */
-export function entryProblems(
-  values: EntryValues,
-  options: EntryOptions,
+export function papersProblems(
+  values: PapersValues,
+  options: PapersOptions,
 ): string[] {
   return thresholdProblems(values.thresholds, options.thresholds);
 }

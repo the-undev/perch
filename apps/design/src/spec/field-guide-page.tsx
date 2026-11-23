@@ -67,7 +67,7 @@ const birdNotes: Note[] = [
   {
     title: "The fence · not adopted",
     text: "Everything the scan finds starts on the fence beneath the wires. A fence bird is dimmed and does not wear its mood, and the fence is ordered by name, since it holds no priority.",
-    rule: "Adopting a bird writes its entry into config and puts it on a wire.",
+    rule: "Adopting a bird writes its papers into config and puts it on a wire.",
   },
 ];
 

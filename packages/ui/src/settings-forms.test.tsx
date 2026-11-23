@@ -126,6 +126,20 @@ describe("the settings editor", () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it("says an adopted bird's papers name its wire, and the default takes papers naming none", () => {
+    editor("wires");
+    const wires = group("Wires");
+
+    expect(
+      wires.getByText(/An adopted bird sits on the wire its papers name, else/),
+    ).toBeDefined();
+    expect(
+      wires.getByText(
+        "The wire papers naming none take; pick another to remove it",
+      ),
+    ).toBeDefined();
+  });
+
   it("orders the wires, adds one and picks the default from them", () => {
     const { onSave, form } = editor("wires");
     const wires = group("Wires");

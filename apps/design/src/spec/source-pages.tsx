@@ -244,11 +244,11 @@ const roadmaps: SourceSpec = {
   polled: ["roadmap"],
   reads: (
     <p>
-      For every local presence, the roadmap files its config entry names in{" "}
+      For every local presence, the roadmap files its papers name in{" "}
       <Code>roadmaps</Code>. A file is parsed as a roadmap only when listed
       there; when the list is unset or empty, the first of the standard names
-      that exists is recorded by path and shown as a document. The entry is
-      resolved through the project the clone joins, so it runs after the forge
+      that exists is recorded by path and shown as a document. The papers are
+      resolved through the project the clone joins, so they run after the forge
       enrichers. Each file is parsed into its headings, the bullets directly
       under each, and the prose between.
     </p>

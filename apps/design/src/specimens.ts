@@ -28,7 +28,7 @@ import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 export {
   mockBird,
   mockBirds,
-  mockEntryForm,
+  mockPapersForm,
   quietSnooze,
 } from "@perch/ui/mock-birds.ts";
 

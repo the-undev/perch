@@ -202,7 +202,7 @@ describe("writeConfig", () => {
     expect(roundTrip(reversed)).toEqual(reversed);
   });
 
-  it("writes a config with no entity entries", async () => {
+  it("writes a config with no papers", async () => {
     const config: Config = {
       ...parseConfig(await exampleText(), home),
       entities: {},
@@ -211,7 +211,7 @@ describe("writeConfig", () => {
     expect(roundTrip(config)).toEqual(config);
   });
 
-  it("writes the same bytes every time, whatever order entries were added in", () => {
+  it("writes the same bytes every time, whatever order papers were added in", () => {
     const config = parseConfig(maximalText, home);
     const reordered: Config = {
       ...withSessions(config, {

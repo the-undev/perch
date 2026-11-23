@@ -122,9 +122,9 @@ export interface RawRoadmapFile {
 }
 
 export interface RawRoadmap {
-  /** The files the entity's entry lists in `roadmaps`, read; empty when it lists none. */
+  /** The files the entity's papers list in `roadmaps`, read; empty when they list none. */
   files: RawRoadmapFile[];
-  /** The first standard-named file found when the entry lists none, shown but never parsed; else null. */
+  /** The first standard-named file found when the papers list none, shown but never parsed; else null. */
   detectedPath: string | null;
 }
 

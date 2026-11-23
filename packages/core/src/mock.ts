@@ -13,8 +13,8 @@
 import {
   type Config,
   defaultBugThresholds,
-  type EntityEntry,
   noThresholdOverrides,
+  type Papers,
 } from "./config.ts";
 import type { LoginEntry } from "./settings-form.ts";
 import type {
@@ -48,7 +48,7 @@ const dayWindows = { amberDays: 7, redDays: 30 };
 
 // Config
 
-function entry(fields: Partial<EntityEntry>): EntityEntry {
+function papers(fields: Partial<Papers>): Papers {
   return {
     wire: null,
     name: null,
@@ -124,57 +124,57 @@ export const mockConfig: Config = {
   },
   work: { bugWords: null, criticalBugWords: null },
   entities: {
-    ".dotfiles": entry({
+    ".dotfiles": papers({
       wire: "Machine & Home",
       name: "Dotfiles",
       roadmaps: ["docs/roadmap.md"],
     }),
-    "obsidian/Hothouse": entry({
+    "obsidian/Hothouse": papers({
       wire: "Machine & Home",
       name: "Hothouse Vault",
       roadmaps: ["Tech/Tech Plans.md", "Garden/Garden Plans.md"],
     }),
-    "obsidian/Pocket": entry({
+    "obsidian/Pocket": papers({
       wire: "Machine & Home",
       name: "Pocket Vault",
       roadmaps: ["Code/Code Plans.md", "Pocket Plans.md"],
     }),
-    "dev/perch": entry({
+    "dev/perch": papers({
       name: "Perch",
       keyFiles: ["README.md", "docs/forge-access.md", "docs/roadmap.md"],
       roadmaps: ["docs/roadmap.md"],
     }),
-    "undev/harbour": entry({
+    "undev/harbour": papers({
       name: "Harbour",
       roadmaps: ["docs/roadmap.md"],
     }),
-    "undev/skiff": entry({
+    "undev/skiff": papers({
       name: "Skiff",
       roadmaps: ["docs/roadmap.md"],
     }),
-    "undev/prism": entry({
+    "undev/prism": papers({
       name: "Prism",
       roadmaps: ["docs/roadmap.md"],
     }),
-    "undev/Hollow-legacy": entry({
+    "undev/Hollow-legacy": papers({
       name: "Hollow (legacy)",
       roadmaps: ["docs/roadmap.md"],
     }),
-    "undev/oxbow": entry({
+    "undev/oxbow": papers({
       name: "Oxbow",
       roadmaps: ["docs/roadmap.md"],
     }),
-    "undev/gramophone": entry({
+    "undev/gramophone": papers({
       name: "Gramophone",
       roadmaps: ["docs/roadmap.md"],
     }),
     // Spool lists no roadmaps: its standard-named file is shown as a document only.
-    "undev/spool": entry({ name: "Spool" }),
-    "undev/glyph-docs": entry({
+    "undev/spool": papers({ name: "Spool" }),
+    "undev/glyph-docs": papers({
       name: "Glyph Docs",
       roadmaps: ["Roadmap.md"],
     }),
-    "forgejo:finch/field-notes": entry({
+    "forgejo:finch/field-notes": papers({
       wire: "Machine & Home",
       name: "Pergola Notes",
     }),
@@ -419,7 +419,7 @@ export function mockRoadmap(
   };
 }
 
-/** A standard-named roadmap file shown as a document: the entry lists none, so nothing is parsed. */
+/** A standard-named roadmap file shown as a document: the papers list none, so nothing is parsed. */
 export function mockDetectedRoadmap(detectedPath: string): RoadmapData {
   return { ...mockRoadmap([]), detectedPath };
 }

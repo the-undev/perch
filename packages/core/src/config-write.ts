@@ -163,12 +163,12 @@ function actionTable(
 }
 
 /**
- * Serialises config to TOML at the current version that parseConfig reads back to an equal config,
- * deterministic because papers and zellij session roots are sorted by key and every list, sources and launch
- * actions among them, keeps its order. Paths at or under the home directory are written with a
- * leading ~, empty optional tables, source kinds and launch actions are left out, and so is a
- * launch action's field that holds its kind's default, a window or update setting that holds its own,
- * and a bug threshold that holds its default.
+ * Serialises config to TOML at the current version that parseConfig reads back to an equal
+ * config, deterministic because papers and zellij session roots are sorted by key and every list,
+ * sources and launch actions among them, keeps its order. Paths at or under the home directory
+ * are written with a leading ~, empty optional tables, source kinds and launch actions are left
+ * out, and so is a launch action's field that holds its kind's default, a window or update
+ * setting that holds its own, and a bug threshold that holds its default.
  */
 export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);

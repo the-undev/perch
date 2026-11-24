@@ -86,7 +86,7 @@ const book: Group[] = [
     entries: [
       entry(
         "All quiet",
-        "No unsafe work, no stalled flight, nothing red. The default state.",
+        "No unsafe work, not stalled, nothing red. The default state.",
         "undev/spool",
       ),
       entry(
@@ -147,7 +147,7 @@ const book: Group[] = [
         "undev/skiff",
       ),
       variant(
-        "Stalled flight",
+        "Stalled",
         "HEAD on a non-default branch, no movement for 7 days (default).",
         "undev/skiff",
         {
@@ -158,7 +158,7 @@ const book: Group[] = [
       ),
       variant(
         "Stalled with work unsafe",
-        "Stalled flight while something is uncommitted or unpushed.",
+        "Stalled while something is uncommitted or unpushed.",
         "undev/skiff",
         {
           subject: {

@@ -129,8 +129,8 @@ const localGit: SourceSpec = {
       forge repositories (<Code>linkRepositories</Code> in{" "}
       <Code>src/link.ts</Code>
       ). Then git data per entity: the default branch, the work state, unsafe
-      work aged in hours from its oldest change, and stalled flight aged in
-      days. A missing include path becomes a scene-wide warning.
+      work aged in hours from its oldest change, and the days stalled.
+      A missing include path becomes a scene-wide warning.
     </p>
   ),
   derivations: [

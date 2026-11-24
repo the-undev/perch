@@ -2,14 +2,6 @@
 
 Work identified and not done. Remove work items as they land.
 
-## Code to match the glossary
-
-`GLOSSARY.md` holds the language wanted. The code, config and app text still
-use the older words below. Each is looked at on its own, then renamed.
-
-- The Uptime Kuma source and the server entity go, until server monitoring is
-  built. The migration drops a config's `[[sources.kuma]]` tables.
-
 ## SSH address on the no-local-repository slip
 
 The slip offers the SSH address to copy. Investigate whether it should also

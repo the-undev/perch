@@ -19,7 +19,7 @@ import type {
   HourThresholds,
 } from "./snapshot.ts";
 
-/** The health thresholds: unsafe work in hours, stalled flight in days, open bugs and critical bugs in counts. */
+/** The health thresholds: unsafe work in hours, stalled in days, open bugs and critical bugs in counts. */
 export interface Thresholds {
   unsafe: HourThresholds;
   stalled: DayThresholds;

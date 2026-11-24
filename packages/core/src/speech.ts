@@ -164,8 +164,8 @@ function primary(cause: HealthCause): {
           `Stalled on ${cause.stall.branch} for ${daysWords(cause.stall.days)}.`,
         ],
         closing: cause.everythingPushed
-          ? "Everything's pushed, but the flight's gone quiet."
-          : "The flight's gone quiet.",
+          ? "Everything's pushed, but the branch has gone quiet."
+          : "The branch has gone quiet.",
       };
   }
 }

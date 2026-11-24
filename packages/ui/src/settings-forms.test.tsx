@@ -324,7 +324,7 @@ describe("the settings editor", () => {
     expect(removeProjects().disabled).toBe(false);
   });
 
-  it("holds two sets of thresholds on the Judgement page: unsafe work and stalled flight", () => {
+  it("holds two sets of thresholds on the Judgement page: unsafe work and stalled", () => {
     editor("judgement");
 
     expect(
@@ -334,8 +334,8 @@ describe("the settings editor", () => {
     ).toEqual([
       "Unsafe work, amber after hours",
       "Unsafe work, red after hours",
-      "Stalled flight, amber after days",
-      "Stalled flight, red after days",
+      "Stalled, amber after days",
+      "Stalled, red after days",
     ]);
   });
 
@@ -402,7 +402,7 @@ describe("the settings editor", () => {
 
     type(
       thresholds.getByRole("spinbutton", {
-        name: "Stalled flight, amber after days",
+        name: "Stalled, amber after days",
       }),
       "40",
     );
@@ -414,7 +414,7 @@ describe("the settings editor", () => {
     );
 
     expect(
-      screen.getByText("Stalled flight: amber must come before red"),
+      screen.getByText("Stalled: amber must come before red"),
     ).toBeDefined();
     expect(
       screen.getByText(

@@ -422,7 +422,7 @@ export function deriveUnsafeWork(
 }
 
 /**
- * Stalled flight: HEAD on a branch other than the default with no new commit, aged in days from that
+ * Stalled: HEAD on a branch other than the default with no new commit, aged in days from that
  * branch's newest commit, so a fresh commit on the branch restarts the clock. Null on the
  * default branch, on a detached HEAD, or without a default branch to compare against.
  */
@@ -704,7 +704,7 @@ export function bugCause(
  * An entity's health: the worst of its inputs. Failing CI is red. Each roadmap file is judged on
  * its own, the worse of its open bugs and open critical bugs against their thresholds. A remote the
  * local repository pushes to that no card can read is amber; a forge whose read failed this scan is
- * not an input. Uncommitted changes, unpushed commits and stalled flight take the level already
+ * not an input. Uncommitted changes, unpushed commits and stalled take the level already
  * judged against the entity's thresholds. Only amber and red inputs are causes; they come worst first,
  * ties in the order CI, unreadable remotes, bugs, uncommitted, unpushed, stalled. Flags are not
  * inputs: the one with a level, not set up, is the fence's own situation.

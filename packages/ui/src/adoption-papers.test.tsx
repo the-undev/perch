@@ -151,7 +151,7 @@ describe("the adoption papers", () => {
     press("Add the roadmap");
     fireEvent.change(
       screen.getByRole("spinbutton", {
-        name: "Stalled flight, amber after days",
+        name: "Stalled, amber after days",
       }),
       { target: { value: "3" } },
     );
@@ -190,13 +190,13 @@ describe("the adoption papers", () => {
 
     fireEvent.change(
       screen.getByRole("spinbutton", {
-        name: "Stalled flight, amber after days",
+        name: "Stalled, amber after days",
       }),
       { target: { value: "40" } },
     );
 
     expect(
-      screen.getByText("Stalled flight: amber must come before red"),
+      screen.getByText("Stalled: amber must come before red"),
     ).toBeDefined();
     const sign = screen.getByRole("button", { name: "Amend the papers" });
     expect((sign as HTMLButtonElement).disabled).toBe(true);

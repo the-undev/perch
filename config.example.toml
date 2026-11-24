@@ -67,7 +67,7 @@ tracked_forks = []
 
 # Health thresholds: amber at the first, red at the second. Unsafe work
 # (uncommitted changes, unpushed commits) ages in hours from its oldest
-# change. Stalled flight: on a branch other than the default with no new commit,
+# change. Stalled: on a branch other than the default with no new commit,
 # ages in days. Open bugs and open critical bugs are counted in each roadmap
 # file on its own; left out, their thresholds are the values shown. Each is
 # overridable per entity with the same keys.

@@ -13,7 +13,7 @@ const content: Entry[] = [
   {
     id: "undev/spool",
     label: "All quiet",
-    rule: "No unsafe work, no stalled flight, nothing red. The default state.",
+    rule: "No unsafe work, not stalled, nothing red. The default state.",
   },
   {
     id: "dev/perch",

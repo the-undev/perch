@@ -575,7 +575,7 @@ describe("deriving unpushed branches", () => {
   });
 });
 
-describe("stalled flight", () => {
+describe("stalled", () => {
   const feature = (days: number) => ({
     name: "extension-popup-ia",
     lastCommit: commitAt("Popup", daysBefore(days)),

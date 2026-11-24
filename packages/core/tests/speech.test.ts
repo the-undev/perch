@@ -162,12 +162,12 @@ describe("restless birds nudge", () => {
     );
   });
 
-  it("stalled flight, saying everything is pushed only when it is", () => {
+  it("stalled, saying everything is pushed only when it is", () => {
     expect(speak(subject({ causes: [cause.stalled(21, true)] }))).toBe(
-      "Stalled on extension-popup-ia for three weeks. Everything's pushed, but the flight's gone quiet.",
+      "Stalled on extension-popup-ia for three weeks. Everything's pushed, but the branch has gone quiet.",
     );
     expect(speak(subject({ causes: [cause.stalled(9, false)] }))).toBe(
-      "Stalled on extension-popup-ia for nine days. The flight's gone quiet.",
+      "Stalled on extension-popup-ia for nine days. The branch has gone quiet.",
     );
   });
 });

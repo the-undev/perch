@@ -94,7 +94,7 @@ export const thresholdFacts: readonly {
     red: "unsafe_red_hours",
   },
   {
-    label: "Stalled flight",
+    label: "Stalled",
     unit: "days",
     counts:
       "Days a non-default branch has sat without a commit, even with everything pushed",

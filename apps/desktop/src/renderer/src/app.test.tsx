@@ -694,7 +694,7 @@ describe("the window", () => {
       );
       fireEvent.change(
         screen.getByRole("spinbutton", {
-          name: "Stalled flight, amber after days",
+          name: "Stalled, amber after days",
         }),
         { target: { value: "3" } },
       );

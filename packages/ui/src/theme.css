@@ -446,7 +446,7 @@
   }
   /* A roadmap bug's mark, in the sheet's left margin level with its line: one
      bar for a bug, two for a critical bug, faint once done. The gutter is the
-     sheet's left padding, px-9.5 in paper.tsx; a list entity sits a list's
+     sheet's left padding, px-9.5 in key-file-sheets.tsx; a list entity sits a list's
      indent further in. */
   .perch-prose [data-mark] {
     --mark-gutter: 38px;

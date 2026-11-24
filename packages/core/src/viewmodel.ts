@@ -234,7 +234,7 @@ export interface Reading {
   url: string | null;
   /** When the fact dates from, shown as an age; null when it has no time. */
   at: string | null;
-  /** The line in a key file the reading points at, which pressing it shows on the paper; null for none. */
+  /** The line in a key file the reading points at, which pressing it shows on the sheet; null for none. */
   reveal: SheetLine | null;
 }
 
@@ -281,7 +281,7 @@ export interface BranchLine {
   url: string | null;
 }
 
-/** Which forges hold a commit: green on every forge read, amber short of one or when none could be read, null without a forge. */
+/** How well forges hold a commit: green when every forge read holds it, amber short of that or when none could be read, null without a forge. */
 export type HeldOnTone = Exclude<HealthLevel, "red"> | null;
 
 /** One commit on the default branch, told once however many places hold it. */
@@ -293,7 +293,7 @@ export interface HistoryCommit {
   /** The commit on the first forge holding it; null when no forge does. */
   url: string | null;
   tone: HeldOnTone;
-  /** Which repositories hold it, in words, such as "on github and forgejo" or "no remote could be read". */
+  /** Which forges hold it, in words, such as "on github and forgejo" or "no remote could be read". */
   heldOn: string;
 }
 
@@ -364,7 +364,7 @@ export interface LinkOut {
   url: string;
 }
 
-/** The mark in the paper's margin beside a bug's line: one bar for a bug, two for a critical bug, faint once done. */
+/** The mark in the sheet's margin beside a bug's line: one bar for a bug, two for a critical bug, faint once done. */
 export interface LineMark {
   kind: "bug" | "critical-bug";
   done: boolean;

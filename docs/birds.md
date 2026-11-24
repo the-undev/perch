@@ -9,7 +9,7 @@ It is decided in this order: not adopted, snoozed and not past its end date,
 then mood, editing and the hour.
 Birds sleep from midnight to 06:00, whatever the sky shows.
 
-| Bird | Hour | Colour | State word | Eyes | Mark | Motion |
+| Bird | Hour | Colour | State phrase | Eyes | Mark | Motion |
 | --- | --- | --- | --- | --- | --- | --- |
 | On the fence | 06:00 to midnight | dimmed | not adopted | open | none | gentle bob |
 | On the fence | midnight to 06:00 | dimmed | not adopted | closed | z | still |

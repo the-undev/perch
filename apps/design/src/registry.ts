@@ -144,7 +144,7 @@ export const pages: DesignPage[] = [
   {
     slug: "bird-page-heading",
     group: "components",
-    title: "Page heading",
+    title: "Bird's page heading",
     summary:
       "The top of a bird's page: name, state phrase and activity, and the meta line saying where it lives.",
     component: HeadingPage,

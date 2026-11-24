@@ -341,7 +341,7 @@ export function PhrasebookPage() {
       ))}
       <Section
         title="Asleep · midnight to 06:00"
-        rule="From midnight to 06:00 a bird that is neither distressed nor being edited sleeps, and so does every fence bird; a distressed bird stays awake, and an edited bird sings at any hour."
+        rule="From midnight to 06:00 a bird that is neither distressed nor uncommitted sleeps, and so does every fence bird; a distressed bird stays awake, and an uncommitted bird sings at any hour."
         min={440}
       >
         <Specimen

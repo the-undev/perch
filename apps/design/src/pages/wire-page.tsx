@@ -138,7 +138,7 @@ export function WirePage() {
 
       <Section
         title="Together in the small hours"
-        rule="The sky shows night as the backdrop only; positions and colours hold. Sleep follows its own hours: from midnight to 06:00 every bird sleeps but the distressed and the edited, and the edited sing."
+        rule="The sky shows night as the backdrop only; positions and colours hold. Sleep follows its own hours: from midnight to 06:00 every bird sleeps but the distressed and the uncommitted, and the uncommitted sing."
         min={900}
       >
         <Specimen

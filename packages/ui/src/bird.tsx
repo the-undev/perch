@@ -399,7 +399,7 @@ const labelClass = {
 const labelReacts =
   "group-hover:fill-ink group-focus-visible:fill-ink group-focus-visible:underline";
 
-/** One bird perched in a scene: its figure, its song when edited, and its name beneath. */
+/** One bird perched in a scene: its figure, its song when uncommitted, and its name beneath. */
 export function Bird({
   bird,
   x,

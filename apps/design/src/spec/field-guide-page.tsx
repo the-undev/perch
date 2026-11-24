@@ -45,13 +45,13 @@ const birdNotes: Note[] = [
     rule: "Volume at a glance; the exact count is the bubble's open-work-items chip.",
   },
   {
-    title: "♪ · being edited",
+    title: "♪ · uncommitted changes",
     text: "The song means the local repository holds uncommitted changes: your hands are in it now. The work state runs on its own axis beside health, so a bird of any mood can sing, and it sings at any hour. A fence bird never sings.",
     rule: "From git: uncommitted while any file is uncommitted.",
   },
   {
     title: "The eye and the z · asleep",
-    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor being edited sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. A snoozed bird sleeps at any hour, dimmed like a fence bird, until its end date or until woken. Colours and places never change by night.",
+    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor uncommitted sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. A snoozed bird sleeps at any hour, dimmed like a fence bird, until its end date or until woken. Colours and places never change by night.",
     rule: "Clicked with its eyes closed, a bird wakes and says so before its speech.",
   },
   {
@@ -238,7 +238,7 @@ export function FieldGuidePage() {
         >
           <Specimen
             label="Spool in the small hours: asleep"
-            rule="Content and not edited, so its eye closes under a green z."
+            rule="Content and committed or merged, so its eye closes under a green z."
           >
             <Plate phase="night">
               <BirdPortrait
@@ -250,7 +250,7 @@ export function FieldGuidePage() {
           </Specimen>
           <Specimen
             label="Perch in the small hours: singing"
-            rule="Being edited, so it stays awake and shows the note, never the z."
+            rule="Uncommitted, so it stays awake and shows the note, never the z."
           >
             <Plate phase="night">
               <BirdPortrait

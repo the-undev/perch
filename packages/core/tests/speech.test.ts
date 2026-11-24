@@ -107,7 +107,7 @@ describe("content birds are brief", () => {
     );
   });
 
-  it("being edited: acknowledges you, with the song", () => {
+  it("uncommitted: acknowledges you, with the song", () => {
     expect(
       speak(subject({ workState: "uncommitted", openWorkItems: 24 })),
     ).toBe("We're in the middle of something. ♪");

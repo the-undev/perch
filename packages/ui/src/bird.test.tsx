@@ -120,7 +120,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/spool",
-      "content, not edited",
+      "content, committed or merged",
       "06:00 to midnight",
       "green",
       "content",
@@ -130,7 +130,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/spool",
-      "content, not edited",
+      "content, committed or merged",
       "midnight to 06:00",
       "green",
       "content",
@@ -140,7 +140,7 @@ describe("the bird's look", () => {
     ],
     [
       "dev/perch",
-      "content, edited",
+      "content, uncommitted",
       "06:00 to midnight",
       "green",
       "content",
@@ -150,7 +150,7 @@ describe("the bird's look", () => {
     ],
     [
       "dev/perch",
-      "content, edited",
+      "content, uncommitted",
       "midnight to 06:00",
       "green",
       "content",
@@ -160,7 +160,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/skiff",
-      "restless, not edited",
+      "restless, committed or merged",
       "06:00 to midnight",
       "amber",
       "restless",
@@ -170,7 +170,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/skiff",
-      "restless, not edited",
+      "restless, committed or merged",
       "midnight to 06:00",
       "amber",
       "restless",
@@ -180,7 +180,7 @@ describe("the bird's look", () => {
     ],
     [
       "obsidian/Hothouse",
-      "restless, edited",
+      "restless, uncommitted",
       "06:00 to midnight",
       "amber",
       "restless",
@@ -190,7 +190,7 @@ describe("the bird's look", () => {
     ],
     [
       "obsidian/Hothouse",
-      "restless, edited",
+      "restless, uncommitted",
       "midnight to 06:00",
       "amber",
       "restless",
@@ -200,7 +200,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/Hollow-legacy",
-      "distressed, not edited",
+      "distressed, committed or merged",
       "06:00 to midnight",
       "red",
       "distressed",
@@ -210,7 +210,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/Hollow-legacy",
-      "distressed, not edited",
+      "distressed, committed or merged",
       "midnight to 06:00",
       "red",
       "distressed",
@@ -220,7 +220,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/prism",
-      "distressed, edited",
+      "distressed, uncommitted",
       "06:00 to midnight",
       "red",
       "distressed",
@@ -230,7 +230,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/prism",
-      "distressed, edited",
+      "distressed, uncommitted",
       "midnight to 06:00",
       "red",
       "distressed",
@@ -254,11 +254,15 @@ describe("the bird's look", () => {
   );
 
   it.each([
-    ["undev/spool", "content, not edited", "06:00 to midnight"],
-    ["undev/skiff", "restless, not edited", "midnight to 06:00"],
-    ["undev/Hollow-legacy", "distressed, not edited", "06:00 to midnight"],
-    ["undev/prism", "distressed, edited", "06:00 to midnight"],
-    ["undev/prism", "distressed, edited", "midnight to 06:00"],
+    ["undev/spool", "content, committed or merged", "06:00 to midnight"],
+    ["undev/skiff", "restless, committed or merged", "midnight to 06:00"],
+    [
+      "undev/Hollow-legacy",
+      "distressed, committed or merged",
+      "06:00 to midnight",
+    ],
+    ["undev/prism", "distressed, uncommitted", "06:00 to midnight"],
+    ["undev/prism", "distressed, uncommitted", "midnight to 06:00"],
   ])("looks snoozed for %s, %s, %s", (id, _row, hour) => {
     const now = hour === "06:00 to midnight" ? afternoon : smallHours;
     const snoozed = { ...mockBird(id), snooze: { until: "2026-11-01" } };

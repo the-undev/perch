@@ -591,7 +591,7 @@ const dotfiles = localEntity(".dotfiles", {
 });
 
 /**
- * Restless and being edited: one critical bug in its garden plans, six changes uncommitted for
+ * Restless and uncommitted: one critical bug in its garden plans, six changes uncommitted for
  * 30 hours, and a full roadmap whose tech plans hold one bug, within its thresholds.
  */
 const hothouse = localEntity("obsidian/Hothouse", {
@@ -722,7 +722,7 @@ const pocket = localEntity("obsidian/Pocket", {
   },
 });
 
-/** Content and being edited on a fresh branch; CI passing on GitHub and pending on Forgejo, with no runner. */
+/** Content and uncommitted on a fresh branch; CI passing on GitHub and pending on Forgejo, with no runner. */
 const perch = localEntity("dev/perch", {
   forges: [
     forgeRepository("github", "finch/perch"),
@@ -1315,7 +1315,7 @@ const oxbow = localEntity("undev/oxbow", {
   },
 });
 
-/** Distressed and being edited: fourteen changes uncommitted for five days. */
+/** Distressed and uncommitted: fourteen changes uncommitted for five days. */
 const gramophone = localEntity("undev/gramophone", {
   forges: [forgeRepository("forgejo", "the-undev/gramophone")],
   sources: {

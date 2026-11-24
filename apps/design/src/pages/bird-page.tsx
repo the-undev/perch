@@ -116,7 +116,7 @@ export function BirdPage() {
       </Section>
 
       <Section
-        title="♪ · being edited"
+        title="♪ · uncommitted changes"
         rule="The song means your hands are in its files right now. The work state is behaviour, not feeling: a separate axis from health, so any mood can sing."
         min={260}
       >
@@ -148,11 +148,11 @@ export function BirdPage() {
 
       <Section
         title="Asleep · midnight to 06:00, by its own rule"
-        rule="From midnight to 06:00 a bird that is neither distressed nor being edited sleeps: eyes closed, still, a z in its own colour where the note sits. The sky keeps its own night from 21:00, and before midnight every bird is awake. Colours and positions never change by night."
+        rule="From midnight to 06:00 a bird that is neither distressed nor uncommitted sleeps: eyes closed, still, a z in its own colour where the note sits. The sky keeps its own night from 21:00, and before midnight every bird is awake. Colours and positions never change by night."
         min={260}
       >
         <Specimen
-          label="content, not edited: asleep"
+          label="content, committed or merged: asleep"
           rule="Spool closes its eyes and stops bobbing."
         >
           <Plate phase="night">
@@ -160,7 +160,7 @@ export function BirdPage() {
           </Plate>
         </Specimen>
         <Specimen
-          label="restless, not edited: asleep"
+          label="restless, committed or merged: asleep"
           rule="Skiff sleeps on its stalled branch, amber and still."
         >
           <Plate phase="night">
@@ -168,7 +168,7 @@ export function BirdPage() {
           </Plate>
         </Specimen>
         <Specimen
-          label="distressed, not edited: awake"
+          label="distressed, committed or merged: awake"
           rule="Hollow-legacy stays awake: a red project is never hidden by sleep."
         >
           <Plate phase="night">
@@ -180,7 +180,7 @@ export function BirdPage() {
           </Plate>
         </Specimen>
         <Specimen
-          label="edited: singing"
+          label="uncommitted: singing"
           rule="Perch sings at any hour, and never shows a z."
         >
           <Plate phase="night">
@@ -216,7 +216,7 @@ export function BirdPage() {
       >
         <Specimen
           label="by day"
-          rule="Prism, distressed and being edited, snoozed: no red, no note."
+          rule="Prism, distressed and uncommitted, snoozed: no red, no note."
         >
           <Plate phase="day">
             <BirdPortrait
@@ -340,7 +340,7 @@ export function BirdPage() {
           {
             name: "now",
             type: "Date",
-            what: "The render's clock: the bird sleeps from midnight to 06:00 unless distressed or edited.",
+            what: "The render's clock: the bird sleeps from midnight to 06:00 unless distressed or uncommitted.",
           },
           {
             name: "x, y",

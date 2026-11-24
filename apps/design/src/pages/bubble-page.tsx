@@ -147,7 +147,7 @@ export function BubblePage() {
       >
         <Specimen
           label="Woken"
-          rule="Skiff: restless, not being edited, asleep until clicked."
+          rule="Skiff: restless, committed, asleep until clicked."
         >
           <Plate phase="night">
             <SpeakingBird

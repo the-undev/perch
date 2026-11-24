@@ -33,8 +33,8 @@ purpose.
 
 ## Invented account names in mock data
 
-Mock data and test fixtures use a real account name in forge references
-(`the-undev`). Replace it with an invented one.
+Mock data and test fixtures use a real account name in forge references.
+Replace it with an invented one.
 
 ## Branches that are not work under way
 

@@ -13,6 +13,23 @@ purpose.
 Mock data and test fixtures use a real account name in forge references.
 Replace it with an invented one.
 
+## Papers named entities in config code
+
+`Config.entities` holds each entity's papers, keyed by a repository reference,
+while the config key and the glossary say papers. Rename the field to
+`papers`.
+
+## Snapshot migration checks
+
+`migrateSnapshot` casts its result to `Snapshot` without checking the shape,
+and `Snapshot.version` is typed as the literal 2, which a version 3 must widen.
+
+## Loose casts and test text
+
+`kindName` is cast to `Record<SourceCardKind, string>` rather than typed as
+one. The config store's version 2 test builds its file text by chained
+`replace` calls rather than writing the file out.
+
 ## Branches that are not work under way
 
 A project on a release or dev branch is not unfinished work. Config would hold

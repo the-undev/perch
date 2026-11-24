@@ -66,7 +66,7 @@ export interface PapersSeen {
 
 /** What the detail page needs to adopt a bird or edit its papers. */
 export interface PapersForm {
-  /** The config key the papers sits under; null for a bird config does not name. */
+  /** The config key the papers sit under; null for a bird config does not name. */
   key: string | null;
   /** The name the scan found, which a name left unset keeps. */
   scannedName: string;

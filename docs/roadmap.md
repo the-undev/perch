@@ -45,9 +45,10 @@ More types of bird, perhaps per project.
 
 A `.perch.toml` at a repository's root, meant to be checked in, holds what is
 true of the project on any machine: `key_files`, `roadmaps`, `bug_words`,
-`critical_bug_words` and the bug thresholds, with the same keys as an entity's papers. Precedence, each set value replacing the one below: the papers in
-the owner's config, then `.perch.toml`, then `[work]` and `[thresholds]`, then
-built in. Wires, names, sessions, launch actions and sources stay in the
+`critical_bug_words` and the bug thresholds, with the same keys as an entity's
+papers. Precedence, each set value replacing the one below: the papers in the
+owner's config, then `.perch.toml`, then `[work]` and `[thresholds]`, then built
+in. Wires, names, sessions, launch actions and sources stay in the
 owner's config. A bird known only from a forge has no clone to read it from;
 reading it through the forge API is a later step. Perch cannot migrate a file
 in another repository, so the schema and its versioning are settled before

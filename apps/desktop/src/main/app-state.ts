@@ -432,7 +432,7 @@ export function createAppState(deps: AppStateDeps): AppState {
     async launch(requested) {
       const current = aviary();
       const action = (current === null ? [] : birdsOf(current))
-        .flatMap((candidate) => candidate.detail.actions)
+        .flatMap((candidate) => candidate.page.actions)
         .find((candidate) => sameAction(candidate, requested));
       if (action === undefined) return;
       await perform(action);
@@ -442,7 +442,7 @@ export function createAppState(deps: AppStateDeps): AppState {
       return perform(configFileAction(actions, deps.configPath));
     },
     async keyFiles(birdId) {
-      const files = bird(birdId)?.detail.keyFiles ?? [];
+      const files = bird(birdId)?.page.keyFiles ?? [];
       return Promise.all(
         files.map(async (file) => ({
           file,

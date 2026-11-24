@@ -1,4 +1,4 @@
-// The adoption papers: one sheet of paper on a bird's page that adopts a fence bird and, reopened,
+// The adoption papers: one sheet on a bird's page that adopts a fence bird and, reopened,
 // amends an adopted one. The head carries the portrait and the ring, the config key; then what
 // the scan found, in the scanner's mono and not editable; then what the owner says, the common
 // choices above a fold that names the rare ones; then the signature line. The sheet holds only its

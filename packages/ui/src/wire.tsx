@@ -15,7 +15,7 @@ import {
   type Facing,
   type NamePlace,
   roomyName,
-  type StateWord,
+  type StatePhrase,
 } from "./bird.tsx";
 
 /** The margin no bird is placed inside at the scene's right end: 0.06 of the scene, at least 60 units, so 120 at full width. */
@@ -120,7 +120,7 @@ export function byPosition(birds: BirdModel[]): BirdModel[] {
   return [...birds].sort((a, b) => a.position - b.position);
 }
 
-/** The state words a tally counts: the awake moods and a snooze, each by the bird's look at the time. */
+/** The state phrases a tally counts: the awake moods and a snooze, each by the bird's look at the time. */
 export interface TallyCounts {
   attention: number;
   drifting: number;
@@ -128,11 +128,11 @@ export interface TallyCounts {
   snoozed: number;
 }
 
-/** How many of the birds are at each state word at a time; fence birds are counted by none, as their state word is "not adopted", which no count takes. */
+/** How many of the birds are at each state phrase at a time; fence birds are counted by none, as their state phrase is "not adopted", which no count takes. */
 export function tallyCounts(birds: BirdModel[], now: Date): TallyCounts {
-  const stateWords = birds.map((bird) => birdLook(bird, now).stateWord);
-  const count = (word: StateWord) =>
-    stateWords.filter((stateWord) => stateWord === word).length;
+  const statePhrases = birds.map((bird) => birdLook(bird, now).statePhrase);
+  const count = (word: StatePhrase) =>
+    statePhrases.filter((statePhrase) => statePhrase === word).length;
   return {
     attention: count("distressed"),
     drifting: count("restless"),

@@ -1,9 +1,9 @@
-// What the design site has to put on a bird's paper: this repository's own README, forge-access
+// What the design site has to put on a bird's page: this repository's own README, forge-access
 // guide and roadmap stand in for the mock Perch bird's key files. No other file is read, so every other
 // sheet says it could not be.
 
 import type { Bird, KeyFile } from "@perch/core/viewmodel.ts";
-import type { KeyFileSheet } from "@perch/ui/paper.tsx";
+import type { KeyFileSheet } from "@perch/ui/key-file-sheets.tsx";
 import forgeAccess from "../../../docs/forge-access.md?raw";
 import roadmap from "../../../docs/roadmap.md?raw";
 import readme from "../../../README.md?raw";
@@ -26,7 +26,7 @@ export function sheetsFor(
 /** A bird's sheets as the design site can read them: Perch's from this repository, none other. */
 export function birdSheets(bird: Bird): KeyFileSheet[] {
   return sheetsFor(
-    bird.detail.keyFiles,
+    bird.page.keyFiles,
     bird.id === "dev/perch" ? perchFiles : {},
   );
 }

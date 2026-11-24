@@ -1,7 +1,11 @@
 import type { LineMarks } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { KeyFilePaper, type KeyFileSheet, type Reveal } from "./paper.tsx";
+import {
+  type KeyFileSheet,
+  KeyFileSheets,
+  type Reveal,
+} from "./key-file-sheets.tsx";
 
 afterEach(cleanup);
 
@@ -30,9 +34,9 @@ const sheets: KeyFileSheet[] = [
   { file: file("docs/missing.md"), markdown: null },
 ];
 
-describe("the key-file paper", () => {
+describe("the key-file sheets", () => {
   it("renders the first file's markdown headings and lists", () => {
-    render(<KeyFilePaper reveal={null} sheets={sheets} />);
+    render(<KeyFileSheets reveal={null} sheets={sheets} />);
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("perch");
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
@@ -49,7 +53,7 @@ describe("the key-file paper", () => {
     const markdown =
       "![build status](https://ci.example.com/badge.svg) ![diagram](docs/flow.png) ![](./bare.png)\n";
     const { container } = render(
-      <KeyFilePaper
+      <KeyFileSheets
         reveal={null}
         sheets={[{ file: file("README.md"), markdown }]}
       />,
@@ -66,7 +70,7 @@ describe("the key-file paper", () => {
   });
 
   it("puts each file behind a folder tab and opens the one pressed", () => {
-    render(<KeyFilePaper reveal={null} sheets={sheets} />);
+    render(<KeyFileSheets reveal={null} sheets={sheets} />);
 
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
       "README.md",
@@ -86,7 +90,7 @@ describe("the key-file paper", () => {
   });
 
   it("says when a file could not be read", () => {
-    render(<KeyFilePaper reveal={null} sheets={sheets} />);
+    render(<KeyFileSheets reveal={null} sheets={sheets} />);
     fireEvent.click(screen.getByRole("tab", { name: "docs/missing.md" }));
 
     expect(screen.getByRole("tabpanel").textContent).toBe(
@@ -100,7 +104,7 @@ describe("the key-file paper", () => {
       (_, i) => `## Section ${i}\n\nA paragraph.\n`,
     ).join("\n");
     render(
-      <KeyFilePaper
+      <KeyFileSheets
         reveal={null}
         sheets={[{ file: file("docs/spec.md"), markdown: long }]}
       />,
@@ -135,7 +139,7 @@ describe("the key-file paper", () => {
       "- Queue edits while offline", // 15
     ].join("\n");
     const { container } = render(
-      <KeyFilePaper
+      <KeyFileSheets
         reveal={null}
         sheets={[
           {
@@ -189,14 +193,14 @@ describe("the key-file paper", () => {
       press,
     });
     const { container, rerender } = render(
-      <KeyFilePaper sheets={[readme, roadmap]} reveal={null} />,
+      <KeyFileSheets sheets={[readme, roadmap]} reveal={null} />,
     );
     const marks = () =>
       [...container.querySelectorAll('[data-part="landing"]')].map((mark) =>
         mark.parentElement?.textContent?.trim(),
       );
 
-    rerender(<KeyFilePaper sheets={[readme, roadmap]} reveal={reveal(1)} />);
+    rerender(<KeyFileSheets sheets={[readme, roadmap]} reveal={reveal(1)} />);
 
     expect(
       screen
@@ -214,14 +218,14 @@ describe("the key-file paper", () => {
 
     expect(marks()).toEqual([]);
 
-    rerender(<KeyFilePaper sheets={[readme, roadmap]} reveal={reveal(2)} />);
+    rerender(<KeyFileSheets sheets={[readme, roadmap]} reveal={reveal(2)} />);
 
     expect(scrolled).toHaveLength(2);
     expect(marks()).toEqual(["Times drift by an hour"]);
   });
 
   it("draws nothing for a bird without key files", () => {
-    const { container } = render(<KeyFilePaper reveal={null} sheets={[]} />);
+    const { container } = render(<KeyFileSheets reveal={null} sheets={[]} />);
 
     expect(container.innerHTML).toBe("");
   });

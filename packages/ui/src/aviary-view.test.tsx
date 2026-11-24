@@ -72,7 +72,7 @@ function show(now = morning, aviary = mockAviary, pickedAt = () => now) {
   };
 }
 
-/** A bird's button, named by the bird's name and its state word. */
+/** A bird's button, named by the bird's name and its state phrase. */
 function birdButton(id: string): HTMLElement {
   const bird = mockBird(id);
   return screen.getByRole("button", {
@@ -196,7 +196,7 @@ describe("the aviary view", () => {
       screen.getByRole("button", { name: "Tell me the full story" }),
     );
 
-    expect(onLaunch).toHaveBeenCalledWith(perch.detail.actions[1]);
+    expect(onLaunch).toHaveBeenCalledWith(perch.page.actions[1]);
     expect(onFullStory).toHaveBeenCalledWith(perch);
     expect(screen.queryByRole("region", { name: "Perch says" })).toBeNull();
   });

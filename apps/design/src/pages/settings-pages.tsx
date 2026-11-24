@@ -411,7 +411,7 @@ export function SettingsGroupsPage() {
       </Section>
       <Section
         title="Updates"
-        rule="The status row first, one shape in every state: a sentence saying what is known, a detail line, and one button slot. The slot holds Check now, quiet, until something newer is known, then the next step: Open the releases page with install off, Install with it on, Restart now once downloaded; its weight says whether Perch itself can act. The detail line holds the releases link, an amber failure, the download's bar or a quiet note. Two switch rows follow: Check for updates is [update] check, true unless the file says false; Install updates is [update] install, false unless it says true, its row naming the image it replaces. Run from source the install switch is held, in amber. The status row is state, never saved."
+        rule="The status row first, one shape in every state: a sentence saying what is known, a page line, and one button slot. The slot holds Check now, quiet, until something newer is known, then the next step: Open the releases page with install off, Install with it on, Restart now once downloaded; its weight says whether Perch itself can act. The page line holds the releases link, an amber failure, the download's bar or a quiet note. Two switch rows follow: Check for updates is [update] check, true unless the file says false; Install updates is [update] install, false unless it says true, its row naming the image it replaces. Run from source the install switch is held, in amber. The status row is state, never saved."
         min={560}
       >
         <GroupSpecimen
@@ -446,7 +446,7 @@ export function SettingsGroupsPage() {
         />
         <GroupSpecimen
           label="Downloading"
-          rule="The bar in the detail line, the install held."
+          rule="The bar in the page line, the install held."
           start={installOn}
           group={updatesWith(mockUpdates.downloading, onImage)}
         />

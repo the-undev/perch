@@ -23,7 +23,7 @@ function speak(bird: Bird, now = afternoon) {
     <Bubble
       bubble={bird.bubble}
       look={birdLook(bird, now)}
-      actions={bird.detail.actions}
+      actions={bird.page.actions}
       onLaunch={onLaunch}
       snoozeAction={null}
       onFullStory={onFullStory}
@@ -108,7 +108,7 @@ describe("the bubble", () => {
       screen.getByRole("button", { name: "Tell me the full story" }),
     );
 
-    expect(onLaunch).toHaveBeenCalledWith(perch.detail.actions[1]);
+    expect(onLaunch).toHaveBeenCalledWith(perch.page.actions[1]);
     expect(onFullStory).toHaveBeenCalledOnce();
   });
 
@@ -119,9 +119,9 @@ describe("the bubble", () => {
     cleanup();
     speak({
       ...perch,
-      detail: {
-        ...perch.detail,
-        actions: perch.detail.actions.map((action) => ({
+      page: {
+        ...perch.page,
+        actions: perch.page.actions.map((action) => ({
           ...action,
           icon: "edit" as const,
         })),
@@ -129,12 +129,12 @@ describe("the bubble", () => {
     });
 
     expect(
-      perch.detail.actions.map(
+      perch.page.actions.map(
         (action) =>
           screen.getByRole("button", { name: action.verb }).querySelector("svg")
             ?.outerHTML,
       ),
-    ).toEqual(perch.detail.actions.map(() => editIcon));
+    ).toEqual(perch.page.actions.map(() => editIcon));
   });
 
   it("offers adopt as a fence bird's one key beside the full story, and an adopted bird none", () => {

@@ -1,21 +1,21 @@
 // Tier C's ruled ledger: facts in full words, then the sections beneath it (branches, the commit
-// river, pull requests, flags, the sources that couldn't be read). Every row is a label on the left and a value on
+// history, pull requests, flags, the sources that couldn't be read). Every row is a label on the left and a value on
 // the right; clean zeros read a quiet green "none", counts take their severity's tone. A row that
-// holds a bubble chip's working is marked with a dot and spells it out beneath, source by source.
+// holds a bubble chip's reading is marked with a dot and spells it out beneath, source by source.
 
 import type {
   BranchLine,
   ChipKind,
   FlagLine,
+  HeldOnTone,
+  History,
+  HistoryCommit,
   LedgerFact,
-  PaperLine,
   PullRequestLine,
-  River,
-  RiverCommit,
+  Reading,
+  SheetLine,
   SourceProblem,
-  SpreadTone,
   Tone,
-  Working,
 } from "@perch/core/viewmodel.ts";
 import type { ReactNode } from "react";
 import Markdown, { type Components } from "react-markdown";
@@ -104,8 +104,8 @@ function factValue(fact: LedgerFact, now: Date): ReactNode {
   }
 }
 
-/** A working's ink: its tone, else the muted ink that reads beside the faint source. */
-const workingToneClass: Record<NonNullable<Tone> | "none", string> = {
+/** A reading's ink: its tone, else the muted ink that reads beside the faint source. */
+const readingToneClass: Record<NonNullable<Tone> | "none", string> = {
   ...toneClass,
   none: "text-ink-muted",
 };
@@ -134,15 +134,15 @@ function BugTitle({ title }: { title: string }) {
   );
 }
 
-/** What a working says: a button showing its line on the paper, a link out, or plain words. */
-function WorkingText({
-  working,
+/** What a reading says: a button showing its line on the sheet, a link out, or plain words. */
+function ReadingText({
+  reading,
   onReveal,
 }: {
-  working: Working;
-  onReveal: (line: PaperLine) => void;
+  reading: Reading;
+  onReveal: (line: SheetLine) => void;
 }) {
-  const { reveal } = working;
+  const { reveal } = reading;
   if (reveal !== null) {
     return (
       <button
@@ -151,40 +151,40 @@ function WorkingText({
         onClick={() => onReveal(reveal)}
         className="cursor-pointer text-left text-inherit underline decoration-ink-faint decoration-dotted underline-offset-3 hover:text-ink hover:decoration-ink-accent focus-visible:outline-2 focus-visible:outline-ink-accent"
       >
-        <BugTitle title={working.text} />
+        <BugTitle title={reading.text} />
       </button>
     );
   }
-  if (working.url === null) return working.text;
-  return <OutLink href={working.url}>{working.text}</OutLink>;
+  if (reading.url === null) return reading.text;
+  return <OutLink href={reading.url}>{reading.text}</OutLink>;
 }
 
 /** One source's part in a row, in mono: the source, what it says there, toned and linked, and its age. */
-function WorkingLine({
-  working,
+function ReadingLine({
+  reading,
   now,
   onReveal,
 }: {
-  working: Working;
+  reading: Reading;
   now: Date;
-  onReveal: (line: PaperLine) => void;
+  onReveal: (line: SheetLine) => void;
 }) {
   return (
-    <li data-part="working" className="break-words">
-      {working.source}
+    <li data-part="reading" className="break-words">
+      {reading.source}
       {" · "}
       <span
-        data-working-tone={working.tone ?? "none"}
-        className={workingToneClass[working.tone ?? "none"]}
+        data-reading-tone={reading.tone ?? "none"}
+        className={readingToneClass[reading.tone ?? "none"]}
       >
-        <WorkingText working={working} onReveal={onReveal} />
+        <ReadingText reading={reading} onReveal={onReveal} />
       </span>
-      {working.at === null ? "" : ` · ${agoWords(working.at, now)}`}
+      {reading.at === null ? "" : ` · ${agoWords(reading.at, now)}`}
     </li>
   );
 }
 
-/** The mark before a label whose row holds a bubble chip's working. */
+/** The mark before a label whose row holds a bubble chip's reading. */
 function HandleMark() {
   return (
     <span
@@ -219,7 +219,7 @@ export function LandingMark() {
   );
 }
 
-/** A row of the ledger proper: the label and value, with the row's working beneath, source by source. */
+/** A row of the ledger proper: the label and value, with the row's reading beneath, source by source. */
 function FactRow({
   fact,
   now,
@@ -229,11 +229,11 @@ function FactRow({
   fact: LedgerFact;
   now: Date;
   landing: Landing | null;
-  onReveal: (line: PaperLine) => void;
+  onReveal: (line: SheetLine) => void;
 }) {
   const tone = fact.kind === "time" ? null : fact.tone;
   const chip = fact.kind === "time" ? null : fact.chip;
-  const workings = fact.kind === "time" ? [] : fact.workings;
+  const readings = fact.kind === "time" ? [] : fact.readings;
   const landed = chip !== null && landing !== null && landing.chip === chip;
   return (
     <div
@@ -254,16 +254,16 @@ function FactRow({
           {factValue(fact, now)}
         </span>
       </div>
-      {workings.length > 0 && (
+      {readings.length > 0 && (
         <ul
           key={landed ? `ink-${landing.press}` : "ink-resting"}
-          data-part="workings"
+          data-part="readings"
           className={`m-0 -mt-1 list-none space-y-0.5 p-0 pb-2.25 font-mono text-[12px] text-ink-faint leading-normal ${landed ? "animate-land-ink" : ""}`}
         >
-          {workings.map((working) => (
-            <WorkingLine
-              key={`${working.source} ${working.reveal?.line ?? working.text}`}
-              working={working}
+          {readings.map((reading) => (
+            <ReadingLine
+              key={`${reading.source} ${reading.reveal?.line ?? reading.text}`}
+              reading={reading}
               now={now}
               onReveal={onReveal}
             />
@@ -282,11 +282,11 @@ export interface LedgerProps {
   now: Date;
   /** The chip last pressed on the roost, whose row is briefly marked; null when none has been. */
   landing: Landing | null;
-  /** A working's line in a key file was pressed: show it on the paper. */
-  onReveal: (line: PaperLine) => void;
+  /** A reading's line in a key file was pressed: show it on the sheet. */
+  onReveal: (line: SheetLine) => void;
 }
 
-/** The facts that exist for a bird, in full words, each chip's working spelled out on its row. */
+/** The facts that exist for a bird, in full words, each chip's reading spelled out on its row. */
 export function Ledger({ quiet, facts, now, landing, onReveal }: LedgerProps) {
   return (
     <div data-part="ledger">
@@ -320,7 +320,7 @@ export function BranchLines({
 }: {
   branches: BranchLine[];
   now: Date;
-  /** The bubble chip whose working the section holds, null when the bubble carries none. */
+  /** The bubble chip whose reading the section holds, null when the bubble carries none. */
   chip: ChipKind | null;
   landing: Landing | null;
 }) {
@@ -367,31 +367,31 @@ export function BranchLines({
   );
 }
 
-/** Green or amber by the commit's spread, and the quietest faint dot for a bird with no forge. */
-const spreadDotClass: Record<NonNullable<SpreadTone> | "none", string> = {
+/** Green or amber by which forges hold the commit, and the quietest faint dot for a bird with no forge. */
+const heldOnDotClass: Record<NonNullable<HeldOnTone> | "none", string> = {
   green: "size-1.75 bg-green",
   amber: "size-1.75 bg-amber",
   none: "size-0.75 bg-edge-hi",
 };
 
-/** A commit's one dot, its spread spoken for a screen reader and on hover. */
-function SpreadDot({ commit }: { commit: RiverCommit }) {
+/** A commit's one dot, its holders spoken for a screen reader and on hover. */
+function HeldOnDot({ commit }: { commit: HistoryCommit }) {
   const tone = commit.tone ?? "none";
   return (
     <span
       role="img"
-      aria-label={commit.spread}
-      title={commit.spread}
-      data-spread-tone={tone}
+      aria-label={commit.heldOn}
+      title={commit.heldOn}
+      data-held-on-tone={tone}
       className="inline-flex size-1.75 items-center justify-center self-center"
     >
-      <span className={`rounded-full ${spreadDotClass[tone]}`} />
+      <span className={`rounded-full ${heldOnDotClass[tone]}`} />
     </span>
   );
 }
 
 /** A line in amber above the commits: a forge that couldn't be read, or the divergence. */
-function RiverLine({ part, text }: { part: string; text: string }) {
+function HistoryLine({ part, text }: { part: string; text: string }) {
   return (
     <p data-part={part} className="m-0 mt-1.5 text-[12.5px] text-amber">
       {text}
@@ -399,32 +399,38 @@ function RiverLine({ part, text }: { part: string; text: string }) {
   );
 }
 
-/** The heading names the branch the river judges, when one does. */
-function riverHeading(branch: string | null): string {
+/** The heading names the branch the history judges, when one does. */
+function historyHeading(branch: string | null): string {
   return branch === null
     ? "Commits, and where each has reached"
     : `Commits on ${branch}, and where each has reached`;
 }
 
-/** The newest commits on the default branch, each once, a dot before each saying how far it has spread. */
-export function CommitRiver({ river, now }: { river: River; now: Date }) {
+/** The newest commits on the default branch, each once, a dot before each saying which forges hold it. */
+export function CommitHistory({
+  history,
+  now,
+}: {
+  history: History;
+  now: Date;
+}) {
   return (
-    <section data-part="river">
-      <LedgerHeading>{riverHeading(river.branch)}</LedgerHeading>
-      {river.notes.map((note) => (
-        <RiverLine key={note} part="river-note" text={note} />
+    <section data-part="history">
+      <LedgerHeading>{historyHeading(history.branch)}</LedgerHeading>
+      {history.notes.map((note) => (
+        <HistoryLine key={note} part="history-note" text={note} />
       ))}
-      {river.divergence !== null && (
-        <RiverLine part="divergence" text={river.divergence} />
+      {history.divergence !== null && (
+        <HistoryLine part="divergence" text={history.divergence} />
       )}
       <ul className="m-0 mt-1 grid list-none grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2.5 p-0">
-        {river.commits.map((commit) => (
+        {history.commits.map((commit) => (
           <li
             key={commit.sha}
-            data-part="river-commit"
+            data-part="history-commit"
             className="col-span-full grid grid-cols-subgrid items-baseline py-0.75 font-mono text-[12.5px]"
           >
-            <SpreadDot commit={commit} />
+            <HeldOnDot commit={commit} />
             <span className="truncate text-ink-muted" title={commit.subject}>
               {commit.url === null ? (
                 commit.subject

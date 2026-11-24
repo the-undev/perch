@@ -1,4 +1,4 @@
-// Times on the detail page and the settings page, in the speech's duration words, measured to a
+// Times on the bird's page and the settings page, in the speech's duration words, measured to a
 // moment the caller passes: components hold no clock.
 
 import { hoursWords } from "@perch/core/speech.ts";

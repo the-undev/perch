@@ -41,13 +41,13 @@ const stages: Stage[] = [
     name: "View model",
     where: "in memory, at render",
     writtenBy: "deriveAviary · src/viewmodel.ts, src/speech.ts",
-    types: ["Aviary", "Wire", "Fence", "Bird", "Bubble", "Detail"],
+    types: ["Aviary", "Wire", "Fence", "Bird", "Bubble", "BirdPage"],
     reads: "One snapshot and the config, by pure functions.",
   },
   {
     name: "Renderer",
     where: "packages/ui, apps/desktop",
-    writtenBy: "AviaryView, DetailView, CameraView",
+    writtenBy: "AviaryView, BirdPageView, CameraView",
     types: [],
     reads: "The view model only, and the clock for the sky.",
   },
@@ -193,7 +193,7 @@ export function ChainPage() {
         <FunctionTable file="src/speech.ts" />
         <Declarations
           file="src/viewmodel.ts"
-          names={["Aviary", "Wire", "Fence", "Bird", "Bubble", "Detail"]}
+          names={["Aviary", "Wire", "Fence", "Bird", "Bubble", "BirdPage"]}
         />
       </Part>
     </>

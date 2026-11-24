@@ -55,10 +55,10 @@ export function isSnoozed(bird: BirdModel, now: Date): boolean {
 }
 
 /** The word beside a bird's name: its mood, where a fence bird stands, or that it is snoozed. */
-export type StateWord = Mood | "not adopted" | "snoozed";
+export type StatePhrase = Mood | "not adopted" | "snoozed";
 
-/** The text colour of each state word, where the word is written. */
-export const stateTone: Record<StateWord, string> = {
+/** The text colour of each state phrase, where the word is written. */
+export const stateTone: Record<StatePhrase, string> = {
   content: "text-green",
   restless: "text-amber",
   distressed: "text-red",
@@ -71,7 +71,7 @@ export type BirdMark = "z" | "note" | null;
 
 /** What the drawing needs to know, worked out at render from the view model and the time. */
 export interface BirdLook {
-  stateWord: StateWord;
+  statePhrase: StatePhrase;
   /** The snooze's end in words while snoozed, such as "until Friday"; else null. */
   snoozedUntil: string | null;
   breast: string;
@@ -86,12 +86,12 @@ export interface BirdLook {
 
 /** A dimmed bird that does not wear its mood: awake with a gentle bob, or asleep. */
 function dimLook(
-  stateWord: StateWord,
+  statePhrase: StatePhrase,
   snoozedUntil: string | null,
   asleep: boolean,
 ): BirdLook {
   return {
-    stateWord,
+    statePhrase,
     snoozedUntil,
     breast: "var(--color-breast-dim)",
     dim: true,
@@ -110,7 +110,7 @@ export function birdLook(bird: BirdModel, now: Date): BirdLook {
     return dimLook("snoozed", snoozeWords(bird.snooze.until, now), true);
   }
   const awake = {
-    stateWord: bird.mood,
+    statePhrase: bird.mood,
     snoozedUntil: null,
     breast: moodColour[bird.mood],
     dim: false,
@@ -478,7 +478,7 @@ export function BirdPortrait({ bird, facing, now }: BirdPortraitProps) {
   return (
     <svg
       role="img"
-      aria-label={`${bird.name}, ${look.stateWord}${look.asleep ? ", asleep" : ""}`}
+      aria-label={`${bird.name}, ${look.statePhrase}${look.asleep ? ", asleep" : ""}`}
       viewBox={`${-half} ${-top} ${frame.width} ${frame.height}`}
       width={frame.width}
       height={frame.height}

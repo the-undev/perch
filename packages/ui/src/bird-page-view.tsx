@@ -4,11 +4,11 @@
 // bubble at its reading width, and the bird sitting on its perch at the right. It never scrolls.
 // Beneath it the ground holds two panes that each scroll their own contents: the record (the ledger
 // and its sections) and the key files on paper, or for a bird with no local repository here the
-// slip saying so; in a narrow page they join into one pane, the paper at the end. The adoption
+// slip saying so; in a narrow page they join into one pane, the sheets at the end. The adoption
 // papers rise as a sheet over both panes, which dim and go inert while the band stays live. A chip
-// pressed in the roost's bubble lands on the ledger row holding its working, or the can't-read chip
+// pressed in the roost's bubble lands on the ledger row holding its reading, or the can't-read chip
 // on the notice, as does the chip pressed in the aviary's bubble that brought the camera here. A
-// bug line pressed in the ledger opens its file on the paper at that line. Only what exists is
+// bug line pressed in the ledger opens its file on the sheet at that line. Only what exists is
 // shown. The view fetches nothing: key-file contents, launching, the clipboard and the papers' form
 // and writes are the caller's.
 
@@ -21,19 +21,24 @@ import type {
   Bird,
   ChipKind,
   LaunchAction,
-  PaperLine,
   RemoteNotice,
+  SheetLine,
 } from "@perch/core/viewmodel.ts";
 import { useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { actionClass, LaunchActions, LinksOut } from "./actions.tsx";
 import { AdoptionPapers } from "./adoption-papers.tsx";
 import { birdLook } from "./bird.tsx";
-import { DetailHeading } from "./detail-heading.tsx";
+import { BirdPageHeading } from "./bird-page-heading.tsx";
 import { Icon } from "./icons.tsx";
 import {
+  type KeyFileSheet,
+  KeyFileSheets,
+  type Reveal,
+} from "./key-file-sheets.tsx";
+import {
   BranchLines,
-  CommitRiver,
+  CommitHistory,
   FlagLines,
   type Landing,
   LandingMark,
@@ -46,12 +51,11 @@ import {
   NoLocalRepositoryClause,
   NoLocalRepositorySlip,
 } from "./no-local-repository-slip.tsx";
-import { KeyFilePaper, type KeyFileSheet, type Reveal } from "./paper.tsx";
 import { RisingSheet } from "./rising-sheet.tsx";
 import { Roost } from "./roost.tsx";
 import { SnoozeAction, type SnoozeCalls } from "./snooze-action.tsx";
 
-/** What the detail page needs to adopt its bird or amend its papers. */
+/** What the bird's page needs to adopt its bird or amend its papers. */
 export interface PapersControls {
   /** The open bird's papers and the form's choices; null until read, when no control shows. */
   form: PapersForm | null;
@@ -61,7 +65,7 @@ export interface PapersControls {
   onRemove: (birdId: string) => void;
 }
 
-export interface DetailViewProps {
+export interface BirdPageViewProps {
   bird: Bird;
   /** The render's clock: ages are measured to it, and the bird's look follows the hour. */
   now: Date;
@@ -181,7 +185,7 @@ function RemoteNotices({
   );
 }
 
-/** Scrolls the element holding a chip's working to the middle of its own pane. */
+/** Scrolls the element holding a chip's reading to the middle of its own pane. */
 function scrollToChip(article: HTMLElement | null, chip: ChipKind) {
   article
     ?.querySelector(`[data-chip="${chip}"]`)
@@ -196,10 +200,10 @@ const paneClass =
  * The whole project page as a fixed stage, centred as one block. The band at the top holds still:
  * from 860px one row, the heading taking what the roost leaves and the roost only as wide as its
  * bubble and bird need; narrower, the roost beneath the heading in a centred column. Beneath it the record
- * pane and the paper pane each scroll their own contents when the page is wide enough; narrower,
+ * pane and the sheets pane each scroll their own contents when the page is wide enough; narrower,
  * they join into one pane, the key files at the record's end. It fills a flex column.
  */
-export function DetailView({
+export function BirdPageView({
   bird,
   now,
   onLaunch,
@@ -213,8 +217,8 @@ export function DetailView({
   onLocalSources,
   onCopy,
   panning,
-}: DetailViewProps) {
-  const { detail } = bird;
+}: BirdPageViewProps) {
+  const { page } = bird;
   const [open, setOpen] = useState(openPapers);
   const [asked, setAsked] = useState(openPapers);
   if (openPapers !== asked) {
@@ -267,9 +271,9 @@ export function DetailView({
     });
     scrollToChip(articleRef.current, chip);
   };
-  // A bug line pressed in the ledger shows its line on the paper.
+  // A bug line pressed in the ledger shows its line on the sheet.
   const [reveal, setReveal] = useState<Reveal | null>(null);
-  const revealLine = (at: PaperLine) =>
+  const revealLine = (at: SheetLine) =>
     setReveal((last) => ({ at, press: (last?.press ?? 0) + 1 }));
   const [swaps] = useState(!panning);
   return (
@@ -286,7 +290,7 @@ export function DetailView({
           data-part="heading"
           className="min-w-0 @min-[860px]:flex-[1_1_22rem]"
         >
-          <DetailHeading
+          <BirdPageHeading
             bird={bird}
             now={now}
             actions={
@@ -294,17 +298,17 @@ export function DetailView({
                 data-part="actions"
                 className="flex flex-wrap items-center gap-1"
               >
-                {detail.noLocalRepository?.onMetaLine && (
+                {page.noLocalRepository?.onMetaLine && (
                   <NoLocalRepositoryClause />
                 )}
-                <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
+                <LaunchActions actions={page.actions} onLaunch={onLaunch} />
                 <SnoozeAction
                   bird={bird}
                   look={birdLook(bird, now)}
                   place="page"
                   calls={snooze}
                 />
-                <LinksOut links={detail.links} />
+                <LinksOut links={page.links} />
                 {agreed !== null && (
                   <PapersVerb
                     adopt={agreed.values === null}
@@ -316,7 +320,7 @@ export function DetailView({
             }
           />
           <RemoteNotices
-            notices={detail.notices}
+            notices={page.notices}
             landing={landing}
             onSettings={onSettings}
           />
@@ -359,15 +363,15 @@ export function DetailView({
       >
         <div data-part="record" className={paneClass}>
           <Ledger
-            quiet={detail.quiet}
-            facts={detail.ledger}
+            quiet={page.quiet}
+            facts={page.ledger}
             now={now}
             landing={landing}
             onReveal={revealLine}
           />
-          {detail.branches.length > 0 && (
+          {page.branches.length > 0 && (
             <BranchLines
-              branches={detail.branches}
+              branches={page.branches}
               now={now}
               chip={
                 bird.bubble.chips.some((chip) => chip.kind === "stalled")
@@ -377,26 +381,26 @@ export function DetailView({
               landing={landing}
             />
           )}
-          {detail.river.commits.length > 0 && (
-            <CommitRiver river={detail.river} now={now} />
+          {page.history.commits.length > 0 && (
+            <CommitHistory history={page.history} now={now} />
           )}
-          {detail.pullRequests.length > 0 && (
-            <PullRequestLines pullRequests={detail.pullRequests} now={now} />
+          {page.pullRequests.length > 0 && (
+            <PullRequestLines pullRequests={page.pullRequests} now={now} />
           )}
-          {detail.flags.length > 0 && <FlagLines flags={detail.flags} />}
-          {detail.problems.length > 0 && (
-            <SourceProblems problems={detail.problems} />
+          {page.flags.length > 0 && <FlagLines flags={page.flags} />}
+          {page.problems.length > 0 && (
+            <SourceProblems problems={page.problems} />
           )}
         </div>
-        <div data-part="paper" className={paneClass}>
-          {detail.noLocalRepository !== null && (
+        <div data-part="sheets" className={paneClass}>
+          {page.noLocalRepository !== null && (
             <NoLocalRepositorySlip
-              slip={detail.noLocalRepository}
+              slip={page.noLocalRepository}
               onLocalSources={onLocalSources}
               onCopy={onCopy}
             />
           )}
-          <KeyFilePaper sheets={sheets} reveal={reveal} />
+          <KeyFileSheets sheets={sheets} reveal={reveal} />
         </div>
       </div>
     </article>

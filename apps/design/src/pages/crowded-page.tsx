@@ -135,7 +135,7 @@ export function CrowdedPage() {
               aviary={crowdedFence(liveFence)}
               now={scanMoment}
               place={{
-                at: "detail",
+                at: "birdPage",
                 birdId: "fence/0",
                 papers: false,
                 chip: null,

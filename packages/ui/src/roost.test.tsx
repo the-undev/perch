@@ -115,7 +115,7 @@ describe("the roost", () => {
     }
   });
 
-  it("speaks the bubble's speech and chips, with no name, state word or key beside the chips", () => {
+  it("speaks the bubble's speech and chips, with no name, state phrase or key beside the chips", () => {
     const prism = mockBird("undev/prism");
     const { section } = roost(prism);
     const bubble = within(section).getByRole("region", {

@@ -16,9 +16,9 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DetailView } from "./detail-view.tsx";
+import { BirdPageView } from "./bird-page-view.tsx";
+import type { KeyFileSheet } from "./key-file-sheets.tsx";
 import { mockBird, mockHome, mockPapersForm } from "./mock-birds.ts";
-import type { KeyFileSheet } from "./paper.tsx";
 import { roostColumnWidth, roostFrame } from "./roost.tsx";
 
 afterEach(cleanup);
@@ -113,7 +113,7 @@ function page(bird: Bird, options: PageOptions = {}) {
   const onSnooze = vi.fn();
   const onWake = vi.fn();
   const view = (next: Bird, given: PageOptions) => (
-    <DetailView
+    <BirdPageView
       bird={next}
       now={now}
       onLaunch={onLaunch}
@@ -187,7 +187,7 @@ function headings(): string[] {
     .map((heading) => heading.textContent ?? "");
 }
 
-describe("the detail view", () => {
+describe("the bird's page", () => {
   it("continues the bird's mood and speech, then its ledger in full words", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch);
@@ -195,7 +195,7 @@ describe("the detail view", () => {
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Perch");
     expect(container.textContent).toContain(perch.bubble.speech);
     expect(ledgerRows(container)).toEqual(
-      perch.detail.ledger.map((fact) => [
+      perch.page.ledger.map((fact) => [
         fact.label,
         fact.kind === "time" ? expect.stringMatching(/ ago$/) : fact.text,
       ]),
@@ -219,7 +219,7 @@ describe("the detail view", () => {
     expect(container.querySelectorAll('[data-part="figure"]')).toHaveLength(1);
   });
 
-  it("says the name and state word once, in the heading, and the speech once, in the roost's bubble", () => {
+  it("says the name and state phrase once, in the heading, and the speech once, in the roost's bubble", () => {
     const prism = mockBird("undev/prism");
     const { container } = page(prism);
     const bubble = screen.getByRole("region", { name: "Prism says" });
@@ -301,7 +301,7 @@ describe("the detail view", () => {
     expect(actions.queryByRole("button", { name: "Wake" })).toBeNull();
   });
 
-  it("lands a pressed chip on the ledger row holding its working: scrolled to the middle and marked", () => {
+  it("lands a pressed chip on the ledger row holding its reading: scrolled to the middle and marked", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch);
     const bubble = screen.getByRole("region", { name: "Perch says" });
@@ -331,18 +331,18 @@ describe("the detail view", () => {
     expect(markedRow()).toBe("pull-requests");
   });
 
-  it("shows a pressed bug line on the paper: its file's tab open and its line scrolled to the middle and marked", () => {
+  it("shows a pressed bug line on the sheet: its file's tab open and its line scrolled to the middle and marked", () => {
     const hothouse = mockBird("obsidian/Hothouse");
     const { container } = page(hothouse, {
-      sheets: hothouse.detail.keyFiles.map((file) => ({
+      sheets: hothouse.page.keyFiles.map((file) => ({
         file,
         markdown: "- bug 1\n- task 2\n",
       })),
     });
     const record = container.querySelector('[data-part="record"]');
-    const paper = container.querySelector('[data-part="paper"]');
-    if (record === null || paper === null) {
-      throw new Error("the page has a record and a paper pane");
+    const sheetsPane = container.querySelector('[data-part="sheets"]');
+    if (record === null || sheetsPane === null) {
+      throw new Error("the page has a record and a sheets pane");
     }
 
     fireEvent.click(
@@ -350,10 +350,10 @@ describe("the detail view", () => {
     );
 
     expect(
-      within(paper as HTMLElement).getByRole("tab", { selected: true })
+      within(sheetsPane as HTMLElement).getByRole("tab", { selected: true })
         .textContent,
     ).toBe("Tech/Tech Plans.md");
-    const revealed = paper.querySelector("[data-revealed]");
+    const revealed = sheetsPane.querySelector("[data-revealed]");
     expect(revealed?.textContent).toBe("bug 1");
     expect(scrolled).toEqual([{ element: revealed, options: landingOptions }]);
     expect(markedAtScroll).toEqual([true]);
@@ -434,7 +434,7 @@ describe("the detail view", () => {
     const pergolaNotes = () => mockBird("forgejo:finch/field-notes");
     const slipOf = (container: HTMLElement) =>
       container.querySelector(
-        '[data-part="paper"] [data-part="no-local-repository-slip"]',
+        '[data-part="sheets"] [data-part="no-local-repository-slip"]',
       );
 
     it("lays the slip where the key files would be: stamped, the fact, the route naming the repository, and Open Sources", () => {
@@ -503,13 +503,13 @@ describe("the detail view", () => {
 
     it("leaves the address row out while the address is unknown", () => {
       const bird = pergolaNotes();
-      const noLocalRepository = bird.detail.noLocalRepository;
+      const noLocalRepository = bird.page.noLocalRepository;
       if (noLocalRepository === null)
         throw new Error("pergola notes has its slip");
       const { container } = page({
         ...bird,
-        detail: {
-          ...bird.detail,
+        page: {
+          ...bird.page,
           noLocalRepository: { ...noLocalRepository, sshAddress: null },
         },
       });
@@ -529,7 +529,7 @@ describe("the detail view", () => {
 
     it("says no local repository on the meta line where the actions would be, only while config holds an action", () => {
       const bird = pergolaNotes();
-      const noLocalRepository = bird.detail.noLocalRepository;
+      const noLocalRepository = bird.page.noLocalRepository;
       if (noLocalRepository === null)
         throw new Error("pergola notes has its slip");
       const clause = (container: HTMLElement) =>
@@ -543,8 +543,8 @@ describe("the detail view", () => {
       cleanup();
       const silent = page({
         ...bird,
-        detail: {
-          ...bird.detail,
+        page: {
+          ...bird.page,
           noLocalRepository: { ...noLocalRepository, onMetaLine: false },
         },
       });
@@ -700,7 +700,7 @@ describe("the detail view", () => {
     expect(following(band, panes)).toBeTruthy();
     expect(band.contains(panes)).toBe(false);
     expect(panes.contains(part("record"))).toBe(true);
-    expect(panes.contains(part("paper"))).toBe(true);
+    expect(panes.contains(part("sheets"))).toBe(true);
     expect(classes(panes)).toContain("min-h-0");
     expect(classes(panes.parentElement)).toEqual(
       expect.arrayContaining([
@@ -752,10 +752,10 @@ describe("the detail view", () => {
     const actions = container.querySelector('[data-part="actions"]');
     const verbs = [...(actions?.querySelectorAll("button, a") ?? [])];
 
-    expect(perch.detail.actions.length).toBeGreaterThanOrEqual(2);
-    expect(perch.detail.links.length).toBeGreaterThanOrEqual(2);
+    expect(perch.page.actions.length).toBeGreaterThanOrEqual(2);
+    expect(perch.page.links.length).toBeGreaterThanOrEqual(2);
     expect(verbs).toHaveLength(
-      perch.detail.actions.length + perch.detail.links.length + 2,
+      perch.page.actions.length + perch.page.links.length + 2,
     );
     expect(verbs.map((verb) => verb.textContent).at(-1)).toBe("The papers");
     // The snooze verb sits in a holder of its own, which places its durations beneath it.
@@ -849,27 +849,27 @@ describe("the detail view", () => {
     ).toContain("@min-[460px]:hidden");
   });
 
-  it("holds the key files in the paper pane beside the record, with no height cap of their own", () => {
+  it("holds the key files in the sheets pane beside the record, with no height cap of their own", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch, {
-      sheets: perch.detail.keyFiles.map((file) => ({
+      sheets: perch.page.keyFiles.map((file) => ({
         file,
         markdown: `# ${file.path}\n`,
       })),
     });
-    const paper = container.querySelector('[data-part="paper"]');
+    const sheetsPane = container.querySelector('[data-part="sheets"]');
     const record = container.querySelector('[data-part="record"]');
     const sheet = screen.getByRole("tabpanel");
 
-    expect(paper?.contains(screen.getByRole("tablist"))).toBe(true);
-    expect(paper?.contains(sheet)).toBe(true);
+    expect(sheetsPane?.contains(screen.getByRole("tablist"))).toBe(true);
+    expect(sheetsPane?.contains(sheet)).toBe(true);
     expect(record?.querySelector('[role="tablist"]')).toBeNull();
-    expect(paper?.className.split(" ")).toContain(
+    expect(sheetsPane?.className.split(" ")).toContain(
       "@min-[960px]:overflow-y-auto",
     );
     for (
       let link: Element | null = sheet;
-      link !== paper && link !== null;
+      link !== sheetsPane && link !== null;
       link = link.parentElement
     ) {
       expect(link.className).not.toMatch(/max-h|overflow/);
@@ -880,7 +880,7 @@ describe("the detail view", () => {
     const { container } = page(mockBird("dev/perch"));
     const panes = container.querySelector('[data-part="panes"]');
     const record = container.querySelector('[data-part="record"]');
-    const paper = container.querySelector('[data-part="paper"]');
+    const sheetsPane = container.querySelector('[data-part="sheets"]');
     const classes = (element: Element | null) =>
       element?.className.split(" ") ?? [];
 
@@ -892,7 +892,7 @@ describe("the detail view", () => {
         "@min-[960px]:grid-cols-[minmax(350px,450px)_minmax(0,1fr)]",
       ]),
     );
-    for (const pane of [record, paper]) {
+    for (const pane of [record, sheetsPane]) {
       expect(classes(pane)).not.toContain("overflow-y-auto");
       expect(classes(pane)).toContain("@min-[960px]:overflow-y-auto");
     }
@@ -900,7 +900,7 @@ describe("the detail view", () => {
       [...(panes?.children ?? [])].map((child) =>
         child.getAttribute("data-part"),
       ),
-    ).toEqual(["record", "paper"]);
+    ).toEqual(["record", "sheets"]);
   });
 
   it("keeps a main-process problem in the fixed band, whatever the record's scroll", () => {
@@ -935,7 +935,7 @@ describe("the detail view", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Open the folder/ }));
 
-    expect(onLaunch).toHaveBeenCalledWith(perch.detail.actions[2]);
+    expect(onLaunch).toHaveBeenCalledWith(perch.page.actions[2]);
     expect(
       screen.getByRole("link", { name: /finch\/perch on GitHub/ }),
     ).toBeDefined();
@@ -956,9 +956,9 @@ describe("the detail view", () => {
 
     page({
       ...perch,
-      detail: {
-        ...perch.detail,
-        river: { ...perch.detail.river, commits: [] },
+      page: {
+        ...perch.page,
+        history: { ...perch.page.history, commits: [] },
       },
     });
     expect(headings()).not.toContain(
@@ -986,10 +986,10 @@ describe("the detail view", () => {
     ).toBeDefined();
   });
 
-  it("puts the key files the caller read on paper", () => {
+  it("puts the key files the caller read as sheets", () => {
     const perch = mockBird("dev/perch");
     page(perch, {
-      sheets: perch.detail.keyFiles.map((file) => ({
+      sheets: perch.page.keyFiles.map((file) => ({
         file,
         markdown: `# ${file.path}\n`,
       })),
@@ -1162,7 +1162,7 @@ describe("the detail view", () => {
     expect(panes?.hasAttribute("inert")).toBe(true);
     expect(panes?.classList.contains("opacity-25")).toBe(true);
     expect(panes?.contains(sheet)).toBe(false);
-    for (const pane of ["record", "paper"]) {
+    for (const pane of ["record", "sheets"]) {
       expect(
         container.querySelector(`[data-part="${pane}"]`)?.closest("[inert]"),
       ).toBe(panes);

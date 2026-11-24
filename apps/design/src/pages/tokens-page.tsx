@@ -56,7 +56,7 @@ export function TokensPage() {
       >
         <Specimen
           label="Surfaces"
-          rule="Page, header rail, bands, panels, the detail page's ground."
+          rule="Page, header rail, bands, panels, the bird's page's ground."
         >
           <Swatches
             tokens={["bg", "rail", "band", "panel", "panel-hi", "ground"]}
@@ -180,7 +180,7 @@ export function TokensPage() {
         </Specimen>
         <Specimen
           label="Mood on paper"
-          rule="The bubble's state word, darker so it reads on the light sheet."
+          rule="The bubble's state phrase, darker so it reads on the light sheet."
         >
           <Swatches tokens={["paper-green", "paper-amber", "paper-red"]} />
         </Specimen>

@@ -204,7 +204,7 @@ export function BubblePage() {
 
       <Section
         title="Snoozed"
-        rule="A snoozed bird's state word is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours. A Wake action takes the Snooze action's place, and pressing it wakes the bird and closes the bubble."
+        rule="A snoozed bird's state phrase is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours. A Wake action takes the Snooze action's place, and pressing it wakes the bird and closes the bubble."
         min={440}
       >
         <Specimen
@@ -253,12 +253,12 @@ export function BubblePage() {
           {
             name: "look",
             type: "BirdLook",
-            what: "birdLook(bird, now): the state word, a snooze's end in words, and closed eyes, which give the speech the waking prefix.",
+            what: "birdLook(bird, now): the state phrase, a snooze's end in words, and closed eyes, which give the speech the waking prefix.",
           },
           {
             name: "actions",
             type: "LaunchAction[]",
-            what: "bird.detail.actions, shown as icon buttons titled with their verbs.",
+            what: "bird.page.actions, shown as icon buttons titled with their verbs.",
           },
           {
             name: "onLaunch",
@@ -273,7 +273,7 @@ export function BubblePage() {
           {
             name: "onFullStory",
             type: "() => void",
-            what: "Rides the camera down to the bird's detail page.",
+            what: "Rides the camera down to the bird's page.",
           },
           {
             name: "onAdopt",
@@ -283,7 +283,7 @@ export function BubblePage() {
           {
             name: "onChip",
             type: "(chip: ChipKind) => void",
-            what: "A chip was pressed: the camera rides to the bird's page, which lands on the ledger row holding the chip's working and marks it, as a press on the page's own bubble does.",
+            what: "A chip was pressed: the camera rides to the bird's page, which lands on the ledger row holding the chip's reading and marks it, as a press on the page's own bubble does.",
           },
           {
             name: "tail",
@@ -318,7 +318,7 @@ export function BubblePage() {
           its place (bubble or page) and the <Code>SnoozeCalls</Code>. A
           pick&apos;s end date is counted from <Code>pickedAt</Code>, the moment
           of the pick. The look decides the action: snoozed offers Wake, not
-          adopted offers neither, any other state word Snooze. The durations
+          adopted offers neither, any other state phrase Snooze. The durations
           exist only there: a pick becomes an end date with{" "}
           <Code>snoozeEndDate</Code>, or null for indefinitely, and goes to{" "}
           <Code>onSnooze(birdId, until)</Code>. The bird&apos;s page carries the

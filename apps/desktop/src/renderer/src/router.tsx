@@ -41,7 +41,7 @@ const aviaryRoute = createRoute({
 
 /**
  * What a bird's URL can carry beyond its id: papers=true unfolds its adoption papers, and
- * chip=<kind> lands on the ledger row holding that chip's working.
+ * chip=<kind> lands on the ledger row holding that chip's reading.
  */
 export interface BirdSearch {
   papers?: true;
@@ -58,7 +58,7 @@ export function birdSearch(search: Record<string, unknown>): BirdSearch {
 }
 
 /**
- * One bird's detail; the rest of the path is its id, which holds slashes ("dev/perch"). The
+ * One bird's page; the rest of the path is its id, which holds slashes ("dev/perch"). The
  * search says whether its papers unfold as the page opens, and which chip's row it lands on.
  */
 const birdRoute = createRoute({

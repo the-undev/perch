@@ -73,7 +73,7 @@ const birdNotes: Note[] = [
 
 const bubbleNotes: Note[] = [
   {
-    title: "Name and state word · the same health, spoken",
+    title: "Name and state phrase · the same health, spoken",
     text: 'The display name, and the word for the mood the breast wears, in its colour on paper: content, restless or distressed. A fence bird says "not adopted" and a snoozed bird "snoozed", quietly, with when its snooze ends beneath.',
     rule: "Never a second status: the colour and the word read from one derivation.",
   },
@@ -84,7 +84,7 @@ const bubbleNotes: Note[] = [
   },
   {
     title: "Chips · the numbers it carries",
-    text: "In a fixed order: can't read, CI, bugs, uncommitted, unpushed, stalled, pull requests, open work items. A chip is plain when its fact is not judged, amber or red when it is. Each is a handle: pressed, it rides the camera to the bird's page and lands on the ledger row holding its working.",
+    text: "In a fixed order: can't read, CI, bugs, uncommitted, unpushed, stalled, pull requests, open work items. A chip is plain when its fact is not judged, amber or red when it is. Each is a handle: pressed, it rides the camera to the bird's page and lands on the ledger row holding its reading.",
     rule: "A zero or an absent source shows no chip; a fence bird carries none.",
   },
   {

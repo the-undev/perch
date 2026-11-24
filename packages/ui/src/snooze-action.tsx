@@ -10,7 +10,7 @@ import {
 } from "@perch/core/snooze-date.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
-import type { BirdLook, StateWord } from "./bird.tsx";
+import type { BirdLook, StatePhrase } from "./bird.tsx";
 import { Icon } from "./icons.tsx";
 
 /** The calls the control makes to the main process, and the clock it reads at each pick. */
@@ -34,8 +34,8 @@ const durations: SnoozeDuration[] = [
   "1 month",
 ];
 
-/** The action a state word offers: none on the fence, wake while snoozed, else snooze. */
-const offered: Record<StateWord, "snooze" | "wake" | null> = {
+/** The action a state phrase offers: none on the fence, wake while snoozed, else snooze. */
+const offered: Record<StatePhrase, "snooze" | "wake" | null> = {
   content: "snooze",
   restless: "snooze",
   distressed: "snooze",
@@ -124,7 +124,7 @@ export function SnoozeAction({ bird, look, place, calls }: SnoozeActionProps) {
     if (open) menuItems(menuRef.current)[0]?.focus();
   }, [open]);
 
-  const action = offered[look.stateWord];
+  const action = offered[look.statePhrase];
   if (action === null) return null;
   if (action === "wake") {
     return (

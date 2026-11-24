@@ -64,7 +64,7 @@ const restless = entity("dev/harbour", {
     git: gitData({
       unpushedCount: 2,
       workState: "committed",
-      drift: {
+      unsafeWork: {
         uncommitted: null,
         unpushed: aged(40, "amber"),
         level: "amber",
@@ -141,7 +141,7 @@ describe("mood", () => {
         git: gitData({
           uncommittedCount: 4,
           workState: "uncommitted",
-          drift: {
+          unsafeWork: {
             uncommitted: aged(60, "amber"),
             unpushed: null,
             level: "amber",
@@ -202,7 +202,7 @@ describe("mood", () => {
           branch: "spec",
           uncommittedCount: 2,
           workState: "uncommitted",
-          drift: {
+          unsafeWork: {
             uncommitted: aged(3, "green"),
             unpushed: null,
             level: "green",
@@ -435,7 +435,7 @@ describe("chips", () => {
         git: gitData({
           uncommittedCount: 4,
           unpushedCount: 1,
-          drift: {
+          unsafeWork: {
             uncommitted: aged(80, "red"),
             unpushed: aged(3, "green"),
             level: "red",
@@ -491,7 +491,7 @@ describe("chips", () => {
 
   it("wear a stalled chip at the stall's level, after unpushed, and none for a stall still green", async () => {
     const config = await testConfig('[papers."dev/prism"]\n');
-    const parked = (days: number, level: "green" | "amber" | "red") =>
+    const stalled = (days: number, level: "green" | "amber" | "red") =>
       entity("dev/prism", {
         sources: {
           git: gitData({
@@ -506,7 +506,7 @@ describe("chips", () => {
         },
       });
     const chipsOf = (days: number, level: "green" | "amber" | "red") =>
-      birdIn([parked(days, level)], config, "dev/prism").bubble.chips.map(
+      birdIn([stalled(days, level)], config, "dev/prism").bubble.chips.map(
         (chip) => [chip.kind, chip.label, chip.count, chip.severity],
       );
 
@@ -602,7 +602,7 @@ describe("the ledger", () => {
               work: aged(40, "amber"),
             },
           ],
-          drift: {
+          unsafeWork: {
             uncommitted: null,
             unpushed: aged(40, "amber"),
             level: "amber",
@@ -788,7 +788,7 @@ describe("the unpushed commits row", () => {
             work: aged(500, "red"),
           },
         ],
-        drift: {
+        unsafeWork: {
           uncommitted: null,
           unpushed: aged(500, "red"),
           level: "red",
@@ -949,7 +949,7 @@ describe("the ledger's quiet sentence", () => {
       "dev/prism",
       "dev/fresh",
       "dev/unread",
-      "dev/parked",
+      "dev/stalled",
       "github:finch/history",
     ]);
     const fresh = entity("dev/fresh", {
@@ -958,8 +958,8 @@ describe("the ledger's quiet sentence", () => {
     const unread = entity("dev/unread", {
       sources: { git: { error: "not a git repository" } },
     });
-    // Clean and pushed, but parked: the stall lives in health, never on a ledger row.
-    const parked = entity("dev/parked", {
+    // Clean and pushed, but stalled: the stall lives in health, never on a ledger row.
+    const stalled = entity("dev/stalled", {
       sources: {
         git: gitData({
           stall: {
@@ -977,7 +977,7 @@ describe("the ledger's quiet sentence", () => {
       repositories: { local: null, forges: [] },
       sources: { github: forgeData({}) },
     });
-    const entities = [restless, distressed, fresh, unread, parked, forgeOnly];
+    const entities = [restless, distressed, fresh, unread, stalled, forgeOnly];
 
     expect(
       entities.map(
@@ -1331,7 +1331,7 @@ describe("the ledger's readings", () => {
     ]);
   });
 
-  it("adds no mood line to a row within its window, and a restless or distressed one at its window's count, from per-entity overrides when set", async () => {
+  it("adds no mood line to a row within its thresholds, and a restless or distressed one at its threshold's count, from per-entity overrides when set", async () => {
     const config = await adoptAll(["dev/hollow"]);
     const lineOf = (
       counts: { bug: number; criticalBug: number },
@@ -1380,7 +1380,7 @@ describe("the ledger's readings", () => {
     ]);
   });
 
-  it("leaves tasks out of health however many there are, and judges against the windows the roadmap carries", async () => {
+  it("leaves tasks out of health however many there are, and judges against the thresholds the roadmap carries", async () => {
     const config = await adoptAll(["dev/hollow"]);
     const busy = (bug: number) =>
       entity("dev/hollow", {
@@ -1406,7 +1406,7 @@ describe("the ledger's readings", () => {
     });
   });
 
-  it("gives a file within its windows uncoloured chips, and none for a kind with nothing open", async () => {
+  it("gives a file within its thresholds uncoloured chips, and none for a kind with nothing open", async () => {
     const config = await adoptAll(["dev/hollow"]);
     const chipsOf = (files: Parameters<typeof mockRoadmap>[0]) =>
       birdIn(
@@ -1477,14 +1477,14 @@ describe("the ledger's readings", () => {
     expect([bird.health.causes, bird.plumpness.outstanding]).toEqual([[], 0]);
   });
 
-  it("ages uncommitted changes from the oldest, toned by its window", async () => {
+  it("ages uncommitted changes from the oldest, toned by its thresholds", async () => {
     const config = await adoptAll(["dev/gramophone"]);
     const gramophone = entity("dev/gramophone", {
       sources: {
         git: gitData({
           uncommittedCount: 14,
           workState: "uncommitted",
-          drift: {
+          unsafeWork: {
             uncommitted: aged(123, "red"),
             unpushed: null,
             level: "red",

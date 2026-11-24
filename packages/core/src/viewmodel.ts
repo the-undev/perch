@@ -100,7 +100,7 @@ export type HealthCause =
       kind: "stalled";
       level: HealthLevel;
       stall: Stall;
-      /** Nothing uncommitted and nothing unpushed while parked. */
+      /** Nothing uncommitted and nothing unpushed while stalled. */
       everythingPushed: boolean;
     };
 
@@ -715,10 +715,10 @@ function roadmapReadings(
 function moodReadings(
   source: string,
   level: HealthLevel,
-  window: CountThresholds,
+  thresholds: CountThresholds,
 ): Reading[] {
   if (level === "green") return [];
-  const atCount = level === "red" ? window.redCount : window.amberCount;
+  const atCount = level === "red" ? thresholds.redCount : thresholds.amberCount;
   return [
     {
       source,
@@ -750,7 +750,7 @@ function openWorkItemReadings(
 
 /**
  * Each roadmap file's open bugs, then its open critical bugs when it has any, toned by their
- * windows, each row listing its open work items before its mood line. A row holds the bubble chip of its
+ * thresholds, each row listing its open work items before its mood line. A row holds the bubble chip of its
  * kind when the file has any open of that kind.
  */
 function bugRows(
@@ -837,7 +837,7 @@ function unpushedBranchReadings(
     }));
 }
 
-/** One chip per roadmap file and kind with open bugs, toned by its window; the path only when there are several files. */
+/** One chip per roadmap file and kind with open bugs, toned by its thresholds; the path only when there are several files. */
 function bugChips(roadmap: RoadmapData): Chip[] {
   return roadmap.files.flatMap((file) => {
     const levels = bugLevelsOf(file.counts, roadmap.thresholds);
@@ -987,9 +987,11 @@ function ledgerFor(
       countFact(
         "uncommitted changes",
         git.uncommittedCount,
-        git.drift.uncommitted ? severity(git.drift.uncommitted.level) : null,
+        git.unsafeWork.uncommitted
+          ? severity(git.unsafeWork.uncommitted.level)
+          : null,
         handle("uncommitted"),
-        agedReadings(git.drift.uncommitted, "oldest change"),
+        agedReadings(git.unsafeWork.uncommitted, "oldest change"),
       ),
     );
     if (git.backup === "local-only") {
@@ -1007,7 +1009,9 @@ function ledgerFor(
         countFact(
           "unpushed commits",
           git.unpushedCount,
-          git.drift.unpushed ? severity(git.drift.unpushed.level) : null,
+          git.unsafeWork.unpushed
+            ? severity(git.unsafeWork.unpushed.level)
+            : null,
           handle("unpushed"),
           unpushedBranchReadings(entity, git, config),
         ),

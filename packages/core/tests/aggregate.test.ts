@@ -124,7 +124,7 @@ describe("aggregate", () => {
     expect(later.entities[0]?.sources.git).toMatchObject({
       backup: "local-only",
       workState: "uncommitted",
-      drift: {
+      unsafeWork: {
         uncommitted: { hours: 72, level: "amber" },
         level: "amber",
         thresholds: { amberHours: 48, redHours: 96 },
@@ -146,7 +146,7 @@ describe("aggregate", () => {
     });
   });
 
-  it("classes work items by the word lists the entity's papers set, else [work], and judges them by its windows", async () => {
+  it("classes work items by the word lists the entity's papers set, else [work], and judges them by its thresholds", async () => {
     const worded = await testConfig(
       '[work]\nbug_words = ["defect"]\n\n[papers."dev/perch"]\ncritical_bug_words = ["outage"]\nbugs_red_count = 9\n',
     );

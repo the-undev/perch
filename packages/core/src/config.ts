@@ -19,7 +19,7 @@ import type {
   HourThresholds,
 } from "./snapshot.ts";
 
-/** The health windows: unsafe work in hours, stalled flight in days, open bugs and critical bugs in counts. */
+/** The health thresholds: unsafe work in hours, stalled flight in days, open bugs and critical bugs in counts. */
 export interface Thresholds {
   unsafe: HourThresholds;
   stalled: DayThresholds;
@@ -349,7 +349,7 @@ export function collapseHome(path: string, home: string): string {
   return path;
 }
 
-/** The threshold keys, the same globally and per entity, with the window and field each sets. */
+/** The threshold keys, the same globally and per entity, with the fact and field each sets. */
 export const thresholdKeys = [
   ["unsafe", "amberHours", "unsafe_amber_hours"],
   ["unsafe", "redHours", "unsafe_red_hours"],
@@ -369,9 +369,9 @@ export function noThresholdOverrides(): ThresholdOverrides {
 /** Reads the threshold keys present in a table. */
 function thresholdOverrides(source: Table, where: string): ThresholdOverrides {
   const overrides = noThresholdOverrides();
-  for (const [window, field, key] of thresholdKeys) {
+  for (const [fact, field, key] of thresholdKeys) {
     if (source[key] === undefined) continue;
-    Object.assign(overrides[window], {
+    Object.assign(overrides[fact], {
       [field]: positiveInteger(source[key], `${where}${key}`),
     });
   }
@@ -390,7 +390,7 @@ function applyOverrides(
   };
 }
 
-/** Amber must open before red, or the amber window would never show. */
+/** Amber must come before red, or amber would never show. */
 function checkOrder(thresholds: Thresholds, where: string): void {
   const pairs: [string, number, number][] = [
     ["unsafe", thresholds.unsafe.amberHours, thresholds.unsafe.redHours],
@@ -924,7 +924,7 @@ export function resolvePapers(
   };
 }
 
-/** The health windows for an entity: the global values with its papers' overrides applied. */
+/** The health thresholds for an entity: the global values with its papers' overrides applied. */
 export function thresholdsFor(
   config: Config,
   papers: Papers | null,

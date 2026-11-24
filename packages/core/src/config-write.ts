@@ -32,10 +32,8 @@ function sortedByKey<T>(record: Record<string, T>): Record<string, T> {
 /** The threshold keys a table sets, in the parser's key order. */
 function thresholdTable(thresholds: Thresholds | ThresholdOverrides): Table {
   const out: Table = {};
-  for (const [window, field, key] of thresholdKeys) {
-    const value = (thresholds[window] as Partial<Record<string, number>>)[
-      field
-    ];
+  for (const [fact, field, key] of thresholdKeys) {
+    const value = (thresholds[fact] as Partial<Record<string, number>>)[field];
     if (value !== undefined) out[key] = value;
   }
   return out;

@@ -324,7 +324,7 @@ describe("the settings editor", () => {
     expect(removeProjects().disabled).toBe(false);
   });
 
-  it("holds two windows on the Judgement page: unsafe work and stalled flight", () => {
+  it("holds two sets of thresholds on the Judgement page: unsafe work and stalled flight", () => {
     editor("judgement");
 
     expect(
@@ -347,9 +347,15 @@ describe("the settings editor", () => {
     expect(thresholds.getAllByText("days")).toHaveLength(2);
   });
 
-  it("says what each window counts and what the defaults are", () => {
+  it("says what each threshold counts and what the defaults are", () => {
     editor("judgement");
     const thresholds = group("Judgement");
+
+    expect(
+      thresholds.getByText(
+        "At the amber number the bird turns restless, at the red one distressed. Whole numbers above zero; a bird's papers may override either threshold.",
+      ),
+    ).toBeDefined();
 
     expect(
       thresholds.getByText(

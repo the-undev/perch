@@ -10,7 +10,7 @@ import {
   type PapersValues,
   papersProblems,
   type ThresholdKey,
-  thresholdWindows,
+  thresholdFacts,
 } from "@perch/core/papers-form.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { type ReactNode, useId, useState } from "react";
@@ -218,14 +218,14 @@ function PathList({
   );
 }
 
-/** One health window's amber and red overrides, each empty for the global value. */
+/** One fact's amber and red threshold overrides, each empty for the global value. */
 function ThresholdPair({
-  window,
+  fact,
   defaults,
   value,
   onChange,
 }: {
-  window: (typeof thresholdWindows)[number];
+  fact: (typeof thresholdFacts)[number];
   defaults: Record<ThresholdKey, number>;
   value: PapersValues["thresholds"];
   onChange: (value: PapersValues["thresholds"]) => void;
@@ -235,10 +235,10 @@ function ThresholdPair({
     onChange(Number.isNaN(next) ? rest : { ...rest, [key]: next });
   };
   const overridden =
-    value[window.amber] !== undefined || value[window.red] !== undefined;
+    value[fact.amber] !== undefined || value[fact.red] !== undefined;
   const field = (key: ThresholdKey, level: "amber" | "red") => (
     <ThresholdField
-      window={window}
+      fact={fact}
       level={level}
       value={value[key]}
       placeholder={String(defaults[key])}
@@ -247,18 +247,14 @@ function ThresholdPair({
   );
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-      {field(window.amber, "amber")}
-      {field(window.red, "red")}
+      {field(fact.amber, "amber")}
+      {field(fact.red, "red")}
       {overridden ? (
         <button
           type="button"
-          aria-label={`Clear ${window.label}`}
+          aria-label={`Clear ${fact.label}`}
           onClick={() => {
-            const {
-              [window.amber]: _amber,
-              [window.red]: _red,
-              ...rest
-            } = value;
+            const { [fact.amber]: _amber, [fact.red]: _red, ...rest } = value;
             onChange(rest);
           }}
           className={quietClass}
@@ -269,7 +265,7 @@ function ThresholdPair({
         <span className="text-[12px] text-ink-faint">default</span>
       )}
       <p className="m-0 basis-full max-w-[52ch] text-[12.5px] text-paper-quiet">
-        {window.counts}; empty follows the Judgement page.
+        {fact.counts}; empty follows the Judgement page.
       </p>
     </div>
   );
@@ -434,7 +430,7 @@ export function AdoptionPapers({
           >
             ▸
           </span>
-          More particulars · its windows, key files, roadmaps and session
+          More particulars · its thresholds, key files, roadmaps and session
         </button>
         {moreOpen && (
           <div id={ids.more} data-material="paper" className="pb-3.5">
@@ -470,16 +466,16 @@ export function AdoptionPapers({
               />
             </FormRow>
             <p className="mt-3 mb-0 px-0.5 font-semibold text-[13.5px] text-paper-head">
-              Its own windows
+              Its own thresholds
               <span className="ml-2 font-normal text-[12.5px] text-paper-quiet">
                 hours and days before amber and red; blank follows the judgement
                 settings
               </span>
             </p>
-            {thresholdWindows.map((window) => (
-              <FormRow key={window.label} label={window.label} sub="">
+            {thresholdFacts.map((fact) => (
+              <FormRow key={fact.label} label={fact.label} sub="">
                 <ThresholdPair
-                  window={window}
+                  fact={fact}
                   defaults={options.thresholds}
                   value={values.thresholds}
                   onChange={(thresholds) => update({ thresholds })}

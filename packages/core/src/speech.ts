@@ -85,8 +85,8 @@ export function hoursWords(hours: number): string {
   return daysWords(Math.floor(hours / 24));
 }
 
-/** A window from config: whole days when it is a multiple of a day, else hours. */
-function windowWords(hours: number): string {
+/** A threshold from config: whole days when it is a multiple of a day, else hours. */
+function thresholdWords(hours: number): string {
   return hours % 24 === 0 ? daysWords(hours / 24) : hoursWords(hours);
 }
 
@@ -143,7 +143,7 @@ function primary(cause: HealthCause): {
         opening: [
           `${count} ${plural(cause.count, "change has", "changes have")} sat uncommitted for ${span}.`,
         ],
-        closing: `Past ${windowWords(cause.thresholds.amberHours)} now.`,
+        closing: `Past ${thresholdWords(cause.thresholds.amberHours)} now.`,
       };
     }
     case "unpushed": {

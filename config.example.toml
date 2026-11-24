@@ -2,7 +2,7 @@
 # values.
 #
 # The live copy is ~/.config/perch/config.toml. The app writes a starter
-# there when asked: one wire, the standard windows, no sources. The command
+# there when asked: one wire, the standard thresholds, no sources. The command
 # line scanner runs with those defaults when the live copy does not exist.
 # The app writes the file back without comments. No secrets here: tokens
 # come from the desktop keyring at run time.
@@ -65,11 +65,11 @@ key = "forgejo-someone"
 hosts = ["forge.example.lan"]
 tracked_forks = []
 
-# Health windows: amber at the first, red at the second. Unsafe work
+# Health thresholds: amber at the first, red at the second. Unsafe work
 # (uncommitted changes, unpushed commits) ages in hours from its oldest
 # change. Stalled flight: on a branch other than the default with no new commit,
 # ages in days. Open bugs and open critical bugs are counted in each roadmap
-# file on its own; left out, their windows are the values shown. Each is
+# file on its own; left out, their thresholds are the values shown. Each is
 # overridable per entity with the same keys.
 [thresholds]
 unsafe_amber_hours = 24

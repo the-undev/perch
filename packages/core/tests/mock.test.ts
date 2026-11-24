@@ -3,8 +3,8 @@ import { resolvePapers, thresholdsFor } from "../src/config.ts";
 import {
   configuredCards,
   countOpenWorkItems,
-  deriveDrift,
   deriveStall,
+  deriveUnsafeWork,
   deriveWorkState,
 } from "../src/derivations.ts";
 import { launchKinds } from "../src/launch-kinds.ts";
@@ -94,7 +94,7 @@ describe("the mock dataset", () => {
     expect(adopted.some((bird) => bird.health.causes.length > 1)).toBe(true);
   });
 
-  it("holds roadmap files within their bug windows, past amber on critical bugs, and past red on bugs", () => {
+  it("holds roadmap files within their bug thresholds, past amber on critical bugs, and past red on bugs", () => {
     const bugCauses = adopted.flatMap((bird) =>
       bird.health.causes.flatMap((cause) =>
         cause.kind === "bugs" ? [[cause.level, cause.critical]] : [],
@@ -489,8 +489,8 @@ describe("the mock dataset", () => {
       }
       const git = entity.sources.git;
       if (git === undefined || "error" in git) continue;
-      expect(git.drift, entity.id).toEqual(
-        deriveDrift(
+      expect(git.unsafeWork, entity.id).toEqual(
+        deriveUnsafeWork(
           {
             oldestUncommittedAt: git.oldestUncommittedAt,
             oldestUnpushedAt: git.oldestUnpushedAt,

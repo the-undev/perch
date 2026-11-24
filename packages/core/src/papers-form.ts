@@ -78,8 +78,8 @@ export interface PapersForm {
   options: PapersOptions;
 }
 
-/** The two health windows, each an amber key and a red key, with the unit they count in and a fragment saying what the number counts. */
-export const thresholdWindows: readonly {
+/** The two facts with thresholds the papers set, each an amber key and a red key, with the unit they count in and a fragment saying what the number counts. */
+export const thresholdFacts: readonly {
   label: string;
   unit: "hours" | "days";
   counts: string;
@@ -117,29 +117,26 @@ export function emptyPapersValues(): PapersValues {
   };
 }
 
-/** Thresholds keyed as config writes them, a window left out leaving its keys out. */
+/** Thresholds keyed as config writes them, a fact left out leaving its keys out. */
 export function flatThresholds(
   thresholds: ThresholdOverrides,
 ): Partial<Record<ThresholdKey, number>> {
   const flat: Partial<Record<ThresholdKey, number>> = {};
-  for (const [window, field, key] of thresholdKeys) {
-    const value = (thresholds[window] as Partial<Record<string, number>>)[
-      field
-    ];
+  for (const [fact, field, key] of thresholdKeys) {
+    const value = (thresholds[fact] as Partial<Record<string, number>>)[field];
     if (value !== undefined) flat[key] = value;
   }
   return flat;
 }
 
-/** Thresholds keyed as config writes them, back in their windows. */
+/** Thresholds keyed as config writes them, back under their facts. */
 export function nestedThresholds(
   flat: Partial<Record<ThresholdKey, number>>,
 ): ThresholdOverrides {
   const overrides = noThresholdOverrides();
-  for (const [window, field, key] of thresholdKeys) {
+  for (const [fact, field, key] of thresholdKeys) {
     const value = flat[key];
-    if (value !== undefined)
-      Object.assign(overrides[window], { [field]: value });
+    if (value !== undefined) Object.assign(overrides[fact], { [field]: value });
   }
   return overrides;
 }
@@ -308,20 +305,20 @@ export function thresholdProblems(
   fallback: Record<ThresholdKey, number>,
 ): string[] {
   const problems: string[] = [];
-  for (const window of thresholdWindows) {
-    const amber = thresholds[window.amber];
-    const red = thresholds[window.red];
+  for (const fact of thresholdFacts) {
+    const amber = thresholds[fact.amber];
+    const red = thresholds[fact.red];
     const bad = [amber, red].some(
       (value) => value !== undefined && !(Number.isInteger(value) && value > 0),
     );
     if (bad) {
       problems.push(
-        `${window.label}: thresholds must be whole ${window.unit} above zero`,
+        `${fact.label}: thresholds must be whole ${fact.unit} above zero`,
       );
       continue;
     }
-    if ((amber ?? fallback[window.amber]) >= (red ?? fallback[window.red])) {
-      problems.push(`${window.label}: amber must come before red`);
+    if ((amber ?? fallback[fact.amber]) >= (red ?? fallback[fact.red])) {
+      problems.push(`${fact.label}: amber must come before red`);
     }
   }
   return problems;

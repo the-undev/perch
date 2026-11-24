@@ -10,8 +10,8 @@ import {
 import type { HealthCause } from "../src/viewmodel.ts";
 import { aged, hoursBefore } from "./helpers/snapshot.ts";
 
-const windows = { amberHours: 24, redHours: 72 };
-const dayWindows = { amberDays: 7, redDays: 30 };
+const hourThresholds = { amberHours: 24, redHours: 72 };
+const dayThresholds = { amberDays: 7, redDays: 30 };
 
 function subject(overrides: Partial<SpeechSubject>): SpeechSubject {
   return {
@@ -70,7 +70,7 @@ const cause = {
     level,
     count,
     work: aged(hours, level),
-    thresholds: windows,
+    thresholds: hourThresholds,
   }),
   unpushed: (
     count: number,
@@ -81,7 +81,7 @@ const cause = {
     level,
     count,
     work: aged(hours, level),
-    thresholds: windows,
+    thresholds: hourThresholds,
   }),
   stalled: (days: number, everythingPushed: boolean): HealthCause => ({
     kind: "stalled",
@@ -91,7 +91,7 @@ const cause = {
       since: hoursBefore(days * 24),
       days,
       level: days >= 30 ? "red" : "amber",
-      thresholds: dayWindows,
+      thresholds: dayThresholds,
     },
     everythingPushed,
   }),

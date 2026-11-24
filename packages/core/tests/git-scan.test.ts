@@ -3,9 +3,9 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { GitThresholds } from "../src/derivations.ts";
 import {
-  deriveDrift,
   deriveGit,
   deriveStall,
+  deriveUnsafeWork,
   deriveWorkState,
 } from "../src/derivations.ts";
 import { fileMtime } from "../src/fs.ts";
@@ -296,7 +296,7 @@ describe("deriving git data", () => {
     const data = deriveGit(rawGit({}), thresholds, now, "linked");
 
     expect(data.workState).toBe("merged");
-    expect(data.drift).toMatchObject({
+    expect(data.unsafeWork).toMatchObject({
       uncommitted: null,
       unpushed: null,
       level: "green",
@@ -404,7 +404,7 @@ describe("deriving git data", () => {
 
     expect(data.uncommittedCount).toBe(3);
     expect(data.oldestUncommittedAt).toBe(daysBefore(10).toISOString());
-    expect(data.drift).toMatchObject({
+    expect(data.unsafeWork).toMatchObject({
       uncommitted: {
         since: daysBefore(10).toISOString(),
         hours: 240,
@@ -430,31 +430,33 @@ describe("deriving git data", () => {
     );
 
     expect(data.unpushedCount).toBe(2);
-    expect(data.drift).toMatchObject({
+    expect(data.unsafeWork).toMatchObject({
       unpushed: { hours: 960, level: "red" },
       level: "red",
     });
   });
 
-  it("judges each age in hours against the injected windows, the worse giving the level", () => {
+  it("judges each age in hours against the injected thresholds, the worse giving the level", () => {
     const ages = {
       oldestUncommittedAt: daysBefore(4).toISOString(),
       oldestUnpushedAt: new Date(now.getTime() - 30 * 3_600_000).toISOString(),
     };
 
-    expect(deriveDrift(ages, thresholds.unsafe, now).level).toBe("green");
-    expect(deriveDrift(ages, { amberHours: 24, redHours: 72 }, now)).toEqual({
+    expect(deriveUnsafeWork(ages, thresholds.unsafe, now).level).toBe("green");
+    expect(
+      deriveUnsafeWork(ages, { amberHours: 24, redHours: 72 }, now),
+    ).toEqual({
       uncommitted: { since: ages.oldestUncommittedAt, hours: 96, level: "red" },
       unpushed: { since: ages.oldestUnpushedAt, hours: 30, level: "amber" },
       level: "red",
       thresholds: { amberHours: 24, redHours: 72 },
     });
     expect(
-      deriveDrift(ages, { amberHours: 24, redHours: 120 }, now).level,
+      deriveUnsafeWork(ages, { amberHours: 24, redHours: 120 }, now).level,
     ).toBe("amber");
-    expect(deriveDrift(ages, thresholds.unsafe, daysBefore(-30)).level).toBe(
-      "red",
-    );
+    expect(
+      deriveUnsafeWork(ages, thresholds.unsafe, daysBefore(-30)).level,
+    ).toBe("red");
   });
 });
 
@@ -472,12 +474,12 @@ describe("deriving git data by backup state", () => {
     ],
   });
 
-  it("gives a local-only repository no unpushed work and no unpushed drift", () => {
+  it("gives a local-only repository no unpushed work and no unpushed unsafe work", () => {
     const data = deriveGit(unpushed, thresholds, now, "local-only");
 
     expect(data.backup).toBe("local-only");
     expect(data.unpushedCount).toBe(0);
-    expect(data.drift).toMatchObject({
+    expect(data.unsafeWork).toMatchObject({
       unpushed: null,
       uncommitted: { hours: 216, level: "amber" },
       level: "amber",
@@ -493,7 +495,7 @@ describe("deriving git data by backup state", () => {
     );
 
     expect(data.unpushedCount).toBe(1);
-    expect(data.drift).toMatchObject({
+    expect(data.unsafeWork).toMatchObject({
       unpushed: null,
       uncommitted: null,
       level: "green",
@@ -502,7 +504,7 @@ describe("deriving git data by backup state", () => {
 
   it("ages unpushed commits against a linked remote", () => {
     expect(
-      deriveGit(unpushed, thresholds, now, "linked").drift.unpushed?.hours,
+      deriveGit(unpushed, thresholds, now, "linked").unsafeWork.unpushed?.hours,
     ).toBe(960);
   });
 });
@@ -625,7 +627,7 @@ describe("stalled flight", () => {
     ).toBeNull();
   });
 
-  it("goes green, amber and red on the day windows, and needs a default branch to compare", () => {
+  it("goes green, amber and red on the day thresholds, and needs a default branch to compare", () => {
     const head = (days: number) => ({
       branch: "spec",
       defaultBranch: "main",

@@ -202,7 +202,7 @@ const book: Group[] = [
         ".dotfiles",
         {
           subject: { ...dotfiles, causes: [causeAt(dotfiles, "red")] },
-          changed: "the backlog past the red window",
+          changed: "the backlog past the red threshold",
           mood: "distressed",
         },
       ),

@@ -95,7 +95,7 @@ const readingSpecimens: LedgerSpecimen[] = [
   {
     id: "undev/Hollow-legacy",
     label: "Bugs",
-    rule: "Hollow: the bugs row for its roadmap file holds 23, past red, its reading the window it is judged by. A critical bug row appears only for a file that has any.",
+    rule: "Hollow: the bugs row for its roadmap file holds 23, past red, its reading the threshold it is judged by. A critical bug row appears only for a file that has any.",
   },
   {
     id: "undev/skiff",
@@ -222,7 +222,7 @@ export function LedgerPage() {
 
       <Section
         title="Bug rows by mood"
-        rule="A roadmap file's bugs row and critical bugs row list their open bugs, then one line when the count has reached a window: restless at the amber count, distressed at the red count, toned like the row. Within its window a row has no such line. The windows here are 5 and 20 for bugs and 3 and 6 for critical bugs."
+        rule="A roadmap file's bugs row and critical bugs row list their open bugs, then one line when the count has reached a threshold: restless at the amber count, distressed at the red count, toned like the row. Within its thresholds a row has no such line. The thresholds here are 5 and 20 for bugs and 3 and 6 for critical bugs."
         min={360}
       >
         {bugMoods.map((specimen) => (

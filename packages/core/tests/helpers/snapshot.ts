@@ -49,7 +49,7 @@ export function gitData(overrides: Partial<GitData>): GitData {
       },
     ],
     workState: "merged",
-    drift: {
+    unsafeWork: {
       uncommitted: null,
       unpushed: null,
       level: "green",

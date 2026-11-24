@@ -137,14 +137,14 @@ const localGit: SourceSpec = {
     "deriveGit",
     "chooseDefaultBranch",
     "deriveWorkState",
-    "deriveDrift",
+    "deriveUnsafeWork",
     "deriveStall",
   ],
   snapshotTypes: [
     "GitData",
     "Backup",
     "WorkState",
-    "Drift",
+    "UnsafeWork",
     "AgedWork",
     "Stall",
     "LocalBranch",
@@ -277,7 +277,7 @@ const roadmaps: SourceSpec = {
       above it, leaving out inline code and double-quoted text, and the open
       work items counted by kind. The counts feed the bird&apos;s plumpness, its
       chips and its ledger. Each file&apos;s open bugs and critical bugs are
-      judged against their windows, and the worse level is a cause of the
+      judged against their thresholds, and the worse level is a cause of the
       bird&apos;s health; tasks never are.
     </p>
   ),

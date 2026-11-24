@@ -98,12 +98,12 @@ const cause = {
 };
 
 describe("content birds are brief", () => {
-  it("settled: says so, and when it was last touched", () => {
+  it("quiet: says so, and when it was last touched", () => {
     expect(speak(subject({ lastTouchedHours: 30 }))).toBe(
-      "All settled over here. Last touched 30 hours ago.",
+      "All quiet over here. Last touched 30 hours ago.",
     );
     expect(speak(subject({ lastTouchedHours: null }))).toBe(
-      "All settled over here.",
+      "All quiet over here.",
     );
   });
 
@@ -113,12 +113,12 @@ describe("content birds are brief", () => {
     ).toBe("We're in the middle of something. ♪");
   });
 
-  it("settled with a backlog: offers the work items", () => {
+  it("quiet with a backlog: offers the work items", () => {
     expect(speak(subject({ openWorkItems: 12 }))).toBe(
-      "All settled, and twelve work items on my roadmap when you want me.",
+      "All quiet, and twelve work items on my roadmap when you want me.",
     );
     expect(speak(subject({ openWorkItems: 1 }))).toBe(
-      "All settled, and one work item on my roadmap when you want me.",
+      "All quiet, and one work item on my roadmap when you want me.",
     );
   });
 

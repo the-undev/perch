@@ -199,7 +199,7 @@ function fenceSpeech(situation: FenceSituation): string {
   }
 }
 
-/** A content bird is brief: what it is doing, else its backlog as an offer, else that it is settled. */
+/** A content bird is brief: what it is doing, else its backlog as an offer, else that all is quiet. */
 function contentSpeech(subject: SpeechSubject): string {
   if (subject.workState === "uncommitted") {
     return "We're in the middle of something. ♪";
@@ -216,10 +216,10 @@ function contentSpeech(subject: SpeechSubject): string {
     return `${capitalise(countWords(unpushedCount))} ${plural(unpushedCount, "commit", "commits")} waiting to go up. All fresh so far.`;
   }
   if (subject.openWorkItems > 0) {
-    return `All settled, and ${countWords(subject.openWorkItems)} ${plural(subject.openWorkItems, "work item", "work items")} on my roadmap when you want me.`;
+    return `All quiet, and ${countWords(subject.openWorkItems)} ${plural(subject.openWorkItems, "work item", "work items")} on my roadmap when you want me.`;
   }
-  if (subject.lastTouchedHours === null) return "All settled over here.";
-  return `All settled over here. Last touched ${hoursWords(subject.lastTouchedHours)} ago.`;
+  if (subject.lastTouchedHours === null) return "All quiet over here.";
+  return `All quiet over here. Last touched ${hoursWords(subject.lastTouchedHours)} ago.`;
 }
 
 /**

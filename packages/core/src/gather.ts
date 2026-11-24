@@ -16,8 +16,8 @@ export type PolledSources = { [N in PolledSourceName]: PolledSource<N> };
 
 /**
  * Collection rounds, run in order. Root collectors read config and the outside world; enrichers
- * read what earlier rounds gathered. The roadmap reader runs last, because a clone's config entry
- * is resolved through the join, which needs the forge enrichers' files. Sources within a round
+ * read what earlier rounds gathered. The roadmap reader runs last, because a clone's config papers
+ * are resolved through the join, which needs the forge enrichers' files. Sources within a round
  * run together.
  */
 export const gatherRounds: readonly (readonly PolledSourceName[])[] = [

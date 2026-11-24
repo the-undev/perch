@@ -111,7 +111,7 @@ export function ConfigPage() {
           file="src/config.ts"
           names={[
             "Config",
-            "EntityEntry",
+            "Papers",
             "Thresholds",
             "ThresholdOverrides",
             "SourcesConfig",

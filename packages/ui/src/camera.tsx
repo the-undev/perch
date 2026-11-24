@@ -39,7 +39,7 @@ import {
   type StateWord,
   stateTone,
 } from "./bird.tsx";
-import { DetailView, type EntryControls } from "./detail-view.tsx";
+import { DetailView, type PapersControls } from "./detail-view.tsx";
 import {
   type PixelSize,
   useElementSize,
@@ -353,7 +353,7 @@ function Flyer({
 interface PageProps {
   bird: Bird;
   sheets: KeyFileSheet[];
-  entry: EntryControls;
+  papers: PapersControls;
   problems: string[];
   openPapers: boolean;
   arrivalChip: ChipKind | null;
@@ -586,7 +586,7 @@ export interface CameraViewProps {
   /** Puts the no-clone slip's clone address on the clipboard, settling once it is there. */
   onCopy: (text: string) => Promise<void>;
   /** Adopting the open bird or amending its papers, from its detail page. */
-  entry: EntryControls;
+  papers: PapersControls;
   /** The main process's problems, which the open bird's papers show. */
   problems: string[];
 }
@@ -608,7 +608,7 @@ export function CameraView({
   onSettings,
   onLocalSources,
   onCopy,
-  entry,
+  papers,
   problems,
 }: CameraViewProps) {
   const phase = skyPhase(now);
@@ -629,7 +629,7 @@ export function CameraView({
   const [visit, setVisit] = useState(0);
   const [pan, setPan] = useState<Pan | null>(null);
   // The page as last committed, which a pan keeps drawing as it slides away: by then the caller's
-  // sheets and entry are the chosen bird's.
+  // sheets and papers are the chosen bird's.
   const lastPage = useRef<GroundPage | null>(null);
   const shown =
     bird ?? (shownId === null ? undefined : findBird(aviary, shownId));
@@ -692,7 +692,7 @@ export function CameraView({
           props: {
             bird: shown,
             sheets,
-            entry,
+            papers,
             problems,
             openPapers: place.at === "detail" && place.papers,
             arrivalChip: place.at === "detail" ? place.chip : null,

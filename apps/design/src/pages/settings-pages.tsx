@@ -203,7 +203,7 @@ export function SettingsGroupsPage() {
     <>
       <Section
         title="Wires"
-        rule="Ordered rows, each edited in place and moved up and down, and the default picked from them. A row keeps the wire it started as, so a rename carries that wire's entries to the new name, and the default stays on its row. Removing a wire takes a second press on its remove, after the row says how many birds name it and that they move to the default; the form then names the entries. The default itself cannot be removed."
+        rule="Ordered rows, each edited in place and moved up and down, and the default picked from them. A row keeps the wire it started as, so a rename carries that wire's papers to the new name, and the default stays on its row. Removing a wire takes a second press on its remove, after the row says how many birds name it and that they move to the default; the form then names the papers. The default itself cannot be removed."
         min={560}
       >
         <GroupSpecimen
@@ -214,7 +214,7 @@ export function SettingsGroupsPage() {
         />
         <GroupSpecimen
           label="A wire renamed"
-          rule="Machine & Home is now Home: the row says what it was, and saving moves its three entries to Home. Nothing warns."
+          rule="Machine & Home is now Home: the row says what it was, and saving moves its three papers to Home. Nothing warns."
           start={withMock({
             wires: {
               rows: [
@@ -227,8 +227,8 @@ export function SettingsGroupsPage() {
           group={wires}
         />
         <GroupSpecimen
-          label="A wire removed that entries name"
-          rule="Three entries sit on Machine & Home: the warning says they move to Projects. It is not a problem; Save stays on."
+          label="A wire removed that papers name"
+          rule="Three sets of papers sit on Machine & Home: the warning says they move to Projects. It is not a problem; Save stays on."
           start={withMock({
             wires: {
               rows: [{ from: "Projects", name: "Projects" }],
@@ -487,7 +487,7 @@ export function SettingsGroupsPage() {
           {
             name: "form",
             type: "SettingsForm",
-            what: "The values as the file and the autostart entry hold them, the entries naming each wire, and the login row's hold and entry. The draft starts here and follows it while untouched.",
+            what: "The values as the file and the autostart entry hold them, the papers naming each wire, and the login row's hold and entry. The draft starts here and follows it while untouched.",
           },
           {
             name: "page",

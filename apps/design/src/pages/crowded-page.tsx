@@ -149,7 +149,7 @@ export function CrowdedPage() {
               onSettings={() => {}}
               onLocalSources={() => {}}
               onCopy={async () => {}}
-              entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
+              papers={{ form: null, onSave: () => {}, onRemove: () => {} }}
               problems={[]}
             />
           </SceneFrame>

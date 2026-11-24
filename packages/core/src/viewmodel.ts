@@ -6,10 +6,10 @@
 import {
   type Config,
   collapseHome,
-  type EntityEntry,
   hostsOf,
   obsidianOnly,
-  resolveEntry,
+  type Papers,
+  resolvePapers,
   wireFor,
   zellijSessionFor,
 } from "./config.ts";
@@ -249,7 +249,7 @@ export interface PaperLine {
  * the bubble chip whose working it holds, null when the bubble carries no such chip, and spells
  * that working out per source: each source with something to say, or that it couldn't be read.
  */
-export type LedgerEntry =
+export type LedgerFact =
   | {
       kind: "count";
       label: string;
@@ -420,7 +420,7 @@ export interface Detail {
   notices: RemoteNotice[];
   /** The sentence that opens the ledger when nothing waits; null when something does. */
   quiet: string | null;
-  ledger: LedgerEntry[];
+  ledger: LedgerFact[];
   branches: BranchLine[];
   river: River;
   pullRequests: PullRequestLine[];
@@ -484,9 +484,9 @@ function readable<T extends object>(
   return value;
 }
 
-/** The config entry an entity resolves to, by its id and every presence reference it holds. */
-function entryFor(entity: Entity, config: Config): EntityEntry | null {
-  return resolveEntry(config, entity.id, entityRefs(entity)).entry;
+/** The papers an entity resolves to, by its id and every presence reference it holds. */
+function papersFor(entity: Entity, config: Config): Papers | null {
+  return resolvePapers(config, entity.id, entityRefs(entity)).papers;
 }
 
 /** A level as a severity: amber and red stand, green is not judged. */
@@ -520,13 +520,13 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-function countEntry(
+function countFact(
   label: string,
   count: number,
   tone: Tone,
   chip: ChipKind | null,
   workings: Working[],
-): LedgerEntry {
+): LedgerFact {
   return count === 0
     ? {
         kind: "count",
@@ -622,7 +622,7 @@ function noneRead(entity: Entity, part: ForgePart): boolean {
 }
 
 /** A row no forge could be read for: "couldn't read" in amber, each forge's working saying so. */
-function unreadRow(label: string, workings: Working[]): LedgerEntry {
+function unreadRow(label: string, workings: Working[]): LedgerFact {
   return {
     kind: "state",
     label,
@@ -638,7 +638,7 @@ function unreadRow(label: string, workings: Working[]): LedgerEntry {
  * The CI row: the worst state, as the chip says it, then each forge's newest run, named and linked.
  * With no run anywhere it says "couldn't read" when no forge's CI could be read, else nothing.
  */
-function ciEntry(entity: Entity, chip: ChipKind | null): LedgerEntry | null {
+function ciFact(entity: Entity, chip: ChipKind | null): LedgerFact | null {
   const worst = worstCiState(entity);
   const workings = ciWorkings(entity);
   if (worst === undefined) {
@@ -764,12 +764,12 @@ function bugRows(
   roadmap: RoadmapData,
   bugsChip: ChipKind | null,
   criticalBugsChip: ChipKind | null,
-): LedgerEntry[] {
+): LedgerFact[] {
   const { thresholds } = roadmap;
   return roadmap.files.flatMap((file) => {
     const levels = bugLevelsOf(file.counts, thresholds);
     const rows = [
-      countEntry(
+      countFact(
         `bugs in ${file.path}`,
         file.counts.bug,
         severity(levels.bugs),
@@ -783,7 +783,7 @@ function bugRows(
     if (file.counts["critical-bug"] === 0) return rows;
     return [
       ...rows,
-      countEntry(
+      countFact(
         `critical bugs in ${file.path}`,
         file.counts["critical-bug"],
         severity(levels.criticalBugs),
@@ -984,14 +984,14 @@ function ledgerFor(
   entity: Entity,
   chips: Chip[],
   config: Config,
-): LedgerEntry[] {
+): LedgerFact[] {
   const handle = (kind: ChipKind) =>
     chips.some((chip) => chip.kind === kind) ? kind : null;
-  const ledger: LedgerEntry[] = [];
+  const ledger: LedgerFact[] = [];
   const git = readable<GitData>(entity.sources.git);
   if (git) {
     ledger.push(
-      countEntry(
+      countFact(
         "uncommitted changes",
         git.uncommittedCount,
         git.drift.uncommitted ? severity(git.drift.uncommitted.level) : null,
@@ -1011,7 +1011,7 @@ function ledgerFor(
       });
     } else {
       ledger.push(
-        countEntry(
+        countFact(
           "unpushed commits",
           git.unpushedCount,
           git.drift.unpushed ? severity(git.drift.unpushed.level) : null,
@@ -1026,7 +1026,7 @@ function ledgerFor(
   if (roadmap && roadmap.files.length > 0) {
     ledger.push(...bugRows(roadmap, handle("bugs"), handle("critical-bugs")));
     ledger.push(
-      countEntry(
+      countFact(
         "open work items",
         openWorkItemsOf(roadmap),
         null,
@@ -1041,7 +1041,7 @@ function ledgerFor(
   }
   if (pullForges.length > 0) {
     ledger.push(
-      countEntry(
+      countFact(
         "open pull requests",
         pullForges.reduce((total, { pulls }) => total + pulls.length, 0),
         null,
@@ -1050,7 +1050,7 @@ function ledgerFor(
       ),
     );
   }
-  const ci = ciEntry(entity, handle("ci"));
+  const ci = ciFact(entity, handle("ci"));
   if (ci !== null) ledger.push(ci);
   if (git?.lastCommitAt) {
     ledger.push({ kind: "time", label: "last commit", at: git.lastCommitAt });
@@ -1298,7 +1298,7 @@ function pullRequestsFor(entity: Entity): PullRequestLine[] {
  */
 function actionsFor(
   entity: Entity,
-  entry: EntityEntry | null,
+  papers: Papers | null,
   config: Config,
 ): LaunchAction[] {
   const path = entity.path;
@@ -1312,7 +1312,7 @@ function actionsFor(
           icon: zellijKind.icon,
           zellij: action.zellij,
           terminal: action.terminal,
-          session: zellijSessionFor(action, entry, path),
+          session: zellijSessionFor(action, papers, path),
           tab: entity.name,
           cwd: path,
         },
@@ -1354,13 +1354,13 @@ export function lineMarksOf(file: RoadmapFile): LineMarks {
   return marks;
 }
 
-function keyFilesFor(entity: Entity, entry: EntityEntry | null): KeyFile[] {
+function keyFilesFor(entity: Entity, papers: Papers | null): KeyFile[] {
   const path = entity.path;
   if (path === null) return [];
   const roadmap = roadmapOf(entity);
   const roadmapFiles = roadmap?.files ?? [];
   const detectedPath = roadmap?.detectedPath ?? null;
-  const files = entry?.keyFiles ?? [
+  const files = papers?.keyFiles ?? [
     "README.md",
     ...roadmapFiles.map((file) => file.path),
     ...(detectedPath === null ? [] : [detectedPath]),
@@ -1488,7 +1488,7 @@ export function speechSubjectFor(
 ): SpeechSubject {
   return speechSubject(
     entity,
-    wireFor(config, entryFor(entity, config)),
+    wireFor(config, papersFor(entity, config)),
     scannedAt,
   );
 }
@@ -1523,10 +1523,10 @@ export function deriveBird(
   const mood = moodOf[health.level];
   const git = readable<GitData>(entity.sources.git);
   const activity = git ? activityOf[git.activity] : null;
-  const entry = entryFor(entity, config);
-  const wire = wireFor(config, entry);
+  const papers = papersFor(entity, config);
+  const wire = wireFor(config, papers);
   const adopted = wire !== null;
-  const name = entry?.name ?? entity.name;
+  const name = papers?.name ?? entity.name;
   const outstanding = openWorkItemsOf(roadmapOf(entity));
   const speech = speak(speechSubject(entity, wire, scannedAt));
   const chips = adopted ? chipsFor(entity, health) : [];
@@ -1568,7 +1568,7 @@ export function deriveBird(
         detail: flag.detail,
         level: flag.level,
       })),
-      actions: actionsFor(entity, entry, config),
+      actions: actionsFor(entity, papers, config),
       links: entity.presences.forges.flatMap((presence) =>
         presence.url === null
           ? []
@@ -1579,7 +1579,7 @@ export function deriveBird(
               },
             ],
       ),
-      keyFiles: keyFilesFor(entity, entry),
+      keyFiles: keyFilesFor(entity, papers),
       noClone: noCloneFor(entity, config),
       problems: problemsFor(entity),
     },

@@ -5,13 +5,13 @@
 // draft: what is signed leaves through the callbacks, and the caller decides when it folds away.
 
 import {
-  type EntryForm,
-  type EntryValues,
-  emptyEntryValues,
-  entryProblems,
+  emptyPapersValues,
+  type PapersForm,
+  type PapersValues,
+  papersProblems,
   type ThresholdKey,
   thresholdWindows,
-} from "@perch/core/entry-form.ts";
+} from "@perch/core/papers-form.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { type ReactNode, useId, useState } from "react";
 import { BirdFigure, birdLook } from "./bird.tsx";
@@ -227,8 +227,8 @@ function ThresholdPair({
 }: {
   window: (typeof thresholdWindows)[number];
   defaults: Record<ThresholdKey, number>;
-  value: EntryValues["thresholds"];
-  onChange: (value: EntryValues["thresholds"]) => void;
+  value: PapersValues["thresholds"];
+  onChange: (value: PapersValues["thresholds"]) => void;
 }) {
   const set = (key: ThresholdKey, next: number) => {
     const { [key]: _, ...rest } = value;
@@ -275,7 +275,7 @@ function ThresholdPair({
   );
 }
 
-/** A text field's value as an entry holds it: blank is null. */
+/** A text field's value as papers hold it: blank is null. */
 function blankAsNull(text: string): string | null {
   return text.trim() === "" ? null : text;
 }
@@ -283,21 +283,21 @@ function blankAsNull(text: string): string | null {
 export interface AdoptionPapersProps {
   /** The bird the papers are for: its name and portrait head the sheet. */
   bird: Bird;
-  /** The bird's entry form: amend mode when it has values, adopt mode when it has none. */
-  form: EntryForm;
+  /** The bird's papers form: amend mode when it has values, adopt mode when it has none. */
+  form: PapersForm;
   /** The render's clock, which the last commit's age is measured to. */
   now: Date;
   /** Sentences from the main process, a refused write among them, shown above the signature. */
   problems: string[];
   /** Signed: the values to write, every untouched field null. */
-  onSign: (values: EntryValues) => void;
+  onSign: (values: PapersValues) => void;
   /** Return to the fence was pressed and then confirmed. */
   onReturn: () => void;
   /** Not now, or Escape: the papers fold away and nothing is written. */
   onClose: () => void;
 }
 
-/** The adoption papers for one bird, adopting it or amending its entry. */
+/** The adoption papers for one bird, adopting it or amending its papers. */
 export function AdoptionPapers({
   bird,
   form,
@@ -307,14 +307,14 @@ export function AdoptionPapers({
   onReturn,
   onClose,
 }: AdoptionPapersProps) {
-  const [values, setValues] = useState(form.values ?? emptyEntryValues());
+  const [values, setValues] = useState(form.values ?? emptyPapersValues());
   const [moreOpen, setMoreOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const id = useId();
   const { options, seen } = form;
   const amending = form.values !== null;
-  const holds = entryProblems(values, options);
-  const update = (change: Partial<EntryValues>) =>
+  const holds = papersProblems(values, options);
+  const update = (change: Partial<PapersValues>) =>
     setValues({ ...values, ...change });
   const ids = {
     wire: `${id}-wire`,

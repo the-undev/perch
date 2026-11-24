@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveEntry, thresholdsFor } from "../src/config.ts";
+import { resolvePapers, thresholdsFor } from "../src/config.ts";
 import {
   configuredCards,
   countOpenWorkItems,
@@ -102,11 +102,11 @@ describe("the mock dataset", () => {
     );
     const quietBugRows = adopted.flatMap((bird) =>
       bird.detail.ledger.filter(
-        (entry) =>
-          entry.kind === "count" &&
-          entry.label.startsWith("bugs in") &&
-          entry.count > 0 &&
-          entry.tone === null,
+        (fact) =>
+          fact.kind === "count" &&
+          fact.label.startsWith("bugs in") &&
+          fact.count > 0 &&
+          fact.tone === null,
       ),
     );
 
@@ -122,7 +122,7 @@ describe("the mock dataset", () => {
   it("splits unpushed commits over several branches, one ahead of its upstream and one with none", () => {
     const dotfiles = birds.find((bird) => bird.id === ".dotfiles");
     const row = dotfiles?.detail.ledger.find(
-      (entry) => entry.label === "unpushed commits",
+      (fact) => fact.label === "unpushed commits",
     );
 
     expect(row).toMatchObject({
@@ -172,7 +172,7 @@ describe("the mock dataset", () => {
         (bird) =>
           bird.bubble.chips.length === 0 &&
           bird.detail.ledger.every(
-            (entry) => entry.kind !== "count" || entry.text === "none",
+            (fact) => fact.kind !== "count" || fact.text === "none",
           ),
       ),
     ).toBe(true);
@@ -236,8 +236,8 @@ describe("the mock dataset", () => {
   it("hands each chip on a bubble one ledger row or the notice holding its working, and nothing a chip it lacks", () => {
     for (const bird of birds) {
       const handled = [
-        ...bird.detail.ledger.flatMap((entry) =>
-          entry.kind === "time" || entry.chip === null ? [] : [entry.chip],
+        ...bird.detail.ledger.flatMap((fact) =>
+          fact.kind === "time" || fact.chip === null ? [] : [fact.chip],
         ),
         ...(bird.detail.branches.length > 0 &&
         bird.bubble.chips.some((chip) => chip.kind === "stalled")
@@ -257,8 +257,8 @@ describe("the mock dataset", () => {
   it("spells out two forges disagreeing on CI, a forge's part that couldn't be read, and open work items over two roadmap files", () => {
     const rows = (label: string) =>
       adopted.flatMap((bird) =>
-        bird.detail.ledger.flatMap((entry) =>
-          entry.kind !== "time" && entry.label === label ? [entry] : [],
+        bird.detail.ledger.flatMap((fact) =>
+          fact.kind !== "time" && fact.label === label ? [fact] : [],
         ),
       );
     const runStates = rows("CI").map(
@@ -274,9 +274,9 @@ describe("the mock dataset", () => {
     expect(
       adopted.some((bird) =>
         bird.detail.ledger.some(
-          (entry) =>
-            entry.kind !== "time" &&
-            entry.workings.some((working) =>
+          (fact) =>
+            fact.kind !== "time" &&
+            fact.workings.some((working) =>
               working.text.startsWith("couldn't read "),
             ),
         ),
@@ -293,7 +293,7 @@ describe("the mock dataset", () => {
         (problem) => problem.source === "GitHub pull requests",
       );
       if (unread.length === 0) return [];
-      const ci = bird.detail.ledger.find((entry) => entry.label === "CI");
+      const ci = bird.detail.ledger.find((fact) => fact.label === "CI");
       return [
         {
           ciFromGithub:
@@ -433,7 +433,7 @@ describe("the mock dataset", () => {
     });
   });
 
-  it("covers a bird whose roadmap is parsed because its entry lists it, and one whose standard file is only shown", () => {
+  it("covers a bird whose roadmap is parsed because its papers list it, and one whose standard file is only shown", () => {
     const rawEntry = (id: string) =>
       mockConfig.entities[id] ?? { roadmaps: undefined };
     const roadmapOfBird = (id: string) =>
@@ -459,11 +459,11 @@ describe("the mock dataset", () => {
 
   it("agrees with the derivation rules wherever it states a judged value", () => {
     for (const entity of mockSnapshot.entities) {
-      const entry = resolveEntry(mockConfig, entity.id, [
+      const papers = resolvePapers(mockConfig, entity.id, [
         ...(entity.presences.local ? [entity.presences.local.ref] : []),
         ...entity.presences.forges.map((presence) => presence.ref),
-      ]).entry;
-      const thresholds = thresholdsFor(mockConfig, entry);
+      ]).papers;
+      const thresholds = thresholdsFor(mockConfig, papers);
       const roadmap = entity.sources.roadmap;
       if (roadmap !== undefined && !("error" in roadmap)) {
         expect(roadmap.counts, entity.id).toEqual(

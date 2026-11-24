@@ -20,7 +20,7 @@ import {
   type Bird,
   chipKinds,
   deriveAviary,
-  type LedgerEntry,
+  type LedgerFact,
   type River,
 } from "../src/viewmodel.ts";
 import { testConfig } from "./helpers/config.ts";
@@ -45,7 +45,7 @@ function birdIn(entities: Entity[], config: Config, id: string): Bird {
   const bird = [
     ...aviary.wires.flatMap((wire) => wire.birds),
     ...aviary.fence.birds,
-  ].find((entry) => entry.id === id);
+  ].find((candidate) => candidate.id === id);
   if (bird === undefined) throw new Error(`no bird ${id}`);
   return bird;
 }
@@ -330,7 +330,7 @@ describe("the wires", () => {
     ]);
   });
 
-  it("puts a bird on the wire its entry names", async () => {
+  it("puts a bird on the wire its papers name", async () => {
     const config = await testConfig(
       '[papers."dev/spool"]\nwire = "Machine & Home"\n',
     );
@@ -561,9 +561,9 @@ describe("chips", () => {
     expect(bird.bubble.chips).toEqual([]);
     expect(
       bird.detail.ledger.filter(
-        (entry) =>
-          /ci/i.test(entry.label) ||
-          ("text" in entry && entry.text === "not set up"),
+        (fact) =>
+          /ci/i.test(fact.label) ||
+          ("text" in fact && fact.text === "not set up"),
       ),
     ).toEqual([]);
     expect(bird.mood).toBe("content");
@@ -737,7 +737,7 @@ describe("the ledger", () => {
         ],
       }),
     );
-    expect(ledger.some((entry) => entry.label === "unpushed commits")).toBe(
+    expect(ledger.some((fact) => fact.label === "unpushed commits")).toBe(
       false,
     );
   });
@@ -797,8 +797,8 @@ describe("the unpushed commits row", () => {
   });
   const unpushedRow = (bird: Bird) =>
     bird.detail.ledger.find(
-      (entry): entry is Extract<LedgerEntry, { kind: "count" }> =>
-        entry.kind === "count" && entry.label === "unpushed commits",
+      (fact): fact is Extract<LedgerFact, { kind: "count" }> =>
+        fact.kind === "count" && fact.label === "unpushed commits",
     );
 
   it("gives one line per branch, oldest first, each toned by its own age, a fresh one untoned", async () => {
@@ -894,7 +894,9 @@ describe("where a fence bird lives", () => {
   const undecided = entity("dev/spool", { sources: { git: gitData({}) } });
   const entities = [forgeOnly, oneDisk, undecided];
   const livesOf = (config: Config) =>
-    entities.map((entry) => birdIn(entities, config, entry.id).lives);
+    entities.map(
+      (listedEntity) => birdIn(entities, config, listedEntity.id).lives,
+    );
 
   it("names the forge, the one disk, or nothing while undecided", async () => {
     expect(livesOf(await adoptAll([]))).toEqual([
@@ -905,11 +907,9 @@ describe("where a fence bird lives", () => {
   });
 
   it("says nothing for an adopted bird", async () => {
-    expect(livesOf(await adoptAll(entities.map((entry) => entry.id)))).toEqual([
-      null,
-      null,
-      null,
-    ]);
+    expect(
+      livesOf(await adoptAll(entities.map((listedEntity) => listedEntity.id))),
+    ).toEqual([null, null, null]);
   });
 });
 
@@ -978,7 +978,10 @@ describe("the ledger's quiet sentence", () => {
     const entities = [restless, distressed, fresh, unread, parked, forgeOnly];
 
     expect(
-      entities.map((entry) => birdIn(entities, config, entry.id).detail.quiet),
+      entities.map(
+        (listedEntity) =>
+          birdIn(entities, config, listedEntity.id).detail.quiet,
+      ),
     ).toEqual([null, null, null, null, null, null]);
   });
 });
@@ -986,13 +989,13 @@ describe("the ledger's quiet sentence", () => {
 describe("the ledger's workings", () => {
   /** A ledger row by its label, failing when the bird has none. */
   function row(bird: Bird, label: string) {
-    const entry = bird.detail.ledger.find(
+    const fact = bird.detail.ledger.find(
       (candidate) => candidate.label === label,
     );
-    if (entry === undefined || entry.kind === "time") {
+    if (fact === undefined || fact.kind === "time") {
       throw new Error(`no ${label} row`);
     }
-    return entry;
+    return fact;
   }
 
   it("names each forge's newest run on one CI row, which says the worst state as the chip does", async () => {
@@ -1238,9 +1241,9 @@ describe("the ledger's workings", () => {
       },
     });
     const bird = birdIn([hollow], config, "dev/hollow");
-    const bugRows = bird.detail.ledger.flatMap((entry) =>
-      entry.kind === "count" && /bugs in/.test(entry.label)
-        ? [[entry.label, entry.text, entry.tone, entry.chip]]
+    const bugRows = bird.detail.ledger.flatMap((fact) =>
+      fact.kind === "count" && /bugs in/.test(fact.label)
+        ? [[fact.label, fact.text, fact.tone, fact.chip]]
         : [],
     );
 
@@ -1517,9 +1520,9 @@ describe("the ledger's workings", () => {
     const ledger = birdIn([found], config, "dev/mixed-bag").detail.ledger;
 
     expect(
-      ledger.map((entry) => (entry.kind === "time" ? null : entry.chip)),
+      ledger.map((fact) => (fact.kind === "time" ? null : fact.chip)),
     ).toEqual(ledger.map(() => null));
-    expect(ledger.find((entry) => entry.label === "CI")).toBeDefined();
+    expect(ledger.find((fact) => fact.label === "CI")).toBeDefined();
   });
 });
 
@@ -1822,7 +1825,9 @@ describe("the detail", () => {
       },
     });
     const entities = [cloned, forgeOnly, oneDisk, outside];
-    const config = await adoptAll(entities.map((entry) => entry.id));
+    const config = await adoptAll(
+      entities.map((listedEntity) => listedEntity.id),
+    );
     const whereabouts = (id: string) => {
       const { clonePath, forges } = birdIn(entities, config, id).detail;
       return { clonePath, forges };
@@ -2052,9 +2057,7 @@ describe("the detail", () => {
       },
     ]);
     expect(
-      bird.detail.ledger.filter((entry) =>
-        /bugs|open roadmap/.test(entry.label),
-      ),
+      bird.detail.ledger.filter((fact) => /bugs|open roadmap/.test(fact.label)),
     ).toEqual([]);
     expect(bird.bubble.chips.filter((chip) => chip.kind === "bugs")).toEqual(
       [],

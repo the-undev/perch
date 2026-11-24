@@ -4,7 +4,7 @@ import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
 import {
   mockBird,
-  mockEntryForm,
+  mockPapersForm,
   reportedSnooze,
   scanMoment,
   snoozedUntil,
@@ -92,10 +92,10 @@ export function DetailScenePage() {
               },
             }}
             sheets={birdSheets(bird)}
-            entry={{
-              form: mockEntryForm(id),
-              onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
-              onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
+            papers={{
+              form: mockPapersForm(id),
+              onSave: (birdId) => setPressed(`papers.onSave(${birdId})`),
+              onRemove: (birdId) => setPressed(`papers.onRemove(${birdId})`),
             }}
             problems={[]}
             openPapers={false}
@@ -134,9 +134,9 @@ export function DetailScenePage() {
             what: "bird.detail.keyFiles with the markdown read from each, null where a file could not be read; empty until read.",
           },
           {
-            name: "entry",
-            type: "EntryControls",
-            what: "The bird's entry form, null until read, and the calls that save or remove the entry: Adopt on a fence bird, The papers on an adopted one.",
+            name: "papers",
+            type: "PapersControls",
+            what: "The bird's papers form, null until read, and the calls that save or remove the papers: Adopt on a fence bird, The papers on an adopted one.",
           },
           {
             name: "problems",

@@ -19,7 +19,7 @@ import {
   type Bird,
   compareByName,
   deriveAviary,
-  type LedgerEntry,
+  type LedgerFact,
   type Wire,
 } from "@perch/core/viewmodel.ts";
 import { mockBird } from "@perch/ui/mock-birds.ts";
@@ -28,7 +28,7 @@ import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 export {
   mockBird,
   mockBirds,
-  mockEntryForm,
+  mockPapersForm,
   quietSnooze,
 } from "@perch/ui/mock-birds.ts";
 
@@ -232,7 +232,7 @@ export function stubKeyring(
 const bugLedgerEntityId = "undev/Hollow-legacy";
 
 /** Hollow's bug and critical bug ledger rows derived again with the given open counts, the windows 5 and 20 for bugs and 3 and 6 for critical bugs. */
-export function bugLedgerRows(bug: number, criticalBug: number): LedgerEntry[] {
+export function bugLedgerRows(bug: number, criticalBug: number): LedgerFact[] {
   const entities = mockSnapshot.entities.map(
     (entity): Entity =>
       entity.id === bugLedgerEntityId
@@ -264,6 +264,6 @@ export function bugLedgerRows(bug: number, criticalBug: number): LedgerEntry[] {
     .find((candidate) => candidate.id === bugLedgerEntityId);
   if (bird === undefined) throw new Error("the mock has no Hollow");
   return bird.detail.ledger.filter(
-    (entry) => entry.kind === "count" && entry.label.includes("bugs in"),
+    (fact) => fact.kind === "count" && fact.label.includes("bugs in"),
   );
 }

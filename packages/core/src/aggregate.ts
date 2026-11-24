@@ -1,10 +1,10 @@
 import { basename } from "node:path";
 import {
   type Config,
-  type EntityEntry,
   hostsOf,
-  type ResolvedEntry,
-  resolveEntry,
+  type Papers,
+  type ResolvedPapers,
+  resolvePapers,
   thresholdsFor,
   workWordsFor,
 } from "./config.ts";
@@ -145,14 +145,14 @@ function backupOf(project: Project & { local: LocalInput }): Backup {
 
 function localSources(
   project: Project & { local: LocalInput },
-  entry: EntityEntry | null,
+  papers: Papers | null,
   files: Partial<RawFiles>,
   config: Config,
 ): EntitySources {
   const sources: EntitySources = {};
   const { id, presence } = project.local;
   const observedAt = new Date(files.local?.gatheredAt ?? 0);
-  const thresholds = thresholdsFor(config, entry);
+  const thresholds = thresholdsFor(config, papers);
   if (presence.git.state === "error") {
     sources.git = { error: presence.git.error };
   } else if (presence.git.state === "observed") {
@@ -169,7 +169,7 @@ function localSources(
   };
   const roadmap = fromEntry(
     files.roadmap?.data[id],
-    (raw) => deriveRoadmap(raw, workWordsFor(config, entry), bugThresholds),
+    (raw) => deriveRoadmap(raw, workWordsFor(config, papers), bugThresholds),
     () => emptyRoadmap(bugThresholds),
   );
   if (roadmap !== undefined) sources.roadmap = roadmap;
@@ -181,9 +181,9 @@ function projectId(project: Project): string {
   return project.local ? project.local.id : (project.refs[0] ?? "");
 }
 
-/** The config entry a project resolves to, by its id and every presence reference. */
-function entryOf(project: Project, config: Config): ResolvedEntry {
-  return resolveEntry(config, projectId(project), project.refs);
+/** The papers a project resolves to, by its id and every presence reference. */
+function papersOf(project: Project, config: Config): ResolvedPapers {
+  return resolvePapers(config, projectId(project), project.refs);
 }
 
 /** Joins the presences in a set of raw files into projects, with config's hosts, links and ignores. */
@@ -213,17 +213,17 @@ export function joinRawFiles(
 }
 
 /**
- * The config entry each local clone resolves to through the project it joins, for the gather
- * rounds that need an entry before aggregation.
+ * The papers each local clone resolves to through the project it joins, for the gather
+ * rounds that need papers before aggregation.
  */
-export function localEntries(
+export function localPapers(
   files: Partial<RawFiles>,
   config: Config,
-): Map<string, EntityEntry | null> {
+): Map<string, Papers | null> {
   return new Map(
     joinRawFiles(files, config).projects.flatMap((project) =>
       project.local
-        ? [[project.local.id, entryOf(project, config).entry] as const]
+        ? [[project.local.id, papersOf(project, config).papers] as const]
         : [],
     ),
   );
@@ -231,7 +231,7 @@ export function localEntries(
 
 function entityFor(
   project: Project,
-  entry: EntityEntry | null,
+  papers: Papers | null,
   files: Partial<RawFiles>,
   config: Config,
 ): Entity {
@@ -239,7 +239,7 @@ function entityFor(
   const first = project.forges[0];
   const id = projectId(project);
   const sources: EntitySources = local
-    ? localSources({ ...project, local }, entry, files, config)
+    ? localSources({ ...project, local }, papers, files, config)
     : {};
   for (const forge of forgeNames) {
     const presence = project.forges.find((entry) => entry.forge === forge);
@@ -253,7 +253,7 @@ function entityFor(
     local &&
     include?.state === "observed" &&
     include.value === "directory" &&
-    entry === null
+    papers === null
   ) {
     flags.unshift({
       flag: "not-set-up",
@@ -336,9 +336,9 @@ export function aggregate(
 
   const resolved: { entity: Entity; keys: string[] }[] = join.projects.map(
     (project) => {
-      const { entry, keys } = entryOf(project, config);
+      const { papers, keys } = papersOf(project, config);
       return {
-        entity: entityFor(project, entry, files, config),
+        entity: entityFor(project, papers, files, config),
         keys,
       };
     },

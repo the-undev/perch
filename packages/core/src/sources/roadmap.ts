@@ -25,7 +25,7 @@ type RoadmapEntry = Entry<RawRoadmap, "no-roadmap-file">;
 export interface RoadmapSourceDeps {
   readText: (path: string) => Promise<string | null>;
   /**
-   * Roadmap files the entry lists for each local presence, relative to it, or null or empty for
+   * Roadmap files the papers list for each local presence, relative to it, or null or empty for
    * none (a standard-named file is then only detected); built once per gather from the earlier rounds' files.
    */
   roadmapsFor: (

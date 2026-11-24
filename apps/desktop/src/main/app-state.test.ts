@@ -8,7 +8,6 @@ import {
 } from "@perch/core/config.ts";
 import { defaultConfig } from "@perch/core/config-default.ts";
 import { writeConfig } from "@perch/core/config-write.ts";
-import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
 import { HttpStatusError } from "@perch/core/http.ts";
 import type { LaunchActionValues } from "@perch/core/launch-form.ts";
@@ -18,6 +17,7 @@ import {
   mockLogin,
   mockSnapshot,
 } from "@perch/core/mock.ts";
+import { emptyPapersValues } from "@perch/core/papers-form.ts";
 import type { Snapshot } from "@perch/core/snapshot.ts";
 import type { Aviary, LaunchAction } from "@perch/core/viewmodel.ts";
 import { parse } from "smol-toml";
@@ -459,13 +459,13 @@ describe("the app state", () => {
   });
 });
 
-describe("editing config entries", () => {
+describe("editing config papers", () => {
   const home = "/home/owner";
   let dir: string;
   let configPath: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "perch-entries-"));
+    dir = await mkdtemp(join(tmpdir(), "perch-papers-"));
     configPath = join(dir, "config.toml");
   });
   afterEach(async () => {
@@ -504,7 +504,7 @@ describe("editing config entries", () => {
     )?.name;
   }
 
-  /** The mock config with Perch's entry keyed by its GitHub reference instead of its id. */
+  /** The mock config with Perch's papers keyed by its GitHub reference instead of its id. */
   function forgeKeyed(): Config {
     const { "dev/perch": perch, ...rest } = mockConfig.entities;
     if (perch === undefined) throw new Error("the mock config has no Perch");
@@ -514,13 +514,13 @@ describe("editing config entries", () => {
     };
   }
 
-  it("adopts a fence bird: writes its entry and nothing else, perches it and rescans", async () => {
+  it("adopts a fence bird: writes its papers and nothing else, perches it and rescans", async () => {
     const { app, deps, published } = await onFile(mockConfig);
     const before = await written();
     await app.start();
 
-    await app.saveEntry("dev/odin/hello", {
-      ...emptyEntryValues(),
+    await app.savePapers("dev/odin/hello", {
+      ...emptyPapersValues(),
       wire: "Machine & Home",
       name: "Hello",
     });
@@ -536,13 +536,13 @@ describe("editing config entries", () => {
     expect(deps.requestScan).toHaveBeenCalledTimes(1);
   });
 
-  it("edits a forge-keyed entry under that key, without a second entry", async () => {
+  it("edits forge-keyed papers under that key, without a second set", async () => {
     const { app } = await onFile(forgeKeyed());
     await app.start();
-    const form = app.entryForm("dev/perch");
-    if (form?.values == null) throw new Error("Perch has no entry");
+    const form = app.papersForm("dev/perch");
+    if (form?.values == null) throw new Error("Perch has no papers");
 
-    await app.saveEntry("dev/perch", {
+    await app.savePapers("dev/perch", {
       ...form.values,
       wire: "Machine & Home",
       thresholds: { stalled_amber_days: 3 },
@@ -557,14 +557,14 @@ describe("editing config entries", () => {
       wire: "Machine & Home",
       thresholds: { stalled: { amberDays: 3 } },
     });
-    expect(app.entryForm("dev/perch")?.key).toBe("github:finch/perch");
+    expect(app.papersForm("dev/perch")?.key).toBe("github:finch/perch");
   });
 
-  it("unadopts a bird: removes its entry and returns it to the fence", async () => {
+  it("unadopts a bird: removes its papers and returns it to the fence", async () => {
     const { app, deps, published } = await onFile(mockConfig);
     await app.start();
 
-    await app.removeEntry("undev/spool");
+    await app.removePapers("undev/spool");
 
     expect((await writtenConfig()).entities["undev/spool"]).toBeUndefined();
     expect(wireOf(published.at(-1)?.aviary, "undev/spool")).toBe("fence");
@@ -576,8 +576,8 @@ describe("editing config entries", () => {
     await app.start();
     const before = await written();
 
-    await app.saveEntry("dev/perch", {
-      ...emptyEntryValues(),
+    await app.savePapers("dev/perch", {
+      ...emptyPapersValues(),
       thresholds: { stalled_amber_days: 30 },
     });
 
@@ -588,7 +588,7 @@ describe("editing config entries", () => {
     expect(deps.requestScan).not.toHaveBeenCalled();
 
     await rm(configPath);
-    await app.removeEntry("dev/perch");
+    await app.removePapers("dev/perch");
     expect(published.at(-1)?.problems).toEqual([
       `The config was not changed: ${configPath} does not exist`,
     ]);
@@ -603,12 +603,12 @@ describe("editing config entries", () => {
     await app.start();
     const before = await written();
 
-    await app.saveEntry("dev/nobody", emptyEntryValues());
-    await app.removeEntry("dev/nobody");
+    await app.savePapers("dev/nobody", emptyPapersValues());
+    await app.removePapers("dev/nobody");
 
     expect(await written()).toBe(before);
     expect(deps.requestScan).not.toHaveBeenCalled();
-    expect(app.entryForm("dev/nobody")).toBeNull();
+    expect(app.papersForm("dev/nobody")).toBeNull();
   });
 });
 
@@ -740,13 +740,13 @@ describe("snoozing birds", () => {
     await app.start();
     await app.snooze("undev/spool", null);
 
-    await app.removeEntry("undev/spool");
+    await app.removePapers("undev/spool");
 
     expect(await stored()).toEqual({});
     expect(snoozeOf(published.at(-1), "undev/spool")).toBeNull();
 
-    await app.saveEntry("undev/spool", {
-      ...emptyEntryValues(),
+    await app.savePapers("undev/spool", {
+      ...emptyPapersValues(),
       wire: "Projects",
     });
 
@@ -766,8 +766,8 @@ describe("snoozing birds", () => {
 
     expect(snoozeOf(app.state(), "dev/odin/hello")).toBeNull();
 
-    await app.saveEntry("dev/odin/hello", {
-      ...emptyEntryValues(),
+    await app.savePapers("dev/odin/hello", {
+      ...emptyPapersValues(),
       wire: "Machine & Home",
     });
 
@@ -795,9 +795,9 @@ describe("snoozing birds", () => {
     await app.snooze("dev/perch", "2026-12-04");
 
     await app.scan();
-    const form = app.entryForm("dev/perch");
-    if (form?.values == null) throw new Error("Perch has no entry");
-    await app.saveEntry("dev/perch", { ...form.values, name: "Perch app" });
+    const form = app.papersForm("dev/perch");
+    if (form?.values == null) throw new Error("Perch has no papers");
+    await app.savePapers("dev/perch", { ...form.values, name: "Perch app" });
 
     const perch = published
       .at(-1)

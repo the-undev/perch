@@ -5,11 +5,6 @@
 
 import { defaultConfig } from "@perch/core/config-default.ts";
 import {
-  flatThresholds,
-  type ThresholdKey,
-  thresholdWindows,
-} from "@perch/core/entry-form.ts";
-import {
   cardIcon,
   cardObsidianOnly,
   cardVerb,
@@ -32,6 +27,11 @@ import {
   launchKinds,
   lineIcons,
 } from "@perch/core/launch-kinds.ts";
+import {
+  flatThresholds,
+  type ThresholdKey,
+  thresholdWindows,
+} from "@perch/core/papers-form.ts";
 import {
   checkSentence,
   defaultName,
@@ -151,7 +151,7 @@ function wiresWithout(wires: Wires, index: number): Wires {
   };
 }
 
-/** What removing a row does to the entries naming its config wire, in words. */
+/** What removing a row does to the papers naming its config wire, in words. */
 function removalWords(count: number, defaultWire: string): string {
   if (count === 0) return "No bird names this wire.";
   if (count === 1) return `1 bird names this wire; it moves to ${defaultWire}.`;
@@ -169,7 +169,7 @@ function WireRows({
   onChange,
 }: {
   value: Wires;
-  /** The entry keys naming each config wire. */
+  /** The keys of the papers naming each config wire. */
   named: Record<string, string[]>;
   onChange: (value: Wires) => void;
 }) {
@@ -308,27 +308,27 @@ function WireRows({
   );
 }
 
-/** The wires top to bottom and the default; a renamed wire carries its entries with it. */
+/** The wires top to bottom and the default; a renamed wire carries its papers with it. */
 export function WiresGroup({
   value,
   named,
   onChange,
 }: GroupProps<Wires> & {
-  /** The entry keys naming each config wire. */
+  /** The keys of the papers naming each config wire. */
   named: Record<string, string[]>;
 }) {
   return (
     <SettingsGroup
       title="Wires"
       table="[wires]"
-      lead="The owner's priority bands, top to bottom. An adopted bird sits on the wire its entry names, else on the default. Renaming a wire takes its birds with it."
+      lead="The owner's priority bands, top to bottom. An adopted bird sits on the wire its papers name, else on the default. Renaming a wire takes its birds with it."
     >
       <FormRow label="Wires" sub="In order, first at the top">
         <WireRows value={value} named={named} onChange={onChange} />
       </FormRow>
       <FormRow
         label="Default"
-        sub="The wire an entry naming none takes; pick another to remove it"
+        sub="The wire papers naming none take; pick another to remove it"
       >
         <PillChoice
           label="Default wire"

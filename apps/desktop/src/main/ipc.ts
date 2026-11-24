@@ -1,4 +1,4 @@
-import type { EntryValues } from "@perch/core/entry-form.ts";
+import type { PapersValues } from "@perch/core/papers-form.ts";
 import type { SettingsValues } from "@perch/core/settings-form.ts";
 import type { SnoozeEnd } from "@perch/core/snooze-date.ts";
 import type { SourceTestValues } from "@perch/core/sources-form.ts";
@@ -20,16 +20,16 @@ export function registerIpc(handlers: PerchCalls): void {
   ipcMain.handle(channels.writeStarterConfig, () =>
     handlers.writeStarterConfig(),
   );
-  ipcMain.handle(channels.entryForm, (_event, birdId: string) =>
-    handlers.entryForm(birdId),
+  ipcMain.handle(channels.papersForm, (_event, birdId: string) =>
+    handlers.papersForm(birdId),
   );
   ipcMain.handle(
-    channels.saveEntry,
-    (_event, birdId: string, values: EntryValues) =>
-      handlers.saveEntry(birdId, values),
+    channels.savePapers,
+    (_event, birdId: string, values: PapersValues) =>
+      handlers.savePapers(birdId, values),
   );
-  ipcMain.handle(channels.removeEntry, (_event, birdId: string) =>
-    handlers.removeEntry(birdId),
+  ipcMain.handle(channels.removePapers, (_event, birdId: string) =>
+    handlers.removePapers(birdId),
   );
   ipcMain.handle(channels.snooze, (_event, birdId: string, until: SnoozeEnd) =>
     handlers.snooze(birdId, until),

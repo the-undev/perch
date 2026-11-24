@@ -14,10 +14,10 @@ const api: PerchApi = {
   launch: (action) => ipcRenderer.invoke(channels.launch, action),
   openConfig: () => ipcRenderer.invoke(channels.openConfig),
   writeStarterConfig: () => ipcRenderer.invoke(channels.writeStarterConfig),
-  entryForm: (birdId) => ipcRenderer.invoke(channels.entryForm, birdId),
-  saveEntry: (birdId, values) =>
-    ipcRenderer.invoke(channels.saveEntry, birdId, values),
-  removeEntry: (birdId) => ipcRenderer.invoke(channels.removeEntry, birdId),
+  papersForm: (birdId) => ipcRenderer.invoke(channels.papersForm, birdId),
+  savePapers: (birdId, values) =>
+    ipcRenderer.invoke(channels.savePapers, birdId, values),
+  removePapers: (birdId) => ipcRenderer.invoke(channels.removePapers, birdId),
   snooze: (birdId, until) => ipcRenderer.invoke(channels.snooze, birdId, until),
   wake: (birdId) => ipcRenderer.invoke(channels.wake, birdId),
   settingsForm: () => ipcRenderer.invoke(channels.settingsForm),

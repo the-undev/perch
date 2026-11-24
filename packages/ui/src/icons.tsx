@@ -1,4 +1,4 @@
-// The board's line icons for launch actions, links out, the config entry's verbs and the snooze
+// The board's line icons for launch actions, links out, the papers' verbs and the snooze
 // control, stroked in the accent.
 
 import type { IconName } from "@perch/core/launch-kinds.ts";

@@ -1,9 +1,9 @@
-import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { mockSnapshot } from "@perch/core/mock.ts";
+import { emptyPapersValues } from "@perch/core/papers-form.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AdoptionPapers } from "./adoption-papers.tsx";
-import { mockBird, mockEntryForm } from "./mock-birds.ts";
+import { mockBird, mockPapersForm } from "./mock-birds.ts";
 
 afterEach(cleanup);
 
@@ -13,7 +13,7 @@ function papers(id: string, problems: string[] = []) {
   const onSign = vi.fn();
   const onReturn = vi.fn();
   const onClose = vi.fn();
-  const form = mockEntryForm(id);
+  const form = mockPapersForm(id);
   render(
     <AdoptionPapers
       bird={mockBird(id)}
@@ -67,7 +67,7 @@ describe("the adoption papers", () => {
     expect(checked("radio", "Projects · the default")).toBe(true);
     press("Adopt onto Projects");
 
-    expect(onSign).toHaveBeenCalledWith(emptyEntryValues());
+    expect(onSign).toHaveBeenCalledWith(emptyPapersValues());
   });
 
   it("name the chosen wire on the signature button", () => {
@@ -94,7 +94,7 @@ describe("the adoption papers", () => {
     });
     press("Adopt onto Machine & Home");
     expect(onSign).toHaveBeenLastCalledWith({
-      ...emptyEntryValues(),
+      ...emptyPapersValues(),
       wire: "Machine & Home",
       name: "Hello",
     });
@@ -106,7 +106,7 @@ describe("the adoption papers", () => {
       target: { value: " " },
     });
     press("Adopt onto Projects");
-    expect(onSign).toHaveBeenLastCalledWith(emptyEntryValues());
+    expect(onSign).toHaveBeenLastCalledWith(emptyPapersValues());
   });
 
   it("hold no tier row and no expectations row: what you say is the wire and the name", () => {
@@ -157,7 +157,7 @@ describe("the adoption papers", () => {
     press("Adopt onto Projects");
 
     expect(onSign).toHaveBeenCalledWith({
-      ...emptyEntryValues(),
+      ...emptyPapersValues(),
       keyFiles: ["docs/spec.md"],
       roadmaps: ["docs/roadmap.md"],
       thresholds: { stalled_amber_days: 3 },
@@ -203,7 +203,7 @@ describe("the adoption papers", () => {
     expect(onSign).not.toHaveBeenCalled();
   });
 
-  it("amend from the entry as written, signing it unchanged when nothing is touched", () => {
+  it("amend from the papers as written, signing it unchanged when nothing is touched", () => {
     const { onSign, form } = papers("obsidian/Hothouse");
 
     expect(checked("radio", "Machine & Home")).toBe(true);

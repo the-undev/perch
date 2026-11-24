@@ -1,4 +1,10 @@
-import { existsSync, readdirSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parseConfig } from "../src/config.ts";
@@ -9,6 +15,7 @@ import {
   runAggregate,
   runGather,
 } from "../src/scan.ts";
+import { snapshotVersion } from "../src/snapshot.ts";
 import {
   commit,
   initRepo,
@@ -77,6 +84,9 @@ describe("the scan with its directories passed in", () => {
     expect(status.sources.local?.state).toBe("ok");
     expect(readdirSync(rawDir)).toContain("local.json");
     expect(snapshot.configPath).toBe("/configs/perch.toml");
+    expect(JSON.parse(readFileSync(snapshotPath, "utf8")).version).toBe(
+      snapshotVersion,
+    );
     expect(snapshot.entities.map((entity) => entity.id)).toEqual(["dev/kept"]);
     expect(await readSnapshot(snapshotPath)).toEqual(snapshot);
     expect(readdirSync(join(dataDir, "scan")).sort()).toEqual([
@@ -107,6 +117,90 @@ describe("the scan with its directories passed in", () => {
 
   it("reads no snapshot where none was written", async () => {
     expect(await readSnapshot(join(dataDir, "absent.json"))).toBeNull();
+  });
+});
+
+describe("a snapshot cached by an earlier perch", () => {
+  const version1Fixture = join(
+    import.meta.dirname,
+    "fixtures",
+    "snapshots",
+    "version1.json",
+  );
+
+  it("reads a version 1 snapshot as version 2, with the new words and no server entity or Kuma card", async () => {
+    const snapshotPath = join(dataDir, "snapshot.json");
+    copyFileSync(version1Fixture, snapshotPath);
+
+    const snapshot = await readSnapshot(snapshotPath);
+
+    expect(snapshot?.version).toBe(snapshotVersion);
+    expect(snapshot && "items" in snapshot).toBe(false);
+    expect(snapshot?.entities.map((entity) => entity.id)).toEqual([
+      "dev/nest",
+      "dev/shed",
+    ]);
+    const [nest, shed] = snapshot?.entities ?? [];
+    expect(nest && "presences" in nest).toBe(false);
+    expect(nest && "liveSources" in nest).toBe(false);
+    expect(nest?.repositories.local).toEqual({
+      ref: "local:dev/nest",
+      path: "/home/owner/dev/nest",
+    });
+    expect(nest?.repositories.forges.map((forge) => forge.ref)).toEqual([
+      "github:finch/nest",
+    ]);
+    expect(nest?.flags.map((flag) => flag.flag)).toEqual([
+      "remote-linked-elsewhere",
+    ]);
+    const git = nest?.sources.git;
+    if (!git || "error" in git) throw new Error("expected git data");
+    expect(git.backup).toBe("linked");
+    expect(git.workState).toBe("uncommitted");
+    expect(git.unsafeWork.uncommitted?.hours).toBe(21);
+    expect("activity" in git || "drift" in git).toBe(false);
+    const roadmap = nest?.sources.roadmap;
+    if (!roadmap || "error" in roadmap) throw new Error("expected roadmap");
+    const [file] = roadmap.files;
+    expect(file?.workItems.map((item) => item.text)).toEqual(["Top task"]);
+    expect(file?.groups[0]?.workItems).toEqual([]);
+    expect(
+      file?.groups[0]?.groups[0]?.workItems.map((item) => item.text),
+    ).toEqual(["Nested task"]);
+    expect(JSON.stringify(file)).not.toContain('"items"');
+    expect(shed?.sources.git).toEqual({ error: "git status failed" });
+    expect(snapshot?.forges.github.active).toEqual([
+      {
+        ref: "github:finch/nest",
+        fullName: "finch/nest",
+        url: "https://github.com/finch/nest",
+        entityId: "dev/nest",
+        ignored: false,
+      },
+      {
+        ref: "github:finch/loose",
+        fullName: "finch/loose",
+        url: "https://github.com/finch/loose",
+        entityId: null,
+        ignored: false,
+      },
+    ]);
+    expect(Object.keys(snapshot?.sources ?? {})).toEqual(["local"]);
+    expect(snapshot?.sourceCards.map((card) => card.id)).toEqual([
+      "local:~/dev",
+    ]);
+    expect(readFileSync(snapshotPath, "utf8")).toBe(
+      readFileSync(version1Fixture, "utf8"),
+    );
+  });
+
+  it("reads a snapshot from a newer perch as no cache, and leaves it as it was", async () => {
+    const snapshotPath = join(dataDir, "snapshot.json");
+    const newer = `${JSON.stringify({ version: 3, entities: [] })}\n`;
+    writeFileSync(snapshotPath, newer);
+
+    expect(await readSnapshot(snapshotPath)).toBeNull();
+    expect(readFileSync(snapshotPath, "utf8")).toBe(newer);
   });
 });
 

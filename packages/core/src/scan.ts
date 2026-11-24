@@ -12,6 +12,7 @@ import { createFetchJson, type FetchJson } from "./http.ts";
 import type { StatusFile } from "./raw.ts";
 import { createKeyringTokenLookup, type TokenLookup } from "./secrets.ts";
 import type { Snapshot } from "./snapshot.ts";
+import { migrateSnapshot } from "./snapshot-migration.ts";
 import {
   createForgeAccountsSource,
   createForgeSource,
@@ -108,15 +109,12 @@ export async function runGather(run: GatherRun): Promise<StatusFile> {
   });
 }
 
-/**
- * The snapshot at a path, or null when there is none or it cannot be parsed: it is a cache, and
- * losing it only forgets each source card's last read.
- */
+/** The snapshot at a path migrated to this perch's version, or null when there is none or it cannot be read. */
 export async function readSnapshot(path: string): Promise<Snapshot | null> {
   const text = await readTextIfExists(path);
   if (text === null) return null;
   try {
-    return JSON.parse(text) as Snapshot;
+    return migrateSnapshot(JSON.parse(text));
   } catch {
     return null;
   }

@@ -1,5 +1,4 @@
-// A cached snapshot written by an earlier perch, migrated on read one step per version to the
-// shape this perch writes. A snapshot is a cache, so one that cannot be migrated reads as none.
+// Migrates a snapshot written by an earlier perch, one step per version, to the shape this perch writes.
 
 import type { JsonRecord } from "./json.ts";
 import { type Snapshot, snapshotVersion } from "./snapshot.ts";
@@ -42,12 +41,13 @@ function gitFromVersion1(git: JsonRecord): JsonRecord {
   };
 }
 
-function groupFromVersion1(group: JsonRecord): JsonRecord {
-  const { items, groups, ...rest } = group;
+/** A roadmap file or group, which share one shape, with its items renamed to work items. */
+function workItemHolderFromVersion1(holder: JsonRecord): JsonRecord {
+  const { items, groups, ...rest } = holder;
   return {
     ...rest,
     workItems: items,
-    groups: records(groups).map(groupFromVersion1),
+    groups: records(groups).map(workItemHolderFromVersion1),
   };
 }
 
@@ -55,11 +55,7 @@ function roadmapFromVersion1(roadmap: JsonRecord): JsonRecord {
   if ("error" in roadmap) return roadmap;
   return {
     ...roadmap,
-    files: records(roadmap.files).map(({ items, groups, ...file }) => ({
-      ...file,
-      workItems: items,
-      groups: records(groups).map(groupFromVersion1),
-    })),
+    files: records(roadmap.files).map(workItemHolderFromVersion1),
   };
 }
 
@@ -102,10 +98,7 @@ function forgeListingFromVersion1(listing: unknown): JsonRecord {
   return { active: entries(active), archived: entries(archived) };
 }
 
-/**
- * Version 2 took the glossary's words: items became entities, presences repositories, joined
- * linked, activity the work state and drift unsafe work; servers and Uptime Kuma were dropped.
- */
+/** Version 2 took the glossary's words and dropped servers and Uptime Kuma. */
 function fromVersion1(document: JsonRecord): JsonRecord {
   const { items, sources, sourceCards, forges, ...rest } = document;
   const { kuma: _kuma, ...polledSources } = isRecord(sources) ? sources : {};

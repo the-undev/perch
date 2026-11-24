@@ -109,10 +109,7 @@ export async function runGather(run: GatherRun): Promise<StatusFile> {
   });
 }
 
-/**
- * The snapshot at a path migrated to this perch's version, or null when there is none, it cannot
- * be parsed or it is newer: it is a cache, and losing it only forgets each source card's last read.
- */
+/** The snapshot at a path migrated to this perch's version, or null when there is none or it cannot be read. */
 export async function readSnapshot(path: string): Promise<Snapshot | null> {
   const text = await readTextIfExists(path);
   if (text === null) return null;

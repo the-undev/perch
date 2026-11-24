@@ -15,6 +15,7 @@ import {
   runAggregate,
   runGather,
 } from "../src/scan.ts";
+import { snapshotVersion } from "../src/snapshot.ts";
 import {
   commit,
   initRepo,
@@ -83,7 +84,9 @@ describe("the scan with its directories passed in", () => {
     expect(status.sources.local?.state).toBe("ok");
     expect(readdirSync(rawDir)).toContain("local.json");
     expect(snapshot.configPath).toBe("/configs/perch.toml");
-    expect(JSON.parse(readFileSync(snapshotPath, "utf8")).version).toBe(2);
+    expect(JSON.parse(readFileSync(snapshotPath, "utf8")).version).toBe(
+      snapshotVersion,
+    );
     expect(snapshot.entities.map((entity) => entity.id)).toEqual(["dev/kept"]);
     expect(await readSnapshot(snapshotPath)).toEqual(snapshot);
     expect(readdirSync(join(dataDir, "scan")).sort()).toEqual([
@@ -131,7 +134,7 @@ describe("a snapshot cached by an earlier perch", () => {
 
     const snapshot = await readSnapshot(snapshotPath);
 
-    expect(snapshot?.version).toBe(2);
+    expect(snapshot?.version).toBe(snapshotVersion);
     expect(snapshot && "items" in snapshot).toBe(false);
     expect(snapshot?.entities.map((entity) => entity.id)).toEqual([
       "dev/nest",

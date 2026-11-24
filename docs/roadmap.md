@@ -7,9 +7,6 @@ Work identified and not done. Remove work items as they land.
 `GLOSSARY.md` holds the language wanted. The code, config and app text still
 use the older words below. Each is looked at on its own, then renamed.
 
-- The sky legend, the header's totals and each wire's tally say "attention",
-  "drifting" and "settled". They become "distressed", "restless" and
-  "content".
 - The Uptime Kuma source and the server entity go, until server monitoring is
   built. The migration drops a config's `[[sources.kuma]]` tables.
 

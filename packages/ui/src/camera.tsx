@@ -533,19 +533,15 @@ function Strip({
   );
 }
 
-/** The header's totals in order: each count's field, the state phrase it counts and the word it is written with. */
-const totalWords: {
-  key: keyof TallyCounts;
-  statePhrase: StatePhrase;
-  word: string;
-}[] = [
-  { key: "attention", statePhrase: "distressed", word: "attention" },
-  { key: "drifting", statePhrase: "restless", word: "drifting" },
-  { key: "settled", statePhrase: "content", word: "settled" },
-  { key: "snoozed", statePhrase: "snoozed", word: "snoozed" },
+/** The state phrases the header totals, in order. */
+const totalPhrases: (keyof TallyCounts & StatePhrase)[] = [
+  "distressed",
+  "restless",
+  "content",
+  "snoozed",
 ];
 
-/** The header's totals over every adopted bird: how many need attention, drift, are settled or snoozed. */
+/** The header's totals over every adopted bird: how many are distressed, restless, content or snoozed. */
 function Totals({ aviary, now }: { aviary: Aviary; now: Date }) {
   const counts = tallyCounts(
     aviary.wires.flatMap((wire) => wire.birds),
@@ -553,9 +549,9 @@ function Totals({ aviary, now }: { aviary: Aviary; now: Date }) {
   );
   return (
     <div className="flex gap-4 font-semibold text-[13px]">
-      {totalWords.map(({ key, statePhrase, word }) => (
-        <span key={key} className={stateTone[statePhrase]}>
-          {counts[key]} {word}
+      {totalPhrases.map((statePhrase) => (
+        <span key={statePhrase} className={stateTone[statePhrase]}>
+          {counts[statePhrase]} {statePhrase}
         </span>
       ))}
     </div>

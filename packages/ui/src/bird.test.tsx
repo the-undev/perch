@@ -447,11 +447,11 @@ describe("the wire and the fence", () => {
 
   it("hangs the tally under the wire's left end in front, a line per word group in its colour", () => {
     const [machine, projects] = mockAviary.wires as [WireModel, WireModel];
-    const settled = {
+    const allContent = {
       name: "Quiet",
       birds: projects.birds.filter((bird) => bird.mood === "content"),
     };
-    const lines = [machine, projects, settled].map((wire) => {
+    const lines = [machine, projects, allContent].map((wire) => {
       const container = wireScene(wire);
       const tally = [...container.querySelectorAll('[data-part="tally"] text')];
       const birds = [...container.querySelectorAll("[data-bird]")];
@@ -476,9 +476,12 @@ describe("the wire and the fence", () => {
     });
 
     expect(lines).toEqual([
-      [at("2 drifting", 218, "fill-amber")],
-      [at("3 attention", 218, "fill-red"), at("1 drifting", 238, "fill-amber")],
-      [at("all settled", 218, "fill-ink-faint")],
+      [at("2 restless", 218, "fill-amber")],
+      [
+        at("3 distressed", 218, "fill-red"),
+        at("1 restless", 238, "fill-amber"),
+      ],
+      [at("all content", 218, "fill-ink-faint")],
     ]);
   });
 

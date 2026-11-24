@@ -14,8 +14,8 @@ import { Code, Section, Specimen, Usage } from "../usage.tsx";
 const machineHome = mockWire("Machine & Home");
 const projects = mockWire("Projects");
 
-/** A wire whose birds are all content: the tally reads "all settled". */
-const settledWire: WireModel = {
+/** A wire whose birds are all content: the tally reads "all content". */
+const contentWire: WireModel = {
   name: "Quiet",
   birds: ["undev/spool", "obsidian/Pocket", "dev/perch"].map(
     (id, position) => ({
@@ -61,7 +61,7 @@ export function WirePage() {
     <>
       <Section
         title="The wire · your priority"
-        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the birds sit in name order. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who needs attention, who drifts, who is snoozed. A snoozed bird is counted as snoozed only, and a snooze that has run out counts by its mood again. The birds start ${columnEdgeFor(sceneWidth)} units in at full width whatever the name or tally says.`}
+        rule={`Wires are set in config, an ordered named list; a bird never changes wire by itself. Along the wire the birds sit in name order. The wire's name is painted large and quiet on the sky behind the wire and its birds, cut back round each bird by a rim of sky. The tally hangs under the wire's left end in front, a line per word group in its colour: who is distressed, who is restless, who is snoozed. A snoozed bird is counted as snoozed only, and a snooze that has run out counts by its mood again. The birds start ${columnEdgeFor(sceneWidth)} units in at full width whatever the name or tally says.`}
         min={900}
       >
         <Specimen
@@ -77,20 +77,20 @@ export function WirePage() {
           <WireScene wire={projects} />
         </Specimen>
         <Specimen
-          label="All settled"
+          label="All content"
           rule="Hand-built: when nobody is restless or distressed the tally says so."
         >
-          <WireScene wire={settledWire} />
+          <WireScene wire={contentWire} />
         </Specimen>
         <Specimen
           label="Snoozed"
-          rule="Prism and Skiff snoozed: the tally counts them as snoozed after drifting, and not as attention or drifting."
+          rule="Prism and Skiff snoozed: the tally counts them as snoozed after restless, and not as distressed or restless."
         >
           <WireScene wire={snoozedWire} />
         </Specimen>
         <Specimen
           label="Snooze run out"
-          rule="Skiff snoozed until 22 October, drawn that afternoon: counted as drifting again."
+          rule="Skiff snoozed until 22 October, drawn that afternoon: counted as restless again."
         >
           <WireScene wire={runOutWire} />
         </Specimen>

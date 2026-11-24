@@ -391,10 +391,10 @@ describe("the camera", () => {
   describe("its tallies", () => {
     const header = () => screen.getByRole("banner").textContent;
 
-    it("totals attention, drifting, settled and snoozed in the header, each always shown", () => {
+    it("totals distressed, restless, content and snoozed in the header, each always shown", () => {
       camera(aviaryPlace);
 
-      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+      expect(header()).toContain("3 distressed3 restless7 content0 snoozed");
     });
 
     it("counts a snoozed bird in the header as snoozed only, in the snoozed word's grey", () => {
@@ -405,7 +405,7 @@ describe("the camera", () => {
         snoozing(["undev/gramophone", ".dotfiles", "undev/spool"], null),
       );
 
-      expect(header()).toContain("2 attention2 drifting6 settled3 snoozed");
+      expect(header()).toContain("2 distressed2 restless6 content3 snoozed");
       expect(screen.getByText("3 snoozed").className).toContain(
         "text-ink-faint",
       );
@@ -419,23 +419,23 @@ describe("the camera", () => {
         snoozing(["undev/gramophone", "undev/spool"], "2026-10-22"),
       );
 
-      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+      expect(header()).toContain("3 distressed3 restless7 content0 snoozed");
     });
 
     it("never counts a fence bird in the header's totals", () => {
       camera(aviaryPlace);
 
       expect(mockAviary.fence.birds.length).toBeGreaterThan(0);
-      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+      expect(header()).toContain("3 distressed3 restless7 content0 snoozed");
     });
 
-    it("counts a restless bird asleep at night as drifting in the header", () => {
+    it("counts a restless bird asleep at night as restless in the header", () => {
       camera(aviaryPlace, false, new Date(2026, 9, 23, 3, 0));
 
-      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+      expect(header()).toContain("3 distressed3 restless7 content0 snoozed");
     });
 
-    it("follows the wire's rule in the strip on a bird's page, snoozed after drifting", () => {
+    it("follows the wire's rule in the strip on a bird's page, snoozed after restless", () => {
       const { container } = camera(
         birdPageOf("undev/skiff"),
         false,
@@ -445,7 +445,7 @@ describe("the camera", () => {
 
       expect(
         container.querySelector('[data-part="strip-tally"]')?.textContent,
-      ).toBe("2 attention · 1 drifting · 2 snoozed");
+      ).toBe("2 distressed · 1 restless · 2 snoozed");
     });
 
     it("counts a run-out snooze in the strip by its mood again", () => {
@@ -458,7 +458,7 @@ describe("the camera", () => {
 
       expect(
         container.querySelector('[data-part="strip-tally"]')?.textContent,
-      ).toBe("3 attention · 1 drifting");
+      ).toBe("3 distressed · 1 restless");
     });
   });
 
@@ -504,7 +504,7 @@ describe("the camera", () => {
     // The tally keeps its one line under the wire's left end, in front and in colour.
     expect(tally.getAttribute("x")).toBe("36");
     expect(tally.getAttribute("y")).toBe(String(stripWireY + 16));
-    expect(tally.textContent).toBe("3 attention · 1 drifting");
+    expect(tally.textContent).toBe("3 distressed · 1 restless");
     expect(
       [...tally.querySelectorAll("tspan")]
         .map((tspan) => tspan.getAttribute("class"))

@@ -277,7 +277,7 @@ describe("the aviary's layout", () => {
   it("never moves a bird for its wire's name or tally", () => {
     const wire = wireOf(8);
     const named = { ...wire, name: "A wire with a very long name indeed" };
-    const settled = {
+    const allContent = {
       ...wire,
       birds: wire.birds.map((bird) => ({ ...bird, mood: "content" as const })),
     };
@@ -287,7 +287,7 @@ describe("the aviary's layout", () => {
       );
 
     expect(xs(aviaryOf([named]))).toEqual(xs(aviaryOf([wire])));
-    expect(xs(aviaryOf([settled]))).toEqual(xs(aviaryOf([wire])));
+    expect(xs(aviaryOf([allContent]))).toEqual(xs(aviaryOf([wire])));
   });
 
   it("reads a crowded wire like text: blocks in its order, top row first, each left to right", () => {

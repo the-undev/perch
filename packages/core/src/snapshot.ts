@@ -12,7 +12,8 @@ export interface EntityError {
   error: string;
 }
 
-export type ActivityState = "settled" | "in-progress" | "editing";
+/** How far the work in the local repository has got: uncommitted wins over committed. */
+export type WorkState = "uncommitted" | "committed" | "merged";
 
 export type HealthLevel = "green" | "amber" | "red";
 
@@ -120,7 +121,7 @@ export interface GitData {
    */
   defaultBranchCommits?: FinalisedCommit[] | null;
   remotes: Remote[];
-  activity: ActivityState;
+  workState: WorkState;
   drift: Drift;
   /** Null when HEAD is on the default branch, detached, or there is no default branch. */
   stall: Stall | null;

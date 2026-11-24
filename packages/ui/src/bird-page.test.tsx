@@ -70,7 +70,7 @@ describe("the bird's page's pieces", () => {
     ]);
   });
 
-  it("heads the page with the name, the state phrase and the activity, and no speech", () => {
+  it("heads the page with the name, the state phrase and the work state, and no speech", () => {
     const perch = mockBird("dev/perch");
     const { container } = render(
       <BirdPageHeading bird={perch} now={now} actions={null} />,
@@ -80,8 +80,23 @@ describe("the bird's page's pieces", () => {
     expect(
       container.querySelector('[data-part="state-word"]')?.textContent,
     ).toBe("content");
-    expect(container.textContent).toContain("editing ♪");
+    expect(container.textContent).toContain("uncommitted ♪");
     expect(container.textContent).not.toContain(perch.bubble.speech);
+  });
+
+  it("says committed in the heading, and nothing for merged", () => {
+    const perch = mockBird("dev/perch");
+    const headingText = (workState: "committed" | "merged") =>
+      render(
+        <BirdPageHeading
+          bird={{ ...perch, workState }}
+          now={now}
+          actions={null}
+        />,
+      ).container.textContent;
+
+    expect(headingText("committed")).toContain("committed");
+    expect(headingText("merged")).not.toMatch(/committed|merged/);
   });
 
   it("heads a snoozed bird's page with snoozed and the snooze's end beside it", () => {

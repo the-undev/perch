@@ -48,7 +48,7 @@ export function gitData(overrides: Partial<GitData>): GitData {
         pushUrls: ["git@github.com:finch/perch.git"],
       },
     ],
-    activity: "settled",
+    workState: "merged",
     drift: {
       uncommitted: null,
       unpushed: null,

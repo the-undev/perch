@@ -7,9 +7,6 @@ Work identified and not done. Remove work items as they land.
 `GLOSSARY.md` holds the language wanted. The code, config and app text still
 use the older words below. Each is looked at on its own, then renamed.
 
-- "activity" becomes "work state": "editing" becomes "uncommitted", "in flight"
-  and the scanner's "in-progress" become "committed", and "settled" becomes
-  "merged". Reaches the app text on the bird's page.
 - "window" in comments, config comments and the design site becomes
   "threshold".
 - `Drift` becomes unsafe work.

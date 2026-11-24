@@ -46,8 +46,8 @@ const birdNotes: Note[] = [
   },
   {
     title: "♪ · being edited",
-    text: "The song means the local repository holds uncommitted changes: your hands are in it now. Activity runs on its own axis beside health, so a bird of any mood can sing, and it sings at any hour. A fence bird never sings.",
-    rule: "From git: editing while any file is uncommitted.",
+    text: "The song means the local repository holds uncommitted changes: your hands are in it now. The work state runs on its own axis beside health, so a bird of any mood can sing, and it sings at any hour. A fence bird never sings.",
+    rule: "From git: uncommitted while any file is uncommitted.",
   },
   {
     title: "The eye and the z · asleep",
@@ -193,7 +193,7 @@ export function FieldGuidePage() {
         notes={birdNotes}
       >
         <Specimen
-          label={`${vault.name}: restless, editing, at the plumpness cap`}
+          label={`${vault.name}: restless, uncommitted, at the plumpness cap`}
           rule={`On ${vault.wire}. ${vault.bubble.speech}`}
         >
           <Plate phase="day">

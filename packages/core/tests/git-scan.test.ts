@@ -3,10 +3,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { GitThresholds } from "../src/derivations.ts";
 import {
-  deriveActivity,
   deriveDrift,
   deriveGit,
   deriveStall,
+  deriveWorkState,
 } from "../src/derivations.ts";
 import { fileMtime } from "../src/fs.ts";
 import type { RawCommit, RawGit } from "../src/raw.ts";
@@ -292,10 +292,10 @@ function rawGit(overrides: Partial<RawGit>): RawGit {
 }
 
 describe("deriving git data", () => {
-  it("is settled when everything is on the default branch and pushed", () => {
+  it("is merged when everything is on the default branch and pushed", () => {
     const data = deriveGit(rawGit({}), thresholds, now, "linked");
 
-    expect(data.activity).toBe("settled");
+    expect(data.workState).toBe("merged");
     expect(data.drift).toMatchObject({
       uncommitted: null,
       unpushed: null,
@@ -308,7 +308,7 @@ describe("deriving git data", () => {
     ]);
   });
 
-  it("is in progress with another local branch, unpushed commits or a detached head", () => {
+  it("is committed with a leftover local branch, unpushed commits or a detached head", () => {
     const feature = {
       name: "feature",
       lastCommit: commitAt("Work", daysBefore(1)),
@@ -323,16 +323,16 @@ describe("deriving git data", () => {
         thresholds,
         now,
         "linked",
-      ).activity,
-    ).toBe("in-progress");
+      ).workState,
+    ).toBe("committed");
     expect(
       deriveGit(
         rawGit({ unpushedCommits: [commitAt("Local", daysBefore(1))] }),
         thresholds,
         now,
         "linked",
-      ).activity,
-    ).toBe("in-progress");
+      ).workState,
+    ).toBe("committed");
     expect(
       deriveGit(
         rawGit({
@@ -341,8 +341,8 @@ describe("deriving git data", () => {
         thresholds,
         now,
         "linked",
-      ).activity,
-    ).toBe("in-progress");
+      ).workState,
+    ).toBe("committed");
   });
 
   it("carries the default branch's commits, and null without a local default branch", () => {
@@ -364,16 +364,16 @@ describe("deriving git data", () => {
     ).toBeNull();
   });
 
-  it("ranks editing over in progress", () => {
+  it("ranks uncommitted over committed", () => {
     expect(
-      deriveActivity({
+      deriveWorkState({
         uncommittedCount: 1,
         unpushedCount: 1,
         branch: "main",
         defaultBranch: "main",
         branchNames: ["main"],
       }),
-    ).toBe("editing");
+    ).toBe("uncommitted");
   });
 
   it("ages uncommitted work from the oldest existing dirty file, ignoring deleted ones", () => {
@@ -413,7 +413,7 @@ describe("deriving git data", () => {
       unpushed: null,
       level: "amber",
     });
-    expect(data.activity).toBe("editing");
+    expect(data.workState).toBe("uncommitted");
   });
 
   it("ages unpushed work from the oldest commit no remote holds", () => {

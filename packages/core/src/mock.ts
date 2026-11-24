@@ -1,7 +1,7 @@
 // A hand-curated snapshot and config pair modelled on the owner's real projects, for the design
 // site and the app to render every view model state without a scan. The scan is at 09:00 on 22
 // October 2026, and every age below is measured from it. Between them the birds cover every mood
-// and activity, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed
+// and work state, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed
 // backlog, a stalled branch and clean zeros, a bird with no local repository here on a wire and one
 // on the fence, each with its no-local-repository slip, and one on no forge, a remote no card can
 // read, forges that couldn't be read at all and one whose pull requests alone couldn't be read, the
@@ -553,7 +553,7 @@ const dotfiles = localEntity(".dotfiles", {
           ],
         },
       ],
-      activity: "in-progress",
+      workState: "committed",
       drift: {
         uncommitted: null,
         unpushed: {
@@ -630,7 +630,7 @@ const hothouse = localEntity("obsidian/Hothouse", {
           pushUrls: ["ssh://git@forgejo:2222/finch/Hothouse.git"],
         },
       ],
-      activity: "editing",
+      workState: "uncommitted",
       drift: {
         uncommitted: {
           since: "2026-10-21T03:00:00.000Z",
@@ -664,7 +664,7 @@ const hothouse = localEntity("obsidian/Hothouse", {
   },
 });
 
-/** Content, settled, with a backlog on offer. */
+/** Content, merged, with a backlog on offer. */
 const pocket = localEntity("obsidian/Pocket", {
   kind: "obsidian",
   forges: [forgeRepository("forgejo", "finch/Pocket", "account-listing")],
@@ -702,7 +702,7 @@ const pocket = localEntity("obsidian/Pocket", {
           pushUrls: ["ssh://git@forgejo:2222/finch/Pocket.git"],
         },
       ],
-      activity: "settled",
+      workState: "merged",
       drift: quietDrift,
       stall: null,
     },
@@ -782,7 +782,7 @@ const perch = localEntity("dev/perch", {
           ],
         },
       ],
-      activity: "editing",
+      workState: "uncommitted",
       drift: {
         uncommitted: {
           since: "2026-10-22T07:00:00.000Z",
@@ -862,7 +862,7 @@ const perch = localEntity("dev/perch", {
   },
 });
 
-/** Content and settled on two forges, neither running CI, Forgejo a commit behind GitHub. */
+/** Content and merged on two forges, neither running CI, Forgejo a commit behind GitHub. */
 const harbour = localEntity("undev/harbour", {
   forges: [
     forgeRepository("github", "the-undev/harbour"),
@@ -910,7 +910,7 @@ const harbour = localEntity("undev/harbour", {
           ],
         },
       ],
-      activity: "settled",
+      workState: "merged",
       drift: quietDrift,
       stall: null,
     },
@@ -1002,7 +1002,7 @@ const skiff = localEntity("undev/skiff", {
           ],
         },
       ],
-      activity: "in-progress",
+      workState: "committed",
       drift: quietDrift,
       stall: {
         branch: "extension-popup-ia",
@@ -1104,7 +1104,7 @@ const prism = localEntity("undev/prism", {
           ],
         },
       ],
-      activity: "editing",
+      workState: "uncommitted",
       drift: {
         uncommitted: {
           since: "2026-10-19T21:00:00.000Z",
@@ -1217,7 +1217,7 @@ const hollow = localEntity("undev/Hollow-legacy", {
           pushUrls: ["git@github-work:the-undev/Hollow.git"],
         },
       ],
-      activity: "settled",
+      workState: "merged",
       drift: quietDrift,
       stall: null,
     },
@@ -1244,7 +1244,7 @@ const hollow = localEntity("undev/Hollow-legacy", {
   },
 });
 
-/** Content and settled on two forges, neither running CI, with a long backlog. */
+/** Content and merged on two forges, neither running CI, with a long backlog. */
 const oxbow = localEntity("undev/oxbow", {
   forges: [
     forgeRepository("github", "the-undev/oxbow"),
@@ -1287,7 +1287,7 @@ const oxbow = localEntity("undev/oxbow", {
           ],
         },
       ],
-      activity: "settled",
+      workState: "merged",
       drift: quietDrift,
       stall: null,
     },
@@ -1352,7 +1352,7 @@ const gramophone = localEntity("undev/gramophone", {
           pushUrls: ["forge-work:the-undev/gramophone.git"],
         },
       ],
-      activity: "editing",
+      workState: "uncommitted",
       drift: {
         uncommitted: {
           since: "2026-10-17T06:00:00.000Z",
@@ -1380,7 +1380,7 @@ const gramophone = localEntity("undev/gramophone", {
   },
 });
 
-/** Content and settled with every count a clean zero. */
+/** Content and merged with every count a clean zero. */
 const spool = localEntity("undev/spool", {
   forges: [forgeRepository("forgejo", "the-undev/spool")],
   sources: {
@@ -1417,7 +1417,7 @@ const spool = localEntity("undev/spool", {
           pushUrls: ["forge-work:the-undev/spool.git"],
         },
       ],
-      activity: "settled",
+      workState: "merged",
       drift: quietDrift,
       stall: null,
     },
@@ -1434,7 +1434,7 @@ const spool = localEntity("undev/spool", {
   },
 });
 
-/** Content and in flight on a branch with one fresh commit not yet pushed. */
+/** Content and committed on a branch with one fresh commit not yet pushed. */
 const glyphDocs = localEntity("undev/glyph-docs", {
   kind: "obsidian",
   forges: [forgeRepository("forgejo", "the-undev/glyph-docs")],
@@ -1490,7 +1490,7 @@ const glyphDocs = localEntity("undev/glyph-docs", {
           pushUrls: ["forge-work:the-undev/glyph-docs.git"],
         },
       ],
-      activity: "in-progress",
+      workState: "committed",
       drift: {
         uncommitted: null,
         unpushed: {
@@ -1572,7 +1572,7 @@ const homeItConfig = localEntity("dev/hearth-config", {
           ],
         },
       ],
-      activity: "settled",
+      workState: "merged",
       drift: quietDrift,
       stall: null,
     },
@@ -1618,7 +1618,7 @@ const hello = localEntity("dev/odin/hello", {
         },
       ],
       remotes: [],
-      activity: "settled",
+      workState: "merged",
       drift: quietDrift,
       stall: null,
     },

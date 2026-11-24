@@ -329,7 +329,10 @@ describe("the bird's look", () => {
     const asleep = portrait(spool, smallHours);
     const z = part(asleep, "mark");
     cleanup();
-    const singing = portrait({ ...spool, activity: "editing" }, smallHours);
+    const singing = portrait(
+      { ...spool, workState: "uncommitted" },
+      smallHours,
+    );
     const note = part(singing, "mark");
 
     expect([z.getAttribute("x"), z.getAttribute("y")]).toEqual([
@@ -341,12 +344,12 @@ describe("the bird's look", () => {
     expect(z.getAttribute("class")).toContain("italic");
   });
 
-  it("looks the same in flight as settled, by day and by night", () => {
+  it("looks the same committed as merged, by day and by night", () => {
     const spool = mockBird("undev/spool");
-    const inFlight = { ...spool, activity: "in-flight" as const };
+    const committed = { ...spool, workState: "committed" as const };
 
     for (const now of [afternoon, smallHours]) {
-      expect(seen(inFlight, now)).toEqual(seen(spool, now));
+      expect(seen(committed, now)).toEqual(seen(spool, now));
     }
   });
 

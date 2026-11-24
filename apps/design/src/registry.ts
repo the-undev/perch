@@ -146,7 +146,7 @@ export const pages: DesignPage[] = [
     group: "components",
     title: "Bird's page heading",
     summary:
-      "The top of a bird's page: name, state phrase and activity, and the meta line saying where it lives.",
+      "The top of a bird's page: name, state phrase and work state, and the meta line saying where it lives.",
     component: HeadingPage,
   },
   {

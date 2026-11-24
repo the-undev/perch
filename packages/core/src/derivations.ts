@@ -17,7 +17,6 @@ import type {
   StatusFile,
 } from "./raw.ts";
 import type {
-  ActivityState,
   AgedWork,
   Backup,
   BugThresholds,
@@ -44,6 +43,7 @@ import type {
   WorkItemCounts,
   WorkItemGroup,
   WorkItemKind,
+  WorkState,
 } from "./snapshot.ts";
 import type { Health, HealthCause } from "./viewmodel.ts";
 
@@ -316,7 +316,7 @@ export function chooseDefaultBranch(
   return ["main", "master"].find((name) => branchNames.includes(name)) ?? null;
 }
 
-export interface ActivityInput {
+export interface WorkStateInput {
   uncommittedCount: number;
   unpushedCount: number;
   branch: string | null;
@@ -325,18 +325,18 @@ export interface ActivityInput {
 }
 
 /**
- * The git work-state. Editing when any file is uncommitted. Otherwise in progress when any
+ * The work state. Uncommitted when any file is uncommitted. Otherwise committed when any
  * commit is unpushed, HEAD is not on the default branch, or any other local branch exists.
- * Otherwise settled.
+ * Otherwise merged.
  */
-export function deriveActivity(input: ActivityInput): ActivityState {
-  if (input.uncommittedCount > 0) return "editing";
-  if (input.unpushedCount > 0) return "in-progress";
-  if (input.branch !== input.defaultBranch) return "in-progress";
+export function deriveWorkState(input: WorkStateInput): WorkState {
+  if (input.uncommittedCount > 0) return "uncommitted";
+  if (input.unpushedCount > 0) return "committed";
+  if (input.branch !== input.defaultBranch) return "committed";
   const otherBranches = input.branchNames.filter(
     (name) => name !== input.defaultBranch,
   );
-  return otherBranches.length > 0 ? "in-progress" : "settled";
+  return otherBranches.length > 0 ? "committed" : "merged";
 }
 
 /** Whole units of a length from a timestamp to the observation time, never negative. */
@@ -538,7 +538,7 @@ export function deriveGit(
         ? raw.defaultBranchCommits.value
         : null,
     remotes: raw.remotes.state === "observed" ? raw.remotes.value : [],
-    activity: deriveActivity({
+    workState: deriveWorkState({
       uncommittedCount: raw.dirtyFiles.length,
       unpushedCount: unpushed.length,
       branch,

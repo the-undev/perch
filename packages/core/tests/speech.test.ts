@@ -17,7 +17,7 @@ function subject(overrides: Partial<SpeechSubject>): SpeechSubject {
   return {
     fence: null,
     causes: [],
-    activity: "settled",
+    workState: "merged",
     branch: "main",
     defaultBranch: "main",
     unpushedCount: 0,
@@ -108,9 +108,9 @@ describe("content birds are brief", () => {
   });
 
   it("being edited: acknowledges you, with the song", () => {
-    expect(speak(subject({ activity: "editing", openWorkItems: 24 }))).toBe(
-      "We're in the middle of something. ♪",
-    );
+    expect(
+      speak(subject({ workState: "uncommitted", openWorkItems: 24 })),
+    ).toBe("We're in the middle of something. ♪");
   });
 
   it("settled with a backlog: offers the work items", () => {
@@ -122,11 +122,11 @@ describe("content birds are brief", () => {
     );
   });
 
-  it("in flight while fresh: names the branch, or the commits waiting to go up", () => {
+  it("committed while fresh: names the branch, or the commits waiting to go up", () => {
     expect(
-      speak(subject({ activity: "in-flight", branch: "scanner-poc" })),
+      speak(subject({ workState: "committed", branch: "scanner-poc" })),
     ).toBe("Out on scanner-poc. All fresh so far.");
-    expect(speak(subject({ activity: "in-flight", unpushedCount: 2 }))).toBe(
+    expect(speak(subject({ workState: "committed", unpushedCount: 2 }))).toBe(
       "Two commits waiting to go up. All fresh so far.",
     );
   });

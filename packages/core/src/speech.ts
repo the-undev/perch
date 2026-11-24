@@ -3,8 +3,8 @@
 // punctuation. Times are durations measured at the scan, so the words need no clock and no time
 // zone.
 
-import type { ForgeName } from "./snapshot.ts";
-import type { Activity, HealthCause } from "./viewmodel.ts";
+import type { ForgeName, WorkState } from "./snapshot.ts";
+import type { HealthCause } from "./viewmodel.ts";
 
 /** The prefix an asleep bird's speech gains when it is clicked. */
 export const wakingPrefix = "Mm? You woke me.";
@@ -21,7 +21,7 @@ export interface SpeechSubject {
   fence: FenceSituation | null;
   /** Amber and red causes, worst first. */
   causes: readonly HealthCause[];
-  activity: Activity | null;
+  workState: WorkState | null;
   branch: string | null;
   defaultBranch: string | null;
   unpushedCount: number;
@@ -201,18 +201,18 @@ function fenceSpeech(situation: FenceSituation): string {
 
 /** A content bird is brief: what it is doing, else its backlog as an offer, else that it is settled. */
 function contentSpeech(subject: SpeechSubject): string {
-  if (subject.activity === "editing") {
+  if (subject.workState === "uncommitted") {
     return "We're in the middle of something. ♪";
   }
   const { branch, defaultBranch, unpushedCount } = subject;
   if (
-    subject.activity === "in-flight" &&
+    subject.workState === "committed" &&
     branch !== null &&
     branch !== defaultBranch
   ) {
     return `Out on ${branch}. All fresh so far.`;
   }
-  if (subject.activity === "in-flight" && unpushedCount > 0) {
+  if (subject.workState === "committed" && unpushedCount > 0) {
     return `${capitalise(countWords(unpushedCount))} ${plural(unpushedCount, "commit", "commits")} waiting to go up. All fresh so far.`;
   }
   if (subject.openWorkItems > 0) {

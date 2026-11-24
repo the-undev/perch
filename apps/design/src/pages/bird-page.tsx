@@ -26,7 +26,7 @@ export function BirdPage() {
       >
         <Specimen
           label="content"
-          rule="Spool: nothing amber or red. All settled."
+          rule="Spool: nothing amber or red. All quiet."
         >
           <Plate phase="day">
             <BirdPortrait bird={spool} facing="right" now={byDay} />
@@ -117,11 +117,11 @@ export function BirdPage() {
 
       <Section
         title="♪ · being edited"
-        rule="The song means your hands are in its files right now. Activity is behaviour, not feeling: a separate axis from health, so any mood can sing."
+        rule="The song means your hands are in its files right now. The work state is behaviour, not feeling: a separate axis from health, so any mood can sing."
         min={260}
       >
         <Specimen
-          label="content and editing"
+          label="content and uncommitted"
           rule="Perch: uncommitted work younger than a day."
         >
           <Plate phase="day">
@@ -129,7 +129,7 @@ export function BirdPage() {
           </Plate>
         </Specimen>
         <Specimen
-          label="restless and editing"
+          label="restless and uncommitted"
           rule="The Hothouse Vault: six changes past a day."
         >
           <Plate phase="day">
@@ -137,7 +137,7 @@ export function BirdPage() {
           </Plate>
         </Specimen>
         <Specimen
-          label="distressed and editing"
+          label="distressed and uncommitted"
           rule="Prism: CI failing while you work on it."
         >
           <Plate phase="day">
@@ -330,7 +330,7 @@ export function BirdPage() {
           {
             name: "bird",
             type: "Bird",
-            what: "One bird from the view model: mood, activity, size, plumpness, adoption.",
+            what: "One bird from the view model: mood, work state, size, plumpness, adoption.",
           },
           {
             name: "facing",

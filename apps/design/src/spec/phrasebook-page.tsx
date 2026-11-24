@@ -85,28 +85,28 @@ const book: Group[] = [
     rule: "Green birds are brief. Contentment never needs more than two sentences, and the backlog is an invitation, not a nag.",
     entries: [
       entry(
-        "Settled",
+        "All quiet",
         "No unsafe work, no stalled flight, nothing red. The default state.",
         "undev/spool",
       ),
       entry(
-        "Being edited",
-        "Activity is editing. The song plays; the speech acknowledges you.",
+        "Uncommitted changes",
+        "Uncommitted. The song plays; the speech acknowledges you.",
         "dev/perch",
       ),
       entry(
-        "Settled with a backlog",
+        "All quiet with a backlog",
         "Green with open work items. The work items are an offer.",
         "obsidian/Pocket",
       ),
       entry(
         "Out on a branch",
-        "In flight on a non-default branch, all of it younger than the amber window.",
+        "Committed on a non-default branch, all of it younger than the amber threshold.",
         "undev/glyph-docs",
       ),
       variant(
         "Commits waiting to go up",
-        "In flight on the default branch with fresh unpushed commits.",
+        "Committed on the default branch with fresh unpushed commits.",
         "undev/glyph-docs",
         {
           subject: { ...glyphDocs, branch: glyphDocs.defaultBranch },
@@ -115,8 +115,8 @@ const book: Group[] = [
         },
       ),
       variant(
-        "Settled, nothing known",
-        "Settled with no commit to measure from.",
+        "All quiet, nothing known",
+        "Merged with no commit to measure from.",
         "undev/spool",
         {
           subject: { ...spool, lastTouchedHours: null },
@@ -253,7 +253,7 @@ function speaker(entry: Entry): Bird {
 function causeWords(subject: SpeechSubject): string {
   if (subject.fence !== null) return `fence: ${subject.fence.kind}`;
   if (subject.causes.length === 0)
-    return `no causes; activity ${subject.activity ?? "none"}`;
+    return `no causes; work state ${subject.workState ?? "none"}`;
   return subject.causes
     .map((cause) => `${cause.kind} ${cause.level}`)
     .join(", ");

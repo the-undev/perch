@@ -145,8 +145,8 @@ export function HeadingPage() {
         min={640}
       >
         <Specimen
-          label="content, editing, two forges"
-          rule="Perch: the song becomes the words editing ♪; it has a local repository here and is held on GitHub and Forgejo."
+          label="content, uncommitted, two forges"
+          rule="Perch: the song becomes the words uncommitted ♪; it has a local repository here and is held on GitHub and Forgejo."
         >
           <Ground>
             <BirdPageHeading
@@ -157,8 +157,8 @@ export function HeadingPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="restless, in flight"
-          rule="Skiff: in flight on a branch; settled says nothing."
+          label="restless, committed"
+          rule="Skiff: committed on a branch; merged says nothing."
         >
           <Ground>
             <BirdPageHeading
@@ -205,7 +205,7 @@ export function HeadingPage() {
         </Specimen>
         <Specimen
           label="on the fence, no local repository"
-          rule="obsidian-tidy: on a forge, with no local repository here, so the meta line starts with the forge, the heading has no activity, and no local repository stands where the launch actions would."
+          rule="obsidian-tidy: on a forge, with no local repository here, so the meta line starts with the forge, the heading has no work state, and no local repository stands where the launch actions would."
         >
           <Ground>
             <BirdPageHeading

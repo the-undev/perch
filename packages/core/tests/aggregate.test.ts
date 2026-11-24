@@ -123,7 +123,7 @@ describe("aggregate", () => {
 
     expect(later.entities[0]?.sources.git).toMatchObject({
       backup: "local-only",
-      activity: "editing",
+      workState: "uncommitted",
       drift: {
         uncommitted: { hours: 72, level: "amber" },
         level: "amber",

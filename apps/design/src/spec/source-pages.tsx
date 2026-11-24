@@ -128,7 +128,7 @@ const localGit: SourceSpec = {
       Linking comes first: each local repository&apos;s remote URLs link it to
       forge repositories (<Code>linkRepositories</Code> in{" "}
       <Code>src/link.ts</Code>
-      ). Then git data per entity: the default branch, the work-state, unsafe
+      ). Then git data per entity: the default branch, the work state, unsafe
       work aged in hours from its oldest change, and stalled flight aged in
       days. A missing include path becomes a scene-wide warning.
     </p>
@@ -136,14 +136,14 @@ const localGit: SourceSpec = {
   derivations: [
     "deriveGit",
     "chooseDefaultBranch",
-    "deriveActivity",
+    "deriveWorkState",
     "deriveDrift",
     "deriveStall",
   ],
   snapshotTypes: [
     "GitData",
     "Backup",
-    "ActivityState",
+    "WorkState",
     "Drift",
     "AgedWork",
     "Stall",

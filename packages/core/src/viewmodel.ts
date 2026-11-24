@@ -53,6 +53,7 @@ import type {
   WorkItemCounts,
   WorkItemGroup,
   WorkItemKind,
+  WorkState,
 } from "./snapshot.ts";
 import type { SnoozeEnd } from "./snooze-date.ts";
 import { type FenceSituation, type SpeechSubject, speak } from "./speech.ts";
@@ -114,9 +115,6 @@ export interface Health {
 /** How the bird wears its health: green content, amber restless, red distressed. */
 export type Mood = "content" | "restless" | "distressed";
 
-/** What the bird is doing, apart from how it feels: from the git work-state. */
-export type Activity = "editing" | "in-flight" | "settled";
-
 /** The whole scene: the wires top to bottom, then the fence beneath. */
 export interface Aviary {
   scannedAt: string;
@@ -176,8 +174,8 @@ export interface Bird {
   position: number;
   health: Health;
   mood: Mood;
-  /** Null without a local repository, which has no work-state. */
-  activity: Activity | null;
+  /** Null without a local repository, which has no work state. */
+  workState: WorkState | null;
   plumpness: Plumpness;
   /** Null when the owner has not snoozed it, and always on the fence. */
   snooze: Snooze | null;
@@ -461,12 +459,6 @@ const moodOf: Record<HealthLevel, Mood> = {
   green: "content",
   amber: "restless",
   red: "distressed",
-};
-
-const activityOf: Record<GitData["activity"], Activity> = {
-  editing: "editing",
-  "in-progress": "in-flight",
-  settled: "settled",
 };
 
 /** Worst first, for the CI chip when two forges disagree. */
@@ -1508,7 +1500,7 @@ function speechSubject(
   return {
     fence: wire === null ? fenceSituation(entity) : null,
     causes: deriveHealth(entity).causes,
-    activity: git ? activityOf[git.activity] : null,
+    workState: git?.workState ?? null,
     branch: git?.branch ?? null,
     defaultBranch: git?.defaultBranch ?? null,
     unpushedCount: git?.unpushedCount ?? 0,
@@ -1528,7 +1520,6 @@ export function deriveBird(
   const health = deriveHealth(entity);
   const mood = moodOf[health.level];
   const git = readable<GitData>(entity.sources.git);
-  const activity = git ? activityOf[git.activity] : null;
   const papers = papersFor(entity, config);
   const wire = wireFor(config, papers);
   const adopted = wire !== null;
@@ -1545,7 +1536,7 @@ export function deriveBird(
     position: 0,
     health,
     mood,
-    activity,
+    workState: git?.workState ?? null,
     plumpness: {
       outstanding,
       fullness: Math.min(outstanding, plumpnessCap) / plumpnessCap,

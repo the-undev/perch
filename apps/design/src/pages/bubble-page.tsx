@@ -12,23 +12,23 @@ interface Entry {
 const content: Entry[] = [
   {
     id: "undev/spool",
-    label: "Settled",
+    label: "All quiet",
     rule: "No unsafe work, no stalled flight, nothing red. The default state.",
   },
   {
     id: "dev/perch",
-    label: "Being edited",
-    rule: "Activity is editing. The song plays; the speech acknowledges you.",
+    label: "Uncommitted changes",
+    rule: "Uncommitted. The song plays; the speech acknowledges you.",
   },
   {
     id: "obsidian/Pocket",
-    label: "Settled with a backlog",
+    label: "All quiet with a backlog",
     rule: "Green with open work items. The work items are an offer.",
   },
   {
     id: "undev/glyph-docs",
     label: "Out on a branch",
-    rule: "In flight on a non-default branch, all of it younger than the amber window.",
+    rule: "Committed on a non-default branch, all of it younger than the amber threshold.",
   },
 ];
 

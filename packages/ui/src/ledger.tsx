@@ -7,7 +7,7 @@ import type {
   BranchLine,
   ChipKind,
   FlagLine,
-  LedgerEntry,
+  LedgerFact,
   PaperLine,
   PullRequestLine,
   River,
@@ -89,18 +89,18 @@ function Sub({ children }: { children: ReactNode }) {
   return <span className="block text-[12.5px] text-ink-faint">{children}</span>;
 }
 
-function entryValue(entry: LedgerEntry, now: Date): ReactNode {
-  switch (entry.kind) {
+function factValue(fact: LedgerFact, now: Date): ReactNode {
+  switch (fact.kind) {
     case "count":
-      return entry.text;
+      return fact.text;
     case "state":
-      return entry.url === null ? (
-        entry.text
+      return fact.url === null ? (
+        fact.text
       ) : (
-        <OutLink href={entry.url}>{entry.text}</OutLink>
+        <OutLink href={fact.url}>{fact.text}</OutLink>
       );
     case "time":
-      return agoWords(entry.at, now);
+      return agoWords(fact.at, now);
   }
 }
 
@@ -220,24 +220,24 @@ export function LandingMark() {
 }
 
 /** A row of the ledger proper: the label and value, with the row's working beneath, source by source. */
-function EntryRow({
-  entry,
+function FactRow({
+  fact,
   now,
   landing,
   onReveal,
 }: {
-  entry: LedgerEntry;
+  fact: LedgerFact;
   now: Date;
   landing: Landing | null;
   onReveal: (line: PaperLine) => void;
 }) {
-  const tone = entry.kind === "time" ? null : entry.tone;
-  const chip = entry.kind === "time" ? null : entry.chip;
-  const workings = entry.kind === "time" ? [] : entry.workings;
+  const tone = fact.kind === "time" ? null : fact.tone;
+  const chip = fact.kind === "time" ? null : fact.chip;
+  const workings = fact.kind === "time" ? [] : fact.workings;
   const landed = chip !== null && landing !== null && landing.chip === chip;
   return (
     <div
-      data-part="ledger-entry"
+      data-part="ledger-fact"
       data-chip={chip ?? undefined}
       className="relative isolate border-edge border-t px-0.5 first-of-type:border-t-0"
     >
@@ -245,13 +245,13 @@ function EntryRow({
       <div className="flex items-baseline justify-between gap-4 py-2.25">
         <span className="min-w-0">
           {chip !== null && <HandleMark />}
-          {entry.label}
+          {fact.label}
         </span>
         <span
           data-tone={tone ?? "none"}
           className={`whitespace-nowrap text-[13px] tabular-nums ${toneClass[tone ?? "none"]}`}
         >
-          {entryValue(entry, now)}
+          {factValue(fact, now)}
         </span>
       </div>
       {workings.length > 0 && (
@@ -277,7 +277,7 @@ function EntryRow({
 export interface LedgerProps {
   /** The sentence that opens the ledger when nothing waits; null when something does. */
   quiet: string | null;
-  entries: LedgerEntry[];
+  facts: LedgerFact[];
   /** The moment times are measured to: the render's clock, passed in. */
   now: Date;
   /** The chip last pressed on the roost, whose row is briefly marked; null when none has been. */
@@ -287,13 +287,7 @@ export interface LedgerProps {
 }
 
 /** The facts that exist for a bird, in full words, each chip's working spelled out on its row. */
-export function Ledger({
-  quiet,
-  entries,
-  now,
-  landing,
-  onReveal,
-}: LedgerProps) {
+export function Ledger({ quiet, facts, now, landing, onReveal }: LedgerProps) {
   return (
     <div data-part="ledger">
       {quiet !== null && (
@@ -304,10 +298,10 @@ export function Ledger({
           {quiet}
         </p>
       )}
-      {entries.map((entry) => (
-        <EntryRow
-          key={entry.label}
-          entry={entry}
+      {facts.map((fact) => (
+        <FactRow
+          key={fact.label}
+          fact={fact}
           now={now}
           landing={landing}
           onReveal={onReveal}

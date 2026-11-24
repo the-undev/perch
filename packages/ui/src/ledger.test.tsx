@@ -1,5 +1,5 @@
 import { mockSnapshot } from "@perch/core/mock.ts";
-import type { LedgerEntry, PaperLine } from "@perch/core/viewmodel.ts";
+import type { LedgerFact, PaperLine } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { BranchLines, CommitRiver, FlagLines, Ledger } from "./ledger.tsx";
@@ -41,7 +41,7 @@ describe("the ledger", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={mockBird("undev/prism").detail.ledger}
+        facts={mockBird("undev/prism").detail.ledger}
         now={now}
         landing={null}
       />,
@@ -61,7 +61,7 @@ describe("the ledger", () => {
         <Ledger
           onReveal={ignoreReveal}
           quiet={null}
-          entries={mockBird("undev/gramophone").detail.ledger}
+          facts={mockBird("undev/gramophone").detail.ledger}
           now={now}
           landing={null}
         />,
@@ -73,7 +73,7 @@ describe("the ledger", () => {
         <Ledger
           onReveal={ignoreReveal}
           quiet={null}
-          entries={mockBird("undev/prism").detail.ledger}
+          facts={mockBird("undev/prism").detail.ledger}
           now={now}
           landing={null}
         />,
@@ -85,7 +85,7 @@ describe("the ledger", () => {
   });
 
   it("links a state to its page and gives times as durations to the moment passed", () => {
-    const entries: LedgerEntry[] = [
+    const facts: LedgerFact[] = [
       {
         kind: "state",
         label: "CI",
@@ -101,7 +101,7 @@ describe("the ledger", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
         landing={null}
       />,
@@ -121,7 +121,7 @@ describe("the ledger", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={spool.quiet}
-        entries={spool.ledger}
+        facts={spool.ledger}
         now={now}
         landing={null}
       />,
@@ -136,7 +136,7 @@ describe("the ledger", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={spool.ledger}
+        facts={spool.ledger}
         now={now}
         landing={null}
       />,
@@ -165,7 +165,7 @@ describe("the ledger's workings", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={mockBird("dev/perch").detail.ledger}
+        facts={mockBird("dev/perch").detail.ledger}
         now={now}
         landing={null}
       />,
@@ -193,7 +193,7 @@ describe("the ledger's workings", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={mockBird("undev/prism").detail.ledger}
+        facts={mockBird("undev/prism").detail.ledger}
         now={now}
         landing={null}
       />,
@@ -217,7 +217,7 @@ describe("the ledger's workings", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={mockBird("obsidian/Hothouse").detail.ledger}
+        facts={mockBird("obsidian/Hothouse").detail.ledger}
         now={now}
         landing={null}
       />,
@@ -245,7 +245,7 @@ describe("the ledger's workings", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={perch.detail.ledger}
+        facts={perch.detail.ledger}
         now={now}
         landing={null}
       />,
@@ -266,12 +266,12 @@ describe("the ledger's workings", () => {
 
 describe("a chip's landing", () => {
   it("marks the row holding the pressed chip's working, only that row, and afresh on each press, its working lines lit with the mark", () => {
-    const entries = mockBird("dev/perch").detail.ledger;
+    const facts = mockBird("dev/perch").detail.ledger;
     const { container, rerender } = render(
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
         landing={{ chip: "ci", press: 1 }}
       />,
@@ -300,7 +300,7 @@ describe("a chip's landing", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
         landing={{ chip: "ci", press: 2 }}
       />,
@@ -318,7 +318,7 @@ describe("a chip's landing", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
         landing={{ chip: "open-work-items", press: 3 }}
       />,
@@ -334,7 +334,7 @@ describe("a chip's landing", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
         landing={null}
       />,
@@ -467,7 +467,7 @@ describe("the ledger's sections", () => {
   });
 
   describe("bug titles", () => {
-    const bugEntries = (text: string): LedgerEntry[] => [
+    const bugFacts = (text: string): LedgerFact[] => [
       {
         kind: "count",
         label: "bugs in docs/roadmap.md",
@@ -496,7 +496,7 @@ describe("the ledger's sections", () => {
         <Ledger
           onReveal={onReveal}
           quiet={null}
-          entries={bugEntries(text)}
+          facts={bugFacts(text)}
           now={now}
           landing={null}
         />,

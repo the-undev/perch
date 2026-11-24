@@ -355,7 +355,7 @@ export function DetailView({
         <div data-part="record" className={paneClass}>
           <Ledger
             quiet={detail.quiet}
-            entries={detail.ledger}
+            facts={detail.ledger}
             now={now}
             landing={landing}
             onReveal={revealLine}

@@ -1,4 +1,4 @@
-import type { LedgerEntry } from "@perch/core/viewmodel.ts";
+import type { LedgerFact } from "@perch/core/viewmodel.ts";
 import { ChipHandles } from "@perch/ui/chip.tsx";
 import { type Landing, Ledger } from "@perch/ui/ledger.tsx";
 import { useState } from "react";
@@ -9,7 +9,7 @@ import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 const ignoreReveal = () => {};
 
 /** A state the mock lacks: a last commit three weeks old. */
-const handBuilt: LedgerEntry[] = [
+const handBuilt: LedgerFact[] = [
   {
     kind: "count",
     label: "uncommitted changes",
@@ -147,7 +147,7 @@ function LandingDemo() {
       <Ledger
         onReveal={ignoreReveal}
         quiet={perch.detail.quiet}
-        entries={perch.detail.ledger}
+        facts={perch.detail.ledger}
         now={scanMoment}
         landing={landing}
       />
@@ -173,7 +173,7 @@ export function LedgerPage() {
               <Ledger
                 onReveal={ignoreReveal}
                 quiet={mockBird(specimen.id).detail.quiet}
-                entries={mockBird(specimen.id).detail.ledger}
+                facts={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}
                 landing={null}
               />
@@ -188,7 +188,7 @@ export function LedgerPage() {
             <Ledger
               onReveal={ignoreReveal}
               quiet={null}
-              entries={handBuilt}
+              facts={handBuilt}
               now={scanMoment}
               landing={null}
             />
@@ -211,7 +211,7 @@ export function LedgerPage() {
               <Ledger
                 onReveal={ignoreReveal}
                 quiet={mockBird(specimen.id).detail.quiet}
-                entries={mockBird(specimen.id).detail.ledger}
+                facts={mockBird(specimen.id).detail.ledger}
                 now={scanMoment}
                 landing={null}
               />
@@ -235,7 +235,7 @@ export function LedgerPage() {
               <Ledger
                 onReveal={ignoreReveal}
                 quiet={null}
-                entries={bugLedgerRows(specimen.bug, specimen.criticalBug)}
+                facts={bugLedgerRows(specimen.bug, specimen.criticalBug)}
                 now={scanMoment}
                 landing={null}
               />
@@ -266,8 +266,8 @@ export function LedgerPage() {
             what: "bird.detail.quiet: the sentence that opens the ledger when nothing waits; null when something does.",
           },
           {
-            name: "entries",
-            type: "LedgerEntry[]",
+            name: "facts",
+            type: "LedgerFact[]",
             what: "bird.detail.ledger: count, state and time rows in the view model's order; a count or state row names the chip it holds and its workings.",
           },
           {

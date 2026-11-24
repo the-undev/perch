@@ -195,9 +195,9 @@ describe("the detail view", () => {
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Perch");
     expect(container.textContent).toContain(perch.bubble.speech);
     expect(ledgerRows(container)).toEqual(
-      perch.detail.ledger.map((entry) => [
-        entry.label,
-        entry.kind === "time" ? expect.stringMatching(/ ago$/) : entry.text,
+      perch.detail.ledger.map((fact) => [
+        fact.label,
+        fact.kind === "time" ? expect.stringMatching(/ ago$/) : fact.text,
       ]),
     );
   });

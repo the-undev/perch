@@ -406,7 +406,7 @@ export interface NoLocalRepository {
   /** The repository a local repository's remote points at to link the bird, such as finch/pocket. */
   reference: string;
   /** The SSH address to clone from, the first a forge gives; null while unknown. */
-  cloneAddress: string | null;
+  sshAddress: string | null;
   /** Whether the meta line says "no local repository": config holds at least one launch action. */
   onMetaLine: boolean;
 }
@@ -1380,7 +1380,7 @@ function keyFilesFor(entity: Entity, papers: Papers | null): KeyFile[] {
 
 /**
  * The slip for a bird held by at least one forge and with no local repository here: the forges by
- * name, the first forge repository, and the first clone address a forge gave.
+ * name, the first forge repository, and the first SSH address a forge gave.
  */
 function noLocalRepositoryFor(
   entity: Entity,
@@ -1398,7 +1398,7 @@ function noLocalRepositoryFor(
       .join(" and "),
     reference: first.ref.slice(first.ref.indexOf(":") + 1),
     // A snapshot cached before the scanner kept the address has no field at all.
-    cloneAddress:
+    sshAddress:
       entity.repositories.forges
         .map((repository) => repository.sshUrl ?? null)
         .find((address) => address !== null) ?? null,

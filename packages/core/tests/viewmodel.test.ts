@@ -1935,7 +1935,7 @@ describe("the detail", () => {
     const forgeOnly = (id: string, forges: ForgeRepository[]) =>
       entity(id, { path: null, repositories: { local: null, forges } });
 
-    it("names the forge, the repository and the clone address for a bird held by a forge with no local repository here", async () => {
+    it("names the forge, the repository and the SSH address for a bird held by a forge with no local repository here", async () => {
       const pocket = forgeOnly("forgejo:finch/pocket", [
         repository(
           "forgejo",
@@ -1950,7 +1950,7 @@ describe("the detail", () => {
       ).toEqual({
         forges: "Forgejo",
         reference: "finch/pocket",
-        cloneAddress: "ssh://git@forgejo:2222/finch/Pocket.git",
+        sshAddress: "ssh://git@forgejo:2222/finch/Pocket.git",
         onMetaLine: true,
       });
     });
@@ -1967,7 +1967,7 @@ describe("the detail", () => {
       ).toEqual({
         forges: "GitHub and Forgejo",
         reference: "finch/notes",
-        cloneAddress: "git@github.com:finch/notes.git",
+        sshAddress: "git@github.com:finch/notes.git",
         onMetaLine: true,
       });
     });
@@ -1984,7 +1984,7 @@ describe("the detail", () => {
 
       expect(
         birdIn([tidy], await testConfig(""), tidy.id).detail.noLocalRepository,
-      ).toMatchObject({ forges: "GitHub", cloneAddress: null });
+      ).toMatchObject({ forges: "GitHub", sshAddress: null });
     });
 
     it("shows on the fence as on a wire", async () => {

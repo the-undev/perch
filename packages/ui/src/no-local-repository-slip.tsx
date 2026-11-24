@@ -18,8 +18,8 @@ const copyWords: Record<CopyOutcome, string> = {
   failed: "Couldn't copy",
 };
 
-/** The clone address in mono, cut short when narrow, and the control that copies it. */
-function CloneAddress({
+/** The SSH address in mono, cut short when narrow, and the control that copies it. */
+function SshAddress({
   address,
   onCopy,
 }: {
@@ -34,7 +34,7 @@ function CloneAddress({
   }, [outcome]);
   return (
     <span
-      data-part="clone-address"
+      data-part="ssh-address"
       className="flex min-w-0 max-w-full items-center gap-1.5 font-mono text-[11.5px] text-paper-quiet"
     >
       <code
@@ -63,7 +63,7 @@ export interface NoLocalRepositorySlipProps {
   slip: NoLocalRepository;
   /** Open Sources was pressed: the settings page opens on Sources, the local cards unfolded. */
   onLocalSources: () => void;
-  /** Puts the clone address on the clipboard, settling once it is there. */
+  /** Puts the SSH address on the clipboard, settling once it is there. */
   onCopy: (text: string) => Promise<void>;
 }
 
@@ -105,8 +105,8 @@ export function NoLocalRepositorySlip({
         >
           Open Sources
         </button>
-        {slip.cloneAddress !== null && (
-          <CloneAddress address={slip.cloneAddress} onCopy={onCopy} />
+        {slip.sshAddress !== null && (
+          <SshAddress address={slip.sshAddress} onCopy={onCopy} />
         )}
       </div>
     </section>

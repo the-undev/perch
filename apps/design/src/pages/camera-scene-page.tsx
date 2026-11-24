@@ -176,7 +176,7 @@ export function CameraScenePage() {
           {
             name: "onCopy",
             type: "(text: string) => Promise<void>",
-            what: "A no-local-repository slip's Copy was pressed: the app puts the clone address on the clipboard.",
+            what: "A no-local-repository slip's Copy was pressed: the app puts the SSH address on the clipboard.",
           },
           {
             name: "papers",

@@ -178,7 +178,7 @@ function pergolaNotesWith(
   return bird;
 }
 
-/** Pergola Notes read from a snapshot cached before the scanner kept clone addresses. */
+/** Pergola Notes read from a snapshot cached before the scanner kept SSH addresses. */
 export function pergolaNotesCached(): Bird {
   return pergolaNotesWith((forges) =>
     forges.map(({ sshUrl: _, ...repository }) => repository),

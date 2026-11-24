@@ -214,7 +214,7 @@ export function PaperPage() {
         min={420}
       >
         <Specimen
-          label="One forge, with the clone address"
+          label="One forge, with the SSH address"
           rule="Pergola Notes, adopted while only on Forgejo. The address is the SSH address Forgejo gave for the repository. Copy flips to Copied for a moment once the clipboard has it."
         >
           <Slip
@@ -233,7 +233,7 @@ export function PaperPage() {
         </Specimen>
         <Specimen
           label="The address unknown"
-          rule="Pergola Notes from a snapshot cached before the scanner kept clone addresses: the slip shows without the address row until the next scan."
+          rule="Pergola Notes from a snapshot cached before the scanner kept SSH addresses: the slip shows without the address row until the next scan."
         >
           <Slip bird={pergolaNotesCached()} onPress={setPressed} />
         </Specimen>
@@ -256,7 +256,7 @@ export function PaperPage() {
           {
             name: "slip",
             type: "NoLocalRepository",
-            what: "NoLocalRepositorySlip: bird.detail.noLocalRepository, the forges by name, the repository reference, the clone address or null while unknown, and whether the meta line carries its clause.",
+            what: "NoLocalRepositorySlip: bird.detail.noLocalRepository, the forges by name, the repository reference, the SSH address or null while unknown, and whether the meta line carries its clause.",
           },
           {
             name: "onLocalSources",

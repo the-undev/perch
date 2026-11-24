@@ -375,7 +375,7 @@ describe("the mock dataset", () => {
     expect(
       slipped.every(
         (bird) =>
-          bird.detail.noLocalRepository?.cloneAddress !== null &&
+          bird.detail.noLocalRepository?.sshAddress !== null &&
           bird.detail.noLocalRepository?.onMetaLine,
       ),
     ).toBe(true);

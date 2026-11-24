@@ -7,12 +7,6 @@ Work identified and not done. Remove work items as they land.
 `GLOSSARY.md` holds the language wanted. The code, config and app text still
 use the older words below. Each is looked at on its own, then renamed.
 
-- "item" becomes "entity". Reaches config's `[items]` table, so it needs a
-  migration.
-- "presence" and "clone" become "repository": local repository, forge
-  repository. Reaches config's comments.
-- "join" becomes "link". Reaches config's `joins` key.
-- "entry" becomes "papers".
 - "working" becomes "reading".
 - "river" becomes "history", and "spread" goes.
 - "activity" becomes "work state": "editing" becomes "uncommitted", "in flight"
@@ -30,6 +24,17 @@ use the older words below. Each is looked at on its own, then renamed.
   "content".
 - The Uptime Kuma source and the server entity go, until server monitoring is
   built. The migration drops a config's `[[sources.kuma]]` tables.
+
+## SSH address on the no-local-repository slip
+
+The slip offers the SSH address to copy. Investigate whether it should also
+offer an HTTPS address, and whether "SSH address" then still names it for its
+purpose.
+
+## Invented account names in mock data
+
+Mock data and test fixtures use a real account name in forge references
+(`the-undev`). Replace it with an invented one.
 
 ## Branches that are not work under way
 

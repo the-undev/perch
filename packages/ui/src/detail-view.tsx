@@ -82,7 +82,7 @@ export interface DetailViewProps {
   onSettings: () => void;
   /** The no-local-repository slip's Open Sources was pressed: open the settings page on Sources, the local cards unfolded. */
   onLocalSources: () => void;
-  /** Puts the slip's clone address on the clipboard, settling once it is there. */
+  /** Puts the slip's SSH address on the clipboard, settling once it is there. */
   onCopy: (text: string) => Promise<void>;
   /** The camera is panning the ground between birds' pages: a page mounted during it skips its swap. */
   panning: boolean;

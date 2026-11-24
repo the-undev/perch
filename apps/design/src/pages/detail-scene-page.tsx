@@ -166,7 +166,7 @@ export function DetailScenePage() {
           {
             name: "onCopy",
             type: "(text: string) => Promise<void>",
-            what: "The no-local-repository slip's Copy was pressed; the app puts the clone address on the clipboard, and the control says Copied once it settles.",
+            what: "The no-local-repository slip's Copy was pressed; the app puts the SSH address on the clipboard, and the control says Copied once it settles.",
           },
           {
             name: "panning",

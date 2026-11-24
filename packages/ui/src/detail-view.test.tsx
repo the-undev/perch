@@ -460,7 +460,7 @@ describe("the detail view", () => {
       expect(onLocalSources).toHaveBeenCalledOnce();
     });
 
-    it("copies the clone address through the caller and says so in place, then reads Copy again", async () => {
+    it("copies the SSH address through the caller and says so in place, then reads Copy again", async () => {
       vi.useFakeTimers();
       try {
         const { onCopy } = page(pergolaNotes());
@@ -510,12 +510,12 @@ describe("the detail view", () => {
         ...bird,
         detail: {
           ...bird.detail,
-          noLocalRepository: { ...noLocalRepository, cloneAddress: null },
+          noLocalRepository: { ...noLocalRepository, sshAddress: null },
         },
       });
 
       expect(slipOf(container)).not.toBeNull();
-      expect(container.querySelector('[data-part="clone-address"]')).toBeNull();
+      expect(container.querySelector('[data-part="ssh-address"]')).toBeNull();
       expect(screen.queryByRole("button", { name: "Copy" })).toBeNull();
     });
 

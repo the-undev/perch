@@ -277,7 +277,7 @@ describe("aggregate", () => {
     expect(snapshot.forges.github.active).toEqual([]);
   });
 
-  it("carries the SSH clone address each forge gives onto its repository, null when it gives none", () => {
+  it("carries the SSH address each forge gives onto its repository, null when it gives none", () => {
     const silent = forgeRepo("finch/silent", {});
     silent.info.sshUrl = { state: "absent", reason: "not-reported" };
     const forgeOnly = rawFiles({

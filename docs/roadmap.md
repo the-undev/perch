@@ -201,3 +201,7 @@ prints it and silencing it at the cause would leave the test output clean.
 
 - Whether "Waking a snoozed bird when a new cause appears" and "Custom end
   dates", out of scope for snoozes, become work items: TBD.
+
+- Config and snapshot versioning migrate on read, write the config back
+  without comments, keep the old config beside it, and refuse or ignore a
+  newer version. Whether this gets an ADR in `docs/adr/`: TBD.

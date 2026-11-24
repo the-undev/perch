@@ -34,17 +34,18 @@ import type {
   StatusFile,
 } from "./raw.ts";
 import { forgeRef, localRef } from "./refs.ts";
-import type {
-  Backup,
-  ConfigConflict,
-  Entity,
-  EntityError,
-  EntitySources,
-  ForgeData,
-  ForgeError,
-  ForgeListing,
-  Snapshot,
-  SourceStatus,
+import {
+  type Backup,
+  type ConfigConflict,
+  type Entity,
+  type EntityError,
+  type EntitySources,
+  type ForgeData,
+  type ForgeError,
+  type ForgeListing,
+  type Snapshot,
+  type SourceStatus,
+  snapshotVersion,
 } from "./snapshot.ts";
 
 const forgeNames: readonly ForgeName[] = ["github", "forgejo"];
@@ -393,6 +394,7 @@ export function aggregate(
   }
   const includes = files.local?.data.includes ?? {};
   return {
+    version: snapshotVersion,
     scannedAt: bundle.status.gatheredAt,
     durationMs: bundle.status.durationMs,
     aggregatedAt: aggregatedAt.toISOString(),

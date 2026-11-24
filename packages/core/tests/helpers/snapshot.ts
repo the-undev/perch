@@ -96,6 +96,7 @@ export function snapshotOf(entities: Entity[]): Snapshot {
     durationMs: 1,
   };
   return {
+    version: 2,
     scannedAt,
     durationMs: 1,
     aggregatedAt: scannedAt,

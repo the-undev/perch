@@ -352,7 +352,11 @@ export interface SourceCard {
   result: SourceCardResult;
 }
 
+/** The snapshot version this perch reads and writes. */
+export const snapshotVersion = 2;
+
 export interface Snapshot {
+  version: typeof snapshotVersion;
   /** When the raw files were gathered, and how long gathering took. */
   scannedAt: string;
   durationMs: number;

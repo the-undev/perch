@@ -1,0 +1,271 @@
+{
+  "scannedAt": "2026-10-22T09:00:00.000Z",
+  "durationMs": 4200,
+  "aggregatedAt": "2026-10-22T09:00:05.000Z",
+  "configPath": "/home/owner/.config/perch/config.toml",
+  "warnings": [],
+  "conflicts": [],
+  "forges": {
+    "github": {
+      "active": [
+        {
+          "ref": "github:finch/nest",
+          "fullName": "finch/nest",
+          "url": "https://github.com/finch/nest",
+          "itemId": "dev/nest",
+          "ignored": false
+        },
+        {
+          "ref": "github:finch/loose",
+          "fullName": "finch/loose",
+          "url": "https://github.com/finch/loose",
+          "itemId": null,
+          "ignored": false
+        }
+      ],
+      "archived": []
+    },
+    "forgejo": {
+      "active": [],
+      "archived": []
+    }
+  },
+  "sources": {
+    "local": {
+      "state": "ok",
+      "reason": null,
+      "error": null,
+      "lastSucceededAt": "2026-10-22T09:00:00.000Z",
+      "durationMs": 300
+    },
+    "kuma": {
+      "state": "ok",
+      "reason": null,
+      "error": null,
+      "lastSucceededAt": "2026-10-22T09:00:00.000Z",
+      "durationMs": 120
+    }
+  },
+  "sourceCards": [
+    {
+      "id": "local:~/dev",
+      "kind": "local",
+      "label": "~/dev",
+      "result": {
+        "state": "ok",
+        "at": "2026-10-22T09:00:00.000Z",
+        "count": 1,
+        "missingIncludes": []
+      }
+    },
+    {
+      "id": "kuma:home",
+      "kind": "kuma",
+      "label": "home",
+      "result": {
+        "state": "ok",
+        "at": "2026-10-22T09:00:00.000Z",
+        "count": 1,
+        "missingIncludes": []
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": "dev/nest",
+      "name": "nest",
+      "kind": "git",
+      "path": "/home/owner/dev/nest",
+      "liveSources": [],
+      "presences": {
+        "local": {
+          "ref": "local:dev/nest",
+          "path": "/home/owner/dev/nest"
+        },
+        "forges": [
+          {
+            "forge": "github",
+            "ref": "github:finch/nest",
+            "fullName": "finch/nest",
+            "url": "https://github.com/finch/nest",
+            "sshUrl": "git@github.com:finch/nest.git",
+            "foundBy": "account-listing"
+          }
+        ]
+      },
+      "flags": [
+        {
+          "flag": "remote-joined-elsewhere",
+          "level": null,
+          "detail": "github:finch/twig is joined to dev/twig"
+        }
+      ],
+      "sources": {
+        "git": {
+          "backup": "joined",
+          "branch": "main",
+          "defaultBranch": "main",
+          "upstream": "origin/main",
+          "uncommittedCount": 2,
+          "ahead": 1,
+          "behind": 0,
+          "unpushedCount": 1,
+          "lastCommitAt": "2026-10-21T15:00:00.000Z",
+          "oldestUncommittedAt": "2026-10-21T12:00:00.000Z",
+          "oldestUnpushedAt": "2026-10-21T15:00:00.000Z",
+          "unpushedBranches": [],
+          "branches": [
+            {
+              "name": "main",
+              "lastCommitAt": "2026-10-21T15:00:00.000Z",
+              "subject": "Add perch",
+              "upstream": "origin/main"
+            }
+          ],
+          "defaultBranchCommits": [],
+          "remotes": [
+            {
+              "name": "origin",
+              "fetchUrl": "git@github.com:finch/nest.git",
+              "pushUrls": ["git@github.com:finch/nest.git"]
+            }
+          ],
+          "activity": "editing",
+          "drift": {
+            "uncommitted": {
+              "since": "2026-10-21T12:00:00.000Z",
+              "hours": 21,
+              "level": "green"
+            },
+            "unpushed": null,
+            "level": "green",
+            "thresholds": {
+              "amberHours": 24,
+              "redHours": 72
+            }
+          },
+          "stall": null
+        },
+        "roadmap": {
+          "counts": {
+            "task": 2,
+            "bug": 0,
+            "critical-bug": 0
+          },
+          "files": [
+            {
+              "path": "ROADMAP.md",
+              "items": [
+                {
+                  "text": "Top task",
+                  "kind": "task",
+                  "done": null,
+                  "line": 3,
+                  "source": "bullet",
+                  "body": null
+                }
+              ],
+              "groups": [
+                {
+                  "heading": "Later",
+                  "level": 2,
+                  "line": 5,
+                  "role": "structure",
+                  "items": [],
+                  "groups": [
+                    {
+                      "heading": "Soon",
+                      "level": 3,
+                      "line": 6,
+                      "role": "group",
+                      "items": [
+                        {
+                          "text": "Nested task",
+                          "kind": "task",
+                          "done": false,
+                          "line": 7,
+                          "source": "bullet",
+                          "body": null
+                        }
+                      ],
+                      "groups": [],
+                      "progress": {
+                        "done": 0,
+                        "total": 1
+                      }
+                    }
+                  ],
+                  "progress": null
+                }
+              ],
+              "counts": {
+                "task": 2,
+                "bug": 0,
+                "critical-bug": 0
+              }
+            }
+          ],
+          "thresholds": {
+            "bugs": {
+              "amberCount": 3,
+              "redCount": 6
+            },
+            "criticalBugs": {
+              "amberCount": 1,
+              "redCount": 2
+            }
+          },
+          "detectedPath": null
+        }
+      }
+    },
+    {
+      "id": "dev/shed",
+      "name": "shed",
+      "kind": "git",
+      "path": "/home/owner/dev/shed",
+      "liveSources": [],
+      "presences": {
+        "local": {
+          "ref": "local:dev/shed",
+          "path": "/home/owner/dev/shed"
+        },
+        "forges": []
+      },
+      "flags": [],
+      "sources": {
+        "git": {
+          "error": "git status failed"
+        },
+        "roadmap": {
+          "error": "no roadmap file"
+        }
+      }
+    },
+    {
+      "id": "server:boiler",
+      "name": "boiler",
+      "kind": "server",
+      "path": null,
+      "liveSources": ["dockerContainers"],
+      "presences": {
+        "local": null,
+        "forges": []
+      },
+      "flags": [],
+      "sources": {
+        "kuma": {
+          "allUp": true,
+          "monitors": [
+            {
+              "id": 1,
+              "name": "boiler",
+              "status": "up",
+              "lastHeartbeatAt": "2026-10-22T08:59:00.000Z"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1761,6 +1761,7 @@ function forgejoCard(account: string): SourceCard {
 }
 
 export const mockSnapshot: Snapshot = {
+  version: 2,
   scannedAt,
   durationMs: 6200,
   aggregatedAt: "2026-10-22T09:00:07.000Z",

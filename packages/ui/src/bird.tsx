@@ -102,7 +102,7 @@ function dimLook(
   };
 }
 
-/** The look of a bird at a time: the fence first, then a snooze not yet run out, then mood, editing and the hour. */
+/** The look of a bird at a time: the fence first, then a snooze not yet run out, then mood, uncommitted changes and the hour. */
 export function birdLook(bird: BirdModel, now: Date): BirdLook {
   const sleepHours = inSleepHours(now);
   if (!bird.adopted) return dimLook("not adopted", null, sleepHours);
@@ -118,7 +118,7 @@ export function birdLook(bird: BirdModel, now: Date): BirdLook {
     restlessness: restlessness[bird.mood],
     tailFlicks: bird.mood === "distressed",
   };
-  if (bird.activity === "editing") return { ...awake, mark: "note" };
+  if (bird.workState === "uncommitted") return { ...awake, mark: "note" };
   if (bird.mood === "distressed" || !sleepHours) {
     return { ...awake, mark: null };
   }
@@ -399,7 +399,7 @@ const labelClass = {
 const labelReacts =
   "group-hover:fill-ink group-focus-visible:fill-ink group-focus-visible:underline";
 
-/** One bird perched in a scene: its figure, its song when edited, and its name beneath. */
+/** One bird perched in a scene: its figure, its song when uncommitted, and its name beneath. */
 export function Bird({
   bird,
   x,

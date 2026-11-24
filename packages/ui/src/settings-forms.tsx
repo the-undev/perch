@@ -30,7 +30,7 @@ import {
 import {
   flatThresholds,
   type ThresholdKey,
-  thresholdWindows,
+  thresholdFacts,
 } from "@perch/core/papers-form.ts";
 import {
   checkSentence,
@@ -349,7 +349,7 @@ export function WiresGroup({
   );
 }
 
-/** The six global thresholds, amber before red in each window. */
+/** The global thresholds, amber before red for each fact. */
 export function ThresholdsGroup({
   value,
   onChange,
@@ -362,21 +362,21 @@ export function ThresholdsGroup({
     <SettingsGroup
       title="Judgement"
       table="[thresholds]"
-      lead="At the amber number the bird turns restless, at the red one distressed. Whole numbers above zero; a bird's papers may override either window."
+      lead="At the amber number the bird turns restless, at the red one distressed. Whole numbers above zero; a bird's papers may override either threshold."
     >
-      {thresholdWindows.map((window) => {
+      {thresholdFacts.map((fact) => {
         const atDefaults =
-          value[window.amber] === defaults[window.amber] &&
-          value[window.red] === defaults[window.red];
+          value[fact.amber] === defaults[fact.amber] &&
+          value[fact.red] === defaults[fact.red];
         return (
-          <FormRow key={window.label} label={window.label} sub="">
+          <FormRow key={fact.label} label={fact.label} sub="">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
               {(["amber", "red"] as const).map((level) => {
-                const key = window[level];
+                const key = fact[level];
                 return (
                   <ThresholdField
                     key={level}
-                    window={window}
+                    fact={fact}
                     level={level}
                     value={value[key]}
                     placeholder=""
@@ -389,12 +389,12 @@ export function ThresholdsGroup({
               ) : (
                 <button
                   type="button"
-                  aria-label={`Clear ${window.label}`}
+                  aria-label={`Clear ${fact.label}`}
                   onClick={() =>
                     onChange({
                       ...value,
-                      [window.amber]: defaults[window.amber],
-                      [window.red]: defaults[window.red],
+                      [fact.amber]: defaults[fact.amber],
+                      [fact.red]: defaults[fact.red],
                     })
                   }
                   className={quietClass}
@@ -404,8 +404,8 @@ export function ThresholdsGroup({
               )}
             </div>
             <p className="m-0 max-w-[52ch] text-[12.5px] text-ink-faint">
-              {window.counts}; the defaults are {defaults[window.amber]} and{" "}
-              {defaults[window.red]}.
+              {fact.counts}; the defaults are {defaults[fact.amber]} and{" "}
+              {defaults[fact.red]}.
             </p>
           </FormRow>
         );

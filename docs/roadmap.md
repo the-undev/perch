@@ -2,26 +2,6 @@
 
 Work identified and not done. Remove work items as they land.
 
-## Code to match the glossary
-
-`GLOSSARY.md` holds the language wanted. The code, config and app text still
-use the older words below. Each is looked at on its own, then renamed.
-
-- "activity" becomes "work state": "editing" becomes "uncommitted", "in flight"
-  and the scanner's "in-progress" become "committed", and "settled" becomes
-  "merged". Reaches the app text on the bird's page.
-- "window" in comments, config comments and the design site becomes
-  "threshold".
-- `Drift` becomes unsafe work.
-- "parked" in code names and comments becomes "stalled" (`snapshot.ts`,
-  `viewmodel.ts`, `derivations.ts`, `mock.ts`). The app text already says
-  stalled.
-- The sky legend, the header's totals and each wire's tally say "attention",
-  "drifting" and "settled". They become "distressed", "restless" and
-  "content".
-- The Uptime Kuma source and the server entity go, until server monitoring is
-  built. The migration drops a config's `[[sources.kuma]]` tables.
-
 ## SSH address on the no-local-repository slip
 
 The slip offers the SSH address to copy. Investigate whether it should also

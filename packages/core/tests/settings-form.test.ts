@@ -603,7 +603,7 @@ describe("what the settings cannot be", () => {
       }),
     ).toEqual([
       "Unsafe work: thresholds must be whole hours above zero",
-      "Stalled flight: thresholds must be whole days above zero",
+      "Stalled: thresholds must be whole days above zero",
     ]);
   });
 

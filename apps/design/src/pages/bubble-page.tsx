@@ -12,23 +12,23 @@ interface Entry {
 const content: Entry[] = [
   {
     id: "undev/spool",
-    label: "Settled",
-    rule: "No unsafe work, no stalled flight, nothing red. The default state.",
+    label: "All quiet",
+    rule: "No unsafe work, not stalled, nothing red. The default state.",
   },
   {
     id: "dev/perch",
-    label: "Being edited",
-    rule: "Activity is editing. The song plays; the speech acknowledges you.",
+    label: "Uncommitted changes",
+    rule: "Uncommitted. The song plays; the speech acknowledges you.",
   },
   {
     id: "obsidian/Pocket",
-    label: "Settled with a backlog",
+    label: "All quiet with a backlog",
     rule: "Green with open work items. The work items are an offer.",
   },
   {
     id: "undev/glyph-docs",
     label: "Out on a branch",
-    rule: "In flight on a non-default branch, all of it younger than the amber window.",
+    rule: "Committed on a non-default branch, all of it younger than the amber threshold.",
   },
 ];
 
@@ -147,7 +147,7 @@ export function BubblePage() {
       >
         <Specimen
           label="Woken"
-          rule="Skiff: restless, not being edited, asleep until clicked."
+          rule="Skiff: restless, committed, asleep until clicked."
         >
           <Plate phase="night">
             <SpeakingBird

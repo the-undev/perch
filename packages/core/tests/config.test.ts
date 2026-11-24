@@ -129,7 +129,7 @@ describe("example config", () => {
     expect(parseConfig(text, home).window).toEqual({ tray: false });
   });
 
-  it("shows the bug windows and the built-in word lists, which parse as the defaults once uncommented", async () => {
+  it("shows the bug thresholds and the built-in word lists, which parse as the defaults once uncommented", async () => {
     const lines = (await exampleText()).split("\n");
     const thresholds = lines.indexOf("[thresholds]");
     const work = lines.indexOf("# [work]");
@@ -308,7 +308,7 @@ describe("entity overrides", () => {
     expect(() => parseConfig(text, home)).toThrow(/wire must be one of/);
   });
 
-  it("reject an amber window that does not open before red, once merged with the globals", async () => {
+  it("reject an amber threshold that does not come before red, once merged with the globals", async () => {
     const text = await withOverrides(
       '[papers."dev/perch"]\nunsafe_amber_hours = 72\n',
     );

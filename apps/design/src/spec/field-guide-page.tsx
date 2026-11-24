@@ -31,8 +31,8 @@ interface Note {
 const birdNotes: Note[] = [
   {
     title: "Breast colour · health, worn as mood",
-    text: `Green content, amber restless, red distressed. Failing CI is red. Each roadmap file is judged on its own: ${bugs.amberCount} open bugs turn it amber and ${bugs.redCount} red, ${criticalBugs.amberCount} open critical bug amber and ${criticalBugs.redCount} red. Tasks never count. A remote the local repository pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled flight: on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
-    rule: "Worst input wins. The windows are config defaults from the Judgement page; a bird's papers may set its own.",
+    text: `Green content, amber restless, red distressed. Failing CI is red. Each roadmap file is judged on its own: ${bugs.amberCount} open bugs turn it amber and ${bugs.redCount} red, ${criticalBugs.amberCount} open critical bug amber and ${criticalBugs.redCount} red. Tasks never count. A remote the local repository pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled: on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
+    rule: "Worst input wins. The thresholds are config defaults from the Judgement page; a bird's papers may set its own.",
   },
   {
     title: "Restlessness · unhappiness in motion",
@@ -45,13 +45,13 @@ const birdNotes: Note[] = [
     rule: "Volume at a glance; the exact count is the bubble's open-work-items chip.",
   },
   {
-    title: "♪ · being edited",
-    text: "The song means the local repository holds uncommitted changes: your hands are in it now. Activity runs on its own axis beside health, so a bird of any mood can sing, and it sings at any hour. A fence bird never sings.",
-    rule: "From git: editing while any file is uncommitted.",
+    title: "♪ · uncommitted changes",
+    text: "The song means the local repository holds uncommitted changes: your hands are in it now. The work state runs on its own axis beside health, so a bird of any mood can sing, and it sings at any hour. A fence bird never sings.",
+    rule: "From git: uncommitted while any file is uncommitted.",
   },
   {
     title: "The eye and the z · asleep",
-    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor being edited sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. A snoozed bird sleeps at any hour, dimmed like a fence bird, until its end date or until woken. Colours and places never change by night.",
+    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor uncommitted sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. A snoozed bird sleeps at any hour, dimmed like a fence bird, until its end date or until woken. Colours and places never change by night.",
     rule: "Clicked with its eyes closed, a bird wakes and says so before its speech.",
   },
   {
@@ -193,7 +193,7 @@ export function FieldGuidePage() {
         notes={birdNotes}
       >
         <Specimen
-          label={`${vault.name}: restless, editing, at the plumpness cap`}
+          label={`${vault.name}: restless, uncommitted, at the plumpness cap`}
           rule={`On ${vault.wire}. ${vault.bubble.speech}`}
         >
           <Plate phase="day">
@@ -238,7 +238,7 @@ export function FieldGuidePage() {
         >
           <Specimen
             label="Spool in the small hours: asleep"
-            rule="Content and not edited, so its eye closes under a green z."
+            rule="Content and committed or merged, so its eye closes under a green z."
           >
             <Plate phase="night">
               <BirdPortrait
@@ -250,7 +250,7 @@ export function FieldGuidePage() {
           </Specimen>
           <Specimen
             label="Perch in the small hours: singing"
-            rule="Being edited, so it stays awake and shows the note, never the z."
+            rule="Uncommitted, so it stays awake and shows the note, never the z."
           >
             <Plate phase="night">
               <BirdPortrait

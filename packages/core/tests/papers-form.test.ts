@@ -253,10 +253,10 @@ describe("the papers form", () => {
       papersProblems(values({ unsafe_amber_hours: 1.5 }), options),
     ).toEqual(["Unsafe work: thresholds must be whole hours above zero"]);
     expect(papersProblems(values({ stalled_amber_days: 30 }), options)).toEqual(
-      ["Stalled flight: amber must come before red"],
+      ["Stalled: amber must come before red"],
     );
     expect(papersProblems(values({ stalled_red_days: 0 }), options)).toEqual([
-      "Stalled flight: thresholds must be whole days above zero",
+      "Stalled: thresholds must be whole days above zero",
     ]);
   });
 });

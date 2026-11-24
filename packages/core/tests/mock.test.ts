@@ -3,9 +3,9 @@ import { resolvePapers, thresholdsFor } from "../src/config.ts";
 import {
   configuredCards,
   countOpenWorkItems,
-  deriveActivity,
-  deriveDrift,
   deriveStall,
+  deriveUnsafeWork,
+  deriveWorkState,
 } from "../src/derivations.ts";
 import { launchKinds } from "../src/launch-kinds.ts";
 import { mockAviary, mockConfig, mockHome, mockSnapshot } from "../src/mock.ts";
@@ -40,12 +40,12 @@ describe("the mock dataset", () => {
     }
   });
 
-  it("holds every mood and every activity among its adopted birds, and one with no local repository and so no activity", () => {
+  it("holds every mood and every work state among its adopted birds, and one with no local repository and so no work state", () => {
     expect(new Set(adopted.map((bird) => bird.mood))).toEqual(
       new Set(["content", "restless", "distressed"]),
     );
-    expect(new Set(adopted.map((bird) => bird.activity))).toEqual(
-      new Set(["editing", "in-flight", "settled", null]),
+    expect(new Set(adopted.map((bird) => bird.workState))).toEqual(
+      new Set(["uncommitted", "committed", "merged", null]),
     );
   });
 
@@ -94,7 +94,7 @@ describe("the mock dataset", () => {
     expect(adopted.some((bird) => bird.health.causes.length > 1)).toBe(true);
   });
 
-  it("holds roadmap files within their bug windows, past amber on critical bugs, and past red on bugs", () => {
+  it("holds roadmap files within their bug thresholds, past amber on critical bugs, and past red on bugs", () => {
     const bugCauses = adopted.flatMap((bird) =>
       bird.health.causes.flatMap((cause) =>
         cause.kind === "bugs" ? [[cause.level, cause.critical]] : [],
@@ -489,8 +489,8 @@ describe("the mock dataset", () => {
       }
       const git = entity.sources.git;
       if (git === undefined || "error" in git) continue;
-      expect(git.drift, entity.id).toEqual(
-        deriveDrift(
+      expect(git.unsafeWork, entity.id).toEqual(
+        deriveUnsafeWork(
           {
             oldestUncommittedAt: git.oldestUncommittedAt,
             oldestUnpushedAt: git.oldestUnpushedAt,
@@ -529,8 +529,8 @@ describe("the mock dataset", () => {
       ).toEqual(
         mainBranch && [Date.parse(mainBranch.lastCommitAt), mainBranch.subject],
       );
-      expect(git.activity, entity.id).toBe(
-        deriveActivity({
+      expect(git.workState, entity.id).toBe(
+        deriveWorkState({
           uncommittedCount: git.uncommittedCount,
           unpushedCount: git.unpushedCount,
           branch: git.branch,

@@ -12,7 +12,8 @@ export interface EntityError {
   error: string;
 }
 
-export type ActivityState = "settled" | "in-progress" | "editing";
+/** How far the work in the local repository has got: uncommitted wins over committed. */
+export type WorkState = "uncommitted" | "committed" | "merged";
 
 export type HealthLevel = "green" | "amber" | "red";
 
@@ -36,29 +37,29 @@ export interface UnpushedBranch {
   upstream: string | null;
   /** The branch's commits that no remote-tracking ref contains. */
   count: number;
-  /** The branch's oldest such commit, aged against the unsafe-work windows. */
+  /** The branch's oldest such commit, aged against the unsafe-work thresholds. */
   work: AgedWork;
 }
 
-/** Windows in hours: amber at or beyond the first, red at or beyond the second. */
+/** Thresholds in hours: amber at or beyond the first, red at or beyond the second. */
 export interface HourThresholds {
   amberHours: number;
   redHours: number;
 }
 
-/** Windows in days: amber at or beyond the first, red at or beyond the second. */
+/** Thresholds in days: amber at or beyond the first, red at or beyond the second. */
 export interface DayThresholds {
   amberDays: number;
   redDays: number;
 }
 
-/** Windows in open work items: amber at or beyond the first count, red at or beyond the second. */
+/** Thresholds in open work items: amber at or beyond the first count, red at or beyond the second. */
 export interface CountThresholds {
   amberCount: number;
   redCount: number;
 }
 
-/** Unsafe work of one kind, aged from its oldest change and judged against the entity's windows. */
+/** Unsafe work of one kind, aged from its oldest change and judged against the entity's thresholds. */
 export interface AgedWork {
   since: string;
   /** Whole hours from since to when git was read. */
@@ -67,7 +68,7 @@ export interface AgedWork {
 }
 
 /** Unsafe work: uncommitted changes and unpushed commits, each aged from its oldest. */
-export interface Drift {
+export interface UnsafeWork {
   /** The oldest uncommitted change, from the dirty files' mtimes; null when there is none. */
   uncommitted: AgedWork | null;
   /** The oldest commit no remote holds, aged only against a linked forge repository. */
@@ -77,7 +78,7 @@ export interface Drift {
   thresholds: HourThresholds;
 }
 
-/** HEAD parked on a branch other than the default, aged from that branch's newest commit. */
+/** HEAD on a branch other than the default, aged from that branch's newest commit. */
 export interface Stall {
   branch: string;
   since: string;
@@ -120,8 +121,8 @@ export interface GitData {
    */
   defaultBranchCommits?: FinalisedCommit[] | null;
   remotes: Remote[];
-  activity: ActivityState;
-  drift: Drift;
+  workState: WorkState;
+  unsafeWork: UnsafeWork;
   /** Null when HEAD is on the default branch, detached, or there is no default branch. */
   stall: Stall | null;
 }
@@ -170,7 +171,7 @@ export interface RoadmapFile {
   counts: WorkItemCounts;
 }
 
-/** The windows each roadmap file's open bugs and critical bugs are judged against. */
+/** The thresholds each roadmap file's open bugs and critical bugs are judged against. */
 export interface BugThresholds {
   bugs: CountThresholds;
   criticalBugs: CountThresholds;

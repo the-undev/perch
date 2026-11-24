@@ -3,8 +3,8 @@
 // punctuation. Times are durations measured at the scan, so the words need no clock and no time
 // zone.
 
-import type { ForgeName } from "./snapshot.ts";
-import type { Activity, HealthCause } from "./viewmodel.ts";
+import type { ForgeName, WorkState } from "./snapshot.ts";
+import type { HealthCause } from "./viewmodel.ts";
 
 /** The prefix an asleep bird's speech gains when it is clicked. */
 export const wakingPrefix = "Mm? You woke me.";
@@ -21,7 +21,7 @@ export interface SpeechSubject {
   fence: FenceSituation | null;
   /** Amber and red causes, worst first. */
   causes: readonly HealthCause[];
-  activity: Activity | null;
+  workState: WorkState | null;
   branch: string | null;
   defaultBranch: string | null;
   unpushedCount: number;
@@ -85,8 +85,8 @@ export function hoursWords(hours: number): string {
   return daysWords(Math.floor(hours / 24));
 }
 
-/** A window from config: whole days when it is a multiple of a day, else hours. */
-function windowWords(hours: number): string {
+/** A threshold from config: whole days when it is a multiple of a day, else hours. */
+function thresholdWords(hours: number): string {
   return hours % 24 === 0 ? daysWords(hours / 24) : hoursWords(hours);
 }
 
@@ -143,7 +143,7 @@ function primary(cause: HealthCause): {
         opening: [
           `${count} ${plural(cause.count, "change has", "changes have")} sat uncommitted for ${span}.`,
         ],
-        closing: `Past ${windowWords(cause.thresholds.amberHours)} now.`,
+        closing: `Past ${thresholdWords(cause.thresholds.amberHours)} now.`,
       };
     }
     case "unpushed": {
@@ -164,8 +164,8 @@ function primary(cause: HealthCause): {
           `Stalled on ${cause.stall.branch} for ${daysWords(cause.stall.days)}.`,
         ],
         closing: cause.everythingPushed
-          ? "Everything's pushed, but the flight's gone quiet."
-          : "The flight's gone quiet.",
+          ? "Everything's pushed, but the branch has gone quiet."
+          : "The branch has gone quiet.",
       };
   }
 }
@@ -199,27 +199,27 @@ function fenceSpeech(situation: FenceSituation): string {
   }
 }
 
-/** A content bird is brief: what it is doing, else its backlog as an offer, else that it is settled. */
+/** A content bird is brief: what it is doing, else its backlog as an offer, else that all is quiet. */
 function contentSpeech(subject: SpeechSubject): string {
-  if (subject.activity === "editing") {
+  if (subject.workState === "uncommitted") {
     return "We're in the middle of something. ♪";
   }
   const { branch, defaultBranch, unpushedCount } = subject;
   if (
-    subject.activity === "in-flight" &&
+    subject.workState === "committed" &&
     branch !== null &&
     branch !== defaultBranch
   ) {
     return `Out on ${branch}. All fresh so far.`;
   }
-  if (subject.activity === "in-flight" && unpushedCount > 0) {
+  if (subject.workState === "committed" && unpushedCount > 0) {
     return `${capitalise(countWords(unpushedCount))} ${plural(unpushedCount, "commit", "commits")} waiting to go up. All fresh so far.`;
   }
   if (subject.openWorkItems > 0) {
-    return `All settled, and ${countWords(subject.openWorkItems)} ${plural(subject.openWorkItems, "work item", "work items")} on my roadmap when you want me.`;
+    return `All quiet, and ${countWords(subject.openWorkItems)} ${plural(subject.openWorkItems, "work item", "work items")} on my roadmap when you want me.`;
   }
-  if (subject.lastTouchedHours === null) return "All settled over here.";
-  return `All settled over here. Last touched ${hoursWords(subject.lastTouchedHours)} ago.`;
+  if (subject.lastTouchedHours === null) return "All quiet over here.";
+  return `All quiet over here. Last touched ${hoursWords(subject.lastTouchedHours)} ago.`;
 }
 
 /**

@@ -128,23 +128,23 @@ const localGit: SourceSpec = {
       Linking comes first: each local repository&apos;s remote URLs link it to
       forge repositories (<Code>linkRepositories</Code> in{" "}
       <Code>src/link.ts</Code>
-      ). Then git data per entity: the default branch, the work-state, unsafe
-      work aged in hours from its oldest change, and stalled flight aged in
-      days. A missing include path becomes a scene-wide warning.
+      ). Then git data per entity: the default branch, the work state, unsafe
+      work aged in hours from its oldest change, and the days stalled. A missing
+      include path becomes a scene-wide warning.
     </p>
   ),
   derivations: [
     "deriveGit",
     "chooseDefaultBranch",
-    "deriveActivity",
-    "deriveDrift",
+    "deriveWorkState",
+    "deriveUnsafeWork",
     "deriveStall",
   ],
   snapshotTypes: [
     "GitData",
     "Backup",
-    "ActivityState",
-    "Drift",
+    "WorkState",
+    "UnsafeWork",
     "AgedWork",
     "Stall",
     "LocalBranch",
@@ -277,7 +277,7 @@ const roadmaps: SourceSpec = {
       above it, leaving out inline code and double-quoted text, and the open
       work items counted by kind. The counts feed the bird&apos;s plumpness, its
       chips and its ledger. Each file&apos;s open bugs and critical bugs are
-      judged against their windows, and the worse level is a cause of the
+      judged against their thresholds, and the worse level is a cause of the
       bird&apos;s health; tasks never are.
     </p>
   ),

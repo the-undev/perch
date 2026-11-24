@@ -171,7 +171,7 @@ export function AdoptionPapersPage() {
       </Section>
       <Section
         title="Amending"
-        rule="The same sheet, filled with the papers as written and signed with Amend the papers. Return to the fence sits on the signature line. More particulars names what it holds while closed: the key files, roadmaps, zellij session and the bird's own windows, the current form parts in the paper's ink."
+        rule="The same sheet, filled with the papers as written and signed with Amend the papers. Return to the fence sits on the signature line. More particulars names what it holds while closed: the key files, roadmaps, zellij session and the bird's own thresholds, the current form parts in the paper's ink."
         min={560}
       >
         <Specimen

@@ -17,14 +17,12 @@ import type {
   StatusFile,
 } from "./raw.ts";
 import type {
-  ActivityState,
   AgedWork,
   Backup,
   BugThresholds,
   CiRun,
   CiState,
   DayThresholds,
-  Drift,
   Entity,
   EntityError,
   ForgeData,
@@ -40,10 +38,12 @@ import type {
   SourceCardResult,
   Stall,
   UnpushedBranch,
+  UnsafeWork,
   WorkItem,
   WorkItemCounts,
   WorkItemGroup,
   WorkItemKind,
+  WorkState,
 } from "./snapshot.ts";
 import type { Health, HealthCause } from "./viewmodel.ts";
 
@@ -273,7 +273,7 @@ export function emptyRoadmap(thresholds: BugThresholds): RoadmapData {
   };
 }
 
-/** A roadmap file's open bugs and open critical bugs, each judged against its window. */
+/** A roadmap file's open bugs and open critical bugs, each judged against its thresholds. */
 export function bugLevelsOf(
   counts: WorkItemCounts,
   thresholds: BugThresholds,
@@ -316,7 +316,7 @@ export function chooseDefaultBranch(
   return ["main", "master"].find((name) => branchNames.includes(name)) ?? null;
 }
 
-export interface ActivityInput {
+export interface WorkStateInput {
   uncommittedCount: number;
   unpushedCount: number;
   branch: string | null;
@@ -325,18 +325,18 @@ export interface ActivityInput {
 }
 
 /**
- * The git work-state. Editing when any file is uncommitted. Otherwise in progress when any
+ * The work state. Uncommitted when any file is uncommitted. Otherwise committed when any
  * commit is unpushed, HEAD is not on the default branch, or any other local branch exists.
- * Otherwise settled.
+ * Otherwise merged.
  */
-export function deriveActivity(input: ActivityInput): ActivityState {
-  if (input.uncommittedCount > 0) return "editing";
-  if (input.unpushedCount > 0) return "in-progress";
-  if (input.branch !== input.defaultBranch) return "in-progress";
+export function deriveWorkState(input: WorkStateInput): WorkState {
+  if (input.uncommittedCount > 0) return "uncommitted";
+  if (input.unpushedCount > 0) return "committed";
+  if (input.branch !== input.defaultBranch) return "committed";
   const otherBranches = input.branchNames.filter(
     (name) => name !== input.defaultBranch,
   );
-  return otherBranches.length > 0 ? "in-progress" : "settled";
+  return otherBranches.length > 0 ? "committed" : "merged";
 }
 
 /** Whole units of a length from a timestamp to the observation time, never negative. */
@@ -359,7 +359,7 @@ export function hoursSince(since: string, observedAt: Date): number {
   return wholeUnitsSince(since, observedAt, hourMs);
 }
 
-/** Red at or beyond the red window, amber at or beyond the amber window, else green. */
+/** Red at or beyond the red threshold, amber at or beyond the amber threshold, else green. */
 export function levelFor(age: number, amber: number, red: number): HealthLevel {
   if (age >= red) return "red";
   if (age >= amber) return "amber";
@@ -397,14 +397,14 @@ function agedWork(
 
 /**
  * Unsafe work is uncommitted changes and unpushed commits, each aged in hours from its oldest
- * change at the time git was read and judged against the entity's windows. The level is the worse
+ * change at the time git was read and judged against the entity's thresholds. The level is the worse
  * of the two, so continuing to edit never resets the clock on an older backlog.
  */
-export function deriveDrift(
+export function deriveUnsafeWork(
   ages: { oldestUncommittedAt: string | null; oldestUnpushedAt: string | null },
   thresholds: HourThresholds,
   observedAt: Date,
-): Drift {
+): UnsafeWork {
   const uncommitted = agedWork(
     ages.oldestUncommittedAt,
     thresholds,
@@ -422,7 +422,7 @@ export function deriveDrift(
 }
 
 /**
- * Stalled flight: HEAD parked on a branch other than the default, aged in days from that
+ * Stalled: HEAD on a branch other than the default with no new commit, aged in days from that
  * branch's newest commit, so a fresh commit on the branch restarts the clock. Null on the
  * default branch, on a detached HEAD, or without a default branch to compare against.
  */
@@ -448,7 +448,7 @@ export function deriveStall(
   };
 }
 
-/** The windows git data is judged against. */
+/** The thresholds git data is judged against. */
 export interface GitThresholds {
   unsafe: HourThresholds;
   stalled: DayThresholds;
@@ -462,9 +462,9 @@ function earliest(timestamps: readonly string[]): string | null {
 /**
  * Git data for an entity. The oldest uncommitted change is the earliest mtime among dirty files
  * that still exist; deleted files have none. Unpushed work is every commit on a local branch that
- * no remote-tracking ref holds. It only drifts against a linked forge repository; a local
+ * no remote-tracking ref holds. It only counts as unsafe work against a linked forge repository; a local
  * repository with no remote at all is local only, one disk, with no unpushed work and no unpushed
- * drift. Ahead and behind come from the current branch's tracking branch, when it has one.
+ * unsafe work. Ahead and behind come from the current branch's tracking branch, when it has one.
  */
 export function deriveGit(
   raw: RawGit,
@@ -538,14 +538,14 @@ export function deriveGit(
         ? raw.defaultBranchCommits.value
         : null,
     remotes: raw.remotes.state === "observed" ? raw.remotes.value : [],
-    activity: deriveActivity({
+    workState: deriveWorkState({
       uncommittedCount: raw.dirtyFiles.length,
       unpushedCount: unpushed.length,
       branch,
       defaultBranch,
       branchNames,
     }),
-    drift: deriveDrift(
+    unsafeWork: deriveUnsafeWork(
       {
         oldestUncommittedAt,
         oldestUnpushedAt: backup === "linked" ? oldestUnpushedAt : null,
@@ -702,10 +702,10 @@ export function bugCause(
 
 /**
  * An entity's health: the worst of its inputs. Failing CI is red. Each roadmap file is judged on
- * its own, the worse of its open bugs and open critical bugs against their windows. A remote the
+ * its own, the worse of its open bugs and open critical bugs against their thresholds. A remote the
  * local repository pushes to that no card can read is amber; a forge whose read failed this scan is
- * not an input. Uncommitted changes, unpushed commits and stalled flight take the level already
- * judged against the entity's windows. Only amber and red inputs are causes; they come worst first,
+ * not an input. Uncommitted changes, unpushed commits and stalled take the level already
+ * judged against the entity's thresholds. Only amber and red inputs are causes; they come worst first,
  * ties in the order CI, unreadable remotes, bugs, uncommitted, unpushed, stalled. Flags are not
  * inputs: the one with a level, not set up, is the fence's own situation.
  */
@@ -748,23 +748,23 @@ export function deriveHealth(entity: Entity): Health {
   }
   const git = entity.sources.git;
   if (git !== undefined && !("error" in git)) {
-    const { drift } = git;
-    if (drift.uncommitted) {
+    const { unsafeWork } = git;
+    if (unsafeWork.uncommitted) {
       candidates.push({
         kind: "uncommitted",
-        level: drift.uncommitted.level,
+        level: unsafeWork.uncommitted.level,
         count: git.uncommittedCount,
-        work: drift.uncommitted,
-        thresholds: drift.thresholds,
+        work: unsafeWork.uncommitted,
+        thresholds: unsafeWork.thresholds,
       });
     }
-    if (drift.unpushed) {
+    if (unsafeWork.unpushed) {
       candidates.push({
         kind: "unpushed",
-        level: drift.unpushed.level,
+        level: unsafeWork.unpushed.level,
         count: git.unpushedCount,
-        work: drift.unpushed,
-        thresholds: drift.thresholds,
+        work: unsafeWork.unpushed,
+        thresholds: unsafeWork.thresholds,
       });
     }
     if (git.stall) {

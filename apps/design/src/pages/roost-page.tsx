@@ -28,7 +28,7 @@ export function RoostPage() {
         min={380}
       >
         <Specimen
-          label="content, being edited"
+          label="content, uncommitted"
           rule="Perch: the bob and the song run; the chips are the aviary bubble's."
         >
           <Ground>

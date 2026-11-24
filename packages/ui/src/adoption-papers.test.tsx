@@ -126,7 +126,7 @@ describe("the adoption papers", () => {
   it("name the fold's contents while closed, and open it onto key files, roadmaps, session and thresholds", () => {
     const { onSign } = papers("dev/odin/hello");
     const fold = screen.getByRole("button", {
-      name: "More particulars · its windows, key files, roadmaps and session",
+      name: "More particulars · its thresholds, key files, roadmaps and session",
     });
 
     expect(fold.getAttribute("aria-expanded")).toBe("false");
@@ -135,6 +135,7 @@ describe("the adoption papers", () => {
 
     expect(fold.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getAllByRole("spinbutton")).toHaveLength(4);
+    expect(screen.getByText("Its own thresholds")).toBeDefined();
     expect(screen.getByText("The README and the roadmaps")).toBeDefined();
     expect(screen.getByText("The standard roadmap names")).toBeDefined();
     const session = screen.getByRole("textbox", { name: "Zellij session" });
@@ -150,7 +151,7 @@ describe("the adoption papers", () => {
     press("Add the roadmap");
     fireEvent.change(
       screen.getByRole("spinbutton", {
-        name: "Stalled flight, amber after days",
+        name: "Stalled, amber after days",
       }),
       { target: { value: "3" } },
     );
@@ -165,7 +166,7 @@ describe("the adoption papers", () => {
     });
   });
 
-  it("say what each window counts, ending in where an empty field looks", () => {
+  it("say what each threshold counts, ending in where an empty field looks", () => {
     papers("undev/spool");
     openFold();
 
@@ -189,13 +190,13 @@ describe("the adoption papers", () => {
 
     fireEvent.change(
       screen.getByRole("spinbutton", {
-        name: "Stalled flight, amber after days",
+        name: "Stalled, amber after days",
       }),
       { target: { value: "40" } },
     );
 
     expect(
-      screen.getByText("Stalled flight: amber must come before red"),
+      screen.getByText("Stalled: amber must come before red"),
     ).toBeDefined();
     const sign = screen.getByRole("button", { name: "Amend the papers" });
     expect((sign as HTMLButtonElement).disabled).toBe(true);

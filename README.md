@@ -32,7 +32,7 @@ and can replace the AppImage itself.
 ## Configuration
 
 The config is `~/.config/perch/config.toml`. Without it, the app offers to
-create one: one wire, the standard windows, no sources. Add sources on the
+create one: one wire, the standard thresholds, no sources. Add sources on the
 settings page. `config.example.toml` shows every field with placeholder
 values. Forge tokens come from the desktop keyring, see
 [docs/forge-access.md](docs/forge-access.md).

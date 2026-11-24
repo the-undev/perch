@@ -34,7 +34,7 @@ export function BranchesPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="Stalled flight"
+          label="Stalled"
           rule="Skiff: stalled on extension-popup-ia for three weeks."
         >
           <Ground>

@@ -231,7 +231,7 @@ export function stubKeyring(
 
 const bugLedgerEntityId = "undev/Hollow-legacy";
 
-/** Hollow's bug and critical bug ledger rows derived again with the given open counts, the windows 5 and 20 for bugs and 3 and 6 for critical bugs. */
+/** Hollow's bug and critical bug ledger rows derived again with the given open counts, the thresholds 5 and 20 for bugs and 3 and 6 for critical bugs. */
 export function bugLedgerRows(bug: number, criticalBug: number): LedgerFact[] {
   const entities = mockSnapshot.entities.map(
     (entity): Entity =>

@@ -325,19 +325,19 @@ function SkyLegend() {
     <div className="pointer-events-none absolute inset-x-0 bottom-2 flex flex-wrap justify-center gap-x-5 gap-y-1 px-4 text-[11px] text-ink-faint">
       <span className="inline-flex items-center gap-1.5">
         <Swatch colour="var(--color-red)" />
-        attention
+        distressed
       </span>
       <span className="inline-flex items-center gap-1.5">
         <Swatch colour="var(--color-amber)" />
-        drifting
+        restless
       </span>
       <span className="inline-flex items-center gap-1.5">
         <Swatch colour="var(--color-green)" />
-        settled
+        content
       </span>
       <span>
         higher wire = more important · plumper = more outstanding work · ♪ =
-        being edited
+        uncommitted changes
       </span>
       <span>click a bird to hear from it</span>
     </div>

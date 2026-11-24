@@ -391,7 +391,7 @@ describe("aggregating linked projects", () => {
     });
     expect(byId["dev/perch"]?.sources.git).toMatchObject({
       backup: "linked",
-      drift: { unpushed: { hours: 240 } },
+      unsafeWork: { unpushed: { hours: 240 } },
     });
     expect(byId["dev/toy"]?.sources.git).toMatchObject({
       backup: "local-only",
@@ -518,7 +518,7 @@ describe("aggregating linked projects", () => {
     expect([after?.wire, after?.name]).toEqual(["Machine & Home", "Perch"]);
     expect(perch?.flags.map((flag) => flag.flag)).not.toContain("not-set-up");
     expect(perch?.sources.git).toMatchObject({
-      drift: { unpushed: { hours: 240, level: "green" } },
+      unsafeWork: { unpushed: { hours: 240, level: "green" } },
     });
     expect(after?.page.keyFiles.map((file) => file.path)).toEqual([
       "docs/spec.md",

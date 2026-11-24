@@ -14,7 +14,7 @@ import {
 } from "./helpers/git-fixture.ts";
 import {
   gatheredAt,
-  localPresence,
+  localRepository,
   okStatus,
   rawFiles,
 } from "./helpers/raw.ts";
@@ -58,9 +58,9 @@ describe("local source", () => {
       [join(home, "missing")]: { state: "absent", reason: "path-not-found" },
     });
     expect(
-      Object.entries(data.presences).map(([id, presence]) => [
+      Object.entries(data.repositories).map(([id, repository]) => [
         id,
-        presence.include,
+        repository.include,
       ]),
     ).toEqual([
       [".dotfiles", join(home, ".dotfiles")],
@@ -84,11 +84,11 @@ describe("local source", () => {
       [],
     ).gather({});
 
-    expect(data.presences.notes?.obsidian).toEqual({
+    expect(data.repositories.notes?.obsidian).toEqual({
       folder: true,
       livesyncPlugin: true,
     });
-    expect(data.presences.plain?.obsidian).toEqual({
+    expect(data.repositories.plain?.obsidian).toEqual({
       folder: false,
       livesyncPlugin: false,
     });
@@ -104,10 +104,10 @@ describe("local source", () => {
     git(repo, ["remote", "add", "backup", "/srv/backup/perch.git"]);
 
     const data = await source([join(home, "dev")], []).gather({});
-    const presence = data.presences["dev/perch"];
+    const repository = data.repositories["dev/perch"];
 
     expect(
-      presence?.git.state === "observed" && presence.git.value.remotes,
+      repository?.git.state === "observed" && repository.git.value.remotes,
     ).toEqual({
       state: "observed",
       value: [
@@ -121,33 +121,33 @@ describe("local source", () => {
     });
   });
 
-  it("keeps a presence whose git cannot be read, with the error as its git entry", async () => {
+  it("keeps a repository whose git cannot be read, with the error as its git entry", async () => {
     const broken = join(home, "dev", "broken");
     mkdirSync(broken, { recursive: true });
     writeFileSync(join(broken, ".git"), "not a git file\n");
 
     const data = await source([join(home, "dev")], []).gather({});
 
-    expect(data.presences["dev/broken"]?.git.state).toBe("error");
+    expect(data.repositories["dev/broken"]?.git.state).toBe("error");
   });
 });
 
 describe("not set up", () => {
   it("flags red a repository found in an include directory that config does not know", async () => {
-    const config = await testConfig('[items."dev/known"]\n');
+    const config = await testConfig('[papers."dev/known"]\n');
     const files = rawFiles({
       includes: {
         "/home/test/dev": "directory",
         "/home/test/.dotfiles": "repo",
       },
       locals: {
-        "dev/known": localPresence("/home/test/dev/known", {
+        "dev/known": localRepository("/home/test/dev/known", {
           include: "/home/test/dev",
         }),
-        "dev/stray": localPresence("/home/test/dev/stray", {
+        "dev/stray": localRepository("/home/test/dev/stray", {
           include: "/home/test/dev",
         }),
-        ".dotfiles": localPresence("/home/test/.dotfiles", {
+        ".dotfiles": localRepository("/home/test/.dotfiles", {
           include: "/home/test/.dotfiles",
         }),
       },
@@ -160,20 +160,19 @@ describe("not set up", () => {
         config,
         configPath: "c",
         home: "/home/test",
-        liveSources: [],
         previous: null,
       },
       new Date(gatheredAt),
     );
     const flags = Object.fromEntries(
-      snapshot.items.map((item) => [item.id, item.flags]),
+      snapshot.entities.map((entity) => [entity.id, entity.flags]),
     );
 
     expect(flags["dev/stray"]).toEqual([
       {
         flag: "not-set-up",
         level: "red",
-        detail: "found under /home/test/dev with no entry in config items",
+        detail: "found under /home/test/dev with no papers in config",
       },
     ]);
     expect(flags["dev/known"]).toEqual([]);

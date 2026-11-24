@@ -2,7 +2,7 @@
 # values.
 #
 # The live copy is ~/.config/perch/config.toml. The app writes a starter
-# there when asked: one wire, the standard windows, no sources. The command
+# there when asked: one wire, the standard thresholds, no sources. The command
 # line scanner runs with those defaults when the live copy does not exist.
 # The app writes the file back without comments. No secrets here: tokens
 # come from the desktop keyring at run time.
@@ -11,20 +11,24 @@
 # assertion and an observation disagree, the observation wins and the
 # disagreement is flagged.
 #
-# A presence is named local:<id>, github:<owner>/<name> or
+# A repository is named local:<id>, github:<owner>/<name> or
 # forgejo:<owner>/<name>. A local id is the path relative to the home
 # directory.
 
-# Presences that are one project although no remote URL proves it, for
-# example [["github:someone/notes", "forgejo:someone/notes"]].
-joins = []
+# The config version. A file without one is version 1, which the app
+# migrates to this version once, keeping the old file as config.toml.v1.
+version = 2
 
-# Presences to leave off the main view. They still appear in their forge's
+# Repositories that are one project although no remote URL proves it, for
+# example [["github:someone/notes", "forgejo:someone/notes"]].
+links = []
+
+# Repositories to leave off the main view. They still appear in their forge's
 # listing.
 ignore = []
 
-# The wires, top to bottom: the owner's priority bands. An adopted item
-# sits on the wire its entry names, else the default. Everything config does
+# The wires, top to bottom: the owner's priority bands. An adopted entity
+# sits on the wire its papers name, else the default. Everything config does
 # not name sits on the fence beneath.
 [wires]
 names = ["Home", "Projects"]
@@ -61,19 +65,12 @@ key = "forgejo-someone"
 hosts = ["forge.example.lan"]
 tracked_forks = []
 
-# An Uptime Kuma status page, monitored as the server it names. Each name
-# appears once.
-# [[sources.kuma]]
-# name = "Server"
-# base_url = "http://kuma.example.lan:3001"
-# status_page = "status"
-
-# Health windows: amber at the first, red at the second. Unsafe work
+# Health thresholds: amber at the first, red at the second. Unsafe work
 # (uncommitted changes, unpushed commits) ages in hours from its oldest
-# change. Stalled flight: on a branch other than the default with no new commit,
+# change. Stalled: on a branch other than the default with no new commit,
 # ages in days. Open bugs and open critical bugs are counted in each roadmap
-# file on its own; left out, their windows are the values shown. Each is
-# overridable per item with the same keys.
+# file on its own; left out, their thresholds are the values shown. Each is
+# overridable per entity with the same keys.
 [thresholds]
 unsafe_amber_hours = 24
 unsafe_red_hours = 72
@@ -84,12 +81,12 @@ stalled_red_days = 30
 # critical_bugs_amber_count = 1
 # critical_bugs_red_count = 3
 
-# Each roadmap item is a task, a bug or a critical bug. A word from
+# Each work item is a task, a bug or a critical bug. A word from
 # critical_bug_words makes a critical bug, else one from bug_words a bug,
-# matched as whole words in any case against the item's text, its #tags and
+# matched as whole words in any case against the work item's text, its #tags and
 # every heading above it. Words in inline code or double quotes are left out,
 # so a term can be mentioned. Only bugs move the bird. Each list is taken
-# whole from the item's entry, else from here, else the built-in list shown.
+# whole from the entity's papers, else from here, else the built-in list shown.
 # [work]
 # bug_words = ["bug", "bugs", "issue", "issues", "problem", "problems", "broken", "regression", "crash", "crashes", "p2", "p3", "p4"]
 # critical_bug_words = ["critical", "urgent", "severe", "blocker", "p0", "p1"]
@@ -107,7 +104,7 @@ finalised_commits = 10
 # Each table names its kind and only what differs from the kind's defaults:
 # its verb, the words on the bird's page, and its command, run without a
 # shell, detached from Perch. The placeholders in braces are filled in at
-# launch: {path} is the item's directory, and {obsidian} the Obsidian vault's
+# launch: {path} is the entity's directory, and {obsidian} the Obsidian vault's
 # folder name, encoded for a URI.
 #
 #   vscode    Open in VS Code    ["code", "{path}"]
@@ -122,8 +119,8 @@ finalised_commits = 10
 # The zellij kind, at most once, finds the session's tab named after the
 # project and goes to it, or opens one in the project's directory. A session
 # that is not running opens in its terminal command, with {session} and
-# {cwd}, the project's directory. The session is the item's own
-# zellij_session, else the session of the longest root holding the item in
+# {cwd}, the project's directory. The session is the entity's own
+# zellij_session, else the session of the longest root holding the entity in
 # [launch.actions.sessions], else its session. Its defaults:
 #
 #   verb      "Open the zellij tab"
@@ -176,15 +173,15 @@ kind = "folder"
 # check = false
 # install = true
 
-# Item entries. An entry adopts the bird and puts it on a wire. Its key names
-# any presence of the item: a local id, or a forge presence such as
-# "forgejo:owner/name", which still applies once a local clone joins it. When
-# two entries name one item, the one keyed by the item's id applies and the
+# Papers. An entity's papers adopt the bird and put it on a wire. Their key
+# names any repository of the entity: a local id, or a forge repository such as
+# "forgejo:owner/name", which still applies once a local repository links it. When
+# two papers name one entity, the one keyed by the entity's id applies and the
 # clash is flagged. A repository found inside an include directory is flagged
-# as not set up until it has an entry here, even an empty one.
+# as not set up until it has papers here, even empty ones.
 #
-# Every field an entry can hold, each optional:
-# [items."projects/example"]
+# Every field papers can hold, each optional:
+# [papers."projects/example"]
 # wire = "Projects"                  # one of wires.names
 # name = "Example"                   # the bird's name; default the folder or repository name
 # key_files = ["README.md", "docs/forge-access.md", "docs/roadmap.md"]  # default the README and any roadmap

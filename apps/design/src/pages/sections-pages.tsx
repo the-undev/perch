@@ -1,10 +1,10 @@
-// The ledger's sections, one usage page each: branches, the commit river, pull requests, flags
+// The ledger's sections, one usage page each: branches, the commit history, pull requests, flags
 // and what couldn't be read.
 
 import type { FlagLine } from "@perch/core/viewmodel.ts";
 import {
   BranchLines,
-  CommitRiver,
+  CommitHistory,
   FlagLines,
   PullRequestLines,
   SourceProblems,
@@ -17,7 +17,7 @@ export function BranchesPage() {
     <>
       <Section
         title="Branches"
-        rule="Every local branch, the checked-out one first, then by newest commit. A branch links to its forge page when its upstream matches a forge presence."
+        rule="Every local branch, the checked-out one first, then by newest commit. A branch links to its forge page when its upstream matches a forge repository."
         min={380}
       >
         <Specimen
@@ -26,7 +26,7 @@ export function BranchesPage() {
         >
           <Ground>
             <BranchLines
-              branches={mockBird("dev/perch").detail.branches}
+              branches={mockBird("dev/perch").page.branches}
               now={scanMoment}
               chip={null}
               landing={null}
@@ -34,12 +34,12 @@ export function BranchesPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="Stalled flight"
+          label="Stalled"
           rule="Skiff: stalled on extension-popup-ia for three weeks."
         >
           <Ground>
             <BranchLines
-              branches={mockBird("undev/skiff").detail.branches}
+              branches={mockBird("undev/skiff").page.branches}
               now={scanMoment}
               chip={"stalled"}
               landing={null}
@@ -52,7 +52,7 @@ export function BranchesPage() {
         >
           <Ground>
             <BranchLines
-              branches={mockBird("undev/spool").detail.branches}
+              branches={mockBird("undev/spool").page.branches}
               now={scanMoment}
               chip={null}
               landing={null}
@@ -66,12 +66,12 @@ export function BranchesPage() {
           {
             name: "branches",
             type: "BranchLine[]",
-            what: "bird.detail.branches.",
+            what: "bird.page.branches.",
           },
           {
             name: "chip",
             type: "ChipKind | null",
-            what: "The bubble chip whose working the section holds (stalled), else null; the section is marked and the chip lands on it.",
+            what: "The bubble chip whose reading the section holds (stalled), else null; the section is marked and the chip lands on it.",
           },
           {
             name: "landing",
@@ -93,8 +93,8 @@ export function BranchesPage() {
   );
 }
 
-/** The river's states, each from a mock bird and the rule that draws it. */
-const riverSpecimens: { id: string; label: string; rule: string }[] = [
+/** The history's states, each from a mock bird and the rule that draws it. */
+const historySpecimens: { id: string; label: string; rule: string }[] = [
   {
     id: "undev/oxbow",
     label: "In step",
@@ -133,7 +133,7 @@ const riverSpecimens: { id: string; label: string; rule: string }[] = [
   {
     id: "dev/hearth-config",
     label: "No remote could be read",
-    rule: "hearth-config: neither forge's detail could be read, so each gets an amber line, and every commit's dot is amber: no remote could be read.",
+    rule: "hearth-config: neither forge's page could be read, so each gets an amber line, and every commit's dot is amber: no remote could be read.",
   },
   {
     id: "dev/odin/hello",
@@ -142,23 +142,23 @@ const riverSpecimens: { id: string; label: string; rule: string }[] = [
   },
 ];
 
-export function RiverPage() {
+export function HistoryPage() {
   return (
     <>
       <Section
-        title="The commit river"
-        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits; the heading names the branch. One dot before each says how far it has spread over the forges read: green when every one holds it, amber when one lacks it or none does, amber too when the bird has forges and none could be read, and the quiet dot only for a bird with no forge. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The clone only adds commits. A forge whose commits couldn't be read gets an amber line, with the short why when no card covers it, and one amber sentence appears only when a forge lacks a commit another forge holds."
+        title="The commit history"
+        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits; the heading names the branch. One dot before each says which forges hold it, of those read: green when every one holds it, amber when one lacks it or none does, amber too when the bird has forges and none could be read, and the quiet dot only for a bird with no forge. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The local repository only adds commits. A forge whose commits couldn't be read gets an amber line, with the short why when no card covers it, and one amber sentence appears only when a forge lacks a commit another forge holds."
         min={420}
       >
-        {riverSpecimens.map((specimen) => (
+        {historySpecimens.map((specimen) => (
           <Specimen
             key={specimen.id}
             label={specimen.label}
             rule={specimen.rule}
           >
             <Ground>
-              <CommitRiver
-                river={mockBird(specimen.id).detail.river}
+              <CommitHistory
+                history={mockBird(specimen.id).page.history}
                 now={scanMoment}
               />
             </Ground>
@@ -166,12 +166,12 @@ export function RiverPage() {
         ))}
       </Section>
       <Usage
-        component="<CommitRiver>"
+        component="<CommitHistory>"
         props={[
           {
-            name: "river",
-            type: "River",
-            what: "bird.detail.river: the branch it judges, the commits with their tone and spoken spread, a note per forge that couldn't be read, and the divergence sentence or null.",
+            name: "history",
+            type: "History",
+            what: "bird.page.history: the branch it judges, the commits with their tone and the forges holding them in words, a note per forge that couldn't be read, and the divergence sentence or null.",
           },
           {
             name: "now",
@@ -181,7 +181,7 @@ export function RiverPage() {
         ]}
       >
         <p>
-          Draw it only when the river has commits. A commit links to the first
+          Draw it only when the history has commits. A commit links to the first
           forge holding it; one only here is not linked.
         </p>
       </Usage>
@@ -200,7 +200,7 @@ export function PullRequestsPage() {
         <Specimen label="A draft" rule="Perch: one draft on GitHub.">
           <Ground>
             <PullRequestLines
-              pullRequests={mockBird("dev/perch").detail.pullRequests}
+              pullRequests={mockBird("dev/perch").page.pullRequests}
               now={scanMoment}
             />
           </Ground>
@@ -208,7 +208,7 @@ export function PullRequestsPage() {
         <Specimen label="Several" rule="Skiff: two open on Forgejo.">
           <Ground>
             <PullRequestLines
-              pullRequests={mockBird("undev/skiff").detail.pullRequests}
+              pullRequests={mockBird("undev/skiff").page.pullRequests}
               now={scanMoment}
             />
           </Ground>
@@ -220,7 +220,7 @@ export function PullRequestsPage() {
           {
             name: "pullRequests",
             type: "PullRequestLine[]",
-            what: "bird.detail.pullRequests.",
+            what: "bird.page.pullRequests.",
           },
           {
             name: "now",
@@ -244,16 +244,16 @@ const handBuiltFlags: FlagLine[] = [
     level: "amber",
   },
   {
-    flag: "remote-joined-elsewhere",
-    text: "remote joined elsewhere",
-    detail: "forgejo:finch/perch is joined to dev/perch-old",
+    flag: "remote-linked-elsewhere",
+    text: "remote linked elsewhere",
+    detail: "forgejo:finch/perch is linked to dev/perch-old",
     level: null,
   },
   {
     flag: "config-conflict",
     text: "config conflict",
     detail:
-      "config joins undev/harbour to github:the-undev/skiff; the remote says otherwise",
+      "config links undev/harbour to github:the-undev/skiff; the remote says otherwise",
     level: "red",
   },
 ];
@@ -263,15 +263,15 @@ export function FlagsPage() {
     <>
       <Section
         title="Flags"
-        rule="Facts the scan raised about the bird itself, the detail on the left and the flag on the right, toned by its level. Flags are not health inputs."
+        rule="Facts the scan raised about the bird itself, the page on the left and the flag on the right, toned by its level. Flags are not health inputs."
         min={420}
       >
         <Specimen
           label="Not set up"
-          rule="hello: found under an include path with no entry in config items."
+          rule="hello: found under an include path with no papers in config."
         >
           <Ground>
-            <FlagLines flags={mockBird("dev/odin/hello").detail.flags} />
+            <FlagLines flags={mockBird("dev/odin/hello").page.flags} />
           </Ground>
         </Specimen>
         <Specimen
@@ -286,7 +286,7 @@ export function FlagsPage() {
       <Usage
         component="<FlagLines>"
         props={[
-          { name: "flags", type: "FlagLine[]", what: "bird.detail.flags." },
+          { name: "flags", type: "FlagLine[]", what: "bird.page.flags." },
         ]}
       >
         <p>Draw it only when there are flags.</p>
@@ -308,9 +308,7 @@ export function ProblemsPage() {
           rule="Prism: GitHub answered 404 for its pull requests, so the row names that part alone."
         >
           <Ground>
-            <SourceProblems
-              problems={mockBird("undev/prism").detail.problems}
-            />
+            <SourceProblems problems={mockBird("undev/prism").page.problems} />
           </Ground>
         </Specimen>
         <Specimen
@@ -318,9 +316,7 @@ export function ProblemsPage() {
           rule="Skiff: the scanner's full sentence for the config gap the notice under the heading also names."
         >
           <Ground>
-            <SourceProblems
-              problems={mockBird("undev/skiff").detail.problems}
-            />
+            <SourceProblems problems={mockBird("undev/skiff").page.problems} />
           </Ground>
         </Specimen>
       </Section>
@@ -330,7 +326,7 @@ export function ProblemsPage() {
           {
             name: "problems",
             type: "SourceProblem[]",
-            what: "bird.detail.problems.",
+            what: "bird.page.problems.",
           },
         ]}
       >

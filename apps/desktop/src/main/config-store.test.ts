@@ -1,6 +1,9 @@
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { readTextIfExists } from "@perch/core/fs.ts";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { copyToNewFile, writeTextAtomic } from "./config-edit.ts";
 import { createConfigStore } from "./config-store.ts";
 
 const examplePath = join(
@@ -23,6 +26,15 @@ function storeOver(files: Map<string, string>) {
     readText: async (path) => {
       reads.push(path);
       return files.get(path) ?? null;
+    },
+    writeText: async (path, text) => {
+      files.set(path, text);
+    },
+    copyToNewFile: async (from, to) => {
+      if (files.has(to)) {
+        throw Object.assign(new Error(`${to} exists`), { code: "EEXIST" });
+      }
+      files.set(to, files.get(from) ?? "");
     },
   });
   return { store, reads };
@@ -99,5 +111,113 @@ describe("the config store", () => {
 
     expect(state.error).toBeNull();
     expect(state.loaded?.path).toBe(userPath);
+  });
+});
+
+/** A config written before config carried a version: [items] and joins. */
+const version1Text = await readFile(
+  join(
+    import.meta.dirname,
+    "../../../../packages/core/tests/fixtures/config-version1.toml",
+  ),
+  "utf8",
+);
+
+describe("migrating the config", () => {
+  let dir: string;
+  let configPath: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "perch-migrate-"));
+    configPath = join(dir, "config.toml");
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const storeOnDisk = () =>
+    createConfigStore({
+      home: "/home/owner",
+      path: configPath,
+      readText: readTextIfExists,
+      writeText: writeTextAtomic,
+      copyToNewFile,
+    });
+
+  it("reads a version 1 file as version 2, writes it back, and keeps the old file as config.toml.v1", async () => {
+    await writeFile(configPath, version1Text);
+
+    const state = await storeOnDisk().reload();
+
+    expect(state.error).toBeNull();
+    expect(state.loaded?.config.entities["dev/perch"]?.name).toBe("Perch");
+    const written = await readFile(configPath, "utf8");
+    expect(written).toMatch(/^version = 2$/m);
+    expect(written).toContain('[papers."dev/perch"]');
+    expect(written).toContain(
+      'links = [ [ "github:finch/notes", "forgejo:finch/notes" ] ]',
+    );
+    expect(written).not.toMatch(/items|joins/);
+    expect(await readFile(join(dir, "config.toml.v1"), "utf8")).toBe(
+      version1Text,
+    );
+  });
+
+  it("keeps an earlier config.toml.v1 and copies the old file to config.toml.v1.1", async () => {
+    await writeFile(configPath, version1Text);
+    await writeFile(join(dir, "config.toml.v1"), "# an earlier copy\n");
+
+    const state = await storeOnDisk().reload();
+
+    expect(state.error).toBeNull();
+    expect(await readFile(join(dir, "config.toml.v1"), "utf8")).toBe(
+      "# an earlier copy\n",
+    );
+    expect(await readFile(join(dir, "config.toml.v1.1"), "utf8")).toBe(
+      version1Text,
+    );
+  });
+
+  it("drops [[sources.kuma]] tables from a version 1 file", async () => {
+    await writeFile(
+      configPath,
+      `${version1Text}\n[[sources.kuma]]\nname = "Box"\nbase_url = "http://kuma.invalid"\nstatus_page = "p"\n`,
+    );
+
+    const state = await storeOnDisk().reload();
+
+    expect(state.error).toBeNull();
+    expect(state.loaded?.config.sources).toEqual({
+      local: [],
+      github: [],
+      forgejo: [],
+    });
+    expect(await readFile(configPath, "utf8")).not.toContain("kuma");
+  });
+
+  it("refuses a file of a newer version, naming both, and writes nothing", async () => {
+    const newer = `version = 3\n${version1Text}`;
+    await writeFile(configPath, newer);
+
+    const state = await storeOnDisk().reload();
+
+    expect(state.loaded).toBeNull();
+    expect(state.error).toBe(
+      "config: version 3 is newer than this perch reads, version 2",
+    );
+    expect(await readFile(configPath, "utf8")).toBe(newer);
+    expect(await readdir(dir)).toEqual(["config.toml"]);
+  });
+
+  it("reads a version 2 file without writing it or copying it", async () => {
+    const version2 = `version = 2\n${version1Text.replace("joins", "links").replace("[items.", "[papers.")}`;
+    await writeFile(configPath, version2);
+
+    const state = await storeOnDisk().reload();
+
+    expect(state.error).toBeNull();
+    expect(state.loaded?.config.entities["dev/perch"]?.name).toBe("Perch");
+    expect(await readFile(configPath, "utf8")).toBe(version2);
+    expect(await readdir(dir)).toEqual(["config.toml"]);
   });
 });

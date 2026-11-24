@@ -31,8 +31,8 @@ interface Note {
 const birdNotes: Note[] = [
   {
     title: "Breast colour · health, worn as mood",
-    text: `Green content, amber restless, red distressed. Failing CI is red. Each roadmap file is judged on its own: ${bugs.amberCount} open bugs turn it amber and ${bugs.redCount} red, ${criticalBugs.amberCount} open critical bug amber and ${criticalBugs.redCount} red. Tasks never count. A remote the clone pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled flight: on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
-    rule: "Worst input wins. The windows are config defaults from the Judgement page; a bird's papers may set its own.",
+    text: `Green content, amber restless, red distressed. Failing CI is red. Each roadmap file is judged on its own: ${bugs.amberCount} open bugs turn it amber and ${bugs.redCount} red, ${criticalBugs.amberCount} open critical bug amber and ${criticalBugs.redCount} red. Tasks never count. A remote the local repository pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled: on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
+    rule: "Worst input wins. The thresholds are config defaults from the Judgement page; a bird's papers may set its own.",
   },
   {
     title: "Restlessness · unhappiness in motion",
@@ -41,22 +41,22 @@ const birdNotes: Note[] = [
   },
   {
     title: "Plumpness · outstanding work",
-    text: `Open roadmap items make a plumper bird, up to ${largestGrowth} per cent larger at ${plumpnessCap} items, so nobody bursts. Every wire bird starts from one size and a fence bird from a slightly smaller one; plumpness is the only thing that changes it. ${vault.name} carries ${vault.plumpness.outstanding} open items, past the cap.`,
-    rule: "Volume at a glance; the exact count is the bubble's open-items chip.",
+    text: `Open work items make a plumper bird, up to ${largestGrowth} per cent larger at ${plumpnessCap} work items, so nobody bursts. Every wire bird starts from one size and a fence bird from a slightly smaller one; plumpness is the only thing that changes it. ${vault.name} carries ${vault.plumpness.outstanding} open work items, past the cap.`,
+    rule: "Volume at a glance; the exact count is the bubble's open-work-items chip.",
   },
   {
-    title: "♪ · being edited",
-    text: "The song means the clone holds uncommitted changes: your hands are in it now. Activity runs on its own axis beside health, so a bird of any mood can sing, and it sings at any hour. A fence bird never sings.",
-    rule: "From git: editing while any file is uncommitted.",
+    title: "♪ · uncommitted changes",
+    text: "The song means the local repository holds uncommitted changes: your hands are in it now. The work state runs on its own axis beside health, so a bird of any mood can sing, and it sings at any hour. A fence bird never sings.",
+    rule: "From git: uncommitted while any file is uncommitted.",
   },
   {
     title: "The eye and the z · asleep",
-    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor being edited sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. A snoozed bird sleeps at any hour, dimmed like a fence bird, until its end date or until woken. Colours and places never change by night.",
+    text: "Birds keep their own hours, apart from the sky's phases. From midnight to 06:00 a bird that is neither distressed nor uncommitted sleeps: its eye closes, it stops bobbing and a z in its own colour sits where the note would. Every fence bird sleeps then, whatever its health, and a distressed bird stays awake. A snoozed bird sleeps at any hour, dimmed like a fence bird, until its end date or until woken. Colours and places never change by night.",
     rule: "Clicked with its eyes closed, a bird wakes and says so before its speech.",
   },
   {
     title: "Name · the project",
-    text: "The display name from config, else the name the scan found. A bird is the project, joined over its clone, its forge repositories and its vault state, so one name covers them all. It brightens under the pointer.",
+    text: "The display name from config, else the name the scan found. A bird is the project: its local repository, its forge repositories and its vault state taken as one, so one name covers them all. It brightens under the pointer.",
     rule: null,
   },
   {
@@ -67,13 +67,13 @@ const birdNotes: Note[] = [
   {
     title: "The fence · not adopted",
     text: "Everything the scan finds starts on the fence beneath the wires. A fence bird is dimmed and does not wear its mood, and the fence is ordered by name, since it holds no priority.",
-    rule: "Adopting a bird writes its entry into config and puts it on a wire.",
+    rule: "Adopting a bird writes its papers into config and puts it on a wire.",
   },
 ];
 
 const bubbleNotes: Note[] = [
   {
-    title: "Name and state word · the same health, spoken",
+    title: "Name and state phrase · the same health, spoken",
     text: 'The display name, and the word for the mood the breast wears, in its colour on paper: content, restless or distressed. A fence bird says "not adopted" and a snoozed bird "snoozed", quietly, with when its snooze ends beneath.',
     rule: "Never a second status: the colour and the word read from one derivation.",
   },
@@ -84,7 +84,7 @@ const bubbleNotes: Note[] = [
   },
   {
     title: "Chips · the numbers it carries",
-    text: "In a fixed order: can't read, CI, bugs, uncommitted, unpushed, stalled, pull requests, open items. A chip is plain when its fact is not judged, amber or red when it is. Each is a handle: pressed, it rides the camera to the bird's page and lands on the ledger row holding its working.",
+    text: "In a fixed order: can't read, CI, bugs, uncommitted, unpushed, stalled, pull requests, open work items. A chip is plain when its fact is not judged, amber or red when it is. Each is a handle: pressed, it rides the camera to the bird's page and lands on the ledger row holding its reading.",
     rule: "A zero or an absent source shows no chip; a fence bird carries none.",
   },
   {
@@ -193,7 +193,7 @@ export function FieldGuidePage() {
         notes={birdNotes}
       >
         <Specimen
-          label={`${vault.name}: restless, editing, at the plumpness cap`}
+          label={`${vault.name}: restless, uncommitted, at the plumpness cap`}
           rule={`On ${vault.wire}. ${vault.bubble.speech}`}
         >
           <Plate phase="day">
@@ -238,7 +238,7 @@ export function FieldGuidePage() {
         >
           <Specimen
             label="Spool in the small hours: asleep"
-            rule="Content and not edited, so its eye closes under a green z."
+            rule="Content and committed or merged, so its eye closes under a green z."
           >
             <Plate phase="night">
               <BirdPortrait
@@ -250,7 +250,7 @@ export function FieldGuidePage() {
           </Specimen>
           <Specimen
             label="Perch in the small hours: singing"
-            rule="Being edited, so it stays awake and shows the note, never the z."
+            rule="Uncommitted, so it stays awake and shows the note, never the z."
           >
             <Plate phase="night">
               <BirdPortrait

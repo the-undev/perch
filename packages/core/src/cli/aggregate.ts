@@ -3,9 +3,9 @@
 
 import { runAggregate } from "../scan.ts";
 import { cliConfig } from "./config.ts";
-import { home, rawDir, snapshotPath } from "./paths.ts";
+import { home, rawDir, snapshotPath, userPath } from "./paths.ts";
 
-const { config, path: configPath } = await cliConfig();
+const { config, path: configPath } = await cliConfig({ home, userPath });
 const snapshot = await runAggregate({
   config,
   configPath,
@@ -16,6 +16,6 @@ const snapshot = await runAggregate({
 });
 
 console.log(
-  `${snapshot.items.length} items, config ${configPath}, wrote ${snapshotPath}`,
+  `${snapshot.entities.length} entities, config ${configPath}, wrote ${snapshotPath}`,
 );
 for (const warning of snapshot.warnings) console.log(`warning: ${warning}`);

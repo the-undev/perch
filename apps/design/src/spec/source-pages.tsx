@@ -2,7 +2,7 @@
 // derives from them, each declaration excerpted from the repository and a mock value beside.
 
 import { mockSnapshot } from "@perch/core/mock.ts";
-import type { ItemSources } from "@perch/core/snapshot.ts";
+import type { EntitySources } from "@perch/core/snapshot.ts";
 import type { ReactNode } from "react";
 import { Code } from "../usage.tsx";
 import { type CoreFile, roundOf } from "./code.ts";
@@ -20,8 +20,8 @@ interface SourceSpec {
   derives: ReactNode;
   derivations: string[];
   snapshotTypes: string[];
-  /** One item's derived data for this source in the mock snapshot. */
-  example: { itemId: string; source: keyof ItemSources };
+  /** One entity's derived data for this source in the mock snapshot. */
+  example: { entityId: string; source: keyof EntitySources };
 }
 
 function roundWords(source: string): string {
@@ -29,10 +29,16 @@ function roundWords(source: string): string {
   return `${source}: round ${round}, ${round === 1 ? "a root collector" : "an enricher"}, written to .scan/raw/${source}.json`;
 }
 
-function mockSourceData(itemId: string, source: keyof ItemSources): unknown {
-  const item = mockSnapshot.items.find((candidate) => candidate.id === itemId);
-  if (item === undefined) throw new Error(`the mock has no item ${itemId}`);
-  return item.sources[source] ?? null;
+function mockSourceData(
+  entityId: string,
+  source: keyof EntitySources,
+): unknown {
+  const entity = mockSnapshot.entities.find(
+    (candidate) => candidate.id === entityId,
+  );
+  if (entity === undefined)
+    throw new Error(`the mock has no entity ${entityId}`);
+  return entity.sources[source] ?? null;
 }
 
 function SourcePage({ spec }: { spec: SourceSpec }) {
@@ -70,14 +76,14 @@ function SourcePage({ spec }: { spec: SourceSpec }) {
       <Part title="In the mock snapshot">
         <Prose>
           <p>
-            <Code>{spec.example.itemId}</Code>&apos;s{" "}
+            <Code>{spec.example.entityId}</Code>&apos;s{" "}
             <Code>sources.{spec.example.source}</Code>, from{" "}
             <Code>packages/core/src/mock.ts</Code>.
           </p>
         </Prose>
         <MockValue
-          title={`items["${spec.example.itemId}"].sources.${spec.example.source}`}
-          value={mockSourceData(spec.example.itemId, spec.example.source)}
+          title={`entities["${spec.example.entityId}"].sources.${spec.example.source}`}
+          value={mockSourceData(spec.example.entityId, spec.example.source)}
         />
       </Part>
     </>
@@ -90,8 +96,8 @@ const localGit: SourceSpec = {
     <p>
       Every include path in config: a repository itself, or a directory searched
       up to five levels deep for <Code>.git</Code>, never entering an ignore
-      path, a hidden directory or <Code>node_modules</Code>. For each clone it
-      runs read-only git: <Code>status --porcelain=v2</Code>,{" "}
+      path, a hidden directory or <Code>node_modules</Code>. For each local
+      repository it runs read-only git: <Code>status --porcelain=v2</Code>,{" "}
       <Code>for-each-ref</Code> over the local branches with their upstream
       tracking, <Code>remote -v</Code>, where <Code>origin/HEAD</Code> points,
       <Code>log --branches --not --remotes</Code> for the commits no remote
@@ -107,7 +113,7 @@ const localGit: SourceSpec = {
   ],
   rawTypes: [
     "RawLocal",
-    "RawLocalPresence",
+    "RawLocalRepository",
     "RawObsidian",
     "IncludeKind",
     "RawGit",
@@ -119,31 +125,32 @@ const localGit: SourceSpec = {
   ],
   derives: (
     <p>
-      Joining comes first: each clone is a presence, and its remote URLs join it
-      to forge presences (<Code>joinPresences</Code> in <Code>src/join.ts</Code>
-      ). Then git data per item: the default branch, the work-state, unsafe work
-      aged in hours from its oldest change, and stalled flight aged in days. A
-      missing include path becomes a scene-wide warning.
+      Linking comes first: each local repository&apos;s remote URLs link it to
+      forge repositories (<Code>linkRepositories</Code> in{" "}
+      <Code>src/link.ts</Code>
+      ). Then git data per entity: the default branch, the work state, unsafe
+      work aged in hours from its oldest change, and the days stalled. A missing
+      include path becomes a scene-wide warning.
     </p>
   ),
   derivations: [
     "deriveGit",
     "chooseDefaultBranch",
-    "deriveActivity",
-    "deriveDrift",
+    "deriveWorkState",
+    "deriveUnsafeWork",
     "deriveStall",
   ],
   snapshotTypes: [
     "GitData",
     "Backup",
-    "ActivityState",
-    "Drift",
+    "WorkState",
+    "UnsafeWork",
     "AgedWork",
     "Stall",
     "LocalBranch",
     "Remote",
   ],
-  example: { itemId: "dev/perch", source: "git" },
+  example: { entityId: "dev/perch", source: "git" },
 };
 
 const forgeRawTypes = [
@@ -164,22 +171,22 @@ const forgeSnapshotTypes = [
   "CiState",
   "PullRequest",
   "FinalisedCommit",
-  "ForgePresence",
+  "ForgeRepository",
   "ForgeListing",
 ];
 
 const forgeDerives = (
   <p>
-    Each forge repository is a presence, joined to clones by their remote URLs
-    and to other presences by config&apos;s <Code>joins</Code>. Its details
-    become the item&apos;s forge data: open pull requests, the latest CI in
-    Perch&apos;s own four states, and the finalised commits. Each is read by its
-    own request, so one that fails is that part&apos;s error and the others
-    stand. Archived repositories go to the forge&apos;s listing only, never the
-    main view. A repository a local remote names that could not be looked up is
-    still a presence, carrying its error: a standing config gap when no card
-    covers its owner on the remote&apos;s host, which makes the bird restless,
-    or a failed read, which does not.
+    Each forge repository is a repository, linked to local repositories by their
+    remote URLs and to other repositories by config&apos;s <Code>links</Code>.
+    Its details become the entity&apos;s forge data: open pull requests, the
+    latest CI in Perch&apos;s own four states, and the finalised commits. Each
+    is read by its own request, so one that fails is that part&apos;s error and
+    the others stand. Archived repositories go to the forge&apos;s listing only,
+    never the main view. A repository a local remote names that could not be
+    looked up is still a repository, carrying its error: a standing config gap
+    when no card covers its owner on the remote&apos;s host, which makes the
+    bird restless, or a failed read, which does not.
   </p>
 );
 
@@ -209,7 +216,7 @@ const github: SourceSpec = {
   derives: forgeDerives,
   derivations: ["deriveForge", "githubCiState"],
   snapshotTypes: forgeSnapshotTypes,
-  example: { itemId: "dev/perch", source: "github" },
+  example: { entityId: "dev/perch", source: "github" },
 };
 
 const forgejo: SourceSpec = {
@@ -231,20 +238,20 @@ const forgejo: SourceSpec = {
   derives: forgeDerives,
   derivations: ["deriveForge", "forgejoCiState"],
   snapshotTypes: forgeSnapshotTypes,
-  example: { itemId: "undev/prism", source: "forgejo" },
+  example: { entityId: "undev/prism", source: "forgejo" },
 };
 
 const roadmaps: SourceSpec = {
   polled: ["roadmap"],
   reads: (
     <p>
-      For every local presence, the roadmap files its config entry names in{" "}
+      For every local repository, the roadmap files its papers name in{" "}
       <Code>roadmaps</Code>. A file is parsed as a roadmap only when listed
       there; when the list is unset or empty, the first of the standard names
-      that exists is recorded by path and shown as a document. The entry is
-      resolved through the project the clone joins, so it runs after the forge
-      enrichers. Each file is parsed into its headings, the bullets directly
-      under each, and the prose between.
+      that exists is recorded by path and shown as a document. The papers are
+      resolved through the project the local repository links, so they run after
+      the forge enrichers. Each file is parsed into its headings, the bullets
+      directly under each, and the prose between.
     </p>
   ),
   moduleNames: [
@@ -268,16 +275,16 @@ const roadmaps: SourceSpec = {
       whole words from <Code>bug_words</Code> and{" "}
       <Code>critical_bug_words</Code> in its text, its tags and the headings
       above it, leaving out inline code and double-quoted text, and the open
-      items counted by kind. The counts feed the bird&apos;s plumpness, its
+      work items counted by kind. The counts feed the bird&apos;s plumpness, its
       chips and its ledger. Each file&apos;s open bugs and critical bugs are
-      judged against their windows, and the worse level is a cause of the
+      judged against their thresholds, and the worse level is a cause of the
       bird&apos;s health; tasks never are.
     </p>
   ),
   derivations: [
     "deriveRoadmap",
     "deriveRoadmapFile",
-    "countOpenItems",
+    "countOpenWorkItems",
     "kindClassifier",
   ],
   snapshotTypes: [
@@ -287,33 +294,7 @@ const roadmaps: SourceSpec = {
     "WorkItem",
     "WorkItemCounts",
   ],
-  example: { itemId: "undev/Hollow-legacy", source: "roadmap" },
-};
-
-const kuma: SourceSpec = {
-  polled: ["kuma"],
-  reads: (
-    <p>
-      Each <Code>[[sources.kuma]]</Code> table&apos;s Uptime Kuma status page,{" "}
-      <Code>status_page</Code> at <Code>base_url</Code>: its monitor groups and
-      their heartbeats, keyed by the table&apos;s <Code>name</Code>. The gather
-      reads them on every scan, and the aggregate puts each on the server item
-      that name gives. The view model leaves the server off the scene until
-      server monitoring is picked up, so nothing it reads is shown; see the
-      roadmap&apos;s Server monitoring.
-    </p>
-  ),
-  moduleNames: [{ file: "src/sources/kuma.ts", names: ["createKumaSource"] }],
-  rawTypes: ["RawKuma", "RawMonitor", "RawHeartbeat"],
-  derives: (
-    <p>
-      Each monitor&apos;s status from its newest heartbeat, and whether the
-      server is all up: at least one monitor, every one of them up.
-    </p>
-  ),
-  derivations: ["deriveKuma"],
-  snapshotTypes: ["KumaData", "Monitor", "MonitorStatus"],
-  example: { itemId: "server:Silo", source: "kuma" },
+  example: { entityId: "undev/Hollow-legacy", source: "roadmap" },
 };
 
 export function LocalGitPage() {
@@ -330,8 +311,4 @@ export function ForgejoPage() {
 
 export function RoadmapsPage() {
   return <SourcePage spec={roadmaps} />;
-}
-
-export function KumaPage() {
-  return <SourcePage spec={kuma} />;
 }

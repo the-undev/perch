@@ -8,7 +8,7 @@ import {
   mockRoadmap,
   mockSnapshot,
 } from "@perch/core/mock.ts";
-import type { ForgePresence, Item } from "@perch/core/snapshot.ts";
+import type { Entity, ForgeRepository } from "@perch/core/snapshot.ts";
 import type {
   KeyringCalls,
   SourceTested,
@@ -19,7 +19,7 @@ import {
   type Bird,
   compareByName,
   deriveAviary,
-  type LedgerEntry,
+  type LedgerFact,
   type Wire,
 } from "@perch/core/viewmodel.ts";
 import { mockBird } from "@perch/ui/mock-birds.ts";
@@ -28,7 +28,7 @@ import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 export {
   mockBird,
   mockBirds,
-  mockEntryForm,
+  mockPapersForm,
   quietSnooze,
 } from "@perch/ui/mock-birds.ts";
 
@@ -149,24 +149,24 @@ export function withHelloAdopted(): Aviary {
 
 const pergolaNotesId = "forgejo:finch/field-notes";
 
-/** Pergola Notes derived again from the mock snapshot with its forge presences changed, so its words are the view model's. */
+/** Pergola Notes derived again from the mock snapshot with its forge repositories changed, so its words are the view model's. */
 function pergolaNotesWith(
-  presences: (forges: ForgePresence[]) => ForgePresence[],
+  repositories: (forges: ForgeRepository[]) => ForgeRepository[],
 ): Bird {
-  const items = mockSnapshot.items.map(
-    (item): Item =>
-      item.id === pergolaNotesId
+  const entities = mockSnapshot.entities.map(
+    (entity): Entity =>
+      entity.id === pergolaNotesId
         ? {
-            ...item,
-            presences: {
-              ...item.presences,
-              forges: presences(item.presences.forges),
+            ...entity,
+            repositories: {
+              ...entity.repositories,
+              forges: repositories(entity.repositories.forges),
             },
           }
-        : item,
+        : entity,
   );
   const aviary = deriveAviary(
-    { ...mockSnapshot, items },
+    { ...mockSnapshot, entities },
     mockConfig,
     {},
     mockHome,
@@ -178,10 +178,10 @@ function pergolaNotesWith(
   return bird;
 }
 
-/** Pergola Notes read from a snapshot cached before the scanner kept clone addresses. */
+/** Pergola Notes read from a snapshot cached before the scanner kept SSH addresses. */
 export function pergolaNotesCached(): Bird {
   return pergolaNotesWith((forges) =>
-    forges.map(({ sshUrl: _, ...presence }) => presence),
+    forges.map(({ sshUrl: _, ...repository }) => repository),
   );
 }
 
@@ -229,17 +229,17 @@ export function stubKeyring(
   };
 }
 
-const bugLedgerItemId = "undev/Hollow-legacy";
+const bugLedgerEntityId = "undev/Hollow-legacy";
 
-/** Hollow's bug and critical bug ledger rows derived again with the given open counts, the windows 5 and 20 for bugs and 3 and 6 for critical bugs. */
-export function bugLedgerRows(bug: number, criticalBug: number): LedgerEntry[] {
-  const items = mockSnapshot.items.map(
-    (item): Item =>
-      item.id === bugLedgerItemId
+/** Hollow's bug and critical bug ledger rows derived again with the given open counts, the thresholds 5 and 20 for bugs and 3 and 6 for critical bugs. */
+export function bugLedgerRows(bug: number, criticalBug: number): LedgerFact[] {
+  const entities = mockSnapshot.entities.map(
+    (entity): Entity =>
+      entity.id === bugLedgerEntityId
         ? {
-            ...item,
+            ...entity,
             sources: {
-              ...item.sources,
+              ...entity.sources,
               roadmap: {
                 ...mockRoadmap([
                   { path: "docs/roadmap.md", task: 0, bug, criticalBug },
@@ -251,19 +251,19 @@ export function bugLedgerRows(bug: number, criticalBug: number): LedgerEntry[] {
               },
             },
           }
-        : item,
+        : entity,
   );
   const aviary = deriveAviary(
-    { ...mockSnapshot, items },
+    { ...mockSnapshot, entities },
     mockConfig,
     {},
     mockHome,
   );
   const bird = aviary.wires
     .flatMap((wire) => wire.birds)
-    .find((candidate) => candidate.id === bugLedgerItemId);
+    .find((candidate) => candidate.id === bugLedgerEntityId);
   if (bird === undefined) throw new Error("the mock has no Hollow");
-  return bird.detail.ledger.filter(
-    (entry) => entry.kind === "count" && entry.label.includes("bugs in"),
+  return bird.page.ledger.filter(
+    (fact) => fact.kind === "count" && fact.label.includes("bugs in"),
   );
 }

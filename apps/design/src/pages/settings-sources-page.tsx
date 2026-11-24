@@ -16,7 +16,7 @@ const afterScan = new Date(Date.parse(mockSnapshot.scannedAt) + 4 * 60_000);
 
 const mockSources = mockSettingsForm().values.sources;
 
-const none: SourcesConfig = { local: [], github: [], forgejo: [], kuma: [] };
+const none: SourcesConfig = { local: [], github: [], forgejo: [] };
 
 /** The mock's records with the Forgejo instance failing on its very first read. */
 const neverRead: SourceCard[] = mockSnapshot.sourceCards.map((card) =>
@@ -25,7 +25,7 @@ const neverRead: SourceCard[] = mockSnapshot.sourceCards.map((card) =>
     : card,
 );
 
-/** The mock's sources with a second card for finch and a new Uptime Kuma card. */
+/** The mock's sources with a second card for finch and a new, empty Forgejo card. */
 const withProblems: SourcesConfig = withSourceAdded(
   {
     ...mockSources,
@@ -39,7 +39,7 @@ const withProblems: SourcesConfig = withSourceAdded(
       },
     ],
   },
-  "kuma",
+  "forgejo",
 );
 
 /** One GitHub card, the-undev's, and nothing else. */
@@ -104,7 +104,7 @@ export function SettingsSourcesPage() {
       >
         <PageSpecimen
           label="As the mock holds them, four minutes after its scan"
-          rule="Local folders found 14 and misses ~/work; three GitHub accounts read; both Forgejo cards fail with the instance, last read 19 minutes before; the Silo page is never scanned. Press a heading to open its card."
+          rule="Local folders found 14 and misses ~/work; two GitHub accounts read and a third is never scanned; both Forgejo cards fail with the instance, last read 19 minutes before. Press a heading to open its card."
           start={mockSources}
           cards={mockSnapshot.sourceCards}
           answers={keyringTakes}
@@ -126,7 +126,7 @@ export function SettingsSourcesPage() {
       </Section>
       <Section
         title="Adding a source"
-        rule="The picker offers every kind but Uptime Kuma, which waits for server monitoring: each a sentence and what it needs, and it opens in place. Picking one appends a card of that kind after its kind's last, open, its empty fields named. A new GitHub card starts with github.com in its hosts; a Forgejo card's hosts take the host of its base URL once the address is typed, until the list is edited by hand. A kuma table already in the config keeps its card."
+        rule="The picker offers every kind: each a sentence and what it needs, and it opens in place. Picking one appends a card of that kind after its kind's last, open, its empty fields named. A new GitHub card starts with github.com in its hosts; a Forgejo card's hosts take the host of its base URL once the address is typed, until the list is edited by hand."
         min={640}
       >
         <PageSpecimen
@@ -151,7 +151,7 @@ export function SettingsSourcesPage() {
       </Section>
       <Section
         title="The token and its test"
-        rule="A GitHub or Forgejo card takes a pasted token into the system keyring under its keyring key, write-only: the field is never filled and empties once stored. Test lists the account's repositories with the stored token, as a scan does, and says so in one quiet sentence; a failure says what the keyring or the forge answered. Both are held while either runs and while the card has no key, and Test while it has no account or address. The manual command stays beside the key. An Uptime Kuma card has no token: its status pages are public reads. These stubs answer after a moment."
+        rule="A GitHub or Forgejo card takes a pasted token into the system keyring under its keyring key, write-only: the field is never filled and empties once stored. Test lists the account's repositories with the stored token, as a scan does, and says so in one quiet sentence; a failure says what the keyring or the forge answered. Both are held while either runs and while the card has no key, and Test while it has no account or address. The manual command stays beside the key. These stubs answer after a moment."
         min={640}
       >
         <PageSpecimen
@@ -208,12 +208,12 @@ export function SettingsSourcesPage() {
       </Section>
       <Section
         title="Problems"
-        rule="Each problem sits beneath its field, and the editor lists them beside Save, which stays off. A card that cannot be written starts open. The distinctness rules are the config parser's: one card per GitHub account in any case, per Forgejo account at one address, per Uptime Kuma name."
+        rule="Each problem sits beneath its field, and the editor lists them beside Save, which stays off. A card that cannot be written starts open. The distinctness rules are the config parser's: one card per GitHub account in any case, per Forgejo account at one address."
         min={640}
       >
         <PageSpecimen
           label="A repeated account and an empty new card"
-          rule="Finch repeats finch; the new Uptime Kuma card has no name, address or status page."
+          rule="Finch repeats finch; the new Forgejo card has no address, account or keyring key."
           start={withProblems}
           cards={mockSnapshot.sourceCards}
           answers={keyringTakes}
@@ -245,7 +245,7 @@ export function SettingsSourcesPage() {
           {
             name: "unfold",
             type: "SourceCardKind | null",
-            what: "The cards of this kind start unfolded, as a link to the page asks: a no-clone slip's Open Sources asks for local. Null for none.",
+            what: "The cards of this kind start unfolded, as a link to the page asks: a no-local-repository slip's Open Sources asks for local. Null for none.",
           },
           {
             name: "onChange",

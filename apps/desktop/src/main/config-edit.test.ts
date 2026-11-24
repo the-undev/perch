@@ -101,4 +101,21 @@ describe("writing the config", () => {
     ).rejects.toThrow("stalled amber threshold must be below its red");
     expect(await readFile(configPath, "utf8")).toBe(before);
   });
+
+  it("refuses, writing nothing, a file older than the current config version", async () => {
+    const version1 = await readFile(
+      join(
+        import.meta.dirname,
+        "../../../../packages/core/tests/fixtures/config-version1.toml",
+      ),
+      "utf8",
+    );
+    await writeFile(configPath, version1);
+
+    await expect(editConfigFile(deps(), (config) => config)).rejects.toThrow(
+      "config: version 1 is older than this perch edits, version 2",
+    );
+    expect(await readFile(configPath, "utf8")).toBe(version1);
+    expect(await readdir(dir)).toEqual(["config.toml"]);
+  });
 });

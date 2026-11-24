@@ -1,15 +1,15 @@
 import { mockSnapshot } from "@perch/core/mock.ts";
-import type { LedgerEntry, PaperLine } from "@perch/core/viewmodel.ts";
+import type { LedgerFact, SheetLine } from "@perch/core/viewmodel.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { BranchLines, CommitRiver, FlagLines, Ledger } from "./ledger.tsx";
+import { BranchLines, CommitHistory, FlagLines, Ledger } from "./ledger.tsx";
 import { mockBird } from "./mock-birds.ts";
 
 afterEach(cleanup);
 
 const now = new Date(mockSnapshot.scannedAt);
 
-/** A bug line pressed where no paper listens. */
+/** A bug line pressed where no sheet listens. */
 const ignoreReveal = () => {};
 
 /** Each row's label, value and tone, as drawn. */
@@ -21,13 +21,13 @@ function rows(container: HTMLElement): string[][] {
   ]);
 }
 
-/** Each river commit's dot: its tone and its spoken spread, as drawn. */
+/** Each history commit's dot: its tone and the forges holding it in words, as drawn. */
 function dots(container: HTMLElement): string[][] {
-  return [...container.querySelectorAll('[data-part="river-commit"]')].map(
+  return [...container.querySelectorAll('[data-part="history-commit"]')].map(
     (row) => {
       const dot = row.querySelector('[role="img"]');
       return [
-        dot?.getAttribute("data-spread-tone") ?? "",
+        dot?.getAttribute("data-held-on-tone") ?? "",
         dot?.getAttribute("aria-label") ?? "",
         dot?.getAttribute("title") ?? "",
       ];
@@ -41,7 +41,7 @@ describe("the ledger", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={mockBird("undev/prism").detail.ledger}
+        facts={mockBird("undev/prism").page.ledger}
         now={now}
         landing={null}
       />,
@@ -51,7 +51,7 @@ describe("the ledger", () => {
       ["uncommitted changes", "4", "amber"],
       ["unpushed commits", "none", "green"],
       ["bugs in docs/roadmap.md", "none", "green"],
-      ["open roadmap items", "78", "none"],
+      ["open work items", "78", "none"],
     ]);
   });
 
@@ -61,7 +61,7 @@ describe("the ledger", () => {
         <Ledger
           onReveal={ignoreReveal}
           quiet={null}
-          entries={mockBird("undev/gramophone").detail.ledger}
+          facts={mockBird("undev/gramophone").page.ledger}
           now={now}
           landing={null}
         />,
@@ -73,7 +73,7 @@ describe("the ledger", () => {
         <Ledger
           onReveal={ignoreReveal}
           quiet={null}
-          entries={mockBird("undev/prism").detail.ledger}
+          facts={mockBird("undev/prism").page.ledger}
           now={now}
           landing={null}
         />,
@@ -85,7 +85,7 @@ describe("the ledger", () => {
   });
 
   it("links a state to its page and gives times as durations to the moment passed", () => {
-    const entries: LedgerEntry[] = [
+    const facts: LedgerFact[] = [
       {
         kind: "state",
         label: "CI",
@@ -93,7 +93,7 @@ describe("the ledger", () => {
         tone: "green",
         url: "https://example.test/run",
         chip: null,
-        workings: [],
+        readings: [],
       },
       { kind: "time", label: "last commit", at: "2026-10-21T03:00:00.000Z" },
     ];
@@ -101,7 +101,7 @@ describe("the ledger", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
         landing={null}
       />,
@@ -116,12 +116,12 @@ describe("the ledger", () => {
   });
 
   it("opens with the quiet sentence when given one, and without it when null", () => {
-    const spool = mockBird("undev/spool").detail;
+    const spool = mockBird("undev/spool").page;
     const quiet = render(
       <Ledger
         onReveal={ignoreReveal}
         quiet={spool.quiet}
-        entries={spool.ledger}
+        facts={spool.ledger}
         now={now}
         landing={null}
       />,
@@ -136,7 +136,7 @@ describe("the ledger", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={spool.ledger}
+        facts={spool.ledger}
         now={now}
         landing={null}
       />,
@@ -145,18 +145,18 @@ describe("the ledger", () => {
   });
 });
 
-describe("the ledger's workings", () => {
-  /** Each working line under the row holding the given chip, with its tone. */
-  function workings(container: HTMLElement, chip: string): string[][] {
+describe("the ledger's readings", () => {
+  /** Each reading line under the row holding the given chip, with its tone. */
+  function readings(container: HTMLElement, chip: string): string[][] {
     return [
       ...container.querySelectorAll(
-        `[data-chip="${chip}"] [data-part="working"]`,
+        `[data-chip="${chip}"] [data-part="reading"]`,
       ),
     ].map((line) => [
       line.textContent ?? "",
       line
-        .querySelector("[data-working-tone]")
-        ?.getAttribute("data-working-tone") ?? "",
+        .querySelector("[data-reading-tone]")
+        ?.getAttribute("data-reading-tone") ?? "",
     ]);
   }
 
@@ -165,14 +165,14 @@ describe("the ledger's workings", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={mockBird("dev/perch").detail.ledger}
+        facts={mockBird("dev/perch").page.ledger}
         now={now}
         landing={null}
       />,
     );
 
     expect(rows(container)).toContainEqual(["CI", "pending", "none"]);
-    expect(workings(container, "ci")).toEqual([
+    expect(readings(container, "ci")).toEqual([
       ["github · success on main, run “check” · thirteen hours ago", "green"],
       [
         "forgejo · pending on main, run “check / check (push)” · thirteen hours ago",
@@ -193,48 +193,48 @@ describe("the ledger's workings", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={mockBird("undev/prism").detail.ledger}
+        facts={mockBird("undev/prism").page.ledger}
         now={now}
         landing={null}
       />,
     );
 
-    expect(workings(container, "ci")).toEqual([
+    expect(readings(container, "ci")).toEqual([
       ["github · success on main, run “check” · five days ago", "green"],
       [
         "forgejo · failure on main, run “check / check (push)” · four days ago",
         "red",
       ],
     ]);
-    expect(workings(container, "pull-requests")).toEqual([
+    expect(readings(container, "pull-requests")).toEqual([
       ["github · couldn't read pull requests", "amber"],
       ["forgejo · 2 open", "none"],
     ]);
   });
 
-  it("spells out open items per roadmap file and unsafe work by its oldest", () => {
+  it("spells out open work items per roadmap file and unsafe work by its oldest", () => {
     const { container } = render(
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={mockBird("obsidian/Hothouse").detail.ledger}
+        facts={mockBird("obsidian/Hothouse").page.ledger}
         now={now}
         landing={null}
       />,
     );
 
-    expect(workings(container, "open-items")).toEqual([
+    expect(readings(container, "open-work-items")).toEqual([
       ["Tech/Tech Plans.md · 121 open", "none"],
       ["Garden/Garden Plans.md · 75 open", "none"],
     ]);
-    expect(workings(container, "bugs")).toEqual([
+    expect(readings(container, "bugs")).toEqual([
       ["Tech/Tech Plans.md · bug 1", "none"],
     ]);
-    expect(workings(container, "critical-bugs")).toEqual([
+    expect(readings(container, "critical-bugs")).toEqual([
       ["Garden/Garden Plans.md · critical bug 1", "none"],
       ["Garden/Garden Plans.md · restless at 1", "amber"],
     ]);
-    expect(workings(container, "uncommitted")).toEqual([
+    expect(readings(container, "uncommitted")).toEqual([
       ["git · oldest change · 30 hours ago", "amber"],
     ]);
   });
@@ -245,7 +245,7 @@ describe("the ledger's workings", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={perch.detail.ledger}
+        facts={perch.page.ledger}
         now={now}
         landing={null}
       />,
@@ -265,27 +265,27 @@ describe("the ledger's workings", () => {
 });
 
 describe("a chip's landing", () => {
-  it("marks the row holding the pressed chip's working, only that row, and afresh on each press, its working lines lit with the mark", () => {
-    const entries = mockBird("dev/perch").detail.ledger;
+  it("marks the row holding the pressed chip's reading, only that row, and afresh on each press, its reading lines lit with the mark", () => {
+    const facts = mockBird("dev/perch").page.ledger;
     const { container, rerender } = render(
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
         landing={{ chip: "ci", press: 1 }}
       />,
     );
     const first = container.querySelector('[data-part="landing"]');
-    /** The rows whose working lines are lit, by the chip each holds. */
+    /** The rows whose reading lines are lit, by the chip each holds. */
     const lit = () =>
       [
         ...container.querySelectorAll(
-          '[data-part="workings"].animate-land-ink',
+          '[data-part="readings"].animate-land-ink',
         ),
       ].map((list) => list.parentElement?.getAttribute("data-chip"));
     const firstInk = container.querySelector(
-      '[data-chip="ci"] [data-part="workings"]',
+      '[data-chip="ci"] [data-part="readings"]',
     );
 
     expect(container.querySelectorAll('[data-part="landing"]')).toHaveLength(1);
@@ -293,14 +293,14 @@ describe("a chip's landing", () => {
     expect(first?.getAttribute("class")).toContain("animate-land");
     expect(lit()).toEqual(["ci"]);
     expect(
-      container.querySelectorAll('[data-part="workings"]').length,
+      container.querySelectorAll('[data-part="readings"]').length,
     ).toBeGreaterThan(1);
 
     rerender(
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
         landing={{ chip: "ci", press: 2 }}
       />,
@@ -309,7 +309,7 @@ describe("a chip's landing", () => {
     expect(again).not.toBeNull();
     expect(again).not.toBe(first);
     const againInk = container.querySelector(
-      '[data-chip="ci"] [data-part="workings"]',
+      '[data-chip="ci"] [data-part="readings"]',
     );
     expect(againInk?.classList.contains("animate-land-ink")).toBe(true);
     expect(againInk).not.toBe(firstInk);
@@ -318,23 +318,23 @@ describe("a chip's landing", () => {
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
-        landing={{ chip: "open-items", press: 3 }}
+        landing={{ chip: "open-work-items", press: 3 }}
       />,
     );
     expect(
       container
         .querySelector('[data-part="landing"]')
         ?.parentElement?.getAttribute("data-chip"),
-    ).toBe("open-items");
-    expect(lit()).toEqual(["open-items"]);
+    ).toBe("open-work-items");
+    expect(lit()).toEqual(["open-work-items"]);
 
     rerender(
       <Ledger
         onReveal={ignoreReveal}
         quiet={null}
-        entries={entries}
+        facts={facts}
         now={now}
         landing={null}
       />,
@@ -348,7 +348,7 @@ describe("the ledger's sections", () => {
   it("marks the checked-out branch and the default one", () => {
     render(
       <BranchLines
-        branches={mockBird("dev/perch").detail.branches}
+        branches={mockBird("dev/perch").page.branches}
         now={now}
         chip={null}
         landing={null}
@@ -365,7 +365,10 @@ describe("the ledger's sections", () => {
 
   it("draws one dot per commit, spoken and titled, and the divergence in amber", () => {
     const { container } = render(
-      <CommitRiver river={mockBird("undev/harbour").detail.river} now={now} />,
+      <CommitHistory
+        history={mockBird("undev/harbour").page.history}
+        now={now}
+      />,
     );
 
     expect(screen.getByRole("heading").textContent).toBe(
@@ -382,7 +385,7 @@ describe("the ledger's sections", () => {
 
   it("dots unpushed commits amber, unlinked, with no sentence and no column per place", () => {
     const { container } = render(
-      <CommitRiver river={mockBird(".dotfiles").detail.river} now={now} />,
+      <CommitHistory history={mockBird(".dotfiles").page.history} now={now} />,
     );
 
     expect(container.querySelector('[data-part="divergence"]')).toBeNull();
@@ -392,7 +395,7 @@ describe("the ledger's sections", () => {
       "not pushed to a remote",
     ]);
     expect(
-      container.querySelectorAll('[data-part="river-commit"] [role="img"]'),
+      container.querySelectorAll('[data-part="history-commit"] [role="img"]'),
     ).toHaveLength(dots(container).length);
     expect(screen.queryByText("here")).toBeNull();
     expect(
@@ -402,14 +405,14 @@ describe("the ledger's sections", () => {
 
   it("notes each forge that couldn't be read in amber", () => {
     const { container } = render(
-      <CommitRiver
-        river={mockBird("dev/hearth-config").detail.river}
+      <CommitHistory
+        history={mockBird("dev/hearth-config").page.history}
         now={now}
       />,
     );
 
     const notes = [
-      ...container.querySelectorAll('[data-part="river-note"]'),
+      ...container.querySelectorAll('[data-part="history-note"]'),
     ].map((note) => [note.textContent, note.className.includes("text-amber")]);
     expect(notes).toEqual([
       ["couldn't read github", true],
@@ -419,10 +422,13 @@ describe("the ledger's sections", () => {
 
   it("links each commit to the first forge holding it, judging a forge whose pull requests couldn't be read by its commits", () => {
     const { container } = render(
-      <CommitRiver river={mockBird("undev/prism").detail.river} now={now} />,
+      <CommitHistory
+        history={mockBird("undev/prism").page.history}
+        now={now}
+      />,
     );
 
-    expect(container.querySelector('[data-part="river-note"]')).toBeNull();
+    expect(container.querySelector('[data-part="history-note"]')).toBeNull();
     expect(dots(container)).toEqual([
       ["green", "on github and forgejo", "on github and forgejo"],
     ]);
@@ -437,13 +443,16 @@ describe("the ledger's sections", () => {
 
   it("dots every commit amber when no remote could be read, keeping the quiet dot for a bird with none", () => {
     const { container } = render(
-      <CommitRiver
-        river={mockBird("dev/hearth-config").detail.river}
+      <CommitHistory
+        history={mockBird("dev/hearth-config").page.history}
         now={now}
       />,
     );
     const { container: hello } = render(
-      <CommitRiver river={mockBird("dev/odin/hello").detail.river} now={now} />,
+      <CommitHistory
+        history={mockBird("dev/odin/hello").page.history}
+        now={now}
+      />,
     );
 
     expect(dots(container)).toEqual([
@@ -454,12 +463,12 @@ describe("the ledger's sections", () => {
 
   it("tones a flag by its level", () => {
     const { container } = render(
-      <FlagLines flags={mockBird("dev/odin/hello").detail.flags} />,
+      <FlagLines flags={mockBird("dev/odin/hello").page.flags} />,
     );
 
     expect(rows(container)).toEqual([
       [
-        "found under /home/owner/dev with no entry in config items",
+        "found under /home/owner/dev with no papers in config",
         "not set up",
         "red",
       ],
@@ -467,7 +476,7 @@ describe("the ledger's sections", () => {
   });
 
   describe("bug titles", () => {
-    const bugEntries = (text: string): LedgerEntry[] => [
+    const bugFacts = (text: string): LedgerFact[] => [
       {
         kind: "count",
         label: "bugs in docs/roadmap.md",
@@ -475,7 +484,7 @@ describe("the ledger's sections", () => {
         text: "1",
         tone: "amber",
         chip: null,
-        workings: [
+        readings: [
           {
             source: "docs/roadmap.md · bug 1",
             text,
@@ -490,13 +499,13 @@ describe("the ledger's sections", () => {
 
     function renderTitle(
       text: string,
-      onReveal: (line: PaperLine) => void = ignoreReveal,
+      onReveal: (line: SheetLine) => void = ignoreReveal,
     ) {
       const { container } = render(
         <Ledger
           onReveal={onReveal}
           quiet={null}
-          entries={bugEntries(text)}
+          facts={bugFacts(text)}
           now={now}
           landing={null}
         />,

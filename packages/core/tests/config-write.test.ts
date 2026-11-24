@@ -17,7 +17,8 @@ async function exampleText(): Promise<string> {
 
 /** Every field config can hold, each set away from its default. */
 const maximalText = `
-joins = [["github:finch/notes", "forgejo:finch/notes"], ["local:dev/a", "github:finch/a"]]
+version = 2
+links = [["github:finch/notes", "forgejo:finch/notes"], ["local:dev/a", "github:finch/a"]]
 ignore = ["github:finch/scratch", "forgejo:the-undev/old"]
 
 [wires]
@@ -50,16 +51,6 @@ account = "finch"
 key = "forgejo-finch"
 hosts = ["forgejo"]
 tracked_forks = []
-
-[[sources.kuma]]
-name = "Silo"
-base_url = "http://kuma.invalid:3001"
-status_page = "perch"
-
-[[sources.kuma]]
-name = "Box"
-base_url = "http://kuma.invalid:3002"
-status_page = "box"
 
 [thresholds]
 unsafe_amber_hours = 12
@@ -101,7 +92,7 @@ icon = "obsidian"
 [window]
 tray = false
 
-[items."dev/perch"]
+[papers."dev/perch"]
 wire = "Projects"
 name = "Perch"
 key_files = ["README.md", "docs/spec.md"]
@@ -114,13 +105,13 @@ unsafe_red_hours = 30
 stalled_amber_days = 2
 stalled_red_days = 40
 
-[items."forgejo:finch/hollow"]
+[papers."forgejo:finch/hollow"]
 stalled_red_days = 90
 bugs_red_count = 50
 key_files = []
 roadmaps = []
 
-[items.".dotfiles"]
+[papers.".dotfiles"]
 `;
 
 function roundTrip(config: Config): Config {
@@ -149,6 +140,12 @@ function writtenSessions(document: Record<string, unknown>): unknown {
 }
 
 describe("writeConfig", () => {
+  it("begins with version = 2", async () => {
+    const text = writeConfig(parseConfig(await exampleText(), home), home);
+
+    expect(text.startsWith("version = 2\n")).toBe(true);
+  });
+
   it("writes the example config back to an equal config", async () => {
     const config = parseConfig(await exampleText(), home);
 
@@ -158,9 +155,9 @@ describe("writeConfig", () => {
   it("writes every field back to an equal config", () => {
     const config = parseConfig(maximalText, home);
 
-    expect(config.sources.kuma).toHaveLength(2);
-    expect(config.items["forgejo:finch/hollow"]?.keyFiles).toEqual([]);
-    expect(config.items["dev/perch"]?.criticalBugWords).toEqual([]);
+    expect(config.sources.forgejo).toHaveLength(1);
+    expect(config.entities["forgejo:finch/hollow"]?.keyFiles).toEqual([]);
+    expect(config.entities["dev/perch"]?.criticalBugWords).toEqual([]);
     expect(config.work.bugWords).toEqual(["defect", "fault"]);
     expect(config.launch.actions.map((action) => action.kind)).toEqual([
       "vscode",
@@ -172,17 +169,17 @@ describe("writeConfig", () => {
 
   it("leaves out a source kind with no tables, and the sources table with none at all", () => {
     const config = parseConfig(maximalText, home);
-    const noKuma: Config = {
+    const noForgejo: Config = {
       ...config,
-      sources: { ...config.sources, kuma: [] },
+      sources: { ...config.sources, forgejo: [] },
     };
     const none: Config = {
       ...config,
-      sources: { local: [], github: [], forgejo: [], kuma: [] },
+      sources: { local: [], github: [], forgejo: [] },
     };
 
-    expect(writeConfig(noKuma, home)).not.toContain("sources.kuma");
-    expect(roundTrip(noKuma)).toEqual(noKuma);
+    expect(writeConfig(noForgejo, home)).not.toContain("sources.forgejo");
+    expect(roundTrip(noForgejo)).toEqual(noForgejo);
     expect(writeConfig(none, home)).not.toContain("sources");
     expect(roundTrip(none)).toEqual(none);
   });
@@ -202,29 +199,26 @@ describe("writeConfig", () => {
     expect(text.indexOf('account = "finch"')).toBeLessThan(
       text.indexOf('account = "the-undev"'),
     );
-    expect(text).toContain(
-      '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://kuma.invalid:3001"\nstatus_page = "perch"\n\n[[sources.kuma]]\nname = "Box"',
-    );
     expect(roundTrip(reversed)).toEqual(reversed);
   });
 
-  it("writes a config with no item entries", async () => {
+  it("writes a config with no papers", async () => {
     const config: Config = {
       ...parseConfig(await exampleText(), home),
-      items: {},
+      entities: {},
     };
 
     expect(roundTrip(config)).toEqual(config);
   });
 
-  it("writes the same bytes every time, whatever order entries were added in", () => {
+  it("writes the same bytes every time, whatever order papers were added in", () => {
     const config = parseConfig(maximalText, home);
     const reordered: Config = {
       ...withSessions(config, {
         [`${home}/undev`]: "undev",
         [`${home}/undev/tools`]: "tools",
       }),
-      items: Object.fromEntries(Object.entries(config.items).reverse()),
+      entities: Object.fromEntries(Object.entries(config.entities).reverse()),
     };
 
     const text = writeConfig(config, home);
@@ -284,14 +278,14 @@ describe("writeConfig", () => {
     expect(roundTrip(paths)).toEqual(paths);
   });
 
-  it("leaves out empty item and session tables, and the launch table with no actions", () => {
+  it("leaves out empty entity and session tables, and the launch table with no actions", () => {
     const config = parseConfig(maximalText, home);
-    const noSessions: Config = { ...withSessions(config, {}), items: {} };
+    const noSessions: Config = { ...withSessions(config, {}), entities: {} };
     const noActions: Config = { ...config, launch: { actions: [] } };
 
     const text = writeConfig(noSessions, home);
 
-    expect(text).not.toContain("[items]");
+    expect(text).not.toContain("[papers]");
     expect(text).not.toContain("sessions");
     expect(roundTrip(noSessions)).toEqual(noSessions);
     expect(writeConfig(noActions, home)).not.toContain("launch");

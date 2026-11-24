@@ -8,7 +8,6 @@ import {
 } from "@perch/core/config.ts";
 import { defaultConfig } from "@perch/core/config-default.ts";
 import { writeConfig } from "@perch/core/config-write.ts";
-import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { readTextIfExists } from "@perch/core/fs.ts";
 import { HttpStatusError } from "@perch/core/http.ts";
 import type { LaunchActionValues } from "@perch/core/launch-form.ts";
@@ -18,6 +17,7 @@ import {
   mockLogin,
   mockSnapshot,
 } from "@perch/core/mock.ts";
+import { emptyPapersValues } from "@perch/core/papers-form.ts";
 import type { Snapshot } from "@perch/core/snapshot.ts";
 import type { Aviary, LaunchAction } from "@perch/core/viewmodel.ts";
 import { parse } from "smol-toml";
@@ -25,7 +25,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PerchState } from "../shared/ipc.ts";
 import { type AppStateDeps, createAppState } from "./app-state.ts";
 import { type Autostart, replaceFile } from "./autostart.ts";
-import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
+import {
+  copyToNewFile,
+  editConfigFile,
+  writeTextAtomic,
+} from "./config-edit.ts";
 import {
   type ConfigState,
   type ConfigStore,
@@ -198,9 +202,9 @@ describe("the app state", () => {
       ...mockSnapshot,
       sourceCards: [
         {
-          id: "kuma:Silo",
-          kind: "kuma",
-          label: "Silo",
+          id: "github:finch",
+          kind: "github",
+          label: "finch",
           result: {
             state: "ok",
             at: "2026-10-22T12:00:00.000Z",
@@ -455,13 +459,13 @@ describe("the app state", () => {
   });
 });
 
-describe("editing config entries", () => {
+describe("editing config papers", () => {
   const home = "/home/owner";
   let dir: string;
   let configPath: string;
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "perch-entries-"));
+    dir = await mkdtemp(join(tmpdir(), "perch-papers-"));
     configPath = join(dir, "config.toml");
   });
   afterEach(async () => {
@@ -471,16 +475,16 @@ describe("editing config entries", () => {
   /** The app state on a real config file and snoozes file in the temp directory, holding the given config. */
   async function onFile(config: Config) {
     await writeFile(configPath, writeConfig(config, home));
-    const store = createConfigStore({
+    const file = {
       home,
       path: configPath,
       readText: readTextIfExists,
-    });
-    const file = { home, path: configPath, readText: readTextIfExists };
+      writeText: writeTextAtomic,
+    };
+    const store = createConfigStore({ ...file, copyToNewFile });
     return appState({
       config: store,
-      editConfig: (edit) =>
-        editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+      editConfig: (edit) => editConfigFile(file, edit),
       snoozes: createSnoozeStore({
         path: join(dir, "snoozes.json"),
         readText: readTextIfExists,
@@ -500,30 +504,30 @@ describe("editing config entries", () => {
     )?.name;
   }
 
-  /** The mock config with Perch's entry keyed by its GitHub reference instead of its id. */
+  /** The mock config with Perch's papers keyed by its GitHub reference instead of its id. */
   function forgeKeyed(): Config {
-    const { "dev/perch": perch, ...rest } = mockConfig.items;
+    const { "dev/perch": perch, ...rest } = mockConfig.entities;
     if (perch === undefined) throw new Error("the mock config has no Perch");
     return {
       ...mockConfig,
-      items: { ...rest, "github:finch/perch": perch },
+      entities: { ...rest, "github:finch/perch": perch },
     };
   }
 
-  it("adopts a fence bird: writes its entry and nothing else, perches it and rescans", async () => {
+  it("adopts a fence bird: writes its papers and nothing else, perches it and rescans", async () => {
     const { app, deps, published } = await onFile(mockConfig);
     const before = await written();
     await app.start();
 
-    await app.saveEntry("dev/odin/hello", {
-      ...emptyEntryValues(),
+    await app.savePapers("dev/odin/hello", {
+      ...emptyPapersValues(),
       wire: "Machine & Home",
       name: "Hello",
     });
 
     const after = await written();
     const block =
-      '[items."dev/odin/hello"]\nwire = "Machine & Home"\nname = "Hello"\n\n';
+      '[papers."dev/odin/hello"]\nwire = "Machine & Home"\nname = "Hello"\n\n';
     expect(after).toContain(block);
     expect(after.replace(block, "")).toBe(before);
     expect(wireOf(published.at(-1)?.aviary, "dev/odin/hello")).toBe(
@@ -532,37 +536,37 @@ describe("editing config entries", () => {
     expect(deps.requestScan).toHaveBeenCalledTimes(1);
   });
 
-  it("edits a forge-keyed entry under that key, without a second entry", async () => {
+  it("edits forge-keyed papers under that key, without a second set", async () => {
     const { app } = await onFile(forgeKeyed());
     await app.start();
-    const form = app.entryForm("dev/perch");
-    if (form?.values == null) throw new Error("Perch has no entry");
+    const form = app.papersForm("dev/perch");
+    if (form?.values == null) throw new Error("Perch has no papers");
 
-    await app.saveEntry("dev/perch", {
+    await app.savePapers("dev/perch", {
       ...form.values,
       wire: "Machine & Home",
       thresholds: { stalled_amber_days: 3 },
     });
 
     const config = await writtenConfig();
-    expect(Object.keys(config.items)).toEqual(
-      Object.keys(forgeKeyed().items).sort(),
+    expect(Object.keys(config.entities)).toEqual(
+      Object.keys(forgeKeyed().entities).sort(),
     );
-    expect(config.items["github:finch/perch"]).toMatchObject({
+    expect(config.entities["github:finch/perch"]).toMatchObject({
       name: "Perch",
       wire: "Machine & Home",
       thresholds: { stalled: { amberDays: 3 } },
     });
-    expect(app.entryForm("dev/perch")?.key).toBe("github:finch/perch");
+    expect(app.papersForm("dev/perch")?.key).toBe("github:finch/perch");
   });
 
-  it("unadopts a bird: removes its entry and returns it to the fence", async () => {
+  it("unadopts a bird: removes its papers and returns it to the fence", async () => {
     const { app, deps, published } = await onFile(mockConfig);
     await app.start();
 
-    await app.removeEntry("undev/spool");
+    await app.removePapers("undev/spool");
 
-    expect((await writtenConfig()).items["undev/spool"]).toBeUndefined();
+    expect((await writtenConfig()).entities["undev/spool"]).toBeUndefined();
     expect(wireOf(published.at(-1)?.aviary, "undev/spool")).toBe("fence");
     expect(deps.requestScan).toHaveBeenCalledTimes(1);
   });
@@ -572,19 +576,19 @@ describe("editing config entries", () => {
     await app.start();
     const before = await written();
 
-    await app.saveEntry("dev/perch", {
-      ...emptyEntryValues(),
+    await app.savePapers("dev/perch", {
+      ...emptyPapersValues(),
       thresholds: { stalled_amber_days: 30 },
     });
 
     expect(await written()).toBe(before);
     expect(published.at(-1)?.problems).toEqual([
-      'The config was not changed: config: items."dev/perch".stalled amber threshold must be below its red threshold',
+      'The config was not changed: config: papers."dev/perch".stalled amber threshold must be below its red threshold',
     ]);
     expect(deps.requestScan).not.toHaveBeenCalled();
 
     await rm(configPath);
-    await app.removeEntry("dev/perch");
+    await app.removePapers("dev/perch");
     expect(published.at(-1)?.problems).toEqual([
       `The config was not changed: ${configPath} does not exist`,
     ]);
@@ -599,12 +603,12 @@ describe("editing config entries", () => {
     await app.start();
     const before = await written();
 
-    await app.saveEntry("dev/nobody", emptyEntryValues());
-    await app.removeEntry("server");
+    await app.savePapers("dev/nobody", emptyPapersValues());
+    await app.removePapers("dev/nobody");
 
     expect(await written()).toBe(before);
     expect(deps.requestScan).not.toHaveBeenCalled();
-    expect(app.entryForm("dev/nobody")).toBeNull();
+    expect(app.papersForm("dev/nobody")).toBeNull();
   });
 });
 
@@ -626,11 +630,15 @@ describe("snoozing birds", () => {
 
   /** The app state on a real config file and a real snoozes file in the temp directory. */
   function onFiles(overrides: Partial<AppStateDeps> = {}) {
-    const file = { home, path: configPath, readText: readTextIfExists };
+    const file = {
+      home,
+      path: configPath,
+      readText: readTextIfExists,
+      writeText: writeTextAtomic,
+    };
     return appState({
-      config: createConfigStore(file),
-      editConfig: (edit) =>
-        editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+      config: createConfigStore({ ...file, copyToNewFile }),
+      editConfig: (edit) => editConfigFile(file, edit),
       snoozes: createSnoozeStore({
         path: snoozesPath,
         readText: readTextIfExists,
@@ -732,13 +740,13 @@ describe("snoozing birds", () => {
     await app.start();
     await app.snooze("undev/spool", null);
 
-    await app.removeEntry("undev/spool");
+    await app.removePapers("undev/spool");
 
     expect(await stored()).toEqual({});
     expect(snoozeOf(published.at(-1), "undev/spool")).toBeNull();
 
-    await app.saveEntry("undev/spool", {
-      ...emptyEntryValues(),
+    await app.savePapers("undev/spool", {
+      ...emptyPapersValues(),
       wire: "Projects",
     });
 
@@ -758,8 +766,8 @@ describe("snoozing birds", () => {
 
     expect(snoozeOf(app.state(), "dev/odin/hello")).toBeNull();
 
-    await app.saveEntry("dev/odin/hello", {
-      ...emptyEntryValues(),
+    await app.savePapers("dev/odin/hello", {
+      ...emptyPapersValues(),
       wire: "Machine & Home",
     });
 
@@ -768,12 +776,16 @@ describe("snoozing birds", () => {
   });
 
   it("holds a snooze across a scan, a change in health and an edit to the bird's papers", async () => {
-    const prism = mockSnapshot.items.find((item) => item.id === "undev/prism");
+    const prism = mockSnapshot.entities.find(
+      (entity) => entity.id === "undev/prism",
+    );
     if (prism === undefined) throw new Error("the mock has no Prism");
     const failing: Snapshot = {
       ...mockSnapshot,
-      items: mockSnapshot.items.map((item) =>
-        item.id === "dev/perch" ? { ...item, sources: prism.sources } : item,
+      entities: mockSnapshot.entities.map((entity) =>
+        entity.id === "dev/perch"
+          ? { ...entity, sources: prism.sources }
+          : entity,
       ),
     };
     const { app, published } = onFiles({
@@ -783,9 +795,9 @@ describe("snoozing birds", () => {
     await app.snooze("dev/perch", "2026-12-04");
 
     await app.scan();
-    const form = app.entryForm("dev/perch");
-    if (form?.values == null) throw new Error("Perch has no entry");
-    await app.saveEntry("dev/perch", { ...form.values, name: "Perch app" });
+    const form = app.papersForm("dev/perch");
+    if (form?.values == null) throw new Error("Perch has no papers");
+    await app.savePapers("dev/perch", { ...form.values, name: "Perch app" });
 
     const perch = published
       .at(-1)
@@ -867,12 +879,16 @@ describe("the settings", () => {
   /** The app state on a real config file in the temp directory holding the text. */
   async function onText(text: string, autostart: Autostart) {
     await writeFile(configPath, text);
-    const file = { home, path: configPath, readText: readTextIfExists };
+    const file = {
+      home,
+      path: configPath,
+      readText: readTextIfExists,
+      writeText: writeTextAtomic,
+    };
     const app = appState({
       autostart,
-      config: createConfigStore(file),
-      editConfig: (edit) =>
-        editConfigFile({ ...file, writeText: writeTextAtomic }, edit),
+      config: createConfigStore({ ...file, copyToNewFile }),
+      editConfig: (edit) => editConfigFile(file, edit),
     });
     await app.app.start();
     return app;

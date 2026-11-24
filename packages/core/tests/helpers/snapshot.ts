@@ -2,10 +2,10 @@
 
 import type {
   AgedWork,
+  Entity,
   ForgeData,
   GitData,
   HealthLevel,
-  Item,
   Snapshot,
 } from "../../src/snapshot.ts";
 
@@ -22,7 +22,7 @@ export function aged(hours: number, level: HealthLevel): AgedWork {
 
 export function gitData(overrides: Partial<GitData>): GitData {
   return {
-    backup: "joined",
+    backup: "linked",
     branch: "main",
     defaultBranch: "main",
     upstream: "origin/main",
@@ -48,8 +48,8 @@ export function gitData(overrides: Partial<GitData>): GitData {
         pushUrls: ["git@github.com:finch/perch.git"],
       },
     ],
-    activity: "settled",
-    drift: {
+    workState: "merged",
+    unsafeWork: {
       uncommitted: null,
       unpushed: null,
       level: "green",
@@ -72,23 +72,22 @@ export function forgeData(overrides: Partial<ForgeData>): ForgeData {
   };
 }
 
-/** An item with a local clone at /home/test/<id> and no sources unless given. */
-export function item(id: string, overrides: Partial<Item> = {}): Item {
+/** An entity with a local repository at /home/test/<id> and no sources unless given. */
+export function entity(id: string, overrides: Partial<Entity> = {}): Entity {
   const path = `/home/test/${id}`;
   return {
     id,
     name: id.slice(id.lastIndexOf("/") + 1),
     kind: "git",
     path,
-    liveSources: [],
-    presences: { local: { ref: `local:${id}`, path }, forges: [] },
+    repositories: { local: { ref: `local:${id}`, path }, forges: [] },
     flags: [],
     sources: {},
     ...overrides,
   };
 }
 
-export function snapshotOf(items: Item[]): Snapshot {
+export function snapshotOf(entities: Entity[]): Snapshot {
   const ok = {
     state: "ok" as const,
     reason: null,
@@ -97,6 +96,7 @@ export function snapshotOf(items: Item[]): Snapshot {
     durationMs: 1,
   };
   return {
+    version: 2,
     scannedAt,
     durationMs: 1,
     aggregatedAt: scannedAt,
@@ -114,9 +114,8 @@ export function snapshotOf(items: Item[]): Snapshot {
       roadmap: ok,
       github: ok,
       forgejo: ok,
-      kuma: ok,
     },
     sourceCards: [],
-    items,
+    entities,
   };
 }

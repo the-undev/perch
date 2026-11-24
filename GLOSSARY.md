@@ -8,11 +8,11 @@ are the words for what it shows and for the facts behind it.
 ### Entities
 
 **Entity**:
-Something the owner looks after that perch can watch. A project is the only type so far.
+Something perch can watch. A project is the only type so far.
 _Avoid_: Item, thing
 
 **Project**:
-An entity made of code or documents: its repositories and its roadmaps, taken as one.
+An entity made of code or documents: its repositories, taken as one.
 _Avoid_: Repo (a repository is one copy of a project)
 
 **Repository**:
@@ -30,12 +30,15 @@ A project's repository on a forge. A project has any number.
 A service that hosts repositories, such as GitHub or a Forgejo instance.
 _Avoid_: Remote (a remote is git's own name for an address a local repository pushes to)
 
+**SSH address**:
+The forge's SSH address for a repository, which the no-local-repository slip offers to copy so a local repository can be made from it.
+
 **Link**:
 What makes several repositories one project, proved by a remote's address or stated by the owner.
 _Avoid_: Join, relationship
 
 **Papers**:
-What the owner has recorded about one entity: its wire, its name and its own thresholds.
+What the owner has recorded about one entity, such as its wire, its name and its roadmaps.
 _Avoid_: Entry
 
 **Adopted**:
@@ -56,23 +59,45 @@ _Avoid_: Row, lane, group
 **Fence**:
 Where every bird that is not adopted sits, dimmed, beneath the wires.
 
+**Fence bird**:
+A bird that is not adopted.
+
+**Fly-in**:
+The birds landing one by one when the aviary opens.
+
+**Plumpness**:
+A bird's size, from its outstanding work.
+
+**Asleep**:
+A bird's look, eyes closed with a z.
+Adopted bird: asleep between midnight and 06:00, unless distressed or uncommitted.
+Fence bird: asleep between midnight and 06:00.
+Snoozed bird: asleep at any hour.
+
 **Bubble**:
-What a clicked bird says: its name, state word, speech and chips.
+What a clicked bird says: its name, state phrase, speech and chips.
 _Avoid_: Tooltip, popover
 
-**State word**:
-The one word beside the name in a bubble: content, restless, distressed, not adopted or snoozed.
+**State phrase**:
+The phrase beside the name in a bubble: the bird's mood, or not adopted, or snoozed.
+_Avoid_: State word
 
 **Speech**:
 The bird's first-person sentence giving the reason for its mood.
 
 **Chip**:
-One number or state a bird carries in its bubble, coloured when its fact is judged.
+One number or state a bird carries in its bubble, coloured when its fact has reached a threshold.
 _Avoid_: Badge, tag
 
 **Bird's page**:
-The full account of one bird: the ledger, the history, its branches, pull requests and key files.
+The full account of one bird: the roost, the ledger, the history, its branches, pull requests and sheets.
 _Avoid_: Detail view
+
+**Roost**:
+The bird on its own page, sitting on a stand with its bubble beside it.
+
+**Sheet**:
+One paper on a bird's page, such as a key file, a roadmap's work or the adoption papers.
 
 **Ledger**:
 The list on a bird's page of every fact about it in full words.
@@ -82,7 +107,7 @@ What one source says about a fact in the ledger, such as "failure on main" from 
 _Avoid_: Working
 
 **History**:
-The newest commits on a project's default branch, each told once however many repositories hold it.
+The newest finalised commits, each told once however many repositories hold it.
 _Avoid_: River
 
 **Key file**:
@@ -107,7 +132,7 @@ _Avoid_: Full-story key
 An action that opens something for the project, such as an editor or a terminal tab. It changes nothing.
 
 **Snooze action**:
-The action that snoozes an adopted bird for 1 day, 3 days, 1 week, 2 weeks, 1 month or indefinitely.
+The action that snoozes an adopted bird for a length of time the owner picks.
 _Avoid_: Snooze key
 
 **Wake action**:
@@ -116,8 +141,11 @@ _Avoid_: Wake key
 
 ### Health
 
+**Fact**:
+One thing perch knows about an entity, read by a scan or worked out from what it read.
+
 **Health**:
-The fact of how an entity stands: a level and the causes behind it.
+How an entity stands: a level and the causes behind it.
 _Avoid_: Status
 
 **Level**:
@@ -128,47 +156,42 @@ _Avoid_: Severity, colour
 One amber or red fact that sets an entity's health, such as failing CI.
 
 **Threshold**:
-A limit a fact is judged against. Each judged fact has two: amber at the first, red at the second.
+A limit a fact is compared against. A fact with thresholds has two: amber at the first, red at the second.
 _Avoid_: Window
 
 **Mood**:
 How a bird wears its level: content for green, restless for amber, distressed for red.
+_Avoid_: Settled, drifting, attention
 
-**Activity**:
-What is happening in a project's local repository, apart from its health: editing, in flight or settled.
+**Work state**:
+How far the work in a project's local repository has got, apart from its health: uncommitted, committed or merged. Uncommitted wins over committed.
+_Avoid_: Activity
 
-**Editing**:
-The local repository holds uncommitted changes.
+**Uncommitted**:
+The local repository holds changes that are not committed.
+_Avoid_: Editing
 
-**In flight**:
-Work is under way that is not finished: commits not yet pushed, or a branch other than the default.
-_Avoid_: In progress
+**Committed**:
+The local repository holds commits not yet pushed, or a local branch other than the default, checked out or not.
+_Avoid_: In flight, in progress
 
-**Settled**:
-Neither editing nor in flight.
+**Merged**:
+Neither uncommitted nor committed.
+_Avoid_: Settled
 
 **Unsafe work**:
 Uncommitted changes and unpushed commits, aged from the oldest.
 _Avoid_: Drift
 
 **Stalled**:
-In flight with no new commit: the local repository sits on a branch other than the default and that branch has not moved.
+The local repository has a branch other than the default checked out, and that branch has had no new commit. A cause, aged in days.
 _Avoid_: Parked
 
 **Finalised commit**:
 A commit on a project's default branch.
 
-**Plumpness**:
-A bird's size, from its outstanding work.
-
-**Asleep**:
-A bird's look, eyes closed with a z. A bird that is neither distressed nor being edited is asleep between midnight and 06:00, and a snoozed bird at any hour.
-
 **Snoozed**:
 A bird set aside by the owner until a date, or until woken. It is dimmed and asleep and does not wear its mood. Its bubble and page still show the entity's facts.
-
-**Fly-in**:
-The birds landing one by one when the aviary opens.
 
 **Flag**:
 Something odd about how an entity is set up, such as an archived forge repository or two sets of papers naming it.
@@ -186,13 +209,13 @@ _Avoid_: Ticket, issue
 A work item that is neither a bug nor a critical bug. Tasks never change health.
 
 **Bug**:
-A work item holding one of the bug words.
+A work item holding one of the bug words config lists.
 
 **Critical bug**:
-A work item holding one of the critical bug words.
+A work item holding one of the critical bug words config lists. A critical bug word wins over a bug word.
 
 **Outstanding work**:
-A project's open work items of every kind.
+A project's work items of every kind that are not done.
 
 ### Scanning
 

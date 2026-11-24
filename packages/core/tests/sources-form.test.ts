@@ -32,7 +32,7 @@ const withSources = (sources: SourcesConfig): SettingsValues => ({
   sources,
 });
 
-const none: SourcesConfig = { local: [], github: [], forgejo: [], kuma: [] };
+const none: SourcesConfig = { local: [], github: [], forgejo: [] };
 
 const github = (account: string) => ({
   account,
@@ -45,12 +45,6 @@ const forgejo = (account: string, baseUrl: string) => ({
   ...github(account),
   key: `forgejo-${account}`,
   baseUrl,
-});
-
-const kuma = (name: string) => ({
-  name,
-  baseUrl: "http://forge.example.lan:3001",
-  statusPage: "perch",
 });
 
 /** The config as written and read back. */
@@ -75,6 +69,7 @@ describe("the sources in the settings form", () => {
     expect(sources.github.map((source) => source.account)).toEqual([
       "finch",
       "the-undev",
+      "newcomer",
     ]);
     expect(withSettings(mockConfig, mockValues(), home).sources).toEqual(
       mockConfig.sources,
@@ -86,7 +81,6 @@ describe("the sources in the settings form", () => {
       local: [{ include: ["~/dev", "/srv/repos"], exclude: ["~/dev/old"] }],
       github: [github("someone"), github("someone-else")],
       forgejo: [forgejo("someone", "https://forge.example.lan")],
-      kuma: [kuma("Server")],
     };
     const config = withSettings(mockConfig, withSources(sources), home);
 
@@ -144,7 +138,6 @@ describe("the sources in the settings form", () => {
   it("adds a card of each kind with its fields empty after its kind's last, and removes one", () => {
     let sources = withSourceAdded(mockValues().sources, "github");
     sources = withSourceAdded(sources, "forgejo");
-    sources = withSourceAdded(sources, "kuma");
     sources = withSourceAdded(sources, "local");
 
     expect(sources.github.at(-1)).toEqual({
@@ -160,17 +153,13 @@ describe("the sources in the settings form", () => {
       trackedForks: [],
       baseUrl: "",
     });
-    expect(sources.kuma.at(-1)).toEqual({
-      name: "",
-      baseUrl: "",
-      statusPage: "",
-    });
     expect(sources.local.at(-1)).toEqual({ include: [], exclude: [] });
-    expect(sources.github).toHaveLength(3);
+    expect(sources.github).toHaveLength(4);
 
     const removed = withSourceRemoved(sources, "github", 1);
     expect(removed.github.map((source) => source.account)).toEqual([
       "finch",
+      "newcomer",
       "",
     ]);
     expect(removed.forgejo).toEqual(sources.forgejo);
@@ -184,17 +173,21 @@ describe("the sources in the settings form", () => {
       "local0",
       "github0",
       "github1",
+      "github2",
       "forgejo0",
       "forgejo1",
-      "kuma0",
     ]);
     const next = withSourceCard(sources, {
-      kind: "kuma",
-      index: 0,
-      source: kuma("Server"),
+      kind: "github",
+      index: 1,
+      source: github("renamed"),
     });
-    expect(next.kuma).toEqual([kuma("Server")]);
-    expect(next.github).toEqual(sources.github);
+    expect(next.github.map((source) => source.account)).toEqual([
+      "finch",
+      "renamed",
+      "newcomer",
+    ]);
+    expect(next.forgejo).toEqual(sources.forgejo);
   });
 
   it("matches each card to its scan record by the id the snapshot gives it", () => {
@@ -205,21 +198,20 @@ describe("the sources in the settings form", () => {
     );
   });
 
-  it("offers every kind but Uptime Kuma in the picker, and still names a kuma card", () => {
+  it("offers every kind in the picker", () => {
     expect(pickerKinds.map((words) => words.kind)).toEqual([
       "local",
       "github",
       "forgejo",
     ]);
-    expect(kindName("kuma")).toBe("Uptime Kuma");
+    expect(kindName("forgejo")).toBe("Forgejo");
   });
 
-  it("heads each card with its kind, then its account, host or name", () => {
+  it("heads each card with its kind, then its account or host", () => {
     const sources: SourcesConfig = {
       local: [{ include: ["~/dev"], exclude: [] }],
       github: [github("someone"), github("")],
       forgejo: [forgejo("someone", "https://forge.example.lan")],
-      kuma: [kuma("Server")],
     };
 
     expect(sourceCardsOf(sources).map(sourceHeading)).toEqual([
@@ -227,7 +219,6 @@ describe("the sources in the settings form", () => {
       "GitHub · someone",
       "GitHub",
       "Forgejo · forge.example.lan",
-      "Uptime Kuma · Server",
     ]);
   });
 });
@@ -235,7 +226,7 @@ describe("the sources in the settings form", () => {
 describe("what the sources cannot be", () => {
   it("names each empty required field of a new card, and refuses to write them", () => {
     let sources = none;
-    for (const kind of ["local", "github", "forgejo", "kuma"] as const) {
+    for (const kind of ["local", "github", "forgejo"] as const) {
       sources = withSourceAdded(sources, kind);
     }
 
@@ -276,20 +267,12 @@ describe("what the sources cannot be", () => {
         field: "key",
         problem: "needs the keyring key holding the token",
       },
-      { kind: "kuma", index: 0, field: "name", problem: "needs a name" },
-      { kind: "kuma", index: 0, field: "baseUrl", problem: "needs an address" },
-      {
-        kind: "kuma",
-        index: 0,
-        field: "statusPage",
-        problem: "needs the status page's slug",
-      },
     ]);
     expect(settingsProblems(withSources(sources))).toContain(
       "GitHub source 1, account: needs an account",
     );
     expect(() => withSettings(mockConfig, withSources(sources), home)).toThrow(
-      "Uptime Kuma source 1, status page: needs the status page's slug",
+      "Forgejo source 1, account: needs an account",
     );
   });
 
@@ -298,7 +281,7 @@ describe("what the sources cannot be", () => {
       ...none,
       local: [{ include: ["dev", "~/ok"], exclude: [" "] }],
       github: [{ ...github("someone"), hosts: [""], trackedForks: [" "] }],
-      kuma: [{ ...kuma("Server"), baseUrl: "forge.example.lan:3001" }],
+      forgejo: [forgejo("someone", "forge.example.lan:3001")],
     };
 
     expect(
@@ -310,7 +293,7 @@ describe("what the sources cannot be", () => {
       "local exclude: a folder cannot be empty",
       "github hosts: a host cannot be empty",
       "github trackedForks: a fork cannot be empty",
-      "kuma baseUrl: must start with http:// or https://",
+      "forgejo baseUrl: must start with http:// or https://",
     ]);
   });
 
@@ -386,22 +369,6 @@ describe("what the sources cannot be", () => {
         index: 1,
         field: "key",
         problem: "another Forgejo source uses this keyring key",
-      },
-    ]);
-    expect(() =>
-      reread({ ...mockConfig, sources: { ...mockConfig.sources, ...sources } }),
-    ).toThrow("each may appear once");
-  });
-
-  it("refuses an Uptime Kuma name twice, as the config file does", () => {
-    const sources = { ...none, kuma: [kuma("Server"), kuma("Server")] };
-
-    expect(sourceProblems(sources)).toEqual([
-      {
-        kind: "kuma",
-        index: 1,
-        field: "name",
-        problem: "another Uptime Kuma source has this name",
       },
     ]);
     expect(() =>

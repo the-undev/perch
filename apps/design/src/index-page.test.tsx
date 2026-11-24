@@ -22,8 +22,9 @@ describe("the design site", () => {
     for (const page of pages) {
       expect(
         screen
-          .getByRole("link", { name: new RegExp(`^${page.title}`) })
-          .getAttribute("href"),
+          .getByRole("heading", { level: 3, name: page.title })
+          .closest("a")
+          ?.getAttribute("href"),
       ).toBe(`/${page.slug}`);
     }
     for (const group of groups) {
@@ -54,10 +55,10 @@ describe("the design site", () => {
       name: "Settings pages",
     });
     expect(rail.textContent).toBe(
-      "SourcesJoining upWiresJudgementScanningLaunchingWindowUpdates",
+      "SourcesLinkingWiresJudgementScanningLaunchingWindowUpdates",
     );
     expect(
-      screen.getAllByRole("region", { name: "Uptime Kuma · Silo" }),
+      screen.getAllByRole("region", { name: "GitHub · newcomer" }),
     ).toHaveLength(1);
   });
 

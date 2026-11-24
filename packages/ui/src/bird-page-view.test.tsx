@@ -1,10 +1,10 @@
-import {
-  type EntryForm,
-  emptyEntryValues,
-  entryFormFor,
-  withEntry,
-} from "@perch/core/entry-form.ts";
 import { mockConfig, mockSnapshot } from "@perch/core/mock.ts";
+import {
+  emptyPapersValues,
+  type PapersForm,
+  papersFormFor,
+  withPapers,
+} from "@perch/core/papers-form.ts";
 import type { Aviary, Bird, ChipKind } from "@perch/core/viewmodel.ts";
 import { deriveAviary } from "@perch/core/viewmodel.ts";
 import {
@@ -16,9 +16,9 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DetailView } from "./detail-view.tsx";
-import { mockBird, mockEntryForm, mockHome } from "./mock-birds.ts";
-import type { KeyFileSheet } from "./paper.tsx";
+import { BirdPageView } from "./bird-page-view.tsx";
+import type { KeyFileSheet } from "./key-file-sheets.tsx";
+import { mockBird, mockHome, mockPapersForm } from "./mock-birds.ts";
 import { roostColumnWidth, roostFrame } from "./roost.tsx";
 
 afterEach(cleanup);
@@ -47,12 +47,12 @@ afterEach(() => {
 
 const now = new Date(mockSnapshot.scannedAt);
 
-const helloItem = (() => {
-  const item = mockSnapshot.items.find(
-    (entry) => entry.id === "dev/odin/hello",
+const helloEntity = (() => {
+  const entity = mockSnapshot.entities.find(
+    (candidate) => candidate.id === "dev/odin/hello",
   );
-  if (item === undefined) throw new Error("the mock snapshot has no hello");
-  return item;
+  if (entity === undefined) throw new Error("the mock snapshot has no hello");
+  return entity;
 })();
 
 function findBird(aviary: Aviary, id: string): Bird {
@@ -66,37 +66,37 @@ function findBird(aviary: Aviary, id: string): Bird {
 
 /** Skiff with its GitHub remote unread for want of a card that covers its owner. */
 function unreadableSkiff(): Bird {
-  const items = mockSnapshot.items.map((item) =>
-    item.id === "undev/skiff"
+  const entities = mockSnapshot.entities.map((entity) =>
+    entity.id === "undev/skiff"
       ? {
-          ...item,
-          presences: {
-            ...item.presences,
-            forges: item.presences.forges.map((presence) =>
-              presence.forge === "github"
-                ? { ...presence, fullName: "skiff-app/skiff", url: null }
-                : presence,
+          ...entity,
+          repositories: {
+            ...entity.repositories,
+            forges: entity.repositories.forges.map((repository) =>
+              repository.forge === "github"
+                ? { ...repository, fullName: "skiff-app/skiff", url: null }
+                : repository,
             ),
           },
           sources: {
-            ...item.sources,
+            ...entity.sources,
             github: {
               error: "no GitHub card is configured for owner skiff-app",
               cause: "no-card" as const,
             },
           },
         }
-      : item,
+      : entity,
   );
   return findBird(
-    deriveAviary({ ...mockSnapshot, items }, mockConfig, {}, mockHome),
+    deriveAviary({ ...mockSnapshot, entities }, mockConfig, {}, mockHome),
     "undev/skiff",
   );
 }
 
 interface PageOptions {
   sheets?: KeyFileSheet[];
-  form?: EntryForm | null;
+  form?: PapersForm | null;
   problems?: string[];
   openPapers?: boolean;
   arrivalChip?: ChipKind | null;
@@ -113,13 +113,13 @@ function page(bird: Bird, options: PageOptions = {}) {
   const onSnooze = vi.fn();
   const onWake = vi.fn();
   const view = (next: Bird, given: PageOptions) => (
-    <DetailView
+    <BirdPageView
       bird={next}
       now={now}
       onLaunch={onLaunch}
       snooze={{ onSnooze, onWake, pickedAt: () => now }}
       sheets={given.sheets ?? []}
-      entry={{ form: given.form ?? null, onSave, onRemove }}
+      papers={{ form: given.form ?? null, onSave, onRemove }}
       problems={given.problems ?? []}
       openPapers={given.openPapers ?? false}
       arrivalChip={given.arrivalChip ?? null}
@@ -187,7 +187,7 @@ function headings(): string[] {
     .map((heading) => heading.textContent ?? "");
 }
 
-describe("the detail view", () => {
+describe("the bird's page", () => {
   it("continues the bird's mood and speech, then its ledger in full words", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch);
@@ -195,9 +195,9 @@ describe("the detail view", () => {
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Perch");
     expect(container.textContent).toContain(perch.bubble.speech);
     expect(ledgerRows(container)).toEqual(
-      perch.detail.ledger.map((entry) => [
-        entry.label,
-        entry.kind === "time" ? expect.stringMatching(/ ago$/) : entry.text,
+      perch.page.ledger.map((fact) => [
+        fact.label,
+        fact.kind === "time" ? expect.stringMatching(/ ago$/) : fact.text,
       ]),
     );
   });
@@ -219,7 +219,7 @@ describe("the detail view", () => {
     expect(container.querySelectorAll('[data-part="figure"]')).toHaveLength(1);
   });
 
-  it("says the name and state word once, in the heading, and the speech once, in the roost's bubble", () => {
+  it("says the name and state phrase once, in the heading, and the speech once, in the roost's bubble", () => {
     const prism = mockBird("undev/prism");
     const { container } = page(prism);
     const bubble = screen.getByRole("region", { name: "Prism says" });
@@ -301,7 +301,7 @@ describe("the detail view", () => {
     expect(actions.queryByRole("button", { name: "Wake" })).toBeNull();
   });
 
-  it("lands a pressed chip on the ledger row holding its working: scrolled to the middle and marked", () => {
+  it("lands a pressed chip on the ledger row holding its reading: scrolled to the middle and marked", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch);
     const bubble = screen.getByRole("region", { name: "Perch says" });
@@ -331,18 +331,18 @@ describe("the detail view", () => {
     expect(markedRow()).toBe("pull-requests");
   });
 
-  it("shows a pressed bug line on the paper: its file's tab open and its line scrolled to the middle and marked", () => {
+  it("shows a pressed bug line on the sheet: its file's tab open and its line scrolled to the middle and marked", () => {
     const hothouse = mockBird("obsidian/Hothouse");
     const { container } = page(hothouse, {
-      sheets: hothouse.detail.keyFiles.map((file) => ({
+      sheets: hothouse.page.keyFiles.map((file) => ({
         file,
         markdown: "- bug 1\n- task 2\n",
       })),
     });
     const record = container.querySelector('[data-part="record"]');
-    const paper = container.querySelector('[data-part="paper"]');
-    if (record === null || paper === null) {
-      throw new Error("the page has a record and a paper pane");
+    const sheetsPane = container.querySelector('[data-part="sheets"]');
+    if (record === null || sheetsPane === null) {
+      throw new Error("the page has a record and a sheets pane");
     }
 
     fireEvent.click(
@@ -350,10 +350,10 @@ describe("the detail view", () => {
     );
 
     expect(
-      within(paper as HTMLElement).getByRole("tab", { selected: true })
+      within(sheetsPane as HTMLElement).getByRole("tab", { selected: true })
         .textContent,
     ).toBe("Tech/Tech Plans.md");
-    const revealed = paper.querySelector("[data-revealed]");
+    const revealed = sheetsPane.querySelector("[data-revealed]");
     expect(revealed?.textContent).toBe("bug 1");
     expect(scrolled).toEqual([{ element: revealed, options: landingOptions }]);
     expect(markedAtScroll).toEqual([true]);
@@ -407,7 +407,7 @@ describe("the detail view", () => {
     const notice = container.querySelector('[data-part="notices"]');
 
     expect(notice?.textContent).toBe(
-      "The clone pushes to skiff-app/skiff on github, which no GitHub card reads. Add a card for skiff-app under Sources.",
+      "The local repository pushes to skiff-app/skiff on github, which no GitHub card reads. Add a card for skiff-app under Sources.",
     );
     expect(
       container.querySelector('[data-part="heading"] [data-part="notices"]'),
@@ -430,28 +430,28 @@ describe("the detail view", () => {
     expect(container.querySelector('[data-part="notices"]')).toBeNull();
   });
 
-  describe("a bird with no clone here", () => {
+  describe("a bird with no local repository here", () => {
     const pergolaNotes = () => mockBird("forgejo:finch/field-notes");
     const slipOf = (container: HTMLElement) =>
       container.querySelector(
-        '[data-part="paper"] [data-part="no-clone-slip"]',
+        '[data-part="sheets"] [data-part="no-local-repository-slip"]',
       );
 
     it("lays the slip where the key files would be: stamped, the fact, the route naming the repository, and Open Sources", () => {
       const { container, onLocalSources } = page(pergolaNotes());
       const slip = screen.getByRole("region", {
-        name: "No clone on this machine",
+        name: "No local repository on this machine",
       });
 
       expect(slipOf(container)).toBe(slip);
       expect(within(slip).getByRole("heading", { level: 3 }).textContent).toBe(
-        "No clone on this machine",
+        "No local repository on this machine",
       );
       expect(
         [...slip.querySelectorAll("p")].map((line) => line.textContent),
       ).toEqual([
-        "This repository is on Forgejo. No local clone was found.",
-        "Add a directory to search, or the clone's folder itself, in Sources. A clone whose remote points at finch/field-notes joins this bird on the next scan.",
+        "This repository is on Forgejo. No local repository was found.",
+        "Add a directory to search, or the local repository's folder itself, in Sources. A local repository whose remote points at finch/field-notes is linked to this bird on the next scan.",
       ]);
       fireEvent.click(
         within(slip).getByRole("button", { name: "Open Sources" }),
@@ -460,12 +460,12 @@ describe("the detail view", () => {
       expect(onLocalSources).toHaveBeenCalledOnce();
     });
 
-    it("copies the clone address through the caller and says so in place, then reads Copy again", async () => {
+    it("copies the SSH address through the caller and says so in place, then reads Copy again", async () => {
       vi.useFakeTimers();
       try {
         const { onCopy } = page(pergolaNotes());
         const slip = screen.getByRole("region", {
-          name: "No clone on this machine",
+          name: "No local repository on this machine",
         });
         const address = "ssh://git@forgejo:2222/finch/field-notes.git";
 
@@ -503,15 +503,19 @@ describe("the detail view", () => {
 
     it("leaves the address row out while the address is unknown", () => {
       const bird = pergolaNotes();
-      const noClone = bird.detail.noClone;
-      if (noClone === null) throw new Error("pergola notes has its slip");
+      const noLocalRepository = bird.page.noLocalRepository;
+      if (noLocalRepository === null)
+        throw new Error("pergola notes has its slip");
       const { container } = page({
         ...bird,
-        detail: { ...bird.detail, noClone: { ...noClone, cloneAddress: null } },
+        page: {
+          ...bird.page,
+          noLocalRepository: { ...noLocalRepository, sshAddress: null },
+        },
       });
 
       expect(slipOf(container)).not.toBeNull();
-      expect(container.querySelector('[data-part="clone-address"]')).toBeNull();
+      expect(container.querySelector('[data-part="ssh-address"]')).toBeNull();
       expect(screen.queryByRole("button", { name: "Copy" })).toBeNull();
     });
 
@@ -519,34 +523,42 @@ describe("the detail view", () => {
       const { container } = page(mockBird("github:finch/obsidian-tidy"));
 
       expect(slipOf(container)?.textContent).toContain(
-        "This repository is on GitHub. No local clone was found.",
+        "This repository is on GitHub. No local repository was found.",
       );
     });
 
-    it("says no local clone on the meta line where the actions would be, only while config holds an action", () => {
+    it("says no local repository on the meta line where the actions would be, only while config holds an action", () => {
       const bird = pergolaNotes();
-      const noClone = bird.detail.noClone;
-      if (noClone === null) throw new Error("pergola notes has its slip");
+      const noLocalRepository = bird.page.noLocalRepository;
+      if (noLocalRepository === null)
+        throw new Error("pergola notes has its slip");
       const clause = (container: HTMLElement) =>
-        container.querySelector('[data-part="actions"] [data-part="no-clone"]');
+        container.querySelector(
+          '[data-part="actions"] [data-part="no-local-repository"]',
+        );
 
       const { container } = page(bird);
-      expect(clause(container)?.textContent).toBe("no local clone");
+      expect(clause(container)?.textContent).toBe("no local repository");
 
       cleanup();
       const silent = page({
         ...bird,
-        detail: { ...bird.detail, noClone: { ...noClone, onMetaLine: false } },
+        page: {
+          ...bird.page,
+          noLocalRepository: { ...noLocalRepository, onMetaLine: false },
+        },
       });
       expect(clause(silent.container)).toBeNull();
       expect(slipOf(silent.container)).not.toBeNull();
     });
 
-    it("draws neither the slip nor the clause for a bird with a clone, even with no key files read", () => {
+    it("draws neither the slip nor the clause for a bird with a local repository, even with no key files read", () => {
       const { container } = page(mockBird("dev/odin/hello"));
 
       expect(slipOf(container)).toBeNull();
-      expect(container.querySelector('[data-part="no-clone"]')).toBeNull();
+      expect(
+        container.querySelector('[data-part="no-local-repository"]'),
+      ).toBeNull();
     });
   });
 
@@ -578,14 +590,14 @@ describe("the detail view", () => {
     expect(scrolled).toEqual([]);
     expect(markedRow()).toBeUndefined();
 
-    push(perch, { arrivalChip: "open-items" });
+    push(perch, { arrivalChip: "open-work-items" });
     expect(scrolled).toEqual([
       {
-        element: row("open-items"),
+        element: row("open-work-items"),
         options: landingOptions,
       },
     ]);
-    expect(markedRow()).toBe("open-items");
+    expect(markedRow()).toBe("open-work-items");
 
     push(perch, { arrivalChip: "ci" });
     expect(scrolled.at(-1)?.element).toBe(row("ci"));
@@ -610,7 +622,7 @@ describe("the detail view", () => {
     try {
       const perch = mockBird("dev/perch");
       const { push } = page(perch, { arrivalChip: "ci" });
-      push(perch, { arrivalChip: "open-items" });
+      push(perch, { arrivalChip: "open-work-items" });
 
       expect(scrolled).toHaveLength(2);
       expect(
@@ -688,7 +700,7 @@ describe("the detail view", () => {
     expect(following(band, panes)).toBeTruthy();
     expect(band.contains(panes)).toBe(false);
     expect(panes.contains(part("record"))).toBe(true);
-    expect(panes.contains(part("paper"))).toBe(true);
+    expect(panes.contains(part("sheets"))).toBe(true);
     expect(classes(panes)).toContain("min-h-0");
     expect(classes(panes.parentElement)).toEqual(
       expect.arrayContaining([
@@ -736,26 +748,26 @@ describe("the detail view", () => {
 
   it("packs every verb of the band into one wrapping row", () => {
     const perch = mockBird("dev/perch");
-    const { container } = page(perch, { form: mockEntryForm(perch.id) });
+    const { container } = page(perch, { form: mockPapersForm(perch.id) });
     const actions = container.querySelector('[data-part="actions"]');
     const verbs = [...(actions?.querySelectorAll("button, a") ?? [])];
 
-    expect(perch.detail.actions.length).toBeGreaterThanOrEqual(2);
-    expect(perch.detail.links.length).toBeGreaterThanOrEqual(2);
+    expect(perch.page.actions.length).toBeGreaterThanOrEqual(2);
+    expect(perch.page.links.length).toBeGreaterThanOrEqual(2);
     expect(verbs).toHaveLength(
-      perch.detail.actions.length + perch.detail.links.length + 2,
+      perch.page.actions.length + perch.page.links.length + 2,
     );
     expect(verbs.map((verb) => verb.textContent).at(-1)).toBe("The papers");
     // The snooze verb sits in a holder of its own, which places its durations beneath it.
     for (const verb of verbs) {
-      const item = verb.textContent === "Snooze" ? verb.parentElement : verb;
-      expect(item?.parentElement).toBe(actions);
+      const entity = verb.textContent === "Snooze" ? verb.parentElement : verb;
+      expect(entity?.parentElement).toBe(actions);
     }
   });
 
   it("keeps the heading to tight rows: name, then the meta with the actions, links and verb beside it", () => {
     const perch = mockBird("dev/perch");
-    const { container } = page(perch, { form: mockEntryForm(perch.id) });
+    const { container } = page(perch, { form: mockPapersForm(perch.id) });
     const heading = container.querySelector('[data-part="heading"]');
     const metaRow = heading?.querySelector('[data-part="meta-row"]');
     const actions = metaRow?.querySelector('[data-part="actions"]');
@@ -785,7 +797,7 @@ describe("the detail view", () => {
   it("holds the band to the bird's height: nothing in it declares a greater one", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch, {
-      form: mockEntryForm(perch.id),
+      form: mockPapersForm(perch.id),
       problems: ["Could not open zellij: no such session"],
     });
     const band = container.querySelector('[data-part="band"]') as Element;
@@ -837,27 +849,27 @@ describe("the detail view", () => {
     ).toContain("@min-[460px]:hidden");
   });
 
-  it("holds the key files in the paper pane beside the record, with no height cap of their own", () => {
+  it("holds the key files in the sheets pane beside the record, with no height cap of their own", () => {
     const perch = mockBird("dev/perch");
     const { container } = page(perch, {
-      sheets: perch.detail.keyFiles.map((file) => ({
+      sheets: perch.page.keyFiles.map((file) => ({
         file,
         markdown: `# ${file.path}\n`,
       })),
     });
-    const paper = container.querySelector('[data-part="paper"]');
+    const sheetsPane = container.querySelector('[data-part="sheets"]');
     const record = container.querySelector('[data-part="record"]');
     const sheet = screen.getByRole("tabpanel");
 
-    expect(paper?.contains(screen.getByRole("tablist"))).toBe(true);
-    expect(paper?.contains(sheet)).toBe(true);
+    expect(sheetsPane?.contains(screen.getByRole("tablist"))).toBe(true);
+    expect(sheetsPane?.contains(sheet)).toBe(true);
     expect(record?.querySelector('[role="tablist"]')).toBeNull();
-    expect(paper?.className.split(" ")).toContain(
+    expect(sheetsPane?.className.split(" ")).toContain(
       "@min-[960px]:overflow-y-auto",
     );
     for (
       let link: Element | null = sheet;
-      link !== paper && link !== null;
+      link !== sheetsPane && link !== null;
       link = link.parentElement
     ) {
       expect(link.className).not.toMatch(/max-h|overflow/);
@@ -868,7 +880,7 @@ describe("the detail view", () => {
     const { container } = page(mockBird("dev/perch"));
     const panes = container.querySelector('[data-part="panes"]');
     const record = container.querySelector('[data-part="record"]');
-    const paper = container.querySelector('[data-part="paper"]');
+    const sheetsPane = container.querySelector('[data-part="sheets"]');
     const classes = (element: Element | null) =>
       element?.className.split(" ") ?? [];
 
@@ -880,7 +892,7 @@ describe("the detail view", () => {
         "@min-[960px]:grid-cols-[minmax(350px,450px)_minmax(0,1fr)]",
       ]),
     );
-    for (const pane of [record, paper]) {
+    for (const pane of [record, sheetsPane]) {
       expect(classes(pane)).not.toContain("overflow-y-auto");
       expect(classes(pane)).toContain("@min-[960px]:overflow-y-auto");
     }
@@ -888,7 +900,7 @@ describe("the detail view", () => {
       [...(panes?.children ?? [])].map((child) =>
         child.getAttribute("data-part"),
       ),
-    ).toEqual(["record", "paper"]);
+    ).toEqual(["record", "sheets"]);
   });
 
   it("keeps a main-process problem in the fixed band, whatever the record's scroll", () => {
@@ -923,7 +935,7 @@ describe("the detail view", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Open the folder/ }));
 
-    expect(onLaunch).toHaveBeenCalledWith(perch.detail.actions[2]);
+    expect(onLaunch).toHaveBeenCalledWith(perch.page.actions[2]);
     expect(
       screen.getByRole("link", { name: /finch\/perch on GitHub/ }),
     ).toBeDefined();
@@ -944,9 +956,9 @@ describe("the detail view", () => {
 
     page({
       ...perch,
-      detail: {
-        ...perch.detail,
-        river: { ...perch.detail.river, commits: [] },
+      page: {
+        ...perch.page,
+        history: { ...perch.page.history, commits: [] },
       },
     });
     expect(headings()).not.toContain(
@@ -963,7 +975,7 @@ describe("the detail view", () => {
     expect(headings()).not.toContain("What couldn't be read");
   });
 
-  it("offers nothing to launch for a bird with no clone here", () => {
+  it("offers nothing to launch for a bird with no local repository here", () => {
     const { container } = page(mockBird("github:finch/obsidian-tidy"));
     const actions = container.querySelector('[data-part="actions"]');
     if (!(actions instanceof HTMLElement)) throw new Error("no action row");
@@ -974,10 +986,10 @@ describe("the detail view", () => {
     ).toBeDefined();
   });
 
-  it("puts the key files the caller read on paper", () => {
+  it("puts the key files the caller read as sheets", () => {
     const perch = mockBird("dev/perch");
     page(perch, {
-      sheets: perch.detail.keyFiles.map((file) => ({
+      sheets: perch.page.keyFiles.map((file) => ({
         file,
         markdown: `# ${file.path}\n`,
       })),
@@ -995,7 +1007,7 @@ describe("the detail view", () => {
 
   it("offers a fence bird adoption, and signs the papers onto the wire chosen", () => {
     const hello = mockBird("dev/odin/hello");
-    const { onSave } = page(hello, { form: mockEntryForm(hello.id) });
+    const { onSave } = page(hello, { form: mockPapersForm(hello.id) });
 
     expect(screen.queryByRole("button", { name: "The papers" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
@@ -1005,14 +1017,14 @@ describe("the detail view", () => {
     );
 
     expect(onSave).toHaveBeenCalledWith("dev/odin/hello", {
-      ...emptyEntryValues(),
+      ...emptyPapersValues(),
       wire: "Machine & Home",
     });
   });
 
-  it("folds signed papers once the entry read back shows the write", () => {
+  it("folds signed papers once the papers read back show the write", () => {
     const hello = mockBird("dev/odin/hello");
-    const { push } = page(hello, { form: mockEntryForm(hello.id) });
+    const { push } = page(hello, { form: mockPapersForm(hello.id) });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
     fireEvent.click(screen.getByRole("radio", { name: "Machine & Home" }));
     fireEvent.click(
@@ -1022,15 +1034,15 @@ describe("the detail view", () => {
       screen.getByRole("form", { name: "Adoption papers for hello" }),
     ).toBeDefined();
 
-    const config = withEntry(mockConfig, helloItem, {
-      ...emptyEntryValues(),
+    const config = withPapers(mockConfig, helloEntity, {
+      ...emptyPapersValues(),
       wire: "Machine & Home",
     });
     const adopted = findBird(
       deriveAviary(mockSnapshot, config, {}, mockHome),
       hello.id,
     );
-    push(adopted, { form: entryFormFor(config, helloItem, mockHome) });
+    push(adopted, { form: papersFormFor(config, helloEntity, mockHome) });
 
     expect(screen.queryByRole("form")).toBeNull();
     expect(screen.getByRole("button", { name: "The papers" })).toBeDefined();
@@ -1038,7 +1050,7 @@ describe("the detail view", () => {
 
   it("keeps refused papers open, with the reason above the signature", () => {
     const hello = mockBird("dev/odin/hello");
-    const form = mockEntryForm(hello.id);
+    const form = mockPapersForm(hello.id);
     const { push } = page(hello, { form });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
     fireEvent.click(
@@ -1046,7 +1058,7 @@ describe("the detail view", () => {
     );
 
     push(hello, {
-      form: mockEntryForm(hello.id),
+      form: mockPapersForm(hello.id),
       problems: ["The config was not changed: the disk is read-only"],
     });
 
@@ -1069,7 +1081,7 @@ describe("the detail view", () => {
 
   it("shows no problem strip when there are none", () => {
     const hello = mockBird("dev/odin/hello");
-    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const { container } = page(hello, { form: mockPapersForm(hello.id) });
 
     expect(container.querySelector('[data-part="problems"]')).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
@@ -1079,7 +1091,7 @@ describe("the detail view", () => {
     const hello = mockBird("dev/odin/hello");
     const problems = ["The config was not changed: the disk is read-only"];
     const { container } = page(hello, {
-      form: mockEntryForm(hello.id),
+      form: mockPapersForm(hello.id),
       problems,
     });
     expect(container.querySelector('[data-part="problems"]')).not.toBeNull();
@@ -1094,7 +1106,7 @@ describe("the detail view", () => {
 
   it("offers an adopted bird its papers to amend, and to return it to the fence", () => {
     const perch = mockBird("dev/perch");
-    const form = mockEntryForm(perch.id);
+    const form = mockPapersForm(perch.id);
     const { onSave, onRemove } = page(perch, { form });
 
     expect(screen.queryByRole("button", { name: "Adopt" })).toBeNull();
@@ -1115,7 +1127,7 @@ describe("the detail view", () => {
 
   it("unfolds the papers as the page opens when asked, and again each time it is asked", () => {
     const hello = mockBird("dev/odin/hello");
-    const form = mockEntryForm(hello.id);
+    const form = mockPapersForm(hello.id);
     const { push } = page(hello, { form, openPapers: true });
 
     expect(
@@ -1133,7 +1145,7 @@ describe("the detail view", () => {
 
   it("raises the papers as a sheet over both panes, which are dimmed and inert, scrolling nothing", () => {
     const hello = mockBird("dev/odin/hello");
-    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const { container } = page(hello, { form: mockPapersForm(hello.id) });
     const panes = container.querySelector('[data-part="panes"]');
     expect(container.querySelector('[data-part="rising-sheet"]')).toBeNull();
     expect(panes?.hasAttribute("inert")).toBe(false);
@@ -1150,7 +1162,7 @@ describe("the detail view", () => {
     expect(panes?.hasAttribute("inert")).toBe(true);
     expect(panes?.classList.contains("opacity-25")).toBe(true);
     expect(panes?.contains(sheet)).toBe(false);
-    for (const pane of ["record", "paper"]) {
+    for (const pane of ["record", "sheets"]) {
       expect(
         container.querySelector(`[data-part="${pane}"]`)?.closest("[inert]"),
       ).toBe(panes);
@@ -1160,7 +1172,7 @@ describe("the detail view", () => {
 
   it("restores the panes as the papers close, leaving the sheet inert while it slides away", () => {
     const hello = mockBird("dev/odin/hello");
-    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const { container } = page(hello, { form: mockPapersForm(hello.id) });
     const panes = container.querySelector('[data-part="panes"]');
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
     fireEvent.click(screen.getByRole("button", { name: "Not now" }));
@@ -1175,7 +1187,7 @@ describe("the detail view", () => {
   it("folds the papers on a press on the dimmed background without writing, and not on a press inside the card", () => {
     const hello = mockBird("dev/odin/hello");
     const { container, onSave, onRemove } = page(hello, {
-      form: mockEntryForm(hello.id),
+      form: mockPapersForm(hello.id),
     });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
 
@@ -1202,7 +1214,7 @@ describe("the detail view", () => {
   it("folds the papers on a press over the band's region, the catcher spanning both of the page's rows", () => {
     const hello = mockBird("dev/odin/hello");
     const { container, onSave, onRemove } = page(hello, {
-      form: mockEntryForm(hello.id),
+      form: mockPapersForm(hello.id),
     });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
     const article = screen.getByRole("article", { name: "hello in full" });
@@ -1234,7 +1246,7 @@ describe("the detail view", () => {
 
   it("keeps the band, the heading, the verb and the roost undimmed outside the panes, resting under the catcher", () => {
     const hello = mockBird("dev/odin/hello");
-    const { container } = page(hello, { form: mockEntryForm(hello.id) });
+    const { container } = page(hello, { form: mockPapersForm(hello.id) });
     fireEvent.click(screen.getByRole("button", { name: "Adopt" }));
 
     const panes = container.querySelector('[data-part="panes"]');
@@ -1259,12 +1271,12 @@ describe("the detail view", () => {
     );
   });
 
-  it("offers neither until the entry is read, or while it disagrees with the bird", () => {
+  it("offers neither until the papers are read, or while they disagree with the bird", () => {
     page(mockBird("dev/perch"));
     expect(screen.queryByRole("button", { name: "The papers" })).toBeNull();
     cleanup();
 
-    page(mockBird("dev/perch"), { form: mockEntryForm("dev/odin/hello") });
+    page(mockBird("dev/perch"), { form: mockPapersForm("dev/odin/hello") });
     expect(screen.queryByRole("button", { name: "Adopt" })).toBeNull();
   });
 });

@@ -2,7 +2,7 @@ import { mockSnapshot } from "@perch/core/mock.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LaunchActions, LinksOut } from "./actions.tsx";
-import { DetailHeading } from "./detail-heading.tsx";
+import { BirdPageHeading } from "./bird-page-heading.tsx";
 import { Icon, type IconName } from "./icons.tsx";
 import { PullRequestLines, SourceProblems } from "./ledger.tsx";
 import { mockBird } from "./mock-birds.ts";
@@ -11,12 +11,12 @@ afterEach(cleanup);
 
 const now = new Date(mockSnapshot.scannedAt);
 
-describe("the detail page's pieces", () => {
+describe("the bird's page's pieces", () => {
   it("shows launch actions as verbs and hands back the one pressed", () => {
     const hothouse = mockBird("obsidian/Hothouse");
     const onLaunch = vi.fn();
     render(
-      <LaunchActions actions={hothouse.detail.actions} onLaunch={onLaunch} />,
+      <LaunchActions actions={hothouse.page.actions} onLaunch={onLaunch} />,
     );
 
     expect(
@@ -30,11 +30,11 @@ describe("the detail page's pieces", () => {
       "Follow the log↗",
     ]);
     fireEvent.click(screen.getByRole("button", { name: /zellij/ }));
-    expect(onLaunch).toHaveBeenCalledWith(hothouse.detail.actions[1]);
+    expect(onLaunch).toHaveBeenCalledWith(hothouse.page.actions[1]);
   });
 
   it("draws each launch action with the icon it carries", () => {
-    const [first] = mockBird("dev/perch").detail.actions;
+    const [first] = mockBird("dev/perch").page.actions;
     if (first === undefined) throw new Error("Perch offers no action");
     const drawn = (icon: IconName) => {
       const { container, unmount } = render(<Icon name={icon} size={15} />);
@@ -60,7 +60,7 @@ describe("the detail page's pieces", () => {
   });
 
   it("links out to each forge page", () => {
-    render(<LinksOut links={mockBird("dev/perch").detail.links} />);
+    render(<LinksOut links={mockBird("dev/perch").page.links} />);
 
     expect(
       screen.getAllByRole("link").map((link) => link.getAttribute("href")),
@@ -70,24 +70,39 @@ describe("the detail page's pieces", () => {
     ]);
   });
 
-  it("heads the page with the name, the state word and the activity, and no speech", () => {
+  it("heads the page with the name, the state phrase and the work state, and no speech", () => {
     const perch = mockBird("dev/perch");
     const { container } = render(
-      <DetailHeading bird={perch} now={now} actions={null} />,
+      <BirdPageHeading bird={perch} now={now} actions={null} />,
     );
 
     expect(screen.getByRole("heading").textContent).toBe("Perch");
     expect(
       container.querySelector('[data-part="state-word"]')?.textContent,
     ).toBe("content");
-    expect(container.textContent).toContain("editing ♪");
+    expect(container.textContent).toContain("uncommitted ♪");
     expect(container.textContent).not.toContain(perch.bubble.speech);
+  });
+
+  it("says committed in the heading, and nothing for merged", () => {
+    const perch = mockBird("dev/perch");
+    const headingText = (workState: "committed" | "merged") =>
+      render(
+        <BirdPageHeading
+          bird={{ ...perch, workState }}
+          now={now}
+          actions={null}
+        />,
+      ).container.textContent;
+
+    expect(headingText("committed")).toContain("committed");
+    expect(headingText("merged")).not.toMatch(/committed|merged/);
   });
 
   it("heads a snoozed bird's page with snoozed and the snooze's end beside it", () => {
     const skiff = { ...mockBird("undev/skiff"), snooze: { until: null } };
     const { container } = render(
-      <DetailHeading bird={skiff} now={now} actions={null} />,
+      <BirdPageHeading bird={skiff} now={now} actions={null} />,
     );
     const part = (name: string) =>
       container.querySelector(`[data-part="${name}"]`)?.textContent;
@@ -98,10 +113,10 @@ describe("the detail page's pieces", () => {
     ]);
   });
 
-  it("says in the meta line where the bird lives: clone, forges and wire", () => {
+  it("says in the meta line where the bird lives: local repository, forges and wire", () => {
     const meta = (id: string) => {
       const { container } = render(
-        <DetailHeading bird={mockBird(id)} now={now} actions={null} />,
+        <BirdPageHeading bird={mockBird(id)} now={now} actions={null} />,
       );
       const text = container.querySelector('[data-part="meta"]')?.textContent;
       cleanup();
@@ -118,12 +133,12 @@ describe("the detail page's pieces", () => {
   it("sets the actions it is given on the meta line's row, after the meta", () => {
     const perch = mockBird("dev/perch");
     const { container } = render(
-      <DetailHeading
+      <BirdPageHeading
         bird={perch}
         now={now}
         actions={
           <div data-part="actions">
-            <LinksOut links={perch.detail.links} />
+            <LinksOut links={perch.page.links} />
           </div>
         }
       />,
@@ -140,7 +155,7 @@ describe("the detail page's pieces", () => {
   it("lists pull requests with their forge, author and draft state", () => {
     render(
       <PullRequestLines
-        pullRequests={mockBird("dev/perch").detail.pullRequests}
+        pullRequests={mockBird("dev/perch").page.pullRequests}
         now={now}
       />,
     );
@@ -150,7 +165,7 @@ describe("the detail page's pieces", () => {
 
   it("names a source that could not be read and its error", () => {
     const { container } = render(
-      <SourceProblems problems={mockBird("undev/prism").detail.problems} />,
+      <SourceProblems problems={mockBird("undev/prism").page.problems} />,
     );
 
     expect(container.textContent).toContain("GitHub");

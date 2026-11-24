@@ -107,7 +107,7 @@ export interface RoostProps {
   bird: Bird;
   /** The render's clock: the bird's look follows the hour, and an asleep bird's bubble speaks woken. */
   now: Date;
-  /** A chip in the bubble was pressed: the page lands on the ledger row holding its working. */
+  /** A chip in the bubble was pressed: the page lands on the ledger row holding its reading. */
   onChip: (chip: ChipKind) => void;
 }
 
@@ -154,7 +154,7 @@ export function Roost({ bird, now, onChip }: RoostProps) {
         </div>
         <svg
           role="img"
-          aria-label={`${bird.name}, ${look.stateWord}${look.asleep ? ", asleep" : ""}`}
+          aria-label={`${bird.name}, ${look.statePhrase}${look.asleep ? ", asleep" : ""}`}
           data-mood={bird.mood}
           data-asleep={look.asleep}
           viewBox={`0 0 ${frame.width} ${frame.height}`}

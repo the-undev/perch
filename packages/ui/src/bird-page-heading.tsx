@@ -1,40 +1,42 @@
-// The top of a bird's page: the name large, the state word in the mood's colour, what the bird is
-// doing, and a meta line saying where it lives, the page's actions beside it where they fit. The
+// The top of a bird's page: the name large, the state phrase in the mood's colour, the work
+// state, and a meta line saying where it lives, the page's actions beside it where they fit. The
 // speech belongs to the roost's bubble.
 
-import type { Activity, Bird } from "@perch/core/viewmodel.ts";
+import type { WorkState } from "@perch/core/snapshot.ts";
+import type { Bird } from "@perch/core/viewmodel.ts";
 import type { ReactNode } from "react";
 import { birdLook, stateTone } from "./bird.tsx";
 
-/** What a bird is doing, in words; settled says nothing. */
-export const activityWords: Record<Activity, string | null> = {
-  editing: "editing ♪",
-  "in-flight": "in flight",
-  settled: null,
+/** The work state in words; merged says nothing. */
+export const workStateWords: Record<WorkState, string | null> = {
+  uncommitted: "uncommitted ♪",
+  committed: "committed",
+  merged: null,
 };
 
-/** Where the bird lives, as the meta line says it: the clone with ~, the forges, then the wire. */
+/** Where the bird lives, as the meta line says it: the local repository with ~, the forges, then the wire. */
 export function whereabouts(bird: Bird): string {
-  const { clonePath, forges } = bird.detail;
+  const { localRepositoryPath, forges } = bird.page;
   return [
-    ...(clonePath === null ? [] : [clonePath]),
+    ...(localRepositoryPath === null ? [] : [localRepositoryPath]),
     ...(forges.length === 0 ? [] : [forges.join(", ")]),
     bird.wire === null ? "on the fence" : `on ${bird.wire}`,
   ].join(" · ");
 }
 
-export interface DetailHeadingProps {
+export interface BirdPageHeadingProps {
   bird: Bird;
-  /** The render's clock: the state word and a snooze's end follow it. */
+  /** The render's clock: the state phrase and a snooze's end follow it. */
   now: Date;
   /** The page's verbs and links, one group on the meta line's row where it fits and beneath the meta where not; null for none. */
   actions: ReactNode;
 }
 
-/** The page's heading in two tight rows: the one place on the page that carries the name and the state word, then the meta with the actions. */
-export function DetailHeading({ bird, now, actions }: DetailHeadingProps) {
+/** The page's heading in two tight rows: the one place on the page that carries the name and the state phrase, then the meta with the actions. */
+export function BirdPageHeading({ bird, now, actions }: BirdPageHeadingProps) {
   const look = birdLook(bird, now);
-  const activity = bird.activity === null ? null : activityWords[bird.activity];
+  const workState =
+    bird.workState === null ? null : workStateWords[bird.workState];
   return (
     <header>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -43,9 +45,9 @@ export function DetailHeading({ bird, now, actions }: DetailHeadingProps) {
         </h2>
         <span
           data-part="state-word"
-          className={`font-body font-semibold text-[11px] uppercase tracking-[0.1em] ${stateTone[look.stateWord]}`}
+          className={`font-body font-semibold text-[11px] uppercase tracking-[0.1em] ${stateTone[look.statePhrase]}`}
         >
-          {look.stateWord}
+          {look.statePhrase}
         </span>
         {look.snoozedUntil !== null && (
           <span
@@ -55,8 +57,8 @@ export function DetailHeading({ bird, now, actions }: DetailHeadingProps) {
             {look.snoozedUntil}
           </span>
         )}
-        {activity !== null && (
-          <span className="text-[12.5px] text-ink-accent">{activity}</span>
+        {workState !== null && (
+          <span className="text-[12.5px] text-ink-accent">{workState}</span>
         )}
       </div>
       <div

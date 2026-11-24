@@ -2,7 +2,7 @@
 // alike: page headings, ruled rows, pill choices, switches, editable lists and threshold fields,
 // in one set of styles.
 
-import type { thresholdWindows } from "@perch/core/entry-form.ts";
+import type { thresholdFacts } from "@perch/core/papers-form.ts";
 import { type ReactNode, useId, useState } from "react";
 
 export const panelClass =
@@ -266,13 +266,13 @@ export function StringList({
 
 /** One threshold as a whole number field, labelled amber or red; an emptied field reads as NaN. */
 export function ThresholdField({
-  window,
+  fact,
   level,
   value,
   placeholder,
   onChange,
 }: {
-  window: (typeof thresholdWindows)[number];
+  fact: (typeof thresholdFacts)[number];
   level: "amber" | "red";
   value: number | undefined;
   /** What an empty field stands for, or nothing. */
@@ -285,12 +285,12 @@ export function ThresholdField({
         {level}
       </span>
       <NumberInput
-        label={`${window.label}, ${level} after ${window.unit}`}
+        label={`${fact.label}, ${level} after ${fact.unit}`}
         value={value}
         placeholder={placeholder}
         onChange={onChange}
       />
-      {window.unit}
+      {fact.unit}
     </span>
   );
 }

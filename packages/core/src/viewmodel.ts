@@ -7,9 +7,9 @@ import {
   type Config,
   collapseHome,
   hostsOf,
-  type ItemEntry,
   obsidianOnly,
-  resolveEntry,
+  type Papers,
+  resolvePapers,
   wireFor,
   zellijSessionFor,
 } from "./config.ts";
@@ -21,13 +21,18 @@ import {
   roadmapOf,
 } from "./derivations.ts";
 import { commandKinds, type IconName, zellijKind } from "./launch-kinds.ts";
-import { itemRefs } from "./refs.ts";
+import { entityRefs } from "./refs.ts";
 import { parseRemoteUrl } from "./remote-url.ts";
 import type {
   AgedWork,
   CiRun,
   CiState,
   CountThresholds,
+  Entity,
+  EntityError,
+  EntityFlagName,
+  EntityKind,
+  EntitySourceData,
   FailureReason,
   FinalisedCommit,
   ForgeData,
@@ -35,11 +40,6 @@ import type {
   GitData,
   HealthLevel,
   HourThresholds,
-  Item,
-  ItemError,
-  ItemFlagName,
-  ItemKind,
-  ItemSourceData,
   PolledSourceName,
   PullRequest,
   RoadmapData,
@@ -53,6 +53,7 @@ import type {
   WorkItemCounts,
   WorkItemGroup,
   WorkItemKind,
+  WorkState,
 } from "./snapshot.ts";
 import type { SnoozeEnd } from "./snooze-date.ts";
 import { type FenceSituation, type SpeechSubject, speak } from "./speech.ts";
@@ -75,7 +76,7 @@ export type HealthCause =
       kind: "unreadable-remote";
       level: HealthLevel;
       forge: ForgeName;
-      /** The repository the clone pushes to, as its remote names it. */
+      /** The repository the local repository pushes to, as its remote names it. */
       fullName: string;
     }
   | {
@@ -99,7 +100,7 @@ export type HealthCause =
       kind: "stalled";
       level: HealthLevel;
       stall: Stall;
-      /** Nothing uncommitted and nothing unpushed while parked. */
+      /** Nothing uncommitted and nothing unpushed while stalled. */
       everythingPushed: boolean;
     };
 
@@ -113,9 +114,6 @@ export interface Health {
 
 /** How the bird wears its health: green content, amber restless, red distressed. */
 export type Mood = "content" | "restless" | "distressed";
-
-/** What the bird is doing, apart from how it feels: from the git work-state. */
-export type Activity = "editing" | "in-flight" | "settled";
 
 /** The whole scene: the wires top to bottom, then the fence beneath. */
 export interface Aviary {
@@ -146,7 +144,7 @@ export interface SourceError {
   lastSucceededAt: string | null;
 }
 
-/** Plumpness from outstanding work: the open roadmap items, and their share of the cap. */
+/** Plumpness from outstanding work: the open work items, and their share of the cap. */
 export interface Plumpness {
   outstanding: number;
   /** Outstanding over the cap, at most 1. */
@@ -168,7 +166,7 @@ export interface Bird {
   id: string;
   /** The display name from config, else the scanned name. */
   name: string;
-  kind: Exclude<ItemKind, "server">;
+  kind: EntityKind;
   adopted: boolean;
   /** Null on the fence. */
   wire: string | null;
@@ -176,15 +174,15 @@ export interface Bird {
   position: number;
   health: Health;
   mood: Mood;
-  /** Null without a local clone, which has no work-state. */
-  activity: Activity | null;
+  /** Null without a local repository, which has no work state. */
+  workState: WorkState | null;
   plumpness: Plumpness;
   /** Null when the owner has not snoozed it, and always on the fence. */
   snooze: Snooze | null;
   /** Where a fence bird lives, for its hover tip; null on a wire or while undecided. */
   lives: string | null;
   bubble: Bubble;
-  detail: Detail;
+  page: BirdPage;
 }
 
 // The bubble
@@ -206,7 +204,7 @@ export const chipKinds = [
   "unpushed",
   "stalled",
   "pull-requests",
-  "open-items",
+  "open-work-items",
 ] as const;
 
 export type ChipKind = (typeof chipKinds)[number];
@@ -220,13 +218,13 @@ export interface Chip {
   severity: Exclude<HealthLevel, "green"> | null;
 }
 
-// The detail
+// The page
 
 /** A ledger tone: green for a clean zero or a good state, amber and red by severity, else null. */
 export type Tone = HealthLevel | null;
 
 /** One source's part in a ledger row: where it was read, what it says there, and its link out. */
-export interface Working {
+export interface Reading {
   /** A forge's lower-case name, a roadmap file's path, or git. */
   source: string;
   text: string;
@@ -234,22 +232,22 @@ export interface Working {
   url: string | null;
   /** When the fact dates from, shown as an age; null when it has no time. */
   at: string | null;
-  /** The line in a key file the working points at, which pressing it shows on the paper; null for none. */
-  reveal: PaperLine | null;
+  /** The line in a key file the reading points at, which pressing it shows on the sheet; null for none. */
+  reveal: SheetLine | null;
 }
 
 /** A source line in one of the bird's key files, counted from 1. */
-export interface PaperLine {
+export interface SheetLine {
   path: string;
   line: number;
 }
 
 /**
  * One fact in full words. A clean count of zero reads "none" in green. A count or state row names
- * the bubble chip whose working it holds, null when the bubble carries no such chip, and spells
- * that working out per source: each source with something to say, or that it couldn't be read.
+ * the bubble chip whose reading it holds, null when the bubble carries no such chip, and spells
+ * that reading out per source: each source with something to say, or that it couldn't be read.
  */
-export type LedgerEntry =
+export type LedgerFact =
   | {
       kind: "count";
       label: string;
@@ -257,7 +255,7 @@ export type LedgerEntry =
       text: string;
       tone: Tone;
       chip: ChipKind | null;
-      workings: Working[];
+      readings: Reading[];
     }
   | {
       kind: "state";
@@ -266,7 +264,7 @@ export type LedgerEntry =
       tone: Tone;
       url: string | null;
       chip: ChipKind | null;
-      workings: Working[];
+      readings: Reading[];
     }
   | { kind: "time"; label: string; at: string };
 
@@ -277,32 +275,32 @@ export interface BranchLine {
   lastCommitAt: string;
   subject: string;
   upstream: string | null;
-  /** The branch on its forge, when it is pushed to a forge presence. */
+  /** The branch on its forge, when it is pushed to a forge repository. */
   url: string | null;
 }
 
-/** A commit's spread: green on every forge read, amber short of one or when none could be read, null without a forge. */
-export type SpreadTone = Exclude<HealthLevel, "red"> | null;
+/** How well forges hold a commit: green when every forge read holds it, amber short of that or when none could be read, null without a forge. */
+export type HeldOnTone = Exclude<HealthLevel, "red"> | null;
 
 /** One commit on the default branch, told once however many places hold it. */
-export interface RiverCommit {
+export interface HistoryCommit {
   sha: string;
   shortSha: string;
   subject: string;
   committedAt: string;
   /** The commit on the first forge holding it; null when no forge does. */
   url: string | null;
-  tone: SpreadTone;
-  /** The spread in words, such as "on github and forgejo" or "no remote could be read". */
-  spread: string;
+  tone: HeldOnTone;
+  /** Which forges hold it, in words, such as "on github and forgejo" or "no remote could be read". */
+  heldOn: string;
 }
 
-/** The newest commits on the default branch, each once, with how far each has spread. */
-export interface River {
-  /** The default branch the river judges, the clone's else a forge's; null when none names it. */
+/** The newest commits on the default branch, each once, with which forges hold it. */
+export interface History {
+  /** The default branch the history judges, the local repository's else a forge's; null when none names it. */
   branch: string | null;
   /** Newest first, at most the configured number of finalised commits. */
-  commits: RiverCommit[];
+  commits: HistoryCommit[];
   /** A line per forge whose list couldn't be read, such as "couldn't read github", with why when no card covers it. */
   notes: string[];
   /** One sentence when the forges hold different commits; null when they agree. */
@@ -320,7 +318,7 @@ export interface PullRequestLine {
 }
 
 export interface FlagLine {
-  flag: ItemFlagName;
+  flag: EntityFlagName;
   text: string;
   detail: string;
   level: HealthLevel | null;
@@ -364,7 +362,7 @@ export interface LinkOut {
   url: string;
 }
 
-/** The mark in the paper's margin beside a bug's line: one bar for a bug, two for a critical bug, faint once done. */
+/** The mark in the sheet's margin beside a bug's line: one bar for a bug, two for a critical bug, faint once done. */
 export interface LineMark {
   kind: "bug" | "critical-bug";
   done: boolean;
@@ -373,7 +371,7 @@ export interface LineMark {
 /** Margin marks by the source line they sit beside, counted from 1. */
 export type LineMarks = Record<number, LineMark>;
 
-/** A file the detail page renders as paper, read at render time. */
+/** A file the bird's page renders as sheets, read at render time. */
 export interface KeyFile {
   path: string;
   absolutePath: string;
@@ -388,48 +386,49 @@ export interface SourceProblem {
 }
 
 /**
- * A remote the clone pushes to that no card can read, said under the page's heading: what perch
- * knows and could not do, then the fix, which ends on the link to the settings page's Sources.
+ * A remote the local repository pushes to that no card can read, said under the page's heading:
+ * what perch knows and could not do, then the fix, which ends on the link to the settings page's
+ * Sources.
  */
 export interface RemoteNotice {
-  /** Such as "The clone pushes to skiff-app/skiff on github, which no GitHub card reads." */
+  /** Such as "The local repository pushes to skiff-app/skiff on github, which no GitHub card reads." */
   text: string;
   /** Such as "Add a card for skiff-app under", before the link. */
   fix: string;
 }
 
-/** What the slip says for a bird seen on its forges with no clone on this machine. */
-export interface NoClone {
+/** What the slip says for a bird seen on its forges with no local repository on this machine. */
+export interface NoLocalRepository {
   /** The forges holding the repository, as the slip names them: "Forgejo", or "GitHub and Forgejo". */
   forges: string;
-  /** The repository a clone's remote points at to join the bird, such as finch/pocket. */
+  /** The repository a local repository's remote points at to link the bird, such as finch/pocket. */
   reference: string;
   /** The SSH address to clone from, the first a forge gives; null while unknown. */
-  cloneAddress: string | null;
-  /** Whether the meta line says "no local clone": config holds at least one launch action. */
+  sshAddress: string | null;
+  /** Whether the meta line says "no local repository": config holds at least one launch action. */
   onMetaLine: boolean;
 }
 
-/** Everything about one bird beyond its look and bubble, which the detail page also shows. */
-export interface Detail {
-  /** Where the clone is on disk, home as ~; null for a bird with no clone here. */
-  clonePath: string | null;
-  /** The forges that hold the bird, each once, in the order its presences were found. */
+/** Everything about one bird beyond its look and bubble, which the bird's page also shows. */
+export interface BirdPage {
+  /** Where the local repository is on disk, home as ~; null for a bird with no local repository here. */
+  localRepositoryPath: string | null;
+  /** The forges that hold the bird, each once, in the order its repositories were found. */
   forges: ForgeName[];
   /** One per remote no card can read; where the can't-read chip lands. */
   notices: RemoteNotice[];
   /** The sentence that opens the ledger when nothing waits; null when something does. */
   quiet: string | null;
-  ledger: LedgerEntry[];
+  ledger: LedgerFact[];
   branches: BranchLine[];
-  river: River;
+  history: History;
   pullRequests: PullRequestLine[];
   flags: FlagLine[];
   actions: LaunchAction[];
   links: LinkOut[];
   keyFiles: KeyFile[];
-  /** The slip where the key files would be: null for a bird with a clone here or on no forge. */
-  noClone: NoClone | null;
+  /** The slip where the key files would be: null for a bird with a local repository here or on no forge. */
+  noLocalRepository: NoLocalRepository | null;
   problems: SourceProblem[];
 }
 
@@ -442,18 +441,17 @@ const forgeLabel: Record<ForgeName, string> = {
   forgejo: "Forgejo",
 };
 
-const sourceLabel: Record<keyof ItemSourceData, string> = {
+const sourceLabel: Record<keyof EntitySourceData, string> = {
   git: "git",
   roadmap: "roadmap",
   github: "GitHub",
   forgejo: "Forgejo",
-  kuma: "Uptime Kuma",
 };
 
-const flagText: Record<ItemFlagName, string> = {
+const flagText: Record<EntityFlagName, string> = {
   "not-set-up": "not set up",
   "remote-archived": "remote archived",
-  "remote-joined-elsewhere": "remote joined elsewhere",
+  "remote-linked-elsewhere": "remote linked elsewhere",
   "config-conflict": "config conflict",
 };
 
@@ -461,12 +459,6 @@ const moodOf: Record<HealthLevel, Mood> = {
   green: "content",
   amber: "restless",
   red: "distressed",
-};
-
-const activityOf: Record<GitData["activity"], Activity> = {
-  editing: "editing",
-  "in-progress": "in-flight",
-  settled: "settled",
 };
 
 /** Worst first, for the CI chip when two forges disagree. */
@@ -479,21 +471,15 @@ const ciSeverityOrder: readonly CiState[] = [
 
 /** A source's data when it was read; null when it is absent or an error. */
 function readable<T extends object>(
-  value: T | ItemError | undefined,
+  value: T | EntityError | undefined,
 ): T | null {
   if (value === undefined || "error" in value) return null;
   return value;
 }
 
-type BirdItem = Item & { kind: Exclude<ItemKind, "server"> };
-
-function isBirdItem(item: Item): item is BirdItem {
-  return item.kind !== "server";
-}
-
-/** The config entry an item resolves to, by its id and every presence reference it holds. */
-function entryFor(item: Item, config: Config): ItemEntry | null {
-  return resolveEntry(config, item.id, itemRefs(item)).entry;
+/** The papers an entity resolves to, by its id and every repository reference it holds. */
+function papersFor(entity: Entity, config: Config): Papers | null {
+  return resolvePapers(config, entity.id, entityRefs(entity)).papers;
 }
 
 /** A level as a severity: amber and red stand, green is not judged. */
@@ -501,19 +487,19 @@ function severity(level: HealthLevel): Exclude<HealthLevel, "green"> | null {
   return level === "green" ? null : level;
 }
 
-function forgeData(item: Item): { forge: ForgeName; data: ForgeData }[] {
+function forgeData(entity: Entity): { forge: ForgeName; data: ForgeData }[] {
   return forgeNames.flatMap((forge) => {
-    const data = readable<ForgeData>(item.sources[forge]);
+    const data = readable<ForgeData>(entity.sources[forge]);
     return data ? [{ forge, data }] : [];
   });
 }
 
-/** Open items of every kind. */
+/** Open work items of every kind. */
 function openOf(counts: WorkItemCounts): number {
   return counts.task + counts.bug + counts["critical-bug"];
 }
 
-function openItemsOf(roadmap: RoadmapData | null): number {
+function openWorkItemsOf(roadmap: RoadmapData | null): number {
   return roadmap ? openOf(roadmap.counts) : 0;
 }
 
@@ -527,13 +513,13 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-function countEntry(
+function countFact(
   label: string,
   count: number,
   tone: Tone,
   chip: ChipKind | null,
-  workings: Working[],
-): LedgerEntry {
+  readings: Reading[],
+): LedgerFact {
   return count === 0
     ? {
         kind: "count",
@@ -542,7 +528,7 @@ function countEntry(
         text: "none",
         tone: "green",
         chip,
-        workings,
+        readings,
       }
     : {
         kind: "count",
@@ -551,22 +537,22 @@ function countEntry(
         text: String(count),
         tone,
         chip,
-        workings,
+        readings,
       };
 }
 
-/** Each forge the item holds a source for: its data, or null when it couldn't be read. */
+/** Each forge the entity holds a source for: its data, or null when it couldn't be read. */
 function forgeSources(
-  item: Item,
+  entity: Entity,
 ): { forge: ForgeName; data: ForgeData | null }[] {
   return forgeNames.flatMap((forge) => {
-    const source = item.sources[forge];
+    const source = entity.sources[forge];
     if (source === undefined) return [];
     return [{ forge, data: "error" in source ? null : source }];
   });
 }
 
-/** Each part of a forge's data, named in full for a working that says it couldn't be read. */
+/** Each part of a forge's data, named in full for a reading that says it couldn't be read. */
 const forgePartLabel = {
   openPullRequests: "pull requests",
   latestCi: "CI",
@@ -578,11 +564,11 @@ type ForgePart = keyof typeof forgePartLabel;
 const forgeParts = Object.keys(forgePartLabel) as ForgePart[];
 
 /** Whether a part of a forge's data failed to read. */
-function failed(part: object | null): part is ItemError {
+function failed(part: object | null): part is EntityError {
   return part !== null && "error" in part;
 }
 
-function couldNotRead(source: string, part: ForgePart): Working {
+function couldNotRead(source: string, part: ForgePart): Reading {
   return {
     source,
     text: `couldn't read ${forgePartLabel[part]}`,
@@ -595,17 +581,17 @@ function couldNotRead(source: string, part: ForgePart): Working {
 
 /** Each forge whose open pull requests were read, with them. */
 function forgePullRequests(
-  item: Item,
+  entity: Entity,
 ): { forge: ForgeName; pulls: PullRequest[] }[] {
-  return forgeData(item).flatMap(({ forge, data }) => {
+  return forgeData(entity).flatMap(({ forge, data }) => {
     const pulls = readable<PullRequest[]>(data.openPullRequests);
     return pulls ? [{ forge, pulls }] : [];
   });
 }
 
 /** The worst state among the forges' newest runs; undefined when no forge has a run. */
-function worstCiState(item: Item): CiState | undefined {
-  const runs = forgeData(item).flatMap(({ data }) => {
+function worstCiState(entity: Entity): CiState | undefined {
+  const runs = forgeData(entity).flatMap(({ data }) => {
     const run = latestRunOf(data);
     return run ? [run] : [];
   });
@@ -619,17 +605,17 @@ function ciTone(state: CiState): Tone {
   return state === "success" ? "green" : null;
 }
 
-/** Whether the item has a forge and none of them had this part read. */
-function noneRead(item: Item, part: ForgePart): boolean {
-  const sources = forgeSources(item);
+/** Whether the entity has a forge and none of them had this part read. */
+function noneRead(entity: Entity, part: ForgePart): boolean {
+  const sources = forgeSources(entity);
   return (
     sources.length > 0 &&
     sources.every(({ data }) => data === null || failed(data[part]))
   );
 }
 
-/** A row no forge could be read for: "couldn't read" in amber, each forge's working saying so. */
-function unreadRow(label: string, workings: Working[]): LedgerEntry {
+/** A row no forge could be read for: "couldn't read" in amber, each forge's reading saying so. */
+function unreadRow(label: string, readings: Reading[]): LedgerFact {
   return {
     kind: "state",
     label,
@@ -637,7 +623,7 @@ function unreadRow(label: string, workings: Working[]): LedgerEntry {
     tone: "amber",
     url: null,
     chip: null,
-    workings,
+    readings,
   };
 }
 
@@ -645,11 +631,11 @@ function unreadRow(label: string, workings: Working[]): LedgerEntry {
  * The CI row: the worst state, as the chip says it, then each forge's newest run, named and linked.
  * With no run anywhere it says "couldn't read" when no forge's CI could be read, else nothing.
  */
-function ciEntry(item: Item, chip: ChipKind | null): LedgerEntry | null {
-  const worst = worstCiState(item);
-  const workings = ciWorkings(item);
+function ciFact(entity: Entity, chip: ChipKind | null): LedgerFact | null {
+  const worst = worstCiState(entity);
+  const readings = ciReadings(entity);
   if (worst === undefined) {
-    return noneRead(item, "latestCi") ? unreadRow("CI", workings) : null;
+    return noneRead(entity, "latestCi") ? unreadRow("CI", readings) : null;
   }
   return {
     kind: "state",
@@ -658,13 +644,13 @@ function ciEntry(item: Item, chip: ChipKind | null): LedgerEntry | null {
     tone: ciTone(worst),
     url: null,
     chip,
-    workings,
+    readings,
   };
 }
 
 /** Each forge's newest run on the default branch, named and linked, or that its CI couldn't be read. */
-function ciWorkings(item: Item): Working[] {
-  return forgeSources(item).flatMap(({ forge, data }): Working[] => {
+function ciReadings(entity: Entity): Reading[] {
+  return forgeSources(entity).flatMap(({ forge, data }): Reading[] => {
     if (data === null || failed(data.latestCi)) {
       return [couldNotRead(forge, "latestCi")];
     }
@@ -684,8 +670,8 @@ function ciWorkings(item: Item): Working[] {
 }
 
 /** Each forge's open pull requests, linked to its list; a forge with none is silent. */
-function pullRequestWorkings(item: Item): Working[] {
-  return forgeSources(item).flatMap(({ forge, data }): Working[] => {
+function pullRequestReadings(entity: Entity): Reading[] {
+  return forgeSources(entity).flatMap(({ forge, data }): Reading[] => {
     if (data === null || failed(data.openPullRequests)) {
       return [couldNotRead(forge, "openPullRequests")];
     }
@@ -704,12 +690,12 @@ function pullRequestWorkings(item: Item): Working[] {
   });
 }
 
-/** Each roadmap file's open items of the kinds counted; a file with none is silent. */
-function roadmapWorkings(
+/** Each roadmap file's open work items of the kinds counted; a file with none is silent. */
+function roadmapReadings(
   roadmap: RoadmapData,
   countOf: (counts: WorkItemCounts) => number,
-): Working[] {
-  return roadmap.files.flatMap((file): Working[] => {
+): Reading[] {
+  return roadmap.files.flatMap((file): Reading[] => {
     const open = countOf(file.counts);
     if (open === 0) return [];
     return [
@@ -726,13 +712,13 @@ function roadmapWorkings(
 }
 
 /** The mood line a count's level earns, such as "restless at 5", toned like the row; nothing while content. */
-function moodWorkings(
+function moodReadings(
   source: string,
   level: HealthLevel,
-  window: CountThresholds,
-): Working[] {
+  thresholds: CountThresholds,
+): Reading[] {
   if (level === "green") return [];
-  const atCount = level === "red" ? window.redCount : window.amberCount;
+  const atCount = level === "red" ? thresholds.redCount : thresholds.amberCount;
   return [
     {
       source,
@@ -745,56 +731,59 @@ function moodWorkings(
   ];
 }
 
-/** Each open item of the kind in the file, in the file's order, as a working that points at its line. */
-function openItemWorkings(file: RoadmapFile, kind: WorkItemKind): Working[] {
-  return itemsOf(file)
-    .filter((item) => item.kind === kind && item.done !== true)
-    .map((item) => ({
+/** Each open work item of the kind in the file, in the file's order, as a reading that points at its line. */
+function openWorkItemReadings(
+  file: RoadmapFile,
+  kind: WorkItemKind,
+): Reading[] {
+  return workItemsOf(file)
+    .filter((workItem) => workItem.kind === kind && workItem.done !== true)
+    .map((workItem) => ({
       source: file.path,
-      text: item.text,
+      text: workItem.text,
       tone: null,
       url: null,
       at: null,
-      reveal: { path: file.path, line: item.line },
+      reveal: { path: file.path, line: workItem.line },
     }));
 }
 
 /**
  * Each roadmap file's open bugs, then its open critical bugs when it has any, toned by their
- * windows, each row listing its open items before its mood line. A row holds the bubble chip of its
+ * thresholds, each row listing its open work items before its mood line. A row holds the bubble chip of its
  * kind when the file has any open of that kind.
  */
 function bugRows(
   roadmap: RoadmapData,
   bugsChip: ChipKind | null,
   criticalBugsChip: ChipKind | null,
-): LedgerEntry[] {
+): LedgerFact[] {
   const { thresholds } = roadmap;
   return roadmap.files.flatMap((file) => {
     const levels = bugLevelsOf(file.counts, thresholds);
     const rows = [
-      countEntry(
+      countFact(
         `bugs in ${file.path}`,
         file.counts.bug,
         severity(levels.bugs),
         file.counts.bug > 0 ? bugsChip : null,
         [
-          ...openItemWorkings(file, "bug"),
-          ...moodWorkings(file.path, levels.bugs, thresholds.bugs),
+          ...openWorkItemReadings(file, "bug"),
+          ...moodReadings(file.path, levels.bugs, thresholds.bugs),
         ],
       ),
     ];
     if (file.counts["critical-bug"] === 0) return rows;
     return [
       ...rows,
-      countEntry(
+      countFact(
         `critical bugs in ${file.path}`,
         file.counts["critical-bug"],
         severity(levels.criticalBugs),
         criticalBugsChip,
         [
-          ...openItemWorkings(file, "critical-bug"),
-          ...moodWorkings(
+          ...openWorkItemReadings(file, "critical-bug"),
+          ...moodReadings(
             file.path,
             levels.criticalBugs,
             thresholds.criticalBugs,
@@ -806,7 +795,7 @@ function bugRows(
 }
 
 /** Unsafe work's oldest change, toned by its age; nothing when there is none. */
-function agedWorkings(work: AgedWork | null, text: string): Working[] {
+function agedReadings(work: AgedWork | null, text: string): Reading[] {
   if (work === null) return [];
   return [
     {
@@ -821,11 +810,11 @@ function agedWorkings(work: AgedWork | null, text: string): Working[] {
 }
 
 /** Each branch's unpushed commits, oldest first, toned by age and linked to its upstream branch. */
-function unpushedBranchWorkings(
-  item: Item,
+function unpushedBranchReadings(
+  entity: Entity,
   git: GitData,
   config: Config,
-): Working[] {
+): Reading[] {
   return [...(git.unpushedBranches ?? [])]
     .sort(
       (a, b) =>
@@ -842,13 +831,13 @@ function unpushedBranchWorkings(
       url:
         branch.upstream === null
           ? null
-          : upstreamUrl(item, git, branch.upstream, config),
+          : upstreamUrl(entity, git, branch.upstream, config),
       at: branch.work.since,
       reveal: null,
     }));
 }
 
-/** One chip per roadmap file and kind with open bugs, toned by its window; the path only when there are several files. */
+/** One chip per roadmap file and kind with open bugs, toned by its thresholds; the path only when there are several files. */
 function bugChips(roadmap: RoadmapData): Chip[] {
   return roadmap.files.flatMap((file) => {
     const levels = bugLevelsOf(file.counts, roadmap.thresholds);
@@ -876,7 +865,7 @@ function bugChips(roadmap: RoadmapData): Chip[] {
 
 /** The forge page for an upstream branch, found through its remote's URL; null when none matches. */
 function upstreamUrl(
-  item: Item,
+  entity: Entity,
   git: GitData,
   upstream: string,
   config: Config,
@@ -891,16 +880,16 @@ function upstreamUrl(
     hostsOf(config.sources[name]).includes(location.host),
   );
   const fullName = `${location.owner}/${location.repo}`.toLowerCase();
-  const presence = item.presences.forges.find(
+  const repository = entity.repositories.forges.find(
     (entry) =>
       entry.forge === forge && entry.fullName.toLowerCase() === fullName,
   );
-  return presence?.url
-    ? branchUrl(presence.forge, presence.url, upstream.slice(slash + 1))
+  return repository?.url
+    ? branchUrl(repository.forge, repository.url, upstream.slice(slash + 1))
     : null;
 }
 
-function chipsFor(item: Item, health: Health): Chip[] {
+function chipsFor(entity: Entity, health: Health): Chip[] {
   const chips: Chip[] = [];
   const unreadable = [
     ...new Set(
@@ -917,7 +906,7 @@ function chipsFor(item: Item, health: Health): Chip[] {
       severity: "amber",
     });
   }
-  const worstCi = worstCiState(item);
+  const worstCi = worstCiState(entity);
   if (worstCi !== undefined) {
     chips.push({
       kind: "ci",
@@ -926,9 +915,9 @@ function chipsFor(item: Item, health: Health): Chip[] {
       severity: worstCi === "failure" ? "red" : null,
     });
   }
-  const roadmap = roadmapOf(item);
+  const roadmap = roadmapOf(entity);
   if (roadmap) chips.push(...bugChips(roadmap));
-  const git = readable<GitData>(item.sources.git);
+  const git = readable<GitData>(entity.sources.git);
   const levelOf = (kind: "uncommitted" | "unpushed") =>
     health.causes.find((cause) => cause.kind === kind)?.level ?? "green";
   if (git && git.uncommittedCount > 0) {
@@ -959,7 +948,7 @@ function chipsFor(item: Item, health: Health): Chip[] {
       severity: severity(stall.level),
     });
   }
-  const pulls = forgePullRequests(item).reduce(
+  const pulls = forgePullRequests(entity).reduce(
     (total, { pulls }) => total + pulls.length,
     0,
   );
@@ -971,32 +960,38 @@ function chipsFor(item: Item, health: Health): Chip[] {
       severity: null,
     });
   }
-  const openItems = openItemsOf(roadmap);
-  if (openItems > 0) {
+  const openWorkItems = openWorkItemsOf(roadmap);
+  if (openWorkItems > 0) {
     chips.push({
-      kind: "open-items",
-      label: plural(openItems, "open item", "open items"),
-      count: openItems,
+      kind: "open-work-items",
+      label: plural(openWorkItems, "open work item", "open work items"),
+      count: openWorkItems,
       severity: null,
     });
   }
   return chips;
 }
 
-/** The facts in full words, each chip's working on the row whose number it carries. */
-function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
+/** The facts in full words, each chip's reading on the row whose number it carries. */
+function ledgerFor(
+  entity: Entity,
+  chips: Chip[],
+  config: Config,
+): LedgerFact[] {
   const handle = (kind: ChipKind) =>
     chips.some((chip) => chip.kind === kind) ? kind : null;
-  const ledger: LedgerEntry[] = [];
-  const git = readable<GitData>(item.sources.git);
+  const ledger: LedgerFact[] = [];
+  const git = readable<GitData>(entity.sources.git);
   if (git) {
     ledger.push(
-      countEntry(
+      countFact(
         "uncommitted changes",
         git.uncommittedCount,
-        git.drift.uncommitted ? severity(git.drift.uncommitted.level) : null,
+        git.unsafeWork.uncommitted
+          ? severity(git.unsafeWork.uncommitted.level)
+          : null,
         handle("uncommitted"),
-        agedWorkings(git.drift.uncommitted, "oldest change"),
+        agedReadings(git.unsafeWork.uncommitted, "oldest change"),
       ),
     );
     if (git.backup === "local-only") {
@@ -1007,50 +1002,52 @@ function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
         tone: null,
         url: null,
         chip: null,
-        workings: [],
+        readings: [],
       });
     } else {
       ledger.push(
-        countEntry(
+        countFact(
           "unpushed commits",
           git.unpushedCount,
-          git.drift.unpushed ? severity(git.drift.unpushed.level) : null,
+          git.unsafeWork.unpushed
+            ? severity(git.unsafeWork.unpushed.level)
+            : null,
           handle("unpushed"),
-          unpushedBranchWorkings(item, git, config),
+          unpushedBranchReadings(entity, git, config),
         ),
       );
     }
   }
-  const roadmap = roadmapOf(item);
+  const roadmap = roadmapOf(entity);
   // Without a parsed roadmap file there is nothing to count or judge, so no rows.
   if (roadmap && roadmap.files.length > 0) {
     ledger.push(...bugRows(roadmap, handle("bugs"), handle("critical-bugs")));
     ledger.push(
-      countEntry(
-        "open roadmap items",
-        openItemsOf(roadmap),
+      countFact(
+        "open work items",
+        openWorkItemsOf(roadmap),
         null,
-        handle("open-items"),
-        roadmapWorkings(roadmap, openOf),
+        handle("open-work-items"),
+        roadmapReadings(roadmap, openOf),
       ),
     );
   }
-  const pullForges = forgePullRequests(item);
-  if (noneRead(item, "openPullRequests")) {
-    ledger.push(unreadRow("open pull requests", pullRequestWorkings(item)));
+  const pullForges = forgePullRequests(entity);
+  if (noneRead(entity, "openPullRequests")) {
+    ledger.push(unreadRow("open pull requests", pullRequestReadings(entity)));
   }
   if (pullForges.length > 0) {
     ledger.push(
-      countEntry(
+      countFact(
         "open pull requests",
         pullForges.reduce((total, { pulls }) => total + pulls.length, 0),
         null,
         handle("pull-requests"),
-        pullRequestWorkings(item),
+        pullRequestReadings(entity),
       ),
     );
   }
-  const ci = ciEntry(item, handle("ci"));
+  const ci = ciFact(entity, handle("ci"));
   if (ci !== null) ledger.push(ci);
   if (git?.lastCommitAt) {
     ledger.push({ kind: "time", label: "last commit", at: git.lastCommitAt });
@@ -1058,10 +1055,10 @@ function ledgerFor(item: Item, chips: Chip[], config: Config): LedgerEntry[] {
   return ledger;
 }
 
-/** The ledger's opening sentence: only for a green bird's readable clone with nothing uncommitted or unpushed. */
-function quietFor(item: Item, health: Health): string | null {
+/** The ledger's opening sentence: only for a green bird's readable local repository with nothing uncommitted or unpushed. */
+function quietFor(entity: Entity, health: Health): string | null {
   if (health.level !== "green") return null;
-  const git = readable<GitData>(item.sources.git);
+  const git = readable<GitData>(entity.sources.git);
   if (git === null) return null;
   if (git.uncommittedCount > 0 || git.unpushedCount > 0) return null;
   return git.backup === "local-only"
@@ -1069,8 +1066,8 @@ function quietFor(item: Item, health: Health): string | null {
     : "The working tree is clean and everything is pushed.";
 }
 
-function branchesFor(item: Item, config: Config): BranchLine[] {
-  const git = readable<GitData>(item.sources.git);
+function branchesFor(entity: Entity, config: Config): BranchLine[] {
+  const git = readable<GitData>(entity.sources.git);
   if (git === null) return [];
   return git.branches
     .map((branch) => ({
@@ -1081,7 +1078,7 @@ function branchesFor(item: Item, config: Config): BranchLine[] {
       subject: branch.subject,
       upstream: branch.upstream,
       url: branch.upstream
-        ? upstreamUrl(item, git, branch.upstream, config)
+        ? upstreamUrl(entity, git, branch.upstream, config)
         : null,
     }))
     .sort(
@@ -1102,8 +1099,8 @@ interface PlaceList {
 }
 
 /** Local main's list: null when git couldn't be read, before a scan read it, or without main. */
-function herePlace(item: Item): PlaceList {
-  const git = readable<GitData>(item.sources.git);
+function herePlace(entity: Entity): PlaceList {
+  const git = readable<GitData>(entity.sources.git);
   return {
     name: "here",
     commits: git?.defaultBranchCommits ?? null,
@@ -1112,8 +1109,8 @@ function herePlace(item: Item): PlaceList {
 }
 
 /** A forge's list: null when the forge or its commits couldn't be read, whatever its other parts did. */
-function forgePlace(item: Item, forge: ForgeName): PlaceList {
-  const data = readable<ForgeData>(item.sources[forge]);
+function forgePlace(entity: Entity, forge: ForgeName): PlaceList {
+  const data = readable<ForgeData>(entity.sources[forge]);
   return {
     name: forge,
     commits: data ? readable<FinalisedCommit[]>(data.finalisedCommits) : null,
@@ -1159,7 +1156,7 @@ function forgeShortfalls(
 
 /**
  * The divergence sentence: a forge lacking commits another holds is behind it; two forges each
- * lacking commits have diverged. Counted over every listed commit, not only those the river shows.
+ * lacking commits have diverged. Counted over every listed commit, not only those the history shows.
  */
 function divergenceOf(
   forgeLists: PlaceList[],
@@ -1185,67 +1182,71 @@ function divergenceOf(
 }
 
 /**
- * A commit's spread over the forges read. A forge holds it unless the commit is lacking there, so
- * one older than a forge's list counts as held. The clone only contributes commits. With forges
- * but none read the spread is unknown, in amber; only a bird with no forge is quiet.
+ * Which forges hold a commit, over the forges read. A forge holds it unless the commit is lacking there, so
+ * one older than a forge's list counts as held. The local repository only contributes commits. With
+ * forges but none read, which hold it is unknown, in amber; only a bird with no forge is quiet.
  */
-function spreadOf(
+function heldOnOf(
   forgeCount: number,
   forgeLists: PlaceList[],
   commit: FinalisedCommit,
-): { tone: SpreadTone; spread: string } {
-  if (forgeCount === 0) return { tone: null, spread: "no remote" };
+): { tone: HeldOnTone; heldOn: string } {
+  if (forgeCount === 0) return { tone: null, heldOn: "no remote" };
   if (forgeLists.length === 0)
-    return { tone: "amber", spread: "no remote could be read" };
+    return { tone: "amber", heldOn: "no remote could be read" };
   const holders = forgeLists
     .filter((list) => reachIn(list.commits, commit) !== "lacking")
     .map((list) => list.name);
   if (holders.length === forgeLists.length)
-    return { tone: "green", spread: `on ${holders.join(" and ")}` };
+    return { tone: "green", heldOn: `on ${holders.join(" and ")}` };
   if (holders.length > 0)
-    return { tone: "amber", spread: `only on ${holders.join(" and ")}` };
+    return { tone: "amber", heldOn: `only on ${holders.join(" and ")}` };
   if (forgeLists.length < forgeCount)
-    return { tone: "amber", spread: "on no remote that could be read" };
-  return { tone: "amber", spread: "not pushed to a remote" };
+    return { tone: "amber", heldOn: "on no remote that could be read" };
+  return { tone: "amber", heldOn: "not pushed to a remote" };
 }
 
 /**
  * A forge whose list couldn't be read, in a line: with the short why when no card covers its
  * owner, which only the standing gap has.
  */
-function riverNote(item: Item, forge: ForgeName): string {
-  const source = item.sources[forge];
-  const presence = item.presences.forges.find((entry) => entry.forge === forge);
+function historyNote(entity: Entity, forge: ForgeName): string {
+  const source = entity.sources[forge];
+  const repository = entity.repositories.forges.find(
+    (entry) => entry.forge === forge,
+  );
   if (
     source === undefined ||
     !("cause" in source) ||
     source.cause !== "no-card" ||
-    presence === undefined
+    repository === undefined
   ) {
     return `couldn't read ${forge}`;
   }
-  const owner = presence.fullName.slice(0, presence.fullName.indexOf("/"));
+  const owner = repository.fullName.slice(0, repository.fullName.indexOf("/"));
   return `couldn't read ${forge} · no card covers ${owner}`;
 }
 
-/** The default branch the river judges: the clone's, else the first forge's read. */
-function riverBranch(item: Item): string | null {
-  const git = readable<GitData>(item.sources.git);
-  return git?.defaultBranch ?? forgeData(item)[0]?.data.defaultBranch ?? null;
+/** The default branch the history judges: the local repository's, else the first forge's read. */
+function historyBranch(entity: Entity): string | null {
+  const git = readable<GitData>(entity.sources.git);
+  return git?.defaultBranch ?? forgeData(entity)[0]?.data.defaultBranch ?? null;
 }
 
 /**
- * The commit river: local main's and each forge's newest commits joined by hash, told once each,
- * newest first and capped, with each commit's spread over the forges and a sentence on divergence.
+ * The commit history: local main's and each forge's newest commits joined by hash, told once each,
+ * newest first and capped, with each commit's holders among the forges and a sentence on divergence.
  */
-function riverFor(item: Item, cap: number): River {
+function historyFor(entity: Entity, cap: number): History {
   const forgePlaces = forgeNames
     .filter((forge) =>
-      item.presences.forges.some((presence) => presence.forge === forge),
+      entity.repositories.forges.some(
+        (repository) => repository.forge === forge,
+      ),
     )
-    .map((forge) => forgePlace(item, forge));
+    .map((forge) => forgePlace(entity, forge));
   const lists = [
-    ...(item.path === null ? [] : [herePlace(item)]),
+    ...(entity.path === null ? [] : [herePlace(entity)]),
     ...forgePlaces,
   ];
   const joined = new Map<string, FinalisedCommit>();
@@ -1259,7 +1260,7 @@ function riverFor(item: Item, cap: number): River {
   );
   const forgeLists = forgePlaces.filter((list) => list.commits !== null);
   return {
-    branch: riverBranch(item),
+    branch: historyBranch(entity),
     commits: commits.slice(0, cap).map((commit) => {
       const holderUrl =
         forgeLists.find((list) => reachIn(list.commits, commit) === "held")
@@ -1270,7 +1271,7 @@ function riverFor(item: Item, cap: number): River {
         subject: commit.subject,
         committedAt: commit.committedAt,
         url: holderUrl === null ? null : `${holderUrl}/commit/${commit.sha}`,
-        ...spreadOf(forgePlaces.length, forgeLists, commit),
+        ...heldOnOf(forgePlaces.length, forgeLists, commit),
       };
     }),
     notes: forgeNames
@@ -1279,27 +1280,27 @@ function riverFor(item: Item, cap: number): River {
           (list) => list.name === forge && list.commits === null,
         ),
       )
-      .map((forge) => riverNote(item, forge)),
+      .map((forge) => historyNote(entity, forge)),
     divergence: divergenceOf(forgeLists, commits),
   };
 }
 
-function pullRequestsFor(item: Item): PullRequestLine[] {
-  return forgePullRequests(item)
+function pullRequestsFor(entity: Entity): PullRequestLine[] {
+  return forgePullRequests(entity)
     .flatMap(({ forge, pulls }) => pulls.map((pull) => ({ forge, ...pull })))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 /**
- * The launch actions for a local item, in config order: every action, bar one offered on Obsidian
+ * The launch actions for a local entity, in config order: every action, bar one offered on Obsidian
  * birds only on a bird that is not one.
  */
 function actionsFor(
-  item: Item,
-  entry: ItemEntry | null,
+  entity: Entity,
+  papers: Papers | null,
   config: Config,
 ): LaunchAction[] {
-  const path = item.path;
+  const path = entity.path;
   if (path === null) return [];
   return config.launch.actions.flatMap((action): LaunchAction[] => {
     if (action.kind === "zellij") {
@@ -1310,8 +1311,8 @@ function actionsFor(
           icon: zellijKind.icon,
           zellij: action.zellij,
           terminal: action.terminal,
-          session: zellijSessionFor(action, entry, path),
-          tab: item.name,
+          session: zellijSessionFor(action, papers, path),
+          tab: entity.name,
           cwd: path,
         },
       ];
@@ -1322,19 +1323,19 @@ function actionsFor(
     if (!obsidianOnly(action)) {
       return [{ kind: "command", verb, icon, command, path }];
     }
-    if (item.kind !== "obsidian") return [];
+    if (entity.kind !== "obsidian") return [];
     const obsidianVault = path.slice(path.lastIndexOf("/") + 1);
     return [{ kind: "obsidian", verb, icon, command, path, obsidianVault }];
   });
 }
 
-/** Every item in a roadmap file, nested groups included, in the order of their lines. */
-function itemsOf(file: RoadmapFile): WorkItem[] {
+/** Every work item in a roadmap file, nested groups included, in the order of their lines. */
+function workItemsOf(file: RoadmapFile): WorkItem[] {
   const walk = (group: WorkItemGroup): WorkItem[] => [
-    ...group.items,
+    ...group.workItems,
     ...group.groups.flatMap(walk),
   ];
-  return [...file.items, ...file.groups.flatMap(walk)].sort(
+  return [...file.workItems, ...file.groups.flatMap(walk)].sort(
     (a, b) => a.line - b.line,
   );
 }
@@ -1342,20 +1343,23 @@ function itemsOf(file: RoadmapFile): WorkItem[] {
 /** The margin marks a roadmap file's bugs and critical bugs put beside their lines; tasks have none. */
 export function lineMarksOf(file: RoadmapFile): LineMarks {
   const marks: LineMarks = {};
-  for (const item of itemsOf(file)) {
-    if (item.kind === "task") continue;
-    marks[item.line] = { kind: item.kind, done: item.done === true };
+  for (const workItem of workItemsOf(file)) {
+    if (workItem.kind === "task") continue;
+    marks[workItem.line] = {
+      kind: workItem.kind,
+      done: workItem.done === true,
+    };
   }
   return marks;
 }
 
-function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {
-  const path = item.path;
+function keyFilesFor(entity: Entity, papers: Papers | null): KeyFile[] {
+  const path = entity.path;
   if (path === null) return [];
-  const roadmap = roadmapOf(item);
+  const roadmap = roadmapOf(entity);
   const roadmapFiles = roadmap?.files ?? [];
   const detectedPath = roadmap?.detectedPath ?? null;
-  const files = entry?.keyFiles ?? [
+  const files = papers?.keyFiles ?? [
     "README.md",
     ...roadmapFiles.map((file) => file.path),
     ...(detectedPath === null ? [] : [detectedPath]),
@@ -1371,13 +1375,18 @@ function keyFilesFor(item: Item, entry: ItemEntry | null): KeyFile[] {
 }
 
 /**
- * The slip for a bird held by at least one forge and cloned nowhere here: the forges by name, the
- * first presence's repository, and the first clone address a forge gave.
+ * The slip for a bird held by at least one forge and with no local repository here: the forges by
+ * name, the first forge repository, and the first SSH address a forge gave.
  */
-function noCloneFor(item: Item, config: Config): NoClone | null {
-  const [first] = item.presences.forges;
-  if (item.path !== null || first === undefined) return null;
-  const held = new Set(item.presences.forges.map((presence) => presence.forge));
+function noLocalRepositoryFor(
+  entity: Entity,
+  config: Config,
+): NoLocalRepository | null {
+  const [first] = entity.repositories.forges;
+  if (entity.path !== null || first === undefined) return null;
+  const held = new Set(
+    entity.repositories.forges.map((repository) => repository.forge),
+  );
   return {
     forges: forgeNames
       .filter((forge) => held.has(forge))
@@ -1385,27 +1394,27 @@ function noCloneFor(item: Item, config: Config): NoClone | null {
       .join(" and "),
     reference: first.ref.slice(first.ref.indexOf(":") + 1),
     // A snapshot cached before the scanner kept the address has no field at all.
-    cloneAddress:
-      item.presences.forges
-        .map((presence) => presence.sshUrl ?? null)
+    sshAddress:
+      entity.repositories.forges
+        .map((repository) => repository.sshUrl ?? null)
         .find((address) => address !== null) ?? null,
     onMetaLine: config.launch.actions.length > 0,
   };
 }
 
 /** Each source that couldn't be read for the bird, then each part of a forge read without it. */
-function problemsFor(item: Item): SourceProblem[] {
-  const sources = Object.entries(item.sources).flatMap(([source, data]) =>
+function problemsFor(entity: Entity): SourceProblem[] {
+  const sources = Object.entries(entity.sources).flatMap(([source, data]) =>
     data && "error" in data
       ? [
           {
-            source: sourceLabel[source as keyof ItemSourceData],
+            source: sourceLabel[source as keyof EntitySourceData],
             error: data.error,
           },
         ]
       : [],
   );
-  const parts = forgeData(item).flatMap(({ forge, data }) =>
+  const parts = forgeData(entity).flatMap(({ forge, data }) =>
     forgeParts.flatMap((part) => {
       const value = data[part];
       return failed(value)
@@ -1427,7 +1436,7 @@ function noticesFor(health: Health): RemoteNotice[] {
     cause.kind === "unreadable-remote"
       ? [
           {
-            text: `The clone pushes to ${cause.fullName} on ${cause.forge}, which no ${forgeLabel[cause.forge]} card reads.`,
+            text: `The local repository pushes to ${cause.fullName} on ${cause.forge}, which no ${forgeLabel[cause.forge]} card reads.`,
             fix: `Add a card for ${cause.fullName.slice(0, cause.fullName.indexOf("/"))} under`,
           },
         ]
@@ -1435,12 +1444,12 @@ function noticesFor(health: Health): RemoteNotice[] {
   );
 }
 
-function fenceSituation(item: Item): FenceSituation {
-  const first = item.presences.forges[0];
-  if (item.presences.local === null && first) {
+function fenceSituation(entity: Entity): FenceSituation {
+  const first = entity.repositories.forges[0];
+  if (entity.repositories.local === null && first) {
     return { kind: "forge-only", forge: first.forge, fullName: first.fullName };
   }
-  const git = readable<GitData>(item.sources.git);
+  const git = readable<GitData>(entity.sources.git);
   return git?.backup === "local-only"
     ? { kind: "one-disk" }
     : { kind: "undecided" };
@@ -1459,11 +1468,11 @@ function livesFor(situation: FenceSituation): string | null {
 }
 
 /** Hours from the newest commit, local or on a forge's default branch, to the scan. */
-function lastTouchedHours(item: Item, scannedAt: Date): number | null {
-  const git = readable<GitData>(item.sources.git);
+function lastTouchedHours(entity: Entity, scannedAt: Date): number | null {
+  const git = readable<GitData>(entity.sources.git);
   const times = [
     git?.lastCommitAt ?? null,
-    ...forgeData(item).flatMap(({ data }) =>
+    ...forgeData(entity).flatMap(({ data }) =>
       (readable<FinalisedCommit[]>(data.finalisedCommits) ?? []).map(
         (commit) => commit.committedAt,
       ),
@@ -1473,108 +1482,110 @@ function lastTouchedHours(item: Item, scannedAt: Date): number | null {
   return newest === undefined ? null : hoursSince(newest, scannedAt);
 }
 
-/** Everything a bird's speech is chosen from, read off its snapshot item and the config. */
+/** Everything a bird's speech is chosen from, read off its snapshot entity and the config. */
 export function speechSubjectFor(
-  item: Item,
+  entity: Entity,
   config: Config,
   scannedAt: Date,
 ): SpeechSubject {
   return speechSubject(
-    item,
-    wireFor(config, entryFor(item, config)),
+    entity,
+    wireFor(config, papersFor(entity, config)),
     scannedAt,
   );
 }
 
 function speechSubject(
-  item: Item,
+  entity: Entity,
   wire: string | null,
   scannedAt: Date,
 ): SpeechSubject {
-  const git = readable<GitData>(item.sources.git);
+  const git = readable<GitData>(entity.sources.git);
   return {
-    fence: wire === null ? fenceSituation(item) : null,
-    causes: deriveHealth(item).causes,
-    activity: git ? activityOf[git.activity] : null,
+    fence: wire === null ? fenceSituation(entity) : null,
+    causes: deriveHealth(entity).causes,
+    workState: git?.workState ?? null,
     branch: git?.branch ?? null,
     defaultBranch: git?.defaultBranch ?? null,
     unpushedCount: git?.unpushedCount ?? 0,
-    openItems: openItemsOf(roadmapOf(item)),
-    lastTouchedHours: lastTouchedHours(item, scannedAt),
+    openWorkItems: openWorkItemsOf(roadmapOf(entity)),
+    lastTouchedHours: lastTouchedHours(entity, scannedAt),
   };
 }
 
 /** One bird, before it is placed: its position is set when the wire is ordered; paths show home as ~. */
 export function deriveBird(
-  item: BirdItem,
+  entity: Entity,
   config: Config,
   snoozes: Snoozes,
   scannedAt: Date,
   home: string,
 ): Bird {
-  const health = deriveHealth(item);
+  const health = deriveHealth(entity);
   const mood = moodOf[health.level];
-  const git = readable<GitData>(item.sources.git);
-  const activity = git ? activityOf[git.activity] : null;
-  const entry = entryFor(item, config);
-  const wire = wireFor(config, entry);
+  const git = readable<GitData>(entity.sources.git);
+  const papers = papersFor(entity, config);
+  const wire = wireFor(config, papers);
   const adopted = wire !== null;
-  const name = entry?.name ?? item.name;
-  const outstanding = openItemsOf(roadmapOf(item));
-  const speech = speak(speechSubject(item, wire, scannedAt));
-  const chips = adopted ? chipsFor(item, health) : [];
+  const name = papers?.name ?? entity.name;
+  const outstanding = openWorkItemsOf(roadmapOf(entity));
+  const speech = speak(speechSubject(entity, wire, scannedAt));
+  const chips = adopted ? chipsFor(entity, health) : [];
   return {
-    id: item.id,
+    id: entity.id,
     name,
-    kind: item.kind,
+    kind: entity.kind,
     adopted,
     wire,
     position: 0,
     health,
     mood,
-    activity,
+    workState: git?.workState ?? null,
     plumpness: {
       outstanding,
       fullness: Math.min(outstanding, plumpnessCap) / plumpnessCap,
     },
-    snooze: adopted ? (snoozes[item.id] ?? null) : null,
-    lives: adopted ? null : livesFor(fenceSituation(item)),
+    snooze: adopted ? (snoozes[entity.id] ?? null) : null,
+    lives: adopted ? null : livesFor(fenceSituation(entity)),
     bubble: {
       name,
       speech,
       chips,
     },
-    detail: {
-      clonePath: item.path === null ? null : collapseHome(item.path, home),
+    page: {
+      localRepositoryPath:
+        entity.path === null ? null : collapseHome(entity.path, home),
       forges: [
-        ...new Set(item.presences.forges.map((presence) => presence.forge)),
+        ...new Set(
+          entity.repositories.forges.map((repository) => repository.forge),
+        ),
       ],
       notices: noticesFor(health),
-      quiet: quietFor(item, health),
-      ledger: ledgerFor(item, chips, config),
-      branches: branchesFor(item, config),
-      river: riverFor(item, config.scan.finalisedCommits),
-      pullRequests: pullRequestsFor(item),
-      flags: item.flags.map((flag) => ({
+      quiet: quietFor(entity, health),
+      ledger: ledgerFor(entity, chips, config),
+      branches: branchesFor(entity, config),
+      history: historyFor(entity, config.scan.finalisedCommits),
+      pullRequests: pullRequestsFor(entity),
+      flags: entity.flags.map((flag) => ({
         flag: flag.flag,
         text: flagText[flag.flag],
         detail: flag.detail,
         level: flag.level,
       })),
-      actions: actionsFor(item, entry, config),
-      links: item.presences.forges.flatMap((presence) =>
-        presence.url === null
+      actions: actionsFor(entity, papers, config),
+      links: entity.repositories.forges.flatMap((repository) =>
+        repository.url === null
           ? []
           : [
               {
-                label: `${presence.fullName} on ${forgeLabel[presence.forge]}`,
-                url: presence.url,
+                label: `${repository.fullName} on ${forgeLabel[repository.forge]}`,
+                url: repository.url,
               },
             ],
       ),
-      keyFiles: keyFilesFor(item, entry),
-      noClone: noCloneFor(item, config),
-      problems: problemsFor(item),
+      keyFiles: keyFilesFor(entity, papers),
+      noLocalRepository: noLocalRepositoryFor(entity, config),
+      problems: problemsFor(entity),
     },
   };
 }
@@ -1590,8 +1601,7 @@ function placed(birds: Bird[], compare: (a: Bird, b: Bird) => number): Bird[] {
 
 /**
  * The aviary from a snapshot, the config and the snoozes, paths under the home directory shown with ~. Every
- * configured wire appears, empty or not, in config order. The server item waits for server
- * monitoring and is not a bird. Every wire and the fence are ordered by name.
+ * configured wire appears, empty or not, in config order. Every wire and the fence are ordered by name.
  */
 export function deriveAviary(
   snapshot: Snapshot,
@@ -1600,9 +1610,9 @@ export function deriveAviary(
   home: string,
 ): Aviary {
   const scannedAt = new Date(snapshot.scannedAt);
-  const birds = snapshot.items
-    .filter(isBirdItem)
-    .map((item) => deriveBird(item, config, snoozes, scannedAt, home));
+  const birds = snapshot.entities.map((entity) =>
+    deriveBird(entity, config, snoozes, scannedAt, home),
+  );
   return {
     scannedAt: snapshot.scannedAt,
     wires: config.wires.names.map((name) => ({

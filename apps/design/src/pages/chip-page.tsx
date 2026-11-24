@@ -18,18 +18,19 @@ const ofSeverity = (severity: ChipModel["severity"]) =>
 
 const kindRule: Record<ChipModel["kind"], string> = {
   unreadable:
-    "A forge the clone pushes to that no card can read, named by forge. Always amber; it lands on the record's notice.",
+    "A forge the local repository pushes to that no card can read, named by forge. Always amber; it lands on the record's notice.",
   ci: "The worst CI state across forges on the default branch; red only when failing.",
-  bugs: "A roadmap file's open bugs, one chip per file with any: plain within the bug window, then amber, then red. The path is named only when the record has several roadmap files.",
+  bugs: "A roadmap file's open bugs, one chip per file with any: plain within the bug thresholds, then amber, then red. The path is named only when the record has several roadmap files.",
   "critical-bugs":
-    "A roadmap file's open critical bugs, a chip of their own beside its bugs: plain within the critical bug window, then amber, then red.",
+    "A roadmap file's open critical bugs, a chip of their own beside its bugs: plain within the critical bug thresholds, then amber, then red.",
   uncommitted:
     "Uncommitted changes, toned by their age: unjudged under 24 hours, amber to 72, red beyond.",
   unpushed: "Commits on no remote, toned by their age like uncommitted work.",
   stalled:
-    "The days since the last movement on a branch other than the default, once past the stall window: amber, then red. It lands on the branches section.",
+    "The days since the last movement on a branch other than the default, once past the stalled thresholds: amber, then red. It lands on the branches section.",
   "pull-requests": "Open pull requests across forges. Not judged.",
-  "open-items": "Open roadmap items. Not judged: plumpness carries the volume.",
+  "open-work-items":
+    "Open work items. Not judged: plumpness carries the volume.",
 };
 
 function ChipRow({ list }: { list: ChipModel[] }) {
@@ -59,18 +60,21 @@ export function ChipPage() {
         </Specimen>
         <Specimen
           label="amber"
-          rule="A fact past its amber window, or a remote no card can read."
+          rule="A fact past its amber threshold, or a remote no card can read."
         >
           <ChipRow list={ofSeverity("amber")} />
         </Specimen>
-        <Specimen label="red" rule="A fact past its red window, or failing CI.">
+        <Specimen
+          label="red"
+          rule="A fact past its red threshold, or failing CI."
+        >
           <ChipRow list={ofSeverity("red")} />
         </Specimen>
       </Section>
 
       <Section
         title="Kinds"
-        rule="Chips run in this order on a bubble: can't read, CI, bugs, uncommitted, unpushed, stalled, open pull requests, open items."
+        rule="Chips run in this order on a bubble: can't read, CI, bugs, uncommitted, unpushed, stalled, open pull requests, open work items."
         min={320}
       >
         {kinds.map((kind) => (
@@ -96,7 +100,7 @@ export function ChipPage() {
           {
             name: "onPress",
             type: "(chip: ChipKind) => void",
-            what: "ChipHandles: a chip was pressed; the bird's page lands on the ledger row holding its working, or the record's notice for can't read, riding there first from the aviary.",
+            what: "ChipHandles: a chip was pressed; the bird's page lands on the ledger row holding its reading, or the record's notice for can't read, riding there first from the aviary.",
           },
         ]}
       >
@@ -108,7 +112,7 @@ export function ChipPage() {
         </p>
         <p>
           Both bubbles draw <Code>{"<ChipHandles>"}</Code>: the same paper as
-          buttons, each landing on the ledger row holding its working. From the
+          buttons, each landing on the ledger row holding its reading. From the
           aviary the camera first rides to the bird&apos;s page.
         </p>
       </Usage>

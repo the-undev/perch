@@ -19,7 +19,7 @@ import type {
   HourThresholds,
 } from "./snapshot.ts";
 
-/** The health windows: unsafe work in hours, stalled flight in days, open bugs and critical bugs in counts. */
+/** The health thresholds: unsafe work in hours, stalled in days, open bugs and critical bugs in counts. */
 export interface Thresholds {
   unsafe: HourThresholds;
   stalled: DayThresholds;
@@ -27,7 +27,7 @@ export interface Thresholds {
   criticalBugs: CountThresholds;
 }
 
-/** Per-item threshold overrides; anything left out takes the global value. */
+/** Per-entity threshold overrides; anything left out takes the global value. */
 export interface ThresholdOverrides {
   unsafe: Partial<HourThresholds>;
   stalled: Partial<DayThresholds>;
@@ -41,13 +41,13 @@ export interface WorkWordsConfig {
   criticalBugWords: string[] | null;
 }
 
-/** The word lists an item's work is classed by, each taken whole from one place. */
+/** The word lists an entity's work is classed by, each taken whole from one place. */
 export interface WorkWords {
   bug: string[];
   criticalBug: string[];
 }
 
-/** The words that make a bug when neither the entry nor [work] sets the list. */
+/** The words that make a bug when neither the papers nor [work] set the list. */
 export const builtInBugWords: readonly string[] = [
   "bug",
   "bugs",
@@ -64,7 +64,7 @@ export const builtInBugWords: readonly string[] = [
   "p4",
 ];
 
-/** The words that make a critical bug when neither the entry nor [work] sets the list. */
+/** The words that make a critical bug when neither the papers nor [work] set the list. */
 export const builtInCriticalBugWords: readonly string[] = [
   "critical",
   "urgent",
@@ -80,18 +80,18 @@ export const defaultBugThresholds: Pick<Thresholds, "bugs" | "criticalBugs"> = {
   criticalBugs: { amberCount: 1, redCount: 3 },
 };
 
-/** An item's entry in config. Having one adopts the bird, which puts it on a wire. */
-export interface ItemEntry {
+/** An entity's papers in config. Having one adopts the bird, which puts it on a wire. */
+export interface Papers {
   /** The wire the bird sits on; null puts it on the default wire. */
   wire: string | null;
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
   thresholds: ThresholdOverrides;
-  /** Files for the detail page, relative to the item; null keeps the README and any roadmap. */
+  /** Files for the bird's page, relative to the entity; null keeps the README and any roadmap. */
   keyFiles: string[] | null;
-  /** Roadmap files relative to the item, the only files parsed as roadmaps; null or empty parses none. */
+  /** Roadmap files relative to the entity, the only files parsed as roadmaps; null or empty parses none. */
   roadmaps: string[] | null;
-  /** The zellij session holding the item's tab; null takes it from the zellij action. */
+  /** The zellij session holding the entity's tab; null takes it from the zellij action. */
   zellijSession: string | null;
   /** Words making a bug, replacing the [work] list; null keeps it. */
   bugWords: string[] | null;
@@ -124,38 +124,29 @@ export interface ForgejoSourceConfig extends GithubSourceConfig {
   baseUrl: string;
 }
 
-/** An Uptime Kuma status page, monitored as the server it names. */
-export interface KumaSourceConfig {
-  /** The server's name, which is also the source's identity. */
-  name: string;
-  baseUrl: string;
-  statusPage: string;
-}
-
 /** Every source config declares, each kind in the order configured. */
 export interface SourcesConfig {
   local: LocalSourceConfig[];
   github: GithubSourceConfig[];
   forgejo: ForgejoSourceConfig[];
-  kuma: KumaSourceConfig[];
 }
 
 export interface Config {
-  /** The wires top to bottom, and the one an adopted item sits on when its entry names none. */
+  /** The wires top to bottom, and the one an adopted entity sits on when its papers name none. */
   wires: { names: string[]; default: string };
   sources: SourcesConfig;
-  /** Groups of presence references asserted to be one project. */
-  joins: string[][];
-  /** Presence references to leave off the main view. */
+  /** Groups of repository references asserted to be one project. */
+  links: string[][];
+  /** Repository references to leave off the main view. */
   ignore: string[];
   thresholds: Thresholds;
-  /** The [work] table's word lists, which an entry's own lists replace. */
+  /** The [work] table's word lists, which the papers' own lists replace. */
   work: WorkWordsConfig;
   /**
-   * Item entries keyed by any of the item's presence references (see resolveEntry); an entry
-   * adopts the item and marks a found repository set up.
+   * Papers keyed by any of the entity's repository references (see resolvePapers); papers
+   * adopt the entity and mark a found repository set up.
    */
-  items: Record<string, ItemEntry>;
+  entities: Record<string, Papers>;
   /** The scan interval, and the commits read on each forge repository's default branch. */
   scan: {
     intervalMinutes: number;
@@ -205,7 +196,7 @@ export interface CommandActionConfig {
   icon: IconName;
 }
 
-/** The zellij tab action: goes to the item's tab in its session, or opens one there. */
+/** The zellij tab action: goes to the entity's tab in its session, or opens one there. */
 export interface ZellijActionConfig {
   kind: "zellij";
   /** The words on the bird's page. */
@@ -214,9 +205,9 @@ export interface ZellijActionConfig {
   zellij: string[];
   /** Opens a terminal attached to a session that is not running. */
   terminal: string[];
-  /** The session for an item no root or entry assigns. */
+  /** The session for an entity no root or papers assigns. */
   session: string;
-  /** Sessions by root directory, home expanded; the longest root containing the item wins. */
+  /** Sessions by root directory, home expanded; the longest root containing the entity wins. */
   sessions: Record<string, string>;
 }
 
@@ -358,7 +349,7 @@ export function collapseHome(path: string, home: string): string {
   return path;
 }
 
-/** The threshold keys, the same globally and per item, with the window and field each sets. */
+/** The threshold keys, the same globally and per entity, with the fact and field each sets. */
 export const thresholdKeys = [
   ["unsafe", "amberHours", "unsafe_amber_hours"],
   ["unsafe", "redHours", "unsafe_red_hours"],
@@ -370,7 +361,7 @@ export const thresholdKeys = [
   ["criticalBugs", "redCount", "critical_bugs_red_count"],
 ] as const;
 
-/** Per-item threshold overrides that set nothing. */
+/** Per-entity threshold overrides that set nothing. */
 export function noThresholdOverrides(): ThresholdOverrides {
   return { unsafe: {}, stalled: {}, bugs: {}, criticalBugs: {} };
 }
@@ -378,9 +369,9 @@ export function noThresholdOverrides(): ThresholdOverrides {
 /** Reads the threshold keys present in a table. */
 function thresholdOverrides(source: Table, where: string): ThresholdOverrides {
   const overrides = noThresholdOverrides();
-  for (const [window, field, key] of thresholdKeys) {
+  for (const [fact, field, key] of thresholdKeys) {
     if (source[key] === undefined) continue;
-    Object.assign(overrides[window], {
+    Object.assign(overrides[fact], {
       [field]: positiveInteger(source[key], `${where}${key}`),
     });
   }
@@ -399,7 +390,7 @@ function applyOverrides(
   };
 }
 
-/** Amber must open before red, or the amber window would never show. */
+/** Amber must come before red, or amber would never show. */
 function checkOrder(thresholds: Thresholds, where: string): void {
   const pairs: [string, number, number][] = [
     ["unsafe", thresholds.unsafe.amberHours, thresholds.unsafe.redHours],
@@ -459,7 +450,7 @@ function optionalWords(
   return words;
 }
 
-/** The word list keys, the same in [work] and in an item entry. */
+/** The word list keys, the same in [work] and in papers. */
 const workWordKeys = ["bug_words", "critical_bug_words"] as const;
 
 function parseWork(document: Table): WorkWordsConfig {
@@ -471,8 +462,8 @@ function parseWork(document: Table): WorkWordsConfig {
   };
 }
 
-/** Every key an item entry may hold. */
-const entryKeys = [
+/** Every key papers may hold. */
+const papersKeys = [
   "wire",
   "name",
   "key_files",
@@ -482,17 +473,18 @@ const entryKeys = [
   ...thresholdKeys.map(([, , key]) => key),
 ];
 
-function parseEntry(
+function parsePapers(
   id: string,
   value: unknown,
   context: {
     wires: readonly string[];
     thresholds: Thresholds;
   },
-): ItemEntry {
-  const where = `items."${id}".`;
-  if (!isTable(value)) throw new Error(`config: items."${id}" must be a table`);
-  onlyKeys(value, entryKeys, where);
+): Papers {
+  const where = `papers."${id}".`;
+  if (!isTable(value))
+    throw new Error(`config: papers."${id}" must be a table`);
+  onlyKeys(value, papersKeys, where);
   const wire = optionalString(value, "wire", where);
   if (wire !== null) oneOf(wire, context.wires, `${where}wire`);
   const thresholds = thresholdOverrides(value, where);
@@ -575,7 +567,7 @@ function checkDistinct<T>(
 
 function parseSources(document: Table, home: string): SourcesConfig {
   const sources = optionalTable(document, "sources", "");
-  onlyKeys(sources, ["local", "github", "forgejo", "kuma"], "sources.");
+  onlyKeys(sources, ["local", "github", "forgejo"], "sources.");
   const paths = (card: Table, key: string, where: string) =>
     optionalStrings(card, key, where).map((path) => expandHome(path, home));
   const parsed: SourcesConfig = {
@@ -599,14 +591,6 @@ function parseSources(document: Table, home: string): SourcesConfig {
         baseUrl: string(card, "base_url", where),
       };
     }),
-    kuma: cards(sources, "kuma", (card, where) => {
-      onlyKeys(card, ["name", "base_url", "status_page"], where);
-      return {
-        name: string(card, "name", where),
-        baseUrl: string(card, "base_url", where),
-        statusPage: string(card, "status_page", where),
-      };
-    }),
   };
   checkDistinct(
     "github",
@@ -628,12 +612,6 @@ function parseSources(document: Table, home: string): SourcesConfig {
       (source) => `keyring key ${source.key}`,
     );
   }
-  checkDistinct(
-    "kuma",
-    parsed.kuma,
-    (source) => source.name,
-    (source) => `name ${source.name}`,
-  );
   return parsed;
 }
 
@@ -752,22 +730,83 @@ function stringArrays(value: unknown, name: string): string[][] {
 
 /** Every key config may hold at its top level. */
 const topLevelKeys = [
+  "version",
   "wires",
   "sources",
-  "joins",
+  "links",
   "ignore",
   "thresholds",
   "work",
-  "items",
+  "papers",
   "scan",
   "launch",
   "window",
   "update",
 ] as const;
 
-/** Parses and validates config TOML, expanding a leading ~ in paths against the home directory. */
+/** The config version this perch reads and writes. */
+export const configVersion = 2;
+
+/** Version 2 renamed [items] to [papers] and joins to links, and dropped [[sources.kuma]]. */
+function fromVersion1(document: Table): Table {
+  for (const key of ["papers", "links"]) {
+    if (key in document) {
+      throw new Error(`config: ${key} is not a version 1 config key`);
+    }
+  }
+  const { items, joins, sources, ...rest } = document;
+  const sourcesWithoutKuma = isTable(sources)
+    ? Object.fromEntries(
+        Object.entries(sources).filter(([kind]) => kind !== "kuma"),
+      )
+    : sources;
+  return { ...rest, sources: sourcesWithoutKuma, papers: items, links: joins };
+}
+
+/** The steps that take a document up one version, the step from version 1 first. */
+const migrationSteps: readonly ((document: Table) => Table)[] = [fromVersion1];
+
+/** The version a document was written at: 1 when it names none; refused when newer than this perch. */
+function versionOf(document: Table): number {
+  if (document.version === undefined) return 1;
+  const version = positiveInteger(document.version, "version");
+  if (version > configVersion) {
+    throw new Error(
+      `config: version ${version} is newer than this perch reads, version ${configVersion}`,
+    );
+  }
+  return version;
+}
+
+/** A parsed config and the version its text was written at. */
+export interface VersionedConfig {
+  config: Config;
+  /** Below configVersion when the text was migrated on read. */
+  fileVersion: number;
+}
+
+/**
+ * Parses and validates config TOML of any version up to configVersion, migrating it in memory one
+ * step per version, and expanding a leading ~ in paths against the home directory.
+ */
+export function parseVersionedConfig(
+  text: string,
+  home: string,
+): VersionedConfig {
+  const unmigrated: Table = parse(text);
+  const fileVersion = versionOf(unmigrated);
+  const document = migrationSteps
+    .slice(fileVersion - 1)
+    .reduce((current, step) => step(current), unmigrated);
+  return { config: validConfig(document, home), fileVersion };
+}
+
+/** Parses and validates config TOML, migrated in memory to the current version. */
 export function parseConfig(text: string, home: string): Config {
-  const document: Table = parse(text);
+  return parseVersionedConfig(text, home).config;
+}
+
+function validConfig(document: Table, home: string): Config {
   onlyKeys(document, topLevelKeys, "");
 
   const wires = table(document, "wires", "");
@@ -782,7 +821,7 @@ export function parseConfig(text: string, home: string): Config {
   );
   const thresholds = globalThresholds(table(document, "thresholds", ""));
   checkOrder(thresholds, "thresholds.");
-  const items = optionalTable(document, "items", "");
+  const papers = optionalTable(document, "papers", "");
   const scan = table(document, "scan", "");
   onlyKeys(scan, ["interval_minutes", "finalised_commits"], "scan.");
   const windowTable = optionalTable(document, "window", "");
@@ -793,14 +832,14 @@ export function parseConfig(text: string, home: string): Config {
   return {
     wires: { names: wireNames, default: defaultWire },
     sources: parseSources(document, home),
-    joins: stringArrays(document.joins, "joins"),
+    links: stringArrays(document.links, "links"),
     ignore: stringArray(document.ignore, "ignore"),
     thresholds,
     work: parseWork(document),
-    items: Object.fromEntries(
-      Object.entries(items).map(([id, value]) => [
+    entities: Object.fromEntries(
+      Object.entries(papers).map(([id, value]) => [
         id,
-        parseEntry(id, value, { wires: wireNames, thresholds }),
+        parsePapers(id, value, { wires: wireNames, thresholds }),
       ]),
     ),
     scan: {
@@ -851,25 +890,25 @@ export function hostsOf(sources: readonly { hosts: string[] }[]): string[] {
   return [...new Set(sources.flatMap((source) => source.hosts))];
 }
 
-/** The entry an item resolves to, and every key naming the item. */
-export interface ResolvedEntry {
-  /** The entry that applies, null when no key names the item. */
-  entry: ItemEntry | null;
-  /** Every key naming the item, the one that applies first; more than one is a conflict. */
+/** The papers an entity resolves to, and every key naming the entity. */
+export interface ResolvedPapers {
+  /** The papers that apply, null when no key names the entity. */
+  papers: Papers | null;
+  /** Every key naming the entity, the one that applies first; more than one is a conflict. */
   keys: string[];
 }
 
 /**
- * The config entry for an item, given its id and presence references: an entry applies when its
+ * The papers for an entity, given its id and repository references: papers apply when its
  * key names any of them, and the key naming the earliest wins, the id first, ties by key.
  */
-export function resolveEntry(
+export function resolvePapers(
   config: Config,
   id: string,
   refs: readonly string[],
-): ResolvedEntry {
+): ResolvedPapers {
   const names = [id, ...refs];
-  const ranked = Object.keys(config.items)
+  const ranked = Object.keys(config.entities)
     .map((key) => {
       const candidates = [key, ...candidateRefs(key)];
       const rank = names.findIndex((name) => candidates.includes(name));
@@ -880,42 +919,36 @@ export function resolveEntry(
   const keys = ranked.map(({ key }) => key);
   const first = keys[0];
   return {
-    entry: first === undefined ? null : (config.items[first] ?? null),
+    papers: first === undefined ? null : (config.entities[first] ?? null),
     keys,
   };
 }
 
-/** The health windows for an item: the global values with its entry's overrides applied. */
+/** The health thresholds for an entity: the global values with its papers' overrides applied. */
 export function thresholdsFor(
   config: Config,
-  entry: ItemEntry | null,
+  papers: Papers | null,
 ): Thresholds {
-  const overrides = entry?.thresholds ?? noThresholdOverrides();
+  const overrides = papers?.thresholds ?? noThresholdOverrides();
   return applyOverrides(config.thresholds, overrides);
 }
 
-/** The word lists for an item: each from its entry if set, else from [work], else built in. */
-export function workWordsFor(
-  config: Config,
-  entry: ItemEntry | null,
-): WorkWords {
+/** The word lists for an entity: each from its papers if set, else from [work], else built in. */
+export function workWordsFor(config: Config, papers: Papers | null): WorkWords {
   return {
-    bug: [...(entry?.bugWords ?? config.work.bugWords ?? builtInBugWords)],
+    bug: [...(papers?.bugWords ?? config.work.bugWords ?? builtInBugWords)],
     criticalBug: [
-      ...(entry?.criticalBugWords ??
+      ...(papers?.criticalBugWords ??
         config.work.criticalBugWords ??
         builtInCriticalBugWords),
     ],
   };
 }
 
-/** The wire an adopted item sits on; null for an item config does not name, which is on the fence. */
-export function wireFor(
-  config: Config,
-  entry: ItemEntry | null,
-): string | null {
-  if (entry === null) return null;
-  return entry.wire ?? config.wires.default;
+/** The wire an adopted entity sits on; null for an entity config does not name, which is on the fence. */
+export function wireFor(config: Config, papers: Papers | null): string | null {
+  if (papers === null) return null;
+  return papers.wire ?? config.wires.default;
 }
 
 /** The config's zellij action, or null when it has none. */
@@ -928,15 +961,15 @@ export function zellijActionOf(config: Config): ZellijActionConfig | null {
 }
 
 /**
- * The zellij session for an item at a path: its entry's, else the session of the action's longest
+ * The zellij session for an entity at a path: its papers', else the session of the action's longest
  * root containing the path, else the action's default.
  */
 export function zellijSessionFor(
   action: ZellijActionConfig,
-  entry: ItemEntry | null,
+  papers: Papers | null,
   path: string,
 ): string {
-  const asserted = entry?.zellijSession;
+  const asserted = papers?.zellijSession;
   if (asserted) return asserted;
   const byRoot = Object.entries(action.sessions)
     .filter(([root]) => path === root || path.startsWith(`${root}/`))

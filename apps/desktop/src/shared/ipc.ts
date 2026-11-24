@@ -1,4 +1,4 @@
-import type { EntryForm, EntryValues } from "@perch/core/entry-form.ts";
+import type { PapersForm, PapersValues } from "@perch/core/papers-form.ts";
 import type {
   SettingsForm,
   SettingsValues,
@@ -29,7 +29,7 @@ export interface PerchState {
   scanning: boolean;
   /**
    * What went wrong outside any one source: an unreadable config, a failed scan or launch, a
-   * config entry or settings that were not written.
+   * papers or settings that were not written.
    */
   problems: string[];
   /** The running version, the release check's answers and the download, for the Updates page. */
@@ -65,15 +65,15 @@ export interface PerchApi {
    * the file exists, resolving false, and the refusal arrives as a problem in the state.
    */
   writeStarterConfig(): Promise<boolean>;
-  /** A bird's config entry and the choices its form offers; null for a bird the aviary does not hold. */
-  entryForm(birdId: string): Promise<EntryForm | null>;
+  /** A bird's papers and the choices its form offers; null for a bird the aviary does not hold. */
+  papersForm(birdId: string): Promise<PapersForm | null>;
   /**
-   * Sets a bird's config entry, adopting it when it has none, then scans; a failure writes
+   * Sets a bird's papers, adopting it when it has none, then scans; a failure writes
    * nothing and arrives as a problem in the state.
    */
-  saveEntry(birdId: string, values: EntryValues): Promise<void>;
-  /** Removes every config entry naming a bird, returning it to the fence, as saveEntry writes. */
-  removeEntry(birdId: string): Promise<void>;
+  savePapers(birdId: string, values: PapersValues): Promise<void>;
+  /** Removes every papers naming a bird, returning it to the fence, as savePapers writes. */
+  removePapers(birdId: string): Promise<void>;
   /**
    * Snoozes an adopted bird until a date, or indefinitely with null, and pushes the state without
    * a scan; a failure writes nothing and arrives as a problem in the state.
@@ -82,12 +82,12 @@ export interface PerchApi {
   /** Wakes an adopted bird, as snooze writes. */
   wake(birdId: string): Promise<void>;
   /**
-   * Everything in config but the item entries, and the autostart entry, as the settings page edits
+   * Everything in config but the papers, and the autostart entry, as the settings page edits
    * them; null without config.
    */
   settingsForm(): Promise<SettingsForm | null>;
   /**
-   * Sets everything in config but the item entries, then writes or removes the autostart entry,
+   * Sets everything in config but the papers, then writes or removes the autostart entry,
    * then scans; a config that cannot be written writes nothing, and either failure arrives as a
    * problem in the state.
    */
@@ -121,9 +121,9 @@ export const channels = {
   launch: "bird:launch",
   openConfig: "config:open",
   writeStarterConfig: "config:write-starter",
-  entryForm: "bird:entry-form",
-  saveEntry: "bird:save-entry",
-  removeEntry: "bird:remove-entry",
+  papersForm: "bird:papers-form",
+  savePapers: "bird:save-papers",
+  removePapers: "bird:remove-papers",
   snooze: "bird:snooze",
   wake: "bird:wake",
   settingsForm: "config:settings-form",

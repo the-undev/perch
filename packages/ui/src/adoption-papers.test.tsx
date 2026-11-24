@@ -1,9 +1,9 @@
-import { emptyEntryValues } from "@perch/core/entry-form.ts";
 import { mockSnapshot } from "@perch/core/mock.ts";
+import { emptyPapersValues } from "@perch/core/papers-form.ts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AdoptionPapers } from "./adoption-papers.tsx";
-import { mockBird, mockEntryForm } from "./mock-birds.ts";
+import { mockBird, mockPapersForm } from "./mock-birds.ts";
 
 afterEach(cleanup);
 
@@ -13,7 +13,7 @@ function papers(id: string, problems: string[] = []) {
   const onSign = vi.fn();
   const onReturn = vi.fn();
   const onClose = vi.fn();
-  const form = mockEntryForm(id);
+  const form = mockPapersForm(id);
   render(
     <AdoptionPapers
       bird={mockBird(id)}
@@ -67,7 +67,7 @@ describe("the adoption papers", () => {
     expect(checked("radio", "Projects · the default")).toBe(true);
     press("Adopt onto Projects");
 
-    expect(onSign).toHaveBeenCalledWith(emptyEntryValues());
+    expect(onSign).toHaveBeenCalledWith(emptyPapersValues());
   });
 
   it("name the chosen wire on the signature button", () => {
@@ -94,7 +94,7 @@ describe("the adoption papers", () => {
     });
     press("Adopt onto Machine & Home");
     expect(onSign).toHaveBeenLastCalledWith({
-      ...emptyEntryValues(),
+      ...emptyPapersValues(),
       wire: "Machine & Home",
       name: "Hello",
     });
@@ -106,7 +106,7 @@ describe("the adoption papers", () => {
       target: { value: " " },
     });
     press("Adopt onto Projects");
-    expect(onSign).toHaveBeenLastCalledWith(emptyEntryValues());
+    expect(onSign).toHaveBeenLastCalledWith(emptyPapersValues());
   });
 
   it("hold no tier row and no expectations row: what you say is the wire and the name", () => {
@@ -126,7 +126,7 @@ describe("the adoption papers", () => {
   it("name the fold's contents while closed, and open it onto key files, roadmaps, session and thresholds", () => {
     const { onSign } = papers("dev/odin/hello");
     const fold = screen.getByRole("button", {
-      name: "More particulars · its windows, key files, roadmaps and session",
+      name: "More particulars · its thresholds, key files, roadmaps and session",
     });
 
     expect(fold.getAttribute("aria-expanded")).toBe("false");
@@ -135,6 +135,7 @@ describe("the adoption papers", () => {
 
     expect(fold.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getAllByRole("spinbutton")).toHaveLength(4);
+    expect(screen.getByText("Its own thresholds")).toBeDefined();
     expect(screen.getByText("The README and the roadmaps")).toBeDefined();
     expect(screen.getByText("The standard roadmap names")).toBeDefined();
     const session = screen.getByRole("textbox", { name: "Zellij session" });
@@ -150,14 +151,14 @@ describe("the adoption papers", () => {
     press("Add the roadmap");
     fireEvent.change(
       screen.getByRole("spinbutton", {
-        name: "Stalled flight, amber after days",
+        name: "Stalled, amber after days",
       }),
       { target: { value: "3" } },
     );
     press("Adopt onto Projects");
 
     expect(onSign).toHaveBeenCalledWith({
-      ...emptyEntryValues(),
+      ...emptyPapersValues(),
       keyFiles: ["docs/spec.md"],
       roadmaps: ["docs/roadmap.md"],
       thresholds: { stalled_amber_days: 3 },
@@ -165,7 +166,7 @@ describe("the adoption papers", () => {
     });
   });
 
-  it("say what each window counts, ending in where an empty field looks", () => {
+  it("say what each threshold counts, ending in where an empty field looks", () => {
     papers("undev/spool");
     openFold();
 
@@ -189,13 +190,13 @@ describe("the adoption papers", () => {
 
     fireEvent.change(
       screen.getByRole("spinbutton", {
-        name: "Stalled flight, amber after days",
+        name: "Stalled, amber after days",
       }),
       { target: { value: "40" } },
     );
 
     expect(
-      screen.getByText("Stalled flight: amber must come before red"),
+      screen.getByText("Stalled: amber must come before red"),
     ).toBeDefined();
     const sign = screen.getByRole("button", { name: "Amend the papers" });
     expect((sign as HTMLButtonElement).disabled).toBe(true);
@@ -203,7 +204,7 @@ describe("the adoption papers", () => {
     expect(onSign).not.toHaveBeenCalled();
   });
 
-  it("amend from the entry as written, signing it unchanged when nothing is touched", () => {
+  it("amend from the papers as written, signing it unchanged when nothing is touched", () => {
     const { onSign, form } = papers("obsidian/Hothouse");
 
     expect(checked("radio", "Machine & Home")).toBe(true);

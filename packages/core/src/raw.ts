@@ -13,13 +13,13 @@ export type Observed<T, R extends string> =
   | { state: "observed"; value: T }
   | Absent<R>;
 
-/** Something that went wrong reading one item, recorded as data rather than failing the source. */
+/** Something that went wrong reading one entity, recorded as data rather than failing the source. */
 export interface EntryError {
   state: "error";
   error: string;
 }
 
-/** One item's entry in a source file. */
+/** One entity's entry in a source file. */
 export type Entry<T, R extends string> = Observed<T, R> | EntryError;
 
 // Git
@@ -116,15 +116,15 @@ export interface RoadmapStructure {
 }
 
 export interface RawRoadmapFile {
-  /** Path relative to the item. */
+  /** Path relative to the entity. */
   path: string;
   structure: Observed<RoadmapStructure, "file-not-found">;
 }
 
 export interface RawRoadmap {
-  /** The files the item's entry lists in `roadmaps`, read; empty when it lists none. */
+  /** The files the entity's papers list in `roadmaps`, read; empty when they list none. */
   files: RawRoadmapFile[];
-  /** The first standard-named file found when the entry lists none, shown but never parsed; else null. */
+  /** The first standard-named file found when the papers list none, shown but never parsed; else null. */
   detectedPath: string | null;
 }
 
@@ -211,7 +211,7 @@ export type RawForgeEntry =
 
 export interface RawForgeRepo {
   info: RawForgeRepoInfo;
-  /** Listed under a configured account, or looked up because a local clone's remote names it. */
+  /** Listed under a configured account, or looked up because a local repository's remote names it. */
   foundBy: "account-listing" | "local-remote";
   /** The configured account whose token read it. */
   account: string;
@@ -220,29 +220,7 @@ export interface RawForgeRepo {
   details: Entry<RawForgeDetails, "archived-slow-lane">;
 }
 
-// Uptime Kuma
-
-export interface RawHeartbeat {
-  /** Kuma's numeric status: 0 down, 1 up, 2 pending, 3 maintenance. */
-  status: number;
-  time: string;
-  message: string;
-}
-
-export interface RawMonitor {
-  id: number;
-  name: string;
-  group: string;
-  /** Heartbeats as the status page returns them. */
-  heartbeats: RawHeartbeat[];
-}
-
-export interface RawKuma {
-  statusPage: string;
-  monitors: RawMonitor[];
-}
-
-// Local presences
+// Local repositories
 
 export type IncludeKind = "repo" | "directory";
 
@@ -253,7 +231,7 @@ export interface RawObsidian {
   livesyncPlugin: boolean;
 }
 
-export interface RawLocalPresence {
+export interface RawLocalRepository {
   path: string;
   /** The configured include path the repository was found under. */
   include: string;
@@ -265,7 +243,7 @@ export interface RawLocal {
   /** Each configured include path: itself a repository, a directory searched for them, or missing. */
   includes: Record<string, Observed<IncludeKind, "path-not-found">>;
   /** Found repositories keyed by id, the path relative to the home directory. */
-  presences: Record<string, RawLocalPresence>;
+  repositories: Record<string, RawLocalRepository>;
 }
 
 // Source files
@@ -276,8 +254,6 @@ export interface RawData {
   /** Account listings keyed by their table's keyring key. */
   githubAccounts: Record<string, Entry<RawForgeAccount, never>>;
   forgejoAccounts: Record<string, Entry<RawForgeAccount, never>>;
-  /** Status pages keyed by their source's name. */
-  kuma: Record<string, Entry<RawKuma, never>>;
   roadmap: Record<string, Entry<RawRoadmap, "no-roadmap-file">>;
   /** Forge repositories keyed by lower-case owner/name. */
   github: Record<string, RawForgeEntry>;
@@ -311,6 +287,6 @@ export type SourceStatus =
 export interface StatusFile {
   gatheredAt: string;
   durationMs: number;
-  /** A source that did not run, such as kuma with no [[sources.kuma]] table, has no entry. */
+  /** A source that did not run has no entry. */
   sources: Partial<Record<PolledSourceName, SourceStatus>>;
 }

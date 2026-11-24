@@ -1,6 +1,6 @@
 // The camera: the app's whole navigation. Zoomed in it is the aviary; opening a bird pulls the
 // camera back, the sky collapsing into a strip that shows the bird's own wire while its wire-mates
-// fly there, and the detail rises beneath. The header's tabs, in the scene's own order, are the
+// fly there, and the page rises beneath. The header's tabs, in the scene's own order, are the
 // only switcher: The Aviary, one tab per wire, On the fence. Each wire tab remembers the bird last
 // open on it. Moving from one bird's page to another pans the ground under the still strip, the
 // page left sliding out as the chosen bird's slides in. The brand, The Aviary and Escape ride the
@@ -36,16 +36,16 @@ import {
   BirdFigure,
   birdLook,
   type Facing,
-  type StateWord,
+  type StatePhrase,
   stateTone,
 } from "./bird.tsx";
-import { DetailView, type EntryControls } from "./detail-view.tsx";
+import { BirdPageView, type PapersControls } from "./bird-page-view.tsx";
 import {
   type PixelSize,
   useElementSize,
   usePrefersReducedMotion,
 } from "./hooks.ts";
-import type { KeyFileSheet } from "./paper.tsx";
+import type { KeyFileSheet } from "./key-file-sheets.tsx";
 import { ScanLine } from "./scan-line.tsx";
 import { sceneWidthFor, skyBackground } from "./scene.tsx";
 import { skyPhase } from "./sky.ts";
@@ -66,13 +66,13 @@ import {
 } from "./wire.tsx";
 
 /**
- * Where the camera points: the whole aviary, or one bird's detail page, its papers unfolded or
+ * Where the camera points: the whole aviary, or one bird's page, its papers unfolded or
  * not, and the chip pressed in its aviary bubble, whose ledger row the page lands on.
  */
 export type CameraPlace =
   | { at: "aviary" }
   | {
-      at: "detail";
+      at: "birdPage";
       birdId: string;
       papers: boolean;
       chip: ChipKind | null;
@@ -136,7 +136,7 @@ export function tabDestination(
     [...tab.birds].sort(byTabOrder(now))[0];
   return bird === undefined
     ? null
-    : { at: "detail", birdId: bird.id, papers: false, chip: null };
+    : { at: "birdPage", birdId: bird.id, papers: false, chip: null };
 }
 
 function findBird(aviary: Aviary, id: string): Bird | undefined {
@@ -181,7 +181,7 @@ const stripTallyY = stripWireY + 16;
 /** The most birds in the strip sit apart; a crowded tab squeezes them closer. */
 const stripGap = 175;
 
-/** The tally beneath the strip's name: the wire's state words, or how many sit on the fence. */
+/** The tally beneath the strip's name: the wire's state phrases, or how many sit on the fence. */
 function stripTally(tab: BirdTab, now: Date): string {
   return tab.kind === "fence"
     ? `${tab.birds.length} not adopted`
@@ -353,7 +353,7 @@ function Flyer({
 interface PageProps {
   bird: Bird;
   sheets: KeyFileSheet[];
-  entry: EntryControls;
+  papers: PapersControls;
   problems: string[];
   openPapers: boolean;
   arrivalChip: ChipKind | null;
@@ -533,19 +533,15 @@ function Strip({
   );
 }
 
-/** The header's totals in order: each count's field, the state word it counts and the word it is written with. */
-const totalWords: {
-  key: keyof TallyCounts;
-  stateWord: StateWord;
-  word: string;
-}[] = [
-  { key: "attention", stateWord: "distressed", word: "attention" },
-  { key: "drifting", stateWord: "restless", word: "drifting" },
-  { key: "settled", stateWord: "content", word: "settled" },
-  { key: "snoozed", stateWord: "snoozed", word: "snoozed" },
+/** The state phrases the header totals, in order. */
+const totalPhrases: (keyof TallyCounts & StatePhrase)[] = [
+  "distressed",
+  "restless",
+  "content",
+  "snoozed",
 ];
 
-/** The header's totals over every adopted bird: how many need attention, drift, are settled or snoozed. */
+/** The header's totals over every adopted bird: how many are distressed, restless, content or snoozed. */
 function Totals({ aviary, now }: { aviary: Aviary; now: Date }) {
   const counts = tallyCounts(
     aviary.wires.flatMap((wire) => wire.birds),
@@ -553,9 +549,9 @@ function Totals({ aviary, now }: { aviary: Aviary; now: Date }) {
   );
   return (
     <div className="flex gap-4 font-semibold text-[13px]">
-      {totalWords.map(({ key, stateWord, word }) => (
-        <span key={key} className={stateTone[stateWord]}>
-          {counts[key]} {word}
+      {totalPhrases.map((statePhrase) => (
+        <span key={statePhrase} className={stateTone[statePhrase]}>
+          {counts[statePhrase]} {statePhrase}
         </span>
       ))}
     </div>
@@ -581,12 +577,12 @@ export interface CameraViewProps {
   onRescan: () => void;
   /** The header's settings control was pressed. */
   onSettings: () => void;
-  /** The no-clone slip's Open Sources was pressed: open the settings page on Sources, the local cards unfolded. */
+  /** The no-local-repository slip's Open Sources was pressed: open the settings page on Sources, the local cards unfolded. */
   onLocalSources: () => void;
-  /** Puts the no-clone slip's clone address on the clipboard, settling once it is there. */
+  /** Puts the no-local-repository slip's SSH address on the clipboard, settling once it is there. */
   onCopy: (text: string) => Promise<void>;
-  /** Adopting the open bird or amending its papers, from its detail page. */
-  entry: EntryControls;
+  /** Adopting the open bird or amending its papers, from its bird's page. */
+  papers: PapersControls;
   /** The main process's problems, which the open bird's papers show. */
   problems: string[];
 }
@@ -594,7 +590,7 @@ export interface CameraViewProps {
 /** Until the first measurement the camera assumes a small monitor's window. */
 const assumedSize: PixelSize = { width: 1400, height: 800 };
 
-/** The whole app view: header tabs, the aviary or the strip, and the detail beneath. */
+/** The whole app view: header tabs, the aviary or the strip, and the page beneath. */
 export function CameraView({
   aviary,
   now,
@@ -608,13 +604,13 @@ export function CameraView({
   onSettings,
   onLocalSources,
   onCopy,
-  entry,
+  papers,
   problems,
 }: CameraViewProps) {
   const phase = skyPhase(now);
   const tabs = cameraTabs(aviary);
   const bird =
-    place.at === "detail" ? findBird(aviary, place.birdId) : undefined;
+    place.at === "birdPage" ? findBird(aviary, place.birdId) : undefined;
   const zoomed = bird === undefined;
   const mainRef = useRef<HTMLElement>(null);
   const size = useElementSize(mainRef, assumedSize);
@@ -629,7 +625,7 @@ export function CameraView({
   const [visit, setVisit] = useState(0);
   const [pan, setPan] = useState<Pan | null>(null);
   // The page as last committed, which a pan keeps drawing as it slides away: by then the caller's
-  // sheets and entry are the chosen bird's.
+  // sheets and papers are the chosen bird's.
   const lastPage = useRef<GroundPage | null>(null);
   const shown =
     bird ?? (shownId === null ? undefined : findBird(aviary, shownId));
@@ -692,10 +688,10 @@ export function CameraView({
           props: {
             bird: shown,
             sheets,
-            entry,
+            papers,
             problems,
-            openPapers: place.at === "detail" && place.papers,
-            arrivalChip: place.at === "detail" ? place.chip : null,
+            openPapers: place.at === "birdPage" && place.papers,
+            arrivalChip: place.at === "birdPage" ? place.chip : null,
           },
         };
   useLayoutEffect(() => {
@@ -809,7 +805,7 @@ export function CameraView({
                 snooze={snooze}
                 onFullStory={(chosen) =>
                   onNavigate({
-                    at: "detail",
+                    at: "birdPage",
                     birdId: chosen.id,
                     papers: false,
                     chip: null,
@@ -817,7 +813,7 @@ export function CameraView({
                 }
                 onAdopt={(chosen) =>
                   onNavigate({
-                    at: "detail",
+                    at: "birdPage",
                     birdId: chosen.id,
                     papers: true,
                     chip: null,
@@ -825,7 +821,7 @@ export function CameraView({
                 }
                 onChip={(chosen, chip) =>
                   onNavigate({
-                    at: "detail",
+                    at: "birdPage",
                     birdId: chosen.id,
                     papers: false,
                     chip,
@@ -853,7 +849,7 @@ export function CameraView({
                   flyingIds={flyingIds}
                   onOpen={(chosen) =>
                     onNavigate({
-                      at: "detail",
+                      at: "birdPage",
                       birdId: chosen.id,
                       papers: false,
                       chip: null,
@@ -892,7 +888,7 @@ export function CameraView({
                         aria-hidden={leaving ? "true" : undefined}
                         className="flex min-h-0 w-full flex-none flex-col px-7.5 pt-5.5"
                       >
-                        <DetailView
+                        <BirdPageView
                           {...groundPage.props}
                           now={now}
                           onLaunch={onLaunch}

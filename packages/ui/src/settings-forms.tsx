@@ -1,14 +1,9 @@
 // The settings page's pages, one per part of config, and the editor that holds them: sources,
-// joining up, wires, judgement, scanning, launching, the window and updates.
+// linking, wires, judgement, scanning, launching, the window and updates.
 // Each page is presentational, its value in and every change out; the editor holds the draft
 // across them and shows the page the rail has open.
 
 import { defaultConfig } from "@perch/core/config-default.ts";
-import {
-  flatThresholds,
-  type ThresholdKey,
-  thresholdWindows,
-} from "@perch/core/entry-form.ts";
 import {
   cardIcon,
   cardObsidianOnly,
@@ -32,6 +27,11 @@ import {
   launchKinds,
   lineIcons,
 } from "@perch/core/launch-kinds.ts";
+import {
+  flatThresholds,
+  type ThresholdKey,
+  thresholdFacts,
+} from "@perch/core/papers-form.ts";
 import {
   checkSentence,
   defaultName,
@@ -79,7 +79,7 @@ import { SourcesPage } from "./sources-page.tsx";
 /** A page the settings rail names. */
 export type SettingsPageName =
   | "sources"
-  | "joining"
+  | "linking"
   | "wires"
   | "judgement"
   | "scanning"
@@ -87,7 +87,7 @@ export type SettingsPageName =
   | "window"
   | "updates";
 
-/** The rail's pages in order; Joining up sits under Sources, since joins act on what it finds. */
+/** The rail's pages in order; Linking sits under Sources, since links act on what it finds. */
 export const settingsPages: readonly {
   page: SettingsPageName;
   label: string;
@@ -95,7 +95,7 @@ export const settingsPages: readonly {
   sub: boolean;
 }[] = [
   { page: "sources", label: "Sources", sub: false },
-  { page: "joining", label: "Joining up", sub: true },
+  { page: "linking", label: "Linking", sub: true },
   { page: "wires", label: "Wires", sub: false },
   { page: "judgement", label: "Judgement", sub: false },
   { page: "scanning", label: "Scanning", sub: false },
@@ -151,7 +151,7 @@ function wiresWithout(wires: Wires, index: number): Wires {
   };
 }
 
-/** What removing a row does to the entries naming its config wire, in words. */
+/** What removing a row does to the papers naming its config wire, in words. */
 function removalWords(count: number, defaultWire: string): string {
   if (count === 0) return "No bird names this wire.";
   if (count === 1) return `1 bird names this wire; it moves to ${defaultWire}.`;
@@ -169,7 +169,7 @@ function WireRows({
   onChange,
 }: {
   value: Wires;
-  /** The entry keys naming each config wire. */
+  /** The keys of the papers naming each config wire. */
   named: Record<string, string[]>;
   onChange: (value: Wires) => void;
 }) {
@@ -308,27 +308,27 @@ function WireRows({
   );
 }
 
-/** The wires top to bottom and the default; a renamed wire carries its entries with it. */
+/** The wires top to bottom and the default; a renamed wire carries its papers with it. */
 export function WiresGroup({
   value,
   named,
   onChange,
 }: GroupProps<Wires> & {
-  /** The entry keys naming each config wire. */
+  /** The keys of the papers naming each config wire. */
   named: Record<string, string[]>;
 }) {
   return (
     <SettingsGroup
       title="Wires"
       table="[wires]"
-      lead="The owner's priority bands, top to bottom. An adopted bird sits on the wire its entry names, else on the default. Renaming a wire takes its birds with it."
+      lead="The owner's priority bands, top to bottom. An adopted bird sits on the wire its papers name, else on the default. Renaming a wire takes its birds with it."
     >
       <FormRow label="Wires" sub="In order, first at the top">
         <WireRows value={value} named={named} onChange={onChange} />
       </FormRow>
       <FormRow
         label="Default"
-        sub="The wire an entry naming none takes; pick another to remove it"
+        sub="The wire papers naming none take; pick another to remove it"
       >
         <PillChoice
           label="Default wire"
@@ -349,7 +349,7 @@ export function WiresGroup({
   );
 }
 
-/** The six global thresholds, amber before red in each window. */
+/** The global thresholds, amber before red for each fact. */
 export function ThresholdsGroup({
   value,
   onChange,
@@ -362,21 +362,21 @@ export function ThresholdsGroup({
     <SettingsGroup
       title="Judgement"
       table="[thresholds]"
-      lead="At the amber number the bird turns restless, at the red one distressed. Whole numbers above zero; a bird's papers may override either window."
+      lead="At the amber number the bird turns restless, at the red one distressed. Whole numbers above zero; a bird's papers may override either threshold."
     >
-      {thresholdWindows.map((window) => {
+      {thresholdFacts.map((fact) => {
         const atDefaults =
-          value[window.amber] === defaults[window.amber] &&
-          value[window.red] === defaults[window.red];
+          value[fact.amber] === defaults[fact.amber] &&
+          value[fact.red] === defaults[fact.red];
         return (
-          <FormRow key={window.label} label={window.label} sub="">
+          <FormRow key={fact.label} label={fact.label} sub="">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
               {(["amber", "red"] as const).map((level) => {
-                const key = window[level];
+                const key = fact[level];
                 return (
                   <ThresholdField
                     key={level}
-                    window={window}
+                    fact={fact}
                     level={level}
                     value={value[key]}
                     placeholder=""
@@ -389,12 +389,12 @@ export function ThresholdsGroup({
               ) : (
                 <button
                   type="button"
-                  aria-label={`Clear ${window.label}`}
+                  aria-label={`Clear ${fact.label}`}
                   onClick={() =>
                     onChange({
                       ...value,
-                      [window.amber]: defaults[window.amber],
-                      [window.red]: defaults[window.red],
+                      [fact.amber]: defaults[fact.amber],
+                      [fact.red]: defaults[fact.red],
                     })
                   }
                   className={quietClass}
@@ -404,8 +404,8 @@ export function ThresholdsGroup({
               )}
             </div>
             <p className="m-0 max-w-[52ch] text-[12.5px] text-ink-faint">
-              {window.counts}; the defaults are {defaults[window.amber]} and{" "}
-              {defaults[window.red]}.
+              {fact.counts}; the defaults are {defaults[fact.amber]} and{" "}
+              {defaults[fact.red]}.
             </p>
           </FormRow>
         );
@@ -688,7 +688,7 @@ function ActionFields({
       <div className="grid gap-2.5 @min-[520px]:grid-cols-2">
         <ActionField
           field="session"
-          sub="for an item no root assigns"
+          sub="for a project no root assigns"
           problems={problems("session")}
         >
           {text(
@@ -700,7 +700,7 @@ function ActionFields({
         </ActionField>
         <ActionField
           field="sessions"
-          sub="the longest root holding the item"
+          sub="the longest root holding the project"
           problems={problems("sessions")}
         >
           <RecordRows
@@ -946,28 +946,28 @@ export function LaunchGroup({
   );
 }
 
-/** The presence lists: joins, each a list line, and the presences ignored. */
-export function PresencesGroup({
+/** The repository lists: links, each a list line, and the repositories ignored. */
+export function LinkingGroup({
   value,
   onChange,
-}: GroupProps<Pick<SettingsValues, "joins" | "ignore">>) {
+}: GroupProps<Pick<SettingsValues, "links" | "ignore">>) {
   return (
     <SettingsGroup
-      title="Joining up"
-      table="joins, ignore"
-      lead="A presence is local: and a path under the home directory, github:owner/name or forgejo:owner/name. A join is a list line: its presences in brackets, double-quoted."
+      title="Linking"
+      table="links, ignore"
+      lead="A repository is named local: and a path under the home directory, github:owner/name or forgejo:owner/name. A link is a list line: its repositories in brackets, double-quoted."
     >
-      <FormRow label="Joins" sub="Presences that are one project">
+      <FormRow label="Links" sub="Repositories that are one project">
         <StringList
-          noun="join"
+          noun="link"
           placeholder='["github:owner/notes", "forgejo:owner/notes"]'
-          values={value.joins}
-          onChange={(joins) => onChange({ ...value, joins })}
+          values={value.links}
+          onChange={(links) => onChange({ ...value, links })}
         />
       </FormRow>
       <FormRow label="Ignore" sub="Left off the main view">
         <StringList
-          noun="ignored presence"
+          noun="ignored repository"
           placeholder="github:owner/name"
           values={value.ignore}
           onChange={(ignore) => onChange({ ...value, ignore })}
@@ -1304,10 +1304,10 @@ export function SettingsEditor({
           onChange={(sources) => update({ sources })}
         />
       )}
-      {page === "joining" && (
-        <PresencesGroup
-          value={{ joins: draft.joins, ignore: draft.ignore }}
-          onChange={(presences) => update(presences)}
+      {page === "linking" && (
+        <LinkingGroup
+          value={{ links: draft.links, ignore: draft.ignore }}
+          onChange={(linking) => update(linking)}
         />
       )}
       {page === "wires" && (

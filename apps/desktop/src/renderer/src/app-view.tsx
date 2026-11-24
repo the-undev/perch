@@ -2,8 +2,8 @@
 // where the camera points; the main process's state holds what it shows.
 
 import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
+import type { PapersControls } from "@perch/ui/bird-page-view.tsx";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
-import type { EntryControls } from "@perch/ui/detail-view.tsx";
 import { SettingsView } from "@perch/ui/settings-view.tsx";
 import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,8 +16,8 @@ import {
 import { useCallback, useEffect, useMemo } from "react";
 import type { PerchApi } from "../../shared/ipc.ts";
 import {
-  useEntryForm,
   useKeyFiles,
+  usePapersForm,
   usePerchState,
   useSettingsForm,
 } from "./queries.ts";
@@ -58,10 +58,10 @@ function findBird(aviary: Aviary, id: string): Bird | undefined {
 }
 
 /**
- * When the open bird's entry is read again: after every scan, and as soon as a reread config
+ * When the open bird's papers are read again: after every scan, and as soon as a reread config
  * moves the bird or renames it, before the scan that follows. Null until there is an aviary.
  */
-function entryVersion(aviary: Aviary | null, birdId: string | null) {
+function papersVersion(aviary: Aviary | null, birdId: string | null) {
   if (aviary === null) return null;
   const bird = birdId === null ? undefined : findBird(aviary, birdId);
   return [aviary.scannedAt, bird?.wire ?? "fence", bird?.name ?? ""].join("\n");
@@ -87,24 +87,26 @@ export function AppView({ api }: { api: PerchApi }) {
   });
   const settings = useSettingsForm(api, atSettings);
   const place: CameraPlace =
-    birdId === null ? { at: "aviary" } : { at: "detail", birdId, papers, chip };
+    birdId === null
+      ? { at: "aviary" }
+      : { at: "birdPage", birdId, papers, chip };
   const sheets = useKeyFiles(api, birdId, state?.aviary?.scannedAt ?? null);
   const queryClient = useQueryClient();
-  const entryForm = useEntryForm(
+  const papersForm = usePapersForm(
     api,
     birdId,
-    entryVersion(state?.aviary ?? null, birdId),
+    papersVersion(state?.aviary ?? null, birdId),
   );
-  const entry = useMemo((): EntryControls => {
-    // A write settles once its scan has, which reads the entry again whatever changed.
+  const papersControls = useMemo((): PapersControls => {
+    // A write settles once its scan has, which reads the papers again whatever changed.
     const reread = () =>
-      void queryClient.invalidateQueries({ queryKey: ["entryForm"] });
+      void queryClient.invalidateQueries({ queryKey: ["papersForm"] });
     return {
-      form: entryForm,
-      onSave: (id, values) => void api.saveEntry(id, values).finally(reread),
-      onRemove: (id) => void api.removeEntry(id).finally(reread),
+      form: papersForm,
+      onSave: (id, values) => void api.savePapers(id, values).finally(reread),
+      onRemove: (id) => void api.removePapers(id).finally(reread),
     };
-  }, [api, entryForm, queryClient]);
+  }, [api, papersForm, queryClient]);
   const snooze = useMemo(
     (): SnoozeCalls => ({
       pickedAt: () => new Date(),
@@ -212,7 +214,7 @@ export function AppView({ api }: { api: PerchApi }) {
         void navigate({ to: "/settings", search: { unfold: "local" } })
       }
       onCopy={(text) => navigator.clipboard.writeText(text)}
-      entry={entry}
+      papers={papersControls}
       problems={state.problems}
     />
   );

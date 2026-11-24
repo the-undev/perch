@@ -18,9 +18,9 @@ const scannedAt = new Date(mockSnapshot.scannedAt);
 
 /** The speech subject the view model built a mock bird's speech from. */
 function subjectOf(id: string): SpeechSubject {
-  const item = mockSnapshot.items.find((candidate) => candidate.id === id);
-  if (item === undefined) throw new Error(`the mock has no item ${id}`);
-  return speechSubjectFor(item, mockConfig, scannedAt);
+  const entity = mockSnapshot.entities.find((candidate) => candidate.id === id);
+  if (entity === undefined) throw new Error(`the mock has no entity ${id}`);
+  return speechSubjectFor(entity, mockConfig, scannedAt);
 }
 
 /** A cause of a mock bird's, its level changed. */
@@ -85,28 +85,28 @@ const book: Group[] = [
     rule: "Green birds are brief. Contentment never needs more than two sentences, and the backlog is an invitation, not a nag.",
     entries: [
       entry(
-        "Settled",
-        "No unsafe work, no stalled flight, nothing red. The default state.",
+        "All quiet",
+        "No unsafe work, not stalled, nothing red. The default state.",
         "undev/spool",
       ),
       entry(
-        "Being edited",
-        "Activity is editing. The song plays; the speech acknowledges you.",
+        "Uncommitted changes",
+        "Uncommitted. The song plays; the speech acknowledges you.",
         "dev/perch",
       ),
       entry(
-        "Settled with a backlog",
-        "Green with open roadmap items. The items are an offer.",
+        "All quiet with a backlog",
+        "Green with open work items. The work items are an offer.",
         "obsidian/Pocket",
       ),
       entry(
         "Out on a branch",
-        "In flight on a non-default branch, all of it younger than the amber window.",
+        "Committed on a non-default branch, all of it younger than the amber threshold.",
         "undev/glyph-docs",
       ),
       variant(
         "Commits waiting to go up",
-        "In flight on the default branch with fresh unpushed commits.",
+        "Committed on the default branch with fresh unpushed commits.",
         "undev/glyph-docs",
         {
           subject: { ...glyphDocs, branch: glyphDocs.defaultBranch },
@@ -115,8 +115,8 @@ const book: Group[] = [
         },
       ),
       variant(
-        "Settled, nothing known",
-        "Settled with no commit to measure from.",
+        "All quiet, nothing known",
+        "Merged with no commit to measure from.",
         "undev/spool",
         {
           subject: { ...spool, lastTouchedHours: null },
@@ -143,11 +143,11 @@ const book: Group[] = [
       ),
       entry(
         "A remote no card can read",
-        "The clone pushes to a forge repository whose owner no card covers. A read that failed this scan is not a cause.",
+        "The local repository pushes to a forge repository whose owner no card covers. A read that failed this scan is not a cause.",
         "undev/skiff",
       ),
       variant(
-        "Stalled flight",
+        "Stalled",
         "HEAD on a non-default branch, no movement for 7 days (default).",
         "undev/skiff",
         {
@@ -158,7 +158,7 @@ const book: Group[] = [
       ),
       variant(
         "Stalled with work unsafe",
-        "Stalled flight while something is uncommitted or unpushed.",
+        "Stalled while something is uncommitted or unpushed.",
         "undev/skiff",
         {
           subject: {
@@ -202,7 +202,7 @@ const book: Group[] = [
         ".dotfiles",
         {
           subject: { ...dotfiles, causes: [causeAt(dotfiles, "red")] },
-          changed: "the backlog past the red window",
+          changed: "the backlog past the red threshold",
           mood: "distressed",
         },
       ),
@@ -220,7 +220,7 @@ const book: Group[] = [
     entries: [
       entry(
         "Forge only",
-        "A repository on a forge with no local clone.",
+        "A repository on a forge with no local repository.",
         "github:finch/obsidian-tidy",
       ),
       entry(
@@ -253,7 +253,7 @@ function speaker(entry: Entry): Bird {
 function causeWords(subject: SpeechSubject): string {
   if (subject.fence !== null) return `fence: ${subject.fence.kind}`;
   if (subject.causes.length === 0)
-    return `no causes; activity ${subject.activity ?? "none"}`;
+    return `no causes; work state ${subject.workState ?? "none"}`;
   return subject.causes
     .map((cause) => `${cause.kind} ${cause.level}`)
     .join(", ");
@@ -298,7 +298,7 @@ export function PhrasebookPage() {
       <p className="mt-4 mb-0 max-w-[90ch] text-[13px] text-ink-faint">
         Each bubble holds what <Code>speak(subject)</Code> in{" "}
         <Code>packages/core/src/speech.ts</Code> returns for the subject{" "}
-        <Code>speechSubjectFor(item, config, scannedAt)</Code> builds from the
+        <Code>speechSubjectFor(entity, config, scannedAt)</Code> builds from the
         mock snapshot. Where the mock holds no bird in a situation, the nearest
         bird&apos;s subject has one fact changed, and the entry says which.
       </p>
@@ -309,20 +309,20 @@ export function PhrasebookPage() {
           rule={group.rule}
           min={440}
         >
-          {group.entries.map((item) => (
+          {group.entries.map((entity) => (
             <Specimen
-              key={item.name}
-              label={item.name}
+              key={entity.name}
+              label={entity.name}
               rule={
                 <>
-                  {item.when}{" "}
+                  {entity.when}{" "}
                   <span className="font-mono text-[11.5px] text-ink-faint/80">
-                    {causeWords(item.subject)}
+                    {causeWords(entity.subject)}
                   </span>
-                  {item.changed !== null && (
+                  {entity.changed !== null && (
                     <span className="text-amber">
                       {" "}
-                      {mockBird(item.id).name}, {item.changed}.
+                      {mockBird(entity.id).name}, {entity.changed}.
                     </span>
                   )}
                 </>
@@ -330,7 +330,7 @@ export function PhrasebookPage() {
             >
               <Plate phase="dusk">
                 <SpeakingBird
-                  bird={speaker(item)}
+                  bird={speaker(entity)}
                   now={byDay}
                   onPress={ignore}
                 />
@@ -341,7 +341,7 @@ export function PhrasebookPage() {
       ))}
       <Section
         title="Asleep · midnight to 06:00"
-        rule="From midnight to 06:00 a bird that is neither distressed nor being edited sleeps, and so does every fence bird; a distressed bird stays awake, and an edited bird sings at any hour."
+        rule="From midnight to 06:00 a bird that is neither distressed nor uncommitted sleeps, and so does every fence bird; a distressed bird stays awake, and an uncommitted bird sings at any hour."
         min={440}
       >
         <Specimen
@@ -371,7 +371,7 @@ export function PhrasebookPage() {
       </Section>
       <Section
         title="Candidates"
-        rule="Lines the board proposed that wait on a fact the scan does not yet gather. They are not spoken; each has its roadmap item."
+        rule="Lines the board proposed that wait on a fact the scan does not yet gather. They are not spoken; each has its roadmap work item."
         min={440}
       >
         <Specimen

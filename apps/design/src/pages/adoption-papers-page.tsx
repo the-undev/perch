@@ -1,14 +1,14 @@
 // The adoption papers: the sheet that adopts a fence bird and amends an adopted one, in each of its
 // states from the mock dataset.
 
-import type { EntryForm, EntryValues } from "@perch/core/entry-form.ts";
+import type { PapersForm, PapersValues } from "@perch/core/papers-form.ts";
 import { AdoptionPapers } from "@perch/ui/adoption-papers.tsx";
-import { DetailView } from "@perch/ui/detail-view.tsx";
+import { BirdPageView } from "@perch/ui/bird-page-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
 import {
   mockBird,
-  mockEntryForm,
+  mockPapersForm,
   reportedSnooze,
   scanMoment,
 } from "../specimens.ts";
@@ -23,14 +23,14 @@ import {
 } from "../usage.tsx";
 
 /** What a signature would write, in short, so the page shows the callback working. */
-function signedWords(values: EntryValues): string {
+function signedWords(values: PapersValues): string {
   const set = Object.entries(values).filter(
     ([, value]) =>
       value !== null &&
       !(Array.isArray(value) && value.length === 0) &&
       !(typeof value === "object" && Object.keys(value).length === 0),
   );
-  if (set.length === 0) return "an entry with nothing set";
+  if (set.length === 0) return "papers with nothing set";
   return set
     .map(([field, value]) => `${field} = ${JSON.stringify(value)}`)
     .join(", ");
@@ -44,7 +44,7 @@ function PapersSpecimen({
   onPressed,
 }: {
   id: string;
-  form: EntryForm;
+  form: PapersForm;
   problems: string[];
   onPressed: (text: string) => void;
 }) {
@@ -63,10 +63,10 @@ function PapersSpecimen({
   );
 }
 
-/** A mock bird's entry form with its values changed, as a draft would hold them. */
-function withValues(id: string, change: Partial<EntryValues>): EntryForm {
-  const form = mockEntryForm(id);
-  if (form.values === null) throw new Error(`${id} has no entry`);
+/** A mock bird's papers form with its values changed, as a draft would hold them. */
+function withValues(id: string, change: Partial<PapersValues>): PapersForm {
+  const form = mockPapersForm(id);
+  if (form.values === null) throw new Error(`${id} has no papers`);
   return { ...form, values: { ...form.values, ...change } };
 }
 
@@ -77,7 +77,7 @@ export function AdoptionPapersPage() {
   const specimen = (id: string, problems: string[] = []) => (
     <PapersSpecimen
       id={id}
-      form={mockEntryForm(id)}
+      form={mockPapersForm(id)}
       problems={problems}
       onPressed={setPressed}
     />
@@ -87,7 +87,7 @@ export function AdoptionPapersPage() {
       <Pressed text={pressed} />
       <Section
         title="On the bird's page"
-        rule="The papers rise as a sheet over the bird's record and paper panes, which dim to a quarter and go inert. The band above, with the heading, the verb and the roost, stays lit, but its controls rest: a press anywhere off the papers, the band included, folds them. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt action leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
+        rule="The papers rise as a sheet over the bird's record and sheets panes, which dim to a quarter and go inert. The band above, with the heading, the verb and the roost, stays lit, but its controls rest: a press anywhere off the papers, the band included, folds them. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt action leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
         min={620}
       >
         <Specimen
@@ -95,14 +95,14 @@ export function AdoptionPapersPage() {
           rule="hello: press Adopt to raise the sheet; Adopt onto Projects signs them."
         >
           <Stage height="640px">
-            <DetailView
+            <BirdPageView
               bird={hello}
               now={scanMoment}
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
               snooze={reportedSnooze(setPressed)}
               sheets={birdSheets(hello)}
-              entry={{
-                form: mockEntryForm(hello.id),
+              papers={{
+                form: mockPapersForm(hello.id),
                 onSave: (birdId, values) =>
                   setPressed(`onSave(${birdId}, ${signedWords(values)})`),
                 onRemove: (birdId) => setPressed(`onRemove(${birdId})`),
@@ -119,17 +119,17 @@ export function AdoptionPapersPage() {
         </Specimen>
         <Specimen
           label="Led here by the bubble's Adopt"
-          rule="Perch with openPapers set: the sheet is risen as the page opens, filled with the entry as written, and the panes beneath it are dimmed and inert. Not now lowers the sheet and brings the panes back."
+          rule="Perch with openPapers set: the sheet is risen as the page opens, filled with the papers as written, and the panes beneath it are dimmed and inert. Not now lowers the sheet and brings the panes back."
         >
           <Stage height="640px">
-            <DetailView
+            <BirdPageView
               bird={perch}
               now={scanMoment}
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
               snooze={reportedSnooze(setPressed)}
               sheets={birdSheets(perch)}
-              entry={{
-                form: mockEntryForm(perch.id),
+              papers={{
+                form: mockPapersForm(perch.id),
                 onSave: (birdId, values) =>
                   setPressed(`onSave(${birdId}, ${signedWords(values)})`),
                 onRemove: (birdId) => setPressed(`onRemove(${birdId})`),
@@ -147,12 +147,12 @@ export function AdoptionPapersPage() {
       </Section>
       <Section
         title="Adopting"
-        rule="What the scan found is set in mono and cannot be edited: where the clone is, the forges that also hold it, and the last commit. What you set starts on the defaults; a choice left on its default is written as nothing. The signature button names the wire it will write."
+        rule="What the scan found is set in mono and cannot be edited: where the local repository is, the forges that also hold it, and the last commit. What you set starts on the defaults; a choice left on its default is written as nothing. The signature button names the wire it will write."
         min={560}
       >
         <Specimen
           label="Found under an include path"
-          rule="hearth-config: a clone joined to two forges, not yet decided."
+          rule="hearth-config: a local repository linked to two forges, not yet decided."
         >
           {specimen("dev/hearth-config")}
         </Specimen>
@@ -164,14 +164,14 @@ export function AdoptionPapersPage() {
         </Specimen>
         <Specimen
           label="Forge only"
-          rule="obsidian-tidy: never cloned here, so it lives at its forge, its ring is the forge reference, and its last commit is the forge's newest."
+          rule="obsidian-tidy: no local repository here, so it lives at its forge, its ring is the forge reference, and its last commit is the forge's newest."
         >
           {specimen("github:finch/obsidian-tidy")}
         </Specimen>
       </Section>
       <Section
         title="Amending"
-        rule="The same sheet, filled with the entry as written and signed with Amend the papers. Return to the fence sits on the signature line. More particulars names what it holds while closed: the key files, roadmaps, zellij session and the bird's own windows, the current form parts in the paper's ink."
+        rule="The same sheet, filled with the papers as written and signed with Amend the papers. Return to the fence sits on the signature line. More particulars names what it holds while closed: the key files, roadmaps, zellij session and the bird's own thresholds, the current form parts in the paper's ink."
         min={560}
       >
         <Specimen
@@ -236,8 +236,8 @@ export function AdoptionPapersPage() {
           },
           {
             name: "form",
-            type: "EntryForm",
-            what: "The bird's entry form: what the scan found, the choices, the session the zellij action gives, and the entry's values, null for a fence bird.",
+            type: "PapersForm",
+            what: "The bird's papers form: what the scan found, the choices, the session the zellij action gives, and the papers' values, null for a fence bird.",
           },
           {
             name: "now",
@@ -251,7 +251,7 @@ export function AdoptionPapersPage() {
           },
           {
             name: "onSign",
-            type: "(values: EntryValues) => void",
+            type: "(values: PapersValues) => void",
             what: "Signed with values that can be written, every untouched field null.",
           },
           {
@@ -267,14 +267,14 @@ export function AdoptionPapersPage() {
         ]}
       >
         <p>
-          The form comes from <Code>entryFormFor(config, item, home)</Code> in{" "}
-          <Code>@perch/core/entry-form.ts</Code>, which the main process answers{" "}
-          <Code>entryForm(birdId)</Code> with. Inside the app the detail page
-          mounts the papers and hands a signature to the main process as{" "}
-          <Code>saveEntry(birdId, values)</Code>, written under the key that
-          already names the bird, else its id; a return to the fence as{" "}
-          <Code>removeEntry(birdId)</Code>, which removes every key naming it.
-          The papers fold once the entry read back matches what was signed.
+          The form comes from <Code>papersFormFor(config, entity, home)</Code>{" "}
+          in <Code>@perch/core/papers-form.ts</Code>, which the main process
+          answers <Code>papersForm(birdId)</Code> with. Inside the app the
+          bird's page mounts the papers and hands a signature to the main
+          process as <Code>savePapers(birdId, values)</Code>, written under the
+          key that already names the bird, else its id; a return to the fence as{" "}
+          <Code>removePapers(birdId)</Code>, which removes every key naming it.
+          The papers fold once the papers read back match what was signed.
         </p>
       </Usage>
     </>

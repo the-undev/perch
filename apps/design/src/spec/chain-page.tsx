@@ -32,8 +32,8 @@ const stages: Stage[] = [
     name: "Snapshot",
     where: ".scan/snapshot.json",
     writtenBy:
-      "pnpm aggregate · src/aggregate.ts, src/join.ts, src/derivations.ts",
-    types: ["Snapshot", "Item", "ItemSourceData"],
+      "pnpm aggregate · src/aggregate.ts, src/link.ts, src/derivations.ts",
+    types: ["Snapshot", "Entity", "EntitySourceData"],
     reads:
       "The raw files and the config only; the previous snapshot for first-seen times.",
   },
@@ -41,13 +41,13 @@ const stages: Stage[] = [
     name: "View model",
     where: "in memory, at render",
     writtenBy: "deriveAviary · src/viewmodel.ts, src/speech.ts",
-    types: ["Aviary", "Wire", "Fence", "Bird", "Bubble", "Detail"],
+    types: ["Aviary", "Wire", "Fence", "Bird", "Bubble", "BirdPage"],
     reads: "One snapshot and the config, by pure functions.",
   },
   {
     name: "Renderer",
     where: "packages/ui, apps/desktop",
-    writtenBy: "AviaryView, DetailView, CameraView",
+    writtenBy: "AviaryView, BirdPageView, CameraView",
     types: [],
     reads: "The view model only, and the clock for the sky.",
   },
@@ -167,13 +167,13 @@ export function ChainPage() {
         <ModuleNote file="src/snapshot.ts" />
         <Declarations
           file="src/snapshot.ts"
-          names={["Snapshot", "Item", "ItemSourceData", "SourceStatus"]}
+          names={["Snapshot", "Entity", "EntitySourceData", "SourceStatus"]}
         />
         <h3 className="mt-7 mb-0 font-semibold text-[14px] text-ink-faint">
           Where each derivation lives
         </h3>
-        <ModuleNote file="src/join.ts" />
-        <FunctionTable file="src/join.ts" />
+        <ModuleNote file="src/link.ts" />
+        <FunctionTable file="src/link.ts" />
         <p className="mt-4 mb-0 font-mono text-[12.5px] text-ink-accent">
           packages/core/src/aggregate.ts
         </p>
@@ -193,7 +193,7 @@ export function ChainPage() {
         <FunctionTable file="src/speech.ts" />
         <Declarations
           file="src/viewmodel.ts"
-          names={["Aviary", "Wire", "Fence", "Bird", "Bubble", "Detail"]}
+          names={["Aviary", "Wire", "Fence", "Bird", "Bubble", "BirdPage"]}
         />
       </Part>
     </>

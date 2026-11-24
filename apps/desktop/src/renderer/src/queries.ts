@@ -1,8 +1,8 @@
 // What the renderer reads from the main process, through the query cache: the state, kept
-// current by the main process's pushes, the open bird's key files and its config entry, and the
+// current by the main process's pushes, the open bird's key files and its papers, and the
 // settings.
 
-import type { EntryForm } from "@perch/core/entry-form.ts";
+import type { PapersForm } from "@perch/core/papers-form.ts";
 import type { SettingsForm } from "@perch/core/settings-form.ts";
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -11,7 +11,7 @@ import type { KeyFileSheet, PerchApi, PerchState } from "../../shared/ipc.ts";
 const stateKey = ["state"] as const;
 
 /** The forms read from config, which every pushed state may have changed. */
-const configFormKeys = [["entryForm"], ["settings"]] as const;
+const configFormKeys = [["papersForm"], ["settings"]] as const;
 
 /**
  * The state: what the main process has at once, the cached snapshot's aviary at start, then
@@ -59,20 +59,20 @@ export function useKeyFiles(
 }
 
 /**
- * The open bird's config entry and its form's choices, read with the state known, again after
+ * The open bird's papers and its form's choices, read with the state known, again after
  * every scan and every change the bird shows; null until read.
  */
-export function useEntryForm(
+export function usePapersForm(
   api: PerchApi,
   birdId: string | null,
   version: string | null,
-): EntryForm | null {
+): PapersForm | null {
   const query = useQuery({
-    queryKey: ["entryForm", birdId, version],
+    queryKey: ["papersForm", birdId, version],
     queryFn:
       birdId === null || version === null
         ? skipToken
-        : () => api.entryForm(birdId),
+        : () => api.papersForm(birdId),
     placeholderData: (previous, previousQuery) =>
       previousQuery?.queryKey[1] === birdId ? previous : undefined,
   });

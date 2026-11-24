@@ -4,7 +4,7 @@
 
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { aggregate, localEntries, readRawBundle } from "./aggregate.ts";
+import { aggregate, localPapers, readRawBundle } from "./aggregate.ts";
 import type { Config } from "./config.ts";
 import { fileMtime, readTextIfExists } from "./fs.ts";
 import { createRawStore, gather, type PolledSources } from "./gather.ts";
@@ -12,7 +12,7 @@ import { createFetchJson, type FetchJson } from "./http.ts";
 import type { StatusFile } from "./raw.ts";
 import { createKeyringTokenLookup, type TokenLookup } from "./secrets.ts";
 import type { Snapshot } from "./snapshot.ts";
-import { dockerContainersSource } from "./sources/docker-containers.ts";
+import { migrateSnapshot } from "./snapshot-migration.ts";
 import {
   createForgeAccountsSource,
   createForgeSource,
@@ -20,7 +20,6 @@ import {
 import { createForgejoClient } from "./sources/forgejo.ts";
 import { createGitRunner } from "./sources/git.ts";
 import { createGithubClient } from "./sources/github.ts";
-import { createKumaSource } from "./sources/kuma.ts";
 import { createLocalSource } from "./sources/local.ts";
 import { createRoadmapSource } from "./sources/roadmap.ts";
 
@@ -45,7 +44,7 @@ export interface SourceIo {
 
 /**
  * The polled sources config declares: one local source over every local table's paths, one
- * client per forge account, and kuma only when some kuma table is declared.
+ * client per forge account.
  */
 export function gatherSources(config: Config, io: SourceIo): PolledSources {
   const { home, fetchJson, tokenFor } = io;
@@ -83,15 +82,11 @@ export function gatherSources(config: Config, io: SourceIo): PolledSources {
     }),
     githubAccounts: createForgeAccountsSource("githubAccounts", github),
     forgejoAccounts: createForgeAccountsSource("forgejoAccounts", forgejo),
-    kuma:
-      sources.kuma.length === 0
-        ? null
-        : createKumaSource({ fetchJson, cards: sources.kuma }),
     roadmap: createRoadmapSource({
       readText: readTextIfExists,
       roadmapsFor: (earlier) => {
-        const entries = localEntries(earlier, config);
-        return (localId) => entries.get(localId)?.roadmaps ?? null;
+        const papersByLocalId = localPapers(earlier, config);
+        return (localId) => papersByLocalId.get(localId)?.roadmaps ?? null;
       },
     }),
     github: createForgeSource("github", "githubAccounts", github),
@@ -114,15 +109,12 @@ export async function runGather(run: GatherRun): Promise<StatusFile> {
   });
 }
 
-/**
- * The snapshot at a path, or null when there is none or it cannot be parsed: it is a cache, and
- * losing it only forgets each source card's last read.
- */
+/** The snapshot at a path migrated to this perch's version, or null when there is none or it cannot be read. */
 export async function readSnapshot(path: string): Promise<Snapshot | null> {
   const text = await readTextIfExists(path);
   if (text === null) return null;
   try {
-    return JSON.parse(text) as Snapshot;
+    return migrateSnapshot(JSON.parse(text));
   } catch {
     return null;
   }
@@ -152,7 +144,6 @@ export async function runAggregate(run: AggregateRun): Promise<Snapshot> {
       config: run.config,
       configPath: run.configPath,
       home: run.home,
-      liveSources: [dockerContainersSource],
       previous,
     },
     run.now(),

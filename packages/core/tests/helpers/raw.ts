@@ -9,7 +9,7 @@ import type {
   RawForgeDetails,
   RawForgeRepo,
   RawGit,
-  RawLocalPresence,
+  RawLocalRepository,
   RawPullRequest,
   RawRemote,
   SourceStatus,
@@ -60,10 +60,10 @@ export function withRemotes(
   };
 }
 
-export function localPresence(
+export function localRepository(
   path: string,
   options: { include: string; git?: Partial<RawGit>; obsidian?: boolean },
-): RawLocalPresence {
+): RawLocalRepository {
   return {
     path,
     include: options.include,
@@ -128,10 +128,10 @@ export function forgeDetails(values: {
   };
 }
 
-/** Raw files holding local presences and forge repositories, keyed as the sources key them. */
+/** Raw files holding local repositories and forge repositories, keyed as the sources key them. */
 export function rawFiles(input: {
   includes: Record<string, "repo" | "directory">;
-  locals: Record<string, RawLocalPresence>;
+  locals: Record<string, RawLocalRepository>;
   forges: Partial<Record<ForgeName, RawForgeRepo[]>>;
 }): Partial<RawFiles> {
   const files: Partial<RawFiles> = {
@@ -145,7 +145,7 @@ export function rawFiles(input: {
             { state: "observed", value: kind },
           ]),
         ),
-        presences: input.locals,
+        repositories: input.locals,
       },
     },
   };

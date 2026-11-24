@@ -149,8 +149,8 @@ function stripXs(container: HTMLElement): number[] {
 
 const now = new Date(mockSnapshot.scannedAt);
 const aviaryPlace: CameraPlace = { at: "aviary" };
-const detailOf = (birdId: string): CameraPlace => ({
-  at: "detail",
+const birdPageOf = (birdId: string): CameraPlace => ({
+  at: "birdPage",
   birdId,
   papers: false,
   chip: null,
@@ -181,7 +181,7 @@ function camera(
       onSettings={onSettings}
       onLocalSources={onLocalSources}
       onCopy={onCopy}
-      entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
+      papers={{ form: null, onSave: () => {}, onRemove: () => {} }}
       problems={[]}
     />
   );
@@ -223,10 +223,10 @@ describe("the camera", () => {
     fireEvent.click(tab("Projects"));
     fireEvent.click(tab("Machine & Home"));
 
-    expect(onNavigate).toHaveBeenNthCalledWith(1, detailOf("undev/prism"));
+    expect(onNavigate).toHaveBeenNthCalledWith(1, birdPageOf("undev/prism"));
     expect(onNavigate).toHaveBeenNthCalledWith(
       2,
-      detailOf("obsidian/Hothouse"),
+      birdPageOf("obsidian/Hothouse"),
     );
   });
 
@@ -262,7 +262,7 @@ describe("the camera", () => {
 
     fireEvent.click(tab("On the fence"));
 
-    expect(onNavigate).toHaveBeenCalledWith(detailOf(first.id));
+    expect(onNavigate).toHaveBeenCalledWith(birdPageOf(first.id));
   });
 
   it("opens an awake bird from a tab before any snoozed one, whatever their moods", () => {
@@ -286,7 +286,7 @@ describe("the camera", () => {
 
     fireEvent.click(tab("Projects"));
 
-    expect(onNavigate).toHaveBeenCalledWith(detailOf("undev/skiff"));
+    expect(onNavigate).toHaveBeenCalledWith(birdPageOf("undev/skiff"));
   });
 
   it("shows an empty wire's tab, quietly saying so, and goes nowhere from it", () => {
@@ -310,14 +310,14 @@ describe("the camera", () => {
     expect(onNavigate).not.toHaveBeenCalled();
   });
 
-  it("rides down to a bird's detail from its bubble", () => {
+  it("rides down to a bird's page from its bubble", () => {
     const { onNavigate } = camera(aviaryPlace);
     fireEvent.click(screen.getByRole("button", { name: "Skiff, restless" }));
     fireEvent.click(
       screen.getByRole("button", { name: "Tell me the full story" }),
     );
 
-    expect(onNavigate).toHaveBeenCalledWith(detailOf("undev/skiff"));
+    expect(onNavigate).toHaveBeenCalledWith(birdPageOf("undev/skiff"));
   });
 
   it("rides to a bird's page from a chip in its bubble, carrying the chip", () => {
@@ -327,15 +327,15 @@ describe("the camera", () => {
     fireEvent.click(screen.getByRole("button", { name: "ci failure" }));
 
     expect(onNavigate).toHaveBeenCalledWith({
-      at: "detail",
+      at: "birdPage",
       birdId: "undev/prism",
       papers: false,
       chip: "ci",
     });
   });
 
-  it("shows the open bird's detail beneath its wire's strip, its tab current", () => {
-    const { container } = camera(detailOf("undev/skiff"));
+  it("shows the open bird's page beneath its wire's strip, its tab current", () => {
+    const { container } = camera(birdPageOf("undev/skiff"));
 
     expect(
       screen.getByRole("article", { name: "Skiff in full" }),
@@ -352,8 +352,8 @@ describe("the camera", () => {
     );
   });
 
-  it("holds the bird page's ground still while the record and paper panes scroll, instantly, beneath the fixed band", () => {
-    const { container } = camera(detailOf("dev/perch"));
+  it("holds the bird page's ground still while the record and sheets panes scroll, instantly, beneath the fixed band", () => {
+    const { container } = camera(birdPageOf("dev/perch"));
     const part = (name: string) => {
       const element = container.querySelector(`[data-part="${name}"]`);
       if (element === null) throw new Error(`the page has no ${name}`);
@@ -362,7 +362,7 @@ describe("the camera", () => {
     const classes = (element: Element) => element.className.split(" ");
     const ground = part("ground");
     const band = part("band");
-    const panes = [part("record"), part("paper")];
+    const panes = [part("record"), part("sheets")];
 
     expect(classes(ground)).toContain("overflow-hidden");
     expect(classes(ground)).not.toContain("overflow-y-auto");
@@ -391,10 +391,10 @@ describe("the camera", () => {
   describe("its tallies", () => {
     const header = () => screen.getByRole("banner").textContent;
 
-    it("totals attention, drifting, settled and snoozed in the header, each always shown", () => {
+    it("totals distressed, restless, content and snoozed in the header, each always shown", () => {
       camera(aviaryPlace);
 
-      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+      expect(header()).toContain("3 distressed3 restless7 content0 snoozed");
     });
 
     it("counts a snoozed bird in the header as snoozed only, in the snoozed word's grey", () => {
@@ -405,7 +405,7 @@ describe("the camera", () => {
         snoozing(["undev/gramophone", ".dotfiles", "undev/spool"], null),
       );
 
-      expect(header()).toContain("2 attention2 drifting6 settled3 snoozed");
+      expect(header()).toContain("2 distressed2 restless6 content3 snoozed");
       expect(screen.getByText("3 snoozed").className).toContain(
         "text-ink-faint",
       );
@@ -419,25 +419,25 @@ describe("the camera", () => {
         snoozing(["undev/gramophone", "undev/spool"], "2026-10-22"),
       );
 
-      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+      expect(header()).toContain("3 distressed3 restless7 content0 snoozed");
     });
 
     it("never counts a fence bird in the header's totals", () => {
       camera(aviaryPlace);
 
       expect(mockAviary.fence.birds.length).toBeGreaterThan(0);
-      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+      expect(header()).toContain("3 distressed3 restless7 content0 snoozed");
     });
 
-    it("counts a restless bird asleep at night as drifting in the header", () => {
+    it("counts a restless bird asleep at night as restless in the header", () => {
       camera(aviaryPlace, false, new Date(2026, 9, 23, 3, 0));
 
-      expect(header()).toContain("3 attention3 drifting7 settled0 snoozed");
+      expect(header()).toContain("3 distressed3 restless7 content0 snoozed");
     });
 
-    it("follows the wire's rule in the strip on a bird's page, snoozed after drifting", () => {
+    it("follows the wire's rule in the strip on a bird's page, snoozed after restless", () => {
       const { container } = camera(
-        detailOf("undev/skiff"),
+        birdPageOf("undev/skiff"),
         false,
         now,
         snoozing(["undev/gramophone", "undev/spool"], null),
@@ -445,12 +445,12 @@ describe("the camera", () => {
 
       expect(
         container.querySelector('[data-part="strip-tally"]')?.textContent,
-      ).toBe("2 attention · 1 drifting · 2 snoozed");
+      ).toBe("2 distressed · 1 restless · 2 snoozed");
     });
 
     it("counts a run-out snooze in the strip by its mood again", () => {
       const { container } = camera(
-        detailOf("undev/skiff"),
+        birdPageOf("undev/skiff"),
         false,
         now,
         snoozing(["undev/gramophone"], "2026-10-22"),
@@ -458,12 +458,12 @@ describe("the camera", () => {
 
       expect(
         container.querySelector('[data-part="strip-tally"]')?.textContent,
-      ).toBe("3 attention · 1 drifting");
+      ).toBe("3 distressed · 1 restless");
     });
   });
 
   it("paints its name behind the wire and its birds, its tally in front, the birds right of the column at the new height", () => {
-    const { container } = camera(detailOf("undev/skiff"));
+    const { container } = camera(birdPageOf("undev/skiff"));
     const strip = container.querySelector('[data-part="strip"]') as HTMLElement;
     const sky = container.querySelector('[data-part="sky"]') as HTMLElement;
     const drawing = strip.querySelector("svg");
@@ -504,7 +504,7 @@ describe("the camera", () => {
     // The tally keeps its one line under the wire's left end, in front and in colour.
     expect(tally.getAttribute("x")).toBe("36");
     expect(tally.getAttribute("y")).toBe(String(stripWireY + 16));
-    expect(tally.textContent).toBe("3 attention · 1 drifting");
+    expect(tally.textContent).toBe("3 distressed · 1 restless");
     expect(
       [...tally.querySelectorAll("tspan")]
         .map((tspan) => tspan.getAttribute("class"))
@@ -540,7 +540,7 @@ describe("the camera", () => {
   });
 
   it("brightens the open bird in the strip and dims the rest", () => {
-    const { container } = camera(detailOf("undev/skiff"));
+    const { container } = camera(birdPageOf("undev/skiff"));
     const birds = [...container.querySelectorAll("[data-strip-bird]")];
     const open = birds.filter((bird) =>
       bird.getAttribute("class")?.split(" ").includes("opacity-55"),
@@ -564,7 +564,7 @@ describe("the camera", () => {
       position,
     }));
     const crowded = { ...mockAviary, fence: { birds } };
-    const { container } = camera(detailOf("fence-0"), false, now, crowded);
+    const { container } = camera(birdPageOf("fence-0"), false, now, crowded);
     const names = [...container.querySelectorAll("[data-strip-bird] > text")];
     const layout = stripLayout(
       cameraTabs(crowded).at(-1) as BirdTab,
@@ -595,7 +595,7 @@ describe("the camera", () => {
   });
 
   it("holds the strip at the floor in a window narrower than the floor's width, its birds bunching right of the column", () => {
-    const { container } = camera(detailOf("undev/skiff"));
+    const { container } = camera(birdPageOf("undev/skiff"));
     const drawing = container.querySelector('[data-part="strip"] svg');
     const unitsWide = Number(drawing?.getAttribute("viewBox")?.split(" ")[2]);
     const projects = cameraTabs(mockAviary)[2] as BirdTab;
@@ -631,7 +631,7 @@ describe("the camera", () => {
   });
 
   it("sits the bird on its page's perch while its wire-mates stand in the strip", () => {
-    const { container } = camera(detailOf("undev/skiff"));
+    const { container } = camera(birdPageOf("undev/skiff"));
     const poses = (selector: string) =>
       [...container.querySelectorAll(`${selector} [data-part="figure"]`)].map(
         (figure) => figure.getAttribute("data-pose"),
@@ -644,7 +644,7 @@ describe("the camera", () => {
   });
 
   it("presses and keys the strip's birds as tabs", () => {
-    const { onNavigate } = camera(detailOf("undev/skiff"));
+    const { onNavigate } = camera(birdPageOf("undev/skiff"));
     const spool = screen.getByRole("button", { name: "Open Spool" });
 
     fireEvent.keyDown(spool, { key: "Enter" });
@@ -653,21 +653,21 @@ describe("the camera", () => {
 
     expect(spool.getAttribute("tabindex")).toBe("0");
     expect(onNavigate.mock.calls).toEqual([
-      [detailOf("undev/spool")],
-      [detailOf("undev/spool")],
+      [birdPageOf("undev/spool")],
+      [birdPageOf("undev/spool")],
     ]);
   });
 
   it("switches to a wire-mate from the strip", () => {
-    const { onNavigate } = camera(detailOf("undev/skiff"));
+    const { onNavigate } = camera(birdPageOf("undev/skiff"));
 
     fireEvent.click(screen.getByRole("button", { name: "Open Spool" }));
 
-    expect(onNavigate).toHaveBeenCalledWith(detailOf("undev/spool"));
+    expect(onNavigate).toHaveBeenCalledWith(birdPageOf("undev/spool"));
   });
 
   it("rides home on Escape, the brand and The Aviary", () => {
-    const { onNavigate } = camera(detailOf("undev/skiff"));
+    const { onNavigate } = camera(birdPageOf("undev/skiff"));
 
     fireEvent.keyDown(window, { key: "Escape" });
     fireEvent.click(screen.getByRole("button", { name: "Perch" }));
@@ -689,23 +689,23 @@ describe("the camera", () => {
   });
 
   it("remembers the bird last open on each wire", () => {
-    const { onNavigate, moveTo } = camera(detailOf("undev/spool"));
+    const { onNavigate, moveTo } = camera(birdPageOf("undev/spool"));
 
-    moveTo(detailOf(".dotfiles"));
+    moveTo(birdPageOf(".dotfiles"));
     moveTo(aviaryPlace);
     fireEvent.click(tab("Projects"));
     fireEvent.click(tab("Machine & Home"));
 
     expect(onNavigate.mock.calls).toEqual([
-      [detailOf("undev/spool")],
-      [detailOf(".dotfiles")],
+      [birdPageOf("undev/spool")],
+      [birdPageOf(".dotfiles")],
     ]);
   });
 
   it("flies the wire-mates up into the strip when the camera pulls back", () => {
     const { container, moveTo } = camera(aviaryPlace);
 
-    moveTo(detailOf("obsidian/Hothouse"));
+    moveTo(birdPageOf("obsidian/Hothouse"));
 
     expect(
       [...container.querySelectorAll("[data-flyer]")]
@@ -722,7 +722,7 @@ describe("the camera", () => {
     const size = { width: assumedWidth, height: 800 };
     const layout = layoutAviary(mockAviary, size);
 
-    moveTo(detailOf("obsidian/Hothouse"));
+    moveTo(birdPageOf("obsidian/Hothouse"));
 
     expect(k).toBeCloseTo(minPixelsPerUnit);
     expect(layout.width).toBe(stripUnits);
@@ -754,7 +754,7 @@ describe("the camera", () => {
     const wire = mockAviary.wires[0]?.birds ?? [];
     const outsider = mockAviary.fence.birds[0] as Bird;
 
-    moveTo(detailOf("obsidian/Hothouse"));
+    moveTo(birdPageOf("obsidian/Hothouse"));
 
     for (const mate of wire) {
       expect(sceneDraws(container, mate.name)).toBe(false);
@@ -767,7 +767,7 @@ describe("the camera", () => {
     const { container, moveTo } = camera(aviaryPlace);
     const wire = mockAviary.wires[0]?.birds ?? [];
     const [landing, ...flying] = wire as [Bird, ...Bird[]];
-    moveTo(detailOf("obsidian/Hothouse"));
+    moveTo(birdPageOf("obsidian/Hothouse"));
 
     await land(landing.id);
 
@@ -781,7 +781,7 @@ describe("the camera", () => {
   });
 
   it("hides the wire-mates on the way home too, until each lands in the aviary", async () => {
-    const { container, moveTo } = camera(detailOf("obsidian/Hothouse"));
+    const { container, moveTo } = camera(birdPageOf("obsidian/Hothouse"));
     const wire = mockAviary.wires[0]?.birds ?? [];
     const [landing, ...flying] = wire as [Bird, ...Bird[]];
 
@@ -797,7 +797,7 @@ describe("the camera", () => {
   });
 
   it("stays home when asked for a bird the aviary no longer holds", () => {
-    camera(detailOf("dev/gone"));
+    camera(birdPageOf("dev/gone"));
 
     expect(tab("The Aviary").getAttribute("aria-current")).toBe("page");
     expect(screen.queryByRole("article")).toBeNull();
@@ -839,7 +839,7 @@ describe("the camera", () => {
   });
 
   it("leaves for the settings from the header's last word", () => {
-    const { onSettings, onNavigate } = camera(detailOf("dev/perch"));
+    const { onSettings, onNavigate } = camera(birdPageOf("dev/perch"));
 
     fireEvent.click(screen.getByRole("button", { name: "settings" }));
 
@@ -847,9 +847,9 @@ describe("the camera", () => {
     expect(onNavigate).not.toHaveBeenCalled();
   });
 
-  it("hands a no-clone slip's Open Sources and Copy to the caller, the camera staying put", async () => {
+  it("hands a no-local-repository slip's Open Sources and Copy to the caller, the camera staying put", async () => {
     const { onLocalSources, onCopy, onSettings, onNavigate } = camera(
-      detailOf("forgejo:finch/field-notes"),
+      birdPageOf("forgejo:finch/field-notes"),
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Open Sources" }));
@@ -877,11 +877,11 @@ describe("the camera", () => {
 
 describe("the pan between birds", () => {
   it("pans the ground between two birds towards the chosen one and settles with one article", async () => {
-    const { container, moveTo } = camera(detailOf("undev/skiff"));
+    const { container, moveTo } = camera(birdPageOf("undev/skiff"));
     const strip = container.querySelector('[data-part="strip"] svg');
     const track = container.querySelector('[data-part="pan-track"]');
 
-    moveTo(detailOf("undev/spool"));
+    moveTo(birdPageOf("undev/spool"));
 
     // Spool sits right of Skiff, so its page comes in from the right and the ground slides left.
     expect(track?.getAttribute("data-pan")).toBe("right");
@@ -915,9 +915,9 @@ describe("the pan between birds", () => {
   });
 
   it("pans the other way towards a bird earlier along the strip", async () => {
-    const { container, moveTo } = camera(detailOf("undev/spool"));
+    const { container, moveTo } = camera(birdPageOf("undev/spool"));
 
-    moveTo(detailOf("undev/prism"));
+    moveTo(birdPageOf("undev/prism"));
 
     expect(
       container
@@ -954,9 +954,9 @@ describe("the pan between birds", () => {
         matches: query === "(prefers-reduced-motion: reduce)",
       }) as MediaQueryList;
     try {
-      const { container, moveTo } = camera(detailOf("undev/skiff"));
+      const { container, moveTo } = camera(birdPageOf("undev/skiff"));
 
-      moveTo(detailOf("undev/spool"));
+      moveTo(birdPageOf("undev/spool"));
 
       expect(pans).toEqual([]);
       expect(groundPages(container)).toEqual(["undev/spool"]);
@@ -972,10 +972,10 @@ describe("the pan between birds", () => {
   });
 
   it("lands an arrival chip as the arriving page mounts, while the pan still runs", () => {
-    const { container, moveTo } = camera(detailOf("undev/skiff"));
+    const { container, moveTo } = camera(birdPageOf("undev/skiff"));
 
     moveTo({
-      at: "detail",
+      at: "birdPage",
       birdId: "undev/prism",
       papers: false,
       chip: "ci",
@@ -990,9 +990,9 @@ describe("the pan between birds", () => {
   });
 
   it("keeps the leaving page inert and out of the tree during the pan, the arriving page owning it", async () => {
-    const { container, moveTo } = camera(detailOf("undev/skiff"));
+    const { container, moveTo } = camera(birdPageOf("undev/skiff"));
 
-    moveTo(detailOf("undev/spool"));
+    moveTo(birdPageOf("undev/spool"));
     const leaving = groundPage(container, "undev/skiff");
     const arriving = groundPage(container, "undev/spool");
 
@@ -1016,13 +1016,13 @@ describe("the pan between birds", () => {
   });
 
   it("starts the arriving page fresh at the top of its panes, playing no swap of its own", async () => {
-    const { container, moveTo } = camera(detailOf("undev/skiff"));
+    const { container, moveTo } = camera(birdPageOf("undev/skiff"));
     const leavingRecord = container.querySelector(
       '[data-part="record"]',
     ) as HTMLElement;
     leavingRecord.scrollTop = 300;
 
-    moveTo(detailOf("undev/spool"));
+    moveTo(birdPageOf("undev/spool"));
     await settlePan();
     const record = container.querySelector(
       '[data-part="record"]',
@@ -1054,7 +1054,7 @@ describe("the pan between birds", () => {
     };
 
     expect(geometry()).toEqual(final);
-    moveTo(detailOf("undev/skiff"));
+    moveTo(birdPageOf("undev/skiff"));
     expect(geometry()).toEqual(final);
     expect(
       container
@@ -1067,11 +1067,11 @@ describe("the pan between birds", () => {
   it("mounts a fresh page on every zoom back to the bird last open", () => {
     const { moveTo } = camera(aviaryPlace);
 
-    moveTo(detailOf("undev/skiff"));
+    moveTo(birdPageOf("undev/skiff"));
     const first = screen.getByRole("article", { name: "Skiff in full" });
     moveTo(aviaryPlace);
     expect(screen.getByRole("article", { name: "Skiff in full" })).toBe(first);
-    moveTo(detailOf("undev/skiff"));
+    moveTo(birdPageOf("undev/skiff"));
 
     expect(pans).toEqual([]);
     expect(screen.getByRole("article", { name: "Skiff in full" })).not.toBe(
@@ -1082,7 +1082,7 @@ describe("the pan between birds", () => {
   it("lands a chip again on a zoom back to the same bird, in its fresh page", () => {
     const { container, moveTo } = camera(aviaryPlace);
     const prismCi: CameraPlace = {
-      at: "detail",
+      at: "birdPage",
       birdId: "undev/prism",
       papers: false,
       chip: "ci",
@@ -1105,7 +1105,7 @@ describe("the pan between birds", () => {
   it("keeps the swap for the first arrival from the aviary, with no pan", () => {
     const { container, moveTo } = camera(aviaryPlace);
 
-    moveTo(detailOf("undev/skiff"));
+    moveTo(birdPageOf("undev/skiff"));
 
     expect(pans).toEqual([]);
     expect(groundPages(container)).toEqual(["undev/skiff"]);
@@ -1115,11 +1115,11 @@ describe("the pan between birds", () => {
   });
 
   it("pans on from the arriving page when the camera moves again mid-pan, dropping the page left", async () => {
-    const { container, moveTo } = camera(detailOf("undev/skiff"));
+    const { container, moveTo } = camera(birdPageOf("undev/skiff"));
 
-    moveTo(detailOf("undev/spool"));
+    moveTo(birdPageOf("undev/spool"));
     const spool = groundPage(container, "undev/spool");
-    moveTo(detailOf("undev/prism"));
+    moveTo(birdPageOf("undev/prism"));
 
     expect(groundPages(container)).toEqual(["undev/prism", "undev/spool"]);
     expect(groundPage(container, "undev/spool")).toBe(spool);

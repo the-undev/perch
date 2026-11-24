@@ -12,23 +12,23 @@ interface Entry {
 const content: Entry[] = [
   {
     id: "undev/spool",
-    label: "Settled",
-    rule: "No unsafe work, no stalled flight, nothing red. The default state.",
+    label: "All quiet",
+    rule: "No unsafe work, not stalled, nothing red. The default state.",
   },
   {
     id: "dev/perch",
-    label: "Being edited",
-    rule: "Activity is editing. The song plays; the speech acknowledges you.",
+    label: "Uncommitted changes",
+    rule: "Uncommitted. The song plays; the speech acknowledges you.",
   },
   {
     id: "obsidian/Pocket",
-    label: "Settled with a backlog",
-    rule: "Green with open roadmap items. The items are an offer.",
+    label: "All quiet with a backlog",
+    rule: "Green with open work items. The work items are an offer.",
   },
   {
     id: "undev/glyph-docs",
     label: "Out on a branch",
-    rule: "In flight on a non-default branch, all of it younger than the amber window.",
+    rule: "Committed on a non-default branch, all of it younger than the amber threshold.",
   },
 ];
 
@@ -46,7 +46,7 @@ const restless: Entry[] = [
   {
     id: "undev/skiff",
     label: "A remote no card can read",
-    rule: "The clone pushes to a repository whose owner no card covers: amber, with the can't-read chip, which lands on the record's notice. Its stall follows as the secondary.",
+    rule: "The local repository pushes to a repository whose owner no card covers: amber, with the can't-read chip, which lands on the record's notice. Its stall follows as the secondary.",
   },
 ];
 
@@ -72,7 +72,7 @@ const fence: Entry[] = [
   {
     id: "github:finch/obsidian-tidy",
     label: "Forge only",
-    rule: "A repository on a forge with no local clone.",
+    rule: "A repository on a forge with no local repository.",
   },
   {
     id: "dev/hearth-config",
@@ -147,7 +147,7 @@ export function BubblePage() {
       >
         <Specimen
           label="Woken"
-          rule="Skiff: restless, not being edited, asleep until clicked."
+          rule="Skiff: restless, committed, asleep until clicked."
         >
           <Plate phase="night">
             <SpeakingBird
@@ -204,7 +204,7 @@ export function BubblePage() {
 
       <Section
         title="Snoozed"
-        rule="A snoozed bird's state word is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours. A Wake action takes the Snooze action's place, and pressing it wakes the bird and closes the bubble."
+        rule="A snoozed bird's state phrase is snoozed, in quiet grey, with the end on its own line under the name: the weekday within six days, else the day and month, or until you wake it. Its eyes are closed, so a click gives the waking prefix. The chips keep their true colours. A Wake action takes the Snooze action's place, and pressing it wakes the bird and closes the bubble."
         min={440}
       >
         <Specimen
@@ -253,12 +253,12 @@ export function BubblePage() {
           {
             name: "look",
             type: "BirdLook",
-            what: "birdLook(bird, now): the state word, a snooze's end in words, and closed eyes, which give the speech the waking prefix.",
+            what: "birdLook(bird, now): the state phrase, a snooze's end in words, and closed eyes, which give the speech the waking prefix.",
           },
           {
             name: "actions",
             type: "LaunchAction[]",
-            what: "bird.detail.actions, shown as icon buttons titled with their verbs.",
+            what: "bird.page.actions, shown as icon buttons titled with their verbs.",
           },
           {
             name: "onLaunch",
@@ -273,7 +273,7 @@ export function BubblePage() {
           {
             name: "onFullStory",
             type: "() => void",
-            what: "Rides the camera down to the bird's detail page.",
+            what: "Rides the camera down to the bird's page.",
           },
           {
             name: "onAdopt",
@@ -283,7 +283,7 @@ export function BubblePage() {
           {
             name: "onChip",
             type: "(chip: ChipKind) => void",
-            what: "A chip was pressed: the camera rides to the bird's page, which lands on the ledger row holding the chip's working and marks it, as a press on the page's own bubble does.",
+            what: "A chip was pressed: the camera rides to the bird's page, which lands on the ledger row holding the chip's reading and marks it, as a press on the page's own bubble does.",
           },
           {
             name: "tail",
@@ -318,7 +318,7 @@ export function BubblePage() {
           its place (bubble or page) and the <Code>SnoozeCalls</Code>. A
           pick&apos;s end date is counted from <Code>pickedAt</Code>, the moment
           of the pick. The look decides the action: snoozed offers Wake, not
-          adopted offers neither, any other state word Snooze. The durations
+          adopted offers neither, any other state phrase Snooze. The durations
           exist only there: a pick becomes an end date with{" "}
           <Code>snoozeEndDate</Code>, or null for indefinitely, and goes to{" "}
           <Code>onSnooze(birdId, until)</Code>. The bird&apos;s page carries the

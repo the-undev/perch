@@ -1,4 +1,4 @@
-// The config but the item entries as the settings page edits it: the values the form holds, what
+// The config but the papers as the settings page edits it: the values the form holds, what
 // they cannot be, and the edit that puts them back into config. No Node modules, so the renderer
 // may import it.
 
@@ -6,16 +6,10 @@ import {
   type Config,
   collapseHome,
   expandHome,
-  type ItemEntry,
+  type Papers,
   type SourcesConfig,
   type Thresholds,
 } from "./config.ts";
-import {
-  flatThresholds,
-  nestedThresholds,
-  type ThresholdKey,
-  thresholdProblems,
-} from "./entry-form.ts";
 import {
   type LaunchActionValues,
   launchConfigOf,
@@ -24,6 +18,12 @@ import {
   launchValuesOf,
 } from "./launch-form.ts";
 import { listLine, listOf, parseListLine } from "./list-line.ts";
+import {
+  flatThresholds,
+  nestedThresholds,
+  type ThresholdKey,
+  thresholdProblems,
+} from "./papers-form.ts";
 import { sourceProblemLine, sourceProblems } from "./sources-form.ts";
 
 /** A wire on the settings page: the config wire it started as, null for one added, and its name now. */
@@ -32,7 +32,7 @@ export interface WireRow {
   name: string;
 }
 
-/** Everything in config but the item entries, which each bird's page edits. */
+/** Everything in config but the papers, which each bird's page edits. */
 export interface SettingsValues {
   /** The wires top to bottom, and the default by its row's place among them. */
   wires: { rows: WireRow[]; defaultRow: number };
@@ -47,9 +47,9 @@ export interface SettingsValues {
     /** One card per launch action, in the order a bird offers them. */
     actions: LaunchActionValues[];
   };
-  /** Each join's presence references as one list line. */
-  joins: string[];
-  /** Presence references left off the main view. */
+  /** Each link's repository references as one list line. */
+  links: string[];
+  /** Repository references left off the main view. */
   ignore: string[];
   window: {
     /** Config's [window] tray. */
@@ -84,10 +84,10 @@ export const sourceRunHeld =
 export const installSourceRunHeld =
   "run from source there is no image to replace.";
 
-/** What the settings page needs: the values, which item entries name each wire, and two rows' machine facts. */
+/** What the settings page needs: the values, which papers name each wire, and two rows' machine facts. */
 export interface SettingsForm {
   values: SettingsValues;
-  /** The keys of the entries naming each config wire, which removing it moves to the default. */
+  /** The keys of the papers naming each config wire, which removing it moves to the default. */
   named: { wires: Record<string, string[]> };
   /** The login row beyond its toggle: its hold, and the entry's path and target shown with ~. */
   login: Pick<LoginEntry, "held" | "path" | "target">;
@@ -96,12 +96,12 @@ export interface SettingsForm {
 }
 
 function namedBy(
-  items: Record<string, ItemEntry>,
-  field: (entry: ItemEntry) => string | null,
+  entities: Record<string, Papers>,
+  field: (papers: Papers) => string | null,
 ): Record<string, string[]> {
   const named: Record<string, string[]> = {};
-  for (const [key, entry] of Object.entries(items)) {
-    const name = field(entry);
+  for (const [key, papers] of Object.entries(entities)) {
+    const name = field(papers);
     if (name === null) continue;
     named[name] = [...(named[name] ?? []), key];
   }
@@ -136,13 +136,13 @@ export function settingsFormFor(
           launchValuesOf(action, path),
         ),
       },
-      joins: config.joins.map(listLine),
+      links: config.links.map(listLine),
       ignore: [...config.ignore],
       window: { tray: config.window.tray, login: login.on },
       update: { ...config.update },
     },
     named: {
-      wires: namedBy(config.items, (entry) => entry.wire),
+      wires: namedBy(config.entities, (papers) => papers.wire),
     },
     login: {
       held: login.held,
@@ -214,7 +214,6 @@ function mapSourcePaths(
     })),
     github: sources.github.map(forge),
     forgejo: sources.forgejo.map(forge),
-    kuma: sources.kuma.map((source) => ({ ...source })),
   };
 }
 
@@ -276,29 +275,29 @@ export function settingsProblems(values: SettingsValues): string[] {
   problems.push(
     ...launchProblems(values.launch.actions).map(launchProblemLine),
   );
-  for (const line of values.joins) {
+  for (const line of values.links) {
     const parsed = parseListLine(line);
     if ("problem" in parsed) {
-      problems.push(`Joins: each join ${parsed.problem}`);
+      problems.push(`Links: each link ${parsed.problem}`);
       continue;
     }
     if (parsed.list.length < 2 || parsed.list.some(isBlank)) {
-      problems.push("Joins: each join names two references or more");
+      problems.push("Links: each link names two references or more");
     }
   }
   if (values.ignore.some(isBlank)) {
-    problems.push("Ignored presences: a reference cannot be empty");
+    problems.push("Ignored repositories: a reference cannot be empty");
   }
   problems.push(...sourceProblems(values.sources).map(sourceProblemLine));
   return problems;
 }
 
-function entryNames(keys: string[]): string {
+function keysInWords(keys: string[]): string {
   if (keys.length === 1) return keys[0] ?? "";
   return `${keys.slice(0, -1).join(", ")} and ${keys.at(-1)}`;
 }
 
-/** What saving does to entries naming a config wire no row starts as, in words. */
+/** What saving does to papers naming a config wire no row starts as, in words. */
 export function wireWarnings(
   named: Record<string, string[]>,
   wires: SettingsValues["wires"],
@@ -308,14 +307,14 @@ export function wireWarnings(
     .filter(([wire]) => !kept.has(wire))
     .map(
       ([wire, keys]) =>
-        `${entryNames(keys)} ${keys.length === 1 ? "sits" : "sit"} on ${wire}, which is removed: saving moves ${keys.length === 1 ? "it" : "them"} to the default wire, ${defaultName(wires)}.`,
+        `${keysInWords(keys)} ${keys.length === 1 ? "sits" : "sit"} on ${wire}, which is removed: saving moves ${keys.length === 1 ? "it" : "them"} to the default wire, ${defaultName(wires)}.`,
     );
 }
 
 /**
- * Config with everything but its item entries and [work] set to the values, paths expanded against the home
- * directory; the login toggle is the caller's to write. An entry's wire follows the row that starts as it to that row's name, all in one
- * pass; an entry naming a wire no row starts as falls to the default. Throws when
+ * Config with everything but its papers and [work] set to the values, paths expanded against the home
+ * directory; the login toggle is the caller's to write. The papers' wire follows the row that starts as it to that row's name, all in one
+ * pass; papers naming a wire no row starts as fall to the default. Throws when
  * settingsProblems finds any.
  */
 export function withSettings(
@@ -336,16 +335,17 @@ export function withSettings(
       default: defaultName(values.wires) ?? "",
     },
     sources: mapSourcePaths(values.sources, path),
-    joins: values.joins.map(listOf),
+    links: values.links.map(listOf),
     ignore: [...values.ignore],
     thresholds: nestedThresholds(values.thresholds) as Thresholds,
     work: config.work,
-    items: Object.fromEntries(
-      Object.entries(config.items).map(([key, entry]) => [
+    entities: Object.fromEntries(
+      Object.entries(config.entities).map(([key, papers]) => [
         key,
         {
-          ...entry,
-          wire: entry.wire === null ? null : (renamed.get(entry.wire) ?? null),
+          ...papers,
+          wire:
+            papers.wire === null ? null : (renamed.get(papers.wire) ?? null),
         },
       ]),
     ),

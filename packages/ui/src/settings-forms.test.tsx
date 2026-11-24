@@ -126,6 +126,20 @@ describe("the settings editor", () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it("says an adopted bird's papers name its wire, and the default takes papers naming none", () => {
+    editor("wires");
+    const wires = group("Wires");
+
+    expect(
+      wires.getByText(/An adopted bird sits on the wire its papers name, else/),
+    ).toBeDefined();
+    expect(
+      wires.getByText(
+        "The wire papers naming none take; pick another to remove it",
+      ),
+    ).toBeDefined();
+  });
+
   it("orders the wires, adds one and picks the default from them", () => {
     const { onSave, form } = editor("wires");
     const wires = group("Wires");
@@ -310,7 +324,7 @@ describe("the settings editor", () => {
     expect(removeProjects().disabled).toBe(false);
   });
 
-  it("holds two windows on the Judgement page: unsafe work and stalled flight", () => {
+  it("holds two sets of thresholds on the Judgement page: unsafe work and stalled", () => {
     editor("judgement");
 
     expect(
@@ -320,8 +334,8 @@ describe("the settings editor", () => {
     ).toEqual([
       "Unsafe work, amber after hours",
       "Unsafe work, red after hours",
-      "Stalled flight, amber after days",
-      "Stalled flight, red after days",
+      "Stalled, amber after days",
+      "Stalled, red after days",
     ]);
   });
 
@@ -333,9 +347,15 @@ describe("the settings editor", () => {
     expect(thresholds.getAllByText("days")).toHaveLength(2);
   });
 
-  it("says what each window counts and what the defaults are", () => {
+  it("says what each threshold counts and what the defaults are", () => {
     editor("judgement");
     const thresholds = group("Judgement");
+
+    expect(
+      thresholds.getByText(
+        "At the amber number the bird turns restless, at the red one distressed. Whole numbers above zero; a bird's papers may override either threshold.",
+      ),
+    ).toBeDefined();
 
     expect(
       thresholds.getByText(
@@ -382,7 +402,7 @@ describe("the settings editor", () => {
 
     type(
       thresholds.getByRole("spinbutton", {
-        name: "Stalled flight, amber after days",
+        name: "Stalled, amber after days",
       }),
       "40",
     );
@@ -394,7 +414,7 @@ describe("the settings editor", () => {
     );
 
     expect(
-      screen.getByText("Stalled flight: amber must come before red"),
+      screen.getByText("Stalled: amber must come before red"),
     ).toBeDefined();
     expect(
       screen.getByText(
@@ -437,32 +457,35 @@ describe("the settings editor", () => {
     ).toBeDefined();
   });
 
-  it("adds a join as a list line and an ignored presence", () => {
-    const { onSave, form } = editor("joining");
-    const presences = group("Joining up");
+  it("adds a link as a list line and an ignored repository", () => {
+    const { onSave, form } = editor("linking");
+    const linking = group("Linking");
+    expect(
+      linking.getByText("Repositories that are one project"),
+    ).toBeDefined();
 
     type(
-      presences.getByRole("textbox", { name: "Add a join" }),
+      linking.getByRole("textbox", { name: "Add a link" }),
       "github:a/b forgejo:a/b",
     );
-    fireEvent.click(presences.getByRole("button", { name: "Add the join" }));
-    expect(screen.getByText(/^Joins: each join must be a list/)).toBeDefined();
+    fireEvent.click(linking.getByRole("button", { name: "Add the link" }));
+    expect(screen.getByText(/^Links: each link must be a list/)).toBeDefined();
     type(
-      presences.getByRole("textbox", { name: "join 1" }),
+      linking.getByRole("textbox", { name: "link 1" }),
       '["github:a/b", "forgejo:a/b"]',
     );
     type(
-      presences.getByRole("textbox", { name: "Add an ignored presence" }),
+      linking.getByRole("textbox", { name: "Add an ignored repository" }),
       "github:a/old",
     );
     fireEvent.click(
-      presences.getByRole("button", { name: "Add the ignored presence" }),
+      linking.getByRole("button", { name: "Add the ignored repository" }),
     );
     fireEvent.click(saveButton());
 
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
-      joins: ['["github:a/b", "forgejo:a/b"]'],
+      links: ['["github:a/b", "forgejo:a/b"]'],
       ignore: ["github:a/old"],
     });
   });
@@ -776,6 +799,10 @@ describe("the Launching page", () => {
       ],
       ["home", "main"],
     ]);
+    expect(cardAt(1).getByText(/for a project no root assigns/)).toBeTruthy();
+    expect(
+      cardAt(1).getByText(/the longest root holding the project/),
+    ).toBeTruthy();
     fireEvent.click(
       cardAt(1).getByRole("button", { name: "Add session root" }),
     );
@@ -1179,7 +1206,7 @@ describe("the settings page", () => {
       rail.getAllByRole("button").map((button) => button.textContent),
     ).toEqual([
       "Sources",
-      "Joining up",
+      "Linking",
       "Wires",
       "Judgement",
       "Scanning",

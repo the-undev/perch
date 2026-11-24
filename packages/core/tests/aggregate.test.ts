@@ -9,25 +9,24 @@ import type {
   SourceCard,
   SourceCardResult,
 } from "../src/snapshot.ts";
-import { dockerContainersSource } from "../src/sources/docker-containers.ts";
 import { testConfig } from "./helpers/config.ts";
 import {
   forgeRepo,
   gatheredAt,
-  localPresence,
+  localRepository,
   okStatus,
   rawFiles,
   withRemotes,
 } from "./helpers/raw.ts";
 
 const config = await testConfig(
-  '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://forge.example.lan:3001"\nstatus_page = "perch"\n\n[items."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\n',
+  '[papers."dev/perch"]\nunsafe_amber_hours = 48\nunsafe_red_hours = 96\n',
 );
 
 const files = rawFiles({
   includes: { "/home/test/dev": "directory", "/home/test/undev": "directory" },
   locals: {
-    "dev/perch": localPresence("/home/test/dev/perch", {
+    "dev/perch": localRepository("/home/test/dev/perch", {
       include: "/home/test/dev",
       git: {
         dirtyFiles: [
@@ -71,21 +70,16 @@ const input = {
   config,
   configPath: "config.toml",
   home: "/home/test",
-  liveSources: [dockerContainersSource],
   previous: null,
 };
 
 describe("aggregate", () => {
-  it("adds the server item from config, wiring live sources by kind", () => {
+  it("lists each project as an entity, and the snapshot's times", () => {
     const snapshot = aggregate(bundle, input, new Date("2026-10-22T00:00:00Z"));
 
-    expect(
-      snapshot.items.map((item) => [item.id, item.kind, item.liveSources]),
-    ).toEqual([
-      ["dev/perch", "git", []],
-      ["server:Silo", "server", ["dockerContainers"]],
-    ]);
-    expect(snapshot.items[1]?.name).toBe("Silo");
+    expect(snapshot.entities.map((entity) => [entity.id, entity.kind])).toEqual(
+      [["dev/perch", "git"]],
+    );
     expect(snapshot.scannedAt).toBe(gatheredAt);
     expect(snapshot.aggregatedAt).toBe("2026-10-22T00:00:00.000Z");
     expect(snapshot.warnings).toEqual([
@@ -93,15 +87,15 @@ describe("aggregate", () => {
     ]);
   });
 
-  it("names a local item's kind by what it holds: obsidian with an .obsidian folder, else git", () => {
+  it("names a local entity's kind by what it holds: obsidian with an .obsidian folder, else git", () => {
     const siloFiles = rawFiles({
       includes: { "/home/test/obsidian": "directory" },
       locals: {
-        "obsidian/notes": localPresence("/home/test/obsidian/notes", {
+        "obsidian/notes": localRepository("/home/test/obsidian/notes", {
           include: "/home/test/obsidian",
           obsidian: true,
         }),
-        "obsidian/plain": localPresence("/home/test/obsidian/plain", {
+        "obsidian/plain": localRepository("/home/test/obsidian/plain", {
           include: "/home/test/obsidian",
         }),
       },
@@ -115,70 +109,22 @@ describe("aggregate", () => {
     );
 
     expect(
-      snapshot.items
-        .filter((item) => item.path !== null)
-        .map((item) => [item.id, item.kind]),
+      snapshot.entities
+        .filter((entity) => entity.path !== null)
+        .map((entity) => [entity.id, entity.kind]),
     ).toEqual([
       ["obsidian/notes", "obsidian"],
       ["obsidian/plain", "git"],
     ]);
   });
 
-  it("adds a server item per kuma source, each with its own status page", async () => {
-    const twoServers = await testConfig(
-      '[[sources.kuma]]\nname = "Silo"\nbase_url = "http://kuma.invalid"\nstatus_page = "silo"\n\n[[sources.kuma]]\nname = "Box"\nbase_url = "http://kuma.invalid"\nstatus_page = "box"\n',
-    );
-    const withKuma: RawBundle = {
-      ...bundle,
-      files: {
-        ...files,
-        kuma: {
-          source: "kuma",
-          gatheredAt,
-          data: {
-            Silo: {
-              state: "observed",
-              value: { statusPage: "silo", monitors: [] },
-            },
-            Box: { state: "error", error: "HTTP 502" },
-          },
-        },
-      },
-    };
-
-    const servers = aggregate(
-      withKuma,
-      { ...input, config: twoServers },
-      new Date(),
-    ).items.filter((item) => item.kind === "server");
-
-    expect(
-      servers.map((item) => [item.id, item.name, item.sources.kuma]),
-    ).toEqual([
-      ["server:Silo", "Silo", { allUp: false, monitors: [] }],
-      ["server:Box", "Box", { error: "HTTP 502" }],
-    ]);
-  });
-
-  it("adds no server item when config has no kuma source", async () => {
-    const withoutServer = await testConfig("");
-
-    const snapshot = aggregate(
-      bundle,
-      { ...input, config: withoutServer },
-      new Date(),
-    );
-
-    expect(snapshot.items.map((item) => item.id)).toEqual(["dev/perch"]);
-  });
-
-  it("derives git data against the item's thresholds, as of when it was gathered", () => {
+  it("derives git data against the entity's thresholds, as of when it was gathered", () => {
     const later = aggregate(bundle, input, new Date("2027-01-01T00:00:00Z"));
 
-    expect(later.items[0]?.sources.git).toMatchObject({
+    expect(later.entities[0]?.sources.git).toMatchObject({
       backup: "local-only",
-      activity: "editing",
-      drift: {
+      workState: "uncommitted",
+      unsafeWork: {
         uncommitted: { hours: 72, level: "amber" },
         level: "amber",
         thresholds: { amberHours: 48, redHours: 96 },
@@ -187,7 +133,7 @@ describe("aggregate", () => {
   });
 
   it("maps a missing roadmap file to no work items", () => {
-    const perch = aggregate(bundle, input, new Date()).items[0];
+    const perch = aggregate(bundle, input, new Date()).entities[0];
 
     expect(perch?.sources.roadmap).toEqual({
       counts: { task: 0, bug: 0, "critical-bug": 0 },
@@ -200,9 +146,9 @@ describe("aggregate", () => {
     });
   });
 
-  it("classes roadmap items by the word lists the item's entry sets, else [work], and judges them by its windows", async () => {
+  it("classes work items by the word lists the entity's papers set, else [work], and judges them by its thresholds", async () => {
     const worded = await testConfig(
-      '[work]\nbug_words = ["defect"]\n\n[items."dev/perch"]\ncritical_bug_words = ["outage"]\nbugs_red_count = 9\n',
+      '[work]\nbug_words = ["defect"]\n\n[papers."dev/perch"]\ncritical_bug_words = ["outage"]\nbugs_red_count = 9\n',
     );
     const structure = readRoadmapStructure(
       "- [ ] A defect in the export\n- [ ] An outage at night\n- [ ] A bug in the import\n",
@@ -233,7 +179,7 @@ describe("aggregate", () => {
       { ...bundle, files: roadmapFiles },
       { ...input, config: worded },
       new Date(),
-    ).items[0];
+    ).entities[0];
 
     expect(perch?.sources.roadmap).toMatchObject({
       counts: { task: 1, bug: 1, "critical-bug": 1 },
@@ -258,32 +204,24 @@ describe("aggregate", () => {
     expect(snapshot.sources.local?.lastSucceededAt).toBe(gatheredAt);
   });
 
-  it("returns not-implemented from the container list stub", async () => {
-    const server = aggregate(bundle, input, new Date()).items[1];
-
-    expect(server && (await dockerContainersSource.fetch(server))).toEqual({
-      state: "not-implemented",
-    });
-  });
-
-  it("keeps a forge the enricher could not read as a presence carrying its error", () => {
-    const clone = (path: string, url: string) =>
-      localPresence(path, {
+  it("keeps a forge the enricher could not read as a repository carrying its error", () => {
+    const localWithRemote = (path: string, url: string) =>
+      localRepository(path, {
         include: "/home/test/undev",
         git: withRemotes([{ name: "origin", url }]),
       });
     const unread = rawFiles({
       includes: { "/home/test/undev": "directory" },
       locals: {
-        "undev/skiff": clone(
+        "undev/skiff": localWithRemote(
           "/home/test/undev/skiff",
           "git@github-work:skiff-app/skiff.git",
         ),
-        "undev/gone": clone(
+        "undev/gone": localWithRemote(
           "/home/test/undev/gone",
           "git@github.com:the-undev/gone.git",
         ),
-        "undev/fork": clone(
+        "undev/fork": localWithRemote(
           "/home/test/undev/fork",
           "git@github.com:the-undev/fork.git",
         ),
@@ -313,14 +251,14 @@ describe("aggregate", () => {
       input,
       new Date(),
     );
-    const item = (id: string) =>
-      snapshot.items.find((candidate) => candidate.id === id);
+    const entity = (id: string) =>
+      snapshot.entities.find((candidate) => candidate.id === id);
 
-    expect(item("undev/skiff")?.sources.github).toEqual({
+    expect(entity("undev/skiff")?.sources.github).toEqual({
       error: "no GitHub card is configured for owner skiff-app",
       cause: "no-card",
     });
-    expect(item("undev/skiff")?.presences.forges).toEqual([
+    expect(entity("undev/skiff")?.repositories.forges).toEqual([
       {
         forge: "github",
         ref: "github:skiff-app/skiff",
@@ -330,16 +268,16 @@ describe("aggregate", () => {
         foundBy: "local-remote",
       },
     ]);
-    expect(item("undev/gone")?.sources.github).toEqual({
+    expect(entity("undev/gone")?.sources.github).toEqual({
       error: "HTTP 404 for the-undev/gone",
       cause: "read-failed",
     });
-    expect(item("undev/fork")?.presences.forges).toEqual([]);
-    expect(item("undev/fork")?.sources.github).toBeUndefined();
+    expect(entity("undev/fork")?.repositories.forges).toEqual([]);
+    expect(entity("undev/fork")?.sources.github).toBeUndefined();
     expect(snapshot.forges.github.active).toEqual([]);
   });
 
-  it("carries the SSH clone address each forge gives onto its presence, null when it gives none", () => {
+  it("carries the SSH address each forge gives onto its repository, null when it gives none", () => {
     const silent = forgeRepo("finch/silent", {});
     silent.info.sshUrl = { state: "absent", reason: "not-reported" };
     const forgeOnly = rawFiles({
@@ -358,10 +296,10 @@ describe("aggregate", () => {
     );
 
     expect(
-      snapshot.items.flatMap((item) =>
-        item.presences.forges.map((presence) => [
-          presence.ref,
-          presence.sshUrl,
+      snapshot.entities.flatMap((entity) =>
+        entity.repositories.forges.map((repository) => [
+          repository.ref,
+          repository.sshUrl,
         ]),
       ),
     ).toEqual([
@@ -387,16 +325,16 @@ describe("source cards", () => {
         "/home/test/undev": "directory",
       },
       locals: {
-        "dev/perch": localPresence("/home/test/dev/perch", {
+        "dev/perch": localRepository("/home/test/dev/perch", {
           include: "/home/test/dev",
         }),
-        "dev/harbour": localPresence("/home/test/dev/harbour", {
+        "dev/harbour": localRepository("/home/test/dev/harbour", {
           include: "/home/test/dev",
         }),
-        ".dotfiles": localPresence("/home/test/.dotfiles", {
+        ".dotfiles": localRepository("/home/test/.dotfiles", {
           include: "/home/test/.dotfiles",
         }),
-        "undev/skiff": localPresence("/home/test/undev/skiff", {
+        "undev/skiff": localRepository("/home/test/undev/skiff", {
           include: "/home/test/undev",
         }),
       },
@@ -417,22 +355,6 @@ describe("source cards", () => {
       data: {
         "forgejo-finch": listing("finch/perch"),
         "forgejo-the-undev": listing("the-undev/notes", "the-undev/box"),
-      },
-    },
-    kuma: {
-      source: "kuma",
-      gatheredAt,
-      data: {
-        Silo: {
-          state: "observed",
-          value: {
-            statusPage: "perch",
-            monitors: [
-              { id: 1, name: "web", group: "", heartbeats: [] },
-              { id: 2, name: "db", group: "", heartbeats: [] },
-            ],
-          },
-        },
       },
     },
   };
@@ -477,7 +399,6 @@ describe("source cards", () => {
         "forgejo",
         "the-undev@forge.example.lan:3000",
       ],
-      ["kuma:Silo", "kuma", "Silo"],
     ]);
   });
 
@@ -490,7 +411,6 @@ describe("source cards", () => {
     expect(resultOf(cards, "forgejo:the-undev@forge.example.lan:3000")).toEqual(
       ok(2),
     );
-    expect(resultOf(cards, "kuma:Silo")).toEqual(ok(2));
   });
 
   it("fails a forge card on its account's error, carrying its last read from the previous snapshot", () => {
@@ -514,26 +434,6 @@ describe("source cards", () => {
       state: "failed",
       message: "HTTP 401",
       lastSucceededAt: earlier,
-    });
-  });
-
-  it("fails a kuma card whose status page could not be read", () => {
-    const pageError: RawBundle = {
-      ...cardBundle,
-      files: {
-        ...cardFiles,
-        kuma: {
-          source: "kuma",
-          gatheredAt,
-          data: { Silo: { state: "error", error: "HTTP 502" } },
-        },
-      },
-    };
-
-    expect(resultOf(cardsOf(pageError, config), "kuma:Silo")).toEqual({
-      state: "failed",
-      message: "HTTP 502",
-      lastSucceededAt: null,
     });
   });
 
@@ -580,25 +480,27 @@ describe("source cards", () => {
 
   it("says never scanned for a card added since the last gather", async () => {
     const added = await testConfig(
-      '[[sources.local]]\ninclude = ["~/new"]\n\n[[sources.github]]\naccount = "newcomer"\nkey = "github-newcomer"\nhosts = ["github.com"]\n\n[[sources.kuma]]\nname = "Box"\nbase_url = "http://kuma.invalid"\nstatus_page = "box"\n',
+      '[[sources.local]]\ninclude = ["~/new"]\n\n[[sources.github]]\naccount = "newcomer"\nkey = "github-newcomer"\nhosts = ["github.com"]\n',
     );
 
     const cards = cardsOf(cardBundle, added);
 
-    for (const id of ["local:~/new", "github:newcomer", "kuma:Box"]) {
+    for (const id of ["local:~/new", "github:newcomer"]) {
       expect(resultOf(cards, id), id).toEqual({ state: "never-scanned" });
     }
     expect(resultOf(cards, "github:finch")).toEqual(ok(3));
   });
 
   it("says never scanned for a source the gather did not run", () => {
-    const { kuma: _kuma, ...sources } = okStatus({}).sources;
+    const { forgejoAccounts: _unrun, ...sources } = okStatus({}).sources;
     const unrun: RawBundle = {
       status: { ...okStatus({}), sources },
       files: cardFiles,
     };
 
-    expect(resultOf(cardsOf(unrun, config), "kuma:Silo")).toEqual({
+    expect(
+      resultOf(cardsOf(unrun, config), "forgejo:finch@forge.example.lan:3000"),
+    ).toEqual({
       state: "never-scanned",
     });
   });

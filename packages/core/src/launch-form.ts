@@ -18,7 +18,7 @@ import {
 } from "./launch-kinds.ts";
 import { listLine, listOf, parseListLine } from "./list-line.ts";
 
-/** A zellij session and the root directory whose items it holds. */
+/** A zellij session and the root directory whose entities it holds. */
 export interface SessionRoot {
   /** The root as shown: a path under the home directory starts with ~. */
   root: string;

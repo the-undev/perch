@@ -1,27 +1,40 @@
 # Roadmap
 
-Work identified and not done. Remove items as they land.
+Work identified and not done. Remove work items as they land.
 
-## Code to match the glossary
+## SSH address on the no-local-repository slip
 
-`GLOSSARY.md` holds the language wanted. The code, config and app text still
-use the older words below. Each is looked at on its own, then renamed.
+The slip offers the SSH address to copy. Investigate whether it should also
+offer an HTTPS address, and whether "SSH address" then still names it for its
+purpose.
 
-- "item" becomes "entity". Reaches config's `[items]` table, so it needs a
-  migration.
-- "presence" and "clone" become "repository": local repository, forge
-  repository. Reaches config's comments.
-- "join" becomes "link". Reaches config's `joins` key.
-- "entry" becomes "papers".
-- "working" becomes "reading".
-- "river" becomes "history", and "spread" goes.
-- "in-progress" in the scanner becomes "in flight".
-- "window" in comments, config comments and the design site becomes
-  "threshold".
-- `Drift` becomes unsafe work, and `Detail` the bird's page.
-- "parked" in code names and comments becomes "stalled" (`snapshot.ts`,
-  `viewmodel.ts`, `derivations.ts`, `mock.ts`). The app text already says
-  stalled.
+## Invented account names in mock data
+
+Mock data and test fixtures use a real account name in forge references.
+Replace it with an invented one.
+
+## Papers named entities in config code
+
+`Config.entities` holds each entity's papers, keyed by a repository reference,
+while the config key and the glossary say papers. Rename the field to
+`papers`.
+
+## Snapshot migration checks
+
+`migrateSnapshot` casts its result to `Snapshot` without checking the shape,
+and `Snapshot.version` is typed as the literal 2, which a version 3 must widen.
+
+## Loose casts and test text
+
+`kindName` is cast to `Record<SourceCardKind, string>` rather than typed as
+one. The config store's version 2 test builds its file text by chained
+`replace` calls rather than writing the file out.
+
+## Branches that are not work under way
+
+A project on a release or dev branch is not unfinished work. Config would hold
+the branches that count as merged beside the default: a list, or a wildcard
+pattern. Which of the two is TBD.
 
 ## Bird Types
 
@@ -31,18 +44,18 @@ More types of bird, perhaps per project.
 
 A `.perch.toml` at a repository's root, meant to be checked in, holds what is
 true of the project on any machine: `key_files`, `roadmaps`, `bug_words`,
-`critical_bug_words` and the bug thresholds, with the same keys as an item
-entry. Precedence, each set value replacing the one below: the item entry in
-the owner's config, then `.perch.toml`, then `[work]` and `[thresholds]`, then
-built in. Wires, names, sessions, launch actions and sources stay in the
-owner's config. A bird known only from a forge has no clone to read it from;
-reading it through the forge API is a later step. Perch cannot migrate a file
-in another repository, so the schema and its versioning are settled before
-anything else.
+`critical_bug_words` and the bug thresholds, with the same keys as an entity's
+papers. Precedence, each set value replacing the one below: the papers in the
+owner's config, then `.perch.toml`, then `[work]` and `[thresholds]`, then built
+in. Wires, names, sessions, launch actions and sources stay in the
+owner's config. A bird known only from a forge has no local repository to read
+it from; reading it through the forge API is a later step. Perch cannot migrate
+a file in another repository, so the schema and its versioning are settled
+before anything else.
 
 ## Side by side sheets on wide windows
 
-The detail page is capped at 1920px. A wide window could show two sheets side
+The bird's page is capped at 1920px. A wide window could show two sheets side
 by side. What decides the pairing is TBD: by family (documents beside work) or
 chosen per bird, which needs remembered state.
 
@@ -68,7 +81,7 @@ window. Raising another app's window on Plasma Wayland needs a KWin script or
 
 ## Tray icon status
 
-The tray icon could show the worst health colour across everything.
+The tray icon could show the worst level across everything.
 Snoozed birds are left out of it.
 
 ## Server monitoring
@@ -114,16 +127,16 @@ Roadmap sections shown as epics and features with task lists and progress.
 
 ## Docs tree browsing
 
-A docs tree on the detail page to pick any file from, below the configured key
+A docs tree on the bird's page to pick any file from, below the configured key
 files.
 
-## Relative images on the key-file paper
+## Relative images on the key-file sheet
 
 A repository-relative image shows its alt text, because nothing serves it. The
-main process would need to read the file from the clone behind a custom
-protocol.
+main process would need to read the file from the local repository behind a
+custom protocol.
 
-## Seeding a forge card from the clones
+## Seeding a forge card from the local repositories
 
 The sources page could suggest a card from the remotes no source reads: the
 host, the kind (probed for self-hosted Forgejo) and the account from the URL
@@ -132,21 +145,22 @@ paths. The owner confirms it and adds a token.
 ## Picking paths and sessions from what the scan knows
 
 Key files, roadmaps and the zellij session are typed into text fields.
-Perch could offer the files in the clone and the sessions zellij reports.
+Perch could offer the files in the local repository and the sessions zellij
+reports.
 The scan carries no file listing, so this needs a new raw field or a
 main-process read when the form opens.
 
 ## Links inside key files
 
-Relative links on the key-file paper go nowhere. A link to another file in the
-repository should open it on the paper, and external links should open in the
+Relative links on the key-file sheet go nowhere. A link to another file in the
+repository should open it on the sheet, and external links should open in the
 browser.
 
 ## One repository name at two Forgejo instances
 
 Forge repositories are keyed by owner/name alone, so the same name at two
-instances is one presence. Keying by instance changes the presence reference
-that config names, and needs a rule for entries written without one.
+instances is one repository. Keying by instance changes the repository
+reference that config names, and needs a rule for papers written without one.
 
 ## A bird's look worked out once on its page
 
@@ -154,11 +168,11 @@ The bird's page works out the look in its heading, its view and the roost
 separately, for the same bird and time. The page could work it out once and
 pass it down, as the aviary does.
 
-## One map for the state word's colour
+## One map for the state phrase's colour
 
-The bubble's `stateWordTone` and `stateTone` in `bird.tsx`, read by the page
-heading and the header's totals, both map each state word to a colour, so a
-new state word must be added to both.
+The bubble's `statePhraseTone` and `stateTone` in `bird.tsx`, read by the page
+heading and the header's totals, both map each state phrase to a colour, so a
+new state phrase must be added to both.
 
 ## Forget snoozes that have run out
 
@@ -185,11 +199,9 @@ prints it and silencing it at the cause would leave the test output clean.
   saved on the settings page of a dev or isolated run replaces the installed
   app's. Whether runs from source get their own keyring service: TBD.
 
-- The glossary's Asleep says a bird "neither distressed nor being edited" is
-  asleep between midnight and 06:00, but every fence bird sleeps at night
-  whatever its health. Whether to reword it to match: TBD.
 - Whether "Waking a snoozed bird when a new cause appears" and "Custom end
-  dates", out of scope for snoozes, become roadmap items: TBD.
-- The header's totals say "settled" for content birds, but the glossary's
-  Settled is an activity: neither editing nor in flight. Which word the count
-  uses: TBD.
+  dates", out of scope for snoozes, become work items: TBD.
+
+- Config and snapshot versioning migrate on read, write the config back
+  without comments, keep the old config beside it, and refuse or ignore a
+  newer version. Whether this gets an ADR in `docs/adr/`: TBD.

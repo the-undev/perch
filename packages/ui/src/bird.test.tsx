@@ -89,7 +89,7 @@ function seen(bird: Bird, now: Date) {
   const label = container.querySelector("svg")?.getAttribute("aria-label");
   return {
     colour: colours[breast ?? ""],
-    stateWord: label?.split(", ")[1],
+    statePhrase: label?.split(", ")[1],
     eyes: part(container, "eye").tagName === "circle" ? "open" : "closed",
     mark: mark === "z" ? "z" : mark === "♪" ? "note" : "none",
     motion: motionOf(container),
@@ -120,7 +120,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/spool",
-      "content, not edited",
+      "content, committed or merged",
       "06:00 to midnight",
       "green",
       "content",
@@ -130,7 +130,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/spool",
-      "content, not edited",
+      "content, committed or merged",
       "midnight to 06:00",
       "green",
       "content",
@@ -140,7 +140,7 @@ describe("the bird's look", () => {
     ],
     [
       "dev/perch",
-      "content, edited",
+      "content, uncommitted",
       "06:00 to midnight",
       "green",
       "content",
@@ -150,7 +150,7 @@ describe("the bird's look", () => {
     ],
     [
       "dev/perch",
-      "content, edited",
+      "content, uncommitted",
       "midnight to 06:00",
       "green",
       "content",
@@ -160,7 +160,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/skiff",
-      "restless, not edited",
+      "restless, committed or merged",
       "06:00 to midnight",
       "amber",
       "restless",
@@ -170,7 +170,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/skiff",
-      "restless, not edited",
+      "restless, committed or merged",
       "midnight to 06:00",
       "amber",
       "restless",
@@ -180,7 +180,7 @@ describe("the bird's look", () => {
     ],
     [
       "obsidian/Hothouse",
-      "restless, edited",
+      "restless, uncommitted",
       "06:00 to midnight",
       "amber",
       "restless",
@@ -190,7 +190,7 @@ describe("the bird's look", () => {
     ],
     [
       "obsidian/Hothouse",
-      "restless, edited",
+      "restless, uncommitted",
       "midnight to 06:00",
       "amber",
       "restless",
@@ -200,7 +200,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/Hollow-legacy",
-      "distressed, not edited",
+      "distressed, committed or merged",
       "06:00 to midnight",
       "red",
       "distressed",
@@ -210,7 +210,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/Hollow-legacy",
-      "distressed, not edited",
+      "distressed, committed or merged",
       "midnight to 06:00",
       "red",
       "distressed",
@@ -220,7 +220,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/prism",
-      "distressed, edited",
+      "distressed, uncommitted",
       "06:00 to midnight",
       "red",
       "distressed",
@@ -230,7 +230,7 @@ describe("the bird's look", () => {
     ],
     [
       "undev/prism",
-      "distressed, edited",
+      "distressed, uncommitted",
       "midnight to 06:00",
       "red",
       "distressed",
@@ -240,12 +240,12 @@ describe("the bird's look", () => {
     ],
   ])(
     "looks right for %s, %s, %s",
-    (id, _row, hour, colour, stateWord, eyes, mark, motion) => {
+    (id, _row, hour, colour, statePhrase, eyes, mark, motion) => {
       const now = hour === "06:00 to midnight" ? afternoon : smallHours;
 
       expect(seen(mockBird(id), now)).toEqual({
         colour,
-        stateWord,
+        statePhrase,
         eyes,
         mark,
         motion,
@@ -254,18 +254,22 @@ describe("the bird's look", () => {
   );
 
   it.each([
-    ["undev/spool", "content, not edited", "06:00 to midnight"],
-    ["undev/skiff", "restless, not edited", "midnight to 06:00"],
-    ["undev/Hollow-legacy", "distressed, not edited", "06:00 to midnight"],
-    ["undev/prism", "distressed, edited", "06:00 to midnight"],
-    ["undev/prism", "distressed, edited", "midnight to 06:00"],
+    ["undev/spool", "content, committed or merged", "06:00 to midnight"],
+    ["undev/skiff", "restless, committed or merged", "midnight to 06:00"],
+    [
+      "undev/Hollow-legacy",
+      "distressed, committed or merged",
+      "06:00 to midnight",
+    ],
+    ["undev/prism", "distressed, uncommitted", "06:00 to midnight"],
+    ["undev/prism", "distressed, uncommitted", "midnight to 06:00"],
   ])("looks snoozed for %s, %s, %s", (id, _row, hour) => {
     const now = hour === "06:00 to midnight" ? afternoon : smallHours;
     const snoozed = { ...mockBird(id), snooze: { until: "2026-11-01" } };
 
     expect(seen(snoozed, now)).toEqual({
       colour: "dimmed",
-      stateWord: "snoozed",
+      statePhrase: "snoozed",
       eyes: "closed",
       mark: "z",
       motion: "still",
@@ -275,7 +279,7 @@ describe("the bird's look", () => {
   it("looks snoozed with no end date until woken", () => {
     const snoozed = { ...mockBird("undev/skiff"), snooze: { until: null } };
 
-    expect(seen(snoozed, afternoon).stateWord).toBe("snoozed");
+    expect(seen(snoozed, afternoon).statePhrase).toBe("snoozed");
   });
 
   it("wears its real mood from the start of the snooze's end date", () => {
@@ -283,7 +287,7 @@ describe("the bird's look", () => {
     const snoozed = { ...skiff, snooze: { until: "2026-10-22" } };
 
     expect(seen(snoozed, afternoon)).toEqual(seen(skiff, afternoon));
-    expect(seen(snoozed, new Date(2026, 9, 21, 23, 59)).stateWord).toBe(
+    expect(seen(snoozed, new Date(2026, 9, 21, 23, 59)).statePhrase).toBe(
       "snoozed",
     );
   });
@@ -329,7 +333,10 @@ describe("the bird's look", () => {
     const asleep = portrait(spool, smallHours);
     const z = part(asleep, "mark");
     cleanup();
-    const singing = portrait({ ...spool, activity: "editing" }, smallHours);
+    const singing = portrait(
+      { ...spool, workState: "uncommitted" },
+      smallHours,
+    );
     const note = part(singing, "mark");
 
     expect([z.getAttribute("x"), z.getAttribute("y")]).toEqual([
@@ -341,12 +348,12 @@ describe("the bird's look", () => {
     expect(z.getAttribute("class")).toContain("italic");
   });
 
-  it("looks the same in flight as settled, by day and by night", () => {
+  it("looks the same committed as merged, by day and by night", () => {
     const spool = mockBird("undev/spool");
-    const inFlight = { ...spool, activity: "in-flight" as const };
+    const committed = { ...spool, workState: "committed" as const };
 
     for (const now of [afternoon, smallHours]) {
-      expect(seen(inFlight, now)).toEqual(seen(spool, now));
+      expect(seen(committed, now)).toEqual(seen(spool, now));
     }
   });
 
@@ -444,11 +451,11 @@ describe("the wire and the fence", () => {
 
   it("hangs the tally under the wire's left end in front, a line per word group in its colour", () => {
     const [machine, projects] = mockAviary.wires as [WireModel, WireModel];
-    const settled = {
+    const allContent = {
       name: "Quiet",
       birds: projects.birds.filter((bird) => bird.mood === "content"),
     };
-    const lines = [machine, projects, settled].map((wire) => {
+    const lines = [machine, projects, allContent].map((wire) => {
       const container = wireScene(wire);
       const tally = [...container.querySelectorAll('[data-part="tally"] text')];
       const birds = [...container.querySelectorAll("[data-bird]")];
@@ -473,9 +480,12 @@ describe("the wire and the fence", () => {
     });
 
     expect(lines).toEqual([
-      [at("2 drifting", 218, "fill-amber")],
-      [at("3 attention", 218, "fill-red"), at("1 drifting", 238, "fill-amber")],
-      [at("all settled", 218, "fill-ink-faint")],
+      [at("2 restless", 218, "fill-amber")],
+      [
+        at("3 distressed", 218, "fill-red"),
+        at("1 restless", 238, "fill-amber"),
+      ],
+      [at("all content", 218, "fill-ink-faint")],
     ]);
   });
 

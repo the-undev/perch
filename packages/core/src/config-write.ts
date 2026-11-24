@@ -5,13 +5,14 @@ import { stringify } from "smol-toml";
 import {
   type Config,
   collapseHome,
+  configVersion,
   defaultBugThresholds,
   defaultTray,
   defaultUpdateCheck,
   defaultUpdateInstall,
   type GithubSourceConfig,
-  type ItemEntry,
   type LaunchActionConfig,
+  type Papers,
   type ThresholdOverrides,
   type Thresholds,
   thresholdKeys,
@@ -31,10 +32,8 @@ function sortedByKey<T>(record: Record<string, T>): Record<string, T> {
 /** The threshold keys a table sets, in the parser's key order. */
 function thresholdTable(thresholds: Thresholds | ThresholdOverrides): Table {
   const out: Table = {};
-  for (const [window, field, key] of thresholdKeys) {
-    const value = (thresholds[window] as Partial<Record<string, number>>)[
-      field
-    ];
+  for (const [fact, field, key] of thresholdKeys) {
+    const value = (thresholds[fact] as Partial<Record<string, number>>)[field];
     if (value !== undefined) out[key] = value;
   }
   return out;
@@ -54,7 +53,7 @@ function globalThresholdTable(thresholds: Thresholds): Table {
   return written;
 }
 
-/** The word lists a [work] table or an entry sets; a list left unset is left out. */
+/** The word lists a [work] table or papers sets; a list left unset is left out. */
 function wordsTable(words: WorkWordsConfig): Table {
   const out: Table = {};
   if (words.bugWords !== null) out.bug_words = words.bugWords;
@@ -63,17 +62,17 @@ function wordsTable(words: WorkWordsConfig): Table {
   return out;
 }
 
-function entryTable(entry: ItemEntry): Table {
+function papersTable(papers: Papers): Table {
   const out: Table = {};
-  if (entry.wire !== null) out.wire = entry.wire;
-  if (entry.name !== null) out.name = entry.name;
-  if (entry.keyFiles !== null) out.key_files = entry.keyFiles;
-  if (entry.roadmaps !== null) out.roadmaps = entry.roadmaps;
-  if (entry.zellijSession !== null) out.zellij_session = entry.zellijSession;
+  if (papers.wire !== null) out.wire = papers.wire;
+  if (papers.name !== null) out.name = papers.name;
+  if (papers.keyFiles !== null) out.key_files = papers.keyFiles;
+  if (papers.roadmaps !== null) out.roadmaps = papers.roadmaps;
+  if (papers.zellijSession !== null) out.zellij_session = papers.zellijSession;
   return {
     ...out,
-    ...wordsTable(entry),
-    ...thresholdTable(entry.thresholds),
+    ...wordsTable(papers),
+    ...thresholdTable(papers.thresholds),
   };
 }
 
@@ -100,11 +99,6 @@ function sourcesTable(
     forgejo: sources.forgejo.map((source) => ({
       base_url: source.baseUrl,
       ...githubTable(source),
-    })),
-    kuma: sources.kuma.map((source) => ({
-      name: source.name,
-      base_url: source.baseUrl,
-      status_page: source.statusPage,
     })),
   };
   for (const [kind, list] of Object.entries(out)) {
@@ -167,17 +161,18 @@ function actionTable(
 }
 
 /**
- * Serialises config to TOML that parseConfig reads back to an equal config, deterministic because
- * item entries and zellij session roots are sorted by key and every list, sources and launch
- * actions among them, keeps its order. Paths at or under the home directory are written with a
- * leading ~, empty optional tables, source kinds and launch actions are left out, and so is a
- * launch action's field that holds its kind's default, a window or update setting that holds its own,
- * and a bug threshold that holds its default.
+ * Serialises config to TOML at the current version that parseConfig reads back to an equal
+ * config, deterministic because papers and zellij session roots are sorted by key and every list,
+ * sources and launch actions among them, keeps its order. Paths at or under the home directory
+ * are written with a leading ~, empty optional tables, source kinds and launch actions are left
+ * out, and so is a launch action's field that holds its kind's default, a window or update
+ * setting that holds its own, and a bug threshold that holds its default.
  */
 export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);
   const document: Table = {
-    joins: config.joins,
+    version: configVersion,
+    links: config.links,
     ignore: config.ignore,
     wires: { names: config.wires.names, default: config.wires.default },
     sources: unlessEmpty(sourcesTable(config.sources, path)),
@@ -206,11 +201,11 @@ export function writeConfig(config: Config, home: string): string {
         ? {}
         : { install: config.update.install }),
     }),
-    items: unlessEmpty(
+    papers: unlessEmpty(
       Object.fromEntries(
-        Object.entries(sortedByKey(config.items)).map(([key, entry]) => [
+        Object.entries(sortedByKey(config.entities)).map(([key, papers]) => [
           key,
-          entryTable(entry),
+          papersTable(papers),
         ]),
       ),
     ),

@@ -6,7 +6,7 @@ import { errorMessage, nullIfMissing } from "../fs.ts";
 import type {
   IncludeKind,
   Observed,
-  RawLocalPresence,
+  RawLocalRepository,
   RawObsidian,
 } from "../raw.ts";
 import { sortedRecord } from "../records.ts";
@@ -23,7 +23,7 @@ export interface LocalSourceDeps extends GitReadDeps {
 /** How far below an include directory the search for repositories goes. */
 const maxDepth = 5;
 
-/** A local presence's id: its path relative to the home directory, or the absolute path outside it. */
+/** A local repository's id: its path relative to the home directory, or the absolute path outside it. */
 export function localIdFor(path: string, home: string): string {
   const fromHome = relative(home, path);
   if (fromHome === "" || fromHome.startsWith("..")) return path;
@@ -82,7 +82,7 @@ export async function readObsidian(path: string): Promise<RawObsidian> {
 }
 
 /**
- * The root collector for local clones. Each include path is a repository or a directory searched
+ * The root collector for local repositories. Each include path is a repository or a directory searched
  * for repositories; ignore paths are never entered. Kind and LiveSync are observed, not configured.
  */
 export function createLocalSource(
@@ -114,12 +114,12 @@ export function createLocalSource(
         for (const path of repositories)
           if (!found.has(path)) found.set(path, include);
       }
-      const presences: Record<string, RawLocalPresence> = {};
+      const repositories: Record<string, RawLocalRepository> = {};
       await mapWithLimit(
         [...found],
         deps.concurrency,
         async ([path, include]) => {
-          let git: RawLocalPresence["git"];
+          let git: RawLocalRepository["git"];
           try {
             git = {
               state: "observed",
@@ -128,7 +128,7 @@ export function createLocalSource(
           } catch (error) {
             git = { state: "error", error: errorMessage(error) };
           }
-          presences[localIdFor(path, deps.home)] = {
+          repositories[localIdFor(path, deps.home)] = {
             path,
             include,
             obsidian: await readObsidian(path),
@@ -136,7 +136,7 @@ export function createLocalSource(
           };
         },
       );
-      return { includes, presences: sortedRecord(presences) };
+      return { includes, repositories: sortedRecord(repositories) };
     },
   };
 }

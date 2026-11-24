@@ -10,18 +10,18 @@ import {
 import type { HealthCause } from "../src/viewmodel.ts";
 import { aged, hoursBefore } from "./helpers/snapshot.ts";
 
-const windows = { amberHours: 24, redHours: 72 };
-const dayWindows = { amberDays: 7, redDays: 30 };
+const hourThresholds = { amberHours: 24, redHours: 72 };
+const dayThresholds = { amberDays: 7, redDays: 30 };
 
 function subject(overrides: Partial<SpeechSubject>): SpeechSubject {
   return {
     fence: null,
     causes: [],
-    activity: "settled",
+    workState: "merged",
     branch: "main",
     defaultBranch: "main",
     unpushedCount: 0,
-    openItems: 0,
+    openWorkItems: 0,
     lastTouchedHours: 30,
     ...overrides,
   };
@@ -70,7 +70,7 @@ const cause = {
     level,
     count,
     work: aged(hours, level),
-    thresholds: windows,
+    thresholds: hourThresholds,
   }),
   unpushed: (
     count: number,
@@ -81,7 +81,7 @@ const cause = {
     level,
     count,
     work: aged(hours, level),
-    thresholds: windows,
+    thresholds: hourThresholds,
   }),
   stalled: (days: number, everythingPushed: boolean): HealthCause => ({
     kind: "stalled",
@@ -91,42 +91,42 @@ const cause = {
       since: hoursBefore(days * 24),
       days,
       level: days >= 30 ? "red" : "amber",
-      thresholds: dayWindows,
+      thresholds: dayThresholds,
     },
     everythingPushed,
   }),
 };
 
 describe("content birds are brief", () => {
-  it("settled: says so, and when it was last touched", () => {
+  it("quiet: says so, and when it was last touched", () => {
     expect(speak(subject({ lastTouchedHours: 30 }))).toBe(
-      "All settled over here. Last touched 30 hours ago.",
+      "All quiet over here. Last touched 30 hours ago.",
     );
     expect(speak(subject({ lastTouchedHours: null }))).toBe(
-      "All settled over here.",
+      "All quiet over here.",
     );
   });
 
-  it("being edited: acknowledges you, with the song", () => {
-    expect(speak(subject({ activity: "editing", openItems: 24 }))).toBe(
-      "We're in the middle of something. ♪",
-    );
-  });
-
-  it("settled with a backlog: offers the items", () => {
-    expect(speak(subject({ openItems: 12 }))).toBe(
-      "All settled, and twelve items on my roadmap when you want me.",
-    );
-    expect(speak(subject({ openItems: 1 }))).toBe(
-      "All settled, and one item on my roadmap when you want me.",
-    );
-  });
-
-  it("in flight while fresh: names the branch, or the commits waiting to go up", () => {
+  it("uncommitted: acknowledges you, with the song", () => {
     expect(
-      speak(subject({ activity: "in-flight", branch: "scanner-poc" })),
+      speak(subject({ workState: "uncommitted", openWorkItems: 24 })),
+    ).toBe("We're in the middle of something. ♪");
+  });
+
+  it("quiet with a backlog: offers the work items", () => {
+    expect(speak(subject({ openWorkItems: 12 }))).toBe(
+      "All quiet, and twelve work items on my roadmap when you want me.",
+    );
+    expect(speak(subject({ openWorkItems: 1 }))).toBe(
+      "All quiet, and one work item on my roadmap when you want me.",
+    );
+  });
+
+  it("committed while fresh: names the branch, or the commits waiting to go up", () => {
+    expect(
+      speak(subject({ workState: "committed", branch: "scanner-poc" })),
     ).toBe("Out on scanner-poc. All fresh so far.");
-    expect(speak(subject({ activity: "in-flight", unpushedCount: 2 }))).toBe(
+    expect(speak(subject({ workState: "committed", unpushedCount: 2 }))).toBe(
       "Two commits waiting to go up. All fresh so far.",
     );
   });
@@ -162,12 +162,12 @@ describe("restless birds nudge", () => {
     );
   });
 
-  it("stalled flight, saying everything is pushed only when it is", () => {
+  it("stalled, saying everything is pushed only when it is", () => {
     expect(speak(subject({ causes: [cause.stalled(21, true)] }))).toBe(
-      "Stalled on extension-popup-ia for three weeks. Everything's pushed, but the flight's gone quiet.",
+      "Stalled on extension-popup-ia for three weeks. Everything's pushed, but the branch has gone quiet.",
     );
     expect(speak(subject({ causes: [cause.stalled(9, false)] }))).toBe(
-      "Stalled on extension-popup-ia for nine days. The flight's gone quiet.",
+      "Stalled on extension-popup-ia for nine days. The branch has gone quiet.",
     );
   });
 });
@@ -246,7 +246,7 @@ describe("fence birds state where they stand", () => {
         forge: "github",
         fullName: "finch/obsidian-tidy",
       }),
-    ).toBe("Nobody's cloned me yet. I live on GitHub as finch/obsidian-tidy.");
+    ).toBe("I live on GitHub as finch/obsidian-tidy.");
     expect(fence({ kind: "one-disk" })).toBe(
       "I only exist on this machine. One disk, no backup.",
     );

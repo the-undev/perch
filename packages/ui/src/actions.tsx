@@ -1,10 +1,10 @@
-// The detail page's verbs and links: launch actions open things and change nothing; links out go
+// The bird's page's verbs and links: launch actions open things and change nothing; links out go
 // to the bird's pages on its forges.
 
 import type { LaunchAction, LinkOut } from "@perch/core/viewmodel.ts";
 import { Icon } from "./icons.tsx";
 
-/** A verb on the detail page's action row: quiet until hovered. */
+/** A verb on the bird's page's action row: quiet until hovered. */
 export const actionClass =
   "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-transparent px-3.25 py-2.25 font-body font-medium text-[13.5px] text-ink-muted no-underline hover:border-edge hover:bg-panel hover:text-ink focus-visible:outline-2 focus-visible:outline-ink-accent focus-visible:outline-offset-1";
 

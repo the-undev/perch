@@ -1,17 +1,17 @@
-// The adoption papers: one sheet of paper on a bird's page that adopts a fence bird and, reopened,
+// The adoption papers: one sheet on a bird's page that adopts a fence bird and, reopened,
 // amends an adopted one. The head carries the portrait and the ring, the config key; then what
 // the scan found, in the scanner's mono and not editable; then what the owner says, the common
 // choices above a fold that names the rare ones; then the signature line. The sheet holds only its
 // draft: what is signed leaves through the callbacks, and the caller decides when it folds away.
 
 import {
-  type EntryForm,
-  type EntryValues,
-  emptyEntryValues,
-  entryProblems,
+  emptyPapersValues,
+  type PapersForm,
+  type PapersValues,
+  papersProblems,
   type ThresholdKey,
-  thresholdWindows,
-} from "@perch/core/entry-form.ts";
+  thresholdFacts,
+} from "@perch/core/papers-form.ts";
 import type { Bird } from "@perch/core/viewmodel.ts";
 import { type ReactNode, useId, useState } from "react";
 import { BirdFigure, birdLook } from "./bird.tsx";
@@ -174,7 +174,7 @@ function WirePicker({
 }
 
 /**
- * A list of paths relative to the item, each once: each removable, one more added at the end.
+ * A list of paths relative to the entity, each once: each removable, one more added at the end.
  * Null keeps the defaults, which the list names; an empty list is none at all.
  */
 function PathList({
@@ -218,27 +218,27 @@ function PathList({
   );
 }
 
-/** One health window's amber and red overrides, each empty for the global value. */
+/** One fact's amber and red threshold overrides, each empty for the global value. */
 function ThresholdPair({
-  window,
+  fact,
   defaults,
   value,
   onChange,
 }: {
-  window: (typeof thresholdWindows)[number];
+  fact: (typeof thresholdFacts)[number];
   defaults: Record<ThresholdKey, number>;
-  value: EntryValues["thresholds"];
-  onChange: (value: EntryValues["thresholds"]) => void;
+  value: PapersValues["thresholds"];
+  onChange: (value: PapersValues["thresholds"]) => void;
 }) {
   const set = (key: ThresholdKey, next: number) => {
     const { [key]: _, ...rest } = value;
     onChange(Number.isNaN(next) ? rest : { ...rest, [key]: next });
   };
   const overridden =
-    value[window.amber] !== undefined || value[window.red] !== undefined;
+    value[fact.amber] !== undefined || value[fact.red] !== undefined;
   const field = (key: ThresholdKey, level: "amber" | "red") => (
     <ThresholdField
-      window={window}
+      fact={fact}
       level={level}
       value={value[key]}
       placeholder={String(defaults[key])}
@@ -247,18 +247,14 @@ function ThresholdPair({
   );
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-      {field(window.amber, "amber")}
-      {field(window.red, "red")}
+      {field(fact.amber, "amber")}
+      {field(fact.red, "red")}
       {overridden ? (
         <button
           type="button"
-          aria-label={`Clear ${window.label}`}
+          aria-label={`Clear ${fact.label}`}
           onClick={() => {
-            const {
-              [window.amber]: _amber,
-              [window.red]: _red,
-              ...rest
-            } = value;
+            const { [fact.amber]: _amber, [fact.red]: _red, ...rest } = value;
             onChange(rest);
           }}
           className={quietClass}
@@ -269,13 +265,13 @@ function ThresholdPair({
         <span className="text-[12px] text-ink-faint">default</span>
       )}
       <p className="m-0 basis-full max-w-[52ch] text-[12.5px] text-paper-quiet">
-        {window.counts}; empty follows the Judgement page.
+        {fact.counts}; empty follows the Judgement page.
       </p>
     </div>
   );
 }
 
-/** A text field's value as an entry holds it: blank is null. */
+/** A text field's value as papers hold it: blank is null. */
 function blankAsNull(text: string): string | null {
   return text.trim() === "" ? null : text;
 }
@@ -283,21 +279,21 @@ function blankAsNull(text: string): string | null {
 export interface AdoptionPapersProps {
   /** The bird the papers are for: its name and portrait head the sheet. */
   bird: Bird;
-  /** The bird's entry form: amend mode when it has values, adopt mode when it has none. */
-  form: EntryForm;
+  /** The bird's papers form: amend mode when it has values, adopt mode when it has none. */
+  form: PapersForm;
   /** The render's clock, which the last commit's age is measured to. */
   now: Date;
   /** Sentences from the main process, a refused write among them, shown above the signature. */
   problems: string[];
   /** Signed: the values to write, every untouched field null. */
-  onSign: (values: EntryValues) => void;
+  onSign: (values: PapersValues) => void;
   /** Return to the fence was pressed and then confirmed. */
   onReturn: () => void;
   /** Not now, or Escape: the papers fold away and nothing is written. */
   onClose: () => void;
 }
 
-/** The adoption papers for one bird, adopting it or amending its entry. */
+/** The adoption papers for one bird, adopting it or amending its papers. */
 export function AdoptionPapers({
   bird,
   form,
@@ -307,14 +303,14 @@ export function AdoptionPapers({
   onReturn,
   onClose,
 }: AdoptionPapersProps) {
-  const [values, setValues] = useState(form.values ?? emptyEntryValues());
+  const [values, setValues] = useState(form.values ?? emptyPapersValues());
   const [moreOpen, setMoreOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const id = useId();
   const { options, seen } = form;
   const amending = form.values !== null;
-  const holds = entryProblems(values, options);
-  const update = (change: Partial<EntryValues>) =>
+  const holds = papersProblems(values, options);
+  const update = (change: Partial<PapersValues>) =>
     setValues({ ...values, ...change });
   const ids = {
     wire: `${id}-wire`,
@@ -434,7 +430,7 @@ export function AdoptionPapers({
           >
             ▸
           </span>
-          More particulars · its windows, key files, roadmaps and session
+          More particulars · its thresholds, key files, roadmaps and session
         </button>
         {moreOpen && (
           <div id={ids.more} data-material="paper" className="pb-3.5">
@@ -470,16 +466,16 @@ export function AdoptionPapers({
               />
             </FormRow>
             <p className="mt-3 mb-0 px-0.5 font-semibold text-[13.5px] text-paper-head">
-              Its own windows
+              Its own thresholds
               <span className="ml-2 font-normal text-[12.5px] text-paper-quiet">
                 hours and days before amber and red; blank follows the judgement
                 settings
               </span>
             </p>
-            {thresholdWindows.map((window) => (
-              <FormRow key={window.label} label={window.label} sub="">
+            {thresholdFacts.map((fact) => (
+              <FormRow key={fact.label} label={fact.label} sub="">
                 <ThresholdPair
-                  window={window}
+                  fact={fact}
                   defaults={options.thresholds}
                   value={values.thresholds}
                   onChange={(thresholds) => update({ thresholds })}

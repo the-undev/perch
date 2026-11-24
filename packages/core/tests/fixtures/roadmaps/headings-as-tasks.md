@@ -1,6 +1,6 @@
 # Roadmap
 
-Work identified and not done. Remove items as they land.
+Work identified and not done. Remove work items as they land.
 
 ## Bird Positions
 

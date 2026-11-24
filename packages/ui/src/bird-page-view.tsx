@@ -2,38 +2,43 @@
 // the meta line with the launch actions, the snooze control, links out and papers' verb beside it,
 // then a notice for each remote no card can read and the main process's problems), the roost's
 // bubble at its reading width, and the bird sitting on its perch at the right. It never scrolls.
-// Beneath it the ground holds two panes that each scroll their own contents: the record (the
-// ledger and its sections) and the key files on paper, or for a bird with no clone here the slip
-// saying so; in a narrow page they join into one pane, the paper at the end. The adoption papers
-// rise as a sheet over both panes, which dim and go inert while the band stays live. A chip
-// pressed in the roost's bubble lands on the ledger row holding its working, or the can't-read
-// chip on the notice, as does the chip pressed in the aviary's bubble that brought the camera
-// here. A bug line pressed in the ledger opens its file on the paper at that line. Only what
-// exists is shown. The view fetches nothing: key-file contents, launching, the clipboard and the
-// entry's form and writes are the caller's.
+// Beneath it the ground holds two panes that each scroll their own contents: the record (the ledger
+// and its sections) and the key files on paper, or for a bird with no local repository here the
+// slip saying so; in a narrow page they join into one pane, the sheets at the end. The adoption
+// papers rise as a sheet over both panes, which dim and go inert while the band stays live. A chip
+// pressed in the roost's bubble lands on the ledger row holding its reading, or the can't-read chip
+// on the notice, as does the chip pressed in the aviary's bubble that brought the camera here. A
+// bug line pressed in the ledger opens its file on the sheet at that line. Only what exists is
+// shown. The view fetches nothing: key-file contents, launching, the clipboard and the papers' form
+// and writes are the caller's.
 
 import {
-  type EntryForm,
-  type EntryValues,
-  sameEntryValues,
-} from "@perch/core/entry-form.ts";
+  type PapersForm,
+  type PapersValues,
+  samePapersValues,
+} from "@perch/core/papers-form.ts";
 import type {
   Bird,
   ChipKind,
   LaunchAction,
-  PaperLine,
   RemoteNotice,
+  SheetLine,
 } from "@perch/core/viewmodel.ts";
 import { useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { actionClass, LaunchActions, LinksOut } from "./actions.tsx";
 import { AdoptionPapers } from "./adoption-papers.tsx";
 import { birdLook } from "./bird.tsx";
-import { DetailHeading } from "./detail-heading.tsx";
+import { BirdPageHeading } from "./bird-page-heading.tsx";
 import { Icon } from "./icons.tsx";
 import {
+  type KeyFileSheet,
+  KeyFileSheets,
+  type Reveal,
+} from "./key-file-sheets.tsx";
+import {
   BranchLines,
-  CommitRiver,
+  CommitHistory,
   FlagLines,
   type Landing,
   LandingMark,
@@ -42,23 +47,25 @@ import {
   PullRequestLines,
   SourceProblems,
 } from "./ledger.tsx";
-import { NoCloneClause, NoCloneSlip } from "./no-clone-slip.tsx";
-import { KeyFilePaper, type KeyFileSheet, type Reveal } from "./paper.tsx";
+import {
+  NoLocalRepositoryClause,
+  NoLocalRepositorySlip,
+} from "./no-local-repository-slip.tsx";
 import { RisingSheet } from "./rising-sheet.tsx";
 import { Roost } from "./roost.tsx";
 import { SnoozeAction, type SnoozeCalls } from "./snooze-action.tsx";
 
-/** What the detail page needs to adopt its bird or amend its papers. */
-export interface EntryControls {
-  /** The open bird's entry and the form's choices; null until read, when no control shows. */
-  form: EntryForm | null;
-  /** Writes the bird's entry, adopting it when it has none. */
-  onSave: (birdId: string, values: EntryValues) => void;
-  /** Removes the bird's entry, returning it to the fence. */
+/** What the bird's page needs to adopt its bird or amend its papers. */
+export interface PapersControls {
+  /** The open bird's papers and the form's choices; null until read, when no control shows. */
+  form: PapersForm | null;
+  /** Writes the bird's papers, adopting it when it has none. */
+  onSave: (birdId: string, values: PapersValues) => void;
+  /** Removes the bird's papers, returning it to the fence. */
   onRemove: (birdId: string) => void;
 }
 
-export interface DetailViewProps {
+export interface BirdPageViewProps {
   bird: Bird;
   /** The render's clock: ages are measured to it, and the bird's look follows the hour. */
   now: Date;
@@ -68,7 +75,7 @@ export interface DetailViewProps {
   /** The bird's key files with what was read from each; empty until the caller has read them. */
   sheets: KeyFileSheet[];
   /** Adopting the bird or amending its papers. */
-  entry: EntryControls;
+  papers: PapersControls;
   /** The main process's problems, a refused write among them, which the strip under the heading or open papers show. */
   problems: string[];
   /** The papers unfold as the page opens, and again whenever this turns true. */
@@ -77,21 +84,21 @@ export interface DetailViewProps {
   arrivalChip: ChipKind | null;
   /** A notice's Sources was pressed: open the settings page. */
   onSettings: () => void;
-  /** The no-clone slip's Open Sources was pressed: open the settings page on Sources, the local cards unfolded. */
+  /** The no-local-repository slip's Open Sources was pressed: open the settings page on Sources, the local cards unfolded. */
   onLocalSources: () => void;
-  /** Puts the slip's clone address on the clipboard, settling once it is there. */
+  /** Puts the slip's SSH address on the clipboard, settling once it is there. */
   onCopy: (text: string) => Promise<void>;
   /** The camera is panning the ground between birds' pages: a page mounted during it skips its swap. */
   panning: boolean;
 }
 
-/** What was signed and is not yet in the entry read back: the values written, or the return. */
-type Signed = { kind: "values"; values: EntryValues } | { kind: "return" };
+/** What was signed and is not yet in the papers read back: the values written, or the return. */
+type Signed = { kind: "values"; values: PapersValues } | { kind: "return" };
 
-/** Whether the entry read back shows what was signed. */
-function landed(signed: Signed, form: EntryForm): boolean {
+/** Whether the papers read back show what was signed. */
+function landed(signed: Signed, form: PapersForm): boolean {
   if (signed.kind === "return") return form.values === null;
-  return form.values !== null && sameEntryValues(form.values, signed.values);
+  return form.values !== null && samePapersValues(form.values, signed.values);
 }
 
 /** The papers' verb: Adopt for a fence bird, The papers for an adopted one. */
@@ -178,7 +185,7 @@ function RemoteNotices({
   );
 }
 
-/** Scrolls the element holding a chip's working to the middle of its own pane. */
+/** Scrolls the element holding a chip's reading to the middle of its own pane. */
 function scrollToChip(article: HTMLElement | null, chip: ChipKind) {
   article
     ?.querySelector(`[data-chip="${chip}"]`)
@@ -193,16 +200,16 @@ const paneClass =
  * The whole project page as a fixed stage, centred as one block. The band at the top holds still:
  * from 860px one row, the heading taking what the roost leaves and the roost only as wide as its
  * bubble and bird need; narrower, the roost beneath the heading in a centred column. Beneath it the record
- * pane and the paper pane each scroll their own contents when the page is wide enough; narrower,
+ * pane and the sheets pane each scroll their own contents when the page is wide enough; narrower,
  * they join into one pane, the key files at the record's end. It fills a flex column.
  */
-export function DetailView({
+export function BirdPageView({
   bird,
   now,
   onLaunch,
   snooze,
   sheets,
-  entry,
+  papers,
   problems,
   openPapers,
   arrivalChip,
@@ -210,18 +217,18 @@ export function DetailView({
   onLocalSources,
   onCopy,
   panning,
-}: DetailViewProps) {
-  const { detail } = bird;
+}: BirdPageViewProps) {
+  const { page } = bird;
   const [open, setOpen] = useState(openPapers);
   const [asked, setAsked] = useState(openPapers);
   if (openPapers !== asked) {
     setAsked(openPapers);
     if (openPapers) setOpen(true);
   }
-  // Signed papers stay open until the entry read back shows the write, so a refused one keeps them
+  // Signed papers stay open until the papers read back show the write, so a refused one keeps them
   // open with the reason.
   const [signed, setSigned] = useState<Signed | null>(null);
-  const { form } = entry;
+  const { form } = papers;
   if (signed !== null && form !== null && landed(signed, form)) {
     setSigned(null);
     setOpen(false);
@@ -264,9 +271,9 @@ export function DetailView({
     });
     scrollToChip(articleRef.current, chip);
   };
-  // A bug line pressed in the ledger shows its line on the paper.
+  // A bug line pressed in the ledger shows its line on the sheet.
   const [reveal, setReveal] = useState<Reveal | null>(null);
-  const revealLine = (at: PaperLine) =>
+  const revealLine = (at: SheetLine) =>
     setReveal((last) => ({ at, press: (last?.press ?? 0) + 1 }));
   const [swaps] = useState(!panning);
   return (
@@ -283,7 +290,7 @@ export function DetailView({
           data-part="heading"
           className="min-w-0 @min-[860px]:flex-[1_1_22rem]"
         >
-          <DetailHeading
+          <BirdPageHeading
             bird={bird}
             now={now}
             actions={
@@ -291,15 +298,17 @@ export function DetailView({
                 data-part="actions"
                 className="flex flex-wrap items-center gap-1"
               >
-                {detail.noClone?.onMetaLine && <NoCloneClause />}
-                <LaunchActions actions={detail.actions} onLaunch={onLaunch} />
+                {page.noLocalRepository?.onMetaLine && (
+                  <NoLocalRepositoryClause />
+                )}
+                <LaunchActions actions={page.actions} onLaunch={onLaunch} />
                 <SnoozeAction
                   bird={bird}
                   look={birdLook(bird, now)}
                   place="page"
                   calls={snooze}
                 />
-                <LinksOut links={detail.links} />
+                <LinksOut links={page.links} />
                 {agreed !== null && (
                   <PapersVerb
                     adopt={agreed.values === null}
@@ -311,7 +320,7 @@ export function DetailView({
             }
           />
           <RemoteNotices
-            notices={detail.notices}
+            notices={page.notices}
             landing={landing}
             onSettings={onSettings}
           />
@@ -337,11 +346,11 @@ export function DetailView({
             problems={problems}
             onSign={(values) => {
               setSigned({ kind: "values", values });
-              entry.onSave(bird.id, values);
+              papers.onSave(bird.id, values);
             }}
             onReturn={() => {
               setSigned({ kind: "return" });
-              entry.onRemove(bird.id);
+              papers.onRemove(bird.id);
             }}
             onClose={close}
           />
@@ -354,15 +363,15 @@ export function DetailView({
       >
         <div data-part="record" className={paneClass}>
           <Ledger
-            quiet={detail.quiet}
-            entries={detail.ledger}
+            quiet={page.quiet}
+            facts={page.ledger}
             now={now}
             landing={landing}
             onReveal={revealLine}
           />
-          {detail.branches.length > 0 && (
+          {page.branches.length > 0 && (
             <BranchLines
-              branches={detail.branches}
+              branches={page.branches}
               now={now}
               chip={
                 bird.bubble.chips.some((chip) => chip.kind === "stalled")
@@ -372,26 +381,26 @@ export function DetailView({
               landing={landing}
             />
           )}
-          {detail.river.commits.length > 0 && (
-            <CommitRiver river={detail.river} now={now} />
+          {page.history.commits.length > 0 && (
+            <CommitHistory history={page.history} now={now} />
           )}
-          {detail.pullRequests.length > 0 && (
-            <PullRequestLines pullRequests={detail.pullRequests} now={now} />
+          {page.pullRequests.length > 0 && (
+            <PullRequestLines pullRequests={page.pullRequests} now={now} />
           )}
-          {detail.flags.length > 0 && <FlagLines flags={detail.flags} />}
-          {detail.problems.length > 0 && (
-            <SourceProblems problems={detail.problems} />
+          {page.flags.length > 0 && <FlagLines flags={page.flags} />}
+          {page.problems.length > 0 && (
+            <SourceProblems problems={page.problems} />
           )}
         </div>
-        <div data-part="paper" className={paneClass}>
-          {detail.noClone !== null && (
-            <NoCloneSlip
-              slip={detail.noClone}
+        <div data-part="sheets" className={paneClass}>
+          {page.noLocalRepository !== null && (
+            <NoLocalRepositorySlip
+              slip={page.noLocalRepository}
               onLocalSources={onLocalSources}
               onCopy={onCopy}
             />
           )}
-          <KeyFilePaper sheets={sheets} reveal={reveal} />
+          <KeyFileSheets sheets={sheets} reveal={reveal} />
         </div>
       </div>
     </article>

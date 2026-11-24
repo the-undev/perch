@@ -72,7 +72,7 @@ function show(now = morning, aviary = mockAviary, pickedAt = () => now) {
   };
 }
 
-/** A bird's button, named by the bird's name and its state word. */
+/** A bird's button, named by the bird's name and its state phrase. */
 function birdButton(id: string): HTMLElement {
   const bird = mockBird(id);
   return screen.getByRole("button", {
@@ -196,7 +196,7 @@ describe("the aviary view", () => {
       screen.getByRole("button", { name: "Tell me the full story" }),
     );
 
-    expect(onLaunch).toHaveBeenCalledWith(perch.detail.actions[1]);
+    expect(onLaunch).toHaveBeenCalledWith(perch.page.actions[1]);
     expect(onFullStory).toHaveBeenCalledWith(perch);
     expect(screen.queryByRole("region", { name: "Perch says" })).toBeNull();
   });
@@ -339,7 +339,7 @@ describe("the aviary view", () => {
       expect(
         within(screen.getByRole("menu", { name: "Snooze Skiff for" }))
           .getAllByRole("menuitem")
-          .map((item) => item.textContent),
+          .map((entity) => entity.textContent),
       ).toEqual([
         "1 day",
         "3 days",
@@ -412,21 +412,21 @@ describe("the aviary view", () => {
       fireEvent.click(birdButton("undev/skiff"));
       const button = screen.getByRole("button", { name: "Snooze" });
       fireEvent.click(button);
-      const items = screen.getAllByRole("menuitem");
+      const menuItems = screen.getAllByRole("menuitem");
       const menu = screen.getByRole("menu");
-      expect(document.activeElement).toBe(items[0]);
+      expect(document.activeElement).toBe(menuItems[0]);
 
       fireEvent.keyDown(menu, { key: "ArrowDown" });
-      expect(document.activeElement).toBe(items[1]);
+      expect(document.activeElement).toBe(menuItems[1]);
       fireEvent.keyDown(menu, { key: "ArrowUp" });
       fireEvent.keyDown(menu, { key: "ArrowUp" });
-      expect(document.activeElement).toBe(items[5]);
+      expect(document.activeElement).toBe(menuItems[5]);
       fireEvent.keyDown(menu, { key: "ArrowDown" });
-      expect(document.activeElement).toBe(items[0]);
+      expect(document.activeElement).toBe(menuItems[0]);
       fireEvent.keyDown(menu, { key: "End" });
-      expect(document.activeElement).toBe(items[5]);
+      expect(document.activeElement).toBe(menuItems[5]);
       fireEvent.keyDown(menu, { key: "Home" });
-      expect(document.activeElement).toBe(items[0]);
+      expect(document.activeElement).toBe(menuItems[0]);
 
       fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
       expect(screen.queryByRole("menu")).toBeNull();
@@ -446,7 +446,7 @@ describe("the aviary view", () => {
     fireEvent.pointerMove(birdButton("undev/prism"));
 
     expect(screen.getByRole("tooltip").textContent).toBe(
-      "Prism · distressedci failure · 4 uncommitted · 2 open PRs · 78 open items",
+      "Prism · distressedci failure · 4 uncommitted · 2 open PRs · 78 open work items",
     );
   });
 
@@ -461,7 +461,7 @@ describe("the aviary view", () => {
       "last commit ten days ago",
     );
     expect(tipLine(mockBird("undev/prism"), morning)).toBe(
-      "ci failure · 4 uncommitted · 2 open PRs · 78 open items",
+      "ci failure · 4 uncommitted · 2 open PRs · 78 open work items",
     );
   });
 
@@ -537,6 +537,20 @@ describe("the aviary view", () => {
     expect(holder.style.width).toBe(`${expected.width}px`);
   });
 
+  it("keys the sky with the mood words and the song", () => {
+    show();
+    const legend = screen.getByText(/♪ = uncommitted changes/)
+      .parentElement as HTMLElement;
+
+    expect([...legend.children].map((part) => part.textContent)).toEqual([
+      "distressed",
+      "restless",
+      "content",
+      "higher wire = more important · plumper = more outstanding work · ♪ = uncommitted changes",
+      "click a bird to hear from it",
+    ]);
+  });
+
   describe("its wire tallies", () => {
     /** Each wire's tally lines, top wire first. */
     function tallies(container: HTMLElement): string[][] {
@@ -546,19 +560,19 @@ describe("the aviary view", () => {
       ) as string[][];
     }
 
-    it("counts a snoozed bird as snoozed, out of attention, drifting and settled", () => {
+    it("counts a snoozed bird as snoozed, out of distressed, restless and content", () => {
       const { container } = show(
         morning,
         snoozing(["undev/gramophone", "undev/skiff", ".dotfiles"], null),
       );
 
       expect(tallies(container)).toEqual([
-        ["1 drifting", "1 snoozed"],
-        ["2 attention", "2 snoozed"],
+        ["1 restless", "1 snoozed"],
+        ["2 distressed", "2 snoozed"],
       ]);
     });
 
-    it("never says all settled while a bird on the wire is snoozed", () => {
+    it("never says all content while a bird on the wire is snoozed", () => {
       const { container } = show(
         morning,
         snoozing([".dotfiles", "obsidian/Hothouse"], null),
@@ -573,13 +587,13 @@ describe("the aviary view", () => {
         snoozing(["undev/gramophone", "undev/skiff"], "2026-10-22"),
       );
 
-      expect(tallies(container)[1]).toEqual(["3 attention", "1 drifting"]);
+      expect(tallies(container)[1]).toEqual(["3 distressed", "1 restless"]);
     });
 
-    it("counts a restless bird asleep at night as drifting", () => {
+    it("counts a restless bird asleep at night as restless", () => {
       const { container } = show(smallHours);
 
-      expect(tallies(container)[0]).toEqual(["2 drifting"]);
+      expect(tallies(container)[0]).toEqual(["2 restless"]);
     });
   });
 

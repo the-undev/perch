@@ -1,5 +1,5 @@
 // A number the bird carries, on the bubble's paper, toned by the severity of the fact behind it.
-// In a bubble a chip is a handle that lands on the ledger row holding its working.
+// In a bubble a chip is a handle that lands on the ledger row holding its reading.
 
 import type { ChipKind, Chip as ChipModel } from "@perch/core/viewmodel.ts";
 

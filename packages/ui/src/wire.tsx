@@ -15,7 +15,7 @@ import {
   type Facing,
   type NamePlace,
   roomyName,
-  type StateWord,
+  type StatePhrase,
 } from "./bird.tsx";
 
 /** The margin no bird is placed inside at the scene's right end: 0.06 of the scene, at least 60 units, so 120 at full width. */
@@ -120,39 +120,39 @@ export function byPosition(birds: BirdModel[]): BirdModel[] {
   return [...birds].sort((a, b) => a.position - b.position);
 }
 
-/** The state words a tally counts: the awake moods and a snooze, each by the bird's look at the time. */
+/** The state phrases a tally counts: the awake moods and a snooze, each by the bird's look at the time. */
 export interface TallyCounts {
-  attention: number;
-  drifting: number;
-  settled: number;
+  distressed: number;
+  restless: number;
+  content: number;
   snoozed: number;
 }
 
-/** How many of the birds are at each state word at a time; fence birds are counted by none, as their state word is "not adopted", which no count takes. */
+/** How many of the birds are at each state phrase at a time; fence birds are counted by none, as their state phrase is "not adopted", which no count takes. */
 export function tallyCounts(birds: BirdModel[], now: Date): TallyCounts {
-  const stateWords = birds.map((bird) => birdLook(bird, now).stateWord);
-  const count = (word: StateWord) =>
-    stateWords.filter((stateWord) => stateWord === word).length;
+  const statePhrases = birds.map((bird) => birdLook(bird, now).statePhrase);
+  const count = (word: StatePhrase) =>
+    statePhrases.filter((statePhrase) => statePhrase === word).length;
   return {
-    attention: count("distressed"),
-    drifting: count("restless"),
-    settled: count("content"),
+    distressed: count("distressed"),
+    restless: count("restless"),
+    content: count("content"),
     snoozed: count("snoozed"),
   };
 }
 
-/** The tally's words in order, each with its ink; "all settled" when nothing else is said. */
+/** The tally's words in order, each with its ink; "all content" when nothing else is said. */
 function tallyWords(
   birds: BirdModel[],
   now: Date,
 ): { words: string; ink: string | undefined }[] {
-  const { attention, drifting, snoozed } = tallyCounts(birds, now);
+  const { distressed, restless, snoozed } = tallyCounts(birds, now);
   const said = [
-    { count: attention, words: `${attention} attention`, ink: "fill-red" },
-    { count: drifting, words: `${drifting} drifting`, ink: "fill-amber" },
+    { count: distressed, words: `${distressed} distressed`, ink: "fill-red" },
+    { count: restless, words: `${restless} restless`, ink: "fill-amber" },
     { count: snoozed, words: `${snoozed} snoozed`, ink: undefined },
   ].filter((part) => part.count > 0);
-  return said.length > 0 ? said : [{ words: "all settled", ink: undefined }];
+  return said.length > 0 ? said : [{ words: "all content", ink: undefined }];
 }
 
 /** The tally as one line of text, as the tspans spell it. */
@@ -261,7 +261,7 @@ const tallyLeading = 20;
 /** How far the tally's first baseline hangs beneath the wire's left end. */
 const tallyDrop = 30;
 
-/** The tally under a wire's left end, in front: one line per word group in its colour, or "all settled" faintly. */
+/** The tally under a wire's left end, in front: one line per word group in its colour, or "all content" faintly. */
 export function WireTally({
   y,
   birds,

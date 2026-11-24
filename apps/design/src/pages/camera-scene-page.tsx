@@ -5,7 +5,7 @@ import { birdSheets } from "../key-files.ts";
 import {
   aviaryWith,
   mockBird,
-  mockEntryForm,
+  mockPapersForm,
   reportedSnooze,
 } from "../specimens.ts";
 import {
@@ -43,7 +43,7 @@ const scanningOptions: { value: Scanning; label: string }[] = [
 function placeWords(place: CameraPlace): string {
   return place.at === "aviary"
     ? "{ at: aviary }"
-    : `{ at: detail, birdId: ${place.birdId}, papers: ${place.papers} }`;
+    : `{ at: birdPage, birdId: ${place.birdId}, papers: ${place.papers} }`;
 }
 
 export function CameraScenePage() {
@@ -53,12 +53,12 @@ export function CameraScenePage() {
   const [wires, setWires] = useState<Wires>("mock");
   const [pressed, setPressed] = useState("nothing yet");
   const sheets =
-    place.at === "detail" ? birdSheets(mockBird(place.birdId)) : [];
+    place.at === "birdPage" ? birdSheets(mockBird(place.birdId)) : [];
   return (
     <>
       <Section
         title="The camera, end to end"
-        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the detail rises beneath. The strip is 124px: the wire's name is painted on the sky behind the line's left end, cut round the birds that cross it, the tally beneath in front (attention, drifting, then snoozed, with a snoozed bird in no other count), and the birds, standing at their wire size, centre in the room right of the 240-unit column, the open one bright. Pressing another bird in the strip, or any move from one bird's page to another, pans the ground under the still strip: the old page slides out as the chosen bird's slides in, from the right for a bird further along the strip or on a later tab, from the left otherwise, and instantly with reduced motion. The header's tabs switch wires; each remembers the bird last open on it, opens the bird that needs you most (awake before snoozed, worst mood, then plumpest) until then, the fence's tab the first fence bird by name, and an empty wire's tab says so. The brand, The Aviary and Escape ride home. The header's totals read attention, drifting, settled and snoozed, each always shown, over the adopted birds only. The scan line at the right says how old the scan is and scans again when pressed; settings, beside it, leaves for the settings page."
+        rule="Click a bird and press Tell me the full story: the camera pulls back, the sky collapses into a strip of the bird's own wire as its wire-mates fly there, and the page rises beneath. The strip is 124px: the wire's name is painted on the sky behind the line's left end, cut round the birds that cross it, the tally beneath in front (distressed, restless, then snoozed, with a snoozed bird in no other count), and the birds, standing at their wire size, centre in the room right of the 240-unit column, the open one bright. Pressing another bird in the strip, or any move from one bird's page to another, pans the ground under the still strip: the old page slides out as the chosen bird's slides in, from the right for a bird further along the strip or on a later tab, from the left otherwise, and instantly with reduced motion. The header's tabs switch wires; each remembers the bird last open on it, opens the bird that needs you most (awake before snoozed, worst mood, then plumpest) until then, the fence's tab the first fence bird by name, and an empty wire's tab says so. The brand, The Aviary and Escape ride home. The header's totals read distressed, restless, content and snoozed, each always shown, over the adopted birds only. The scan line at the right says how old the scan is and scans again when pressed; settings, beside it, leaves for the settings page."
         min={600}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -105,10 +105,10 @@ export function CameraScenePage() {
           onSettings={() => setPressed("onSettings()")}
           onLocalSources={() => setPressed("onLocalSources()")}
           onCopy={async (text) => setPressed(`onCopy(${text})`)}
-          entry={{
-            form: place.at === "detail" ? mockEntryForm(place.birdId) : null,
-            onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
-            onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
+          papers={{
+            form: place.at === "birdPage" ? mockPapersForm(place.birdId) : null,
+            onSave: (birdId) => setPressed(`papers.onSave(${birdId})`),
+            onRemove: (birdId) => setPressed(`papers.onRemove(${birdId})`),
           }}
           problems={[]}
         />
@@ -130,7 +130,7 @@ export function CameraScenePage() {
           },
           {
             name: "place",
-            type: '{ at: "aviary" } | { at: "detail"; birdId: string; papers: boolean }',
+            type: '{ at: "aviary" } | { at: "birdPage"; birdId: string; papers: boolean }',
             what: "Where the camera points. The caller holds it; a bird the aviary no longer holds shows the aviary.",
           },
           {
@@ -141,12 +141,12 @@ export function CameraScenePage() {
           {
             name: "onLaunch",
             type: "(action: LaunchAction) => void",
-            what: "A launch action was pressed, in a bubble or on the detail page.",
+            what: "A launch action was pressed, in a bubble or on the bird's page.",
           },
           {
             name: "snooze",
             type: "SnoozeCalls",
-            what: "A snooze or wake action was pressed, in a bubble or on the detail page. It also carries the pick's clock.",
+            what: "A snooze or wake action was pressed, in a bubble or on the bird's page. It also carries the pick's clock.",
           },
           {
             name: "sheets",
@@ -171,17 +171,17 @@ export function CameraScenePage() {
           {
             name: "onLocalSources",
             type: "() => void",
-            what: "A no-clone slip's Open Sources was pressed: the app opens the settings page on Sources, the local cards unfolded.",
+            what: "A no-local-repository slip's Open Sources was pressed: the app opens the settings page on Sources, the local cards unfolded.",
           },
           {
             name: "onCopy",
             type: "(text: string) => Promise<void>",
-            what: "A no-clone slip's Copy was pressed: the app puts the clone address on the clipboard.",
+            what: "A no-local-repository slip's Copy was pressed: the app puts the SSH address on the clipboard.",
           },
           {
-            name: "entry",
-            type: "EntryControls",
-            what: "The open bird's entry form and the calls that save or remove its entry, for the detail page's papers.",
+            name: "papers",
+            type: "PapersControls",
+            what: "The open bird's papers form and the calls that save or remove its papers, for the bird's page's papers.",
           },
           {
             name: "problems",
@@ -198,7 +198,7 @@ export function CameraScenePage() {
           home. Tabs follow <Code>cameraTabs(aviary)</Code>; a wire with no
           birds keeps its tab, which says empty and cannot be pressed. The
           ground beneath the strip never scrolls: the bird&apos;s page fills it,
-          and only its record and paper panes move their contents.{" "}
+          and only its record and sheets panes move their contents.{" "}
           <Code>stripLayout(tab, width)</Code> places the strip&apos;s birds in
           a strip as many units wide as the aviary&apos;s scene in the same
           window, from the same column edge as the aviary&apos;s wires, and the

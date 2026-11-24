@@ -5,16 +5,15 @@ import type { FailureReason, ForgeName, PolledSourceName } from "./raw.ts";
 
 export type { FailureReason, ForgeName, PolledSourceName };
 
-export type ItemKind = "git" | "obsidian" | "server";
+export type EntityKind = "git" | "obsidian";
 
-export type LiveSourceName = "dockerContainers";
-
-/** Data a source could not read for one item, kept as data rather than failing the source. */
-export interface ItemError {
+/** Data a source could not read for one entity, kept as data rather than failing the source. */
+export interface EntityError {
   error: string;
 }
 
-export type ActivityState = "settled" | "in-progress" | "editing";
+/** How far the work in the local repository has got: uncommitted wins over committed. */
+export type WorkState = "uncommitted" | "committed" | "merged";
 
 export type HealthLevel = "green" | "amber" | "red";
 
@@ -38,29 +37,29 @@ export interface UnpushedBranch {
   upstream: string | null;
   /** The branch's commits that no remote-tracking ref contains. */
   count: number;
-  /** The branch's oldest such commit, aged against the unsafe-work windows. */
+  /** The branch's oldest such commit, aged against the unsafe-work thresholds. */
   work: AgedWork;
 }
 
-/** Windows in hours: amber at or beyond the first, red at or beyond the second. */
+/** Thresholds in hours: amber at or beyond the first, red at or beyond the second. */
 export interface HourThresholds {
   amberHours: number;
   redHours: number;
 }
 
-/** Windows in days: amber at or beyond the first, red at or beyond the second. */
+/** Thresholds in days: amber at or beyond the first, red at or beyond the second. */
 export interface DayThresholds {
   amberDays: number;
   redDays: number;
 }
 
-/** Windows in open items: amber at or beyond the first count, red at or beyond the second. */
+/** Thresholds in open work items: amber at or beyond the first count, red at or beyond the second. */
 export interface CountThresholds {
   amberCount: number;
   redCount: number;
 }
 
-/** Unsafe work of one kind, aged from its oldest change and judged against the item's windows. */
+/** Unsafe work of one kind, aged from its oldest change and judged against the entity's thresholds. */
 export interface AgedWork {
   since: string;
   /** Whole hours from since to when git was read. */
@@ -69,17 +68,17 @@ export interface AgedWork {
 }
 
 /** Unsafe work: uncommitted changes and unpushed commits, each aged from its oldest. */
-export interface Drift {
+export interface UnsafeWork {
   /** The oldest uncommitted change, from the dirty files' mtimes; null when there is none. */
   uncommitted: AgedWork | null;
-  /** The oldest commit no remote holds, aged only against a joined forge presence. */
+  /** The oldest commit no remote holds, aged only against a linked forge repository. */
   unpushed: AgedWork | null;
   /** The worse of the two levels; green when neither exists. */
   level: HealthLevel;
   thresholds: HourThresholds;
 }
 
-/** HEAD parked on a branch other than the default, aged from that branch's newest commit. */
+/** HEAD on a branch other than the default, aged from that branch's newest commit. */
 export interface Stall {
   branch: string;
   since: string;
@@ -90,10 +89,10 @@ export interface Stall {
 }
 
 /**
- * Whether unpushed work has somewhere to go: a joined forge presence, a remote perch has no
- * presence for, or no remote at all (one disk).
+ * Whether unpushed work has somewhere to go: a linked forge repository, a remote perch has no
+ * repository for, or no remote at all (one disk).
  */
-export type Backup = "joined" | "unjoined-remote" | "local-only";
+export type Backup = "linked" | "unlinked-remote" | "local-only";
 
 export interface GitData {
   backup: Backup;
@@ -111,7 +110,7 @@ export interface GitData {
   oldestUncommittedAt: string | null;
   oldestUnpushedAt: string | null;
   /**
-   * Each local branch holding unpushed commits, aged only against a joined forge presence and
+   * Each local branch holding unpushed commits, aged only against a linked forge repository and
    * empty otherwise; absent from a snapshot cached before the scanner read them.
    */
   unpushedBranches?: UnpushedBranch[];
@@ -122,8 +121,8 @@ export interface GitData {
    */
   defaultBranchCommits?: FinalisedCommit[] | null;
   remotes: Remote[];
-  activity: ActivityState;
-  drift: Drift;
+  workState: WorkState;
+  unsafeWork: UnsafeWork;
   /** Null when HEAD is on the default branch, detached, or there is no default branch. */
   stall: Stall | null;
 }
@@ -134,12 +133,12 @@ export type WorkItemKind = "task" | "bug" | "critical-bug";
 export interface WorkItem {
   text: string;
   kind: WorkItemKind;
-  /** Null when the item carries no checkbox. */
+  /** Null when the work item carries no checkbox. */
   done: boolean | null;
   line: number;
   /** A bullet, or a bare heading whose prose is its body. */
   source: "bullet" | "heading";
-  /** The prose under a heading item; null for a bullet or a heading with no prose. */
+  /** The prose under a heading work item; null for a bullet or a heading with no prose. */
   body: string | null;
 }
 
@@ -154,36 +153,36 @@ export interface WorkItemGroup {
   line: number;
   /** A group has direct bullets; structure only holds sub-headings. */
   role: "group" | "structure";
-  items: WorkItem[];
+  workItems: WorkItem[];
   groups: WorkItemGroup[];
-  /** Checked against total checkbox items among the direct items, null without checkboxes. */
+  /** Checked against total checkbox work items among the direct work items, null without checkboxes. */
   progress: Progress | null;
 }
 
 export type WorkItemCounts = Record<WorkItemKind, number>;
 
 export interface RoadmapFile {
-  /** Path relative to the item. */
+  /** Path relative to the entity. */
   path: string;
   /** Bullets above the first heading and bare top-level headings. */
-  items: WorkItem[];
+  workItems: WorkItem[];
   groups: WorkItemGroup[];
-  /** Open items in this file by kind; done items are not counted. */
+  /** Open work items in this file by kind; done work items are not counted. */
   counts: WorkItemCounts;
 }
 
-/** The windows each roadmap file's open bugs and critical bugs are judged against. */
+/** The thresholds each roadmap file's open bugs and critical bugs are judged against. */
 export interface BugThresholds {
   bugs: CountThresholds;
   criticalBugs: CountThresholds;
 }
 
 export interface RoadmapData {
-  /** Open items by kind across every file; done items are not counted. */
+  /** Open work items by kind across every file; done work items are not counted. */
   counts: WorkItemCounts;
   files: RoadmapFile[];
   thresholds: BugThresholds;
-  /** A standard-named roadmap file shown as a document but not parsed; null when the entry lists files. */
+  /** A standard-named roadmap file shown as a document but not parsed; null when the papers list files. */
   detectedPath: string | null;
 }
 
@@ -216,18 +215,18 @@ export interface ForgeData {
   fullName: string;
   url: string;
   defaultBranch: string;
-  openPullRequests: PullRequest[] | ItemError;
+  openPullRequests: PullRequest[] | EntityError;
   /** Latest CI result on the default branch, null when there is none. */
-  latestCi: CiRun | null | ItemError;
+  latestCi: CiRun | null | EntityError;
   /** The newest commits on the forge's default branch: finalised work, against local work. */
-  finalisedCommits: FinalisedCommit[] | ItemError;
+  finalisedCommits: FinalisedCommit[] | EntityError;
 }
 
 /**
  * A forge repository perch could not read at all: no card covers its owner, a standing config gap,
  * or the read failed this scan.
  */
-export interface ForgeError extends ItemError {
+export interface ForgeError extends EntityError {
   cause: "no-card" | "read-failed";
 }
 
@@ -237,39 +236,19 @@ export interface FinalisedCommit {
   subject: string;
 }
 
-export type MonitorStatus =
-  | "up"
-  | "down"
-  | "pending"
-  | "maintenance"
-  | "unknown";
-
-export interface Monitor {
-  id: number;
-  name: string;
-  status: MonitorStatus;
-  lastHeartbeatAt: string | null;
-}
-
-export interface KumaData {
-  allUp: boolean;
-  monitors: Monitor[];
-}
-
-/** Derived data per source on an item. */
-export interface ItemSourceData {
-  git: GitData | ItemError;
-  roadmap: RoadmapData | ItemError;
+/** Derived data per source on an entity. */
+export interface EntitySourceData {
+  git: GitData | EntityError;
+  roadmap: RoadmapData | EntityError;
   github: ForgeData | ForgeError;
   forgejo: ForgeData | ForgeError;
-  kuma: KumaData | ItemError;
 }
 
-export type ItemSources = Partial<ItemSourceData>;
+export type EntitySources = Partial<EntitySourceData>;
 
-export interface ForgePresence {
+export interface ForgeRepository {
   forge: ForgeName;
-  /** The presence reference, such as github:finch/perch. */
+  /** The repository reference, such as github:finch/perch. */
   ref: string;
   /** As the forge spells it, or lower case as the remote named it when it could not be read. */
   fullName: string;
@@ -283,36 +262,34 @@ export interface ForgePresence {
   foundBy: "account-listing" | "local-remote";
 }
 
-export interface Presences {
+export interface Repositories {
   local: { ref: string; path: string } | null;
-  forges: ForgePresence[];
+  forges: ForgeRepository[];
 }
 
-export type ItemFlagName =
+export type EntityFlagName =
   | "not-set-up"
   | "remote-archived"
-  | "remote-joined-elsewhere"
+  | "remote-linked-elsewhere"
   | "config-conflict";
 
-export interface ItemFlag {
-  flag: ItemFlagName;
+export interface EntityFlag {
+  flag: EntityFlagName;
   /** The health level the flag carries where one is decided, else null. */
   level: HealthLevel | null;
   detail: string;
 }
 
-export interface Item {
-  /** A local presence's id, or the first forge presence's reference for a forge-only item. */
+export interface Entity {
+  /** A local repository's id, or the first forge repository's reference for a forge-only entity. */
   id: string;
   name: string;
-  kind: ItemKind;
-  /** Absolute path of the local clone, null without one. */
+  kind: EntityKind;
+  /** Absolute path of the local repository, null without one. */
   path: string | null;
-  /** Live sources a detail view may fetch for this item; never part of the scan. */
-  liveSources: LiveSourceName[];
-  presences: Presences;
-  flags: ItemFlag[];
-  sources: ItemSources;
+  repositories: Repositories;
+  flags: EntityFlag[];
+  sources: EntitySources;
 }
 
 /** A config assertion that the observations contradict; the observation won. */
@@ -325,8 +302,8 @@ export interface ForgeListingEntry {
   ref: string;
   fullName: string;
   url: string;
-  /** The item this presence belongs to, null when it is on no item. */
-  itemId: string | null;
+  /** The entity this repository belongs to, null when it is on no entity. */
+  entityId: string | null;
   ignored: boolean;
 }
 
@@ -344,7 +321,7 @@ export interface SourceStatus {
   durationMs: number;
 }
 
-export type SourceCardKind = "local" | "github" | "forgejo" | "kuma";
+export type SourceCardKind = "local" | "github" | "forgejo";
 
 /** A source card's last scan: never read, read with what it found, or failed. */
 export type SourceCardResult =
@@ -353,7 +330,7 @@ export type SourceCardResult =
       state: "ok";
       /** When the card's raw file was gathered. */
       at: string;
-      /** Repositories found or listed, or a kuma page's monitors. */
+      /** Repositories found or listed. */
       count: number;
       /** A local card's include paths that do not exist, home as ~; empty for other kinds. */
       missingIncludes: string[];
@@ -367,26 +344,30 @@ export type SourceCardResult =
 
 /** One configured source table, as its settings card shows it, with its last scan. */
 export interface SourceCard {
-  /** Stable identity: local:<first include>, github:<account>, forgejo:<account>@<host>, kuma:<name>. */
+  /** Stable identity: local:<first include>, github:<account>, forgejo:<account>@<host>. */
   id: string;
   kind: SourceCardKind;
-  /** The card's heading: the account, account@host, the kuma name, or the include paths, home as ~. */
+  /** The card's heading: the account, account@host, or the include paths, home as ~. */
   label: string;
   result: SourceCardResult;
 }
 
+/** The snapshot version this perch reads and writes. */
+export const snapshotVersion = 2;
+
 export interface Snapshot {
+  version: typeof snapshotVersion;
   /** When the raw files were gathered, and how long gathering took. */
   scannedAt: string;
   durationMs: number;
   aggregatedAt: string;
   configPath: string;
-  /** Problems outside any one item, such as a configured include path that does not exist. */
+  /** Problems outside any one entity, such as a configured include path that does not exist. */
   warnings: string[];
   conflicts: ConfigConflict[];
   forges: Record<ForgeName, ForgeListing>;
   sources: Partial<Record<PolledSourceName, SourceStatus>>;
-  /** One per configured source table, in config order: local, github, forgejo, then kuma. */
+  /** One per configured source table, in config order: local, github, forgejo. */
   sourceCards: SourceCard[];
-  items: Item[];
+  entities: Entity[];
 }

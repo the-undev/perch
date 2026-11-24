@@ -15,7 +15,7 @@ which ones need your attention.
 
 - **Local git repositories:** branches, uncommitted and unpushed work.
 - **GitHub and Forgejo:** your repositories, their pull requests and CI runs.
-- **Roadmaps:** Markdown files listing open items.
+- **Roadmaps:** Markdown files listing open work items.
 
 ## Launch actions
 
@@ -32,10 +32,15 @@ and can replace the AppImage itself.
 ## Configuration
 
 The config is `~/.config/perch/config.toml`. Without it, the app offers to
-create one: one wire, the standard windows, no sources. Add sources on the
+create one: one wire, the standard thresholds, no sources. Add sources on the
 settings page. `config.example.toml` shows every field with placeholder
 values. Forge tokens come from the desktop keyring, see
 [docs/forge-access.md](docs/forge-access.md).
+
+The config carries a `version`. The app migrates an older config once, writing
+it back without comments and keeping the old file beside it as
+`config.toml.v1`. An older perch cannot read the migrated file; restore
+`config.toml.v1` to go back.
 
 ## Development
 

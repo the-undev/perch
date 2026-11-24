@@ -1,12 +1,6 @@
 import type { Config } from "@perch/core/config.ts";
 import { defaultConfig } from "@perch/core/config-default.ts";
 import {
-  type EntryForm,
-  type EntryValues,
-  entryFormFor,
-  withEntry,
-} from "@perch/core/entry-form.ts";
-import {
   mockAviary,
   mockConfig,
   mockImage,
@@ -14,6 +8,12 @@ import {
   mockSnapshot,
   mockUpdates,
 } from "@perch/core/mock.ts";
+import {
+  type PapersForm,
+  type PapersValues,
+  papersFormFor,
+  withPapers,
+} from "@perch/core/papers-form.ts";
 import {
   type SettingsForm,
   settingsFormFor,
@@ -66,7 +66,7 @@ function renderApp(
   initial: PerchState,
   path = "/",
   sheetsFor?: (birdId: string) => KeyFileSheet[],
-  formFor?: (birdId: string) => EntryForm | null,
+  formFor?: (birdId: string) => PapersForm | null,
   settings: SettingsForm | null = null,
 ) {
   const fake = fakeApi(initial, sheetsFor, formFor, settings);
@@ -241,10 +241,12 @@ describe("the window", () => {
 
   it("rides to a fence bird's page with its papers unfolded from its bubble's adopt action", async () => {
     const { router } = renderApp(idle(mockAviary), "/", undefined, (birdId) => {
-      const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-      return item === undefined
+      const entity = mockSnapshot.entities.find(
+        (candidate) => candidate.id === birdId,
+      );
+      return entity === undefined
         ? null
-        : entryFormFor(mockConfig, item, mockHome);
+        : papersFormFor(mockConfig, entity, mockHome);
     });
 
     fireEvent.click(await birdButton("dev/odin/hello"));
@@ -294,10 +296,12 @@ describe("the window", () => {
       "/bird/dev/perch?papers=true",
       undefined,
       (birdId) => {
-        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-        return item === undefined
+        const entity = mockSnapshot.entities.find(
+          (candidate) => candidate.id === birdId,
+        );
+        return entity === undefined
           ? null
-          : entryFormFor(mockConfig, item, mockHome);
+          : papersFormFor(mockConfig, entity, mockHome);
       },
     );
 
@@ -312,10 +316,12 @@ describe("the window", () => {
       "/bird/dev/perch",
       undefined,
       (birdId) => {
-        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-        return item === undefined
+        const entity = mockSnapshot.entities.find(
+          (candidate) => candidate.id === birdId,
+        );
+        return entity === undefined
           ? null
-          : entryFormFor(mockConfig, item, mockHome);
+          : papersFormFor(mockConfig, entity, mockHome);
       },
     );
     const verb = await screen.findByRole("button", { name: "The papers" });
@@ -404,9 +410,9 @@ describe("the window", () => {
     ).toBeDefined();
   });
 
-  it("reads the open bird's key files into its detail", async () => {
+  it("reads the open bird's key files into its page", async () => {
     const { fake } = renderApp(idle(mockAviary), "/bird/dev/perch", (birdId) =>
-      mockBird(birdId).detail.keyFiles.map((file) => ({
+      mockBird(birdId).page.keyFiles.map((file) => ({
         file,
         markdown: file.path === "README.md" ? "# Hello from the readme" : null,
       })),
@@ -438,7 +444,7 @@ describe("the window", () => {
     expect(fake.rescans).toBe(1);
   });
 
-  it("puts a no-clone slip's address on the clipboard in the window, which stays on the bird", async () => {
+  it("puts a no-local-repository slip's address on the clipboard in the window, which stays on the bird", async () => {
     const copied: string[] = [];
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -507,11 +513,13 @@ describe("the window", () => {
         page.getAttribute("data-page"),
       );
 
-    function entryForms(birdId: string): EntryForm | null {
-      const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-      return item === undefined
+    function papersForms(birdId: string): PapersForm | null {
+      const entity = mockSnapshot.entities.find(
+        (candidate) => candidate.id === birdId,
+      );
+      return entity === undefined
         ? null
-        : entryFormFor(mockConfig, item, mockHome);
+        : papersFormFor(mockConfig, entity, mockHome);
     }
 
     it("pans the ground to a wire-mate pressed in the strip, the page left keeping its key files, leaving one page once it settles", async () => {
@@ -519,7 +527,7 @@ describe("the window", () => {
         idle(mockAviary),
         "/bird/undev/skiff",
         (birdId) =>
-          mockBird(birdId).detail.keyFiles.map((file) => ({
+          mockBird(birdId).page.keyFiles.map((file) => ({
             file,
             markdown: `# Read from ${birdId}`,
           })),
@@ -569,7 +577,7 @@ describe("the window", () => {
         idle(mockAviary),
         "/bird/dev/perch?papers=true",
         undefined,
-        entryForms,
+        papersForms,
       );
       await screen.findByRole("form", { name: "Adoption papers for Perch" });
 
@@ -594,26 +602,28 @@ describe("the window", () => {
     });
   });
 
-  describe("config entries", () => {
+  describe("config papers", () => {
     /** The config the fake main process holds, which a save changes as the real one would. */
     function configHolder() {
       let config: Config = mockConfig;
-      const item = (birdId: string) => {
-        const found = mockSnapshot.items.find((entry) => entry.id === birdId);
-        if (found === undefined) throw new Error(`no item ${birdId}`);
+      const entity = (birdId: string) => {
+        const found = mockSnapshot.entities.find(
+          (candidate) => candidate.id === birdId,
+        );
+        if (found === undefined) throw new Error(`no entity ${birdId}`);
         return found;
       };
       return {
         formFor: (birdId: string) =>
-          entryFormFor(config, item(birdId), mockHome),
-        save: (birdId: string, values: EntryValues) => {
-          config = withEntry(config, item(birdId), values);
+          papersFormFor(config, entity(birdId), mockHome),
+        save: (birdId: string, values: PapersValues) => {
+          config = withPapers(config, entity(birdId), values);
           return idle(deriveAviary(mockSnapshot, config, {}, mockHome));
         },
       };
     }
 
-    it("adopts a fence bird from its detail page onto the wire picked", async () => {
+    it("adopts a fence bird from its page onto the wire picked", async () => {
       const holder = configHolder();
       const { fake } = renderApp(
         idle(mockAviary),
@@ -633,7 +643,7 @@ describe("the window", () => {
         ).getByRole("button", { name: "Adopt onto Machine & Home" }),
       );
 
-      expect(fake.entrySaves).toEqual([
+      expect(fake.papersSaves).toEqual([
         {
           birdId: "dev/odin/hello",
           values: {
@@ -652,7 +662,7 @@ describe("the window", () => {
         fake.push(
           holder.save(
             "dev/odin/hello",
-            fake.entrySaves[0]?.values as EntryValues,
+            fake.papersSaves[0]?.values as PapersValues,
           ),
         ),
       );
@@ -684,13 +694,13 @@ describe("the window", () => {
       );
       fireEvent.change(
         screen.getByRole("spinbutton", {
-          name: "Stalled flight, amber after days",
+          name: "Stalled, amber after days",
         }),
         { target: { value: "3" } },
       );
       fireEvent.click(screen.getByRole("button", { name: "Amend the papers" }));
 
-      expect(fake.entrySaves).toEqual([
+      expect(fake.papersSaves).toEqual([
         {
           birdId: "dev/perch",
           values: expect.objectContaining({
@@ -715,7 +725,7 @@ describe("the window", () => {
       fireEvent.click(
         screen.getByRole("button", { name: "Return it to the fence" }),
       );
-      expect(fake.entryRemovals).toEqual(["dev/perch"]);
+      expect(fake.papersRemovals).toEqual(["dev/perch"]);
     });
   });
 
@@ -755,7 +765,7 @@ describe("the window", () => {
       await waitFor(() => expect(pathOf(router)).toBe("/settings"));
     });
 
-    it("opens on Sources from a no-clone slip with the local cards unfolded", async () => {
+    it("opens on Sources from a no-local-repository slip with the local cards unfolded", async () => {
       const { router } = renderApp(
         idle(mockAviary),
         "/bird/forgejo:finch/field-notes",
@@ -874,15 +884,15 @@ describe("the window", () => {
         form,
       );
 
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Joining up" }),
-      );
+      fireEvent.click(await screen.findByRole("button", { name: "Linking" }));
       fireEvent.change(
-        await screen.findByRole("textbox", { name: "Add an ignored presence" }),
+        await screen.findByRole("textbox", {
+          name: "Add an ignored repository",
+        }),
         { target: { value: "github:a/old" } },
       );
       fireEvent.click(
-        screen.getByRole("button", { name: "Add the ignored presence" }),
+        screen.getByRole("button", { name: "Add the ignored repository" }),
       );
       fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
@@ -912,10 +922,10 @@ describe("the window", () => {
         form,
       );
 
-      const kuma = await screen.findByRole("region", {
-        name: "Uptime Kuma · Silo",
+      const newcomer = await screen.findByRole("region", {
+        name: "GitHub · newcomer",
       });
-      expect(within(kuma).getByText("never scanned yet")).toBeDefined();
+      expect(within(newcomer).getByText("never scanned yet")).toBeDefined();
       expect(
         within(
           screen.getByRole("region", { name: "GitHub · finch" }),
@@ -1053,7 +1063,7 @@ describe("the window", () => {
       await waitFor(async () => expect(await interval()).toBe("20"));
     });
 
-    it("saves the Window page's switches and shows the entry the main process wrote", async () => {
+    it("saves the Window page's switches and shows the login entry the main process wrote", async () => {
       const form = mockSettingsForm();
       const { fake } = renderApp(
         idle(mockAviary),
@@ -1107,8 +1117,12 @@ describe("the window", () => {
     it("gives open papers the wires the file now has", async () => {
       let config: Config = mockConfig;
       const formFor = (birdId: string) => {
-        const item = mockSnapshot.items.find((entry) => entry.id === birdId);
-        return item === undefined ? null : entryFormFor(config, item, mockHome);
+        const entity = mockSnapshot.entities.find(
+          (candidate) => candidate.id === birdId,
+        );
+        return entity === undefined
+          ? null
+          : papersFormFor(config, entity, mockHome);
       };
       const { fake } = renderApp(
         idle(mockAviary),

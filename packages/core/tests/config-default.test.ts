@@ -14,16 +14,15 @@ describe("the default config", () => {
     expect(parseConfig(text, home)).toEqual(defaultConfig());
   });
 
-  it("declares no sources, holds no entries, and writes no sources table", () => {
+  it("declares no sources, holds no papers, and writes no sources table", () => {
     const config = defaultConfig();
 
     expect(config.sources).toEqual({
       local: [],
       github: [],
       forgejo: [],
-      kuma: [],
     });
-    expect(config.items).toEqual({});
+    expect(config.entities).toEqual({});
     expect(config.wires).toEqual({ names: ["projects"], default: "projects" });
     expect(writeConfig(config, home)).not.toContain("sources");
   });

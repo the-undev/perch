@@ -46,7 +46,7 @@ export interface ScanWords {
   tone: "ok" | "never" | "failed";
   text: string;
   /** A second line: a local card's folders not found, or when a failed card last read. */
-  detail: string | null;
+  page: string | null;
 }
 
 /** A card's last scan in words; a card with no record yet reads as never scanned. */
@@ -56,13 +56,13 @@ export function scanWords(
   now: Date,
 ): ScanWords {
   if (result === null || result.state === "never-scanned") {
-    return { tone: "never", text: "never scanned yet", detail: null };
+    return { tone: "never", text: "never scanned yet", page: null };
   }
   if (result.state === "failed") {
     return {
       tone: "failed",
       text: `failed: ${result.message}`,
-      detail:
+      page:
         result.lastSucceededAt === null
           ? null
           : `last read ${recentWords(result.lastSucceededAt, now)}`,
@@ -72,12 +72,11 @@ export function scanWords(
     local: `found ${plural(result.count, "repository", "repositories")}`,
     github: `read ${plural(result.count, "repository", "repositories")}`,
     forgejo: `read ${plural(result.count, "repository", "repositories")}`,
-    kuma: `read ${plural(result.count, "monitor", "monitors")}`,
   }[kind];
   return {
     tone: "ok",
     text: `${found} · ${recentWords(result.at, now)}`,
-    detail:
+    page:
       result.missingIncludes.length === 0
         ? null
         : `not found: ${result.missingIncludes.join(", ")}`,
@@ -365,7 +364,7 @@ function AccountFields<Source extends GithubSourceConfig>({
       </p>
       <ListField
         field="hosts"
-        sub="the remote hostnames and SSH aliases that reach the account; a clone joins its listing by them"
+        sub="the remote hostnames and SSH aliases that reach the account; a local repository is linked to its listing by them"
         noun="host"
         placeholder={kind === "github" ? "github.com" : "forge.example.lan"}
         values={source.hosts}
@@ -446,7 +445,8 @@ function CardBody({
           />
           <p className={quietLineClass}>
             The account's own repositories appear on the fence until adopted. A
-            clone here whose remote names one of the hosts joins the same bird.
+            local repository here whose remote names one of the hosts is linked
+            to the same bird.
           </p>
         </>
       );
@@ -481,49 +481,11 @@ function CardBody({
           />
           <p className={quietLineClass}>
             The account's own repositories on this server appear on the fence
-            until adopted. A clone here whose remote names one of the hosts
-            joins the same bird.
+            until adopted. A local repository here whose remote names one of the
+            hosts is linked to the same bird.
           </p>
         </>
       );
-    case "kuma": {
-      const { source } = card;
-      const set = (next: typeof source) => onChange({ ...card, source: next });
-      return (
-        <>
-          <div className="grid gap-2.5 @min-[520px]:grid-cols-2">
-            <TextField
-              field="name"
-              sub="the server this source reads"
-              value={source.name}
-              placeholder="Server"
-              problems={problems("name")}
-              onChange={(name) => set({ ...source, name })}
-            />
-            <TextField
-              field="statusPage"
-              sub="its slug"
-              value={source.statusPage}
-              placeholder="perch"
-              problems={problems("statusPage")}
-              onChange={(statusPage) => set({ ...source, statusPage })}
-            />
-          </div>
-          <TextField
-            field="baseUrl"
-            sub="Uptime Kuma's address"
-            value={source.baseUrl}
-            placeholder="http://forge.example.lan:3001"
-            problems={problems("baseUrl")}
-            onChange={(baseUrl) => set({ ...source, baseUrl })}
-          />
-          <p className={quietLineClass}>
-            The page's monitors become one bird named for the server, on the
-            fence until it is adopted.
-          </p>
-        </>
-      );
-    }
   }
 }
 
@@ -602,11 +564,11 @@ function SourceCardView({
           />
           {scan.text}
         </span>
-        {scan.detail !== null && (
+        {scan.page !== null && (
           <span
             className={`basis-full text-right text-[12px] ${scan.tone === "ok" ? "text-amber" : "text-ink-faint"}`}
           >
-            {scan.detail}
+            {scan.page}
           </span>
         )}
       </div>

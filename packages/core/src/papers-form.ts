@@ -1,62 +1,62 @@
-// A bird's config entry as its detail page edits it: the values the form holds, the choices it
+// A bird's config papers as the bird's page edits it: the values the form holds, the choices it
 // offers, and the edits that put them back into config. No Node modules, so the renderer may
 // import it.
 
 import {
   type Config,
   collapseHome,
-  type ItemEntry,
   noThresholdOverrides,
-  resolveEntry,
+  type Papers,
+  resolvePapers,
   type ThresholdOverrides,
   thresholdKeys,
   zellijActionOf,
   zellijSessionFor,
 } from "./config.ts";
-import { itemRefs } from "./refs.ts";
-import type { Item } from "./snapshot.ts";
+import { entityRefs } from "./refs.ts";
+import type { Entity } from "./snapshot.ts";
 
-/** A threshold's key in config, the same globally and per item. */
+/** A threshold's key in config, the same globally and per entity. */
 export type ThresholdKey = (typeof thresholdKeys)[number][2];
 
-/** The entry fields the detail page edits. */
-export interface EntryValues {
+/** The papers fields the bird's page edits. */
+export interface PapersValues {
   /** The wire the bird sits on; null puts it on the default wire. */
   wire: string | null;
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
-  /** Key files relative to the item; null keeps the README and the roadmaps. */
+  /** Key files relative to the entity; null keeps the README and the roadmaps. */
   keyFiles: string[] | null;
-  /** Roadmap files relative to the item; null keeps the standard names. */
+  /** Roadmap files relative to the entity; null keeps the standard names. */
   roadmaps: string[] | null;
   /** The overrides set; a key left out takes the global value. */
   thresholds: Partial<Record<ThresholdKey, number>>;
-  /** The zellij session holding the item's tab; null takes it from the zellij action. */
+  /** The zellij session holding the entity's tab; null takes it from the zellij action. */
   zellijSession: string | null;
-  /** The entry's bug words, kept as config has them; the form does not edit them. */
+  /** The papers' bug words, kept as config has them; the form does not edit them. */
   bugWords: string[] | null;
-  /** The entry's critical bug words, kept as config has them; the form does not edit them. */
+  /** The papers' critical bug words, kept as config has them; the form does not edit them. */
   criticalBugWords: string[] | null;
 }
 
-/** The choices the entry form offers, and the defaults a value left unset takes. */
-export interface EntryOptions {
+/** The choices the papers form offers, and the defaults a value left unset takes. */
+export interface PapersOptions {
   wires: string[];
   defaultWire: string;
   /** The global thresholds, which an override left out takes. */
   thresholds: Record<ThresholdKey, number>;
 }
 
-/** The newest commit the scan read for an item. */
+/** The newest commit the scan read for an entity. */
 export interface SeenCommit {
   at: string;
   /** Null when the scan read no subject for it, as on a detached HEAD. */
   subject: string | null;
 }
 
-/** What the scan found for an item, which the papers show and cannot change. */
-export interface EntrySeen {
-  /** Where the clone is on disk, home as ~; null for an item with no clone here. */
+/** What the scan found for an entity, which the papers show and cannot change. */
+export interface PapersSeen {
+  /** Where the local repository is on disk, home as ~; null for an entity with no local repository here. */
   foundAt: string | null;
   /** The forges that also hold it, each as its web address without the scheme. */
   forges: string[];
@@ -64,22 +64,22 @@ export interface EntrySeen {
   lastCommit: SeenCommit | null;
 }
 
-/** What the detail page needs to adopt a bird or edit its entry. */
-export interface EntryForm {
-  /** The config key the entry sits under; null for a bird config does not name. */
+/** What the bird's page needs to adopt a bird or edit its papers. */
+export interface PapersForm {
+  /** The config key the papers sit under; null for a bird config does not name. */
   key: string | null;
   /** The name the scan found, which a name left unset keeps. */
   scannedName: string;
-  seen: EntrySeen;
-  /** The session the zellij action gives the clone, which a session left unset takes; null without either. */
+  seen: PapersSeen;
+  /** The session the zellij action gives the local repository, which a session left unset takes; null without either. */
   defaultSession: string | null;
-  /** The entry's values; null for a bird on the fence. */
-  values: EntryValues | null;
-  options: EntryOptions;
+  /** The papers' values; null for a bird on the fence. */
+  values: PapersValues | null;
+  options: PapersOptions;
 }
 
-/** The two health windows, each an amber key and a red key, with the unit they count in and a fragment saying what the number counts. */
-export const thresholdWindows: readonly {
+/** The two facts with thresholds the papers set, each an amber key and a red key, with the unit they count in and a fragment saying what the number counts. */
+export const thresholdFacts: readonly {
   label: string;
   unit: "hours" | "days";
   counts: string;
@@ -94,7 +94,7 @@ export const thresholdWindows: readonly {
     red: "unsafe_red_hours",
   },
   {
-    label: "Stalled flight",
+    label: "Stalled",
     unit: "days",
     counts:
       "Days a non-default branch has sat without a commit, even with everything pushed",
@@ -103,8 +103,8 @@ export const thresholdWindows: readonly {
   },
 ];
 
-/** The values of a new entry: everything left to the defaults. */
-export function emptyEntryValues(): EntryValues {
+/** The values of a new papers: everything left to the defaults. */
+export function emptyPapersValues(): PapersValues {
   return {
     wire: null,
     name: null,
@@ -117,50 +117,47 @@ export function emptyEntryValues(): EntryValues {
   };
 }
 
-/** Thresholds keyed as config writes them, a window left out leaving its keys out. */
+/** Thresholds keyed as config writes them, a fact left out leaving its keys out. */
 export function flatThresholds(
   thresholds: ThresholdOverrides,
 ): Partial<Record<ThresholdKey, number>> {
   const flat: Partial<Record<ThresholdKey, number>> = {};
-  for (const [window, field, key] of thresholdKeys) {
-    const value = (thresholds[window] as Partial<Record<string, number>>)[
-      field
-    ];
+  for (const [fact, field, key] of thresholdKeys) {
+    const value = (thresholds[fact] as Partial<Record<string, number>>)[field];
     if (value !== undefined) flat[key] = value;
   }
   return flat;
 }
 
-/** Thresholds keyed as config writes them, back in their windows. */
+/** Thresholds keyed as config writes them, back under their facts. */
 export function nestedThresholds(
   flat: Partial<Record<ThresholdKey, number>>,
 ): ThresholdOverrides {
   const overrides = noThresholdOverrides();
-  for (const [window, field, key] of thresholdKeys) {
+  for (const [fact, field, key] of thresholdKeys) {
     const value = flat[key];
-    if (value !== undefined)
-      Object.assign(overrides[window], { [field]: value });
+    if (value !== undefined) Object.assign(overrides[fact], { [field]: value });
   }
   return overrides;
 }
 
-/** An entry's editable fields as form values. */
-export function entryValues(entry: ItemEntry): EntryValues {
+/** Papers' editable fields as form values. */
+export function papersValues(papers: Papers): PapersValues {
   return {
-    wire: entry.wire,
-    name: entry.name,
-    keyFiles: entry.keyFiles === null ? null : [...entry.keyFiles],
-    roadmaps: entry.roadmaps === null ? null : [...entry.roadmaps],
-    thresholds: flatThresholds(entry.thresholds),
-    zellijSession: entry.zellijSession,
-    bugWords: entry.bugWords === null ? null : [...entry.bugWords],
+    wire: papers.wire,
+    name: papers.name,
+    keyFiles: papers.keyFiles === null ? null : [...papers.keyFiles],
+    roadmaps: papers.roadmaps === null ? null : [...papers.roadmaps],
+    thresholds: flatThresholds(papers.thresholds),
+    zellijSession: papers.zellijSession,
+    bugWords: papers.bugWords === null ? null : [...papers.bugWords],
     criticalBugWords:
-      entry.criticalBugWords === null ? null : [...entry.criticalBugWords],
+      papers.criticalBugWords === null ? null : [...papers.criticalBugWords],
   };
 }
 
 /** The choices the form offers from config. */
-export function entryOptions(config: Config): EntryOptions {
+export function papersOptions(config: Config): PapersOptions {
   const thresholds = flatThresholds(config.thresholds) as Record<
     ThresholdKey,
     number
@@ -173,13 +170,13 @@ export function entryOptions(config: Config): EntryOptions {
 }
 
 /** The newest commit the scan read: git's checked-out one, else the newest any forge finalised. */
-function lastCommitOf(item: Item): SeenCommit | null {
-  const git = item.sources.git;
+function lastCommitOf(entity: Entity): SeenCommit | null {
+  const git = entity.sources.git;
   if (git !== undefined && !("error" in git) && git.lastCommitAt !== null) {
     const head = git.branches.find((branch) => branch.name === git.branch);
     return { at: git.lastCommitAt, subject: head?.subject ?? null };
   }
-  const finalised = [item.sources.github, item.sources.forgejo].flatMap(
+  const finalised = [entity.sources.github, entity.sources.forgejo].flatMap(
     (forge) =>
       forge === undefined ||
       "error" in forge ||
@@ -201,55 +198,56 @@ function lastCommitOf(item: Item): SeenCommit | null {
 }
 
 /**
- * What the scan found for an item: its clone, its forges, by address or by reference for one that
- * could not be read, and its newest commit.
+ * What the scan found for an entity: its local repository, its forges, by address or by reference
+ * for one that could not be read, and its newest commit.
  */
-export function entrySeen(item: Item, home: string): EntrySeen {
+export function papersSeen(entity: Entity, home: string): PapersSeen {
   return {
-    foundAt: item.path === null ? null : collapseHome(item.path, home),
-    forges: item.presences.forges.map(
-      (presence) => presence.url?.replace(/^[a-z]+:\/\//, "") ?? presence.ref,
+    foundAt: entity.path === null ? null : collapseHome(entity.path, home),
+    forges: entity.repositories.forges.map(
+      (repository) =>
+        repository.url?.replace(/^[a-z]+:\/\//, "") ?? repository.ref,
     ),
-    lastCommit: lastCommitOf(item),
+    lastCommit: lastCommitOf(entity),
   };
 }
 
 /**
- * The entry form for an item: the entry that applies to it, if any, what the scan found, and the
+ * The papers form for an entity: the papers that apply to it, if any, what the scan found, and the
  * form's choices. Paths are written with ~ for the home directory.
  */
-export function entryFormFor(
+export function papersFormFor(
   config: Config,
-  item: Item,
+  entity: Entity,
   home: string,
-): EntryForm {
-  const { entry, keys } = resolveEntry(config, item.id, itemRefs(item));
+): PapersForm {
+  const { papers, keys } = resolvePapers(config, entity.id, entityRefs(entity));
   const zellij = zellijActionOf(config);
   return {
     key: keys[0] ?? null,
-    scannedName: item.name,
-    seen: entrySeen(item, home),
+    scannedName: entity.name,
+    seen: papersSeen(entity, home),
     defaultSession:
-      zellij === null || item.path === null
+      zellij === null || entity.path === null
         ? null
-        : zellijSessionFor(zellij, null, item.path),
-    values: entry === null ? null : entryValues(entry),
-    options: entryOptions(config),
+        : zellijSessionFor(zellij, null, entity.path),
+    values: papers === null ? null : papersValues(papers),
+    options: papersOptions(config),
   };
 }
 
 /**
- * Config with an item's entry set to the values: under the key that already applies to the item,
+ * Config with an entity's papers set to the values: under the key that already applies to the entity,
  * else under its id.
  */
-export function withEntry(
+export function withPapers(
   config: Config,
-  item: Item,
-  values: EntryValues,
+  entity: Entity,
+  values: PapersValues,
 ): Config {
-  const { keys } = resolveEntry(config, item.id, itemRefs(item));
-  const key = keys[0] ?? item.id;
-  const next: ItemEntry = {
+  const { keys } = resolvePapers(config, entity.id, entityRefs(entity));
+  const key = keys[0] ?? entity.id;
+  const next: Papers = {
     wire: values.wire,
     name: values.name,
     thresholds: nestedThresholds(values.thresholds),
@@ -260,12 +258,12 @@ export function withEntry(
     criticalBugWords:
       values.criticalBugWords === null ? null : [...values.criticalBugWords],
   };
-  return { ...config, items: { ...config.items, [key]: next } };
+  return { ...config, entities: { ...config.entities, [key]: next } };
 }
 
-/** Whether two sets of values write the same entry, whatever order their thresholds were set in. */
-export function sameEntryValues(a: EntryValues, b: EntryValues): boolean {
-  const canonical = (values: EntryValues) =>
+/** Whether two sets of values write the same papers, whatever order their thresholds were set in. */
+export function samePapersValues(a: PapersValues, b: PapersValues): boolean {
+  const canonical = (values: PapersValues) =>
     JSON.stringify([
       values.wire,
       values.name,
@@ -279,21 +277,21 @@ export function sameEntryValues(a: EntryValues, b: EntryValues): boolean {
   return canonical(a) === canonical(b);
 }
 
-/** Config without any entry naming the item, so it returns to the fence. */
-export function withoutEntry(config: Config, item: Item): Config {
-  const { keys } = resolveEntry(config, item.id, itemRefs(item));
+/** Config without any papers naming the entity, so it returns to the fence. */
+export function withoutPapers(config: Config, entity: Entity): Config {
+  const { keys } = resolvePapers(config, entity.id, entityRefs(entity));
   return {
     ...config,
-    items: Object.fromEntries(
-      Object.entries(config.items).filter(([key]) => !keys.includes(key)),
+    entities: Object.fromEntries(
+      Object.entries(config.entities).filter(([key]) => !keys.includes(key)),
     ),
   };
 }
 
 /** Why the values cannot be saved, in words; empty when they can. */
-export function entryProblems(
-  values: EntryValues,
-  options: EntryOptions,
+export function papersProblems(
+  values: PapersValues,
+  options: PapersOptions,
 ): string[] {
   return thresholdProblems(values.thresholds, options.thresholds);
 }
@@ -307,20 +305,20 @@ export function thresholdProblems(
   fallback: Record<ThresholdKey, number>,
 ): string[] {
   const problems: string[] = [];
-  for (const window of thresholdWindows) {
-    const amber = thresholds[window.amber];
-    const red = thresholds[window.red];
+  for (const fact of thresholdFacts) {
+    const amber = thresholds[fact.amber];
+    const red = thresholds[fact.red];
     const bad = [amber, red].some(
       (value) => value !== undefined && !(Number.isInteger(value) && value > 0),
     );
     if (bad) {
       problems.push(
-        `${window.label}: thresholds must be whole ${window.unit} above zero`,
+        `${fact.label}: thresholds must be whole ${fact.unit} above zero`,
       );
       continue;
     }
-    if ((amber ?? fallback[window.amber]) >= (red ?? fallback[window.red])) {
-      problems.push(`${window.label}: amber must come before red`);
+    if ((amber ?? fallback[fact.amber]) >= (red ?? fallback[fact.red])) {
+      problems.push(`${fact.label}: amber must come before red`);
     }
   }
   return problems;

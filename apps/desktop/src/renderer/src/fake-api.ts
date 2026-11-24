@@ -1,7 +1,7 @@
 // A stand-in for the preload's API in renderer tests: it answers from what the test gives it,
 // records every call, and pushes states when the test says so.
 
-import type { EntryForm, EntryValues } from "@perch/core/entry-form.ts";
+import type { PapersForm, PapersValues } from "@perch/core/papers-form.ts";
 import type {
   SettingsForm,
   SettingsValues,
@@ -26,8 +26,8 @@ export interface FakeApi {
   starterWrites: number;
   /** What the next starter write resolves: whether it wrote. */
   starterWritten: boolean;
-  entrySaves: { birdId: string; values: EntryValues }[];
-  entryRemovals: string[];
+  papersSaves: { birdId: string; values: PapersValues }[];
+  papersRemovals: string[];
   snoozes: { birdId: string; until: SnoozeEnd }[];
   wakes: string[];
   settingsSaves: SettingsValues[];
@@ -49,7 +49,7 @@ export interface FakeApi {
 export function fakeApi(
   initial: PerchState,
   sheetsFor: (birdId: string) => KeyFileSheet[] = () => [],
-  formFor: (birdId: string) => EntryForm | null = () => null,
+  formFor: (birdId: string) => PapersForm | null = () => null,
   settings: SettingsForm | null = null,
 ): FakeApi {
   const listeners = new Set<(state: PerchState) => void>();
@@ -80,12 +80,12 @@ export function fakeApi(
         fake.starterWrites += 1;
         return fake.starterWritten;
       },
-      entryForm: async (birdId) => formFor(birdId),
-      saveEntry: async (birdId, values) => {
-        fake.entrySaves.push({ birdId, values });
+      papersForm: async (birdId) => formFor(birdId),
+      savePapers: async (birdId, values) => {
+        fake.papersSaves.push({ birdId, values });
       },
-      removeEntry: async (birdId) => {
-        fake.entryRemovals.push(birdId);
+      removePapers: async (birdId) => {
+        fake.papersRemovals.push(birdId);
       },
       snooze: async (birdId, until) => {
         fake.snoozes.push({ birdId, until });
@@ -129,8 +129,8 @@ export function fakeApi(
     keyFileReads: [],
     starterWrites: 0,
     starterWritten: true,
-    entrySaves: [],
-    entryRemovals: [],
+    papersSaves: [],
+    papersRemovals: [],
     snoozes: [],
     wakes: [],
     settingsSaves: [],

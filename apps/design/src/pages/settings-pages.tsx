@@ -23,7 +23,7 @@ import { FormNotes } from "@perch/ui/form-parts.tsx";
 import { mockHome, mockSettingsForm } from "@perch/ui/mock-birds.ts";
 import {
   LaunchGroup,
-  PresencesGroup,
+  LinkingGroup,
   ScanGroup,
   type SettingsPageName,
   ThresholdsGroup,
@@ -116,12 +116,12 @@ const launch = (
     onChange={(next) => change({ launch: next })}
   />
 );
-const presences = (
+const linking = (
   values: SettingsValues,
   change: (c: Partial<SettingsValues>) => void,
 ) => (
-  <PresencesGroup
-    value={{ joins: values.joins, ignore: values.ignore }}
+  <LinkingGroup
+    value={{ links: values.links, ignore: values.ignore }}
     onChange={(next) => change(next)}
   />
 );
@@ -203,7 +203,7 @@ export function SettingsGroupsPage() {
     <>
       <Section
         title="Wires"
-        rule="Ordered rows, each edited in place and moved up and down, and the default picked from them. A row keeps the wire it started as, so a rename carries that wire's entries to the new name, and the default stays on its row. Removing a wire takes a second press on its remove, after the row says how many birds name it and that they move to the default; the form then names the entries. The default itself cannot be removed."
+        rule="Ordered rows, each edited in place and moved up and down, and the default picked from them. A row keeps the wire it started as, so a rename carries that wire's papers to the new name, and the default stays on its row. Removing a wire takes a second press on its remove, after the row says how many birds name it and that they move to the default; the form then names the papers. The default itself cannot be removed."
         min={560}
       >
         <GroupSpecimen
@@ -214,7 +214,7 @@ export function SettingsGroupsPage() {
         />
         <GroupSpecimen
           label="A wire renamed"
-          rule="Machine & Home is now Home: the row says what it was, and saving moves its three entries to Home. Nothing warns."
+          rule="Machine & Home is now Home: the row says what it was, and saving moves its three papers to Home. Nothing warns."
           start={withMock({
             wires: {
               rows: [
@@ -227,8 +227,8 @@ export function SettingsGroupsPage() {
           group={wires}
         />
         <GroupSpecimen
-          label="A wire removed that entries name"
-          rule="Three entries sit on Machine & Home: the warning says they move to Projects. It is not a problem; Save stays on."
+          label="A wire removed that papers name"
+          rule="Three sets of papers sit on Machine & Home: the warning says they move to Projects. It is not a problem; Save stays on."
           start={withMock({
             wires: {
               rows: [{ from: "Projects", name: "Projects" }],
@@ -356,27 +356,27 @@ export function SettingsGroupsPage() {
         />
       </Section>
       <Section
-        title="Joining up"
-        rule="The presence lists as raw text: each join one list line of references, each ignore one reference."
+        title="Linking"
+        rule="The repository lists as raw text: each link one list line of references, each ignore one reference."
         min={560}
       >
         <GroupSpecimen
           label="As the mock holds them"
-          rule="No joins and nothing ignored."
+          rule="No links and nothing ignored."
           start={mock}
-          group={presences}
+          group={linking}
         />
         <GroupSpecimen
-          label="A join, an ignore, and a join typed as words"
-          rule="The second join is not a list line."
+          label="A link, an ignore, and a link typed as words"
+          rule="The second link is not a list line."
           start={withMock({
-            joins: [
+            links: [
               '["github:finch/notes", "forgejo:finch/notes"]',
               "github:a/b forgejo:a/b",
             ],
             ignore: ["github:finch/scratch"],
           })}
-          group={presences}
+          group={linking}
         />
       </Section>
       <Section
@@ -411,7 +411,7 @@ export function SettingsGroupsPage() {
       </Section>
       <Section
         title="Updates"
-        rule="The status row first, one shape in every state: a sentence saying what is known, a detail line, and one button slot. The slot holds Check now, quiet, until something newer is known, then the next step: Open the releases page with install off, Install with it on, Restart now once downloaded; its weight says whether Perch itself can act. The detail line holds the releases link, an amber failure, the download's bar or a quiet note. Two switch rows follow: Check for updates is [update] check, true unless the file says false; Install updates is [update] install, false unless it says true, its row naming the image it replaces. Run from source the install switch is held, in amber. The status row is state, never saved."
+        rule="The status row first, one shape in every state: a sentence saying what is known, a page line, and one button slot. The slot holds Check now, quiet, until something newer is known, then the next step: Open the releases page with install off, Install with it on, Restart now once downloaded; its weight says whether Perch itself can act. The page line holds the releases link, an amber failure, the download's bar or a quiet note. Two switch rows follow: Check for updates is [update] check, true unless the file says false; Install updates is [update] install, false unless it says true, its row naming the image it replaces. Run from source the install switch is held, in amber. The status row is state, never saved."
         min={560}
       >
         <GroupSpecimen
@@ -446,7 +446,7 @@ export function SettingsGroupsPage() {
         />
         <GroupSpecimen
           label="Downloading"
-          rule="The bar in the detail line, the install held."
+          rule="The bar in the page line, the install held."
           start={installOn}
           group={updatesWith(mockUpdates.downloading, onImage)}
         />
@@ -487,7 +487,7 @@ export function SettingsGroupsPage() {
           {
             name: "form",
             type: "SettingsForm",
-            what: "The values as the file and the autostart entry hold them, the entries naming each wire, and the login row's hold and entry. The draft starts here and follows it while untouched.",
+            what: "The values as the file and the autostart entry hold them, the papers naming each wire, and the login row's hold and entry. The draft starts here and follows it while untouched.",
           },
           {
             name: "page",
@@ -529,7 +529,7 @@ export function SettingsGroupsPage() {
         <p>
           Each page (<Code>WiresGroup</Code>, <Code>ThresholdsGroup</Code>,{" "}
           <Code>ScanGroup</Code>, <Code>LaunchGroup</Code>,{" "}
-          <Code>PresencesGroup</Code>, <Code>WindowGroup</Code>,{" "}
+          <Code>LinkingGroup</Code>, <Code>WindowGroup</Code>,{" "}
           <Code>UpdatesGroup</Code>, and <Code>SourcesPage</Code> on a page of
           its own) takes its slice of <Code>SettingsValues</Code> as{" "}
           <Code>value</Code> and every change as <Code>onChange</Code>; the
@@ -735,7 +735,7 @@ export function SettingsScenePage() {
           {
             name: "unfold",
             type: "SourceCardKind | null",
-            what: "The Sources page's cards of this kind start unfolded: /settings?unfold=local, from a no-clone slip's Open Sources. Null for none.",
+            what: "The Sources page's cards of this kind start unfolded: /settings?unfold=local, from a no-local-repository slip's Open Sources. Null for none.",
           },
           {
             name: "page",

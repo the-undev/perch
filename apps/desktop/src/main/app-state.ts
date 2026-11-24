@@ -10,22 +10,22 @@ import {
   defaultUpdateInstall,
   type LoadedConfig,
 } from "@perch/core/config.ts";
-import {
-  type EntryForm,
-  type EntryValues,
-  entryFormFor,
-  withEntry,
-  withoutEntry,
-} from "@perch/core/entry-form.ts";
 import { errorMessage } from "@perch/core/fs.ts";
 import type { FetchJson } from "@perch/core/http.ts";
+import {
+  type PapersForm,
+  type PapersValues,
+  papersFormFor,
+  withoutPapers,
+  withPapers,
+} from "@perch/core/papers-form.ts";
 import {
   type SettingsForm,
   type SettingsValues,
   settingsFormFor,
   withSettings,
 } from "@perch/core/settings-form.ts";
-import type { Item, Snapshot } from "@perch/core/snapshot.ts";
+import type { Entity, Snapshot } from "@perch/core/snapshot.ts";
 import { isEndDate, type SnoozeEnd } from "@perch/core/snooze-date.ts";
 import {
   createReleaseChecker,
@@ -115,18 +115,18 @@ export interface AppState {
    * settles; a refusal becomes a problem until the next attempt or scan.
    */
   writeStarterConfig(): Promise<boolean>;
-  /** A bird's config entry and the form's choices; null for a bird the aviary does not hold. */
-  entryForm(birdId: string): EntryForm | null;
+  /** A bird's papers and the form's choices; null for a bird the aviary does not hold. */
+  papersForm(birdId: string): PapersForm | null;
   /**
-   * Sets a bird's config entry, adopting it when it has none and forgetting its snooze, then rereads
+   * Sets a bird's papers, adopting it when it has none and forgetting its snooze, then rereads
    * the config and asks for a scan; a failure writes nothing and becomes a problem until the next scan.
    */
-  saveEntry(birdId: string, values: EntryValues): Promise<void>;
+  savePapers(birdId: string, values: PapersValues): Promise<void>;
   /**
-   * Removes every config entry naming a bird, returning it to the fence, as saveEntry writes, then
+   * Removes every set of papers naming a bird, returning it to the fence, as savePapers writes, then
    * forgets its snooze.
    */
-  removeEntry(birdId: string): Promise<void>;
+  removePapers(birdId: string): Promise<void>;
   /**
    * Snoozes an adopted bird until a date, or indefinitely with null, and publishes without a scan;
    * a failure writes nothing and becomes a problem until the next scan.
@@ -135,12 +135,12 @@ export interface AppState {
   /** Wakes an adopted bird, as snooze writes. */
   wake(birdId: string): Promise<void>;
   /**
-   * Everything in config but the item entries, and the autostart entry, as the settings page edits
+   * Everything in config but the papers, and the autostart entry, as the settings page edits
    * them; null without config.
    */
   settingsForm(): Promise<SettingsForm | null>;
   /**
-   * Sets everything in config but the item entries, then the autostart entry, then rereads the
+   * Sets everything in config but the papers, then the autostart entry, then rereads the
    * config and asks for a scan. A config that cannot be written writes nothing; either failure
    * becomes a problem until the next scan.
    */
@@ -179,7 +179,7 @@ export function createAppState(deps: AppStateDeps): AppState {
   let scanError: string | null = null;
   let launchError: string | null = null;
   let starterError: string | null = null;
-  /** Why the latest config write wrote nothing, an entry's or the settings'. */
+  /** Why the latest config write wrote nothing, the papers' or the settings'. */
   let writeError: string | null = null;
   /** Why the latest snooze or wake wrote nothing. */
   let snoozeError: string | null = null;
@@ -275,10 +275,10 @@ export function createAppState(deps: AppStateDeps): AppState {
     return birdsOf(current).find((candidate) => candidate.id === birdId);
   }
 
-  /** The snapshot item behind a bird the aviary holds. */
-  function birdItem(birdId: string): Item | undefined {
+  /** The snapshot entity behind a bird the aviary holds. */
+  function birdEntity(birdId: string): Entity | undefined {
     if (bird(birdId) === undefined) return undefined;
-    return snapshot?.items.find((item) => item.id === birdId);
+    return snapshot?.entities.find((entity) => entity.id === birdId);
   }
 
   /** Every config read is published, so quitting installs a finished download only while install is on. */
@@ -356,7 +356,7 @@ export function createAppState(deps: AppStateDeps): AppState {
     await deps.requestScan();
   }
 
-  /** Nothing follows an entry's edit. */
+  /** Nothing follows an edit of papers. */
   const nothingAfter = async () => null;
 
   /** Writes or removes the autostart entry as the login toggle says; why it was not, or null. */
@@ -432,7 +432,7 @@ export function createAppState(deps: AppStateDeps): AppState {
     async launch(requested) {
       const current = aviary();
       const action = (current === null ? [] : birdsOf(current))
-        .flatMap((candidate) => candidate.detail.actions)
+        .flatMap((candidate) => candidate.page.actions)
         .find((candidate) => sameAction(candidate, requested));
       if (action === undefined) return;
       await perform(action);
@@ -442,7 +442,7 @@ export function createAppState(deps: AppStateDeps): AppState {
       return perform(configFileAction(actions, deps.configPath));
     },
     async keyFiles(birdId) {
-      const files = bird(birdId)?.detail.keyFiles ?? [];
+      const files = bird(birdId)?.page.keyFiles ?? [];
       return Promise.all(
         files.map(async (file) => ({
           file,
@@ -464,26 +464,26 @@ export function createAppState(deps: AppStateDeps): AppState {
       void deps.requestScan();
       return written;
     },
-    entryForm(birdId) {
-      const item = birdItem(birdId);
+    papersForm(birdId) {
+      const entity = birdEntity(birdId);
       const config = deps.config.current().loaded?.config;
-      if (item === undefined || config === undefined) return null;
-      return entryFormFor(config, item, deps.home);
+      if (entity === undefined || config === undefined) return null;
+      return papersFormFor(config, entity, deps.home);
     },
-    async saveEntry(birdId, values) {
-      const item = birdItem(birdId);
-      if (item === undefined) return;
+    async savePapers(birdId, values) {
+      const entity = birdEntity(birdId);
+      if (entity === undefined) return;
       // Adopting forgets a snooze left from before the bird was on the fence, so none comes back.
       const after = bird(birdId)?.adopted
         ? nothingAfter
         : () => writeSnooze(birdId, null);
-      await edit((config) => withEntry(config, item, values), after);
+      await edit((config) => withPapers(config, entity, values), after);
     },
-    async removeEntry(birdId) {
-      const item = birdItem(birdId);
-      if (item === undefined) return;
+    async removePapers(birdId) {
+      const entity = birdEntity(birdId);
+      if (entity === undefined) return;
       await edit(
-        (config) => withoutEntry(config, item),
+        (config) => withoutPapers(config, entity),
         () => writeSnooze(birdId, null),
       );
     },

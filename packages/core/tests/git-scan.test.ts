@@ -3,10 +3,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { GitThresholds } from "../src/derivations.ts";
 import {
-  deriveActivity,
-  deriveDrift,
   deriveGit,
   deriveStall,
+  deriveUnsafeWork,
+  deriveWorkState,
 } from "../src/derivations.ts";
 import { fileMtime } from "../src/fs.ts";
 import type { RawCommit, RawGit } from "../src/raw.ts";
@@ -292,11 +292,11 @@ function rawGit(overrides: Partial<RawGit>): RawGit {
 }
 
 describe("deriving git data", () => {
-  it("is settled when everything is on the default branch and pushed", () => {
-    const data = deriveGit(rawGit({}), thresholds, now, "joined");
+  it("is merged when everything is on the default branch and pushed", () => {
+    const data = deriveGit(rawGit({}), thresholds, now, "linked");
 
-    expect(data.activity).toBe("settled");
-    expect(data.drift).toMatchObject({
+    expect(data.workState).toBe("merged");
+    expect(data.unsafeWork).toMatchObject({
       uncommitted: null,
       unpushed: null,
       level: "green",
@@ -308,7 +308,7 @@ describe("deriving git data", () => {
     ]);
   });
 
-  it("is in progress with another local branch, unpushed commits or a detached head", () => {
+  it("is committed with a leftover local branch, unpushed commits or a detached head", () => {
     const feature = {
       name: "feature",
       lastCommit: commitAt("Work", daysBefore(1)),
@@ -322,17 +322,17 @@ describe("deriving git data", () => {
         rawGit({ branches: [...main, feature] }),
         thresholds,
         now,
-        "joined",
-      ).activity,
-    ).toBe("in-progress");
+        "linked",
+      ).workState,
+    ).toBe("committed");
     expect(
       deriveGit(
         rawGit({ unpushedCommits: [commitAt("Local", daysBefore(1))] }),
         thresholds,
         now,
-        "joined",
-      ).activity,
-    ).toBe("in-progress");
+        "linked",
+      ).workState,
+    ).toBe("committed");
     expect(
       deriveGit(
         rawGit({
@@ -340,14 +340,14 @@ describe("deriving git data", () => {
         }),
         thresholds,
         now,
-        "joined",
-      ).activity,
-    ).toBe("in-progress");
+        "linked",
+      ).workState,
+    ).toBe("committed");
   });
 
   it("carries the default branch's commits, and null without a local default branch", () => {
     expect(
-      deriveGit(rawGit({}), thresholds, now, "joined").defaultBranchCommits,
+      deriveGit(rawGit({}), thresholds, now, "linked").defaultBranchCommits,
     ).toEqual([commitAt("Initial", daysBefore(20))]);
     expect(
       deriveGit(
@@ -359,21 +359,21 @@ describe("deriving git data", () => {
         }),
         thresholds,
         now,
-        "joined",
+        "linked",
       ).defaultBranchCommits,
     ).toBeNull();
   });
 
-  it("ranks editing over in progress", () => {
+  it("ranks uncommitted over committed", () => {
     expect(
-      deriveActivity({
+      deriveWorkState({
         uncommittedCount: 1,
         unpushedCount: 1,
         branch: "main",
         defaultBranch: "main",
         branchNames: ["main"],
       }),
-    ).toBe("editing");
+    ).toBe("uncommitted");
   });
 
   it("ages uncommitted work from the oldest existing dirty file, ignoring deleted ones", () => {
@@ -399,12 +399,12 @@ describe("deriving git data", () => {
       }),
       thresholds,
       now,
-      "joined",
+      "linked",
     );
 
     expect(data.uncommittedCount).toBe(3);
     expect(data.oldestUncommittedAt).toBe(daysBefore(10).toISOString());
-    expect(data.drift).toMatchObject({
+    expect(data.unsafeWork).toMatchObject({
       uncommitted: {
         since: daysBefore(10).toISOString(),
         hours: 240,
@@ -413,7 +413,7 @@ describe("deriving git data", () => {
       unpushed: null,
       level: "amber",
     });
-    expect(data.activity).toBe("editing");
+    expect(data.workState).toBe("uncommitted");
   });
 
   it("ages unpushed work from the oldest commit no remote holds", () => {
@@ -426,35 +426,37 @@ describe("deriving git data", () => {
       }),
       thresholds,
       now,
-      "joined",
+      "linked",
     );
 
     expect(data.unpushedCount).toBe(2);
-    expect(data.drift).toMatchObject({
+    expect(data.unsafeWork).toMatchObject({
       unpushed: { hours: 960, level: "red" },
       level: "red",
     });
   });
 
-  it("judges each age in hours against the injected windows, the worse giving the level", () => {
+  it("judges each age in hours against the injected thresholds, the worse giving the level", () => {
     const ages = {
       oldestUncommittedAt: daysBefore(4).toISOString(),
       oldestUnpushedAt: new Date(now.getTime() - 30 * 3_600_000).toISOString(),
     };
 
-    expect(deriveDrift(ages, thresholds.unsafe, now).level).toBe("green");
-    expect(deriveDrift(ages, { amberHours: 24, redHours: 72 }, now)).toEqual({
+    expect(deriveUnsafeWork(ages, thresholds.unsafe, now).level).toBe("green");
+    expect(
+      deriveUnsafeWork(ages, { amberHours: 24, redHours: 72 }, now),
+    ).toEqual({
       uncommitted: { since: ages.oldestUncommittedAt, hours: 96, level: "red" },
       unpushed: { since: ages.oldestUnpushedAt, hours: 30, level: "amber" },
       level: "red",
       thresholds: { amberHours: 24, redHours: 72 },
     });
     expect(
-      deriveDrift(ages, { amberHours: 24, redHours: 120 }, now).level,
+      deriveUnsafeWork(ages, { amberHours: 24, redHours: 120 }, now).level,
     ).toBe("amber");
-    expect(deriveDrift(ages, thresholds.unsafe, daysBefore(-30)).level).toBe(
-      "red",
-    );
+    expect(
+      deriveUnsafeWork(ages, thresholds.unsafe, daysBefore(-30)).level,
+    ).toBe("red");
   });
 });
 
@@ -472,37 +474,37 @@ describe("deriving git data by backup state", () => {
     ],
   });
 
-  it("gives a local-only clone no unpushed work and no unpushed drift", () => {
+  it("gives a local-only repository no unpushed work and no unpushed unsafe work", () => {
     const data = deriveGit(unpushed, thresholds, now, "local-only");
 
     expect(data.backup).toBe("local-only");
     expect(data.unpushedCount).toBe(0);
-    expect(data.drift).toMatchObject({
+    expect(data.unsafeWork).toMatchObject({
       unpushed: null,
       uncommitted: { hours: 216, level: "amber" },
       level: "amber",
     });
   });
 
-  it("counts unpushed commits against an unjoined remote but does not age them", () => {
+  it("counts unpushed commits against an unlinked remote but does not age them", () => {
     const data = deriveGit(
       { ...unpushed, dirtyFiles: [] },
       thresholds,
       now,
-      "unjoined-remote",
+      "unlinked-remote",
     );
 
     expect(data.unpushedCount).toBe(1);
-    expect(data.drift).toMatchObject({
+    expect(data.unsafeWork).toMatchObject({
       unpushed: null,
       uncommitted: null,
       level: "green",
     });
   });
 
-  it("ages unpushed commits against a joined remote", () => {
+  it("ages unpushed commits against a linked remote", () => {
     expect(
-      deriveGit(unpushed, thresholds, now, "joined").drift.unpushed?.hours,
+      deriveGit(unpushed, thresholds, now, "linked").unsafeWork.unpushed?.hours,
     ).toBe(960);
   });
 });
@@ -543,8 +545,8 @@ describe("deriving unpushed branches", () => {
     ],
   });
 
-  it("ages each branch holding unpushed commits from its oldest, against a joined remote", () => {
-    const data = deriveGit(branches, thresholds, now, "joined");
+  it("ages each branch holding unpushed commits from its oldest, against a linked remote", () => {
+    const data = deriveGit(branches, thresholds, now, "linked");
 
     expect(data.unpushedCount).toBe(2);
     expect(data.unpushedBranches).toEqual([
@@ -563,17 +565,17 @@ describe("deriving unpushed branches", () => {
     ]);
   });
 
-  it("gives no unpushed branches to an unjoined remote or a local-only clone", () => {
+  it("gives no unpushed branches to an unlinked remote or a local-only repository", () => {
     expect(
       [
-        deriveGit(branches, thresholds, now, "unjoined-remote"),
+        deriveGit(branches, thresholds, now, "unlinked-remote"),
         deriveGit(branches, thresholds, now, "local-only"),
       ].map((data) => data.unpushedBranches),
     ).toEqual([[], []]);
   });
 });
 
-describe("stalled flight", () => {
+describe("stalled", () => {
   const feature = (days: number) => ({
     name: "extension-popup-ia",
     lastCommit: commitAt("Popup", daysBefore(days)),
@@ -594,7 +596,7 @@ describe("stalled flight", () => {
       }),
       thresholds,
       now,
-      "joined",
+      "linked",
     );
 
     expect(data.stall).toEqual({
@@ -610,7 +612,7 @@ describe("stalled flight", () => {
     const branches = [...rawGit({}).branches, feature(40)];
 
     expect(
-      deriveGit(rawGit({ branches }), thresholds, now, "joined").stall,
+      deriveGit(rawGit({ branches }), thresholds, now, "linked").stall,
     ).toBeNull();
     expect(
       deriveGit(
@@ -620,12 +622,12 @@ describe("stalled flight", () => {
         }),
         thresholds,
         now,
-        "joined",
+        "linked",
       ).stall,
     ).toBeNull();
   });
 
-  it("goes green, amber and red on the day windows, and needs a default branch to compare", () => {
+  it("goes green, amber and red on the day thresholds, and needs a default branch to compare", () => {
     const head = (days: number) => ({
       branch: "spec",
       defaultBranch: "main",

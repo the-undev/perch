@@ -69,7 +69,6 @@ export const sourceLabel: Record<PolledSourceName, string> = {
   local: "Local repositories",
   githubAccounts: "GitHub accounts",
   forgejoAccounts: "Forgejo accounts",
-  kuma: "Uptime Kuma",
   roadmap: "Roadmaps",
   github: "GitHub repositories",
   forgejo: "Forgejo repositories",
@@ -89,7 +88,7 @@ export function tipLine(bird: BirdModel, now: Date): string | null {
   if (bird.bubble.chips.length > 0) {
     return bird.bubble.chips.map((chip) => chip.label).join(" · ");
   }
-  const lastCommit = bird.detail.ledger.find(
+  const lastCommit = bird.page.ledger.find(
     (entry) => entry.kind === "time" && entry.label === "last commit",
   );
   const parts = [
@@ -135,7 +134,7 @@ function PerchedBird({
     <g
       role="button"
       tabIndex={0}
-      aria-label={`${bird.name}, ${look.stateWord}`}
+      aria-label={`${bird.name}, ${look.statePhrase}`}
       aria-pressed={speaking}
       data-arrival={arrival}
       className="group cursor-pointer outline-none"
@@ -233,7 +232,7 @@ function AnchoredBubble({
         key={placed.bird.id}
         bubble={placed.bird.bubble}
         look={look}
-        actions={placed.bird.detail.actions}
+        actions={placed.bird.page.actions}
         onLaunch={onLaunch}
         snoozeAction={
           <SnoozeAction
@@ -281,7 +280,7 @@ function Tip({
       }}
     >
       <b className="font-semibold text-ink">{tip.bird.name}</b> ·{" "}
-      {look.stateWord}
+      {look.statePhrase}
       {line !== null && <div>{line}</div>}
     </div>
   );
@@ -326,19 +325,19 @@ function SkyLegend() {
     <div className="pointer-events-none absolute inset-x-0 bottom-2 flex flex-wrap justify-center gap-x-5 gap-y-1 px-4 text-[11px] text-ink-faint">
       <span className="inline-flex items-center gap-1.5">
         <Swatch colour="var(--color-red)" />
-        attention
+        distressed
       </span>
       <span className="inline-flex items-center gap-1.5">
         <Swatch colour="var(--color-amber)" />
-        drifting
+        restless
       </span>
       <span className="inline-flex items-center gap-1.5">
         <Swatch colour="var(--color-green)" />
-        settled
+        content
       </span>
       <span>
         higher wire = more important · plumper = more outstanding work · ♪ =
-        being edited
+        uncommitted changes
       </span>
       <span>click a bird to hear from it</span>
     </div>

@@ -1,4 +1,4 @@
-// A list of strings edited as one line of text, in the config file's own form. Joins and launch
+// A list of strings edited as one line of text, in the config file's own form. Links and launch
 // commands use it. No Node modules, so the renderer may import it.
 
 /**

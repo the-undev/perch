@@ -20,7 +20,11 @@ import {
   replaceFile,
 } from "./autostart.ts";
 import { handOver, parseArguments, startsHidden } from "./command-line.ts";
-import { editConfigFile, writeTextAtomic } from "./config-edit.ts";
+import {
+  copyToNewFile,
+  editConfigFile,
+  writeTextAtomic,
+} from "./config-edit.ts";
 import { createConfigStore } from "./config-store.ts";
 import { createConfigWatch, rescanOnConfigChange } from "./config-watch.ts";
 import { isWebUrl } from "./external-links.ts";
@@ -130,6 +134,8 @@ function start(): void {
     home,
     path: paths.userConfigPath,
     readText: readTextIfExists,
+    writeText: writeTextAtomic,
+    copyToNewFile,
   });
   const spawnDetached = createSpawnDetached(spawn, { cwd: home, env });
   const run = ([program, ...args]: string[]) =>
@@ -301,9 +307,9 @@ function start(): void {
       launch: (action) => state.launch(action),
       openConfig: () => state.openConfig(),
       writeStarterConfig: () => state.writeStarterConfig(),
-      entryForm: async (birdId) => state.entryForm(birdId),
-      saveEntry: (birdId, values) => state.saveEntry(birdId, values),
-      removeEntry: (birdId) => state.removeEntry(birdId),
+      papersForm: async (birdId) => state.papersForm(birdId),
+      savePapers: (birdId, values) => state.savePapers(birdId, values),
+      removePapers: (birdId) => state.removePapers(birdId),
       snooze: (birdId, until) => state.snooze(birdId, until),
       wake: (birdId) => state.wake(birdId),
       settingsForm: async () => state.settingsForm(),

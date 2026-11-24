@@ -140,7 +140,7 @@ export function parseRemotes(output: string): RawRemote[] {
 
 const commitFormat = "--format=%H%x00%ct%x00%s";
 
-/** Reads one repository's working-copy facts without changing it. */
+/** Reads one repository's working tree facts without changing it. */
 export async function readRepository(
   path: string,
   deps: GitReadDeps,

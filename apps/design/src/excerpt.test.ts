@@ -81,7 +81,7 @@ describe("excerpts of the real sources", () => {
   it("finds the real declarations in raw.ts and the gather's rounds", () => {
     expect(declaration(rawSource, "Tracking")).toContain("upstream-gone");
     expect(gatherRoundsFrom(gatherSource)).toEqual([
-      ["local", "githubAccounts", "forgejoAccounts", "kuma"],
+      ["local", "githubAccounts", "forgejoAccounts"],
       ["github", "forgejo"],
       ["roadmap"],
     ]);
@@ -91,13 +91,13 @@ describe("excerpts of the real sources", () => {
 describe("tables of a TOML file", () => {
   it("cuts at each header, the comment above it going with it, numbering an array's tables and placing a subtable in the latest", () => {
     const toml = `# The file.
-joins = []
+links = []
 
 # The wires.
 [wires]
 names = ["a"]
 
-[items."obsidian/Hothouse"]
+[papers."obsidian/Hothouse"]
 wire = "a"
 
 # Accounts.
@@ -117,16 +117,16 @@ kind = "zellij"
 `;
 
     expect(tomlTables(toml)).toEqual([
-      { path: [], array: false, text: "# The file.\njoins = []" },
+      { path: [], array: false, text: "# The file.\nlinks = []" },
       {
         path: ["wires"],
         array: false,
         text: '# The wires.\n[wires]\nnames = ["a"]',
       },
       {
-        path: ["items", "obsidian/Hothouse"],
+        path: ["papers", "obsidian/Hothouse"],
         array: false,
-        text: '[items."obsidian/Hothouse"]\nwire = "a"',
+        text: '[papers."obsidian/Hothouse"]\nwire = "a"',
       },
       {
         path: ["sources", "github", "0"],

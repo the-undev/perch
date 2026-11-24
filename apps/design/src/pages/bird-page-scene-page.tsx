@@ -1,10 +1,10 @@
 import type { SnoozeEnd } from "@perch/core/snooze-date.ts";
-import { DetailView } from "@perch/ui/detail-view.tsx";
+import { BirdPageView } from "@perch/ui/bird-page-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
 import {
   mockBird,
-  mockEntryForm,
+  mockPapersForm,
   reportedSnooze,
   scanMoment,
   snoozedUntil,
@@ -15,7 +15,7 @@ const birds = [
   {
     id: "dev/perch",
     label: "Perch",
-    rule: "Content and being edited: branches, the commit river over here and both forges, a draft pull request, and three key files from config, which this repository's own files stand in for. Press a chip in its bubble to land on the ledger row holding its working.",
+    rule: "Content and uncommitted: branches, the commit history over here and both forges, a draft pull request, and three key files from config, which this repository's own files stand in for. Press a chip in its bubble to land on the ledger row holding its reading.",
   },
   {
     id: "undev/prism",
@@ -25,7 +25,7 @@ const birds = [
   {
     id: "undev/skiff",
     label: "Skiff",
-    rule: "Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, so the notice under the heading names the fix and links to Sources, where the can't-read chip lands. The ledger and river say couldn't read github; Forgejo was read. Also stalled on a feature branch for three weeks.",
+    rule: "Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, so the notice under the heading names the fix and links to Sources, where the can't-read chip lands. The ledger and history say couldn't read github; Forgejo was read. Also stalled on a feature branch for three weeks.",
   },
   {
     id: "dev/odin/hello",
@@ -35,13 +35,13 @@ const birds = [
   {
     id: "github:finch/obsidian-tidy",
     label: "obsidian-tidy",
-    rule: "On a forge, never cloned here, on the fence: no local facts and nothing to launch, so the meta line says no local clone, and the paper pane holds the slip saying why, with Open Sources and the address to copy.",
+    rule: "On a forge, with no local repository here, on the fence: no local facts and nothing to launch, so the meta line says no local repository, and the sheets pane holds the slip saying why, with Open Sources and the address to copy.",
   },
 ] as const;
 
 type BirdId = (typeof birds)[number]["id"];
 
-export function DetailScenePage() {
+export function BirdPageScenePage() {
   const [id, setId] = useState<BirdId>("dev/perch");
   const [pressed, setPressed] = useState("nothing yet");
   // The page keeps its own snoozes, as the main process would, so a pick shows the wake verb.
@@ -55,7 +55,7 @@ export function DetailScenePage() {
     <>
       <Section
         title="Five contrasting birds"
-        rule="The band is one row: the heading at the left says the bird's name, state and where it lives with the actions beside the meta, the bubble takes the middle at a reading width, and the bird sits on its perch at the right, the band sized to the bird on its stand. The page is a fixed stage: the heading, its actions and the roost hold still, and beneath them the record and the key files each scroll their own pane under the pointer. The page shows only what exists for a bird: an empty section is left out, a bird with no clone has nothing to launch, and a source that failed is named with its error."
+        rule="The band is one row: the heading at the left says the bird's name, state and where it lives with the actions beside the meta, the bubble takes the middle at a reading width, and the bird sits on its perch at the right, the band sized to the bird on its stand. The page is a fixed stage: the heading, its actions and the roost hold still, and beneath them the record and the key files each scroll their own pane under the pointer. The page shows only what exists for a bird: an empty section is left out, a bird with no local repository has nothing to launch, and a source that failed is named with its error."
         min={600}
       >
         <div>
@@ -75,7 +75,7 @@ export function DetailScenePage() {
       </Section>
       <div className="mt-4">
         <Stage height="max(560px, calc(100vh - 320px))">
-          <DetailView
+          <BirdPageView
             key={id}
             bird={bird}
             now={scanMoment}
@@ -92,10 +92,10 @@ export function DetailScenePage() {
               },
             }}
             sheets={birdSheets(bird)}
-            entry={{
-              form: mockEntryForm(id),
-              onSave: (birdId) => setPressed(`entry.onSave(${birdId})`),
-              onRemove: (birdId) => setPressed(`entry.onRemove(${birdId})`),
+            papers={{
+              form: mockPapersForm(id),
+              onSave: (birdId) => setPressed(`papers.onSave(${birdId})`),
+              onRemove: (birdId) => setPressed(`papers.onRemove(${birdId})`),
             }}
             problems={[]}
             openPapers={false}
@@ -110,7 +110,7 @@ export function DetailScenePage() {
       <Pressed text={pressed} />
 
       <Usage
-        component="<DetailView>"
+        component="<BirdPageView>"
         props={[
           { name: "bird", type: "Bird", what: "One bird from the aviary." },
           {
@@ -131,12 +131,12 @@ export function DetailScenePage() {
           {
             name: "sheets",
             type: "KeyFileSheet[]",
-            what: "bird.detail.keyFiles with the markdown read from each, null where a file could not be read; empty until read.",
+            what: "bird.page.keyFiles with the markdown read from each, null where a file could not be read; empty until read.",
           },
           {
-            name: "entry",
-            type: "EntryControls",
-            what: "The bird's entry form, null until read, and the calls that save or remove the entry: Adopt on a fence bird, The papers on an adopted one.",
+            name: "papers",
+            type: "PapersControls",
+            what: "The bird's papers form, null until read, and the calls that save or remove the papers: Adopt on a fence bird, The papers on an adopted one.",
           },
           {
             name: "problems",
@@ -161,12 +161,12 @@ export function DetailScenePage() {
           {
             name: "onLocalSources",
             type: "() => void",
-            what: "The no-clone slip's Open Sources was pressed; the app opens the settings page on Sources, the local cards unfolded.",
+            what: "The no-local-repository slip's Open Sources was pressed; the app opens the settings page on Sources, the local cards unfolded.",
           },
           {
             name: "onCopy",
             type: "(text: string) => Promise<void>",
-            what: "The no-clone slip's Copy was pressed; the app puts the clone address on the clipboard, and the control says Copied once it settles.",
+            what: "The no-local-repository slip's Copy was pressed; the app puts the SSH address on the clipboard, and the control says Copied once it settles.",
           },
           {
             name: "panning",
@@ -184,7 +184,7 @@ export function DetailScenePage() {
           leaves and the roost only as wide as its bubble, capped at 56
           characters, and its bird need. Narrower, the roost follows the heading
           in a centred 480px column. Beneath the band, from 960px wide, the
-          record pane (the ledger and its sections) and the paper pane (the key
+          record pane (the ledger and its sections) and the sheets pane (the key
           files) each scroll their own contents with a thin quiet scrollbar,{" "}
           <Code>pane-scroll</Code>. Narrower, they join into one pane, the key
           files at the end. A chip scrolls its row&apos;s pane. The adoption

@@ -80,7 +80,7 @@ const noSources = (): SettingsForm => {
     ...form,
     values: {
       ...form.values,
-      sources: { local: [], github: [], forgejo: [], kuma: [] },
+      sources: { local: [], github: [], forgejo: [] },
     },
   };
 };
@@ -96,9 +96,9 @@ describe("the sources page", () => {
       "Local folders",
       "GitHub · finch",
       "GitHub · the-undev",
+      "GitHub · newcomer",
       "Forgejo · forge.example.lan:3000",
       "Forgejo · forge.example.lan:3000",
-      "Uptime Kuma · Silo",
     ]);
     const local = within(card("Local folders"));
     expect(local.getByText("6 folders searched")).toBeDefined();
@@ -121,7 +121,7 @@ describe("the sources page", () => {
       within(forgejo as HTMLElement).getByText("last read 19 min ago"),
     ).toBeDefined();
     expect(
-      within(card("Uptime Kuma · Silo")).getByText("never scanned yet"),
+      within(card("GitHub · newcomer")).getByText("never scanned yet"),
     ).toBeDefined();
   });
 
@@ -203,17 +203,6 @@ describe("the sources page", () => {
         "Every kind can be added again · more kinds are added in later versions.",
       ),
     ).toBeDefined();
-  });
-
-  it("keeps an existing Uptime Kuma card while the picker no longer offers the kind", () => {
-    sourcesPage();
-
-    expect(card("Uptime Kuma · Silo")).toBeDefined();
-    fireEvent.click(screen.getByRole("button", { name: "Add a source" }));
-    expect(screen.getByRole("list", { name: "Kinds of source" })).toBeDefined();
-    expect(
-      screen.queryByRole("button", { name: "Add Uptime Kuma" }),
-    ).toBeNull();
   });
 
   it("appends a card of the kind picked, open with its empty fields named, the key following the account", () => {
@@ -304,7 +293,7 @@ describe("the sources page", () => {
       ...form.values,
       sources: {
         ...form.values.sources,
-        github: [form.values.sources.github[1]],
+        github: form.values.sources.github.slice(1),
       },
     });
   });
@@ -312,13 +301,20 @@ describe("the sources page", () => {
   it("names each problem beside its field, and holds Save", () => {
     sourcesPage();
     open("GitHub · the-undev");
-    open("Uptime Kuma · Silo");
+    const [forgejo] = screen.getAllByRole("region", {
+      name: "Forgejo · forge.example.lan:3000",
+    });
+    fireEvent.click(
+      within(forgejo as HTMLElement).getByRole("button", {
+        name: "Forgejo · forge.example.lan:3000",
+      }),
+    );
 
     const account = within(card("GitHub · the-undev")).getByRole("textbox", {
       name: "Account",
     });
     type(account, "FINCH");
-    const address = within(card("Uptime Kuma · Silo")).getByRole("textbox", {
+    const address = within(forgejo as HTMLElement).getByRole("textbox", {
       name: "Base URL",
     });
     type(address, "forge.example.lan:3001");
@@ -478,14 +474,5 @@ describe("a forge card's token", () => {
     expect(
       await forgejoCard.findByText("no answer from forge.example.lan:3000"),
     ).toBeDefined();
-  });
-
-  it("is not on an Uptime Kuma card, whose status pages are public", () => {
-    sourcesPage();
-    open("Uptime Kuma · Silo");
-
-    const kuma = within(card("Uptime Kuma · Silo"));
-    expect(kuma.queryByLabelText("Token")).toBeNull();
-    expect(kuma.queryByRole("button", { name: "Test" })).toBeNull();
   });
 });

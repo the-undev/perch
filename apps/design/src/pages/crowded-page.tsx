@@ -135,7 +135,7 @@ export function CrowdedPage() {
               aviary={crowdedFence(liveFence)}
               now={scanMoment}
               place={{
-                at: "detail",
+                at: "birdPage",
                 birdId: "fence/0",
                 papers: false,
                 chip: null,
@@ -149,7 +149,7 @@ export function CrowdedPage() {
               onSettings={() => {}}
               onLocalSources={() => {}}
               onCopy={async () => {}}
-              entry={{ form: null, onSave: () => {}, onRemove: () => {} }}
+              papers={{ form: null, onSave: () => {}, onRemove: () => {} }}
               problems={[]}
             />
           </SceneFrame>

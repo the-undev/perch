@@ -1,14 +1,14 @@
-// Presence references, the names config uses for what the scan finds. No Node modules, so config
+// Repository references, the names config uses for what the scan finds. No Node modules, so config
 // and the view model may import it.
 
 import type { ForgeName } from "./raw.ts";
-import type { Item } from "./snapshot.ts";
+import type { Entity } from "./snapshot.ts";
 
-/** Every presence reference an item holds: its local clone's, then its forges'. */
-export function itemRefs(item: Item): string[] {
+/** Every repository reference an entity holds: its local repository's, then its forges'. */
+export function entityRefs(entity: Entity): string[] {
   return [
-    ...(item.presences.local ? [item.presences.local.ref] : []),
-    ...item.presences.forges.map((presence) => presence.ref),
+    ...(entity.repositories.local ? [entity.repositories.local.ref] : []),
+    ...entity.repositories.forges.map((repository) => repository.ref),
   ];
 }
 
@@ -27,7 +27,7 @@ export function normaliseRef(ref: string): string {
 }
 
 /**
- * The presence references a configured reference may name: a forge reference without case,
+ * The repository references a configured reference may name: a forge reference without case,
  * `local:<id>`, or a bare local id.
  */
 export function candidateRefs(configured: string): [string, string] {

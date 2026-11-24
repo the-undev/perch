@@ -171,12 +171,12 @@ export function CameraScenePage() {
           {
             name: "onLocalSources",
             type: "() => void",
-            what: "A no-clone slip's Open Sources was pressed: the app opens the settings page on Sources, the local cards unfolded.",
+            what: "A no-local-repository slip's Open Sources was pressed: the app opens the settings page on Sources, the local cards unfolded.",
           },
           {
             name: "onCopy",
             type: "(text: string) => Promise<void>",
-            what: "A no-clone slip's Copy was pressed: the app puts the clone address on the clipboard.",
+            what: "A no-local-repository slip's Copy was pressed: the app puts the clone address on the clipboard.",
           },
           {
             name: "papers",

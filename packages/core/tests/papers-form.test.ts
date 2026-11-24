@@ -74,7 +74,7 @@ describe("the papers form", () => {
     expect(form.values).toBeNull();
   });
 
-  it("says what the scan found: the clone with home as ~, the forges, and the checked-out commit", () => {
+  it("says what the scan found: the local repository with home as ~, the forges, and the checked-out commit", () => {
     expect(papersFormFor(mockConfig, perch, home).seen).toEqual({
       foundAt: "~/dev/perch",
       forges: ["github.com/finch/perch", "forge.example.lan:3000/finch/perch"],
@@ -101,7 +101,7 @@ describe("the papers form", () => {
     });
   });
 
-  it("names the session the zellij action gives a clone, and none without a clone or the action", () => {
+  it("names the session the zellij action gives a local repository, and none without a local repository or the action", () => {
     const noZellij: Config = {
       ...mockConfig,
       launch: {

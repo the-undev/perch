@@ -15,7 +15,7 @@ export function defaultConfig(): Config {
   return {
     wires: { names: ["projects"], default: "projects" },
     sources: { local: [], github: [], forgejo: [] },
-    joins: [],
+    links: [],
     ignore: [],
     thresholds: {
       unsafe: { amberHours: 24, redHours: 72 },

@@ -31,7 +31,7 @@ interface Note {
 const birdNotes: Note[] = [
   {
     title: "Breast colour · health, worn as mood",
-    text: `Green content, amber restless, red distressed. Failing CI is red. Each roadmap file is judged on its own: ${bugs.amberCount} open bugs turn it amber and ${bugs.redCount} red, ${criticalBugs.amberCount} open critical bug amber and ${criticalBugs.redCount} red. Tasks never count. A remote the clone pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled flight: on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
+    text: `Green content, amber restless, red distressed. Failing CI is red. Each roadmap file is judged on its own: ${bugs.amberCount} open bugs turn it amber and ${bugs.redCount} red, ${criticalBugs.amberCount} open critical bug amber and ${criticalBugs.redCount} red. Tasks never count. A remote the local repository pushes to that no card can read is amber. Unsafe work, uncommitted changes and unpushed commits alike, turns amber after ${unsafe.amberHours} hours and red after ${unsafe.redHours}, timed from the oldest change. Stalled flight: on a branch other than the default with no movement, turns amber at ${stalled.amberDays} days and red at ${stalled.redDays}, even with everything pushed.`,
     rule: "Worst input wins. The windows are config defaults from the Judgement page; a bird's papers may set its own.",
   },
   {
@@ -46,7 +46,7 @@ const birdNotes: Note[] = [
   },
   {
     title: "♪ · being edited",
-    text: "The song means the clone holds uncommitted changes: your hands are in it now. Activity runs on its own axis beside health, so a bird of any mood can sing, and it sings at any hour. A fence bird never sings.",
+    text: "The song means the local repository holds uncommitted changes: your hands are in it now. Activity runs on its own axis beside health, so a bird of any mood can sing, and it sings at any hour. A fence bird never sings.",
     rule: "From git: editing while any file is uncommitted.",
   },
   {
@@ -56,7 +56,7 @@ const birdNotes: Note[] = [
   },
   {
     title: "Name · the project",
-    text: "The display name from config, else the name the scan found. A bird is the project, joined over its clone, its forge repositories and its vault state, so one name covers them all. It brightens under the pointer.",
+    text: "The display name from config, else the name the scan found. A bird is the project: its local repository, its forge repositories and its vault state taken as one, so one name covers them all. It brightens under the pointer.",
     rule: null,
   },
   {

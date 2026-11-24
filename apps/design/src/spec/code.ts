@@ -5,7 +5,7 @@ import aggregate from "../../../../packages/core/src/aggregate.ts?raw";
 import config from "../../../../packages/core/src/config.ts?raw";
 import derivations from "../../../../packages/core/src/derivations.ts?raw";
 import gather from "../../../../packages/core/src/gather.ts?raw";
-import join from "../../../../packages/core/src/join.ts?raw";
+import link from "../../../../packages/core/src/link.ts?raw";
 import raw from "../../../../packages/core/src/raw.ts?raw";
 import snapshot from "../../../../packages/core/src/snapshot.ts?raw";
 import forge from "../../../../packages/core/src/sources/forge.ts?raw";
@@ -24,7 +24,7 @@ export const coreFiles = {
   "src/snapshot.ts": snapshot,
   "src/derivations.ts": derivations,
   "src/gather.ts": gather,
-  "src/join.ts": join,
+  "src/link.ts": link,
   "src/aggregate.ts": aggregate,
   "src/viewmodel.ts": viewmodel,
   "src/speech.ts": speech,

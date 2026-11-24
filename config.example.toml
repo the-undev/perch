@@ -11,7 +11,7 @@
 # assertion and an observation disagree, the observation wins and the
 # disagreement is flagged.
 #
-# A presence is named local:<id>, github:<owner>/<name> or
+# A repository is named local:<id>, github:<owner>/<name> or
 # forgejo:<owner>/<name>. A local id is the path relative to the home
 # directory.
 
@@ -19,11 +19,11 @@
 # migrates to this version once, keeping the old file as config.toml.v1.
 version = 2
 
-# Presences that are one project although no remote URL proves it, for
+# Repositories that are one project although no remote URL proves it, for
 # example [["github:someone/notes", "forgejo:someone/notes"]].
 links = []
 
-# Presences to leave off the main view. They still appear in their forge's
+# Repositories to leave off the main view. They still appear in their forge's
 # listing.
 ignore = []
 
@@ -174,8 +174,8 @@ kind = "folder"
 # install = true
 
 # Papers. An entity's papers adopt the bird and put it on a wire. Their key
-# names any presence of the entity: a local id, or a forge presence such as
-# "forgejo:owner/name", which still applies once a local clone joins it. When
+# names any repository of the entity: a local id, or a forge repository such as
+# "forgejo:owner/name", which still applies once a local repository links it. When
 # two papers name one entity, the one keyed by the entity's id applies and the
 # clash is flagged. A repository found inside an include directory is flagged
 # as not set up until it has papers here, even empty ones.

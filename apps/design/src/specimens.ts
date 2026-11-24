@@ -8,7 +8,7 @@ import {
   mockRoadmap,
   mockSnapshot,
 } from "@perch/core/mock.ts";
-import type { Entity, ForgePresence } from "@perch/core/snapshot.ts";
+import type { Entity, ForgeRepository } from "@perch/core/snapshot.ts";
 import type {
   KeyringCalls,
   SourceTested,
@@ -149,18 +149,18 @@ export function withHelloAdopted(): Aviary {
 
 const pergolaNotesId = "forgejo:finch/field-notes";
 
-/** Pergola Notes derived again from the mock snapshot with its forge presences changed, so its words are the view model's. */
+/** Pergola Notes derived again from the mock snapshot with its forge repositories changed, so its words are the view model's. */
 function pergolaNotesWith(
-  presences: (forges: ForgePresence[]) => ForgePresence[],
+  repositories: (forges: ForgeRepository[]) => ForgeRepository[],
 ): Bird {
   const entities = mockSnapshot.entities.map(
     (entity): Entity =>
       entity.id === pergolaNotesId
         ? {
             ...entity,
-            presences: {
-              ...entity.presences,
-              forges: presences(entity.presences.forges),
+            repositories: {
+              ...entity.repositories,
+              forges: repositories(entity.repositories.forges),
             },
           }
         : entity,
@@ -181,7 +181,7 @@ function pergolaNotesWith(
 /** Pergola Notes read from a snapshot cached before the scanner kept clone addresses. */
 export function pergolaNotesCached(): Bird {
   return pergolaNotesWith((forges) =>
-    forges.map(({ sshUrl: _, ...presence }) => presence),
+    forges.map(({ sshUrl: _, ...repository }) => repository),
   );
 }
 

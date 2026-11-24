@@ -96,8 +96,8 @@ const localGit: SourceSpec = {
     <p>
       Every include path in config: a repository itself, or a directory searched
       up to five levels deep for <Code>.git</Code>, never entering an ignore
-      path, a hidden directory or <Code>node_modules</Code>. For each clone it
-      runs read-only git: <Code>status --porcelain=v2</Code>,{" "}
+      path, a hidden directory or <Code>node_modules</Code>. For each local
+      repository it runs read-only git: <Code>status --porcelain=v2</Code>,{" "}
       <Code>for-each-ref</Code> over the local branches with their upstream
       tracking, <Code>remote -v</Code>, where <Code>origin/HEAD</Code> points,
       <Code>log --branches --not --remotes</Code> for the commits no remote
@@ -113,7 +113,7 @@ const localGit: SourceSpec = {
   ],
   rawTypes: [
     "RawLocal",
-    "RawLocalPresence",
+    "RawLocalRepository",
     "RawObsidian",
     "IncludeKind",
     "RawGit",
@@ -125,8 +125,9 @@ const localGit: SourceSpec = {
   ],
   derives: (
     <p>
-      Joining comes first: each clone is a presence, and its remote URLs join it
-      to forge presences (<Code>joinPresences</Code> in <Code>src/join.ts</Code>
+      Linking comes first: each local repository&apos;s remote URLs link it to
+      forge repositories (<Code>linkRepositories</Code> in{" "}
+      <Code>src/link.ts</Code>
       ). Then git data per entity: the default branch, the work-state, unsafe
       work aged in hours from its oldest change, and stalled flight aged in
       days. A missing include path becomes a scene-wide warning.
@@ -170,22 +171,22 @@ const forgeSnapshotTypes = [
   "CiState",
   "PullRequest",
   "FinalisedCommit",
-  "ForgePresence",
+  "ForgeRepository",
   "ForgeListing",
 ];
 
 const forgeDerives = (
   <p>
-    Each forge repository is a presence, joined to clones by their remote URLs
-    and to other presences by config&apos;s <Code>links</Code>. Its details
-    become the entity&apos;s forge data: open pull requests, the latest CI in
-    Perch&apos;s own four states, and the finalised commits. Each is read by its
-    own request, so one that fails is that part&apos;s error and the others
-    stand. Archived repositories go to the forge&apos;s listing only, never the
-    main view. A repository a local remote names that could not be looked up is
-    still a presence, carrying its error: a standing config gap when no card
-    covers its owner on the remote&apos;s host, which makes the bird restless,
-    or a failed read, which does not.
+    Each forge repository is a repository, linked to local repositories by their
+    remote URLs and to other repositories by config&apos;s <Code>links</Code>.
+    Its details become the entity&apos;s forge data: open pull requests, the
+    latest CI in Perch&apos;s own four states, and the finalised commits. Each
+    is read by its own request, so one that fails is that part&apos;s error and
+    the others stand. Archived repositories go to the forge&apos;s listing only,
+    never the main view. A repository a local remote names that could not be
+    looked up is still a repository, carrying its error: a standing config gap
+    when no card covers its owner on the remote&apos;s host, which makes the
+    bird restless, or a failed read, which does not.
   </p>
 );
 
@@ -244,13 +245,13 @@ const roadmaps: SourceSpec = {
   polled: ["roadmap"],
   reads: (
     <p>
-      For every local presence, the roadmap files its papers name in{" "}
+      For every local repository, the roadmap files its papers name in{" "}
       <Code>roadmaps</Code>. A file is parsed as a roadmap only when listed
       there; when the list is unset or empty, the first of the standard names
       that exists is recorded by path and shown as a document. The papers are
-      resolved through the project the clone joins, so they run after the forge
-      enrichers. Each file is parsed into its headings, the bullets directly
-      under each, and the prose between.
+      resolved through the project the local repository links, so they run after
+      the forge enrichers. Each file is parsed into its headings, the bullets
+      directly under each, and the prose between.
     </p>
   ),
   moduleNames: [

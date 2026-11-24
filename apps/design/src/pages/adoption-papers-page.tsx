@@ -147,12 +147,12 @@ export function AdoptionPapersPage() {
       </Section>
       <Section
         title="Adopting"
-        rule="What the scan found is set in mono and cannot be edited: where the clone is, the forges that also hold it, and the last commit. What you set starts on the defaults; a choice left on its default is written as nothing. The signature button names the wire it will write."
+        rule="What the scan found is set in mono and cannot be edited: where the local repository is, the forges that also hold it, and the last commit. What you set starts on the defaults; a choice left on its default is written as nothing. The signature button names the wire it will write."
         min={560}
       >
         <Specimen
           label="Found under an include path"
-          rule="hearth-config: a clone joined to two forges, not yet decided."
+          rule="hearth-config: a local repository linked to two forges, not yet decided."
         >
           {specimen("dev/hearth-config")}
         </Specimen>
@@ -164,7 +164,7 @@ export function AdoptionPapersPage() {
         </Specimen>
         <Specimen
           label="Forge only"
-          rule="obsidian-tidy: never cloned here, so it lives at its forge, its ring is the forge reference, and its last commit is the forge's newest."
+          rule="obsidian-tidy: no local repository here, so it lives at its forge, its ring is the forge reference, and its last commit is the forge's newest."
         >
           {specimen("github:finch/obsidian-tidy")}
         </Specimen>

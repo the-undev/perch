@@ -174,7 +174,7 @@ export function writeConfig(config: Config, home: string): string {
   const path = (stored: string) => collapseHome(stored, home);
   const document: Table = {
     version: configVersion,
-    links: config.joins,
+    links: config.links,
     ignore: config.ignore,
     wires: { names: config.wires.names, default: config.wires.default },
     sources: unlessEmpty(sourcesTable(config.sources, path)),

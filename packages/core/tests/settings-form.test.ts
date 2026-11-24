@@ -683,7 +683,7 @@ describe("what the settings cannot be", () => {
     ]);
   });
 
-  it("wants zellij sessions and joins filled in", () => {
+  it("wants zellij sessions and links filled in", () => {
     const { actions, index, action } = mockZellij();
     const unnamed = (sessions: typeof action.sessions) =>
       launchProblems(
@@ -705,13 +705,13 @@ describe("what the settings cannot be", () => {
     expect(
       settingsProblems({
         ...mockValues(),
-        joins: ['["github:finch/notes"]', "github:a/b forgejo:a/b"],
+        links: ['["github:finch/notes"]', "github:a/b forgejo:a/b"],
         ignore: [""],
       }),
     ).toEqual([
-      "Joins: each join names two references or more",
-      'Joins: each join must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
-      "Ignored presences: a reference cannot be empty",
+      "Links: each link names two references or more",
+      'Links: each link must be a list in brackets of strings in double quotes, such as ["code", "{path}"]',
+      "Ignored repositories: a reference cannot be empty",
     ]);
   });
 

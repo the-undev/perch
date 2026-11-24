@@ -17,7 +17,7 @@ export function BranchesPage() {
     <>
       <Section
         title="Branches"
-        rule="Every local branch, the checked-out one first, then by newest commit. A branch links to its forge page when its upstream matches a forge presence."
+        rule="Every local branch, the checked-out one first, then by newest commit. A branch links to its forge page when its upstream matches a forge repository."
         min={380}
       >
         <Specimen
@@ -147,7 +147,7 @@ export function RiverPage() {
     <>
       <Section
         title="The commit river"
-        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits; the heading names the branch. One dot before each says how far it has spread over the forges read: green when every one holds it, amber when one lacks it or none does, amber too when the bird has forges and none could be read, and the quiet dot only for a bird with no forge. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The clone only adds commits. A forge whose commits couldn't be read gets an amber line, with the short why when no card covers it, and one amber sentence appears only when a forge lacks a commit another forge holds."
+        rule="The newest commits on the default branch, each once, joined by hash across local main and each forge's list, newest first and capped at scan.finalised_commits; the heading names the branch. One dot before each says how far it has spread over the forges read: green when every one holds it, amber when one lacks it or none does, amber too when the bird has forges and none could be read, and the quiet dot only for a bird with no forge. A forge lacks a commit only when it is no older than the forge's oldest listed commit; an older one counts as held. The local repository only adds commits. A forge whose commits couldn't be read gets an amber line, with the short why when no card covers it, and one amber sentence appears only when a forge lacks a commit another forge holds."
         min={420}
       >
         {riverSpecimens.map((specimen) => (
@@ -244,16 +244,16 @@ const handBuiltFlags: FlagLine[] = [
     level: "amber",
   },
   {
-    flag: "remote-joined-elsewhere",
-    text: "remote joined elsewhere",
-    detail: "forgejo:finch/perch is joined to dev/perch-old",
+    flag: "remote-linked-elsewhere",
+    text: "remote linked elsewhere",
+    detail: "forgejo:finch/perch is linked to dev/perch-old",
     level: null,
   },
   {
     flag: "config-conflict",
     text: "config conflict",
     detail:
-      "config joins undev/harbour to github:the-undev/skiff; the remote says otherwise",
+      "config links undev/harbour to github:the-undev/skiff; the remote says otherwise",
     level: "red",
   },
 ];

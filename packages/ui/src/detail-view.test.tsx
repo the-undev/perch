@@ -70,12 +70,12 @@ function unreadableSkiff(): Bird {
     entity.id === "undev/skiff"
       ? {
           ...entity,
-          presences: {
-            ...entity.presences,
-            forges: entity.presences.forges.map((presence) =>
-              presence.forge === "github"
-                ? { ...presence, fullName: "skiff-app/skiff", url: null }
-                : presence,
+          repositories: {
+            ...entity.repositories,
+            forges: entity.repositories.forges.map((repository) =>
+              repository.forge === "github"
+                ? { ...repository, fullName: "skiff-app/skiff", url: null }
+                : repository,
             ),
           },
           sources: {
@@ -407,7 +407,7 @@ describe("the detail view", () => {
     const notice = container.querySelector('[data-part="notices"]');
 
     expect(notice?.textContent).toBe(
-      "The clone pushes to skiff-app/skiff on github, which no GitHub card reads. Add a card for skiff-app under Sources.",
+      "The local repository pushes to skiff-app/skiff on github, which no GitHub card reads. Add a card for skiff-app under Sources.",
     );
     expect(
       container.querySelector('[data-part="heading"] [data-part="notices"]'),
@@ -430,28 +430,28 @@ describe("the detail view", () => {
     expect(container.querySelector('[data-part="notices"]')).toBeNull();
   });
 
-  describe("a bird with no clone here", () => {
+  describe("a bird with no local repository here", () => {
     const pergolaNotes = () => mockBird("forgejo:finch/field-notes");
     const slipOf = (container: HTMLElement) =>
       container.querySelector(
-        '[data-part="paper"] [data-part="no-clone-slip"]',
+        '[data-part="paper"] [data-part="no-local-repository-slip"]',
       );
 
     it("lays the slip where the key files would be: stamped, the fact, the route naming the repository, and Open Sources", () => {
       const { container, onLocalSources } = page(pergolaNotes());
       const slip = screen.getByRole("region", {
-        name: "No clone on this machine",
+        name: "No local repository on this machine",
       });
 
       expect(slipOf(container)).toBe(slip);
       expect(within(slip).getByRole("heading", { level: 3 }).textContent).toBe(
-        "No clone on this machine",
+        "No local repository on this machine",
       );
       expect(
         [...slip.querySelectorAll("p")].map((line) => line.textContent),
       ).toEqual([
-        "This repository is on Forgejo. No local clone was found.",
-        "Add a directory to search, or the clone's folder itself, in Sources. A clone whose remote points at finch/field-notes joins this bird on the next scan.",
+        "This repository is on Forgejo. No local repository was found.",
+        "Add a directory to search, or the local repository's folder itself, in Sources. A local repository whose remote points at finch/field-notes is linked to this bird on the next scan.",
       ]);
       fireEvent.click(
         within(slip).getByRole("button", { name: "Open Sources" }),
@@ -465,7 +465,7 @@ describe("the detail view", () => {
       try {
         const { onCopy } = page(pergolaNotes());
         const slip = screen.getByRole("region", {
-          name: "No clone on this machine",
+          name: "No local repository on this machine",
         });
         const address = "ssh://git@forgejo:2222/finch/field-notes.git";
 
@@ -503,11 +503,15 @@ describe("the detail view", () => {
 
     it("leaves the address row out while the address is unknown", () => {
       const bird = pergolaNotes();
-      const noClone = bird.detail.noClone;
-      if (noClone === null) throw new Error("pergola notes has its slip");
+      const noLocalRepository = bird.detail.noLocalRepository;
+      if (noLocalRepository === null)
+        throw new Error("pergola notes has its slip");
       const { container } = page({
         ...bird,
-        detail: { ...bird.detail, noClone: { ...noClone, cloneAddress: null } },
+        detail: {
+          ...bird.detail,
+          noLocalRepository: { ...noLocalRepository, cloneAddress: null },
+        },
       });
 
       expect(slipOf(container)).not.toBeNull();
@@ -519,34 +523,42 @@ describe("the detail view", () => {
       const { container } = page(mockBird("github:finch/obsidian-tidy"));
 
       expect(slipOf(container)?.textContent).toContain(
-        "This repository is on GitHub. No local clone was found.",
+        "This repository is on GitHub. No local repository was found.",
       );
     });
 
-    it("says no local clone on the meta line where the actions would be, only while config holds an action", () => {
+    it("says no local repository on the meta line where the actions would be, only while config holds an action", () => {
       const bird = pergolaNotes();
-      const noClone = bird.detail.noClone;
-      if (noClone === null) throw new Error("pergola notes has its slip");
+      const noLocalRepository = bird.detail.noLocalRepository;
+      if (noLocalRepository === null)
+        throw new Error("pergola notes has its slip");
       const clause = (container: HTMLElement) =>
-        container.querySelector('[data-part="actions"] [data-part="no-clone"]');
+        container.querySelector(
+          '[data-part="actions"] [data-part="no-local-repository"]',
+        );
 
       const { container } = page(bird);
-      expect(clause(container)?.textContent).toBe("no local clone");
+      expect(clause(container)?.textContent).toBe("no local repository");
 
       cleanup();
       const silent = page({
         ...bird,
-        detail: { ...bird.detail, noClone: { ...noClone, onMetaLine: false } },
+        detail: {
+          ...bird.detail,
+          noLocalRepository: { ...noLocalRepository, onMetaLine: false },
+        },
       });
       expect(clause(silent.container)).toBeNull();
       expect(slipOf(silent.container)).not.toBeNull();
     });
 
-    it("draws neither the slip nor the clause for a bird with a clone, even with no key files read", () => {
+    it("draws neither the slip nor the clause for a bird with a local repository, even with no key files read", () => {
       const { container } = page(mockBird("dev/odin/hello"));
 
       expect(slipOf(container)).toBeNull();
-      expect(container.querySelector('[data-part="no-clone"]')).toBeNull();
+      expect(
+        container.querySelector('[data-part="no-local-repository"]'),
+      ).toBeNull();
     });
   });
 
@@ -963,7 +975,7 @@ describe("the detail view", () => {
     expect(headings()).not.toContain("What couldn't be read");
   });
 
-  it("offers nothing to launch for a bird with no clone here", () => {
+  it("offers nothing to launch for a bird with no local repository here", () => {
     const { container } = page(mockBird("github:finch/obsidian-tidy"));
     const actions = container.querySelector('[data-part="actions"]');
     if (!(actions instanceof HTMLElement)) throw new Error("no action row");

@@ -16,7 +16,7 @@ import { createGithubClient } from "../src/sources/github.ts";
 import {
   forgeDetails,
   forgeRepo,
-  localPresence,
+  localRepository,
   withRemotes,
 } from "./helpers/raw.ts";
 
@@ -211,10 +211,10 @@ describe("forge source", () => {
       gatheredAt: "2026-10-21T09:00:00.000Z",
       data: {
         includes: {},
-        presences: Object.fromEntries(
+        repositories: Object.fromEntries(
           remotes.map((url, index) => [
             `dev/r${index}`,
-            localPresence(`/home/test/dev/r${index}`, {
+            localRepository(`/home/test/dev/r${index}`, {
               include: "/home/test/dev",
               git: withRemotes([{ name: "origin", url }]),
             }),
@@ -447,7 +447,7 @@ describe("forge source", () => {
     });
   });
 
-  it("fails as a whole without local presences to read remotes from", async () => {
+  it("fails as a whole without local repositories to read remotes from", async () => {
     const { client } = fakeClient({});
     const { tokenFor } = fakeKeyring(allKeys);
 
@@ -456,7 +456,7 @@ describe("forge source", () => {
         cards: cardsOf(client, github),
         tokenFor,
       }).gather({}),
-    ).rejects.toThrow(/no local presences/);
+    ).rejects.toThrow("no local repositories to read remotes from");
   });
 });
 

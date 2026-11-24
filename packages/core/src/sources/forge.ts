@@ -148,7 +148,7 @@ interface Candidate {
 
 /**
  * Enricher: every listed repository, read through the table that listed it, plus any repository a
- * local clone's remote names on one of this forge's hosts that the listings missed, looked up
+ * local repository's remote names on one of this forge's hosts that the listings missed, looked up
  * through the account that owns it on that host. A remote whose owner no card covers is recorded as
  * that config gap, a failed lookup as its own error. Pull requests, CI and finalised commits are
  * read for those not archived, each failing on its own; a missing token fails the whole detail.
@@ -165,7 +165,7 @@ export function createForgeSource<N extends ForgeName>(
       if (local === undefined) {
         throw new SourceFailure(
           "unexpected",
-          "no local presences to read remotes from",
+          "no local repositories to read remotes from",
         );
       }
       const tokenFor = cachedTokens(deps.tokenFor);
@@ -189,9 +189,9 @@ export function createForgeSource<N extends ForgeName>(
 
       const entries: Record<string, RawForgeEntry> = {};
       const lookedUp = new Set<string>();
-      for (const presence of Object.values(local.data.presences)) {
-        if (presence.git.state !== "observed") continue;
-        const remotes = presence.git.value.remotes;
+      for (const repository of Object.values(local.data.repositories)) {
+        if (repository.git.state !== "observed") continue;
+        const remotes = repository.git.value.remotes;
         if (remotes.state !== "observed") continue;
         for (const url of remotes.value.flatMap(remoteUrls)) {
           const location = parseRemoteUrl(url);

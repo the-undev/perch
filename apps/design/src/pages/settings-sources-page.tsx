@@ -245,7 +245,7 @@ export function SettingsSourcesPage() {
           {
             name: "unfold",
             type: "SourceCardKind | null",
-            what: "The cards of this kind start unfolded, as a link to the page asks: a no-clone slip's Open Sources asks for local. Null for none.",
+            what: "The cards of this kind start unfolded, as a link to the page asks: a no-local-repository slip's Open Sources asks for local. Null for none.",
           },
           {
             name: "onChange",

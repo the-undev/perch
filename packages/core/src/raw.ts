@@ -211,7 +211,7 @@ export type RawForgeEntry =
 
 export interface RawForgeRepo {
   info: RawForgeRepoInfo;
-  /** Listed under a configured account, or looked up because a local clone's remote names it. */
+  /** Listed under a configured account, or looked up because a local repository's remote names it. */
   foundBy: "account-listing" | "local-remote";
   /** The configured account whose token read it. */
   account: string;
@@ -220,7 +220,7 @@ export interface RawForgeRepo {
   details: Entry<RawForgeDetails, "archived-slow-lane">;
 }
 
-// Local presences
+// Local repositories
 
 export type IncludeKind = "repo" | "directory";
 
@@ -231,7 +231,7 @@ export interface RawObsidian {
   livesyncPlugin: boolean;
 }
 
-export interface RawLocalPresence {
+export interface RawLocalRepository {
   path: string;
   /** The configured include path the repository was found under. */
   include: string;
@@ -243,7 +243,7 @@ export interface RawLocal {
   /** Each configured include path: itself a repository, a directory searched for them, or missing. */
   includes: Record<string, Observed<IncludeKind, "path-not-found">>;
   /** Found repositories keyed by id, the path relative to the home directory. */
-  presences: Record<string, RawLocalPresence>;
+  repositories: Record<string, RawLocalRepository>;
 }
 
 // Source files

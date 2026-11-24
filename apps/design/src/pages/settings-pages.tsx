@@ -23,7 +23,7 @@ import { FormNotes } from "@perch/ui/form-parts.tsx";
 import { mockHome, mockSettingsForm } from "@perch/ui/mock-birds.ts";
 import {
   LaunchGroup,
-  PresencesGroup,
+  LinkingGroup,
   ScanGroup,
   type SettingsPageName,
   ThresholdsGroup,
@@ -116,12 +116,12 @@ const launch = (
     onChange={(next) => change({ launch: next })}
   />
 );
-const presences = (
+const linking = (
   values: SettingsValues,
   change: (c: Partial<SettingsValues>) => void,
 ) => (
-  <PresencesGroup
-    value={{ joins: values.joins, ignore: values.ignore }}
+  <LinkingGroup
+    value={{ links: values.links, ignore: values.ignore }}
     onChange={(next) => change(next)}
   />
 );
@@ -356,27 +356,27 @@ export function SettingsGroupsPage() {
         />
       </Section>
       <Section
-        title="Joining up"
-        rule="The presence lists as raw text: each join one list line of references, each ignore one reference."
+        title="Linking"
+        rule="The repository lists as raw text: each link one list line of references, each ignore one reference."
         min={560}
       >
         <GroupSpecimen
           label="As the mock holds them"
-          rule="No joins and nothing ignored."
+          rule="No links and nothing ignored."
           start={mock}
-          group={presences}
+          group={linking}
         />
         <GroupSpecimen
-          label="A join, an ignore, and a join typed as words"
-          rule="The second join is not a list line."
+          label="A link, an ignore, and a link typed as words"
+          rule="The second link is not a list line."
           start={withMock({
-            joins: [
+            links: [
               '["github:finch/notes", "forgejo:finch/notes"]',
               "github:a/b forgejo:a/b",
             ],
             ignore: ["github:finch/scratch"],
           })}
-          group={presences}
+          group={linking}
         />
       </Section>
       <Section
@@ -529,7 +529,7 @@ export function SettingsGroupsPage() {
         <p>
           Each page (<Code>WiresGroup</Code>, <Code>ThresholdsGroup</Code>,{" "}
           <Code>ScanGroup</Code>, <Code>LaunchGroup</Code>,{" "}
-          <Code>PresencesGroup</Code>, <Code>WindowGroup</Code>,{" "}
+          <Code>LinkingGroup</Code>, <Code>WindowGroup</Code>,{" "}
           <Code>UpdatesGroup</Code>, and <Code>SourcesPage</Code> on a page of
           its own) takes its slice of <Code>SettingsValues</Code> as{" "}
           <Code>value</Code> and every change as <Code>onChange</Code>; the
@@ -735,7 +735,7 @@ export function SettingsScenePage() {
           {
             name: "unfold",
             type: "SourceCardKind | null",
-            what: "The Sources page's cards of this kind start unfolded: /settings?unfold=local, from a no-clone slip's Open Sources. Null for none.",
+            what: "The Sources page's cards of this kind start unfolded: /settings?unfold=local, from a no-local-repository slip's Open Sources. Null for none.",
           },
           {
             name: "page",

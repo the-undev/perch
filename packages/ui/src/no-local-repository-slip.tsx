@@ -1,9 +1,10 @@
-// A bird seen on its forges with no clone on this machine says so where its key files would be: a
-// paper slip cut short, stamped with the cause, the fact, the routes to a clone, Open Sources and
-// the address to clone from. The meta line carries the cause in three words. The slip copies
-// nothing itself and opens nothing: the caller puts the address on the clipboard and opens Sources.
+// A bird seen on its forges with no local repository on this machine says so where its key files
+// would be: a paper slip cut short, stamped with the cause, the fact, the routes to a local
+// repository, Open Sources and the address to clone from. The meta line carries the cause in three
+// words. The slip copies nothing itself and opens nothing: the caller puts the address on the
+// clipboard and opens Sources.
 
-import type { NoClone } from "@perch/core/viewmodel.ts";
+import type { NoLocalRepository } from "@perch/core/viewmodel.ts";
 import { useEffect, useId, useState } from "react";
 
 /** How long the copy control says what happened before it reads Copy again. */
@@ -58,8 +59,8 @@ function CloneAddress({
   );
 }
 
-export interface NoCloneSlipProps {
-  slip: NoClone;
+export interface NoLocalRepositorySlipProps {
+  slip: NoLocalRepository;
   /** Open Sources was pressed: the settings page opens on Sources, the local cards unfolded. */
   onLocalSources: () => void;
   /** Puts the clone address on the clipboard, settling once it is there. */
@@ -67,34 +68,34 @@ export interface NoCloneSlipProps {
 }
 
 /** The slip at its reading width: the stamp, the fact, the routes, Open Sources and the address when known. */
-export function NoCloneSlip({
+export function NoLocalRepositorySlip({
   slip,
   onLocalSources,
   onCopy,
-}: NoCloneSlipProps) {
+}: NoLocalRepositorySlipProps) {
   const stampId = useId();
   return (
     <section
       aria-labelledby={stampId}
-      data-part="no-clone-slip"
+      data-part="no-local-repository-slip"
       className="perch-slip relative ml-4.5 max-w-[46ch] rounded-md bg-paper px-5 pt-4.5 pb-4 text-paper-ink shadow-paper"
     >
       <h3
         id={stampId}
         className="perch-stamp m-0 mb-3 inline-block rounded-md border-2 border-paper-stamp px-2.5 py-1 font-bold font-display text-[14.5px] text-paper-stamp leading-tight tracking-[0.01em] opacity-85"
       >
-        No clone on this machine
+        No local repository on this machine
       </h3>
       <p className="m-0 mb-2 text-[13.5px] leading-normal">
-        This repository is on {slip.forges}. No local clone was found.
+        This repository is on {slip.forges}. No local repository was found.
       </p>
       <p className="m-0 text-[12.5px] text-paper-quiet leading-normal">
-        Add a directory to search, or the clone's folder itself, in Sources. A
-        clone whose remote points at{" "}
+        Add a directory to search, or the local repository's folder itself, in
+        Sources. A local repository whose remote points at{" "}
         <code className="whitespace-nowrap rounded bg-paper-dim px-1.25 py-px font-mono text-[12px]">
           {slip.reference}
         </code>{" "}
-        joins this bird on the next scan.
+        is linked to this bird on the next scan.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
@@ -113,13 +114,13 @@ export function NoCloneSlip({
 }
 
 /** The meta line's clause where the launch actions would sit, in the faint voice. */
-export function NoCloneClause() {
+export function NoLocalRepositoryClause() {
   return (
     <span
-      data-part="no-clone"
+      data-part="no-local-repository"
       className="px-1 font-body text-[12.5px] text-ink-faint"
     >
-      no local clone
+      no local repository
     </span>
   );
 }

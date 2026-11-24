@@ -444,7 +444,7 @@ describe("the window", () => {
     expect(fake.rescans).toBe(1);
   });
 
-  it("puts a no-clone slip's address on the clipboard in the window, which stays on the bird", async () => {
+  it("puts a no-local-repository slip's address on the clipboard in the window, which stays on the bird", async () => {
     const copied: string[] = [];
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -765,7 +765,7 @@ describe("the window", () => {
       await waitFor(() => expect(pathOf(router)).toBe("/settings"));
     });
 
-    it("opens on Sources from a no-clone slip with the local cards unfolded", async () => {
+    it("opens on Sources from a no-local-repository slip with the local cards unfolded", async () => {
       const { router } = renderApp(
         idle(mockAviary),
         "/bird/forgejo:finch/field-notes",
@@ -884,15 +884,15 @@ describe("the window", () => {
         form,
       );
 
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Joining up" }),
-      );
+      fireEvent.click(await screen.findByRole("button", { name: "Linking" }));
       fireEvent.change(
-        await screen.findByRole("textbox", { name: "Add an ignored presence" }),
+        await screen.findByRole("textbox", {
+          name: "Add an ignored repository",
+        }),
         { target: { value: "github:a/old" } },
       );
       fireEvent.click(
-        screen.getByRole("button", { name: "Add the ignored presence" }),
+        screen.getByRole("button", { name: "Add the ignored repository" }),
       );
       fireEvent.click(screen.getByRole("button", { name: "Save" }));
 

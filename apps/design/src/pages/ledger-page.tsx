@@ -37,7 +37,7 @@ const specimens: LedgerSpecimen[] = [
   {
     id: "undev/spool",
     label: "Nothing waits",
-    rule: "Spool: a clean, pushed clone with nothing amber or red opens its ledger with one faint sentence.",
+    rule: "Spool: a clean, pushed local repository with nothing amber or red opens its ledger with one faint sentence.",
   },
   {
     id: "undev/prism",
@@ -57,12 +57,12 @@ const specimens: LedgerSpecimen[] = [
   {
     id: "dev/odin/hello",
     label: "One disk only",
-    rule: "hello: a clone with no remote shows the remote row instead of unpushed commits, and its opening sentence says no remote holds a copy.",
+    rule: "hello: a local repository with no remote shows the remote row instead of unpushed commits, and its opening sentence says no remote holds a copy.",
   },
   {
     id: "github:finch/obsidian-tidy",
     label: "Forge only",
-    rule: "obsidian-tidy: no clone, so no git rows; only what the forge says.",
+    rule: "obsidian-tidy: no local repository, so no git rows; only what the forge says.",
   },
 ];
 

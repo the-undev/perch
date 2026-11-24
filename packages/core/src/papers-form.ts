@@ -56,7 +56,7 @@ export interface SeenCommit {
 
 /** What the scan found for an entity, which the papers show and cannot change. */
 export interface PapersSeen {
-  /** Where the clone is on disk, home as ~; null for an entity with no clone here. */
+  /** Where the local repository is on disk, home as ~; null for an entity with no local repository here. */
   foundAt: string | null;
   /** The forges that also hold it, each as its web address without the scheme. */
   forges: string[];
@@ -71,7 +71,7 @@ export interface PapersForm {
   /** The name the scan found, which a name left unset keeps. */
   scannedName: string;
   seen: PapersSeen;
-  /** The session the zellij action gives the clone, which a session left unset takes; null without either. */
+  /** The session the zellij action gives the local repository, which a session left unset takes; null without either. */
   defaultSession: string | null;
   /** The papers' values; null for a bird on the fence. */
   values: PapersValues | null;
@@ -201,14 +201,15 @@ function lastCommitOf(entity: Entity): SeenCommit | null {
 }
 
 /**
- * What the scan found for an entity: its clone, its forges, by address or by reference for one that
- * could not be read, and its newest commit.
+ * What the scan found for an entity: its local repository, its forges, by address or by reference
+ * for one that could not be read, and its newest commit.
  */
 export function papersSeen(entity: Entity, home: string): PapersSeen {
   return {
     foundAt: entity.path === null ? null : collapseHome(entity.path, home),
-    forges: entity.presences.forges.map(
-      (presence) => presence.url?.replace(/^[a-z]+:\/\//, "") ?? presence.ref,
+    forges: entity.repositories.forges.map(
+      (repository) =>
+        repository.url?.replace(/^[a-z]+:\/\//, "") ?? repository.ref,
     ),
     lastCommit: lastCommitOf(entity),
   };

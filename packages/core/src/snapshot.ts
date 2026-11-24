@@ -70,7 +70,7 @@ export interface AgedWork {
 export interface Drift {
   /** The oldest uncommitted change, from the dirty files' mtimes; null when there is none. */
   uncommitted: AgedWork | null;
-  /** The oldest commit no remote holds, aged only against a joined forge presence. */
+  /** The oldest commit no remote holds, aged only against a linked forge repository. */
   unpushed: AgedWork | null;
   /** The worse of the two levels; green when neither exists. */
   level: HealthLevel;
@@ -88,10 +88,10 @@ export interface Stall {
 }
 
 /**
- * Whether unpushed work has somewhere to go: a joined forge presence, a remote perch has no
- * presence for, or no remote at all (one disk).
+ * Whether unpushed work has somewhere to go: a linked forge repository, a remote perch has no
+ * repository for, or no remote at all (one disk).
  */
-export type Backup = "joined" | "unjoined-remote" | "local-only";
+export type Backup = "linked" | "unlinked-remote" | "local-only";
 
 export interface GitData {
   backup: Backup;
@@ -109,7 +109,7 @@ export interface GitData {
   oldestUncommittedAt: string | null;
   oldestUnpushedAt: string | null;
   /**
-   * Each local branch holding unpushed commits, aged only against a joined forge presence and
+   * Each local branch holding unpushed commits, aged only against a linked forge repository and
    * empty otherwise; absent from a snapshot cached before the scanner read them.
    */
   unpushedBranches?: UnpushedBranch[];
@@ -245,9 +245,9 @@ export interface EntitySourceData {
 
 export type EntitySources = Partial<EntitySourceData>;
 
-export interface ForgePresence {
+export interface ForgeRepository {
   forge: ForgeName;
-  /** The presence reference, such as github:finch/perch. */
+  /** The repository reference, such as github:finch/perch. */
   ref: string;
   /** As the forge spells it, or lower case as the remote named it when it could not be read. */
   fullName: string;
@@ -261,15 +261,15 @@ export interface ForgePresence {
   foundBy: "account-listing" | "local-remote";
 }
 
-export interface Presences {
+export interface Repositories {
   local: { ref: string; path: string } | null;
-  forges: ForgePresence[];
+  forges: ForgeRepository[];
 }
 
 export type EntityFlagName =
   | "not-set-up"
   | "remote-archived"
-  | "remote-joined-elsewhere"
+  | "remote-linked-elsewhere"
   | "config-conflict";
 
 export interface EntityFlag {
@@ -280,13 +280,13 @@ export interface EntityFlag {
 }
 
 export interface Entity {
-  /** A local presence's id, or the first forge presence's reference for a forge-only entity. */
+  /** A local repository's id, or the first forge repository's reference for a forge-only entity. */
   id: string;
   name: string;
   kind: EntityKind;
-  /** Absolute path of the local clone, null without one. */
+  /** Absolute path of the local repository, null without one. */
   path: string | null;
-  presences: Presences;
+  repositories: Repositories;
   flags: EntityFlag[];
   sources: EntitySources;
 }
@@ -301,7 +301,7 @@ export interface ForgeListingEntry {
   ref: string;
   fullName: string;
   url: string;
-  /** The entity this presence belongs to, null when it is on no entity. */
+  /** The entity this repository belongs to, null when it is on no entity. */
   entityId: string | null;
   ignored: boolean;
 }

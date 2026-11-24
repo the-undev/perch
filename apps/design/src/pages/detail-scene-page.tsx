@@ -35,7 +35,7 @@ const birds = [
   {
     id: "github:finch/obsidian-tidy",
     label: "obsidian-tidy",
-    rule: "On a forge, never cloned here, on the fence: no local facts and nothing to launch, so the meta line says no local clone, and the paper pane holds the slip saying why, with Open Sources and the address to copy.",
+    rule: "On a forge, with no local repository here, on the fence: no local facts and nothing to launch, so the meta line says no local repository, and the paper pane holds the slip saying why, with Open Sources and the address to copy.",
   },
 ] as const;
 
@@ -55,7 +55,7 @@ export function DetailScenePage() {
     <>
       <Section
         title="Five contrasting birds"
-        rule="The band is one row: the heading at the left says the bird's name, state and where it lives with the actions beside the meta, the bubble takes the middle at a reading width, and the bird sits on its perch at the right, the band sized to the bird on its stand. The page is a fixed stage: the heading, its actions and the roost hold still, and beneath them the record and the key files each scroll their own pane under the pointer. The page shows only what exists for a bird: an empty section is left out, a bird with no clone has nothing to launch, and a source that failed is named with its error."
+        rule="The band is one row: the heading at the left says the bird's name, state and where it lives with the actions beside the meta, the bubble takes the middle at a reading width, and the bird sits on its perch at the right, the band sized to the bird on its stand. The page is a fixed stage: the heading, its actions and the roost hold still, and beneath them the record and the key files each scroll their own pane under the pointer. The page shows only what exists for a bird: an empty section is left out, a bird with no local repository has nothing to launch, and a source that failed is named with its error."
         min={600}
       >
         <div>
@@ -161,12 +161,12 @@ export function DetailScenePage() {
           {
             name: "onLocalSources",
             type: "() => void",
-            what: "The no-clone slip's Open Sources was pressed; the app opens the settings page on Sources, the local cards unfolded.",
+            what: "The no-local-repository slip's Open Sources was pressed; the app opens the settings page on Sources, the local cards unfolded.",
           },
           {
             name: "onCopy",
             type: "(text: string) => Promise<void>",
-            what: "The no-clone slip's Copy was pressed; the app puts the clone address on the clipboard, and the control says Copied once it settles.",
+            what: "The no-local-repository slip's Copy was pressed; the app puts the clone address on the clipboard, and the control says Copied once it settles.",
           },
           {
             name: "panning",

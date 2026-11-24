@@ -3,7 +3,7 @@
 import type { Bird, LaunchAction } from "@perch/core/viewmodel.ts";
 import { LaunchActions, LinksOut } from "@perch/ui/actions.tsx";
 import { DetailHeading } from "@perch/ui/detail-heading.tsx";
-import { NoCloneClause } from "@perch/ui/no-clone-slip.tsx";
+import { NoLocalRepositoryClause } from "@perch/ui/no-local-repository-slip.tsx";
 import { useState } from "react";
 import { byDay, mockBird } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
@@ -66,7 +66,7 @@ export function ActionsPage() {
           {
             name: "actions",
             type: "LaunchAction[]",
-            what: "bird.detail.actions; empty for a bird with no clone.",
+            what: "bird.detail.actions; empty for a bird with no local repository.",
           },
           {
             name: "onLaunch",
@@ -131,7 +131,7 @@ export function LinksPage() {
 function HeadingActions({ bird }: { bird: Bird }) {
   return (
     <div className="flex flex-wrap items-center gap-1">
-      {bird.detail.noClone?.onMetaLine && <NoCloneClause />}
+      {bird.detail.noLocalRepository?.onMetaLine && <NoLocalRepositoryClause />}
       <LaunchActions actions={bird.detail.actions} onLaunch={() => {}} />
       <LinksOut links={bird.detail.links} />
     </div>
@@ -143,12 +143,12 @@ export function HeadingPage() {
     <>
       <Section
         title="The heading of the detail page"
-        rule="The one place on the page that carries the bird's name and state word: the roost's bubble beside it drops its header, so neither is said twice. The name large, the state word in the mood's colour, what the bird is doing, and beneath them a meta line in mono saying where the bird lives: its clone with home as ~, the forges that hold it, and its wire. The page's launch actions, links out and papers' verb share the meta's row where they fit and drop beneath it where not, so the heading keeps to two or three rows."
+        rule="The one place on the page that carries the bird's name and state word: the roost's bubble beside it drops its header, so neither is said twice. The name large, the state word in the mood's colour, what the bird is doing, and beneath them a meta line in mono saying where the bird lives: its local repository with home as ~, the forges that hold it, and its wire. The page's launch actions, links out and papers' verb share the meta's row where they fit and drop beneath it where not, so the heading keeps to two or three rows."
         min={640}
       >
         <Specimen
           label="content, editing, two forges"
-          rule="Perch: the song becomes the words editing ♪; cloned here and held on GitHub and Forgejo."
+          rule="Perch: the song becomes the words editing ♪; it has a local repository here and is held on GitHub and Forgejo."
         >
           <Ground>
             <DetailHeading
@@ -192,8 +192,8 @@ export function HeadingPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="adopted, no clone"
-          rule="Pergola Notes: adopted while only on Forgejo. Where the launch actions would sit, the meta line says no local clone in the faint voice, the cause in three words that the slip in the paper pane spells out. It shows exactly when the slip does and config holds at least one launch action; a config with none stays silent."
+          label="adopted, no local repository"
+          rule="Pergola Notes: adopted while only on Forgejo. Where the launch actions would sit, the meta line says no local repository in the faint voice, the cause in three words that the slip in the paper pane spells out. It shows exactly when the slip does and config holds at least one launch action; a config with none stays silent."
         >
           <Ground>
             <DetailHeading
@@ -206,8 +206,8 @@ export function HeadingPage() {
           </Ground>
         </Specimen>
         <Specimen
-          label="on the fence, no clone"
-          rule="obsidian-tidy: on a forge, never cloned here, so the meta line starts with the forge, the heading has no activity, and no local clone stands where the launch actions would."
+          label="on the fence, no local repository"
+          rule="obsidian-tidy: on a forge, with no local repository here, so the meta line starts with the forge, the heading has no activity, and no local repository stands where the launch actions would."
         >
           <Ground>
             <DetailHeading
@@ -233,9 +233,9 @@ export function HeadingPage() {
       >
         <p>
           The meta line is <Code>whereabouts(bird)</Code>: the view model&apos;s{" "}
-          <Code>detail.clonePath</Code> and <Code>detail.forges</Code>, then{" "}
-          <Code>bird.wire</Code> as &quot;on Projects&quot; or &quot;on the
-          fence&quot;. The speech is the roost&apos;s, on the Roost page.
+          <Code>detail.localRepositoryPath</Code> and <Code>detail.forges</Code>
+          , then <Code>bird.wire</Code> as &quot;on Projects&quot; or &quot;on
+          the fence&quot;. The speech is the roost&apos;s, on the Roost page.
         </p>
       </Usage>
     </>

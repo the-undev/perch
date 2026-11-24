@@ -25,7 +25,7 @@ type RoadmapEntry = Entry<RawRoadmap, "no-roadmap-file">;
 export interface RoadmapSourceDeps {
   readText: (path: string) => Promise<string | null>;
   /**
-   * Roadmap files the papers list for each local presence, relative to it, or null or empty for
+   * Roadmap files the papers list for each local repository, relative to it, or null or empty for
    * none (a standard-named file is then only detected); built once per gather from the earlier rounds' files.
    */
   roadmapsFor: (
@@ -75,7 +75,7 @@ async function configuredRoadmap(
   return { state: "observed", value: { files, detectedPath: null } };
 }
 
-/** Enricher: reads the roadmap structure of every local presence. */
+/** Enricher: reads the roadmap structure of every local repository. */
 export function createRoadmapSource(
   deps: RoadmapSourceDeps,
 ): PolledSource<"roadmap"> {
@@ -86,18 +86,18 @@ export function createRoadmapSource(
       if (local === undefined) {
         throw new SourceFailure(
           "unexpected",
-          "no local presences to read roadmaps for",
+          "no local repositories to read roadmaps for",
         );
       }
       const roadmapsFor = deps.roadmapsFor(earlier);
       const entries: RawData["roadmap"] = {};
-      for (const [id, presence] of Object.entries(local.data.presences)) {
+      for (const [id, repository] of Object.entries(local.data.repositories)) {
         try {
           const configured = roadmapsFor(id);
           entries[id] =
             configured === null || configured.length === 0
-              ? await detectedRoadmap(presence.path, deps)
-              : await configuredRoadmap(presence.path, configured, deps);
+              ? await detectedRoadmap(repository.path, deps)
+              : await configuredRoadmap(repository.path, configured, deps);
         } catch (error) {
           entries[id] = { state: "error", error: errorMessage(error) };
         }

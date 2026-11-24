@@ -847,7 +847,7 @@ describe("the camera", () => {
     expect(onNavigate).not.toHaveBeenCalled();
   });
 
-  it("hands a no-clone slip's Open Sources and Copy to the caller, the camera staying put", async () => {
+  it("hands a no-local-repository slip's Open Sources and Copy to the caller, the camera staying put", async () => {
     const { onLocalSources, onCopy, onSettings, onNavigate } = camera(
       detailOf("forgejo:finch/field-notes"),
     );

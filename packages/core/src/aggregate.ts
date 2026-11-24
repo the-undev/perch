@@ -20,11 +20,11 @@ import {
   type ForgeInput,
   fullNameOf,
   isArchived,
-  type JoinResult,
-  joinPresences,
+  type LinkResult,
   type LocalInput,
+  linkRepositories,
   type Project,
-} from "./join.ts";
+} from "./link.ts";
 import type {
   Entry,
   ForgeName,
@@ -91,11 +91,11 @@ function fromEntry<T, R extends string, D>(
 }
 
 /**
- * Forge presences from the account listings, overlaid with the forge enricher's file, which adds
+ * Forge repositories from the account listings, overlaid with the forge enricher's file, which adds
  * repositories found through local remotes and the details of each. A remote's repository the
- * enricher could not read is a presence carrying its error; an untracked fork is left out.
+ * enricher could not read is a repository carrying its error; an untracked fork is left out.
  */
-function forgePresences(
+function forgeRepositories(
   forge: ForgeName,
   files: Partial<RawFiles>,
 ): ForgeInput[] {
@@ -125,21 +125,21 @@ function forgePresences(
     .map(([key, repo]) => ({ forge, key, repo }));
 }
 
-/** A forge presence's data: derived when it was read, else its error and whether no card covers it. */
-function forgeSource(presence: ForgeInput): ForgeData | ForgeError {
-  if (presence.repo.state === "observed")
-    return deriveForge(presence.repo.value);
+/** A forge repository's data: derived when it was read, else its error and whether no card covers it. */
+function forgeSource(repository: ForgeInput): ForgeData | ForgeError {
+  if (repository.repo.state === "observed")
+    return deriveForge(repository.repo.value);
   return {
-    error: presence.repo.error,
-    cause: presence.repo.reason === "no-card" ? "no-card" : "read-failed",
+    error: repository.repo.error,
+    cause: repository.repo.reason === "no-card" ? "no-card" : "read-failed",
   };
 }
 
 function backupOf(project: Project & { local: LocalInput }): Backup {
-  if (project.forges.length > 0) return "joined";
-  const git = project.local.presence.git;
+  if (project.forges.length > 0) return "linked";
+  const git = project.local.repository.git;
   return git.state === "observed" && git.value.remotes.state === "observed"
-    ? "unjoined-remote"
+    ? "unlinked-remote"
     : "local-only";
 }
 
@@ -150,14 +150,14 @@ function localSources(
   config: Config,
 ): EntitySources {
   const sources: EntitySources = {};
-  const { id, presence } = project.local;
+  const { id, repository } = project.local;
   const observedAt = new Date(files.local?.gatheredAt ?? 0);
   const thresholds = thresholdsFor(config, papers);
-  if (presence.git.state === "error") {
-    sources.git = { error: presence.git.error };
-  } else if (presence.git.state === "observed") {
+  if (repository.git.state === "error") {
+    sources.git = { error: repository.git.error };
+  } else if (repository.git.state === "observed") {
     sources.git = deriveGit(
-      presence.git.value,
+      repository.git.value,
       thresholds,
       observedAt,
       backupOf(project),
@@ -176,44 +176,44 @@ function localSources(
   return sources;
 }
 
-/** A project's entity id: the local id when a clone exists, else its first reference. */
+/** A project's entity id: the local id when a local repository exists, else its first reference. */
 function projectId(project: Project): string {
   return project.local ? project.local.id : (project.refs[0] ?? "");
 }
 
-/** The papers a project resolves to, by its id and every presence reference. */
+/** The papers a project resolves to, by its id and every repository reference. */
 function papersOf(project: Project, config: Config): ResolvedPapers {
   return resolvePapers(config, projectId(project), project.refs);
 }
 
-/** Joins the presences in a set of raw files into projects, with config's hosts, links and ignores. */
-export function joinRawFiles(
+/** Links the repositories in a set of raw files into projects, with config's hosts, links and ignores. */
+export function linkRawFiles(
   files: Partial<RawFiles>,
   config: Config,
-): JoinResult {
+): LinkResult {
   const github = hostsOf(config.sources.github);
   const forgejo = hostsOf(config.sources.forgejo);
-  return joinPresences({
-    locals: Object.entries(files.local?.data.presences ?? {}).map(
-      ([id, presence]) => ({
+  return linkRepositories({
+    locals: Object.entries(files.local?.data.repositories ?? {}).map(
+      ([id, repository]) => ({
         id,
-        presence,
+        repository,
       }),
     ),
-    forges: forgeNames.flatMap((forge) => forgePresences(forge, files)),
+    forges: forgeNames.flatMap((forge) => forgeRepositories(forge, files)),
     forgeForHost: (host) =>
       github.includes(host)
         ? "github"
         : forgejo.includes(host)
           ? "forgejo"
           : null,
-    joins: config.joins,
+    links: config.links,
     ignore: config.ignore,
   });
 }
 
 /**
- * The papers each local clone resolves to through the project it joins, for the gather
+ * The papers each local repository resolves to through the project it links, for the gather
  * rounds that need papers before aggregation.
  */
 export function localPapers(
@@ -221,7 +221,7 @@ export function localPapers(
   config: Config,
 ): Map<string, Papers | null> {
   return new Map(
-    joinRawFiles(files, config).projects.flatMap((project) =>
+    linkRawFiles(files, config).projects.flatMap((project) =>
       project.local
         ? [[project.local.id, papersOf(project, config).papers] as const]
         : [],
@@ -242,12 +242,12 @@ function entityFor(
     ? localSources({ ...project, local }, papers, files, config)
     : {};
   for (const forge of forgeNames) {
-    const presence = project.forges.find((entry) => entry.forge === forge);
-    if (presence) sources[forge] = forgeSource(presence);
+    const repository = project.forges.find((entry) => entry.forge === forge);
+    if (repository) sources[forge] = forgeSource(repository);
   }
   const flags = [...project.flags];
   const include = local
-    ? files.local?.data.includes[local.presence.include]
+    ? files.local?.data.includes[local.repository.include]
     : undefined;
   if (
     local &&
@@ -258,38 +258,38 @@ function entityFor(
     flags.unshift({
       flag: "not-set-up",
       level: "red",
-      detail: `found under ${local.presence.include} with no papers in config`,
+      detail: `found under ${local.repository.include} with no papers in config`,
     });
   }
   return {
     id,
     name: local
-      ? basename(local.presence.path)
+      ? basename(local.repository.path)
       : first?.repo.state === "observed"
         ? first.repo.value.info.name
         : id,
-    kind: local?.presence.obsidian.folder ? "obsidian" : "git",
-    path: local ? local.presence.path : null,
-    presences: {
+    kind: local?.repository.obsidian.folder ? "obsidian" : "git",
+    path: local ? local.repository.path : null,
+    repositories: {
       local: local
-        ? { ref: localRef(local.id), path: local.presence.path }
+        ? { ref: localRef(local.id), path: local.repository.path }
         : null,
-      forges: project.forges.map((presence) => ({
-        forge: presence.forge,
-        ref: forgeRef(presence.forge, presence.key),
-        fullName: fullNameOf(presence),
+      forges: project.forges.map((repository) => ({
+        forge: repository.forge,
+        ref: forgeRef(repository.forge, repository.key),
+        fullName: fullNameOf(repository),
         url:
-          presence.repo.state === "observed"
-            ? presence.repo.value.info.url
+          repository.repo.state === "observed"
+            ? repository.repo.value.info.url
             : null,
         sshUrl:
-          presence.repo.state === "observed" &&
-          presence.repo.value.info.sshUrl.state === "observed"
-            ? presence.repo.value.info.sshUrl.value
+          repository.repo.state === "observed" &&
+          repository.repo.value.info.sshUrl.state === "observed"
+            ? repository.repo.value.info.sshUrl.value
             : null,
         foundBy:
-          presence.repo.state === "observed"
-            ? presence.repo.value.foundBy
+          repository.repo.state === "observed"
+            ? repository.repo.value.foundBy
             : "local-remote",
       })),
     },
@@ -321,7 +321,7 @@ function sourceStatus(raw: RawSourceStatus): SourceStatus {
 }
 
 /**
- * Builds the snapshot from raw files alone: joins presences into projects, derives each
+ * Builds the snapshot from raw files alone: links repositories into projects, derives each
  * project's data, and records where config and observation disagree. Ages are measured against
  * each source file's gatheredAt, so the same raw files always give the same snapshot.
  */
@@ -332,9 +332,9 @@ export function aggregate(
 ): Snapshot {
   const { config } = input;
   const files = bundle.files;
-  const join = joinRawFiles(files, config);
+  const link = linkRawFiles(files, config);
 
-  const resolved: { entity: Entity; keys: string[] }[] = join.projects.map(
+  const resolved: { entity: Entity; keys: string[] }[] = link.projects.map(
     (project) => {
       const { papers, keys } = papersOf(project, config);
       return {
@@ -345,7 +345,7 @@ export function aggregate(
   );
   const entities = resolved.map(({ entity }) => entity);
 
-  const conflicts: ConfigConflict[] = [...join.conflicts];
+  const conflicts: ConfigConflict[] = [...link.conflicts];
   for (const { entity, keys } of resolved) {
     if (keys.length < 2) continue;
     const assertion = keys
@@ -371,16 +371,16 @@ export function aggregate(
   const forges = {} as Record<ForgeName, ForgeListing>;
   for (const forge of forgeNames) {
     const listing: ForgeListing = { active: [], archived: [] };
-    for (const presence of forgePresences(forge, files)) {
-      if (presence.repo.state !== "observed") continue;
-      const ref = forgeRef(forge, presence.key);
-      const project = join.projectOf.get(ref);
-      (isArchived(presence) ? listing.archived : listing.active).push({
+    for (const repository of forgeRepositories(forge, files)) {
+      if (repository.repo.state !== "observed") continue;
+      const ref = forgeRef(forge, repository.key);
+      const project = link.projectOf.get(ref);
+      (isArchived(repository) ? listing.archived : listing.active).push({
         ref,
-        fullName: presence.repo.value.info.fullName,
-        url: presence.repo.value.info.url,
+        fullName: repository.repo.value.info.fullName,
+        url: repository.repo.value.info.url,
         entityId: project ? projectId(project) : null,
-        ignored: join.ignored.has(ref),
+        ignored: link.ignored.has(ref),
       });
     }
     forges[forge] = listing;

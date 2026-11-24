@@ -11,7 +11,7 @@ import {
 import type { PolledSourceName, RawData, StatusFile } from "../src/raw.ts";
 import type { PolledSource } from "../src/sources/source.ts";
 import { makeTempDir, removeDir } from "./helpers/git-fixture.ts";
-import { localPresence } from "./helpers/raw.ts";
+import { localRepository } from "./helpers/raw.ts";
 
 let rawDir: string;
 beforeEach(() => {
@@ -47,8 +47,8 @@ function failing<N extends PolledSourceName>(
 
 const localData: RawData["local"] = {
   includes: { "/home/test/dev": { state: "observed", value: "directory" } },
-  presences: {
-    "dev/a": localPresence("/home/test/dev/a", { include: "/home/test/dev" }),
+  repositories: {
+    "dev/a": localRepository("/home/test/dev/a", { include: "/home/test/dev" }),
   },
 };
 
@@ -123,7 +123,7 @@ describe("gather", () => {
     const roadmap: PolledSource<"roadmap"> = {
       name: "roadmap",
       gather: async (earlier) => {
-        seen.push(Object.keys(earlier.local?.data.presences ?? {}));
+        seen.push(Object.keys(earlier.local?.data.repositories ?? {}));
         return {};
       },
     };
@@ -149,7 +149,7 @@ describe("gather", () => {
     const roadmap: PolledSource<"roadmap"> = {
       name: "roadmap",
       gather: async (earlier) => {
-        seen.push(Object.keys(earlier.local?.data.presences ?? {}));
+        seen.push(Object.keys(earlier.local?.data.repositories ?? {}));
         return {};
       },
     };

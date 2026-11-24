@@ -22,7 +22,7 @@ export function aged(hours: number, level: HealthLevel): AgedWork {
 
 export function gitData(overrides: Partial<GitData>): GitData {
   return {
-    backup: "joined",
+    backup: "linked",
     branch: "main",
     defaultBranch: "main",
     upstream: "origin/main",
@@ -72,7 +72,7 @@ export function forgeData(overrides: Partial<ForgeData>): ForgeData {
   };
 }
 
-/** An entity with a local clone at /home/test/<id> and no sources unless given. */
+/** An entity with a local repository at /home/test/<id> and no sources unless given. */
 export function entity(id: string, overrides: Partial<Entity> = {}): Entity {
   const path = `/home/test/${id}`;
   return {
@@ -80,7 +80,7 @@ export function entity(id: string, overrides: Partial<Entity> = {}): Entity {
     name: id.slice(id.lastIndexOf("/") + 1),
     kind: "git",
     path,
-    presences: { local: { ref: `local:${id}`, path }, forges: [] },
+    repositories: { local: { ref: `local:${id}`, path }, forges: [] },
     flags: [],
     sources: {},
     ...overrides,

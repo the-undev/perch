@@ -13,7 +13,7 @@ import { testConfig } from "./helpers/config.ts";
 import {
   forgeRepo,
   gatheredAt,
-  localPresence,
+  localRepository,
   okStatus,
   rawFiles,
   withRemotes,
@@ -26,7 +26,7 @@ const config = await testConfig(
 const files = rawFiles({
   includes: { "/home/test/dev": "directory", "/home/test/undev": "directory" },
   locals: {
-    "dev/perch": localPresence("/home/test/dev/perch", {
+    "dev/perch": localRepository("/home/test/dev/perch", {
       include: "/home/test/dev",
       git: {
         dirtyFiles: [
@@ -91,11 +91,11 @@ describe("aggregate", () => {
     const siloFiles = rawFiles({
       includes: { "/home/test/obsidian": "directory" },
       locals: {
-        "obsidian/notes": localPresence("/home/test/obsidian/notes", {
+        "obsidian/notes": localRepository("/home/test/obsidian/notes", {
           include: "/home/test/obsidian",
           obsidian: true,
         }),
-        "obsidian/plain": localPresence("/home/test/obsidian/plain", {
+        "obsidian/plain": localRepository("/home/test/obsidian/plain", {
           include: "/home/test/obsidian",
         }),
       },
@@ -204,24 +204,24 @@ describe("aggregate", () => {
     expect(snapshot.sources.local?.lastSucceededAt).toBe(gatheredAt);
   });
 
-  it("keeps a forge the enricher could not read as a presence carrying its error", () => {
-    const clone = (path: string, url: string) =>
-      localPresence(path, {
+  it("keeps a forge the enricher could not read as a repository carrying its error", () => {
+    const localWithRemote = (path: string, url: string) =>
+      localRepository(path, {
         include: "/home/test/undev",
         git: withRemotes([{ name: "origin", url }]),
       });
     const unread = rawFiles({
       includes: { "/home/test/undev": "directory" },
       locals: {
-        "undev/skiff": clone(
+        "undev/skiff": localWithRemote(
           "/home/test/undev/skiff",
           "git@github-work:skiff-app/skiff.git",
         ),
-        "undev/gone": clone(
+        "undev/gone": localWithRemote(
           "/home/test/undev/gone",
           "git@github.com:the-undev/gone.git",
         ),
-        "undev/fork": clone(
+        "undev/fork": localWithRemote(
           "/home/test/undev/fork",
           "git@github.com:the-undev/fork.git",
         ),
@@ -258,7 +258,7 @@ describe("aggregate", () => {
       error: "no GitHub card is configured for owner skiff-app",
       cause: "no-card",
     });
-    expect(entity("undev/skiff")?.presences.forges).toEqual([
+    expect(entity("undev/skiff")?.repositories.forges).toEqual([
       {
         forge: "github",
         ref: "github:skiff-app/skiff",
@@ -272,12 +272,12 @@ describe("aggregate", () => {
       error: "HTTP 404 for the-undev/gone",
       cause: "read-failed",
     });
-    expect(entity("undev/fork")?.presences.forges).toEqual([]);
+    expect(entity("undev/fork")?.repositories.forges).toEqual([]);
     expect(entity("undev/fork")?.sources.github).toBeUndefined();
     expect(snapshot.forges.github.active).toEqual([]);
   });
 
-  it("carries the SSH clone address each forge gives onto its presence, null when it gives none", () => {
+  it("carries the SSH address each forge gives onto its repository, null when it gives none", () => {
     const silent = forgeRepo("finch/silent", {});
     silent.info.sshUrl = { state: "absent", reason: "not-reported" };
     const forgeOnly = rawFiles({
@@ -297,9 +297,9 @@ describe("aggregate", () => {
 
     expect(
       snapshot.entities.flatMap((entity) =>
-        entity.presences.forges.map((presence) => [
-          presence.ref,
-          presence.sshUrl,
+        entity.repositories.forges.map((repository) => [
+          repository.ref,
+          repository.sshUrl,
         ]),
       ),
     ).toEqual([
@@ -325,16 +325,16 @@ describe("source cards", () => {
         "/home/test/undev": "directory",
       },
       locals: {
-        "dev/perch": localPresence("/home/test/dev/perch", {
+        "dev/perch": localRepository("/home/test/dev/perch", {
           include: "/home/test/dev",
         }),
-        "dev/harbour": localPresence("/home/test/dev/harbour", {
+        "dev/harbour": localRepository("/home/test/dev/harbour", {
           include: "/home/test/dev",
         }),
-        ".dotfiles": localPresence("/home/test/.dotfiles", {
+        ".dotfiles": localRepository("/home/test/.dotfiles", {
           include: "/home/test/.dotfiles",
         }),
-        "undev/skiff": localPresence("/home/test/undev/skiff", {
+        "undev/skiff": localRepository("/home/test/undev/skiff", {
           include: "/home/test/undev",
         }),
       },

@@ -246,7 +246,7 @@ describe("fence birds state where they stand", () => {
         forge: "github",
         fullName: "finch/obsidian-tidy",
       }),
-    ).toBe("Nobody's cloned me yet. I live on GitHub as finch/obsidian-tidy.");
+    ).toBe("I live on GitHub as finch/obsidian-tidy.");
     expect(fence({ kind: "one-disk" })).toBe(
       "I only exist on this machine. One disk, no backup.",
     );

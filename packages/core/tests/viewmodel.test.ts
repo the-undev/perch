@@ -13,7 +13,7 @@ import type {
   Entity,
   FinalisedCommit,
   ForgeName,
-  ForgePresence,
+  ForgeRepository,
   RoadmapData,
 } from "../src/snapshot.ts";
 import {
@@ -34,7 +34,7 @@ import {
   snapshotOf,
 } from "./helpers/snapshot.ts";
 
-/** The home directory the test entities' clones sit under. */
+/** The home directory the test entities' local repositories sit under. */
 const home = "/home/test";
 
 const adoptAll = (ids: string[], extra = "") =>
@@ -80,7 +80,7 @@ const distressed = entity("dev/prism", {
   },
 });
 
-/** A clone pushing to the named forges' skiff-app/skiff, each unread: no card, or a failed read. */
+/** A local repository pushing to the named forges' skiff-app/skiff, each unread: no card, or a failed read. */
 function unreadableEntity(
   id: string,
   forges: ForgeName[],
@@ -88,7 +88,7 @@ function unreadableEntity(
   cause: "no-card" | "read-failed",
 ): Entity {
   return entity(id, {
-    presences: {
+    repositories: {
       local: { ref: `local:${id}`, path: `/home/test/${id}` },
       forges: forges.map((forge) => ({
         forge,
@@ -226,14 +226,14 @@ describe("mood", () => {
     ).toEqual([["2 uncommitted", null]]);
   });
 
-  it("maps the git work-state to activity, null without a local clone", async () => {
+  it("maps the git work-state to activity, null without a local repository", async () => {
     const config = await adoptAll(["dev/spool", "dev/harbour", "dev/perch"]);
     const editing = entity("dev/perch", {
       sources: { git: gitData({ uncommittedCount: 1, activity: "editing" }) },
     });
     const forgeOnly = entity("github:finch/obsidian-tidy", {
       path: null,
-      presences: { local: null, forges: [] },
+      repositories: { local: null, forges: [] },
     });
     const entities = [settled, restless, editing, forgeOnly];
 
@@ -744,7 +744,7 @@ describe("the ledger", () => {
 });
 
 describe("the unpushed commits row", () => {
-  const github: ForgePresence = {
+  const github: ForgeRepository = {
     forge: "github",
     ref: "github:finch/perch",
     fullName: "finch/perch",
@@ -752,7 +752,7 @@ describe("the unpushed commits row", () => {
     foundBy: "local-remote",
   };
   const perch = entity("dev/perch", {
-    presences: {
+    repositories: {
       local: { ref: "local:dev/perch", path: "/home/test/dev/perch" },
       forges: [github],
     },
@@ -846,11 +846,11 @@ describe("the unpushed commits row", () => {
     });
   });
 
-  it("leaves an upstream unlinked when no forge presence matches its remote", async () => {
+  it("leaves an upstream unlinked when no forge repository matches its remote", async () => {
     const config = await adoptAll(["dev/perch"]);
     const unlinked = {
       ...perch,
-      presences: { ...perch.presences, forges: [] },
+      repositories: { ...perch.repositories, forges: [] },
     };
 
     expect(
@@ -875,7 +875,7 @@ describe("the unpushed commits row", () => {
 describe("where a fence bird lives", () => {
   const forgeOnly = entity("github:finch/river", {
     path: null,
-    presences: {
+    repositories: {
       local: null,
       forges: [
         {
@@ -930,7 +930,7 @@ describe("the ledger's quiet sentence", () => {
     );
   });
 
-  it("says no remote holds a copy of a clean clone on one disk only", async () => {
+  it("says no remote holds a copy of a clean local repository on one disk only", async () => {
     const config = await adoptAll(["dev/hello"]);
     const hello = entity("dev/hello", {
       sources: { git: gitData({ backup: "local-only" }) },
@@ -941,7 +941,7 @@ describe("the ledger's quiet sentence", () => {
     );
   });
 
-  it("stays silent when something waits, and for a bird with no readable clone", async () => {
+  it("stays silent when something waits, and for a bird with no readable local repository", async () => {
     const config = await adoptAll([
       "dev/harbour",
       "dev/prism",
@@ -972,7 +972,7 @@ describe("the ledger's quiet sentence", () => {
     });
     const forgeOnly = entity("github:finch/river", {
       path: null,
-      presences: { local: null, forges: [] },
+      repositories: { local: null, forges: [] },
       sources: { github: forgeData({}) },
     });
     const entities = [restless, distressed, fresh, unread, parked, forgeOnly];
@@ -1536,7 +1536,7 @@ describe("the detail", () => {
           'papers."dev/perch", papers."github:finch/perch": name one entity, dev/perch; papers."dev/perch" applies',
       },
     ],
-    presences: {
+    repositories: {
       local: { ref: "local:dev/perch", path: "/home/test/dev/perch" },
       forges: [
         {
@@ -1608,7 +1608,7 @@ describe("the detail", () => {
     },
   });
 
-  it("lists branches current first, then newest, linking those pushed to a forge presence", async () => {
+  it("lists branches current first, then newest, linking those pushed to a forge repository", async () => {
     const config = await adoptAll(["dev/perch"]);
 
     expect(
@@ -1791,62 +1791,66 @@ describe("the detail", () => {
     expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([]);
   });
 
-  it("says where the bird lives: its clone with home as ~, and each forge once", async () => {
-    const presence = (forge: "github" | "forgejo", fullName: string) => ({
+  it("says where the bird lives: its local repository with home as ~, and each forge once", async () => {
+    const repository = (forge: "github" | "forgejo", fullName: string) => ({
       forge,
       ref: `${forge}:${fullName}`,
       fullName,
       url: `https://${forge}.example/${fullName}`,
       foundBy: "local-remote" as const,
     });
-    const cloned = entity("dev/perch", {
-      presences: {
+    const withLocalRepository = entity("dev/perch", {
+      repositories: {
         local: { ref: "local:dev/perch", path: "/home/test/dev/perch" },
         forges: [
-          presence("forgejo", "finch/perch"),
-          presence("github", "finch/perch"),
-          presence("forgejo", "the-undev/perch"),
+          repository("forgejo", "finch/perch"),
+          repository("github", "finch/perch"),
+          repository("forgejo", "the-undev/perch"),
         ],
       },
     });
     const forgeOnly = entity("github:finch/obsidian-tidy", {
       path: null,
-      presences: {
+      repositories: {
         local: null,
-        forges: [presence("github", "finch/obsidian-tidy")],
+        forges: [repository("github", "finch/obsidian-tidy")],
       },
     });
     const oneDisk = entity("dev/odin/hello");
     const outside = entity("scratch", {
       path: "/srv/scratch",
-      presences: {
+      repositories: {
         local: { ref: "local:/srv/scratch", path: "/srv/scratch" },
         forges: [],
       },
     });
-    const entities = [cloned, forgeOnly, oneDisk, outside];
+    const entities = [withLocalRepository, forgeOnly, oneDisk, outside];
     const config = await adoptAll(
       entities.map((listedEntity) => listedEntity.id),
     );
     const whereabouts = (id: string) => {
-      const { clonePath, forges } = birdIn(entities, config, id).detail;
-      return { clonePath, forges };
+      const { localRepositoryPath, forges } = birdIn(
+        entities,
+        config,
+        id,
+      ).detail;
+      return { localRepositoryPath, forges };
     };
 
-    expect(whereabouts(cloned.id)).toEqual({
-      clonePath: "~/dev/perch",
+    expect(whereabouts(withLocalRepository.id)).toEqual({
+      localRepositoryPath: "~/dev/perch",
       forges: ["forgejo", "github"],
     });
     expect(whereabouts(forgeOnly.id)).toEqual({
-      clonePath: null,
+      localRepositoryPath: null,
       forges: ["github"],
     });
     expect(whereabouts(oneDisk.id)).toEqual({
-      clonePath: "~/dev/odin/hello",
+      localRepositoryPath: "~/dev/odin/hello",
       forges: [],
     });
     expect(whereabouts(outside.id)).toEqual({
-      clonePath: "/srv/scratch",
+      localRepositoryPath: "/srv/scratch",
       forges: [],
     });
   });
@@ -1854,7 +1858,7 @@ describe("the detail", () => {
   it("names a forge it could not read where the bird lives, with no link out to it", async () => {
     const config = await adoptAll(["undev/skiff"]);
     const skiff = entity("undev/skiff", {
-      presences: {
+      repositories: {
         local: { ref: "local:undev/skiff", path: "/home/test/undev/skiff" },
         forges: [
           {
@@ -1895,7 +1899,7 @@ describe("the detail", () => {
 
     expect(birdIn(entities, config, "undev/skiff").detail.notices).toEqual([
       {
-        text: "The clone pushes to skiff-app/skiff on github, which no GitHub card reads.",
+        text: "The local repository pushes to skiff-app/skiff on github, which no GitHub card reads.",
         fix: "Add a card for skiff-app under",
       },
     ]);
@@ -1904,23 +1908,23 @@ describe("the detail", () => {
     );
   });
 
-  it("offers no launch actions and no key files without a local clone", async () => {
+  it("offers no launch actions and no key files without a local repository", async () => {
     const config = await adoptAll(["github:finch/obsidian-tidy"]);
     const forgeOnly = entity("github:finch/obsidian-tidy", {
       path: null,
-      presences: { local: null, forges: [] },
+      repositories: { local: null, forges: [] },
     });
     const detail = birdIn([forgeOnly], config, forgeOnly.id).detail;
 
     expect([detail.actions, detail.keyFiles]).toEqual([[], []]);
   });
 
-  describe("the no-clone slip", () => {
-    const presence = (
+  describe("the no-local-repository slip", () => {
+    const repository = (
       forge: ForgeName,
       fullName: string,
       sshUrl: string | null,
-    ): ForgePresence => ({
+    ): ForgeRepository => ({
       forge,
       ref: `${forge}:${fullName.toLowerCase()}`,
       fullName,
@@ -1928,12 +1932,12 @@ describe("the detail", () => {
       sshUrl,
       foundBy: "account-listing",
     });
-    const forgeOnly = (id: string, forges: ForgePresence[]) =>
-      entity(id, { path: null, presences: { local: null, forges } });
+    const forgeOnly = (id: string, forges: ForgeRepository[]) =>
+      entity(id, { path: null, repositories: { local: null, forges } });
 
-    it("names the forge, the repository and the clone address for a bird held by a forge and cloned nowhere here", async () => {
+    it("names the forge, the repository and the SSH address for a bird held by a forge with no local repository here", async () => {
       const pocket = forgeOnly("forgejo:finch/pocket", [
-        presence(
+        repository(
           "forgejo",
           "finch/Pocket",
           "ssh://git@forgejo:2222/finch/Pocket.git",
@@ -1941,31 +1945,35 @@ describe("the detail", () => {
       ]);
       const config = await adoptAll([pocket.id]);
 
-      expect(birdIn([pocket], config, pocket.id).detail.noClone).toEqual({
+      expect(
+        birdIn([pocket], config, pocket.id).detail.noLocalRepository,
+      ).toEqual({
         forges: "Forgejo",
         reference: "finch/pocket",
-        cloneAddress: "ssh://git@forgejo:2222/finch/Pocket.git",
+        sshAddress: "ssh://git@forgejo:2222/finch/Pocket.git",
         onMetaLine: true,
       });
     });
 
-    it("names both forges, GitHub first, the first presence's repository and the first address a forge gave", async () => {
+    it("names both forges, GitHub first, the first forge repository and the first address a forge gave", async () => {
       const notes = forgeOnly("forgejo:finch/notes", [
-        presence("forgejo", "finch/notes", null),
-        presence("github", "finch/notes", "git@github.com:finch/notes.git"),
+        repository("forgejo", "finch/notes", null),
+        repository("github", "finch/notes", "git@github.com:finch/notes.git"),
       ]);
       const config = await adoptAll([notes.id]);
 
-      expect(birdIn([notes], config, notes.id).detail.noClone).toEqual({
+      expect(
+        birdIn([notes], config, notes.id).detail.noLocalRepository,
+      ).toEqual({
         forges: "GitHub and Forgejo",
         reference: "finch/notes",
-        cloneAddress: "git@github.com:finch/notes.git",
+        sshAddress: "git@github.com:finch/notes.git",
         onMetaLine: true,
       });
     });
 
     it("leaves the address unknown for a snapshot cached before the scanner kept it", async () => {
-      const cached: ForgePresence = {
+      const cached: ForgeRepository = {
         forge: "github",
         ref: "github:finch/obsidian-tidy",
         fullName: "finch/obsidian-tidy",
@@ -1975,38 +1983,42 @@ describe("the detail", () => {
       const tidy = forgeOnly("github:finch/obsidian-tidy", [cached]);
 
       expect(
-        birdIn([tidy], await testConfig(""), tidy.id).detail.noClone,
-      ).toMatchObject({ forges: "GitHub", cloneAddress: null });
+        birdIn([tidy], await testConfig(""), tidy.id).detail.noLocalRepository,
+      ).toMatchObject({ forges: "GitHub", sshAddress: null });
     });
 
     it("shows on the fence as on a wire", async () => {
       const tidy = forgeOnly("github:finch/obsidian-tidy", [
-        presence("github", "finch/obsidian-tidy", null),
+        repository("github", "finch/obsidian-tidy", null),
       ]);
       const bird = birdIn([tidy], await testConfig(""), tidy.id);
 
       expect(bird.adopted).toBe(false);
-      expect(bird.detail.noClone).not.toBeNull();
+      expect(bird.detail.noLocalRepository).not.toBeNull();
     });
 
-    it("never shows for a bird with a clone here, nor for one on no forge", async () => {
+    it("never shows for a bird with a local repository here, nor for one on no forge", async () => {
       const oneDisk = entity("dev/odin/hello");
       const config = await adoptAll(["dev/perch", oneDisk.id]);
 
-      expect(birdIn([perch], config, "dev/perch").detail.noClone).toBeNull();
-      expect(birdIn([oneDisk], config, oneDisk.id).detail.noClone).toBeNull();
+      expect(
+        birdIn([perch], config, "dev/perch").detail.noLocalRepository,
+      ).toBeNull();
+      expect(
+        birdIn([oneDisk], config, oneDisk.id).detail.noLocalRepository,
+      ).toBeNull();
     });
 
-    it("puts no local clone on the meta line only while config holds a launch action", async () => {
+    it("puts no local repository on the meta line only while config holds a launch action", async () => {
       const tidy = forgeOnly("github:finch/obsidian-tidy", [
-        presence("github", "finch/obsidian-tidy", null),
+        repository("github", "finch/obsidian-tidy", null),
       ]);
       const config = await adoptAll([tidy.id]);
       config.launch.actions = [];
 
-      expect(birdIn([tidy], config, tidy.id).detail.noClone?.onMetaLine).toBe(
-        false,
-      );
+      expect(
+        birdIn([tidy], config, tidy.id).detail.noLocalRepository?.onMetaLine,
+      ).toBe(false);
     });
   });
 
@@ -2125,7 +2137,7 @@ describe("the commit river", () => {
     committedAt: hoursBefore(hours),
     subject: `Commit ${sha}`,
   });
-  const presenceOn = (forge: ForgeName): ForgePresence => ({
+  const repositoryOn = (forge: ForgeName): ForgeRepository => ({
     forge,
     ref: `${forge}:finch/river`,
     fullName: "finch/river",
@@ -2133,7 +2145,7 @@ describe("the commit river", () => {
     foundBy: "local-remote",
   });
 
-  /** The river of a clone at dev/river whose main and forges hold the given lists. */
+  /** The river of a local repository at dev/river whose main and forges hold the given lists. */
   async function riverOf(lists: {
     here: FinalisedCommit[] | null;
     github?: FinalisedCommit[];
@@ -2157,9 +2169,9 @@ describe("the commit river", () => {
         finalisedCommits: lists.forgejo,
       });
     const subject = entity("dev/river", {
-      presences: {
+      repositories: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
-        forges: forges.map(presenceOn),
+        forges: forges.map(repositoryOn),
       },
       sources,
     });
@@ -2199,7 +2211,7 @@ describe("the commit river", () => {
     expect(river.divergence).toBeNull();
   });
 
-  it("joins unpushed commits on main in amber, not pushed to a remote, with no sentence", async () => {
+  it("links unpushed commits on main in amber, not pushed to a remote, with no sentence", async () => {
     const pushed = [at("c2", 5), at("c1", 9)];
     const river = await riverOf({
       here: [at("u1", 1), ...pushed],
@@ -2230,7 +2242,7 @@ describe("the commit river", () => {
     expect(river.divergence).toBe("forgejo is 2 commits behind github.");
   });
 
-  it("counts a commit older than a forge's list as held there, and leaves the clone out of the judgement", async () => {
+  it("counts a commit older than a forge's list as held there, and leaves the local repository out of the judgement", async () => {
     const river = await riverOf({
       here: [at("c4", 1), at("c3", 2)],
       github: [at("c4", 1), at("c3", 2)],
@@ -2275,11 +2287,11 @@ describe("the commit river", () => {
     expect(river.divergence).toBe("forgejo is 3 commits behind github.");
   });
 
-  it("judges over the forges read, noting one that couldn't be read, whatever the clone's list", async () => {
+  it("judges over the forges read, noting one that couldn't be read, whatever the local repository's list", async () => {
     const partly = entity("dev/river", {
-      presences: {
+      repositories: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
-        forges: [presenceOn("github"), presenceOn("forgejo")],
+        forges: [repositoryOn("github"), repositoryOn("forgejo")],
       },
       sources: {
         git: gitData({}),
@@ -2301,11 +2313,11 @@ describe("the commit river", () => {
   it("judges a forge by its commits, whatever its pull requests did", async () => {
     const twoForges = {
       local: { ref: "local:dev/river", path: "/home/test/dev/river" },
-      forges: [presenceOn("github"), presenceOn("forgejo")],
+      forges: [repositoryOn("github"), repositoryOn("forgejo")],
     };
     const commits = [at("c1", 1)];
     const pullsUnread = entity("dev/river", {
-      presences: twoForges,
+      repositories: twoForges,
       sources: {
         git: gitData({ defaultBranchCommits: commits }),
         github: forgeData({
@@ -2317,7 +2329,7 @@ describe("the commit river", () => {
       },
     });
     const commitsUnread = entity("dev/river", {
-      presences: twoForges,
+      repositories: twoForges,
       sources: {
         git: gitData({ defaultBranchCommits: commits }),
         github: forgeData({
@@ -2342,9 +2354,9 @@ describe("the commit river", () => {
 
   it("tones unpushed commits amber, on no remote that could be read, while a forge couldn't be read", async () => {
     const partly = entity("dev/river", {
-      presences: {
+      repositories: {
         local: { ref: "local:dev/river", path: "/home/test/dev/river" },
-        forges: [presenceOn("github"), presenceOn("forgejo")],
+        forges: [repositoryOn("github"), repositoryOn("forgejo")],
       },
       sources: {
         git: gitData({ defaultBranchCommits: [at("u1", 1), at("c1", 5)] }),
@@ -2366,9 +2378,9 @@ describe("the commit river", () => {
   it("names the branch in the river's heading and marks every commit amber when no remote could be read", async () => {
     const unread = (cause: "no-card" | "read-failed") =>
       entity("dev/river", {
-        presences: {
+        repositories: {
           local: { ref: "local:dev/river", path: "/home/test/dev/river" },
-          forges: [presenceOn("github")],
+          forges: [repositoryOn("github")],
         },
         sources: {
           git: gitData({
@@ -2392,7 +2404,7 @@ describe("the commit river", () => {
     expect(gap.notes).toEqual(["couldn't read github · no card covers finch"]);
   });
 
-  it("keeps the quiet speck for a clone with no forge at all", async () => {
+  it("keeps the quiet speck for a local repository with no forge at all", async () => {
     const localOnly = await riverOf({ here: [at("c1", 1)] });
 
     expect(rows(localOnly)).toEqual([["c1", null, "no remote"]]);
@@ -2402,7 +2414,7 @@ describe("the commit river", () => {
   it("tells a forge-only bird's commits from its forge", async () => {
     const forgeOnly = entity("github:finch/river", {
       path: null,
-      presences: { local: null, forges: [presenceOn("github")] },
+      repositories: { local: null, forges: [repositoryOn("github")] },
       sources: {
         github: forgeData({
           url: "https://github.com/finch/river",

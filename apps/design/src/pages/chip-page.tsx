@@ -18,7 +18,7 @@ const ofSeverity = (severity: ChipModel["severity"]) =>
 
 const kindRule: Record<ChipModel["kind"], string> = {
   unreadable:
-    "A forge the clone pushes to that no card can read, named by forge. Always amber; it lands on the record's notice.",
+    "A forge the local repository pushes to that no card can read, named by forge. Always amber; it lands on the record's notice.",
   ci: "The worst CI state across forges on the default branch; red only when failing.",
   bugs: "A roadmap file's open bugs, one chip per file with any: plain within the bug window, then amber, then red. The path is named only when the record has several roadmap files.",
   "critical-bugs":

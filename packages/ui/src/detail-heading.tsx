@@ -13,11 +13,11 @@ export const activityWords: Record<Activity, string | null> = {
   settled: null,
 };
 
-/** Where the bird lives, as the meta line says it: the clone with ~, the forges, then the wire. */
+/** Where the bird lives, as the meta line says it: the local repository with ~, the forges, then the wire. */
 export function whereabouts(bird: Bird): string {
-  const { clonePath, forges } = bird.detail;
+  const { localRepositoryPath, forges } = bird.detail;
   return [
-    ...(clonePath === null ? [] : [clonePath]),
+    ...(localRepositoryPath === null ? [] : [localRepositoryPath]),
     ...(forges.length === 0 ? [] : [forges.join(", ")]),
     bird.wire === null ? "on the fence" : `on ${bird.wire}`,
   ].join(" · ");

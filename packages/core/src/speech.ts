@@ -191,7 +191,7 @@ function secondary(cause: HealthCause): string {
 function fenceSpeech(situation: FenceSituation): string {
   switch (situation.kind) {
     case "forge-only":
-      return `Nobody's cloned me yet. I live on ${forgeLabel[situation.forge]} as ${situation.fullName}.`;
+      return `I live on ${forgeLabel[situation.forge]} as ${situation.fullName}.`;
     case "one-disk":
       return "I only exist on this machine. One disk, no backup.";
     case "undecided":

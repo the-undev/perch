@@ -1,14 +1,14 @@
 // A hand-curated snapshot and config pair modelled on the owner's real projects, for the design
-// site and the app to render every view model state without a scan. The scan is at 09:00 on
-// 22 October 2026, and every age below is measured from it. Between them the birds cover every
-// mood and activity, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed backlog, a stalled
-// branch and clean zeros, a bird with no clone here on a wire and one on the fence, each with its
-// no-clone slip, and one on no forge, a remote no card can
-// read, forges that couldn't be read at all and one whose pull requests alone couldn't be read,
-// the source cards every scan state, the Updates page every update state, and every kind of launch action, some overridden, the
-// Obsidian one on Obsidian birds alone; tests/mock.test.ts keeps it so. Roadmap files carry
-// numbered placeholder work items, as many as each file's open counts, with roadmap files within
-// their bug windows, past amber on critical bugs, and past red on bugs.
+// site and the app to render every view model state without a scan. The scan is at 09:00 on 22
+// October 2026, and every age below is measured from it. Between them the birds cover every mood
+// and activity, the fence's three situations, failing CI, two forges disagreeing on CI, an unpushed
+// backlog, a stalled branch and clean zeros, a bird with no local repository here on a wire and one
+// on the fence, each with its no-local-repository slip, and one on no forge, a remote no card can
+// read, forges that couldn't be read at all and one whose pull requests alone couldn't be read, the
+// source cards every scan state, the Updates page every update state, and every kind of launch
+// action, some overridden, the Obsidian one on Obsidian birds alone; tests/mock.test.ts keeps it
+// so. Roadmap files carry numbered placeholder work items, as many as each file's open counts, with
+// roadmap files within their bug windows, past amber on critical bugs, and past red on bugs.
 
 import {
   type Config,
@@ -24,7 +24,7 @@ import type {
   FinalisedCommit,
   ForgeData,
   ForgeName,
-  ForgePresence,
+  ForgeRepository,
   GitData,
   LocalBranch,
   PullRequest,
@@ -115,7 +115,7 @@ export const mockConfig: Config = {
       },
     ],
   },
-  joins: [],
+  links: [],
   ignore: [],
   thresholds: {
     unsafe: unsafeWindows,
@@ -333,11 +333,11 @@ function sshUrl(forge: ForgeName, fullName: string): string {
     : `ssh://git@forgejo:2222/${fullName}.git`;
 }
 
-function presence(
+function forgeRepository(
   forge: ForgeName,
   fullName: string,
-  foundBy: ForgePresence["foundBy"] = "local-remote",
-): ForgePresence {
+  foundBy: ForgeRepository["foundBy"] = "local-remote",
+): ForgeRepository {
   return {
     forge,
     ref: `${forge}:${fullName.toLowerCase()}`,
@@ -435,7 +435,7 @@ function localEntity(
   id: string,
   fields: {
     kind?: Entity["kind"];
-    forges: ForgePresence[];
+    forges: ForgeRepository[];
     flags?: Entity["flags"];
     sources: Entity["sources"];
   },
@@ -446,7 +446,10 @@ function localEntity(
     name: id.slice(id.lastIndexOf("/") + 1),
     kind: fields.kind ?? "git",
     path,
-    presences: { local: { ref: `local:${id}`, path }, forges: fields.forges },
+    repositories: {
+      local: { ref: `local:${id}`, path },
+      forges: fields.forges,
+    },
     flags: fields.flags ?? [],
     sources: fields.sources,
   };
@@ -467,12 +470,12 @@ function notSetUp(include: string): Entity["flags"] {
 /** Restless: three commits on main local only for 50 hours, a fresh branch with no upstream, both forges in step. */
 const dotfiles = localEntity(".dotfiles", {
   forges: [
-    presence("github", "finch/dotfiles"),
-    presence("forgejo", "finch/dotfiles"),
+    forgeRepository("github", "finch/dotfiles"),
+    forgeRepository("forgejo", "finch/dotfiles"),
   ],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -593,10 +596,10 @@ const dotfiles = localEntity(".dotfiles", {
  */
 const hothouse = localEntity("obsidian/Hothouse", {
   kind: "obsidian",
-  forges: [presence("forgejo", "finch/Hothouse", "account-listing")],
+  forges: [forgeRepository("forgejo", "finch/Hothouse", "account-listing")],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -664,10 +667,10 @@ const hothouse = localEntity("obsidian/Hothouse", {
 /** Content, settled, with a backlog on offer. */
 const pocket = localEntity("obsidian/Pocket", {
   kind: "obsidian",
-  forges: [presence("forgejo", "finch/Pocket", "account-listing")],
+  forges: [forgeRepository("forgejo", "finch/Pocket", "account-listing")],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -722,12 +725,12 @@ const pocket = localEntity("obsidian/Pocket", {
 /** Content and being edited on a fresh branch; CI passing on GitHub and pending on Forgejo, with no runner. */
 const perch = localEntity("dev/perch", {
   forges: [
-    presence("github", "finch/perch"),
-    presence("forgejo", "finch/perch"),
+    forgeRepository("github", "finch/perch"),
+    forgeRepository("forgejo", "finch/perch"),
   ],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "contracts",
       defaultBranch: "main",
       upstream: "origin/contracts",
@@ -862,12 +865,12 @@ const perch = localEntity("dev/perch", {
 /** Content and settled on two forges, neither running CI, Forgejo a commit behind GitHub. */
 const harbour = localEntity("undev/harbour", {
   forges: [
-    presence("github", "the-undev/harbour"),
-    presence("forgejo", "the-undev/harbour"),
+    forgeRepository("github", "the-undev/harbour"),
+    forgeRepository("forgejo", "the-undev/harbour"),
   ],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -954,11 +957,11 @@ const skiff = localEntity("undev/skiff", {
       sshUrl: null,
       foundBy: "local-remote",
     },
-    presence("forgejo", "the-undev/skiff"),
+    forgeRepository("forgejo", "the-undev/skiff"),
   ],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "extension-popup-ia",
       defaultBranch: "main",
       upstream: "origin/extension-popup-ia",
@@ -1060,12 +1063,12 @@ const skiff = localEntity("undev/skiff", {
  */
 const prism = localEntity("undev/prism", {
   forges: [
-    presence("github", "the-undev/prism"),
-    presence("forgejo", "the-undev/prism"),
+    forgeRepository("github", "the-undev/prism"),
+    forgeRepository("forgejo", "the-undev/prism"),
   ],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -1178,10 +1181,10 @@ const prism = localEntity("undev/prism", {
 
 /** Distressed: twenty-three bugs open on the roadmap, past red. */
 const hollow = localEntity("undev/Hollow-legacy", {
-  forges: [presence("github", "the-undev/Hollow")],
+  forges: [forgeRepository("github", "the-undev/Hollow")],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -1244,12 +1247,12 @@ const hollow = localEntity("undev/Hollow-legacy", {
 /** Content and settled on two forges, neither running CI, with a long backlog. */
 const oxbow = localEntity("undev/oxbow", {
   forges: [
-    presence("github", "the-undev/oxbow"),
-    presence("forgejo", "the-undev/oxbow"),
+    forgeRepository("github", "the-undev/oxbow"),
+    forgeRepository("forgejo", "the-undev/oxbow"),
   ],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -1314,10 +1317,10 @@ const oxbow = localEntity("undev/oxbow", {
 
 /** Distressed and being edited: fourteen changes uncommitted for five days. */
 const gramophone = localEntity("undev/gramophone", {
-  forges: [presence("forgejo", "the-undev/gramophone")],
+  forges: [forgeRepository("forgejo", "the-undev/gramophone")],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -1379,10 +1382,10 @@ const gramophone = localEntity("undev/gramophone", {
 
 /** Content and settled with every count a clean zero. */
 const spool = localEntity("undev/spool", {
-  forges: [presence("forgejo", "the-undev/spool")],
+  forges: [forgeRepository("forgejo", "the-undev/spool")],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -1434,10 +1437,10 @@ const spool = localEntity("undev/spool", {
 /** Content and in flight on a branch with one fresh commit not yet pushed. */
 const glyphDocs = localEntity("undev/glyph-docs", {
   kind: "obsidian",
-  forges: [presence("forgejo", "the-undev/glyph-docs")],
+  forges: [forgeRepository("forgejo", "the-undev/glyph-docs")],
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "render-scale-fix",
       defaultBranch: "main",
       upstream: "origin/render-scale-fix",
@@ -1524,16 +1527,16 @@ const glyphDocs = localEntity("undev/glyph-docs", {
 
 // The fence
 
-/** Found under an include directory, joined to two forges, not yet decided; neither forge's detail read. */
+/** Found under an include directory, linked to two forges, not yet decided; neither forge's detail read. */
 const homeItConfig = localEntity("dev/hearth-config", {
   forges: [
-    presence("github", "finch/hearth-config"),
-    presence("forgejo", "finch/hearth-config"),
+    forgeRepository("github", "finch/hearth-config"),
+    forgeRepository("forgejo", "finch/hearth-config"),
   ],
   flags: notSetUp(`${home}/dev`),
   sources: {
     git: {
-      backup: "joined",
+      backup: "linked",
       branch: "main",
       defaultBranch: "main",
       upstream: "origin/main",
@@ -1623,15 +1626,17 @@ const hello = localEntity("dev/odin/hello", {
   },
 });
 
-/** On a forge, never cloned here. */
+/** On a forge, with no local repository here. */
 const obsidianTidy: Entity = {
   id: "github:finch/obsidian-tidy",
   name: "obsidian-tidy",
   kind: "git",
   path: null,
-  presences: {
+  repositories: {
     local: null,
-    forges: [presence("github", "finch/obsidian-tidy", "account-listing")],
+    forges: [
+      forgeRepository("github", "finch/obsidian-tidy", "account-listing"),
+    ],
   },
   flags: [],
   sources: {
@@ -1647,15 +1652,17 @@ const obsidianTidy: Entity = {
   },
 };
 
-/** Adopted while only on Forgejo: no clone here, so its slip says so and the meta line too. */
+/** Adopted while only on Forgejo: no local repository here, so its slip says so and the meta line too. */
 const pergolaNotes: Entity = {
   id: "forgejo:finch/field-notes",
   name: "field-notes",
   kind: "git",
   path: null,
-  presences: {
+  repositories: {
     local: null,
-    forges: [presence("forgejo", "finch/field-notes", "account-listing")],
+    forges: [
+      forgeRepository("forgejo", "finch/field-notes", "account-listing"),
+    ],
   },
   flags: [],
   sources: {
@@ -1693,7 +1700,7 @@ const entities: Entity[] = [
 function listing(forgeName: ForgeName): Snapshot["forges"][ForgeName] {
   return {
     active: entities.flatMap((entity) =>
-      entity.presences.forges.flatMap((entry) =>
+      entity.repositories.forges.flatMap((entry) =>
         entry.forge !== forgeName || entry.url === null
           ? []
           : [

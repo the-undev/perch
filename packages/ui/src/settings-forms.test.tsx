@@ -451,32 +451,35 @@ describe("the settings editor", () => {
     ).toBeDefined();
   });
 
-  it("adds a join as a list line and an ignored presence", () => {
-    const { onSave, form } = editor("joining");
-    const presences = group("Joining up");
+  it("adds a link as a list line and an ignored repository", () => {
+    const { onSave, form } = editor("linking");
+    const linking = group("Linking");
+    expect(
+      linking.getByText("Repositories that are one project"),
+    ).toBeDefined();
 
     type(
-      presences.getByRole("textbox", { name: "Add a join" }),
+      linking.getByRole("textbox", { name: "Add a link" }),
       "github:a/b forgejo:a/b",
     );
-    fireEvent.click(presences.getByRole("button", { name: "Add the join" }));
-    expect(screen.getByText(/^Joins: each join must be a list/)).toBeDefined();
+    fireEvent.click(linking.getByRole("button", { name: "Add the link" }));
+    expect(screen.getByText(/^Links: each link must be a list/)).toBeDefined();
     type(
-      presences.getByRole("textbox", { name: "join 1" }),
+      linking.getByRole("textbox", { name: "link 1" }),
       '["github:a/b", "forgejo:a/b"]',
     );
     type(
-      presences.getByRole("textbox", { name: "Add an ignored presence" }),
+      linking.getByRole("textbox", { name: "Add an ignored repository" }),
       "github:a/old",
     );
     fireEvent.click(
-      presences.getByRole("button", { name: "Add the ignored presence" }),
+      linking.getByRole("button", { name: "Add the ignored repository" }),
     );
     fireEvent.click(saveButton());
 
     expect(onSave).toHaveBeenCalledWith({
       ...form.values,
-      joins: ['["github:a/b", "forgejo:a/b"]'],
+      links: ['["github:a/b", "forgejo:a/b"]'],
       ignore: ["github:a/old"],
     });
   });
@@ -1197,7 +1200,7 @@ describe("the settings page", () => {
       rail.getAllByRole("button").map((button) => button.textContent),
     ).toEqual([
       "Sources",
-      "Joining up",
+      "Linking",
       "Wires",
       "Judgement",
       "Scanning",

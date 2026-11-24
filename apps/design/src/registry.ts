@@ -213,7 +213,7 @@ export const pages: DesignPage[] = [
     group: "components",
     title: "Key-file paper",
     summary:
-      "Markdown on paper behind folder tabs, and the slip a bird with no clone here shows in their place.",
+      "Markdown on paper behind folder tabs, and the slip a bird with no local repository here shows in their place.",
     component: PaperPage,
   },
   {
@@ -309,7 +309,7 @@ export const pages: DesignPage[] = [
     group: "spec",
     title: "Local git",
     summary:
-      "Data source: the clones under the include paths, read with git, and the git data derived from them.",
+      "Data source: the local repositories under the include paths, read with git, and the git data derived from them.",
     component: LocalGitPage,
   },
   {

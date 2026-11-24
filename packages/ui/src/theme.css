@@ -485,7 +485,7 @@
   }
 }
 
-/* The no-clone slip: a docket cut short, its bottom edge in small teeth, and
+/* The no-local-repository slip: a docket cut short, its bottom edge in small teeth, and
    its stamp's ink worn at the edges. */
 @layer components {
   .perch-slip::after {

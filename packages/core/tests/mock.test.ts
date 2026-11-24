@@ -40,7 +40,7 @@ describe("the mock dataset", () => {
     }
   });
 
-  it("holds every mood and every activity among its adopted birds, and one with no clone and so no activity", () => {
+  it("holds every mood and every activity among its adopted birds, and one with no local repository and so no activity", () => {
     expect(new Set(adopted.map((bird) => bird.mood))).toEqual(
       new Set(["content", "restless", "distressed"]),
     );
@@ -53,7 +53,7 @@ describe("the mock dataset", () => {
     expect(mockAviary.wires.every((wire) => wire.birds.length > 0)).toBe(true);
     expect(mockAviary.fence.birds.map((bird) => bird.bubble.speech)).toEqual(
       expect.arrayContaining([
-        expect.stringMatching(/^Nobody's cloned me yet\./),
+        expect.stringMatching(/^I live on /),
         expect.stringMatching(/^I only exist on this machine\./),
         expect.stringMatching(/^Still on the fence\./),
       ]),
@@ -192,7 +192,7 @@ describe("the mock dataset", () => {
     );
   });
 
-  it("offers every kind of launch action, the Obsidian one on Obsidian birds alone, and none without a clone", () => {
+  it("offers every kind of launch action, the Obsidian one on Obsidian birds alone, and none without a local repository", () => {
     const kinds = (bird: (typeof birds)[number]) =>
       bird.detail.actions.map((action) => action.kind);
 
@@ -204,9 +204,11 @@ describe("the mock dataset", () => {
         bird.kind === "obsidian",
       );
     }
-    const unCloned = birds.filter((bird) => bird.detail.clonePath === null);
-    expect(unCloned.length).toBeGreaterThan(0);
-    expect(unCloned.flatMap(kinds)).toEqual([]);
+    const withoutLocalRepository = birds.filter(
+      (bird) => bird.detail.localRepositoryPath === null,
+    );
+    expect(withoutLocalRepository.length).toBeGreaterThan(0);
+    expect(withoutLocalRepository.flatMap(kinds)).toEqual([]);
   });
 
   it("holds every kind of launch action in config, one overridden, and a custom command wearing a picked icon", () => {
@@ -332,32 +334,38 @@ describe("the mock dataset", () => {
     ).toBe(true);
   });
 
-  it("holds a bird with a clone and forges, one with no clone, and one with no forge", () => {
+  it("holds a bird with a local repository and forges, one with no local repository, and one with no forge", () => {
     const whereabouts = birds.map(({ detail }) => ({
-      cloned: detail.clonePath !== null,
+      local: detail.localRepositoryPath !== null,
       forged: detail.forges.length > 0,
     }));
 
     expect(whereabouts).toEqual(
       expect.arrayContaining([
-        { cloned: true, forged: true },
-        { cloned: false, forged: true },
-        { cloned: true, forged: false },
+        { local: true, forged: true },
+        { local: false, forged: true },
+        { local: true, forged: false },
       ]),
     );
     expect(
       birds.every(
         ({ detail }) =>
-          detail.clonePath === null || detail.clonePath.startsWith("~/"),
+          detail.localRepositoryPath === null ||
+          detail.localRepositoryPath.startsWith("~/"),
       ),
     ).toBe(true);
   });
 
-  it("holds the no-clone slip on a wire and on the fence, its clause on the meta line, and on no bird with a clone", () => {
-    const slipped = birds.filter((bird) => bird.detail.noClone !== null);
+  it("holds the no-local-repository slip on a wire and on the fence, its clause on the meta line, and on no bird with a local repository", () => {
+    const slipped = birds.filter(
+      (bird) => bird.detail.noLocalRepository !== null,
+    );
 
     expect(
-      slipped.map((bird) => [bird.adopted, bird.detail.noClone?.forges]),
+      slipped.map((bird) => [
+        bird.adopted,
+        bird.detail.noLocalRepository?.forges,
+      ]),
     ).toEqual(
       expect.arrayContaining([
         [true, "Forgejo"],
@@ -367,14 +375,14 @@ describe("the mock dataset", () => {
     expect(
       slipped.every(
         (bird) =>
-          bird.detail.noClone?.cloneAddress !== null &&
-          bird.detail.noClone?.onMetaLine,
+          bird.detail.noLocalRepository?.sshAddress !== null &&
+          bird.detail.noLocalRepository?.onMetaLine,
       ),
     ).toBe(true);
     expect(
       birds
-        .filter((bird) => bird.detail.clonePath !== null)
-        .every((bird) => bird.detail.noClone === null),
+        .filter((bird) => bird.detail.localRepositoryPath !== null)
+        .every((bird) => bird.detail.noLocalRepository === null),
     ).toBe(true);
   });
 
@@ -428,7 +436,7 @@ describe("the mock dataset", () => {
     );
     expect(cards.find((card) => card.kind === "local")?.result).toMatchObject({
       count: mockSnapshot.entities.filter(
-        (entity) => entity.presences.local !== null,
+        (entity) => entity.repositories.local !== null,
       ).length,
     });
   });
@@ -460,8 +468,8 @@ describe("the mock dataset", () => {
   it("agrees with the derivation rules wherever it states a judged value", () => {
     for (const entity of mockSnapshot.entities) {
       const papers = resolvePapers(mockConfig, entity.id, [
-        ...(entity.presences.local ? [entity.presences.local.ref] : []),
-        ...entity.presences.forges.map((presence) => presence.ref),
+        ...(entity.repositories.local ? [entity.repositories.local.ref] : []),
+        ...entity.repositories.forges.map((repository) => repository.ref),
       ]).papers;
       const thresholds = thresholdsFor(mockConfig, papers);
       const roadmap = entity.sources.roadmap;

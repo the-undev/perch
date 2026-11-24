@@ -47,9 +47,9 @@ export interface SettingsValues {
     /** One card per launch action, in the order a bird offers them. */
     actions: LaunchActionValues[];
   };
-  /** Each join's presence references as one list line. */
-  joins: string[];
-  /** Presence references left off the main view. */
+  /** Each link's repository references as one list line. */
+  links: string[];
+  /** Repository references left off the main view. */
   ignore: string[];
   window: {
     /** Config's [window] tray. */
@@ -136,7 +136,7 @@ export function settingsFormFor(
           launchValuesOf(action, path),
         ),
       },
-      joins: config.joins.map(listLine),
+      links: config.links.map(listLine),
       ignore: [...config.ignore],
       window: { tray: config.window.tray, login: login.on },
       update: { ...config.update },
@@ -275,18 +275,18 @@ export function settingsProblems(values: SettingsValues): string[] {
   problems.push(
     ...launchProblems(values.launch.actions).map(launchProblemLine),
   );
-  for (const line of values.joins) {
+  for (const line of values.links) {
     const parsed = parseListLine(line);
     if ("problem" in parsed) {
-      problems.push(`Joins: each join ${parsed.problem}`);
+      problems.push(`Links: each link ${parsed.problem}`);
       continue;
     }
     if (parsed.list.length < 2 || parsed.list.some(isBlank)) {
-      problems.push("Joins: each join names two references or more");
+      problems.push("Links: each link names two references or more");
     }
   }
   if (values.ignore.some(isBlank)) {
-    problems.push("Ignored presences: a reference cannot be empty");
+    problems.push("Ignored repositories: a reference cannot be empty");
   }
   problems.push(...sourceProblems(values.sources).map(sourceProblemLine));
   return problems;
@@ -335,7 +335,7 @@ export function withSettings(
       default: defaultName(values.wires) ?? "",
     },
     sources: mapSourcePaths(values.sources, path),
-    joins: values.joins.map(listOf),
+    links: values.links.map(listOf),
     ignore: [...values.ignore],
     thresholds: nestedThresholds(values.thresholds) as Thresholds,
     work: config.work,

@@ -1,5 +1,5 @@
 // The settings page's pages, one per part of config, and the editor that holds them: sources,
-// joining up, wires, judgement, scanning, launching, the window and updates.
+// linking, wires, judgement, scanning, launching, the window and updates.
 // Each page is presentational, its value in and every change out; the editor holds the draft
 // across them and shows the page the rail has open.
 
@@ -79,7 +79,7 @@ import { SourcesPage } from "./sources-page.tsx";
 /** A page the settings rail names. */
 export type SettingsPageName =
   | "sources"
-  | "joining"
+  | "linking"
   | "wires"
   | "judgement"
   | "scanning"
@@ -87,7 +87,7 @@ export type SettingsPageName =
   | "window"
   | "updates";
 
-/** The rail's pages in order; Joining up sits under Sources, since joins act on what it finds. */
+/** The rail's pages in order; Linking sits under Sources, since links act on what it finds. */
 export const settingsPages: readonly {
   page: SettingsPageName;
   label: string;
@@ -95,7 +95,7 @@ export const settingsPages: readonly {
   sub: boolean;
 }[] = [
   { page: "sources", label: "Sources", sub: false },
-  { page: "joining", label: "Joining up", sub: true },
+  { page: "linking", label: "Linking", sub: true },
   { page: "wires", label: "Wires", sub: false },
   { page: "judgement", label: "Judgement", sub: false },
   { page: "scanning", label: "Scanning", sub: false },
@@ -946,28 +946,28 @@ export function LaunchGroup({
   );
 }
 
-/** The presence lists: joins, each a list line, and the presences ignored. */
-export function PresencesGroup({
+/** The repository lists: links, each a list line, and the repositories ignored. */
+export function LinkingGroup({
   value,
   onChange,
-}: GroupProps<Pick<SettingsValues, "joins" | "ignore">>) {
+}: GroupProps<Pick<SettingsValues, "links" | "ignore">>) {
   return (
     <SettingsGroup
-      title="Joining up"
+      title="Linking"
       table="links, ignore"
-      lead="A presence is local: and a path under the home directory, github:owner/name or forgejo:owner/name. A join is a list line: its presences in brackets, double-quoted."
+      lead="A repository is named local: and a path under the home directory, github:owner/name or forgejo:owner/name. A link is a list line: its repositories in brackets, double-quoted."
     >
-      <FormRow label="Joins" sub="Presences that are one project">
+      <FormRow label="Links" sub="Repositories that are one project">
         <StringList
-          noun="join"
+          noun="link"
           placeholder='["github:owner/notes", "forgejo:owner/notes"]'
-          values={value.joins}
-          onChange={(joins) => onChange({ ...value, joins })}
+          values={value.links}
+          onChange={(links) => onChange({ ...value, links })}
         />
       </FormRow>
       <FormRow label="Ignore" sub="Left off the main view">
         <StringList
-          noun="ignored presence"
+          noun="ignored repository"
           placeholder="github:owner/name"
           values={value.ignore}
           onChange={(ignore) => onChange({ ...value, ignore })}
@@ -1304,10 +1304,10 @@ export function SettingsEditor({
           onChange={(sources) => update({ sources })}
         />
       )}
-      {page === "joining" && (
-        <PresencesGroup
-          value={{ joins: draft.joins, ignore: draft.ignore }}
-          onChange={(presences) => update(presences)}
+      {page === "linking" && (
+        <LinkingGroup
+          value={{ links: draft.links, ignore: draft.ignore }}
+          onChange={(linking) => update(linking)}
         />
       )}
       {page === "wires" && (

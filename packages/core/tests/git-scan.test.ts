@@ -293,7 +293,7 @@ function rawGit(overrides: Partial<RawGit>): RawGit {
 
 describe("deriving git data", () => {
   it("is settled when everything is on the default branch and pushed", () => {
-    const data = deriveGit(rawGit({}), thresholds, now, "joined");
+    const data = deriveGit(rawGit({}), thresholds, now, "linked");
 
     expect(data.activity).toBe("settled");
     expect(data.drift).toMatchObject({
@@ -322,7 +322,7 @@ describe("deriving git data", () => {
         rawGit({ branches: [...main, feature] }),
         thresholds,
         now,
-        "joined",
+        "linked",
       ).activity,
     ).toBe("in-progress");
     expect(
@@ -330,7 +330,7 @@ describe("deriving git data", () => {
         rawGit({ unpushedCommits: [commitAt("Local", daysBefore(1))] }),
         thresholds,
         now,
-        "joined",
+        "linked",
       ).activity,
     ).toBe("in-progress");
     expect(
@@ -340,14 +340,14 @@ describe("deriving git data", () => {
         }),
         thresholds,
         now,
-        "joined",
+        "linked",
       ).activity,
     ).toBe("in-progress");
   });
 
   it("carries the default branch's commits, and null without a local default branch", () => {
     expect(
-      deriveGit(rawGit({}), thresholds, now, "joined").defaultBranchCommits,
+      deriveGit(rawGit({}), thresholds, now, "linked").defaultBranchCommits,
     ).toEqual([commitAt("Initial", daysBefore(20))]);
     expect(
       deriveGit(
@@ -359,7 +359,7 @@ describe("deriving git data", () => {
         }),
         thresholds,
         now,
-        "joined",
+        "linked",
       ).defaultBranchCommits,
     ).toBeNull();
   });
@@ -399,7 +399,7 @@ describe("deriving git data", () => {
       }),
       thresholds,
       now,
-      "joined",
+      "linked",
     );
 
     expect(data.uncommittedCount).toBe(3);
@@ -426,7 +426,7 @@ describe("deriving git data", () => {
       }),
       thresholds,
       now,
-      "joined",
+      "linked",
     );
 
     expect(data.unpushedCount).toBe(2);
@@ -472,7 +472,7 @@ describe("deriving git data by backup state", () => {
     ],
   });
 
-  it("gives a local-only clone no unpushed work and no unpushed drift", () => {
+  it("gives a local-only repository no unpushed work and no unpushed drift", () => {
     const data = deriveGit(unpushed, thresholds, now, "local-only");
 
     expect(data.backup).toBe("local-only");
@@ -484,12 +484,12 @@ describe("deriving git data by backup state", () => {
     });
   });
 
-  it("counts unpushed commits against an unjoined remote but does not age them", () => {
+  it("counts unpushed commits against an unlinked remote but does not age them", () => {
     const data = deriveGit(
       { ...unpushed, dirtyFiles: [] },
       thresholds,
       now,
-      "unjoined-remote",
+      "unlinked-remote",
     );
 
     expect(data.unpushedCount).toBe(1);
@@ -500,9 +500,9 @@ describe("deriving git data by backup state", () => {
     });
   });
 
-  it("ages unpushed commits against a joined remote", () => {
+  it("ages unpushed commits against a linked remote", () => {
     expect(
-      deriveGit(unpushed, thresholds, now, "joined").drift.unpushed?.hours,
+      deriveGit(unpushed, thresholds, now, "linked").drift.unpushed?.hours,
     ).toBe(960);
   });
 });
@@ -543,8 +543,8 @@ describe("deriving unpushed branches", () => {
     ],
   });
 
-  it("ages each branch holding unpushed commits from its oldest, against a joined remote", () => {
-    const data = deriveGit(branches, thresholds, now, "joined");
+  it("ages each branch holding unpushed commits from its oldest, against a linked remote", () => {
+    const data = deriveGit(branches, thresholds, now, "linked");
 
     expect(data.unpushedCount).toBe(2);
     expect(data.unpushedBranches).toEqual([
@@ -563,10 +563,10 @@ describe("deriving unpushed branches", () => {
     ]);
   });
 
-  it("gives no unpushed branches to an unjoined remote or a local-only clone", () => {
+  it("gives no unpushed branches to an unlinked remote or a local-only repository", () => {
     expect(
       [
-        deriveGit(branches, thresholds, now, "unjoined-remote"),
+        deriveGit(branches, thresholds, now, "unlinked-remote"),
         deriveGit(branches, thresholds, now, "local-only"),
       ].map((data) => data.unpushedBranches),
     ).toEqual([[], []]);
@@ -594,7 +594,7 @@ describe("stalled flight", () => {
       }),
       thresholds,
       now,
-      "joined",
+      "linked",
     );
 
     expect(data.stall).toEqual({
@@ -610,7 +610,7 @@ describe("stalled flight", () => {
     const branches = [...rawGit({}).branches, feature(40)];
 
     expect(
-      deriveGit(rawGit({ branches }), thresholds, now, "joined").stall,
+      deriveGit(rawGit({ branches }), thresholds, now, "linked").stall,
     ).toBeNull();
     expect(
       deriveGit(
@@ -620,7 +620,7 @@ describe("stalled flight", () => {
         }),
         thresholds,
         now,
-        "joined",
+        "linked",
       ).stall,
     ).toBeNull();
   });

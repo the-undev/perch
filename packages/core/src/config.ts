@@ -135,15 +135,15 @@ export interface Config {
   /** The wires top to bottom, and the one an adopted entity sits on when its papers name none. */
   wires: { names: string[]; default: string };
   sources: SourcesConfig;
-  /** Groups of presence references asserted to be one project. */
-  joins: string[][];
-  /** Presence references to leave off the main view. */
+  /** Groups of repository references asserted to be one project. */
+  links: string[][];
+  /** Repository references to leave off the main view. */
   ignore: string[];
   thresholds: Thresholds;
   /** The [work] table's word lists, which the papers' own lists replace. */
   work: WorkWordsConfig;
   /**
-   * Papers keyed by any of the entity's presence references (see resolvePapers); papers
+   * Papers keyed by any of the entity's repository references (see resolvePapers); papers
    * adopt the entity and mark a found repository set up.
    */
   entities: Record<string, Papers>;
@@ -832,7 +832,7 @@ function validConfig(document: Table, home: string): Config {
   return {
     wires: { names: wireNames, default: defaultWire },
     sources: parseSources(document, home),
-    joins: stringArrays(document.links, "links"),
+    links: stringArrays(document.links, "links"),
     ignore: stringArray(document.ignore, "ignore"),
     thresholds,
     work: parseWork(document),
@@ -899,7 +899,7 @@ export interface ResolvedPapers {
 }
 
 /**
- * The papers for an entity, given its id and presence references: papers apply when its
+ * The papers for an entity, given its id and repository references: papers apply when its
  * key names any of them, and the key naming the earliest wins, the id first, ties by key.
  */
 export function resolvePapers(

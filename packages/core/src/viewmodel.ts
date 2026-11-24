@@ -75,7 +75,7 @@ export type HealthCause =
       kind: "unreadable-remote";
       level: HealthLevel;
       forge: ForgeName;
-      /** The repository the clone pushes to, as its remote names it. */
+      /** The repository the local repository pushes to, as its remote names it. */
       fullName: string;
     }
   | {
@@ -176,7 +176,7 @@ export interface Bird {
   position: number;
   health: Health;
   mood: Mood;
-  /** Null without a local clone, which has no work-state. */
+  /** Null without a local repository, which has no work-state. */
   activity: Activity | null;
   plumpness: Plumpness;
   /** Null when the owner has not snoozed it, and always on the fence. */
@@ -277,7 +277,7 @@ export interface BranchLine {
   lastCommitAt: string;
   subject: string;
   upstream: string | null;
-  /** The branch on its forge, when it is pushed to a forge presence. */
+  /** The branch on its forge, when it is pushed to a forge repository. */
   url: string | null;
 }
 
@@ -299,7 +299,7 @@ export interface RiverCommit {
 
 /** The newest commits on the default branch, each once, with how far each has spread. */
 export interface River {
-  /** The default branch the river judges, the clone's else a forge's; null when none names it. */
+  /** The default branch the river judges, the local repository's else a forge's; null when none names it. */
   branch: string | null;
   /** Newest first, at most the configured number of finalised commits. */
   commits: RiverCommit[];
@@ -388,33 +388,34 @@ export interface SourceProblem {
 }
 
 /**
- * A remote the clone pushes to that no card can read, said under the page's heading: what perch
- * knows and could not do, then the fix, which ends on the link to the settings page's Sources.
+ * A remote the local repository pushes to that no card can read, said under the page's heading:
+ * what perch knows and could not do, then the fix, which ends on the link to the settings page's
+ * Sources.
  */
 export interface RemoteNotice {
-  /** Such as "The clone pushes to skiff-app/skiff on github, which no GitHub card reads." */
+  /** Such as "The local repository pushes to skiff-app/skiff on github, which no GitHub card reads." */
   text: string;
   /** Such as "Add a card for skiff-app under", before the link. */
   fix: string;
 }
 
-/** What the slip says for a bird seen on its forges with no clone on this machine. */
-export interface NoClone {
+/** What the slip says for a bird seen on its forges with no local repository on this machine. */
+export interface NoLocalRepository {
   /** The forges holding the repository, as the slip names them: "Forgejo", or "GitHub and Forgejo". */
   forges: string;
-  /** The repository a clone's remote points at to join the bird, such as finch/pocket. */
+  /** The repository a local repository's remote points at to link the bird, such as finch/pocket. */
   reference: string;
   /** The SSH address to clone from, the first a forge gives; null while unknown. */
-  cloneAddress: string | null;
-  /** Whether the meta line says "no local clone": config holds at least one launch action. */
+  sshAddress: string | null;
+  /** Whether the meta line says "no local repository": config holds at least one launch action. */
   onMetaLine: boolean;
 }
 
 /** Everything about one bird beyond its look and bubble, which the detail page also shows. */
 export interface Detail {
-  /** Where the clone is on disk, home as ~; null for a bird with no clone here. */
-  clonePath: string | null;
-  /** The forges that hold the bird, each once, in the order its presences were found. */
+  /** Where the local repository is on disk, home as ~; null for a bird with no local repository here. */
+  localRepositoryPath: string | null;
+  /** The forges that hold the bird, each once, in the order its repositories were found. */
   forges: ForgeName[];
   /** One per remote no card can read; where the can't-read chip lands. */
   notices: RemoteNotice[];
@@ -428,8 +429,8 @@ export interface Detail {
   actions: LaunchAction[];
   links: LinkOut[];
   keyFiles: KeyFile[];
-  /** The slip where the key files would be: null for a bird with a clone here or on no forge. */
-  noClone: NoClone | null;
+  /** The slip where the key files would be: null for a bird with a local repository here or on no forge. */
+  noLocalRepository: NoLocalRepository | null;
   problems: SourceProblem[];
 }
 
@@ -452,7 +453,7 @@ const sourceLabel: Record<keyof EntitySourceData, string> = {
 const flagText: Record<EntityFlagName, string> = {
   "not-set-up": "not set up",
   "remote-archived": "remote archived",
-  "remote-joined-elsewhere": "remote joined elsewhere",
+  "remote-linked-elsewhere": "remote linked elsewhere",
   "config-conflict": "config conflict",
 };
 
@@ -484,7 +485,7 @@ function readable<T extends object>(
   return value;
 }
 
-/** The papers an entity resolves to, by its id and every presence reference it holds. */
+/** The papers an entity resolves to, by its id and every repository reference it holds. */
 function papersFor(entity: Entity, config: Config): Papers | null {
   return resolvePapers(config, entity.id, entityRefs(entity)).papers;
 }
@@ -887,12 +888,12 @@ function upstreamUrl(
     hostsOf(config.sources[name]).includes(location.host),
   );
   const fullName = `${location.owner}/${location.repo}`.toLowerCase();
-  const presence = entity.presences.forges.find(
+  const repository = entity.repositories.forges.find(
     (entry) =>
       entry.forge === forge && entry.fullName.toLowerCase() === fullName,
   );
-  return presence?.url
-    ? branchUrl(presence.forge, presence.url, upstream.slice(slash + 1))
+  return repository?.url
+    ? branchUrl(repository.forge, repository.url, upstream.slice(slash + 1))
     : null;
 }
 
@@ -1058,7 +1059,7 @@ function ledgerFor(
   return ledger;
 }
 
-/** The ledger's opening sentence: only for a green bird's readable clone with nothing uncommitted or unpushed. */
+/** The ledger's opening sentence: only for a green bird's readable local repository with nothing uncommitted or unpushed. */
 function quietFor(entity: Entity, health: Health): string | null {
   if (health.level !== "green") return null;
   const git = readable<GitData>(entity.sources.git);
@@ -1186,8 +1187,8 @@ function divergenceOf(
 
 /**
  * A commit's spread over the forges read. A forge holds it unless the commit is lacking there, so
- * one older than a forge's list counts as held. The clone only contributes commits. With forges
- * but none read the spread is unknown, in amber; only a bird with no forge is quiet.
+ * one older than a forge's list counts as held. The local repository only contributes commits. With
+ * forges but none read the spread is unknown, in amber; only a bird with no forge is quiet.
  */
 function spreadOf(
   forgeCount: number,
@@ -1215,22 +1216,22 @@ function spreadOf(
  */
 function riverNote(entity: Entity, forge: ForgeName): string {
   const source = entity.sources[forge];
-  const presence = entity.presences.forges.find(
+  const repository = entity.repositories.forges.find(
     (entry) => entry.forge === forge,
   );
   if (
     source === undefined ||
     !("cause" in source) ||
     source.cause !== "no-card" ||
-    presence === undefined
+    repository === undefined
   ) {
     return `couldn't read ${forge}`;
   }
-  const owner = presence.fullName.slice(0, presence.fullName.indexOf("/"));
+  const owner = repository.fullName.slice(0, repository.fullName.indexOf("/"));
   return `couldn't read ${forge} · no card covers ${owner}`;
 }
 
-/** The default branch the river judges: the clone's, else the first forge's read. */
+/** The default branch the river judges: the local repository's, else the first forge's read. */
 function riverBranch(entity: Entity): string | null {
   const git = readable<GitData>(entity.sources.git);
   return git?.defaultBranch ?? forgeData(entity)[0]?.data.defaultBranch ?? null;
@@ -1243,7 +1244,9 @@ function riverBranch(entity: Entity): string | null {
 function riverFor(entity: Entity, cap: number): River {
   const forgePlaces = forgeNames
     .filter((forge) =>
-      entity.presences.forges.some((presence) => presence.forge === forge),
+      entity.repositories.forges.some(
+        (repository) => repository.forge === forge,
+      ),
     )
     .map((forge) => forgePlace(entity, forge));
   const lists = [
@@ -1376,14 +1379,17 @@ function keyFilesFor(entity: Entity, papers: Papers | null): KeyFile[] {
 }
 
 /**
- * The slip for a bird held by at least one forge and cloned nowhere here: the forges by name, the
- * first presence's repository, and the first clone address a forge gave.
+ * The slip for a bird held by at least one forge and with no local repository here: the forges by
+ * name, the first forge repository, and the first SSH address a forge gave.
  */
-function noCloneFor(entity: Entity, config: Config): NoClone | null {
-  const [first] = entity.presences.forges;
+function noLocalRepositoryFor(
+  entity: Entity,
+  config: Config,
+): NoLocalRepository | null {
+  const [first] = entity.repositories.forges;
   if (entity.path !== null || first === undefined) return null;
   const held = new Set(
-    entity.presences.forges.map((presence) => presence.forge),
+    entity.repositories.forges.map((repository) => repository.forge),
   );
   return {
     forges: forgeNames
@@ -1392,9 +1398,9 @@ function noCloneFor(entity: Entity, config: Config): NoClone | null {
       .join(" and "),
     reference: first.ref.slice(first.ref.indexOf(":") + 1),
     // A snapshot cached before the scanner kept the address has no field at all.
-    cloneAddress:
-      entity.presences.forges
-        .map((presence) => presence.sshUrl ?? null)
+    sshAddress:
+      entity.repositories.forges
+        .map((repository) => repository.sshUrl ?? null)
         .find((address) => address !== null) ?? null,
     onMetaLine: config.launch.actions.length > 0,
   };
@@ -1434,7 +1440,7 @@ function noticesFor(health: Health): RemoteNotice[] {
     cause.kind === "unreadable-remote"
       ? [
           {
-            text: `The clone pushes to ${cause.fullName} on ${cause.forge}, which no ${forgeLabel[cause.forge]} card reads.`,
+            text: `The local repository pushes to ${cause.fullName} on ${cause.forge}, which no ${forgeLabel[cause.forge]} card reads.`,
             fix: `Add a card for ${cause.fullName.slice(0, cause.fullName.indexOf("/"))} under`,
           },
         ]
@@ -1443,8 +1449,8 @@ function noticesFor(health: Health): RemoteNotice[] {
 }
 
 function fenceSituation(entity: Entity): FenceSituation {
-  const first = entity.presences.forges[0];
-  if (entity.presences.local === null && first) {
+  const first = entity.repositories.forges[0];
+  if (entity.repositories.local === null && first) {
     return { kind: "forge-only", forge: first.forge, fullName: first.fullName };
   }
   const git = readable<GitData>(entity.sources.git);
@@ -1552,9 +1558,12 @@ export function deriveBird(
       chips,
     },
     detail: {
-      clonePath: entity.path === null ? null : collapseHome(entity.path, home),
+      localRepositoryPath:
+        entity.path === null ? null : collapseHome(entity.path, home),
       forges: [
-        ...new Set(entity.presences.forges.map((presence) => presence.forge)),
+        ...new Set(
+          entity.repositories.forges.map((repository) => repository.forge),
+        ),
       ],
       notices: noticesFor(health),
       quiet: quietFor(entity, health),
@@ -1569,18 +1578,18 @@ export function deriveBird(
         level: flag.level,
       })),
       actions: actionsFor(entity, papers, config),
-      links: entity.presences.forges.flatMap((presence) =>
-        presence.url === null
+      links: entity.repositories.forges.flatMap((repository) =>
+        repository.url === null
           ? []
           : [
               {
-                label: `${presence.fullName} on ${forgeLabel[presence.forge]}`,
-                url: presence.url,
+                label: `${repository.fullName} on ${forgeLabel[repository.forge]}`,
+                url: repository.url,
               },
             ],
       ),
       keyFiles: keyFilesFor(entity, papers),
-      noClone: noCloneFor(entity, config),
+      noLocalRepository: noLocalRepositoryFor(entity, config),
       problems: problemsFor(entity),
     },
   };

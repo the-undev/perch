@@ -7,12 +7,6 @@ Work identified and not done. Remove work items as they land.
 `GLOSSARY.md` holds the language wanted. The code, config and app text still
 use the older words below. Each is looked at on its own, then renamed.
 
-- "item" becomes "entity". Reaches config's `[items]` table, so it needs a
-  migration.
-- "presence" and "clone" become "repository": local repository, forge
-  repository. Reaches config's comments.
-- "join" becomes "link". Reaches config's `joins` key.
-- "entry" becomes "papers".
 - "working" becomes "reading".
 - "river" becomes "history", and "spread" goes.
 - "activity" becomes "work state": "editing" becomes "uncommitted", "in flight"
@@ -30,6 +24,17 @@ use the older words below. Each is looked at on its own, then renamed.
   "content".
 - The Uptime Kuma source and the server entity go, until server monitoring is
   built. The migration drops a config's `[[sources.kuma]]` tables.
+
+## SSH address on the no-local-repository slip
+
+The slip offers the SSH address to copy. Investigate whether it should also
+offer an HTTPS address, and whether "SSH address" then still names it for its
+purpose.
+
+## Invented account names in mock data
+
+Mock data and test fixtures use a real account name in forge references.
+Replace it with an invented one.
 
 ## Branches that are not work under way
 
@@ -49,10 +54,10 @@ true of the project on any machine: `key_files`, `roadmaps`, `bug_words`,
 papers. Precedence, each set value replacing the one below: the papers in the
 owner's config, then `.perch.toml`, then `[work]` and `[thresholds]`, then built
 in. Wires, names, sessions, launch actions and sources stay in the
-owner's config. A bird known only from a forge has no clone to read it from;
-reading it through the forge API is a later step. Perch cannot migrate a file
-in another repository, so the schema and its versioning are settled before
-anything else.
+owner's config. A bird known only from a forge has no local repository to read
+it from; reading it through the forge API is a later step. Perch cannot migrate
+a file in another repository, so the schema and its versioning are settled
+before anything else.
 
 ## Side by side sheets on wide windows
 
@@ -134,10 +139,10 @@ files.
 ## Relative images on the key-file paper
 
 A repository-relative image shows its alt text, because nothing serves it. The
-main process would need to read the file from the clone behind a custom
-protocol.
+main process would need to read the file from the local repository behind a
+custom protocol.
 
-## Seeding a forge card from the clones
+## Seeding a forge card from the local repositories
 
 The sources page could suggest a card from the remotes no source reads: the
 host, the kind (probed for self-hosted Forgejo) and the account from the URL
@@ -146,7 +151,8 @@ paths. The owner confirms it and adds a token.
 ## Picking paths and sessions from what the scan knows
 
 Key files, roadmaps and the zellij session are typed into text fields.
-Perch could offer the files in the clone and the sessions zellij reports.
+Perch could offer the files in the local repository and the sessions zellij
+reports.
 The scan carries no file listing, so this needs a new raw field or a
 main-process read when the form opens.
 
@@ -159,8 +165,8 @@ browser.
 ## One repository name at two Forgejo instances
 
 Forge repositories are keyed by owner/name alone, so the same name at two
-instances is one presence. Keying by instance changes the presence reference
-that config names, and needs a rule for papers written without one.
+instances is one repository. Keying by instance changes the repository
+reference that config names, and needs a rule for papers written without one.
 
 ## A bird's look worked out once on its page
 

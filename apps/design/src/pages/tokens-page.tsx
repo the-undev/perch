@@ -174,7 +174,7 @@ export function TokensPage() {
         </Specimen>
         <Specimen
           label="Stamp"
-          rule="The no-clone slip's stamp: a dusty blue far from the judgement colours, since a bird with no clone here may be perfectly healthy."
+          rule="The no-local-repository slip's stamp: a dusty blue far from the judgement colours, since a bird with no local repository here may be perfectly healthy."
         >
           <Swatches tokens={["paper-stamp"]} />
         </Specimen>

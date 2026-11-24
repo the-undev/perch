@@ -46,7 +46,7 @@ const restless: Entry[] = [
   {
     id: "undev/skiff",
     label: "A remote no card can read",
-    rule: "The clone pushes to a repository whose owner no card covers: amber, with the can't-read chip, which lands on the record's notice. Its stall follows as the secondary.",
+    rule: "The local repository pushes to a repository whose owner no card covers: amber, with the can't-read chip, which lands on the record's notice. Its stall follows as the secondary.",
   },
 ];
 
@@ -72,7 +72,7 @@ const fence: Entry[] = [
   {
     id: "github:finch/obsidian-tidy",
     label: "Forge only",
-    rule: "A repository on a forge with no local clone.",
+    rule: "A repository on a forge with no local repository.",
   },
   {
     id: "dev/hearth-config",

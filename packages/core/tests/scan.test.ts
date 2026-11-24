@@ -192,7 +192,7 @@ hosts = ["b.example.lan"]
 
     expect(await sources.local.gather({})).toEqual({
       includes: {},
-      presences: {},
+      repositories: {},
     });
     expect(await sources.githubAccounts.gather({})).toEqual({});
     expect(await sources.forgejoAccounts.gather({})).toEqual({});

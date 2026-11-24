@@ -15,7 +15,7 @@ import {
 import { readRoadmapStructure } from "../src/roadmap-parser.ts";
 import type { RoadmapFile, WorkItem, WorkItemGroup } from "../src/snapshot.ts";
 import { createRoadmapSource } from "../src/sources/roadmap.ts";
-import { localPresence } from "./helpers/raw.ts";
+import { localRepository } from "./helpers/raw.ts";
 
 function readFixture(name: string): string {
   return readFileSync(
@@ -435,11 +435,11 @@ describe("roadmap source", () => {
         gatheredAt: "2026-10-21T09:00:00.000Z",
         data: {
           includes: {},
-          presences: {
-            repo: localPresence("/repo", { include: "/repo" }),
-            empty: localPresence("/empty", { include: "/empty" }),
-            listless: localPresence("/repo", { include: "/repo" }),
-            hothouse: localPresence("/hothouse", {
+          repositories: {
+            repo: localRepository("/repo", { include: "/repo" }),
+            empty: localRepository("/empty", { include: "/empty" }),
+            listless: localRepository("/repo", { include: "/repo" }),
+            hothouse: localRepository("/hothouse", {
               include: "/hothouse",
               obsidian: true,
             }),

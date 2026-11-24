@@ -295,7 +295,7 @@ export function BirdPage() {
         </Specimen>
         <Specimen
           label="forge only"
-          rule="obsidian-tidy: on GitHub, no clone on this machine."
+          rule="obsidian-tidy: on GitHub, no local repository on this machine."
         >
           <Plate phase="day">
             <BirdPortrait

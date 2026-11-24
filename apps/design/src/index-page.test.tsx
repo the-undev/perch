@@ -54,7 +54,7 @@ describe("the design site", () => {
       name: "Settings pages",
     });
     expect(rail.textContent).toBe(
-      "SourcesJoining upWiresJudgementScanningLaunchingWindowUpdates",
+      "SourcesLinkingWiresJudgementScanningLaunchingWindowUpdates",
     );
     expect(
       screen.getAllByRole("region", { name: "GitHub · newcomer" }),

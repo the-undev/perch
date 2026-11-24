@@ -98,7 +98,7 @@ describe("the detail page's pieces", () => {
     ]);
   });
 
-  it("says in the meta line where the bird lives: clone, forges and wire", () => {
+  it("says in the meta line where the bird lives: local repository, forges and wire", () => {
     const meta = (id: string) => {
       const { container } = render(
         <DetailHeading bird={mockBird(id)} now={now} actions={null} />,

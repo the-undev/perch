@@ -32,7 +32,7 @@ const stages: Stage[] = [
     name: "Snapshot",
     where: ".scan/snapshot.json",
     writtenBy:
-      "pnpm aggregate · src/aggregate.ts, src/join.ts, src/derivations.ts",
+      "pnpm aggregate · src/aggregate.ts, src/link.ts, src/derivations.ts",
     types: ["Snapshot", "Entity", "EntitySourceData"],
     reads:
       "The raw files and the config only; the previous snapshot for first-seen times.",
@@ -172,8 +172,8 @@ export function ChainPage() {
         <h3 className="mt-7 mb-0 font-semibold text-[14px] text-ink-faint">
           Where each derivation lives
         </h3>
-        <ModuleNote file="src/join.ts" />
-        <FunctionTable file="src/join.ts" />
+        <ModuleNote file="src/link.ts" />
+        <FunctionTable file="src/link.ts" />
         <p className="mt-4 mb-0 font-mono text-[12.5px] text-ink-accent">
           packages/core/src/aggregate.ts
         </p>

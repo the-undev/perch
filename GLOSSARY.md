@@ -30,6 +30,9 @@ A project's repository on a forge. A project has any number.
 A service that hosts repositories, such as GitHub or a Forgejo instance.
 _Avoid_: Remote (a remote is git's own name for an address a local repository pushes to)
 
+**SSH address**:
+The forge's SSH address for a repository, which the no-local-repository slip offers to copy so a local repository can be made from it.
+
 **Link**:
 What makes several repositories one project, proved by a remote's address or stated by the owner.
 _Avoid_: Join, relationship

@@ -143,7 +143,7 @@ const book: Group[] = [
       ),
       entry(
         "A remote no card can read",
-        "The clone pushes to a forge repository whose owner no card covers. A read that failed this scan is not a cause.",
+        "The local repository pushes to a forge repository whose owner no card covers. A read that failed this scan is not a cause.",
         "undev/skiff",
       ),
       variant(
@@ -220,7 +220,7 @@ const book: Group[] = [
     entries: [
       entry(
         "Forge only",
-        "A repository on a forge with no local clone.",
+        "A repository on a forge with no local repository.",
         "github:finch/obsidian-tidy",
       ),
       entry(

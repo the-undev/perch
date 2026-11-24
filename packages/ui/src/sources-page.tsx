@@ -364,7 +364,7 @@ function AccountFields<Source extends GithubSourceConfig>({
       </p>
       <ListField
         field="hosts"
-        sub="the remote hostnames and SSH aliases that reach the account; a clone joins its listing by them"
+        sub="the remote hostnames and SSH aliases that reach the account; a local repository is linked to its listing by them"
         noun="host"
         placeholder={kind === "github" ? "github.com" : "forge.example.lan"}
         values={source.hosts}
@@ -445,7 +445,8 @@ function CardBody({
           />
           <p className={quietLineClass}>
             The account's own repositories appear on the fence until adopted. A
-            clone here whose remote names one of the hosts joins the same bird.
+            local repository here whose remote names one of the hosts is linked
+            to the same bird.
           </p>
         </>
       );
@@ -480,8 +481,8 @@ function CardBody({
           />
           <p className={quietLineClass}>
             The account's own repositories on this server appear on the fence
-            until adopted. A clone here whose remote names one of the hosts
-            joins the same bird.
+            until adopted. A local repository here whose remote names one of the
+            hosts is linked to the same bird.
           </p>
         </>
       );

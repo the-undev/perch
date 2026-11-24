@@ -3,9 +3,9 @@ import { aggregate, localPapers } from "../src/aggregate.ts";
 import type { Config } from "../src/config.ts";
 import {
   type ForgeInput,
-  joinPresences,
   type LocalInput,
-} from "../src/join.ts";
+  linkRepositories,
+} from "../src/link.ts";
 import type { ForgeName, RawFiles, RawForgeRepo } from "../src/raw.ts";
 import type { Snapshot } from "../src/snapshot.ts";
 import { deriveAviary } from "../src/viewmodel.ts";
@@ -13,7 +13,7 @@ import { testConfig } from "./helpers/config.ts";
 import {
   forgeRepo,
   gatheredAt,
-  localPresence,
+  localRepository,
   okStatus,
   rawFiles,
   withRemotes,
@@ -29,7 +29,7 @@ const forgeForHost = (host: string) => hosts[host] ?? null;
 function local(id: string, remotes: string[]): LocalInput {
   return {
     id,
-    presence: localPresence(`/home/test/${id}`, {
+    repository: localRepository(`/home/test/${id}`, {
       include: "/home/test/dev",
       git: withRemotes(
         remotes.map((url, index) => ({
@@ -49,27 +49,27 @@ function forge(name: ForgeName, repo: RawForgeRepo): ForgeInput {
   };
 }
 
-function joined(input: {
+function linked(input: {
   locals?: LocalInput[];
   forges?: ForgeInput[];
-  joins?: string[][];
+  links?: string[][];
   ignore?: string[];
 }) {
-  return joinPresences({
+  return linkRepositories({
     locals: input.locals ?? [],
     forges: input.forges ?? [],
     forgeForHost,
-    joins: input.joins ?? [],
+    links: input.links ?? [],
     ignore: input.ignore ?? [],
   });
 }
 
-const refsOf = (result: ReturnType<typeof joined>) =>
+const refsOf = (result: ReturnType<typeof linked>) =>
   result.projects.map((project) => project.refs);
 
-describe("joining by remote URL", () => {
-  it("joins a clone to every forge presence its remotes name, without case and through SSH aliases", () => {
-    const result = joined({
+describe("linking by remote URL", () => {
+  it("links a local repository to every forge repository its remotes name, without case and through SSH aliases", () => {
+    const result = linked({
       locals: [
         local("dev/dotfiles", [
           "git@github.com:finch/dotfiles.git",
@@ -90,13 +90,13 @@ describe("joining by remote URL", () => {
     ]);
   });
 
-  it("joins a dual-push remote to the forge named only by its second push URL", () => {
+  it("links a dual-push remote to the forge named only by its second push URL", () => {
     const github = "git@github.com:finch/perch.git";
-    const result = joined({
+    const result = linked({
       locals: [
         {
           id: "dev/perch",
-          presence: localPresence("/home/test/dev/perch", {
+          repository: localRepository("/home/test/dev/perch", {
             include: "/home/test/dev",
             git: withRemotes([
               {
@@ -120,7 +120,7 @@ describe("joining by remote URL", () => {
   });
 
   it("follows a rename through the forge's alias for the old name", () => {
-    const result = joined({
+    const result = linked({
       locals: [
         local("dev/photo-shuttle", [
           "https://github.com/finch/camera-mover.git",
@@ -141,8 +141,8 @@ describe("joining by remote URL", () => {
     ]);
   });
 
-  it("keeps unjoined presences as their own projects and never joins two forge presences", () => {
-    const result = joined({
+  it("keeps unlinked repositories as their own projects and never links two forge repositories", () => {
+    const result = linked({
       locals: [local("dev/toy", [])],
       forges: [
         forge("github", forgeRepo("finch/notes", {})),
@@ -157,8 +157,8 @@ describe("joining by remote URL", () => {
     ]);
   });
 
-  it("flags a clone whose remote names an archived repository, which joins nothing", () => {
-    const result = joined({
+  it("flags a local repository whose remote names an archived repository, which links nothing", () => {
+    const result = linked({
       locals: [
         local("dev/mixed-bag", ["https://github.com/finch/mixed-bag.git"]),
       ],
@@ -171,14 +171,14 @@ describe("joining by remote URL", () => {
     expect(result.projects[0]?.flags.map((flag) => flag.flag)).toEqual([
       "remote-archived",
     ]);
-    expect(result.unlisted.map((presence) => presence.key)).toEqual([
+    expect(result.unlisted.map((repository) => repository.key)).toEqual([
       "finch/mixed-bag",
     ]);
   });
 
-  it("leaves a presence with the first clone and flags a second clone of it", () => {
+  it("leaves a repository with the first local repository and flags a second local repository of it", () => {
     const url = "git@github.com:finch/perch.git";
-    const result = joined({
+    const result = linked({
       locals: [local("dev/perch", [url]), local("dev/perch-copy", [url])],
       forges: [forge("github", forgeRepo("finch/perch", {}))],
     });
@@ -187,20 +187,24 @@ describe("joining by remote URL", () => {
       ["local:dev/perch", "github:finch/perch"],
       ["local:dev/perch-copy"],
     ]);
-    expect(result.projects[1]?.flags.map((flag) => flag.flag)).toEqual([
-      "remote-joined-elsewhere",
+    expect(result.projects[1]?.flags).toEqual([
+      {
+        flag: "remote-linked-elsewhere",
+        level: null,
+        detail: "origin is finch/perch, already linked to local:dev/perch",
+      },
     ]);
   });
 });
 
-describe("asserted joins", () => {
-  it("merge forge presences that no URL proves, matching references without case", () => {
-    const result = joined({
+describe("asserted links", () => {
+  it("merge forge repositories that no URL proves, matching references without case", () => {
+    const result = linked({
       forges: [
         forge("github", forgeRepo("finch/notes", {})),
         forge("forgejo", forgeRepo("finch/notes", {})),
       ],
-      joins: [["github:Finch/Notes", "forgejo:finch/notes"]],
+      links: [["github:Finch/Notes", "forgejo:finch/notes"]],
     });
 
     expect(refsOf(result)).toEqual([
@@ -209,14 +213,14 @@ describe("asserted joins", () => {
     expect(result.conflicts).toEqual([]);
   });
 
-  it("merge into the project with the local clone", () => {
-    const result = joined({
+  it("merge into the project with the local repository", () => {
+    const result = linked({
       locals: [local("dev/notes", ["git@github.com:finch/notes.git"])],
       forges: [
         forge("github", forgeRepo("finch/notes", {})),
         forge("forgejo", forgeRepo("finch/notes", {})),
       ],
-      joins: [["forgejo:finch/notes", "github:finch/notes"]],
+      links: [["forgejo:finch/notes", "github:finch/notes"]],
     });
 
     expect(refsOf(result)).toEqual([
@@ -224,11 +228,11 @@ describe("asserted joins", () => {
     ]);
   });
 
-  it("name a local clone by its bare id as well as by local:<id>", () => {
-    const result = joined({
+  it("name a local repository by its bare id as well as by local:<id>", () => {
+    const result = linked({
       locals: [local("dev/notes", [])],
       forges: [forge("forgejo", forgeRepo("finch/notes", {}))],
-      joins: [["dev/notes", "forgejo:finch/notes"]],
+      links: [["dev/notes", "forgejo:finch/notes"]],
     });
 
     expect(refsOf(result)).toEqual([
@@ -237,17 +241,17 @@ describe("asserted joins", () => {
     expect(result.conflicts).toEqual([]);
   });
 
-  it("lose to the observation when they would join two local clones, flagging both", () => {
-    const result = joined({
+  it("lose to the observation when they would link two local repositories, flagging both", () => {
+    const result = linked({
       locals: [local("dev/a", []), local("dev/b", [])],
-      joins: [["local:dev/a", "local:dev/b"]],
+      links: [["local:dev/a", "local:dev/b"]],
     });
 
     expect(refsOf(result)).toEqual([["local:dev/a"], ["local:dev/b"]]);
     expect(result.conflicts).toEqual([
       {
         assertion: 'links ["local:dev/a","local:dev/b"]',
-        detail: "it would join two local clones into one project",
+        detail: "it would link two local repositories into one project",
       },
     ]);
     expect(
@@ -255,13 +259,13 @@ describe("asserted joins", () => {
     ).toEqual([["config-conflict"], ["config-conflict"]]);
   });
 
-  it("are recorded as conflicts when a presence is missing or archived", () => {
-    const result = joined({
+  it("are recorded as conflicts when a repository is missing or archived", () => {
+    const result = linked({
       forges: [
         forge("github", forgeRepo("finch/notes", {})),
         forge("github", forgeRepo("finch/old", { archived: true })),
       ],
-      joins: [
+      links: [
         ["github:finch/notes", "forgejo:finch/notes", "github:finch/old"],
       ],
     });
@@ -274,8 +278,8 @@ describe("asserted joins", () => {
 });
 
 describe("ignores", () => {
-  it("drop a forge-only presence but not one a local clone uses", () => {
-    const result = joined({
+  it("drop a forge-only repository but not one a local repository uses", () => {
+    const result = linked({
       locals: [local("dev/perch", ["git@github.com:finch/perch.git"])],
       forges: [
         forge("github", forgeRepo("finch/perch", {})),
@@ -296,12 +300,12 @@ describe("ignores", () => {
     ]);
   });
   it("drop a project named by any of its references, not only its id", () => {
-    const result = joined({
+    const result = linked({
       forges: [
         forge("github", forgeRepo("finch/notes", {})),
         forge("forgejo", forgeRepo("finch/notes", {})),
       ],
-      joins: [["github:finch/notes", "forgejo:finch/notes"]],
+      links: [["github:finch/notes", "forgejo:finch/notes"]],
       ignore: ["forgejo:Finch/Notes"],
     });
 
@@ -314,13 +318,13 @@ describe("ignores", () => {
   });
 });
 
-describe("aggregating joined projects", () => {
+describe("aggregating linked projects", () => {
   const config = testConfig;
 
   const files = rawFiles({
     includes: { "/home/test/dev": "directory" },
     locals: {
-      "dev/perch": localPresence("/home/test/dev/perch", {
+      "dev/perch": localRepository("/home/test/dev/perch", {
         include: "/home/test/dev",
         git: {
           ...withRemotes([
@@ -335,10 +339,10 @@ describe("aggregating joined projects", () => {
           ],
         },
       }),
-      "dev/toy": localPresence("/home/test/dev/toy", {
+      "dev/toy": localRepository("/home/test/dev/toy", {
         include: "/home/test/dev",
       }),
-      "dev/gone": localPresence("/home/test/dev/gone", {
+      "dev/gone": localRepository("/home/test/dev/gone", {
         include: "/home/test/dev",
         git: withRemotes([
           { name: "origin", url: "git@gitlab.com:someone/gone.git" },
@@ -354,7 +358,7 @@ describe("aggregating joined projects", () => {
     },
   });
 
-  it("merges local and forge data into one entity and sets each clone's backup state", async () => {
+  it("merges local and forge data into one entity and sets each local repository's backup state", async () => {
     const snapshot = aggregate(
       { status: okStatus({}), files },
       {
@@ -378,20 +382,22 @@ describe("aggregating joined projects", () => {
       snapshot.entities.map((entity) => [entity.id, entity]),
     );
     expect(
-      byId["dev/perch"]?.presences.forges.map((presence) => presence.ref),
+      byId["dev/perch"]?.repositories.forges.map(
+        (repository) => repository.ref,
+      ),
     ).toEqual(["github:finch/perch"]);
     expect(byId["dev/perch"]?.sources.github).toMatchObject({
       fullName: "finch/perch",
     });
     expect(byId["dev/perch"]?.sources.git).toMatchObject({
-      backup: "joined",
+      backup: "linked",
       drift: { unpushed: { hours: 240 } },
     });
     expect(byId["dev/toy"]?.sources.git).toMatchObject({
       backup: "local-only",
     });
     expect(byId["dev/gone"]?.sources.git).toMatchObject({
-      backup: "unjoined-remote",
+      backup: "unlinked-remote",
     });
     expect(byId["github:finch/notes"]).toMatchObject({
       kind: "git",
@@ -400,7 +406,7 @@ describe("aggregating joined projects", () => {
     });
   });
 
-  it("lists every forge presence grouped active and archived, and keeps archived ones off the entities", async () => {
+  it("lists every forge repository grouped active and archived, and keeps archived ones off the entities", async () => {
     const snapshot = aggregate(
       { status: okStatus({}), files },
       {
@@ -474,7 +480,7 @@ describe("aggregating joined projects", () => {
     ]);
   });
 
-  it("keeps forge-keyed papers' adoption, name, wire, thresholds, key files and roadmaps after a local clone joins", async () => {
+  it("keeps forge-keyed papers' adoption, name, wire, thresholds, key files and roadmaps after a local repository links", async () => {
     const configured = await config(
       [
         '[papers."github:Finch/Perch"]',

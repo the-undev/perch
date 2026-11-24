@@ -24,7 +24,7 @@ const examplePath = join(
 );
 const home = "/home/test";
 
-/** The papers config resolves for a local entity with no forge presence. */
+/** The papers config resolves for a local entity with no forge repository. */
 const papersOf = (config: Config, id: string) =>
   resolvePapers(config, id, [`local:${id}`]).papers;
 
@@ -46,7 +46,7 @@ describe("example config", () => {
         exclude: ["/home/test/projects/archive"],
       },
     ]);
-    expect(config.joins).toEqual([]);
+    expect(config.links).toEqual([]);
     expect(config.ignore).toEqual([]);
     expect(config.wires).toEqual({
       names: ["Home", "Projects"],

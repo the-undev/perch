@@ -461,10 +461,10 @@ function earliest(timestamps: readonly string[]): string | null {
 
 /**
  * Git data for an entity. The oldest uncommitted change is the earliest mtime among dirty files
- * that still exist; deleted files have none. Unpushed work is every commit on a local branch
- * that no remote-tracking ref holds. It only drifts against a joined forge presence; a clone
- * with no remote at all is local only, one disk, with no unpushed work and no unpushed drift.
- * Ahead and behind come from the current branch's tracking branch, when it has one.
+ * that still exist; deleted files have none. Unpushed work is every commit on a local branch that
+ * no remote-tracking ref holds. It only drifts against a linked forge repository; a local
+ * repository with no remote at all is local only, one disk, with no unpushed work and no unpushed
+ * drift. Ahead and behind come from the current branch's tracking branch, when it has one.
  */
 export function deriveGit(
   raw: RawGit,
@@ -503,7 +503,7 @@ export function deriveGit(
     oldestUncommittedAt,
     oldestUnpushedAt,
     unpushedBranches:
-      backup === "joined"
+      backup === "linked"
         ? raw.branches.flatMap((entry): UnpushedBranch[] => {
             const work = agedWork(
               earliest(
@@ -548,7 +548,7 @@ export function deriveGit(
     drift: deriveDrift(
       {
         oldestUncommittedAt,
-        oldestUnpushedAt: backup === "joined" ? oldestUnpushedAt : null,
+        oldestUnpushedAt: backup === "linked" ? oldestUnpushedAt : null,
       },
       thresholds.unsafe,
       observedAt,
@@ -655,7 +655,7 @@ function deriveFacet<T, U>(
 }
 
 /**
- * Forge data for a presence; details that could not be read at all are the entity's error, and a
+ * Forge data for a repository; details that could not be read at all are the entity's error, and a
  * part that could not be read is that part's error.
  */
 export function deriveForge(repo: RawForgeRepo): ForgeData | ForgeError {
@@ -701,13 +701,13 @@ export function bugCause(
 }
 
 /**
- * An entity's health: the worst of its inputs. Failing CI is red. Each roadmap file is judged on its
- * own, the worse of its open bugs and open critical bugs against their windows. A remote the clone
- * pushes to that no card can read is amber; a forge whose read failed this scan is not an input.
- * Uncommitted changes, unpushed commits and stalled flight take the level already judged against
- * the entity's windows. Only amber and red inputs are causes; they come worst first, ties in the
- * order CI, unreadable remotes, bugs, uncommitted, unpushed, stalled. Flags are not inputs: the
- * one with a level, not set up, is the fence's own situation.
+ * An entity's health: the worst of its inputs. Failing CI is red. Each roadmap file is judged on
+ * its own, the worse of its open bugs and open critical bugs against their windows. A remote the
+ * local repository pushes to that no card can read is amber; a forge whose read failed this scan is
+ * not an input. Uncommitted changes, unpushed commits and stalled flight take the level already
+ * judged against the entity's windows. Only amber and red inputs are causes; they come worst first,
+ * ties in the order CI, unreadable remotes, bugs, uncommitted, unpushed, stalled. Flags are not
+ * inputs: the one with a level, not set up, is the fence's own situation.
  */
 export function deriveHealth(entity: Entity): Health {
   const candidates: HealthCause[] = [];
@@ -728,16 +728,16 @@ export function deriveHealth(entity: Entity): Health {
     const data = entity.sources[forge];
     if (data === undefined || !("cause" in data) || data.cause !== "no-card")
       continue;
-    // The source is the first presence's of its forge, as aggregation assigns it.
-    const presence = entity.presences.forges.find(
+    // The source is the first repository's of its forge, as aggregation assigns it.
+    const repository = entity.repositories.forges.find(
       (entry) => entry.forge === forge,
     );
-    if (presence === undefined) continue;
+    if (repository === undefined) continue;
     candidates.push({
       kind: "unreadable-remote",
       level: "amber",
       forge,
-      fullName: presence.fullName,
+      fullName: repository.fullName,
     });
   }
   const roadmap = roadmapOf(entity);
@@ -834,8 +834,8 @@ function localGrain(
   if (outcomes.some(({ outcome }) => outcome === undefined)) return null;
   return {
     state: "read",
-    count: Object.values(local.presences).filter((presence) =>
-      include.includes(presence.include),
+    count: Object.values(local.repositories).filter((repository) =>
+      include.includes(repository.include),
     ).length,
     missingIncludes: outcomes
       .filter(({ outcome }) => outcome?.state === "absent")

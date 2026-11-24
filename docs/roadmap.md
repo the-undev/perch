@@ -192,6 +192,12 @@ The desktop tests print git's "You appear to have cloned an empty
 repository" warning several times from their fixtures. Finding the clone that
 prints it and silencing it at the cause would leave the test output clean.
 
+## Config path on the welcome screen
+
+The welcome screen and the `ipc.ts` comment name `~/.config/perch/config.toml`,
+but a dev or isolated run reads the path in `PERCH_CONFIG`. Show the path the
+run actually uses.
+
 ## Open decisions
 
 - Forge tokens live in the desktop keyring under service perch for every

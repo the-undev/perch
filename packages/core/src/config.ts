@@ -87,7 +87,7 @@ export interface Papers {
   /** The name the bird goes by; null keeps the scanned name. */
   name: string | null;
   thresholds: ThresholdOverrides;
-  /** Files for the detail page, relative to the entity; null keeps the README and any roadmap. */
+  /** Files for the bird's page, relative to the entity; null keeps the README and any roadmap. */
   keyFiles: string[] | null;
   /** Roadmap files relative to the entity, the only files parsed as roadmaps; null or empty parses none. */
   roadmaps: string[] | null;

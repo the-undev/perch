@@ -520,7 +520,7 @@ describe("aggregating linked projects", () => {
     expect(perch?.sources.git).toMatchObject({
       drift: { unpushed: { hours: 240, level: "green" } },
     });
-    expect(after?.detail.keyFiles.map((file) => file.path)).toEqual([
+    expect(after?.page.keyFiles.map((file) => file.path)).toEqual([
       "docs/spec.md",
     ]);
     expect(localPapers(files, configured).get("dev/perch")?.roadmaps).toEqual([

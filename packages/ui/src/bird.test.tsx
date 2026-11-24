@@ -89,7 +89,7 @@ function seen(bird: Bird, now: Date) {
   const label = container.querySelector("svg")?.getAttribute("aria-label");
   return {
     colour: colours[breast ?? ""],
-    stateWord: label?.split(", ")[1],
+    statePhrase: label?.split(", ")[1],
     eyes: part(container, "eye").tagName === "circle" ? "open" : "closed",
     mark: mark === "z" ? "z" : mark === "♪" ? "note" : "none",
     motion: motionOf(container),
@@ -240,12 +240,12 @@ describe("the bird's look", () => {
     ],
   ])(
     "looks right for %s, %s, %s",
-    (id, _row, hour, colour, stateWord, eyes, mark, motion) => {
+    (id, _row, hour, colour, statePhrase, eyes, mark, motion) => {
       const now = hour === "06:00 to midnight" ? afternoon : smallHours;
 
       expect(seen(mockBird(id), now)).toEqual({
         colour,
-        stateWord,
+        statePhrase,
         eyes,
         mark,
         motion,
@@ -265,7 +265,7 @@ describe("the bird's look", () => {
 
     expect(seen(snoozed, now)).toEqual({
       colour: "dimmed",
-      stateWord: "snoozed",
+      statePhrase: "snoozed",
       eyes: "closed",
       mark: "z",
       motion: "still",
@@ -275,7 +275,7 @@ describe("the bird's look", () => {
   it("looks snoozed with no end date until woken", () => {
     const snoozed = { ...mockBird("undev/skiff"), snooze: { until: null } };
 
-    expect(seen(snoozed, afternoon).stateWord).toBe("snoozed");
+    expect(seen(snoozed, afternoon).statePhrase).toBe("snoozed");
   });
 
   it("wears its real mood from the start of the snooze's end date", () => {
@@ -283,7 +283,7 @@ describe("the bird's look", () => {
     const snoozed = { ...skiff, snooze: { until: "2026-10-22" } };
 
     expect(seen(snoozed, afternoon)).toEqual(seen(skiff, afternoon));
-    expect(seen(snoozed, new Date(2026, 9, 21, 23, 59)).stateWord).toBe(
+    expect(seen(snoozed, new Date(2026, 9, 21, 23, 59)).statePhrase).toBe(
       "snoozed",
     );
   });

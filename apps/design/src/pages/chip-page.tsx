@@ -97,7 +97,7 @@ export function ChipPage() {
           {
             name: "onPress",
             type: "(chip: ChipKind) => void",
-            what: "ChipHandles: a chip was pressed; the bird's page lands on the ledger row holding its working, or the record's notice for can't read, riding there first from the aviary.",
+            what: "ChipHandles: a chip was pressed; the bird's page lands on the ledger row holding its reading, or the record's notice for can't read, riding there first from the aviary.",
           },
         ]}
       >
@@ -109,7 +109,7 @@ export function ChipPage() {
         </p>
         <p>
           Both bubbles draw <Code>{"<ChipHandles>"}</Code>: the same paper as
-          buttons, each landing on the ledger row holding its working. From the
+          buttons, each landing on the ledger row holding its reading. From the
           aviary the camera first rides to the bird&apos;s page.
         </p>
       </Usage>

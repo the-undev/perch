@@ -29,7 +29,7 @@ function Covered({
       >
         <p className="m-0 mb-2 font-semibold text-ink">The panes</p>
         <p className="m-0">
-          Ledger rows, branches and the commit river sit here. A page decides
+          Ledger rows, branches and the commit history sit here. A page decides
           how its own content dims; the sheet only covers it.
         </p>
       </div>

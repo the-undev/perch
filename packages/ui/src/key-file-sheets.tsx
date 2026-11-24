@@ -1,9 +1,9 @@
-// The key files as paper, the bubble's material, with a folder tab per file. The view model holds
+// The key files as sheets, with a folder tab per file. The view model holds
 // the paths and a roadmap file's margin marks; the caller reads the files and passes their markdown in.
 // A reveal opens its file's tab, scrolls its line into view and briefly marks it, as a chip's
 // landing marks a ledger row.
 
-import type { KeyFile, LineMarks, PaperLine } from "@perch/core/viewmodel.ts";
+import type { KeyFile, LineMarks, SheetLine } from "@perch/core/viewmodel.ts";
 import {
   createElement,
   type HTMLAttributes,
@@ -27,7 +27,7 @@ export interface KeyFileSheet {
 const isAbsoluteAddress = (src: string) => /^[a-z][a-z0-9+.-]*:/i.test(src);
 
 /** A remote image as an image, and a repository-relative one as its alt text, since nothing serves it. */
-function PaperImage({
+function SheetImage({
   src,
   alt,
 }: {
@@ -42,12 +42,12 @@ function PaperImage({
 
 /** A line pressed in the ledger: the key file and line to show, and the press's number, so a second press shows it again. */
 export interface Reveal {
-  at: PaperLine;
+  at: SheetLine;
   press: number;
 }
 
 /** The brief mark behind a revealed line, in the paper's ink; drawn afresh for each press. */
-function PaperLandingMark() {
+function SheetLandingMark() {
   return (
     <span
       aria-hidden="true"
@@ -88,7 +88,7 @@ function markedComponents(
             "data-mark-done": mark.done ? "" : undefined,
             "data-revealed": landed ? "" : undefined,
           },
-          landed && <PaperLandingMark key={`mark-${revealed.press}`} />,
+          landed && <SheetLandingMark key={`mark-${revealed.press}`} />,
           children,
         );
       },
@@ -96,8 +96,8 @@ function markedComponents(
   );
 }
 
-/** A sheet of paper holding one rendered markdown file, with a mark in the margin beside each marked line. */
-export function MarkdownPaper({
+/** A sheet holding one rendered markdown file, with a mark in the margin beside each marked line. */
+export function MarkdownSheet({
   markdown,
   marks,
   revealed,
@@ -108,7 +108,7 @@ export function MarkdownPaper({
   revealed: Reveal | null;
 }) {
   const components = useMemo(
-    () => ({ ...markedComponents(marks, revealed), img: PaperImage }),
+    () => ({ ...markedComponents(marks, revealed), img: SheetImage }),
     [marks, revealed],
   );
   return (
@@ -126,7 +126,7 @@ export function MarkdownPaper({
  * reveal opens its file's tab and scrolls its line to the middle of the pane, marked; pressing a
  * tab drops the mark.
  */
-export function KeyFilePaper({
+export function KeyFileSheets({
   sheets,
   reveal,
 }: {
@@ -204,7 +204,7 @@ export function KeyFilePaper({
             read.
           </p>
         ) : (
-          <MarkdownPaper
+          <MarkdownSheet
             markdown={open.markdown}
             marks={open.file.marks}
             revealed={revealed}

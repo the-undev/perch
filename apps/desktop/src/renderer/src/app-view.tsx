@@ -2,8 +2,8 @@
 // where the camera points; the main process's state holds what it shows.
 
 import type { Aviary, Bird } from "@perch/core/viewmodel.ts";
+import type { PapersControls } from "@perch/ui/bird-page-view.tsx";
 import { type CameraPlace, CameraView } from "@perch/ui/camera.tsx";
-import type { PapersControls } from "@perch/ui/detail-view.tsx";
 import { SettingsView } from "@perch/ui/settings-view.tsx";
 import type { SnoozeCalls } from "@perch/ui/snooze-action.tsx";
 import { useQueryClient } from "@tanstack/react-query";
@@ -87,7 +87,9 @@ export function AppView({ api }: { api: PerchApi }) {
   });
   const settings = useSettingsForm(api, atSettings);
   const place: CameraPlace =
-    birdId === null ? { at: "aviary" } : { at: "detail", birdId, papers, chip };
+    birdId === null
+      ? { at: "aviary" }
+      : { at: "birdPage", birdId, papers, chip };
   const sheets = useKeyFiles(api, birdId, state?.aviary?.scannedAt ?? null);
   const queryClient = useQueryClient();
   const papersForm = usePapersForm(

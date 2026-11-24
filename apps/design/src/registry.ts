@@ -6,22 +6,22 @@ import { ActionsPage, HeadingPage, LinksPage } from "./pages/actions-pages.tsx";
 import { AdoptionPapersPage } from "./pages/adoption-papers-page.tsx";
 import { AviaryScenePage } from "./pages/aviary-scene-page.tsx";
 import { BirdPage } from "./pages/bird-page.tsx";
+import { BirdPageScenePage } from "./pages/bird-page-scene-page.tsx";
 import { BubblePage } from "./pages/bubble-page.tsx";
 import { ButtonPage } from "./pages/button-page.tsx";
 import { CameraScenePage } from "./pages/camera-scene-page.tsx";
 import { ChipPage } from "./pages/chip-page.tsx";
 import { CrowdedPage } from "./pages/crowded-page.tsx";
-import { DetailScenePage } from "./pages/detail-scene-page.tsx";
+import { KeyFileSheetsPage } from "./pages/key-file-sheets-page.tsx";
 import { LedgerPage } from "./pages/ledger-page.tsx";
-import { PaperPage } from "./pages/paper-page.tsx";
 import { RisingSheetPage } from "./pages/rising-sheet-page.tsx";
 import { RoostPage } from "./pages/roost-page.tsx";
 import {
   BranchesPage,
   FlagsPage,
+  HistoryPage,
   ProblemsPage,
   PullRequestsPage,
-  RiverPage,
 } from "./pages/sections-pages.tsx";
 import {
   SettingsGroupsPage,
@@ -75,7 +75,7 @@ export const groups: Group[] = [
     id: "scenes",
     title: "Scenes",
     blurb:
-      "The composed views the desktop app renders, on the mock dataset: the aviary, the detail page, and the camera between them.",
+      "The composed views the desktop app renders, on the mock dataset: the aviary, the bird's page, and the camera between them.",
   },
   {
     id: "spec",
@@ -142,11 +142,11 @@ export const pages: DesignPage[] = [
     component: RoostPage,
   },
   {
-    slug: "detail-heading",
+    slug: "bird-page-heading",
     group: "components",
-    title: "Detail heading",
+    title: "Bird's page heading",
     summary:
-      "The top of a bird's page: name, state word and activity, and the meta line saying where it lives.",
+      "The top of a bird's page: name, state phrase and activity, and the meta line saying where it lives.",
     component: HeadingPage,
   },
   {
@@ -154,7 +154,7 @@ export const pages: DesignPage[] = [
     group: "components",
     title: "Ledger",
     summary:
-      'Facts in full words: clean zeros a quiet green "none", counts toned by severity, each chip\'s working per source and its landing.',
+      'Facts in full words: clean zeros a quiet green "none", counts toned by severity, each chip\'s reading per source and its landing.',
     component: LedgerPage,
   },
   {
@@ -166,12 +166,12 @@ export const pages: DesignPage[] = [
     component: BranchesPage,
   },
   {
-    slug: "river",
+    slug: "history",
     group: "components",
-    title: "Commit river",
+    title: "Commit history",
     summary:
-      "Each commit once, with one dot for how far it has spread, and a sentence when the forges differ.",
-    component: RiverPage,
+      "Each commit once, with one dot for which forges hold it, and a sentence when the forges differ.",
+    component: HistoryPage,
   },
   {
     slug: "pull-requests",
@@ -209,12 +209,12 @@ export const pages: DesignPage[] = [
     component: LinksPage,
   },
   {
-    slug: "paper",
+    slug: "key-file-sheets",
     group: "components",
-    title: "Key-file paper",
+    title: "Key-file sheets",
     summary:
-      "Markdown on paper behind folder tabs, and the slip a bird with no local repository here shows in their place.",
-    component: PaperPage,
+      "Markdown sheets behind folder tabs, and the slip a bird with no local repository here shows in their place.",
+    component: KeyFileSheetsPage,
   },
   {
     slug: "adoption-papers",
@@ -257,19 +257,19 @@ export const pages: DesignPage[] = [
     component: AviaryScenePage,
   },
   {
-    slug: "detail",
+    slug: "bird-page",
     group: "scenes",
-    title: "The detail page",
+    title: "The bird's page",
     summary:
-      "Tier C for five contrasting birds: the roost, the heading and its meta line, ledger, sections, actions, links and paper.",
-    component: DetailScenePage,
+      "Tier C for five contrasting birds: the roost, the heading and its meta line, ledger, sections, actions, links and key-file sheets.",
+    component: BirdPageScenePage,
   },
   {
     slug: "camera",
     group: "scenes",
     title: "The camera",
     summary:
-      "The aviary and the detail joined: header tabs, the strip, the flights, Escape home.",
+      "the aviary and the bird's page joined: header tabs, the strip, the flights, Escape home.",
     component: CameraScenePage,
   },
   {

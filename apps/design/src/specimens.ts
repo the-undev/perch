@@ -263,7 +263,7 @@ export function bugLedgerRows(bug: number, criticalBug: number): LedgerFact[] {
     .flatMap((wire) => wire.birds)
     .find((candidate) => candidate.id === bugLedgerEntityId);
   if (bird === undefined) throw new Error("the mock has no Hollow");
-  return bird.detail.ledger.filter(
+  return bird.page.ledger.filter(
     (fact) => fact.kind === "count" && fact.label.includes("bugs in"),
   );
 }

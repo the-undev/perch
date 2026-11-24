@@ -7,18 +7,15 @@ Work identified and not done. Remove work items as they land.
 `GLOSSARY.md` holds the language wanted. The code, config and app text still
 use the older words below. Each is looked at on its own, then renamed.
 
-- "working" becomes "reading".
-- "river" becomes "history", and "spread" goes.
 - "activity" becomes "work state": "editing" becomes "uncommitted", "in flight"
   and the scanner's "in-progress" become "committed", and "settled" becomes
   "merged". Reaches the app text on the bird's page.
 - "window" in comments, config comments and the design site becomes
   "threshold".
-- `Drift` becomes unsafe work, and `Detail` the bird's page.
+- `Drift` becomes unsafe work.
 - "parked" in code names and comments becomes "stalled" (`snapshot.ts`,
   `viewmodel.ts`, `derivations.ts`, `mock.ts`). The app text already says
   stalled.
-- "state word" becomes "state phrase" (`stateWord`, `stateWordTone`).
 - The sky legend, the header's totals and each wire's tally say "attention",
   "drifting" and "settled". They become "distressed", "restless" and
   "content".
@@ -61,7 +58,7 @@ before anything else.
 
 ## Side by side sheets on wide windows
 
-The detail page is capped at 1920px. A wide window could show two sheets side
+The bird's page is capped at 1920px. A wide window could show two sheets side
 by side. What decides the pairing is TBD: by family (documents beside work) or
 chosen per bird, which needs remembered state.
 
@@ -133,10 +130,10 @@ Roadmap sections shown as epics and features with task lists and progress.
 
 ## Docs tree browsing
 
-A docs tree on the detail page to pick any file from, below the configured key
+A docs tree on the bird's page to pick any file from, below the configured key
 files.
 
-## Relative images on the key-file paper
+## Relative images on the key-file sheet
 
 A repository-relative image shows its alt text, because nothing serves it. The
 main process would need to read the file from the local repository behind a
@@ -158,8 +155,8 @@ main-process read when the form opens.
 
 ## Links inside key files
 
-Relative links on the key-file paper go nowhere. A link to another file in the
-repository should open it on the paper, and external links should open in the
+Relative links on the key-file sheet go nowhere. A link to another file in the
+repository should open it on the sheet, and external links should open in the
 browser.
 
 ## One repository name at two Forgejo instances
@@ -174,11 +171,11 @@ The bird's page works out the look in its heading, its view and the roost
 separately, for the same bird and time. The page could work it out once and
 pass it down, as the aviary does.
 
-## One map for the state word's colour
+## One map for the state phrase's colour
 
-The bubble's `stateWordTone` and `stateTone` in `bird.tsx`, read by the page
-heading and the header's totals, both map each state word to a colour, so a
-new state word must be added to both.
+The bubble's `statePhraseTone` and `stateTone` in `bird.tsx`, read by the page
+heading and the header's totals, both map each state phrase to a colour, so a
+new state phrase must be added to both.
 
 ## Forget snoozes that have run out
 

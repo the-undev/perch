@@ -5,7 +5,7 @@ import { useState } from "react";
 import { bugLedgerRows, mockBird, scanMoment } from "../specimens.ts";
 import { Code, Ground, Section, Specimen, Usage } from "../usage.tsx";
 
-/** A bug line pressed on a page with no paper beside the ledger. */
+/** A bug line pressed on a page with no sheet beside the ledger. */
 const ignoreReveal = () => {};
 
 /** A state the mock lacks: a last commit three weeks old. */
@@ -17,7 +17,7 @@ const handBuilt: LedgerFact[] = [
     text: "none",
     tone: "green",
     chip: null,
-    workings: [],
+    readings: [],
   },
   {
     kind: "time",
@@ -66,7 +66,7 @@ const specimens: LedgerSpecimen[] = [
   },
 ];
 
-const workingSpecimens: LedgerSpecimen[] = [
+const readingSpecimens: LedgerSpecimen[] = [
   {
     id: "dev/perch",
     label: "Two forges disagreeing on CI",
@@ -95,7 +95,7 @@ const workingSpecimens: LedgerSpecimen[] = [
   {
     id: "undev/Hollow-legacy",
     label: "Bugs",
-    rule: "Hollow: the bugs row for its roadmap file holds 23, past red, its working the window it is judged by. A critical bug row appears only for a file that has any.",
+    rule: "Hollow: the bugs row for its roadmap file holds 23, past red, its reading the window it is judged by. A critical bug row appears only for a file that has any.",
   },
   {
     id: "undev/skiff",
@@ -130,7 +130,7 @@ const bugMoods = [
   },
 ];
 
-/** Perch's chips as handles above its ledger, each press landing on its row as the detail page does. */
+/** Perch's chips as handles above its ledger, each press landing on its row as the bird's page does. */
 function LandingDemo() {
   const perch = mockBird("dev/perch");
   const [landing, setLanding] = useState<Landing | null>(null);
@@ -146,8 +146,8 @@ function LandingDemo() {
       </div>
       <Ledger
         onReveal={ignoreReveal}
-        quiet={perch.detail.quiet}
-        facts={perch.detail.ledger}
+        quiet={perch.page.quiet}
+        facts={perch.page.ledger}
         now={scanMoment}
         landing={landing}
       />
@@ -172,8 +172,8 @@ export function LedgerPage() {
             <Ground>
               <Ledger
                 onReveal={ignoreReveal}
-                quiet={mockBird(specimen.id).detail.quiet}
-                facts={mockBird(specimen.id).detail.ledger}
+                quiet={mockBird(specimen.id).page.quiet}
+                facts={mockBird(specimen.id).page.ledger}
                 now={scanMoment}
                 landing={null}
               />
@@ -197,11 +197,11 @@ export function LedgerPage() {
       </Section>
 
       <Section
-        title="Each chip's working"
-        rule="A bubble chip states a conclusion; the row holding its number spells out the working beneath it, source by source, in mono: each forge, roadmap file or git, what it says there, toned, linked where a page exists, and its age where it has one. A source that was read with nothing to say is silent; one that couldn't be read, or a forge whose part for that row couldn't be read, says so in amber: couldn't read, naming the part. A CI or pull request row that no forge could fill says couldn't read itself. A row holding one of the bubble's chips carries the dot, and on the bird's page the chip lands on it."
+        title="Each chip's reading"
+        rule="A bubble chip states a conclusion; the row holding its number spells out the reading beneath it, source by source, in mono: each forge, roadmap file or git, what it says there, toned, linked where a page exists, and its age where it has one. A source that was read with nothing to say is silent; one that couldn't be read, or a forge whose part for that row couldn't be read, says so in amber: couldn't read, naming the part. A CI or pull request row that no forge could fill says couldn't read itself. A row holding one of the bubble's chips carries the dot, and on the bird's page the chip lands on it."
         min={360}
       >
-        {workingSpecimens.map((specimen) => (
+        {readingSpecimens.map((specimen) => (
           <Specimen
             key={specimen.id}
             label={specimen.label}
@@ -210,8 +210,8 @@ export function LedgerPage() {
             <Ground>
               <Ledger
                 onReveal={ignoreReveal}
-                quiet={mockBird(specimen.id).detail.quiet}
-                facts={mockBird(specimen.id).detail.ledger}
+                quiet={mockBird(specimen.id).page.quiet}
+                facts={mockBird(specimen.id).page.ledger}
                 now={scanMoment}
                 landing={null}
               />
@@ -246,12 +246,12 @@ export function LedgerPage() {
 
       <Section
         title="A chip's landing"
-        rule="On the bird's page a bubble chip is a handle. Pressed, the page jumps the row holding its working to the middle of the ground at once, and the mark plays in place on a row that holds still: the row lights behind its words with a ring, its working lines brighten to full ink with it, and both hold a moment and fade back over 1.6 seconds. Neither moves anything, so both run with reduced motion too. Pressing again marks it again. A chip pressed in the aviary's bubble rides the camera to the bird's page with the chip in the URL, and the page lands the same way as it opens."
+        rule="On the bird's page a bubble chip is a handle. Pressed, the page jumps the row holding its reading to the middle of the ground at once, and the mark plays in place on a row that holds still: the row lights behind its words with a ring, its reading lines brighten to full ink with it, and both hold a moment and fade back over 1.6 seconds. Neither moves anything, so both run with reduced motion too. Pressing again marks it again. A chip pressed in the aviary's bubble rides the camera to the bird's page with the chip in the URL, and the page lands the same way as it opens."
         min={360}
       >
         <Specimen
           label="Perch's chips, pressed"
-          rule="Press a chip: its row is marked. The detail page also scrolls to it."
+          rule="Press a chip: its row is marked. The bird's page also scrolls to it."
         >
           <LandingDemo />
         </Specimen>
@@ -263,12 +263,12 @@ export function LedgerPage() {
           {
             name: "quiet",
             type: "string | null",
-            what: "bird.detail.quiet: the sentence that opens the ledger when nothing waits; null when something does.",
+            what: "bird.page.quiet: the sentence that opens the ledger when nothing waits; null when something does.",
           },
           {
             name: "facts",
             type: "LedgerFact[]",
-            what: "bird.detail.ledger: count, state and time rows in the view model's order; a count or state row names the chip it holds and its workings.",
+            what: "bird.page.ledger: count, state and time rows in the view model's order; a count or state row names the chip it holds and its readings.",
           },
           {
             name: "now",

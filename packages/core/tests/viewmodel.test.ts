@@ -20,8 +20,8 @@ import {
   type Bird,
   chipKinds,
   deriveAviary,
+  type History,
   type LedgerFact,
-  type River,
 } from "../src/viewmodel.ts";
 import { testConfig } from "./helpers/config.ts";
 import {
@@ -560,7 +560,7 @@ describe("chips", () => {
 
     expect(bird.bubble.chips).toEqual([]);
     expect(
-      bird.detail.ledger.filter(
+      bird.page.ledger.filter(
         (fact) =>
           /ci/i.test(fact.label) ||
           ("text" in fact && fact.text === "not set up"),
@@ -618,7 +618,7 @@ describe("the ledger", () => {
       },
     });
 
-    expect(birdIn([harbour], config, "dev/harbour").detail.ledger).toEqual([
+    expect(birdIn([harbour], config, "dev/harbour").page.ledger).toEqual([
       {
         kind: "count",
         label: "uncommitted changes",
@@ -626,7 +626,7 @@ describe("the ledger", () => {
         text: "none",
         tone: "green",
         chip: null,
-        workings: [],
+        readings: [],
       },
       {
         kind: "count",
@@ -635,7 +635,7 @@ describe("the ledger", () => {
         text: "2",
         tone: "amber",
         chip: "unpushed",
-        workings: [
+        readings: [
           {
             source: "git",
             text: "data-guard, no upstream, 2 commits",
@@ -653,7 +653,7 @@ describe("the ledger", () => {
         text: "none",
         tone: "green",
         chip: null,
-        workings: [],
+        readings: [],
       },
       {
         kind: "count",
@@ -662,7 +662,7 @@ describe("the ledger", () => {
         text: "15",
         tone: null,
         chip: "open-work-items",
-        workings: [
+        readings: [
           {
             source: "docs/roadmap.md",
             text: "15 open",
@@ -680,7 +680,7 @@ describe("the ledger", () => {
         text: "none",
         tone: "green",
         chip: null,
-        workings: [],
+        readings: [],
       },
       {
         kind: "state",
@@ -689,7 +689,7 @@ describe("the ledger", () => {
         tone: "green",
         url: null,
         chip: "ci",
-        workings: [
+        readings: [
           {
             source: "github",
             text: "success on main, run “check”",
@@ -712,7 +712,7 @@ describe("the ledger", () => {
         github: forgeData({ latestCi: failingRun }),
       },
     });
-    const ledger = birdIn([hello], config, "dev/hello").detail.ledger;
+    const ledger = birdIn([hello], config, "dev/hello").page.ledger;
 
     expect(ledger).toContainEqual({
       kind: "state",
@@ -721,14 +721,14 @@ describe("the ledger", () => {
       tone: null,
       url: null,
       chip: null,
-      workings: [],
+      readings: [],
     });
     expect(ledger).toContainEqual(
       expect.objectContaining({
         label: "CI",
         text: "failure",
         tone: "red",
-        workings: [
+        readings: [
           expect.objectContaining({
             source: "github",
             tone: "red",
@@ -796,7 +796,7 @@ describe("the unpushed commits row", () => {
     },
   });
   const unpushedRow = (bird: Bird) =>
-    bird.detail.ledger.find(
+    bird.page.ledger.find(
       (fact): fact is Extract<LedgerFact, { kind: "count" }> =>
         fact.kind === "count" && fact.label === "unpushed commits",
     );
@@ -809,7 +809,7 @@ describe("the unpushed commits row", () => {
       text: "5",
       tone: "red",
       chip: "unpushed",
-      workings: [
+      readings: [
         {
           source: "git",
           text: "data-guard, no upstream, 2 commits",
@@ -854,7 +854,7 @@ describe("the unpushed commits row", () => {
     };
 
     expect(
-      unpushedRow(birdIn([unlinked], config, "dev/perch"))?.workings,
+      unpushedRow(birdIn([unlinked], config, "dev/perch"))?.readings,
     ).toContainEqual(
       expect.objectContaining({
         text: "updates, 3 ahead of origin/updates",
@@ -868,20 +868,20 @@ describe("the unpushed commits row", () => {
 
     expect(
       unpushedRow(birdIn([restless], config, "dev/harbour")),
-    ).toMatchObject({ count: 2, tone: "amber", workings: [] });
+    ).toMatchObject({ count: 2, tone: "amber", readings: [] });
   });
 });
 
 describe("where a fence bird lives", () => {
-  const forgeOnly = entity("github:finch/river", {
+  const forgeOnly = entity("github:finch/history", {
     path: null,
     repositories: {
       local: null,
       forges: [
         {
           forge: "github",
-          ref: "github:finch/river",
-          fullName: "finch/river",
+          ref: "github:finch/history",
+          fullName: "finch/history",
           url: null,
           foundBy: "account-listing",
         },
@@ -925,7 +925,7 @@ describe("the ledger's quiet sentence", () => {
       },
     });
 
-    expect(birdIn([spool], config, "dev/spool").detail.quiet).toBe(
+    expect(birdIn([spool], config, "dev/spool").page.quiet).toBe(
       "The working tree is clean and everything is pushed.",
     );
   });
@@ -936,7 +936,7 @@ describe("the ledger's quiet sentence", () => {
       sources: { git: gitData({ backup: "local-only" }) },
     });
 
-    expect(birdIn([hello], config, "dev/hello").detail.quiet).toBe(
+    expect(birdIn([hello], config, "dev/hello").page.quiet).toBe(
       "The working tree is clean; no remote holds a copy.",
     );
   });
@@ -948,7 +948,7 @@ describe("the ledger's quiet sentence", () => {
       "dev/fresh",
       "dev/unread",
       "dev/parked",
-      "github:finch/river",
+      "github:finch/history",
     ]);
     const fresh = entity("dev/fresh", {
       sources: { git: gitData({ uncommittedCount: 3 }) },
@@ -970,7 +970,7 @@ describe("the ledger's quiet sentence", () => {
         }),
       },
     });
-    const forgeOnly = entity("github:finch/river", {
+    const forgeOnly = entity("github:finch/history", {
       path: null,
       repositories: { local: null, forges: [] },
       sources: { github: forgeData({}) },
@@ -979,17 +979,16 @@ describe("the ledger's quiet sentence", () => {
 
     expect(
       entities.map(
-        (listedEntity) =>
-          birdIn(entities, config, listedEntity.id).detail.quiet,
+        (listedEntity) => birdIn(entities, config, listedEntity.id).page.quiet,
       ),
     ).toEqual([null, null, null, null, null, null]);
   });
 });
 
-describe("the ledger's workings", () => {
+describe("the ledger's readings", () => {
   /** A ledger row by its label, failing when the bird has none. */
   function row(bird: Bird, label: string) {
-    const fact = bird.detail.ledger.find(
+    const fact = bird.page.ledger.find(
       (candidate) => candidate.label === label,
     );
     if (fact === undefined || fact.kind === "time") {
@@ -1023,7 +1022,7 @@ describe("the ledger's workings", () => {
 
     expect(bird.bubble.chips[0]?.label).toBe("ci pending");
     expect([ci.text, ci.tone, ci.chip]).toEqual(["pending", null, "ci"]);
-    expect(ci.workings).toEqual([
+    expect(ci.readings).toEqual([
       {
         source: "github",
         text: "success on main, run “check”",
@@ -1065,13 +1064,13 @@ describe("the ledger's workings", () => {
     });
     const bird = birdIn([perch], config, "dev/perch");
 
-    expect(row(bird, "CI").workings.map((working) => working.source)).toEqual([
+    expect(row(bird, "CI").readings.map((reading) => reading.source)).toEqual([
       "github",
     ]);
     expect(row(bird, "open pull requests")).toMatchObject({
       text: "1",
       chip: "pull-requests",
-      workings: [
+      readings: [
         {
           source: "github",
           text: "1 open",
@@ -1105,13 +1104,13 @@ describe("the ledger's workings", () => {
       reveal: null,
     });
 
-    expect(row(bird, "CI").workings).toEqual([
+    expect(row(bird, "CI").readings).toEqual([
       couldNotRead("couldn't read CI"),
       expect.objectContaining({ source: "forgejo", tone: "red" }),
     ]);
     expect(row(bird, "open pull requests")).toMatchObject({
       text: "none",
-      workings: [couldNotRead("couldn't read pull requests")],
+      readings: [couldNotRead("couldn't read pull requests")],
     });
   });
 
@@ -1131,7 +1130,7 @@ describe("the ledger's workings", () => {
       tone: "amber",
       url: null,
       chip: null,
-      workings: ["github", "forgejo"].map((source) => ({
+      readings: ["github", "forgejo"].map((source) => ({
         source,
         text: `couldn't read ${part}`,
         tone: "amber",
@@ -1177,11 +1176,11 @@ describe("the ledger's workings", () => {
 
     expect(row(bird, "CI")).toMatchObject({
       text: "failure",
-      workings: [{ source: "github", text: "failure on main, run “check”" }],
+      readings: [{ source: "github", text: "failure on main, run “check”" }],
     });
     expect(row(bird, "open pull requests")).toMatchObject({
       text: "1",
-      workings: [
+      readings: [
         {
           source: "github",
           text: "couldn't read pull requests",
@@ -1197,10 +1196,10 @@ describe("the ledger's workings", () => {
     expect(bird.health.causes.map((cause) => cause.kind)).toEqual([
       "ci-failing",
     ]);
-    expect(bird.detail.pullRequests.map((pull) => pull.forge)).toEqual([
+    expect(bird.page.pullRequests.map((pull) => pull.forge)).toEqual([
       "forgejo",
     ]);
-    expect(bird.detail.problems).toEqual([
+    expect(bird.page.problems).toEqual([
       { source: "GitHub pull requests", error: pullsError },
     ]);
   });
@@ -1219,9 +1218,9 @@ describe("the ledger's workings", () => {
     const bird = birdIn([hollow], config, "dev/hollow");
 
     expect(
-      row(bird, "open work items").workings.map((working) => [
-        working.source,
-        working.text,
+      row(bird, "open work items").readings.map((reading) => [
+        reading.source,
+        reading.text,
       ]),
     ).toEqual([
       ["docs/roadmap.md", "3 open"],
@@ -1241,7 +1240,7 @@ describe("the ledger's workings", () => {
       },
     });
     const bird = birdIn([hollow], config, "dev/hollow");
-    const bugRows = bird.detail.ledger.flatMap((fact) =>
+    const bugRows = bird.page.ledger.flatMap((fact) =>
       fact.kind === "count" && /bugs in/.test(fact.label)
         ? [[fact.label, fact.text, fact.tone, fact.chip]]
         : [],
@@ -1273,7 +1272,7 @@ describe("the ledger's workings", () => {
       ["critical bugs in docs/sync.md", "3", "red", "critical-bugs"],
       ["bugs in docs/ideas.md", "4", null, "bugs"],
     ]);
-    expect(row(bird, "critical bugs in docs/sync.md").workings).toEqual([
+    expect(row(bird, "critical bugs in docs/sync.md").readings).toEqual([
       ...[1, 2, 3].map((line) => ({
         source: "docs/sync.md",
         text: `critical bug ${line}`,
@@ -1313,9 +1312,9 @@ describe("the ledger's workings", () => {
     });
     const bird = birdIn([tidewater], config, "dev/tidewater");
     const lines = (label: string) =>
-      row(bird, label).workings.map((working) => [
-        working.text,
-        working.reveal,
+      row(bird, label).readings.map((reading) => [
+        reading.text,
+        reading.reveal,
       ]);
 
     expect(lines("bugs in docs/roadmap.md")).toEqual([
@@ -1347,11 +1346,11 @@ describe("the ledger's workings", () => {
           },
         },
       });
-      const working = row(
+      const reading = row(
         birdIn([hollow], config, "dev/hollow"),
         label,
-      ).workings.at(-1);
-      return working === undefined ? null : [working.text, working.tone];
+      ).readings.at(-1);
+      return reading === undefined ? null : [reading.text, reading.tone];
     };
     const bugs = "bugs in docs/roadmap.md";
     const criticalBugs = "critical bugs in docs/roadmap.md";
@@ -1496,7 +1495,7 @@ describe("the ledger's workings", () => {
 
     expect(row(bird, "uncommitted changes")).toMatchObject({
       chip: "uncommitted",
-      workings: [
+      readings: [
         {
           source: "git",
           text: "oldest change",
@@ -1517,7 +1516,7 @@ describe("the ledger's workings", () => {
         github: forgeData({ latestCi: failingRun }),
       },
     });
-    const ledger = birdIn([found], config, "dev/mixed-bag").detail.ledger;
+    const ledger = birdIn([found], config, "dev/mixed-bag").page.ledger;
 
     expect(
       ledger.map((fact) => (fact.kind === "time" ? null : fact.chip)),
@@ -1526,7 +1525,7 @@ describe("the ledger's workings", () => {
   });
 });
 
-describe("the detail", () => {
+describe("the page", () => {
   const perch = entity("dev/perch", {
     flags: [
       {
@@ -1612,7 +1611,7 @@ describe("the detail", () => {
     const config = await adoptAll(["dev/perch"]);
 
     expect(
-      birdIn([perch], config, "dev/perch").detail.branches.map((branch) => [
+      birdIn([perch], config, "dev/perch").page.branches.map((branch) => [
         branch.name,
         branch.current,
         branch.isDefault,
@@ -1632,16 +1631,16 @@ describe("the detail", () => {
 
   it("lists pull requests newest first, the links out, the flags and the unread sources", async () => {
     const config = await adoptAll(["dev/perch"]);
-    const detail = birdIn([perch], config, "dev/perch").detail;
+    const page = birdIn([perch], config, "dev/perch").page;
 
-    expect(detail.pullRequests.map((pull) => pull.number)).toEqual([5, 4]);
-    expect(detail.links).toEqual([
+    expect(page.pullRequests.map((pull) => pull.number)).toEqual([5, 4]);
+    expect(page.links).toEqual([
       {
         label: "finch/perch on GitHub",
         url: "https://github.com/finch/perch",
       },
     ]);
-    expect(detail.flags).toEqual([
+    expect(page.flags).toEqual([
       {
         flag: "config-conflict",
         text: "config conflict",
@@ -1650,7 +1649,7 @@ describe("the detail", () => {
         level: null,
       },
     ]);
-    expect(detail.problems).toEqual([{ source: "Forgejo", error: "HTTP 500" }]);
+    expect(page.problems).toEqual([{ source: "Forgejo", error: "HTTP 500" }]);
   });
 
   it("offers launch actions in config order, each with its commands, in the entity's zellij session", async () => {
@@ -1662,7 +1661,7 @@ describe("the detail", () => {
     );
     const obsidianBird = entity("undev/notes", { kind: "obsidian" });
 
-    expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([
+    expect(birdIn([perch], config, "dev/perch").page.actions).toEqual([
       {
         kind: "zellij",
         verb: "Open the zellij tab",
@@ -1698,7 +1697,7 @@ describe("the detail", () => {
       },
     ]);
     expect(
-      birdIn([obsidianBird], config, "undev/notes").detail.actions.map(
+      birdIn([obsidianBird], config, "undev/notes").page.actions.map(
         (action) =>
           action.kind === "zellij"
             ? [action.verb, action.session]
@@ -1729,7 +1728,7 @@ describe("the detail", () => {
     );
     const obsidianBird = entity("obsidian/Home Notes", { kind: "obsidian" });
     const obsidianActions = (id: string) =>
-      birdIn([obsidianBird, perch], config, id).detail.actions.filter(
+      birdIn([obsidianBird, perch], config, id).page.actions.filter(
         (action) => action.kind === "obsidian",
       );
 
@@ -1773,7 +1772,7 @@ describe("the detail", () => {
       },
     ];
 
-    expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([
+    expect(birdIn([perch], config, "dev/perch").page.actions).toEqual([
       {
         kind: "command",
         verb: "Follow the log",
@@ -1788,7 +1787,7 @@ describe("the detail", () => {
     const config = await adoptAll(["dev/perch"]);
     config.launch.actions = [];
 
-    expect(birdIn([perch], config, "dev/perch").detail.actions).toEqual([]);
+    expect(birdIn([perch], config, "dev/perch").page.actions).toEqual([]);
   });
 
   it("says where the bird lives: its local repository with home as ~, and each forge once", async () => {
@@ -1829,11 +1828,7 @@ describe("the detail", () => {
       entities.map((listedEntity) => listedEntity.id),
     );
     const whereabouts = (id: string) => {
-      const { localRepositoryPath, forges } = birdIn(
-        entities,
-        config,
-        id,
-      ).detail;
+      const { localRepositoryPath, forges } = birdIn(entities, config, id).page;
       return { localRepositoryPath, forges };
     };
 
@@ -1878,11 +1873,11 @@ describe("the detail", () => {
         },
       },
     });
-    const detail = birdIn([skiff], config, "undev/skiff").detail;
+    const page = birdIn([skiff], config, "undev/skiff").page;
 
-    expect(detail.forges).toEqual(["github"]);
-    expect(detail.links).toEqual([]);
-    expect(detail.problems).toEqual([
+    expect(page.forges).toEqual(["github"]);
+    expect(page.links).toEqual([]);
+    expect(page.problems).toEqual([
       {
         source: "GitHub",
         error: "no GitHub card is configured for owner skiff-app",
@@ -1897,13 +1892,13 @@ describe("the detail", () => {
       unreadableEntity("undev/tokenless", ["github"], {}, "read-failed"),
     ];
 
-    expect(birdIn(entities, config, "undev/skiff").detail.notices).toEqual([
+    expect(birdIn(entities, config, "undev/skiff").page.notices).toEqual([
       {
         text: "The local repository pushes to skiff-app/skiff on github, which no GitHub card reads.",
         fix: "Add a card for skiff-app under",
       },
     ]);
-    expect(birdIn(entities, config, "undev/tokenless").detail.notices).toEqual(
+    expect(birdIn(entities, config, "undev/tokenless").page.notices).toEqual(
       [],
     );
   });
@@ -1914,9 +1909,9 @@ describe("the detail", () => {
       path: null,
       repositories: { local: null, forges: [] },
     });
-    const detail = birdIn([forgeOnly], config, forgeOnly.id).detail;
+    const page = birdIn([forgeOnly], config, forgeOnly.id).page;
 
-    expect([detail.actions, detail.keyFiles]).toEqual([[], []]);
+    expect([page.actions, page.keyFiles]).toEqual([[], []]);
   });
 
   describe("the no-local-repository slip", () => {
@@ -1946,7 +1941,7 @@ describe("the detail", () => {
       const config = await adoptAll([pocket.id]);
 
       expect(
-        birdIn([pocket], config, pocket.id).detail.noLocalRepository,
+        birdIn([pocket], config, pocket.id).page.noLocalRepository,
       ).toEqual({
         forges: "Forgejo",
         reference: "finch/pocket",
@@ -1962,9 +1957,7 @@ describe("the detail", () => {
       ]);
       const config = await adoptAll([notes.id]);
 
-      expect(
-        birdIn([notes], config, notes.id).detail.noLocalRepository,
-      ).toEqual({
+      expect(birdIn([notes], config, notes.id).page.noLocalRepository).toEqual({
         forges: "GitHub and Forgejo",
         reference: "finch/notes",
         sshAddress: "git@github.com:finch/notes.git",
@@ -1983,7 +1976,7 @@ describe("the detail", () => {
       const tidy = forgeOnly("github:finch/obsidian-tidy", [cached]);
 
       expect(
-        birdIn([tidy], await testConfig(""), tidy.id).detail.noLocalRepository,
+        birdIn([tidy], await testConfig(""), tidy.id).page.noLocalRepository,
       ).toMatchObject({ forges: "GitHub", sshAddress: null });
     });
 
@@ -1994,7 +1987,7 @@ describe("the detail", () => {
       const bird = birdIn([tidy], await testConfig(""), tidy.id);
 
       expect(bird.adopted).toBe(false);
-      expect(bird.detail.noLocalRepository).not.toBeNull();
+      expect(bird.page.noLocalRepository).not.toBeNull();
     });
 
     it("never shows for a bird with a local repository here, nor for one on no forge", async () => {
@@ -2002,10 +1995,10 @@ describe("the detail", () => {
       const config = await adoptAll(["dev/perch", oneDisk.id]);
 
       expect(
-        birdIn([perch], config, "dev/perch").detail.noLocalRepository,
+        birdIn([perch], config, "dev/perch").page.noLocalRepository,
       ).toBeNull();
       expect(
-        birdIn([oneDisk], config, oneDisk.id).detail.noLocalRepository,
+        birdIn([oneDisk], config, oneDisk.id).page.noLocalRepository,
       ).toBeNull();
     });
 
@@ -2017,7 +2010,7 @@ describe("the detail", () => {
       config.launch.actions = [];
 
       expect(
-        birdIn([tidy], config, tidy.id).detail.noLocalRepository?.onMetaLine,
+        birdIn([tidy], config, tidy.id).page.noLocalRepository?.onMetaLine,
       ).toBe(false);
     });
   });
@@ -2028,7 +2021,7 @@ describe("the detail", () => {
       '[papers."dev/perch"]\nkey_files = ["docs/spec.md"]\n',
     );
 
-    expect(birdIn([perch], defaults, "dev/perch").detail.keyFiles).toEqual([
+    expect(birdIn([perch], defaults, "dev/perch").page.keyFiles).toEqual([
       {
         path: "README.md",
         absolutePath: "/home/test/dev/perch/README.md",
@@ -2040,7 +2033,7 @@ describe("the detail", () => {
         marks: {},
       },
     ]);
-    expect(birdIn([perch], own, "dev/perch").detail.keyFiles).toEqual([
+    expect(birdIn([perch], own, "dev/perch").page.keyFiles).toEqual([
       {
         path: "docs/spec.md",
         absolutePath: "/home/test/dev/perch/docs/spec.md",
@@ -2056,7 +2049,7 @@ describe("the detail", () => {
     });
     const bird = birdIn([undeclared], defaults, "dev/perch");
 
-    expect(bird.detail.keyFiles).toEqual([
+    expect(bird.page.keyFiles).toEqual([
       {
         path: "README.md",
         absolutePath: "/home/test/dev/perch/README.md",
@@ -2069,7 +2062,7 @@ describe("the detail", () => {
       },
     ]);
     expect(
-      bird.detail.ledger.filter((fact) => /bugs|open roadmap/.test(fact.label)),
+      bird.page.ledger.filter((fact) => /bugs|open roadmap/.test(fact.label)),
     ).toEqual([]);
     expect(bird.bubble.chips.filter((chip) => chip.kind === "bugs")).toEqual(
       [],
@@ -2080,7 +2073,7 @@ describe("the detail", () => {
     expect(bird.plumpness.outstanding).toBe(0);
   });
 
-  it("marks each bug's and critical bug's line on a roadmap file's paper, faint once done, and no other file", async () => {
+  it("marks each bug's and critical bug's line on a roadmap file's sheet, faint once done, and no other file", async () => {
     const own = await testConfig(
       '[papers."dev/perch"]\nkey_files = ["README.md", "docs/roadmap.md", "docs/plans.md"]\n',
     );
@@ -2111,7 +2104,7 @@ describe("the detail", () => {
     });
 
     expect(
-      birdIn([marked], own, "dev/perch").detail.keyFiles.map((keyFile) => [
+      birdIn([marked], own, "dev/perch").page.keyFiles.map((keyFile) => [
         keyFile.path,
         keyFile.marks,
       ]),
@@ -2130,8 +2123,8 @@ describe("the detail", () => {
   });
 });
 
-describe("the commit river", () => {
-  const forgejoUrl = "http://forgejo.test/finch/river";
+describe("the commit history", () => {
+  const forgejoUrl = "http://forgejo.test/finch/history";
   const at = (sha: string, hours: number): FinalisedCommit => ({
     sha,
     committedAt: hoursBefore(hours),
@@ -2139,19 +2132,19 @@ describe("the commit river", () => {
   });
   const repositoryOn = (forge: ForgeName): ForgeRepository => ({
     forge,
-    ref: `${forge}:finch/river`,
-    fullName: "finch/river",
-    url: forge === "github" ? "https://github.com/finch/river" : forgejoUrl,
+    ref: `${forge}:finch/history`,
+    fullName: "finch/history",
+    url: forge === "github" ? "https://github.com/finch/history" : forgejoUrl,
     foundBy: "local-remote",
   });
 
-  /** The river of a local repository at dev/river whose main and forges hold the given lists. */
-  async function riverOf(lists: {
+  /** The history of a local repository at dev/history whose main and forges hold the given lists. */
+  async function historyOf(lists: {
     here: FinalisedCommit[] | null;
     github?: FinalisedCommit[];
     forgejo?: FinalisedCommit[];
     finalisedCommits?: number;
-  }): Promise<River> {
+  }): Promise<History> {
     const forges = (["github", "forgejo"] as const).filter(
       (forge) => lists[forge] !== undefined,
     );
@@ -2160,7 +2153,7 @@ describe("the commit river", () => {
     };
     if (lists.github)
       sources.github = forgeData({
-        url: "https://github.com/finch/river",
+        url: "https://github.com/finch/history",
         finalisedCommits: lists.github,
       });
     if (lists.forgejo)
@@ -2168,14 +2161,14 @@ describe("the commit river", () => {
         url: forgejoUrl,
         finalisedCommits: lists.forgejo,
       });
-    const subject = entity("dev/river", {
+    const subject = entity("dev/history", {
       repositories: {
-        local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+        local: { ref: "local:dev/history", path: "/home/test/dev/history" },
         forges: forges.map(repositoryOn),
       },
       sources,
     });
-    const config = await adoptAll(["dev/river"]);
+    const config = await adoptAll(["dev/history"]);
     const capped = {
       ...config,
       scan: {
@@ -2183,73 +2176,73 @@ describe("the commit river", () => {
         finalisedCommits: lists.finalisedCommits ?? 10,
       },
     };
-    return birdIn([subject], capped, "dev/river").detail.river;
+    return birdIn([subject], capped, "dev/history").page.history;
   }
 
-  const rows = (river: River) =>
-    river.commits.map((commit) => [commit.sha, commit.tone, commit.spread]);
+  const rows = (history: History) =>
+    history.commits.map((commit) => [commit.sha, commit.tone, commit.heldOn]);
 
   it("tells each commit once, newest first, joined by hash, green and silent when every forge holds it", async () => {
     const commits = [at("c3", 3), at("c2", 5), at("c1", 9)];
-    const river = await riverOf({
+    const history = await historyOf({
       here: commits,
       github: commits,
       forgejo: [at("c2", 5), at("c3", 3), at("c1", 9)],
     });
 
-    expect(rows(river)).toEqual([
+    expect(rows(history)).toEqual([
       ["c3", "green", "on github and forgejo"],
       ["c2", "green", "on github and forgejo"],
       ["c1", "green", "on github and forgejo"],
     ]);
-    expect(river.commits[0]).toMatchObject({
+    expect(history.commits[0]).toMatchObject({
       shortSha: "c3",
       subject: "Commit c3",
-      url: "https://github.com/finch/river/commit/c3",
+      url: "https://github.com/finch/history/commit/c3",
     });
-    expect(river.notes).toEqual([]);
-    expect(river.divergence).toBeNull();
+    expect(history.notes).toEqual([]);
+    expect(history.divergence).toBeNull();
   });
 
   it("links unpushed commits on main in amber, not pushed to a remote, with no sentence", async () => {
     const pushed = [at("c2", 5), at("c1", 9)];
-    const river = await riverOf({
+    const history = await historyOf({
       here: [at("u1", 1), ...pushed],
       github: pushed,
       forgejo: pushed,
     });
 
-    expect(rows(river)[0]).toEqual(["u1", "amber", "not pushed to a remote"]);
-    expect(river.commits[0]?.url).toBeNull();
-    expect(river.divergence).toBeNull();
+    expect(rows(history)[0]).toEqual(["u1", "amber", "not pushed to a remote"]);
+    expect(history.commits[0]?.url).toBeNull();
+    expect(history.divergence).toBeNull();
   });
 
   it("tones a commit one forge lacks within its list amber, and says that forge is behind", async () => {
-    const river = await riverOf({
+    const history = await historyOf({
       here: [at("c4", 1), at("c3", 2), at("c2", 5)],
       github: [at("c4", 1), at("c3", 2), at("c2", 5)],
       forgejo: [at("c2", 5), at("c1", 9)],
     });
 
-    expect(rows(river).slice(0, 3)).toEqual([
+    expect(rows(history).slice(0, 3)).toEqual([
       ["c4", "amber", "only on github"],
       ["c3", "amber", "only on github"],
       ["c2", "green", "on github and forgejo"],
     ]);
-    expect(river.commits[0]?.url).toBe(
-      "https://github.com/finch/river/commit/c4",
+    expect(history.commits[0]?.url).toBe(
+      "https://github.com/finch/history/commit/c4",
     );
-    expect(river.divergence).toBe("forgejo is 2 commits behind github.");
+    expect(history.divergence).toBe("forgejo is 2 commits behind github.");
   });
 
   it("counts a commit older than a forge's list as held there, and leaves the local repository out of the judgement", async () => {
-    const river = await riverOf({
+    const history = await historyOf({
       here: [at("c4", 1), at("c3", 2)],
       github: [at("c4", 1), at("c3", 2)],
       forgejo: [at("c2", 5), at("c1", 9)],
     });
 
-    expect(rows(river)).toEqual([
+    expect(rows(history)).toEqual([
       ["c4", "amber", "only on github"],
       ["c3", "amber", "only on github"],
       ["c2", "green", "on github and forgejo"],
@@ -2258,128 +2251,129 @@ describe("the commit river", () => {
   });
 
   it("says the forges have diverged when each lacks a commit the other holds", async () => {
-    const river = await riverOf({
+    const history = await historyOf({
       here: [at("c1", 9)],
       github: [at("g1", 2), at("c1", 9)],
       forgejo: [at("f1", 3), at("c1", 9)],
     });
 
-    expect(rows(river)).toEqual([
+    expect(rows(history)).toEqual([
       ["g1", "amber", "only on github"],
       ["f1", "amber", "only on forgejo"],
       ["c1", "green", "on github and forgejo"],
     ]);
-    expect(river.commits[1]?.url).toBe(`${forgejoUrl}/commit/f1`);
-    expect(river.divergence).toBe(
+    expect(history.commits[1]?.url).toBe(`${forgejoUrl}/commit/f1`);
+    expect(history.divergence).toBe(
       "github and forgejo have diverged: github lacks 1 commit, forgejo lacks 1 commit.",
     );
   });
 
-  it("caps the river at the configured number but counts divergence over every listed commit", async () => {
-    const river = await riverOf({
+  it("caps the history at the configured number but counts divergence over every listed commit", async () => {
+    const history = await historyOf({
       here: [at("c3", 1), at("c2", 2), at("c1", 3)],
       github: [at("c3", 1), at("c2", 2), at("c1", 3)],
       forgejo: [at("c0", 4)],
       finalisedCommits: 2,
     });
 
-    expect(river.commits.map((commit) => commit.sha)).toEqual(["c3", "c2"]);
-    expect(river.divergence).toBe("forgejo is 3 commits behind github.");
+    expect(history.commits.map((commit) => commit.sha)).toEqual(["c3", "c2"]);
+    expect(history.divergence).toBe("forgejo is 3 commits behind github.");
   });
 
   it("judges over the forges read, noting one that couldn't be read, whatever the local repository's list", async () => {
-    const partly = entity("dev/river", {
+    const partly = entity("dev/history", {
       repositories: {
-        local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+        local: { ref: "local:dev/history", path: "/home/test/dev/history" },
         forges: [repositoryOn("github"), repositoryOn("forgejo")],
       },
       sources: {
         git: gitData({}),
         github: forgeData({
-          url: "https://github.com/finch/river",
+          url: "https://github.com/finch/history",
           finalisedCommits: [at("c1", 1)],
         }),
         forgejo: { error: "HTTP 500", cause: "read-failed" },
       },
     });
-    const config = await adoptAll(["dev/river"]);
-    const river = birdIn([partly], config, "dev/river").detail.river;
+    const config = await adoptAll(["dev/history"]);
+    const history = birdIn([partly], config, "dev/history").page.history;
 
-    expect(rows(river)).toEqual([["c1", "green", "on github"]]);
-    expect(river.notes).toEqual(["couldn't read forgejo"]);
-    expect(river.divergence).toBeNull();
+    expect(rows(history)).toEqual([["c1", "green", "on github"]]);
+    expect(history.notes).toEqual(["couldn't read forgejo"]);
+    expect(history.divergence).toBeNull();
   });
 
   it("judges a forge by its commits, whatever its pull requests did", async () => {
     const twoForges = {
-      local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+      local: { ref: "local:dev/history", path: "/home/test/dev/history" },
       forges: [repositoryOn("github"), repositoryOn("forgejo")],
     };
     const commits = [at("c1", 1)];
-    const pullsUnread = entity("dev/river", {
+    const pullsUnread = entity("dev/history", {
       repositories: twoForges,
       sources: {
         git: gitData({ defaultBranchCommits: commits }),
         github: forgeData({
-          url: "https://github.com/finch/river",
+          url: "https://github.com/finch/history",
           openPullRequests: { error: "HTTP 404" },
           finalisedCommits: commits,
         }),
         forgejo: forgeData({ url: forgejoUrl, finalisedCommits: commits }),
       },
     });
-    const commitsUnread = entity("dev/river", {
+    const commitsUnread = entity("dev/history", {
       repositories: twoForges,
       sources: {
         git: gitData({ defaultBranchCommits: commits }),
         github: forgeData({
-          url: "https://github.com/finch/river",
+          url: "https://github.com/finch/history",
           finalisedCommits: { error: "HTTP 500" },
         }),
         forgejo: forgeData({ url: forgejoUrl, finalisedCommits: commits }),
       },
     });
-    const config = await adoptAll(["dev/river"]);
-    const pullsRiver = birdIn([pullsUnread], config, "dev/river").detail.river;
-    const commitsRiver = birdIn([commitsUnread], config, "dev/river").detail
-      .river;
+    const config = await adoptAll(["dev/history"]);
+    const pullsHistory = birdIn([pullsUnread], config, "dev/history").page
+      .history;
+    const commitsHistory = birdIn([commitsUnread], config, "dev/history").page
+      .history;
 
-    expect(rows(pullsRiver)).toEqual([
+    expect(rows(pullsHistory)).toEqual([
       ["c1", "green", "on github and forgejo"],
     ]);
-    expect(pullsRiver.notes).toEqual([]);
-    expect(rows(commitsRiver)).toEqual([["c1", "green", "on forgejo"]]);
-    expect(commitsRiver.notes).toEqual(["couldn't read github"]);
+    expect(pullsHistory.notes).toEqual([]);
+    expect(rows(commitsHistory)).toEqual([["c1", "green", "on forgejo"]]);
+    expect(commitsHistory.notes).toEqual(["couldn't read github"]);
   });
 
   it("tones unpushed commits amber, on no remote that could be read, while a forge couldn't be read", async () => {
-    const partly = entity("dev/river", {
+    const partly = entity("dev/history", {
       repositories: {
-        local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+        local: { ref: "local:dev/history", path: "/home/test/dev/history" },
         forges: [repositoryOn("github"), repositoryOn("forgejo")],
       },
       sources: {
         git: gitData({ defaultBranchCommits: [at("u1", 1), at("c1", 5)] }),
         github: forgeData({
-          url: "https://github.com/finch/river",
+          url: "https://github.com/finch/history",
           finalisedCommits: [at("c1", 5)],
         }),
         forgejo: { error: "HTTP 500", cause: "read-failed" },
       },
     });
-    const config = await adoptAll(["dev/river"]);
+    const config = await adoptAll(["dev/history"]);
 
-    expect(rows(birdIn([partly], config, "dev/river").detail.river)).toEqual([
+    expect(rows(birdIn([partly], config, "dev/history").page.history)).toEqual([
       ["u1", "amber", "on no remote that could be read"],
       ["c1", "green", "on github"],
     ]);
   });
 
-  it("names the branch in the river's heading and marks every commit amber when no remote could be read", async () => {
+  it("names the branch in the history's heading and marks every commit amber when no remote could be read", async () => {
     const unread = (cause: "no-card" | "read-failed") =>
-      entity("dev/river", {
+      entity("dev/history", {
         repositories: {
-          local: { ref: "local:dev/river", path: "/home/test/dev/river" },
+          local: { ref: "local:dev/history", path: "/home/test/dev/history" },
           forges: [repositoryOn("github")],
         },
         sources: {
@@ -2390,10 +2384,10 @@ describe("the commit river", () => {
           github: { error: "unreadable", cause },
         },
       });
-    const config = await adoptAll(["dev/river"]);
-    const transient = birdIn([unread("read-failed")], config, "dev/river")
-      .detail.river;
-    const gap = birdIn([unread("no-card")], config, "dev/river").detail.river;
+    const config = await adoptAll(["dev/history"]);
+    const transient = birdIn([unread("read-failed")], config, "dev/history")
+      .page.history;
+    const gap = birdIn([unread("no-card")], config, "dev/history").page.history;
 
     expect(transient.branch).toBe("trunk");
     expect(rows(transient)).toEqual([
@@ -2405,29 +2399,29 @@ describe("the commit river", () => {
   });
 
   it("keeps the quiet speck for a local repository with no forge at all", async () => {
-    const localOnly = await riverOf({ here: [at("c1", 1)] });
+    const localOnly = await historyOf({ here: [at("c1", 1)] });
 
     expect(rows(localOnly)).toEqual([["c1", null, "no remote"]]);
     expect(localOnly.notes).toEqual([]);
   });
 
   it("tells a forge-only bird's commits from its forge", async () => {
-    const forgeOnly = entity("github:finch/river", {
+    const forgeOnly = entity("github:finch/history", {
       path: null,
       repositories: { local: null, forges: [repositoryOn("github")] },
       sources: {
         github: forgeData({
-          url: "https://github.com/finch/river",
+          url: "https://github.com/finch/history",
           finalisedCommits: [at("c1", 1)],
         }),
       },
     });
-    const config = await adoptAll(["github:finch/river"]);
+    const config = await adoptAll(["github:finch/history"]);
 
-    const river = birdIn([forgeOnly], config, "github:finch/river").detail
-      .river;
+    const history = birdIn([forgeOnly], config, "github:finch/history").page
+      .history;
 
-    expect(rows(river)).toEqual([["c1", "green", "on github"]]);
-    expect(river.branch).toBe("main");
+    expect(rows(history)).toEqual([["c1", "green", "on github"]]);
+    expect(history.branch).toBe("main");
   });
 });

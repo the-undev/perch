@@ -3,7 +3,7 @@
 
 import type { PapersForm, PapersValues } from "@perch/core/papers-form.ts";
 import { AdoptionPapers } from "@perch/ui/adoption-papers.tsx";
-import { DetailView } from "@perch/ui/detail-view.tsx";
+import { BirdPageView } from "@perch/ui/bird-page-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
 import {
@@ -87,7 +87,7 @@ export function AdoptionPapersPage() {
       <Pressed text={pressed} />
       <Section
         title="On the bird's page"
-        rule="The papers rise as a sheet over the bird's record and paper panes, which dim to a quarter and go inert. The band above, with the heading, the verb and the roost, stays lit, but its controls rest: a press anywhere off the papers, the band included, folds them. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt action leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
+        rule="The papers rise as a sheet over the bird's record and sheets panes, which dim to a quarter and go inert. The band above, with the heading, the verb and the roost, stays lit, but its controls rest: a press anywhere off the papers, the band included, folds them. A fence bird's row ends with Adopt; an adopted bird's with The papers. The fence bubble's Adopt action leads to the same page with the papers already unfolded. Signed papers stay open until the entry read back shows the write."
         min={620}
       >
         <Specimen
@@ -95,7 +95,7 @@ export function AdoptionPapersPage() {
           rule="hello: press Adopt to raise the sheet; Adopt onto Projects signs them."
         >
           <Stage height="640px">
-            <DetailView
+            <BirdPageView
               bird={hello}
               now={scanMoment}
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
@@ -122,7 +122,7 @@ export function AdoptionPapersPage() {
           rule="Perch with openPapers set: the sheet is risen as the page opens, filled with the papers as written, and the panes beneath it are dimmed and inert. Not now lowers the sheet and brings the panes back."
         >
           <Stage height="640px">
-            <DetailView
+            <BirdPageView
               bird={perch}
               now={scanMoment}
               onLaunch={(action) => setPressed(`onLaunch(${action.verb})`)}
@@ -270,7 +270,7 @@ export function AdoptionPapersPage() {
           The form comes from <Code>papersFormFor(config, entity, home)</Code>{" "}
           in <Code>@perch/core/papers-form.ts</Code>, which the main process
           answers <Code>papersForm(birdId)</Code> with. Inside the app the
-          detail page mounts the papers and hands a signature to the main
+          bird's page mounts the papers and hands a signature to the main
           process as <Code>savePapers(birdId, values)</Code>, written under the
           key that already names the bird, else its id; a return to the fence as{" "}
           <Code>removePapers(birdId)</Code>, which removes every key naming it.

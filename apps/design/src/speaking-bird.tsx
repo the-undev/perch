@@ -23,7 +23,7 @@ export function SpeakingBird({ bird, now, onPress }: SpeakingBirdProps) {
       <Bubble
         bubble={bird.bubble}
         look={look}
-        actions={bird.detail.actions}
+        actions={bird.page.actions}
         onLaunch={(action) => onPress(`${bird.name}: ${action.verb}`)}
         snoozeAction={
           <SnoozeAction

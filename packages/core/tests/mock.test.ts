@@ -101,7 +101,7 @@ describe("the mock dataset", () => {
       ),
     );
     const quietBugRows = adopted.flatMap((bird) =>
-      bird.detail.ledger.filter(
+      bird.page.ledger.filter(
         (fact) =>
           fact.kind === "count" &&
           fact.label.startsWith("bugs in") &&
@@ -121,14 +121,14 @@ describe("the mock dataset", () => {
 
   it("splits unpushed commits over several branches, one ahead of its upstream and one with none", () => {
     const dotfiles = birds.find((bird) => bird.id === ".dotfiles");
-    const row = dotfiles?.detail.ledger.find(
+    const row = dotfiles?.page.ledger.find(
       (fact) => fact.label === "unpushed commits",
     );
 
     expect(row).toMatchObject({
       count: 4,
       tone: "amber",
-      workings: [
+      readings: [
         {
           text: "main, 3 ahead of origin/main",
           tone: "amber",
@@ -171,19 +171,19 @@ describe("the mock dataset", () => {
       adopted.some(
         (bird) =>
           bird.bubble.chips.length === 0 &&
-          bird.detail.ledger.every(
+          bird.page.ledger.every(
             (fact) => fact.kind !== "count" || fact.text === "none",
           ),
       ),
     ).toBe(true);
-    expect(adopted.some((bird) => bird.detail.problems.length > 0)).toBe(true);
+    expect(adopted.some((bird) => bird.page.problems.length > 0)).toBe(true);
     expect(birds.some((bird) => bird.kind === "obsidian")).toBe(true);
     expect(mockAviary.sourceErrors).toHaveLength(1);
     expect(mockAviary.warnings).toHaveLength(1);
   });
 
   it("opens a ledger with each quiet sentence, and another with none", () => {
-    expect(new Set(birds.map((bird) => bird.detail.quiet))).toEqual(
+    expect(new Set(birds.map((bird) => bird.page.quiet))).toEqual(
       new Set([
         "The working tree is clean and everything is pushed.",
         "The working tree is clean; no remote holds a copy.",
@@ -194,7 +194,7 @@ describe("the mock dataset", () => {
 
   it("offers every kind of launch action, the Obsidian one on Obsidian birds alone, and none without a local repository", () => {
     const kinds = (bird: (typeof birds)[number]) =>
-      bird.detail.actions.map((action) => action.kind);
+      bird.page.actions.map((action) => action.kind);
 
     expect(new Set(birds.flatMap(kinds))).toEqual(
       new Set(["zellij", "command", "obsidian"]),
@@ -205,7 +205,7 @@ describe("the mock dataset", () => {
       );
     }
     const withoutLocalRepository = birds.filter(
-      (bird) => bird.detail.localRepositoryPath === null,
+      (bird) => bird.page.localRepositoryPath === null,
     );
     expect(withoutLocalRepository.length).toBeGreaterThan(0);
     expect(withoutLocalRepository.flatMap(kinds)).toEqual([]);
@@ -225,7 +225,7 @@ describe("the mock dataset", () => {
       }),
     );
     expect(
-      perch?.detail.actions.map((action) => [action.verb, action.icon]),
+      perch?.page.actions.map((action) => [action.verb, action.icon]),
     ).toEqual([
       ["Open the zellij tab", "terminal"],
       ["Open in VS Code", "code"],
@@ -235,17 +235,17 @@ describe("the mock dataset", () => {
     ]);
   });
 
-  it("hands each chip on a bubble one ledger row or the notice holding its working, and nothing a chip it lacks", () => {
+  it("hands each chip on a bubble one ledger row or the notice holding its reading, and nothing a chip it lacks", () => {
     for (const bird of birds) {
       const handled = [
-        ...bird.detail.ledger.flatMap((fact) =>
+        ...bird.page.ledger.flatMap((fact) =>
           fact.kind === "time" || fact.chip === null ? [] : [fact.chip],
         ),
-        ...(bird.detail.branches.length > 0 &&
+        ...(bird.page.branches.length > 0 &&
         bird.bubble.chips.some((chip) => chip.kind === "stalled")
           ? ["stalled" as const]
           : []),
-        ...(bird.detail.notices.length > 0 && bird.adopted
+        ...(bird.page.notices.length > 0 && bird.adopted
           ? ["unreadable" as const]
           : []),
       ];
@@ -259,60 +259,60 @@ describe("the mock dataset", () => {
   it("spells out two forges disagreeing on CI, a forge's part that couldn't be read, and open work items over two roadmap files", () => {
     const rows = (label: string) =>
       adopted.flatMap((bird) =>
-        bird.detail.ledger.flatMap((fact) =>
+        bird.page.ledger.flatMap((fact) =>
           fact.kind !== "time" && fact.label === label ? [fact] : [],
         ),
       );
     const runStates = rows("CI").map(
       (row) =>
         new Set(
-          row.workings
-            .filter((working) => working.url !== null)
-            .map((working) => working.text.split(" ")[0]),
+          row.readings
+            .filter((reading) => reading.url !== null)
+            .map((reading) => reading.text.split(" ")[0]),
         ),
     );
 
     expect(runStates.some((states) => states.size > 1)).toBe(true);
     expect(
       adopted.some((bird) =>
-        bird.detail.ledger.some(
+        bird.page.ledger.some(
           (fact) =>
             fact.kind !== "time" &&
-            fact.workings.some((working) =>
-              working.text.startsWith("couldn't read "),
+            fact.readings.some((reading) =>
+              reading.text.startsWith("couldn't read "),
             ),
         ),
       ),
     ).toBe(true);
-    expect(rows("open work items").some((row) => row.workings.length > 1)).toBe(
+    expect(rows("open work items").some((row) => row.readings.length > 1)).toBe(
       true,
     );
   });
 
   it("holds a forge whose pull requests alone couldn't be read, its CI and commits shown", () => {
     const pullsUnread = adopted.flatMap((bird) => {
-      const unread = bird.detail.problems.filter(
+      const unread = bird.page.problems.filter(
         (problem) => problem.source === "GitHub pull requests",
       );
       if (unread.length === 0) return [];
-      const ci = bird.detail.ledger.find((fact) => fact.label === "CI");
+      const ci = bird.page.ledger.find((fact) => fact.label === "CI");
       return [
         {
           ciFromGithub:
             ci?.kind === "state" &&
-            ci.workings.some(
-              (working) => working.source === "github" && working.url !== null,
+            ci.readings.some(
+              (reading) => reading.source === "github" && reading.url !== null,
             ),
-          spreadOnGithub: bird.detail.river.commits.some((commit) =>
-            commit.spread.includes("github"),
+          heldOnGithub: bird.page.history.commits.some((commit) =>
+            commit.heldOn.includes("github"),
           ),
-          notes: bird.detail.river.notes,
+          notes: bird.page.history.notes,
         },
       ];
     });
 
     expect(pullsUnread).toEqual([
-      { ciFromGithub: true, spreadOnGithub: true, notes: [] },
+      { ciFromGithub: true, heldOnGithub: true, notes: [] },
     ]);
   });
 
@@ -322,22 +322,22 @@ describe("the mock dataset", () => {
 
     expect(skiff?.mood).toBe("restless");
     expect(skiff?.health.causes[0]?.kind).toBe("unreadable-remote");
-    expect(skiff?.detail.notices).toHaveLength(1);
-    expect(skiff?.detail.river.notes).toEqual([
+    expect(skiff?.page.notices).toHaveLength(1);
+    expect(skiff?.page.history.notes).toEqual([
       "couldn't read github · no card covers skiff-app",
     ]);
     expect(homeIt?.health.causes).toEqual([]);
-    expect(homeIt?.detail.notices).toEqual([]);
-    expect(homeIt?.detail.problems).toHaveLength(2);
+    expect(homeIt?.page.notices).toEqual([]);
+    expect(homeIt?.page.problems).toHaveLength(2);
     expect(
-      homeIt?.detail.river.commits.every((commit) => commit.tone === "amber"),
+      homeIt?.page.history.commits.every((commit) => commit.tone === "amber"),
     ).toBe(true);
   });
 
   it("holds a bird with a local repository and forges, one with no local repository, and one with no forge", () => {
-    const whereabouts = birds.map(({ detail }) => ({
-      local: detail.localRepositoryPath !== null,
-      forged: detail.forges.length > 0,
+    const whereabouts = birds.map(({ page }) => ({
+      local: page.localRepositoryPath !== null,
+      forged: page.forges.length > 0,
     }));
 
     expect(whereabouts).toEqual(
@@ -349,22 +349,22 @@ describe("the mock dataset", () => {
     );
     expect(
       birds.every(
-        ({ detail }) =>
-          detail.localRepositoryPath === null ||
-          detail.localRepositoryPath.startsWith("~/"),
+        ({ page }) =>
+          page.localRepositoryPath === null ||
+          page.localRepositoryPath.startsWith("~/"),
       ),
     ).toBe(true);
   });
 
   it("holds the no-local-repository slip on a wire and on the fence, its clause on the meta line, and on no bird with a local repository", () => {
     const slipped = birds.filter(
-      (bird) => bird.detail.noLocalRepository !== null,
+      (bird) => bird.page.noLocalRepository !== null,
     );
 
     expect(
       slipped.map((bird) => [
         bird.adopted,
-        bird.detail.noLocalRepository?.forges,
+        bird.page.noLocalRepository?.forges,
       ]),
     ).toEqual(
       expect.arrayContaining([
@@ -375,26 +375,26 @@ describe("the mock dataset", () => {
     expect(
       slipped.every(
         (bird) =>
-          bird.detail.noLocalRepository?.sshAddress !== null &&
-          bird.detail.noLocalRepository?.onMetaLine,
+          bird.page.noLocalRepository?.sshAddress !== null &&
+          bird.page.noLocalRepository?.onMetaLine,
       ),
     ).toBe(true);
     expect(
       birds
-        .filter((bird) => bird.detail.localRepositoryPath !== null)
-        .every((bird) => bird.detail.noLocalRepository === null),
+        .filter((bird) => bird.page.localRepositoryPath !== null)
+        .every((bird) => bird.page.noLocalRepository === null),
     ).toBe(true);
   });
 
-  it("tones river commits for every spread, with a divergence and a forge that couldn't be read", () => {
-    const rivers = birds.map(({ detail }) => detail.river);
-    const spreads = new Set(
-      rivers.flatMap((river) =>
-        river.commits.map((commit) => `${commit.tone} ${commit.spread}`),
+  it("tones history commits for every set of holders, with a divergence and a forge that couldn't be read", () => {
+    const histories = birds.map(({ page }) => page.history);
+    const heldOns = new Set(
+      histories.flatMap((history) =>
+        history.commits.map((commit) => `${commit.tone} ${commit.heldOn}`),
       ),
     );
 
-    expect([...spreads]).toEqual(
+    expect([...heldOns]).toEqual(
       expect.arrayContaining([
         "green on github and forgejo",
         "green on forgejo",
@@ -404,14 +404,14 @@ describe("the mock dataset", () => {
         "null no remote",
       ]),
     );
-    expect(rivers.some((river) => river.divergence !== null)).toBe(true);
-    expect(rivers.some((river) => river.notes.length > 0)).toBe(true);
+    expect(histories.some((history) => history.divergence !== null)).toBe(true);
+    expect(histories.some((history) => history.notes.length > 0)).toBe(true);
   });
 
   it("counts Perch's commits beyond Forgejo's list as held there", () => {
     const perch = birds.find((bird) => bird.id === "dev/perch");
 
-    expect(perch?.detail.river.commits.map((commit) => commit.tone)).toEqual([
+    expect(perch?.page.history.commits.map((commit) => commit.tone)).toEqual([
       "green",
       "green",
       "green",
@@ -461,7 +461,7 @@ describe("the mock dataset", () => {
     expect(
       birds
         .find((bird) => bird.id === "undev/spool")
-        ?.detail.keyFiles.map((file) => file.path),
+        ?.page.keyFiles.map((file) => file.path),
     ).toEqual(["README.md", "docs/roadmap.md"]);
   });
 

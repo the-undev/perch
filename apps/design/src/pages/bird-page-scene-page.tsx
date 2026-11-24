@@ -1,5 +1,5 @@
 import type { SnoozeEnd } from "@perch/core/snooze-date.ts";
-import { DetailView } from "@perch/ui/detail-view.tsx";
+import { BirdPageView } from "@perch/ui/bird-page-view.tsx";
 import { useState } from "react";
 import { birdSheets } from "../key-files.ts";
 import {
@@ -15,7 +15,7 @@ const birds = [
   {
     id: "dev/perch",
     label: "Perch",
-    rule: "Content and being edited: branches, the commit river over here and both forges, a draft pull request, and three key files from config, which this repository's own files stand in for. Press a chip in its bubble to land on the ledger row holding its working.",
+    rule: "Content and being edited: branches, the commit history over here and both forges, a draft pull request, and three key files from config, which this repository's own files stand in for. Press a chip in its bubble to land on the ledger row holding its reading.",
   },
   {
     id: "undev/prism",
@@ -25,7 +25,7 @@ const birds = [
   {
     id: "undev/skiff",
     label: "Skiff",
-    rule: "Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, so the notice under the heading names the fix and links to Sources, where the can't-read chip lands. The ledger and river say couldn't read github; Forgejo was read. Also stalled on a feature branch for three weeks.",
+    rule: "Restless: it pushes to skiff-app/skiff on GitHub, which no card covers, so the notice under the heading names the fix and links to Sources, where the can't-read chip lands. The ledger and history say couldn't read github; Forgejo was read. Also stalled on a feature branch for three weeks.",
   },
   {
     id: "dev/odin/hello",
@@ -35,13 +35,13 @@ const birds = [
   {
     id: "github:finch/obsidian-tidy",
     label: "obsidian-tidy",
-    rule: "On a forge, with no local repository here, on the fence: no local facts and nothing to launch, so the meta line says no local repository, and the paper pane holds the slip saying why, with Open Sources and the address to copy.",
+    rule: "On a forge, with no local repository here, on the fence: no local facts and nothing to launch, so the meta line says no local repository, and the sheets pane holds the slip saying why, with Open Sources and the address to copy.",
   },
 ] as const;
 
 type BirdId = (typeof birds)[number]["id"];
 
-export function DetailScenePage() {
+export function BirdPageScenePage() {
   const [id, setId] = useState<BirdId>("dev/perch");
   const [pressed, setPressed] = useState("nothing yet");
   // The page keeps its own snoozes, as the main process would, so a pick shows the wake verb.
@@ -75,7 +75,7 @@ export function DetailScenePage() {
       </Section>
       <div className="mt-4">
         <Stage height="max(560px, calc(100vh - 320px))">
-          <DetailView
+          <BirdPageView
             key={id}
             bird={bird}
             now={scanMoment}
@@ -110,7 +110,7 @@ export function DetailScenePage() {
       <Pressed text={pressed} />
 
       <Usage
-        component="<DetailView>"
+        component="<BirdPageView>"
         props={[
           { name: "bird", type: "Bird", what: "One bird from the aviary." },
           {
@@ -131,7 +131,7 @@ export function DetailScenePage() {
           {
             name: "sheets",
             type: "KeyFileSheet[]",
-            what: "bird.detail.keyFiles with the markdown read from each, null where a file could not be read; empty until read.",
+            what: "bird.page.keyFiles with the markdown read from each, null where a file could not be read; empty until read.",
           },
           {
             name: "papers",
@@ -184,7 +184,7 @@ export function DetailScenePage() {
           leaves and the roost only as wide as its bubble, capped at 56
           characters, and its bird need. Narrower, the roost follows the heading
           in a centred 480px column. Beneath the band, from 960px wide, the
-          record pane (the ledger and its sections) and the paper pane (the key
+          record pane (the ledger and its sections) and the sheets pane (the key
           files) each scroll their own contents with a thin quiet scrollbar,{" "}
           <Code>pane-scroll</Code>. Narrower, they join into one pane, the key
           files at the end. A chip scrolls its row&apos;s pane. The adoption

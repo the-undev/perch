@@ -46,7 +46,7 @@ export interface ScanWords {
   tone: "ok" | "never" | "failed";
   text: string;
   /** A second line: a local card's folders not found, or when a failed card last read. */
-  detail: string | null;
+  page: string | null;
 }
 
 /** A card's last scan in words; a card with no record yet reads as never scanned. */
@@ -56,13 +56,13 @@ export function scanWords(
   now: Date,
 ): ScanWords {
   if (result === null || result.state === "never-scanned") {
-    return { tone: "never", text: "never scanned yet", detail: null };
+    return { tone: "never", text: "never scanned yet", page: null };
   }
   if (result.state === "failed") {
     return {
       tone: "failed",
       text: `failed: ${result.message}`,
-      detail:
+      page:
         result.lastSucceededAt === null
           ? null
           : `last read ${recentWords(result.lastSucceededAt, now)}`,
@@ -76,7 +76,7 @@ export function scanWords(
   return {
     tone: "ok",
     text: `${found} · ${recentWords(result.at, now)}`,
-    detail:
+    page:
       result.missingIncludes.length === 0
         ? null
         : `not found: ${result.missingIncludes.join(", ")}`,
@@ -564,11 +564,11 @@ function SourceCardView({
           />
           {scan.text}
         </span>
-        {scan.detail !== null && (
+        {scan.page !== null && (
           <span
             className={`basis-full text-right text-[12px] ${scan.tone === "ok" ? "text-amber" : "text-ink-faint"}`}
           >
-            {scan.detail}
+            {scan.page}
           </span>
         )}
       </div>

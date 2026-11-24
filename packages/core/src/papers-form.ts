@@ -1,4 +1,4 @@
-// A bird's config papers as its detail page edits it: the values the form holds, the choices it
+// A bird's config papers as the bird's page edits it: the values the form holds, the choices it
 // offers, and the edits that put them back into config. No Node modules, so the renderer may
 // import it.
 
@@ -19,7 +19,7 @@ import type { Entity } from "./snapshot.ts";
 /** A threshold's key in config, the same globally and per entity. */
 export type ThresholdKey = (typeof thresholdKeys)[number][2];
 
-/** The papers fields the detail page edits. */
+/** The papers fields the bird's page edits. */
 export interface PapersValues {
   /** The wire the bird sits on; null puts it on the default wire. */
   wire: string | null;
@@ -64,7 +64,7 @@ export interface PapersSeen {
   lastCommit: SeenCommit | null;
 }
 
-/** What the detail page needs to adopt a bird or edit its papers. */
+/** What the bird's page needs to adopt a bird or edit its papers. */
 export interface PapersForm {
   /** The config key the papers sit under; null for a bird config does not name. */
   key: string | null;

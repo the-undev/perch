@@ -5,8 +5,8 @@ import {
 import { deriveRoadmapFile } from "@perch/core/derivations.ts";
 import { readRoadmapStructure } from "@perch/core/roadmap-parser.ts";
 import { type Bird, lineMarksOf } from "@perch/core/viewmodel.ts";
+import { KeyFileSheets } from "@perch/ui/key-file-sheets.tsx";
 import { NoLocalRepositorySlip } from "@perch/ui/no-local-repository-slip.tsx";
-import { KeyFilePaper } from "@perch/ui/paper.tsx";
 import { useState } from "react";
 import { perchFiles, sheetsFor } from "../key-files.ts";
 import {
@@ -24,7 +24,7 @@ function Slip({
   bird: Bird;
   onPress: (call: string) => void;
 }) {
-  const slip = bird.detail.noLocalRepository;
+  const slip = bird.page.noLocalRepository;
   if (slip === null) throw new Error(`${bird.id} has a local repository here`);
   return (
     <Ground>
@@ -113,15 +113,15 @@ const markedRoadmapMarks = lineMarksOf(
   }),
 );
 
-export function PaperPage() {
+export function KeyFileSheetsPage() {
   const perch = mockBird("dev/perch");
   const hothouse = mockBird("obsidian/Hothouse");
   const [pressed, setPressed] = useState("nothing yet");
   return (
     <>
       <Section
-        title="Key files as paper"
-        rule="A configurable list of key files rendered as paper, the bubble's material, with folder tabs. The sheet fills its column; text on it runs up to 100 characters wide, tables and code blocks may use the whole sheet, and code in a table cell never wraps. A sheet keeps its full height: the pane holding it scrolls, the folder tabs held at the pane's top."
+        title="Key files as sheets"
+        rule="A configurable list of key files rendered as sheets of paper, the bubble's material, with folder tabs. The sheet fills its column; text on it runs up to 100 characters wide, tables and code blocks may use the whole sheet, and code in a table cell never wraps. A sheet keeps its full height: the pane holding it scrolls, the folder tabs held at the pane's top."
         min={760}
       >
         <Specimen
@@ -129,9 +129,9 @@ export function PaperPage() {
           rule="Perch's key_files: the README, the forge access guide and the roadmap. This repository's own files stand in for them."
         >
           <Ground>
-            <KeyFilePaper
+            <KeyFileSheets
               reveal={null}
-              sheets={sheetsFor(perch.detail.keyFiles, perchFiles)}
+              sheets={sheetsFor(perch.page.keyFiles, perchFiles)}
             />
           </Ground>
         </Specimen>
@@ -140,7 +140,7 @@ export function PaperPage() {
           rule="Perch's roadmap, a long document, in a pane of fixed height as the bird's page gives it: the pane scrolls with a thin quiet scrollbar, and the folder tabs stay at its top."
         >
           <div className="pane-scroll h-[28rem] overflow-y-auto rounded-xl border border-edge bg-ground px-5 pb-4">
-            <KeyFilePaper
+            <KeyFileSheets
               reveal={null}
               sheets={sheetsFor(
                 [
@@ -161,7 +161,7 @@ export function PaperPage() {
           rule="A roadmap renders as any markdown does. Beside each bug's line, in the sheet's left margin: one red bar for a bug, two for a critical bug, faint once checked. A task has no mark. The bullets under Critical are critical bugs from the heading alone, and a bare heading under Bugs is one bug."
         >
           <Ground>
-            <KeyFilePaper
+            <KeyFileSheets
               reveal={null}
               sheets={[
                 {
@@ -181,7 +181,7 @@ export function PaperPage() {
           rule="Headings, lists, task lists, tables, quotations, code and rules, through react-markdown with GFM."
         >
           <Ground>
-            <KeyFilePaper
+            <KeyFileSheets
               reveal={null}
               sheets={[
                 {
@@ -201,9 +201,9 @@ export function PaperPage() {
           rule="The Hothouse Vault's defaults: the README and the roadmaps the scan found. None are read here, so each says so."
         >
           <Ground>
-            <KeyFilePaper
+            <KeyFileSheets
               reveal={null}
-              sheets={sheetsFor(hothouse.detail.keyFiles, {})}
+              sheets={sheetsFor(hothouse.page.keyFiles, {})}
             />
           </Ground>
         </Specimen>
@@ -246,17 +246,17 @@ export function PaperPage() {
       </Section>
       <Pressed text={pressed} />
       <Usage
-        component="<KeyFilePaper> · <NoLocalRepositorySlip>"
+        component="<KeyFileSheets> · <NoLocalRepositorySlip>"
         props={[
           {
             name: "sheets",
             type: "KeyFileSheet[]",
-            what: "KeyFilePaper: each of bird.detail.keyFiles, a roadmap file carrying its margin marks by source line, with the markdown read from it, or null when it could not be read.",
+            what: "KeyFileSheets: each of bird.page.keyFiles, a roadmap file carrying its margin marks by source line, with the markdown read from it, or null when it could not be read.",
           },
           {
             name: "slip",
             type: "NoLocalRepository",
-            what: "NoLocalRepositorySlip: bird.detail.noLocalRepository, the forges by name, the repository reference, the SSH address or null while unknown, and whether the meta line carries its clause.",
+            what: "NoLocalRepositorySlip: bird.page.noLocalRepository, the forges by name, the repository reference, the SSH address or null while unknown, and whether the meta line carries its clause.",
           },
           {
             name: "onLocalSources",
@@ -278,17 +278,17 @@ export function PaperPage() {
           a pane that scrolls, <Code>overflow-y-auto</Code> with{" "}
           <Code>pane-scroll</Code>, as the bird&apos;s page does. The tabs stick
           to the pane&apos;s top, and the sheet takes focus so the keys scroll
-          the pane. <Code>MarkdownPaper</Code> renders one sheet&apos;s markdown
+          the pane. <Code>MarkdownSheet</Code> renders one sheet&apos;s markdown
           alone.
         </p>
         <p>
-          The detail page draws <Code>NoLocalRepositorySlip</Code> in the paper
-          pane when <Code>bird.detail.noLocalRepository</Code> is not null,
-          above the key files, which such a bird never has. The window never
+          The bird's page draws <Code>NoLocalRepositorySlip</Code> in the sheets
+          pane when <Code>bird.page.noLocalRepository</Code> is not null, above
+          the key files, which such a bird never has. The window never
           navigates: cloning stays with the owner&apos;s own tools, and the next
           scan finds the local repository under any searched folder.{" "}
           <Code>NoLocalRepositoryClause</Code> is the meta line&apos;s &quot;no
-          local repository&quot;, on the Detail heading page.
+          local repository&quot;, on the Bird's page heading page.
         </p>
       </Usage>
     </>

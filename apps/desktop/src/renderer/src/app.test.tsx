@@ -410,9 +410,9 @@ describe("the window", () => {
     ).toBeDefined();
   });
 
-  it("reads the open bird's key files into its detail", async () => {
+  it("reads the open bird's key files into its page", async () => {
     const { fake } = renderApp(idle(mockAviary), "/bird/dev/perch", (birdId) =>
-      mockBird(birdId).detail.keyFiles.map((file) => ({
+      mockBird(birdId).page.keyFiles.map((file) => ({
         file,
         markdown: file.path === "README.md" ? "# Hello from the readme" : null,
       })),
@@ -527,7 +527,7 @@ describe("the window", () => {
         idle(mockAviary),
         "/bird/undev/skiff",
         (birdId) =>
-          mockBird(birdId).detail.keyFiles.map((file) => ({
+          mockBird(birdId).page.keyFiles.map((file) => ({
             file,
             markdown: `# Read from ${birdId}`,
           })),
@@ -623,7 +623,7 @@ describe("the window", () => {
       };
     }
 
-    it("adopts a fence bird from its detail page onto the wire picked", async () => {
+    it("adopts a fence bird from its page onto the wire picked", async () => {
       const holder = configHolder();
       const { fake } = renderApp(
         idle(mockAviary),

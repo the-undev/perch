@@ -80,7 +80,7 @@ describe("the papers form", () => {
       forges: ["github.com/finch/perch", "forge.example.lan:3000/finch/perch"],
       lastCommit: {
         at: "2026-10-22T06:30:00.000Z",
-        subject: "Derive the view model: aviary, birds, bubbles and detail",
+        subject: "Derive the view model: aviary, birds, bubbles and bird pages",
       },
     });
     expect(papersFormFor(mockConfig, hello, home).seen).toEqual({

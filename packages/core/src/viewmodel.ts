@@ -184,7 +184,7 @@ export interface Bird {
   /** Where a fence bird lives, for its hover tip; null on a wire or while undecided. */
   lives: string | null;
   bubble: Bubble;
-  detail: Detail;
+  page: BirdPage;
 }
 
 // The bubble
@@ -220,13 +220,13 @@ export interface Chip {
   severity: Exclude<HealthLevel, "green"> | null;
 }
 
-// The detail
+// The page
 
 /** A ledger tone: green for a clean zero or a good state, amber and red by severity, else null. */
 export type Tone = HealthLevel | null;
 
 /** One source's part in a ledger row: where it was read, what it says there, and its link out. */
-export interface Working {
+export interface Reading {
   /** A forge's lower-case name, a roadmap file's path, or git. */
   source: string;
   text: string;
@@ -234,20 +234,20 @@ export interface Working {
   url: string | null;
   /** When the fact dates from, shown as an age; null when it has no time. */
   at: string | null;
-  /** The line in a key file the working points at, which pressing it shows on the paper; null for none. */
-  reveal: PaperLine | null;
+  /** The line in a key file the reading points at, which pressing it shows on the sheet; null for none. */
+  reveal: SheetLine | null;
 }
 
 /** A source line in one of the bird's key files, counted from 1. */
-export interface PaperLine {
+export interface SheetLine {
   path: string;
   line: number;
 }
 
 /**
  * One fact in full words. A clean count of zero reads "none" in green. A count or state row names
- * the bubble chip whose working it holds, null when the bubble carries no such chip, and spells
- * that working out per source: each source with something to say, or that it couldn't be read.
+ * the bubble chip whose reading it holds, null when the bubble carries no such chip, and spells
+ * that reading out per source: each source with something to say, or that it couldn't be read.
  */
 export type LedgerFact =
   | {
@@ -257,7 +257,7 @@ export type LedgerFact =
       text: string;
       tone: Tone;
       chip: ChipKind | null;
-      workings: Working[];
+      readings: Reading[];
     }
   | {
       kind: "state";
@@ -266,7 +266,7 @@ export type LedgerFact =
       tone: Tone;
       url: string | null;
       chip: ChipKind | null;
-      workings: Working[];
+      readings: Reading[];
     }
   | { kind: "time"; label: string; at: string };
 
@@ -281,28 +281,28 @@ export interface BranchLine {
   url: string | null;
 }
 
-/** A commit's spread: green on every forge read, amber short of one or when none could be read, null without a forge. */
-export type SpreadTone = Exclude<HealthLevel, "red"> | null;
+/** How well forges hold a commit: green when every forge read holds it, amber short of that or when none could be read, null without a forge. */
+export type HeldOnTone = Exclude<HealthLevel, "red"> | null;
 
 /** One commit on the default branch, told once however many places hold it. */
-export interface RiverCommit {
+export interface HistoryCommit {
   sha: string;
   shortSha: string;
   subject: string;
   committedAt: string;
   /** The commit on the first forge holding it; null when no forge does. */
   url: string | null;
-  tone: SpreadTone;
-  /** The spread in words, such as "on github and forgejo" or "no remote could be read". */
-  spread: string;
+  tone: HeldOnTone;
+  /** Which forges hold it, in words, such as "on github and forgejo" or "no remote could be read". */
+  heldOn: string;
 }
 
-/** The newest commits on the default branch, each once, with how far each has spread. */
-export interface River {
-  /** The default branch the river judges, the local repository's else a forge's; null when none names it. */
+/** The newest commits on the default branch, each once, with which forges hold it. */
+export interface History {
+  /** The default branch the history judges, the local repository's else a forge's; null when none names it. */
   branch: string | null;
   /** Newest first, at most the configured number of finalised commits. */
-  commits: RiverCommit[];
+  commits: HistoryCommit[];
   /** A line per forge whose list couldn't be read, such as "couldn't read github", with why when no card covers it. */
   notes: string[];
   /** One sentence when the forges hold different commits; null when they agree. */
@@ -364,7 +364,7 @@ export interface LinkOut {
   url: string;
 }
 
-/** The mark in the paper's margin beside a bug's line: one bar for a bug, two for a critical bug, faint once done. */
+/** The mark in the sheet's margin beside a bug's line: one bar for a bug, two for a critical bug, faint once done. */
 export interface LineMark {
   kind: "bug" | "critical-bug";
   done: boolean;
@@ -373,7 +373,7 @@ export interface LineMark {
 /** Margin marks by the source line they sit beside, counted from 1. */
 export type LineMarks = Record<number, LineMark>;
 
-/** A file the detail page renders as paper, read at render time. */
+/** A file the bird's page renders as sheets, read at render time. */
 export interface KeyFile {
   path: string;
   absolutePath: string;
@@ -411,8 +411,8 @@ export interface NoLocalRepository {
   onMetaLine: boolean;
 }
 
-/** Everything about one bird beyond its look and bubble, which the detail page also shows. */
-export interface Detail {
+/** Everything about one bird beyond its look and bubble, which the bird's page also shows. */
+export interface BirdPage {
   /** Where the local repository is on disk, home as ~; null for a bird with no local repository here. */
   localRepositoryPath: string | null;
   /** The forges that hold the bird, each once, in the order its repositories were found. */
@@ -423,7 +423,7 @@ export interface Detail {
   quiet: string | null;
   ledger: LedgerFact[];
   branches: BranchLine[];
-  river: River;
+  history: History;
   pullRequests: PullRequestLine[];
   flags: FlagLine[];
   actions: LaunchAction[];
@@ -526,7 +526,7 @@ function countFact(
   count: number,
   tone: Tone,
   chip: ChipKind | null,
-  workings: Working[],
+  readings: Reading[],
 ): LedgerFact {
   return count === 0
     ? {
@@ -536,7 +536,7 @@ function countFact(
         text: "none",
         tone: "green",
         chip,
-        workings,
+        readings,
       }
     : {
         kind: "count",
@@ -545,7 +545,7 @@ function countFact(
         text: String(count),
         tone,
         chip,
-        workings,
+        readings,
       };
 }
 
@@ -560,7 +560,7 @@ function forgeSources(
   });
 }
 
-/** Each part of a forge's data, named in full for a working that says it couldn't be read. */
+/** Each part of a forge's data, named in full for a reading that says it couldn't be read. */
 const forgePartLabel = {
   openPullRequests: "pull requests",
   latestCi: "CI",
@@ -576,7 +576,7 @@ function failed(part: object | null): part is EntityError {
   return part !== null && "error" in part;
 }
 
-function couldNotRead(source: string, part: ForgePart): Working {
+function couldNotRead(source: string, part: ForgePart): Reading {
   return {
     source,
     text: `couldn't read ${forgePartLabel[part]}`,
@@ -622,8 +622,8 @@ function noneRead(entity: Entity, part: ForgePart): boolean {
   );
 }
 
-/** A row no forge could be read for: "couldn't read" in amber, each forge's working saying so. */
-function unreadRow(label: string, workings: Working[]): LedgerFact {
+/** A row no forge could be read for: "couldn't read" in amber, each forge's reading saying so. */
+function unreadRow(label: string, readings: Reading[]): LedgerFact {
   return {
     kind: "state",
     label,
@@ -631,7 +631,7 @@ function unreadRow(label: string, workings: Working[]): LedgerFact {
     tone: "amber",
     url: null,
     chip: null,
-    workings,
+    readings,
   };
 }
 
@@ -641,9 +641,9 @@ function unreadRow(label: string, workings: Working[]): LedgerFact {
  */
 function ciFact(entity: Entity, chip: ChipKind | null): LedgerFact | null {
   const worst = worstCiState(entity);
-  const workings = ciWorkings(entity);
+  const readings = ciReadings(entity);
   if (worst === undefined) {
-    return noneRead(entity, "latestCi") ? unreadRow("CI", workings) : null;
+    return noneRead(entity, "latestCi") ? unreadRow("CI", readings) : null;
   }
   return {
     kind: "state",
@@ -652,13 +652,13 @@ function ciFact(entity: Entity, chip: ChipKind | null): LedgerFact | null {
     tone: ciTone(worst),
     url: null,
     chip,
-    workings,
+    readings,
   };
 }
 
 /** Each forge's newest run on the default branch, named and linked, or that its CI couldn't be read. */
-function ciWorkings(entity: Entity): Working[] {
-  return forgeSources(entity).flatMap(({ forge, data }): Working[] => {
+function ciReadings(entity: Entity): Reading[] {
+  return forgeSources(entity).flatMap(({ forge, data }): Reading[] => {
     if (data === null || failed(data.latestCi)) {
       return [couldNotRead(forge, "latestCi")];
     }
@@ -678,8 +678,8 @@ function ciWorkings(entity: Entity): Working[] {
 }
 
 /** Each forge's open pull requests, linked to its list; a forge with none is silent. */
-function pullRequestWorkings(entity: Entity): Working[] {
-  return forgeSources(entity).flatMap(({ forge, data }): Working[] => {
+function pullRequestReadings(entity: Entity): Reading[] {
+  return forgeSources(entity).flatMap(({ forge, data }): Reading[] => {
     if (data === null || failed(data.openPullRequests)) {
       return [couldNotRead(forge, "openPullRequests")];
     }
@@ -699,11 +699,11 @@ function pullRequestWorkings(entity: Entity): Working[] {
 }
 
 /** Each roadmap file's open work items of the kinds counted; a file with none is silent. */
-function roadmapWorkings(
+function roadmapReadings(
   roadmap: RoadmapData,
   countOf: (counts: WorkItemCounts) => number,
-): Working[] {
-  return roadmap.files.flatMap((file): Working[] => {
+): Reading[] {
+  return roadmap.files.flatMap((file): Reading[] => {
     const open = countOf(file.counts);
     if (open === 0) return [];
     return [
@@ -720,11 +720,11 @@ function roadmapWorkings(
 }
 
 /** The mood line a count's level earns, such as "restless at 5", toned like the row; nothing while content. */
-function moodWorkings(
+function moodReadings(
   source: string,
   level: HealthLevel,
   window: CountThresholds,
-): Working[] {
+): Reading[] {
   if (level === "green") return [];
   const atCount = level === "red" ? window.redCount : window.amberCount;
   return [
@@ -739,11 +739,11 @@ function moodWorkings(
   ];
 }
 
-/** Each open work item of the kind in the file, in the file's order, as a working that points at its line. */
-function openWorkItemWorkings(
+/** Each open work item of the kind in the file, in the file's order, as a reading that points at its line. */
+function openWorkItemReadings(
   file: RoadmapFile,
   kind: WorkItemKind,
-): Working[] {
+): Reading[] {
   return workItemsOf(file)
     .filter((workItem) => workItem.kind === kind && workItem.done !== true)
     .map((workItem) => ({
@@ -776,8 +776,8 @@ function bugRows(
         severity(levels.bugs),
         file.counts.bug > 0 ? bugsChip : null,
         [
-          ...openWorkItemWorkings(file, "bug"),
-          ...moodWorkings(file.path, levels.bugs, thresholds.bugs),
+          ...openWorkItemReadings(file, "bug"),
+          ...moodReadings(file.path, levels.bugs, thresholds.bugs),
         ],
       ),
     ];
@@ -790,8 +790,8 @@ function bugRows(
         severity(levels.criticalBugs),
         criticalBugsChip,
         [
-          ...openWorkItemWorkings(file, "critical-bug"),
-          ...moodWorkings(
+          ...openWorkItemReadings(file, "critical-bug"),
+          ...moodReadings(
             file.path,
             levels.criticalBugs,
             thresholds.criticalBugs,
@@ -803,7 +803,7 @@ function bugRows(
 }
 
 /** Unsafe work's oldest change, toned by its age; nothing when there is none. */
-function agedWorkings(work: AgedWork | null, text: string): Working[] {
+function agedReadings(work: AgedWork | null, text: string): Reading[] {
   if (work === null) return [];
   return [
     {
@@ -818,11 +818,11 @@ function agedWorkings(work: AgedWork | null, text: string): Working[] {
 }
 
 /** Each branch's unpushed commits, oldest first, toned by age and linked to its upstream branch. */
-function unpushedBranchWorkings(
+function unpushedBranchReadings(
   entity: Entity,
   git: GitData,
   config: Config,
-): Working[] {
+): Reading[] {
   return [...(git.unpushedBranches ?? [])]
     .sort(
       (a, b) =>
@@ -980,7 +980,7 @@ function chipsFor(entity: Entity, health: Health): Chip[] {
   return chips;
 }
 
-/** The facts in full words, each chip's working on the row whose number it carries. */
+/** The facts in full words, each chip's reading on the row whose number it carries. */
 function ledgerFor(
   entity: Entity,
   chips: Chip[],
@@ -997,7 +997,7 @@ function ledgerFor(
         git.uncommittedCount,
         git.drift.uncommitted ? severity(git.drift.uncommitted.level) : null,
         handle("uncommitted"),
-        agedWorkings(git.drift.uncommitted, "oldest change"),
+        agedReadings(git.drift.uncommitted, "oldest change"),
       ),
     );
     if (git.backup === "local-only") {
@@ -1008,7 +1008,7 @@ function ledgerFor(
         tone: null,
         url: null,
         chip: null,
-        workings: [],
+        readings: [],
       });
     } else {
       ledger.push(
@@ -1017,7 +1017,7 @@ function ledgerFor(
           git.unpushedCount,
           git.drift.unpushed ? severity(git.drift.unpushed.level) : null,
           handle("unpushed"),
-          unpushedBranchWorkings(entity, git, config),
+          unpushedBranchReadings(entity, git, config),
         ),
       );
     }
@@ -1032,13 +1032,13 @@ function ledgerFor(
         openWorkItemsOf(roadmap),
         null,
         handle("open-work-items"),
-        roadmapWorkings(roadmap, openOf),
+        roadmapReadings(roadmap, openOf),
       ),
     );
   }
   const pullForges = forgePullRequests(entity);
   if (noneRead(entity, "openPullRequests")) {
-    ledger.push(unreadRow("open pull requests", pullRequestWorkings(entity)));
+    ledger.push(unreadRow("open pull requests", pullRequestReadings(entity)));
   }
   if (pullForges.length > 0) {
     ledger.push(
@@ -1047,7 +1047,7 @@ function ledgerFor(
         pullForges.reduce((total, { pulls }) => total + pulls.length, 0),
         null,
         handle("pull-requests"),
-        pullRequestWorkings(entity),
+        pullRequestReadings(entity),
       ),
     );
   }
@@ -1160,7 +1160,7 @@ function forgeShortfalls(
 
 /**
  * The divergence sentence: a forge lacking commits another holds is behind it; two forges each
- * lacking commits have diverged. Counted over every listed commit, not only those the river shows.
+ * lacking commits have diverged. Counted over every listed commit, not only those the history shows.
  */
 function divergenceOf(
   forgeLists: PlaceList[],
@@ -1186,35 +1186,35 @@ function divergenceOf(
 }
 
 /**
- * A commit's spread over the forges read. A forge holds it unless the commit is lacking there, so
+ * Which forges hold a commit, over the forges read. A forge holds it unless the commit is lacking there, so
  * one older than a forge's list counts as held. The local repository only contributes commits. With
- * forges but none read the spread is unknown, in amber; only a bird with no forge is quiet.
+ * forges but none read, which hold it is unknown, in amber; only a bird with no forge is quiet.
  */
-function spreadOf(
+function heldOnOf(
   forgeCount: number,
   forgeLists: PlaceList[],
   commit: FinalisedCommit,
-): { tone: SpreadTone; spread: string } {
-  if (forgeCount === 0) return { tone: null, spread: "no remote" };
+): { tone: HeldOnTone; heldOn: string } {
+  if (forgeCount === 0) return { tone: null, heldOn: "no remote" };
   if (forgeLists.length === 0)
-    return { tone: "amber", spread: "no remote could be read" };
+    return { tone: "amber", heldOn: "no remote could be read" };
   const holders = forgeLists
     .filter((list) => reachIn(list.commits, commit) !== "lacking")
     .map((list) => list.name);
   if (holders.length === forgeLists.length)
-    return { tone: "green", spread: `on ${holders.join(" and ")}` };
+    return { tone: "green", heldOn: `on ${holders.join(" and ")}` };
   if (holders.length > 0)
-    return { tone: "amber", spread: `only on ${holders.join(" and ")}` };
+    return { tone: "amber", heldOn: `only on ${holders.join(" and ")}` };
   if (forgeLists.length < forgeCount)
-    return { tone: "amber", spread: "on no remote that could be read" };
-  return { tone: "amber", spread: "not pushed to a remote" };
+    return { tone: "amber", heldOn: "on no remote that could be read" };
+  return { tone: "amber", heldOn: "not pushed to a remote" };
 }
 
 /**
  * A forge whose list couldn't be read, in a line: with the short why when no card covers its
  * owner, which only the standing gap has.
  */
-function riverNote(entity: Entity, forge: ForgeName): string {
+function historyNote(entity: Entity, forge: ForgeName): string {
   const source = entity.sources[forge];
   const repository = entity.repositories.forges.find(
     (entry) => entry.forge === forge,
@@ -1231,17 +1231,17 @@ function riverNote(entity: Entity, forge: ForgeName): string {
   return `couldn't read ${forge} · no card covers ${owner}`;
 }
 
-/** The default branch the river judges: the local repository's, else the first forge's read. */
-function riverBranch(entity: Entity): string | null {
+/** The default branch the history judges: the local repository's, else the first forge's read. */
+function historyBranch(entity: Entity): string | null {
   const git = readable<GitData>(entity.sources.git);
   return git?.defaultBranch ?? forgeData(entity)[0]?.data.defaultBranch ?? null;
 }
 
 /**
- * The commit river: local main's and each forge's newest commits joined by hash, told once each,
- * newest first and capped, with each commit's spread over the forges and a sentence on divergence.
+ * The commit history: local main's and each forge's newest commits joined by hash, told once each,
+ * newest first and capped, with each commit's holders among the forges and a sentence on divergence.
  */
-function riverFor(entity: Entity, cap: number): River {
+function historyFor(entity: Entity, cap: number): History {
   const forgePlaces = forgeNames
     .filter((forge) =>
       entity.repositories.forges.some(
@@ -1264,7 +1264,7 @@ function riverFor(entity: Entity, cap: number): River {
   );
   const forgeLists = forgePlaces.filter((list) => list.commits !== null);
   return {
-    branch: riverBranch(entity),
+    branch: historyBranch(entity),
     commits: commits.slice(0, cap).map((commit) => {
       const holderUrl =
         forgeLists.find((list) => reachIn(list.commits, commit) === "held")
@@ -1275,7 +1275,7 @@ function riverFor(entity: Entity, cap: number): River {
         subject: commit.subject,
         committedAt: commit.committedAt,
         url: holderUrl === null ? null : `${holderUrl}/commit/${commit.sha}`,
-        ...spreadOf(forgePlaces.length, forgeLists, commit),
+        ...heldOnOf(forgePlaces.length, forgeLists, commit),
       };
     }),
     notes: forgeNames
@@ -1284,7 +1284,7 @@ function riverFor(entity: Entity, cap: number): River {
           (list) => list.name === forge && list.commits === null,
         ),
       )
-      .map((forge) => riverNote(entity, forge)),
+      .map((forge) => historyNote(entity, forge)),
     divergence: divergenceOf(forgeLists, commits),
   };
 }
@@ -1557,7 +1557,7 @@ export function deriveBird(
       speech,
       chips,
     },
-    detail: {
+    page: {
       localRepositoryPath:
         entity.path === null ? null : collapseHome(entity.path, home),
       forges: [
@@ -1569,7 +1569,7 @@ export function deriveBird(
       quiet: quietFor(entity, health),
       ledger: ledgerFor(entity, chips, config),
       branches: branchesFor(entity, config),
-      river: riverFor(entity, config.scan.finalisedCommits),
+      history: historyFor(entity, config.scan.finalisedCommits),
       pullRequests: pullRequestsFor(entity),
       flags: entity.flags.map((flag) => ({
         flag: flag.flag,

@@ -5,7 +5,7 @@ import { type ReactNode, useState } from "react";
 import { byDay, mockBird, smallHours, withOutstanding } from "../specimens.ts";
 import { Code, Ground, Pressed, Section, Specimen, Usage } from "../usage.tsx";
 
-/** A container of the given width, as the detail page is one, so its width picks the roost's arrangement. */
+/** A container of the given width, as the bird's page is one, so its width picks the roost's arrangement. */
 function Column({ width, children }: { width: number; children: ReactNode }) {
   return (
     <div style={{ width }} className="@container max-w-full">
@@ -24,7 +24,7 @@ export function RoostPage() {
     <>
       <Section
         title="The bird on its perch"
-        rule="On its own page the bird leaves the wire for a T-stand at the top right, drawn in the post's colour. It sits on the crossbar, breast settled and no legs showing, where the wires and the strip keep it standing. It is drawn larger than on any wire, idle, and always faces left toward its record. Its bubble continues word for word from the aviary but drops the name and state word, which the page's heading carries, and the actions, which the heading's action row carries. The tail meets the beak. Its chips are handles: pressing one hands back the chip's kind, and the detail page lands on the ledger row holding its working. These are drawn in a 330px container, under the 460px at which the roost becomes a row, so they are stacked."
+        rule="On its own page the bird leaves the wire for a T-stand at the top right, drawn in the post's colour. It sits on the crossbar, breast settled and no legs showing, where the wires and the strip keep it standing. It is drawn larger than on any wire, idle, and always faces left toward its record. Its bubble continues word for word from the aviary but drops the name and state phrase, which the page's heading carries, and the actions, which the heading's action row carries. The tail meets the beak. Its chips are handles: pressing one hands back the chip's kind, and the bird's page lands on the ledger row holding its reading. These are drawn in a 330px container, under the 460px at which the roost becomes a row, so they are stacked."
         min={380}
       >
         <Specimen
@@ -111,7 +111,7 @@ export function RoostPage() {
       <Pressed text={pressed} />
       <Section
         title="Two arrangements"
-        rule="The roost takes its arrangement from the width of its container, the page, not its own. Under 460px it is stacked: the bubble above, the bird below, the tail hanging from the bubble's bottom edge. The tail is long enough that the paper clears the top of the bird's head with 14px of daylight at the bird's drawn scale. From 460px it is a row: the bubble on the left, sized to its words up to a reading cap of 56 characters, the bird on its stand at the right end, a tail leaving the bubble's right edge and slanting down to the beak. The roost is then only as wide as the bubble and the bird need, so the detail page's band can set it beside the heading. The bubble sits at the top of the band, and the stand's pole and shadow hang below the band into the space beneath."
+        rule="The roost takes its arrangement from the width of its container, the page, not its own. Under 460px it is stacked: the bubble above, the bird below, the tail hanging from the bubble's bottom edge. The tail is long enough that the paper clears the top of the bird's head with 14px of daylight at the bird's drawn scale. From 460px it is a row: the bubble on the left, sized to its words up to a reading cap of 56 characters, the bird on its stand at the right end, a tail leaving the bubble's right edge and slanting down to the beak. The roost is then only as wide as the bubble and the bird need, so the bird's page's band can set it beside the heading. The bubble sits at the top of the band, and the stand's pole and shadow hang below the band into the space beneath."
         min={660}
       >
         <Specimen
@@ -179,13 +179,13 @@ export function RoostPage() {
           {
             name: "onChip",
             type: "(chip: ChipKind) => void",
-            what: "A chip in the bubble was pressed; the detail page scrolls to the ledger row holding its working and marks it.",
+            what: "A chip in the bubble was pressed; the bird's page scrolls to the ledger row holding its reading and marks it.",
           },
         ]}
       >
         <p>
           The roost reads the width of the nearest <Code>@container</Code>, the
-          detail page&apos;s article. From 860px the page sets it at the right
+          bird's page&apos;s article. From 860px the page sets it at the right
           of its band at its own width; narrower, beneath the heading in a
           centred 480px column. The bird is drawn sitting at{" "}
           <Code>roostScale</Code> times its plumpness;{" "}

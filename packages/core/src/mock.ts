@@ -745,7 +745,7 @@ const perch = localEntity("dev/perch", {
         branch(
           "contracts",
           "2026-10-22T06:30:00.000Z",
-          "Derive the view model: aviary, birds, bubbles and detail",
+          "Derive the view model: aviary, birds, bubbles and bird pages",
         ),
         branch(
           "main",

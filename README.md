@@ -37,6 +37,11 @@ settings page. `config.example.toml` shows every field with placeholder
 values. Forge tokens come from the desktop keyring, see
 [docs/forge-access.md](docs/forge-access.md).
 
+The config carries a `version`. The app migrates an older config once, writing
+it back without comments and keeping the old file beside it as
+`config.toml.v1`. An older perch cannot read the migrated file; restore
+`config.toml.v1` to go back.
+
 ## Development
 
 An Electron app. It needs Node 26 and pnpm 11. Run `pnpm install` once, then

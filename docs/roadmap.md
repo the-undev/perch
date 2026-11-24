@@ -8,11 +8,6 @@ The slip offers the SSH address to copy. Investigate whether it should also
 offer an HTTPS address, and whether "SSH address" then still names it for its
 purpose.
 
-## Invented account names in mock data
-
-Mock data and test fixtures use a real account name in forge references.
-Replace it with an invented one.
-
 ## Papers named entities in config code
 
 `Config.entities` holds each entity's papers, keyed by a repository reference,
